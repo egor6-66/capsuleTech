@@ -1,0 +1,34 @@
+# deps
+node_modules
+.pnpm-store
+
+# build
+dist
+.nx
+tmp
+*.tsbuildinfo
+
+# IDE
+.idea
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# env
+.env
+.env.local
+.env.*.local
+.npmrc.local
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# capsule-generated
+.capsule/

@@ -1,0 +1,45 @@
+{
+  "name": "@capsule/shared-vite",
+  "version": "0.0.64",
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.29.3",
+    "@capsule/shared-compliance": "workspace:*",
+    "vite-plugin-solid": "^2.11.12"
+  },
+  "devDependencies": {
+    "solid-refresh": "^0.6.3"
+  },
+  "peerDependencies": {
+    "solid-js": "^1.9.0",
+    "solid-refresh": "*",
+    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "solid-refresh": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "packageManager": "pnpm"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ]
+}

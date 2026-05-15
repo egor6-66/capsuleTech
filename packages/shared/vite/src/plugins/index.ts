@@ -1,0 +1,12 @@
+export { HtmlPlugin } from './html';
+export { HMRWrappingPlugin } from './HMRWrapping';
+export { ExportGeneratorPlugin } from './exportGenerator';
+export { EndpointsRegistryPlugin } from './endpointsRegistry';
+export { RouterPlugin } from './router';
+export { CompliancePlugin } from './compliance';
+export { AppConfigPlugin } from './appConfig';
+export { EnsureScaffoldPlugin } from './scaffold';
+export { staticCopyPlugin } from './staticCopy';
+export { default as solidPlugin } from 'vite-plugin-solid';
+export { default as tsconfigPaths } from 'vite-tsconfig-paths';
+export { AliasesPlugin } from './aliases';

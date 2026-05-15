@@ -1,0 +1,108 @@
+import {
+  gitBranches,
+  gitCommit,
+  gitCreateBranch,
+  gitLog,
+  gitPull,
+  gitPush,
+  gitStatus,
+  gitSwitch,
+  gitSync,
+} from '../actions';
+import type { Command } from './types';
+
+const WORKSPACE_SCOPE = ['workspace-root', 'app', 'lib', 'workspace-inner'] as const;
+
+export const gitCommands: Command[] = [
+  {
+    id: 'git.status',
+    label: '📊 Status',
+    icon: '📊',
+    description: 'Текущая ветка + git status --short',
+    scope: [...WORKSPACE_SCOPE],
+    category: 'git',
+    action: gitStatus,
+  },
+  {
+    id: 'git.branches',
+    label: '🌳 Branches',
+    icon: '🌳',
+    description: 'Список локальных веток (в app/lib — фильтр по scope)',
+    scope: [...WORKSPACE_SCOPE],
+    category: 'git',
+    action: gitBranches,
+  },
+  {
+    id: 'git.switch',
+    label: '🔀 Switch',
+    icon: '🔀',
+    description: 'Переключиться на другую ветку (scope-ветки сверху)',
+    scope: [...WORKSPACE_SCOPE],
+    category: 'git',
+    action: gitSwitch,
+  },
+  {
+    id: 'git.create',
+    label: '➕ Create branch',
+    icon: '➕',
+    description: 'Создать новую ветку <type>/<scope>/<slug>',
+    scope: [...WORKSPACE_SCOPE],
+    category: 'git',
+    action: gitCreateBranch,
+  },
+  {
+    id: 'git.pull',
+    label: '⬇  Pull',
+    icon: '⬇',
+    description: 'git pull --ff-only текущей ветки',
+    scope: [...WORKSPACE_SCOPE],
+    category: 'git',
+    action: gitPull,
+  },
+  {
+    id: 'git.push',
+    label: '⬆  Push',
+    icon: '⬆',
+    description: 'git push (авто --set-upstream при первом push)',
+    scope: [...WORKSPACE_SCOPE],
+    category: 'git',
+    action: gitPush,
+  },
+  {
+    id: 'git.sync',
+    label: '🔄 Sync',
+    icon: '🔄',
+    description: 'fetch --all --prune + обзор ahead/behind по всем веткам',
+    scope: [...WORKSPACE_SCOPE],
+    category: 'git',
+    action: gitSync,
+  },
+  {
+    id: 'git.commit',
+    label: '✍  Commit',
+    icon: '✍',
+    description: 'Conventional Commits мастер: type → scope → subject',
+    scope: [...WORKSPACE_SCOPE],
+    category: 'git',
+    params: [
+      {
+        // Позиционный для CLI (`capsule git commit "feat: foo"`); в TUI не спрашивается,
+        // вместо этого action запускает интерактивный мастер.
+        name: 'message',
+        description: 'Готовое commit message (пропускает мастер)',
+        positional: true,
+        required: false,
+      },
+    ],
+    action: gitCommit,
+  },
+  {
+    id: 'git.log',
+    label: '📜 Log',
+    icon: '📜',
+    description: 'Последние 20 коммитов (graph, all)',
+    scope: [...WORKSPACE_SCOPE],
+    category: 'git',
+    action: gitLog,
+  },
+];

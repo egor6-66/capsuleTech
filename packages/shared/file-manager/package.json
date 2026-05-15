@@ -1,0 +1,28 @@
+{
+  "name": "@capsule/shared-file-manager",
+  "version": "0.0.64",
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "vite build"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@capsule/shared-vite": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "packageManager": "pnpm"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ]
+}

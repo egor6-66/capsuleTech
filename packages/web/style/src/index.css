@@ -1,0 +1,183 @@
+@import "tailwindcss";
+
+/* Сканируем сам style-пакет */
+@source ".";
+/* Сканируем core (wrappers/ui и пр.) */
+@source "../../core/src/**/*.{ts,tsx}";
+/* Сканируем web UI-компоненты */
+@source "../../ui/src/**/*.{ts,tsx}";
+/* Сканируем приложения */
+@source "../../../../apps/*/src/**/*.{ts,tsx}";
+
+@theme {
+  /* Цвета в стиле shadcn (Slate/Zinc) */
+  --color-status: var(--current-status);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  /*--color-primary: var(--primary);*/
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+  /* Глобальный фактор отступа */
+  --spacing-base: 1rem;
+
+  /* РЕГИСТРАЦИЯ ОТСТУПОВ ДЛЯ ТЕЙЛВИНДА */
+  /* Теперь можно использовать классы: gap-container, p-layout, py-component и т.д. */
+  --spacing-layout: var(--spacing-base); /* 16px */
+  --spacing-component: calc(var(--spacing-base) / 2);
+  --spacing-container: calc(var(--spacing-base) / 1.5);
+  /* Твой основной градиент кита */
+  --gradient-primary: linear-gradient(to right, oklch(0.7 0.2 340), oklch(0.5 0.2 250));
+
+  /* Можно добавить еще для декора */
+  --gradient-accent: linear-gradient(to bottom right, var(--primary), var(--accent));
+
+  /* Базовый размер текста */
+  --text-base-size: 1rem;
+
+  /* Масштабируемые размеры */
+  --font-size-h1: calc(var(--text-base-size) * 2.5);
+  --font-size-h2: calc(var(--text-base-size) * 2);
+  --font-size-p: var(--text-base-size);
+
+  /* Цвета текста из твоих переменных */
+  --color-text-main: var(--foreground);
+  --color-text-muted: var(--muted-foreground);
+
+  --animate-pulse-subtle: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-subtle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@layer base {
+  :root {
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.961 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.961 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.961 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --destructive-foreground: oklch(0.577 0.245 27.325);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.708 0 0);
+    --radius: 0.5rem;
+
+    --status-success: oklch(0.627 0.194 149.214);
+    --status-error: oklch(0.577 0.245 27.325); /* или var(--destructive) */
+    --status-warning: oklch(0.769 0.188 70.08);
+    --current-status: inherit;
+    --transition-ui: all .3s;
+  }
+
+  /* Темная тема через селектор .dark или [data-theme='dark'] */
+  .dark,
+  [data-theme="dark"] {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.145 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.145 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.985 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.396 0.141 25.723);
+    --destructive-foreground: oklch(0.637 0.237 25.331);
+    --border: oklch(0.269 0 0);
+    --input: oklch(0.269 0 0);
+    --ring: oklch(0.439 0 0);
+  }
+}
+@layer base {
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus,
+  select:-webkit-autofill,
+  select:-webkit-autofill:hover,
+  select:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--foreground) !important;
+    box-shadow: 0 0 100px 100px var(--background) inset !important;
+    transition: background-color 900000000s ease-in-out 900000000s !important;
+    caret-color: var(--foreground) !important;
+  }
+
+  *,
+  ::after,
+  ::before {
+    box-sizing: border-box;
+    border-color: var(--border);
+    border-style: solid;
+    border-width: 0;
+  }
+
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    margin: 0;
+    line-height: inherit;
+  }
+  button,
+  input,
+  a {
+    transition: var(--transition-ui) !important;
+  }
+}
+@layer components {
+  .has-status {
+    background-color: var(--current-status) !important;
+    border-color: var(--current-status) !important;
+    color: white !important;
+    transition: var(--transition-ui) !important;
+  }
+}
+.has-status:hover {
+  filter: brightness(0.6);
+}

@@ -1,0 +1,210 @@
+import { createEffect, createUniqueId, mergeProps, onCleanup, splitProps } from 'solid-js';
+import type { ICtx } from '../../ctx';
+import * as UI from './imports';
+
+type AnyEvent = Event & {
+  currentTarget?: any;
+  key?: string;
+  ctrlKey?: boolean;
+  shiftKey?: boolean;
+  altKey?: boolean;
+  metaKey?: boolean;
+};
+
+const parseMeta = (raw: unknown, fallback: any) => {
+  if (typeof raw === 'string') {
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
+};
+
+/** Деривация name: первый «конкретный» тег (без @-префикса) из meta.tags. */
+const deriveName = (meta: any): string | undefined =>
+  meta?.tags?.find?.((t: string) => typeof t === 'string' && !t.startsWith('@'));
+
+/**
+ * Деривация HTML input-type из тегов. Если в meta.tags есть один из «типовых»
+ * тегов (`password`, `email`, `phone`, `number`, `text`) — возвращаем
+ * соответствующий `type` для DOM-атрибута. Маппинг закрыт; всё остальное —
+ * `undefined` (пусть DOM использует свой default `text` либо то, что задал
+ * автор Entity явно через `type="..."`).
+ */
+const TAG_TO_INPUT_TYPE: Record<string, string> = {
+  password: 'password',
+  email: 'email',
+  phone: 'tel',
+  number: 'number',
+  text: 'text',
+};
+const deriveInputType = (meta: any): string | undefined => {
+  const tags: string[] = meta?.tags ?? [];
+  for (const tag of tags) {
+    const mapped = TAG_TO_INPUT_TYPE[tag];
+    if (mapped) return mapped;
+  }
+  return undefined;
+};
+
+const getTargetData = (e: AnyEvent | undefined, finalProps: any, derivedName?: string) => {
+  const el: any = e?.currentTarget;
+  return {
+    name: el?.name || derivedName || finalProps.name,
+    value: el?.type === 'checkbox' ? el?.checked : (el?.value ?? finalProps.value),
+    type: el?.type,
+    meta: parseMeta(el?.getAttribute?.('meta'), finalProps.meta),
+    dynamicMeta: finalProps?.dynamicMeta,
+    // JSX-declared payload — произвольные данные, которые автор Entity
+    // прикрепил к элементу через `payload={{...}}`. На первом уровне (UI-click)
+    // тут лежит то, что задал автор. На последующих ярусах через `next(arg)`
+    // ControllerProxy перетирает на bubble-аргумент.
+    payload: finalProps?.payload,
+    key: e?.key,
+    modifiers: e
+      ? {
+          ctrl: !!e.ctrlKey,
+          shift: !!e.shiftKey,
+          alt: !!e.altKey,
+          meta: !!e.metaKey,
+        }
+      : undefined,
+  };
+};
+
+// Закрытый набор перехватываемых событий (см. ADR 009).
+// updateStore: обновлять ли store.components[id] значением target (для инпутов / селектов).
+const EVENT_HANDLERS: ReadonlyArray<readonly [string, { updateStore: boolean }]> = [
+  ['onClick', { updateStore: false }],
+  ['onInput', { updateStore: true }],
+  ['onChange', { updateStore: true }],
+  ['onBlur', { updateStore: false }],
+  ['onFocus', { updateStore: false }],
+  ['onKeyDown', { updateStore: false }],
+];
+
+const safeCall = (fn: any, ...args: any[]) => {
+  try {
+    const r = fn?.(...args);
+    if (r && typeof r.catch === 'function') {
+      r.catch((err: any) => console.error('[UiProxy] async handler failed:', err));
+    }
+    return r;
+  } catch (err) {
+    console.error('[UiProxy] sync handler threw:', err);
+  }
+};
+
+export const UiProxy = (ctx: ICtx<any>, wrapperProps: any) => {
+  const wrap = (OriginalComponent: any): any => {
+    if (!OriginalComponent) return undefined;
+
+    if (typeof OriginalComponent !== 'function' && typeof OriginalComponent !== 'object') {
+      return OriginalComponent;
+    }
+
+    const ComponentWrapper = (componentProps: any) => {
+      const merged = mergeProps(wrapperProps, componentProps, {
+        dynamicMeta: wrapperProps?.meta,
+      });
+      const [local, props] = splitProps(merged, ['children']);
+
+      // Политика C: элемент попадает в реестр и получает event-binding ТОЛЬКО
+      // если разработчик явно указал собственный meta на этом JSX-узле.
+      // Унаследованный dynamicMeta (от Entity) — не повод регистрировать
+      // структурные обёртки (Field, Field.Label и т.д.).
+      const hasOwnMeta = !!componentProps?.meta;
+
+      if (!hasOwnMeta) {
+        // Сквозной рендер без побочных эффектов — обёртка только ради
+        // рекурсивного wrap'а под-компонентов через Proxy выше.
+        const finalProps = mergeProps(props, local);
+        return <OriginalComponent {...finalProps} />;
+      }
+
+      const id = createUniqueId();
+
+      // Реактивная регистрация: на mount + при любом изменении props
+      createEffect(() => {
+        const name = deriveName(props.meta);
+        ctx.store.registerComponent({
+          [id]: { ...props, ...(name ? { name } : {}) },
+        });
+      });
+
+      onCleanup(() => {
+        ctx.store.unregisterComponent(id);
+      });
+
+      const eventBindings: Record<string, (e: AnyEvent) => void> = {};
+      for (const [eventName, opts] of EVENT_HANDLERS) {
+        const flag = `__capsule_${eventName}__`;
+        eventBindings[eventName] = (e: AnyEvent) => {
+          // Дедупликация на bubbling: первый сработавший handler помечает event,
+          // верхние обёртки в DOM-цепочке пропускают повторные вызовы.
+          if ((e as any)[flag]) return;
+          (e as any)[flag] = true;
+
+          const data = getTargetData(e, props, deriveName(props.meta));
+          if (opts.updateStore && data.name) {
+            ctx.store.update({ [id]: data });
+          }
+          safeCall(ctx.controller[eventName], data, ctx.store.ctx);
+          safeCall(props[eventName], e);
+        };
+      }
+
+      const dynamicProps = {
+        get class() {
+          const name = deriveName(props.meta);
+          const custom = name ? ctx.store.styles?.[name] || '' : '';
+          return `${props.class || ''} ${custom}`.trim();
+        },
+        get disabled() {
+          return ctx.store.loading || props.disabled;
+        },
+        // name прокидывается под капотом — для нативных DOM-элементов (input/button/select),
+        // которым нужно name-атрибут (form-data, accessibility, label-for-by-id).
+        get name() {
+          return deriveName(props.meta);
+        },
+        // type DOM-инпута, выведенный из тега (password / email / phone / number / text).
+        // Если автор Entity указал `type="..."` явно — уважаем его (props.type win'ит).
+        get type() {
+          return props.type ?? deriveInputType(props.meta);
+        },
+        ...eventBindings,
+      };
+
+      // Порядок mergeProps: позже = выигрывает. Дефолтные props < dynamicProps
+      // (class/disabled/name/type) < patch'и от Controller (`store.setProps`) < children.
+      //
+      // Patch-источник передан **функцией** — Solid'овский mergeProps вызывает её
+      // на КАЖДОМ чтении и пробрасывает реактивность от @xstate/solid (createStore)
+      // в потребителя (`splitProps` / JSX-spread).
+      const finalProps = mergeProps(props, dynamicProps, () => ctx.store.props?.[id] ?? {}, local);
+      return <OriginalComponent {...finalProps} />;
+    };
+
+    return new Proxy(ComponentWrapper, {
+      get(target, prop: string) {
+        const subComponent = (OriginalComponent as any)[prop];
+        if (subComponent) {
+          return wrap(subComponent);
+        }
+        return (target as any)[prop];
+      },
+    });
+  };
+
+  return new Proxy(
+    { ...UI },
+    {
+      get(target, propName: string) {
+        return wrap((target as any)[propName]);
+      },
+    },
+  );
+};

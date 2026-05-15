@@ -1,0 +1,84 @@
+{
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "defaultBase": "main",
+  "analytics": false,
+  "workspaceLayout": {
+    "appsDir": "./apps/*",
+    "libsDir": "./packages/**"
+  },
+  "targetDefaults": {
+    "build": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"],
+      "outputs": ["{projectRoot}/dist"]
+    },
+    "lint": { "cache": true, "inputs": ["default", "^default"] },
+    "lint:fix": { "cache": false, "inputs": ["default", "^default"] },
+    "nx-release-publish": {
+      "executor": "nx:run-commands",
+      "options": {
+        "packageRoot": "{projectRoot}",
+        "command": "pnpm publish --no-git-checks --registry={args.registry}",
+        "cwd": "{projectRoot}"
+      }
+    }
+  },
+  "namedInputs": {
+    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "production": [
+      "default",
+      "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
+      "!{projectRoot}/tsconfig.spec.json",
+      "!{projectRoot}/src/test-setup.[jt]s"
+    ],
+    "sharedGlobals": []
+  },
+  "plugins": [
+    {
+      "plugin": "@nx/js/typescript",
+      "options": {
+        "typecheck": { "targetName": "typecheck" },
+        "build": {
+          "targetName": "build",
+          "configName": "tsconfig.lib.json",
+          "buildDepsName": "build-deps",
+          "watchDepsName": "watch-deps"
+        }
+      }
+    },
+    {
+      "plugin": "@nx/vite/plugin",
+      "options": {
+        "buildTargetName": "build",
+        "testTargetName": "test",
+        "serveTargetName": "serve",
+        "devTargetName": "dev",
+        "previewTargetName": "preview",
+        "serveStaticTargetName": "serve-static",
+        "typecheckTargetName": "typecheck",
+        "buildDepsTargetName": "build-deps",
+        "watchDepsTargetName": "watch-deps"
+      }
+    }
+  ],
+  "release": {
+    "groups": {},
+    "version": {
+      "conventionalCommits": true,
+      "preserveLocalDependencyProtocols": true,
+      "updateDependents": "never"
+    },
+    "changelog": {
+      "workspaceChangelog": false,
+      "automaticFromRef": true
+    },
+    "git": {
+      "commit": true,
+      "commitMessage": "chore(release): publish {version}",
+      "tag": true,
+      "push": false
+    }
+  },
+  "generators": {}
+}

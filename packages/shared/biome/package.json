@@ -1,0 +1,23 @@
+{
+  "name": "@capsule/shared-biome",
+  "version": "0.0.10",
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "vite build"
+  },
+  "devDependencies": {},
+  "publishConfig": {
+    "access": "public",
+    "packageManager": "pnpm"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "files": ["dist"]
+}

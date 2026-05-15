@@ -1,0 +1,153 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import tailwindcss from '@tailwindcss/vite';
+import {
+  AliasesPlugin,
+  AppConfigPlugin,
+  CompliancePlugin,
+  EndpointsRegistryPlugin,
+  EnsureScaffoldPlugin,
+  ExportGeneratorPlugin,
+  RouterPlugin,
+  solidPlugin,
+  tsconfigPaths,
+} from '../plugins';
+import { DEFINE_FACTORIES, WRAPPER_NAMES } from '../plugins/constants';
+import { appConfig } from './appConfig';
+
+import AutoImport from 'unplugin-auto-import/vite';
+
+export interface ICapsuleConfig {
+  devServerPort?: number;
+}
+
+interface IProps {
+  config: any;
+  root: string;
+  workspaceRoot: string;
+  isDev: boolean;
+}
+
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+
+export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) => {
+  const capsuleRoot = join(root, '.capsule');
+  const watchDir = join(root, 'src');
+  const appConfigState = { aliasKeys: new Set<string>() };
+
+  const dedupe = [
+    'solid-js',
+    'solid-js/web',
+    'solid-js/store',
+    '@capsule/ui',
+    '@capsule/state',
+    '@capsule/file-manager',
+  ];
+
+  const capsuleConfig = {
+    ...config,
+    root: capsuleRoot,
+    define: {
+      __CAPSULE_CONFIG__: JSON.stringify(config),
+      // Browser-side identity-стабы для globalThis-фабрик, которыми пользователь
+      // объявляет конфиги (`capsule.app.ts` / `capsule.config.ts`). В Node-CLI
+      // эти функции выставляет `@capsule/cli/defines.ts` на globalThis; в браузере
+      // их нет, а `app-config.gen.ts` импортит `../capsule.app` — без define
+      // получили бы `defineAppConfig is not defined`.
+      defineAppConfig: '((__x__)=>__x__)',
+      defineCapsuleConfig: '((__x__)=>__x__)',
+    },
+    build: {
+      watch: {},
+      rollupOptions: {
+        input: join(capsuleRoot, 'index.html'),
+      },
+      outDir: 'dist',
+      emptyOutDir: true,
+    },
+    optimizeDeps: {
+      // Принудительно подготавливаем Solid + CJS-зависимости (xstate отдаёт
+      // CJS-сборку, и без явного include esbuild не вытащит named exports —
+      // в дев-сервере падает `does not provide an export named 'Actor'`).
+      include: ['solid-js', 'solid-js/web', 'solid-js/store', 'xstate', '@xstate/solid'],
+      // Исключаем внутренние пакеты монорепозитория из пре-бандлинга esbuild.
+      // Благодаря этому Vite будет обрабатывать их на лету через плагины (включая JSX транспиляцию).
+      exclude: [
+        '@capsule/sandbox',
+        '@capsule/ui',
+        '@capsule/core',
+        '@capsule/web-core',
+        '@capsule/web-ui',
+        '@capsule/web-style',
+        '@capsule/web-router',
+        '@capsule/web-profiler',
+        '@capsule/web-state',
+        '@capsule/web-query',
+      ],
+    },
+    plugins: [
+      AutoImport({
+        // NB: список wrapper'ов и define-фабрик — из единого источника
+        // (plugins/constants). Когда добавляешь новый wrapper/factory —
+        // правишь только constants.ts.
+        imports: [
+          { '@capsule/web-core': [...WRAPPER_NAMES] },
+          ...Object.entries(DEFINE_FACTORIES).map(([mod, names]) => ({
+            [mod]: [...names],
+          })),
+        ],
+        dirs: [join(capsuleRoot, 'registry')],
+        dts: './@types/capsule-imports.d.ts',
+      }),
+      AppConfigPlugin({
+        configPath: join(root, 'capsule.app.ts'),
+        typesOut: join(capsuleRoot, '@types', 'app-tags.d.ts'),
+        runtimeOut: join(capsuleRoot, 'app-config.gen.ts'),
+        onLoad: (cfg) => {
+          appConfigState.aliasKeys = new Set(Object.keys(cfg.aliases ?? {}));
+        },
+      }),
+      tsconfigPaths({
+        projects: [join(root, 'tsconfig.json'), join(workspaceRoot, 'tsconfig.base.json')],
+      }),
+      EnsureScaffoldPlugin(capsuleRoot),
+      ExportGeneratorPlugin({
+        out: join(capsuleRoot, 'registry', 'wrappers.ts'),
+        typesOut: join(capsuleRoot, '@types', 'slots.d.ts'),
+        watchDir,
+      }),
+      EndpointsRegistryPlugin({
+        out: join(capsuleRoot, 'registry', 'endpoints.ts'),
+        typesOut: join(capsuleRoot, '@types', 'api.d.ts'),
+        watchDir,
+      }),
+      tailwindcss(),
+      AliasesPlugin({ appRoot: root, workspaceRoot }),
+      CompliancePlugin({ mode: 'warn', appConfigState }),
+
+      RouterPlugin({
+        watchDir,
+        outDir: join(capsuleRoot, 'routes'),
+      }),
+      solidPlugin({ ssr: false }),
+    ],
+    resolve: {
+      dedupe,
+      // Без `'development'` условия: оно бы перенаправило `@capsule/*` на
+      // `./src/...`, который не публикуется в npm/Verdaccio (`files: ["dist"]`).
+      // Для внешних воркспейсов это ломает резолв `@capsule/web-core/providers`
+      // и т.п. App-сервер всегда читает собранный `dist/*.mjs` через `import`.
+      conditions: ['solid', 'browser', 'import'],
+    },
+    server: {
+      port: config.devServerPort || 3000,
+    },
+    esbuild: {
+      tsconfigRaw: readFileSync(join(root, 'tsconfig.json'), 'utf-8'),
+    },
+  };
+
+  return appConfig(capsuleConfig, isDev);
+};

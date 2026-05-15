@@ -1,0 +1,15 @@
+{
+  "name": "@capsule/web-core",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "packages/web/core/src",
+  "tags": [],
+  "targets": {},
+  "release": {
+    "version": {
+      "manifestRootsToUpdate": ["{projectRoot}"],
+      "currentVersionResolver": "git-tag",
+      "fallbackCurrentVersionResolver": "disk"
+    }
+  }
+}

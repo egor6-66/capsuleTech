@@ -1,0 +1,97 @@
+{
+  "compilerOptions": {
+    "baseUrl": "../../../",
+    "paths": {
+      "@capsule/web-core/create": [
+        "packages/web/core/src/create/index.ts"
+      ],
+      "@capsule/web-core/providers": [
+        "packages/web/core/src/providers/index.ts"
+      ],
+      "@capsule/web-core": [
+        "packages/web/core/src/index.ts"
+      ],
+      "@capsule/web-state": [
+        "packages/web/state/src/index.ts"
+      ],
+      "@capsule/web-renderer": [
+        "packages/web/renderer/src/index.ts"
+      ],
+      "@capsule/web-dnd": [
+        "packages/web/dnd/src/index.ts"
+      ],
+      "@capsule/web-manifests": [
+        "packages/web/manifests/src/index.ts"
+      ],
+      "@capsule/web-editor-state": [
+        "packages/web/editor-state/src/index.ts"
+      ],
+      "@capsule/web-inspector": [
+        "packages/web/inspector/src/index.ts"
+      ],
+      "@capsule/web-profiler": [
+        "packages/web/profiler/src/index.ts"
+      ],
+      "@capsule/web-query": [
+        "packages/web/query/src/index.ts"
+      ],
+      "@capsule/web-router": [
+        "packages/web/router/src/index.ts"
+      ],
+      "@capsule/web-style": [
+        "packages/web/style/src/index.ts"
+      ],
+      "@capsule/web-style/editor": [
+        "packages/web/style/src/editor/index.ts"
+      ],
+      "@capsule/web-style/css": [
+        "packages/web/style/src/index.css"
+      ],
+      "@capsule/web-ui": [
+        "packages/web/ui/src/index.ts"
+      ],
+      "@capsule/web-ui/*": [
+        "packages/web/ui/src/components/*"
+      ],
+      "@capsule/cli": [
+        "packages/cli/src/index.ts"
+      ],
+      "@capsule/cli/*": [
+        "packages/cli/*"
+      ],
+      "@capsule/shared-file-manager": [
+        "packages/shared/file-manager/src/index.ts"
+      ],
+      "@capsule/shared-compliance": [
+        "packages/shared/compliance/src/index.ts"
+      ],
+      "@capsule/shared-vite": [
+        "packages/shared/vite/src/index.ts"
+      ],
+      "@capsule/shared-zod": [
+        "packages/shared/zod/src/index.ts"
+      ],
+      "@capsule/shared-utils": [
+        "packages/shared/utils/src/index.ts"
+      ],
+      "@pages/*": [
+        "apps/agent/src/pages/*"
+      ],
+      "@widgets/*": [
+        "apps/agent/src/widgets/*"
+      ],
+      "@features/*": [
+        "apps/agent/src/features/*"
+      ],
+      "@entities/*": [
+        "apps/agent/src/entities/*"
+      ],
+      "@controllers/*": [
+        "apps/agent/src/controllers/*"
+      ],
+      "@shapes/*": [
+        "apps/agent/src/shapes/*"
+      ]
+    }
+  }
+}

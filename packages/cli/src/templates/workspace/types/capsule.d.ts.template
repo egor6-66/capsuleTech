@@ -1,0 +1,15 @@
+// Ambient declarations for Capsule's config-level globals.
+//
+// `defineCapsuleConfig` / `defineAppConfig` are installed on `globalThis` at
+// runtime by `@capsule/cli`. TypeScript needs these declarations to know
+// their types inside `capsule.config.ts` / `capsule.app.ts`.
+
+import type { ICapsuleConfig } from '@capsule/shared-vite';
+import type { IAppConfig } from '@capsule/web-core';
+
+declare global {
+  function defineCapsuleConfig(config: ICapsuleConfig): ICapsuleConfig;
+  function defineAppConfig(config: IAppConfig): IAppConfig;
+}
+
+export {};

@@ -1,0 +1,15 @@
+{
+  "name": "@capsule/web-inspector",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/web/inspector/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {},
+  "release": {
+    "version": {
+      "manifestRootsToUpdate": ["{projectRoot}"],
+      "currentVersionResolver": "git-tag",
+      "fallbackCurrentVersionResolver": "disk"
+    }
+  }
+}

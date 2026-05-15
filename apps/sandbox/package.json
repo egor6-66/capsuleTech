@@ -1,0 +1,11 @@
+{
+  "name": "@capsule/sandbox",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "scripts": {},
+  "dependencies": {
+    "@capsule/web-core": "workspace:*",
+    "@capsule/web-query": "workspace:*"
+  }
+}

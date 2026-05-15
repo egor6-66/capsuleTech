@@ -1,0 +1,26 @@
+{
+  "name": "@capsule/shared-zod",
+  "version": "0.0.17",
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!**/*.tsbuildinfo"
+  ],
+  "scripts": {
+    "build": "vite build"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@capsule/shared-vite": "workspace:*"
+  }
+}

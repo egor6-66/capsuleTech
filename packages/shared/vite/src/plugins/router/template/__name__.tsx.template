@@ -1,0 +1,9 @@
+import { lazy } from 'solid-js';
+
+const <%= componentsName %> = lazy(() => import('@pages/<%= path %>') as Promise<{ default: any }>);
+
+import { createFileRoute } from '@tanstack/solid-router';
+
+export const Route = createFileRoute('/<%= path %>')({
+  component: <%= componentsName %>,
+});

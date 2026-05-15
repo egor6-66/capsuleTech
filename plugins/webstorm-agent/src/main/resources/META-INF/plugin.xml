@@ -1,0 +1,32 @@
+<idea-plugin>
+    <id>io.capsule.agent.webstorm</id>
+    <name>Capsule Agent</name>
+    <vendor email="egorraybul@gmail.com" url="https://github.com/EgorRaybul">Capsule</vendor>
+
+    <description><![CDATA[
+        <h3>Capsule Agent — local-LLM coding assistant for WebStorm</h3>
+        <p>Hosts the Capsule Agent web UI (<code>apps/agent</code>) inside WebStorm via JCEF.
+        Talks to <code>capsule-server</code> (Rust) which orchestrates a local Ollama runtime.</p>
+        <p>For live development: run <code>pnpm dev</code> in <code>apps/agent</code> — Vite HMR
+        propagates changes into the plugin's browser panel without restart.</p>
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <toolWindow
+            id="CapsuleAgent"
+            anchor="right"
+            factoryClass="io.scriber.webstorm.ScriberToolWindowFactory"
+            icon="AllIcons.Toolwindows.ToolWindowMessages"/>
+
+        <applicationService
+            serviceImplementation="io.scriber.webstorm.settings.ScriberSettings"/>
+
+        <applicationConfigurable
+            parentId="tools"
+            instance="io.scriber.webstorm.settings.ScriberSettingsConfigurable"
+            id="io.capsule.agent.settings"
+            displayName="Capsule Agent"/>
+    </extensions>
+</idea-plugin>

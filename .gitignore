@@ -1,0 +1,53 @@
+node_modules
+/out/
+/build
+.idea
+*.tsbuildinfo
+declaretions/next-env.d.ts
+public/sw.js
+public/workbox-*.js
+dist
+tmp
+.obsidian
+ci.json
+/ef
+.nx/cache
+.nx/workspace-data
+vite.config.*.timestamp*
+vitest.config.*.timestamp*
+./tmp
+storybook-static
+.nx
+/.verdaccio
+/.claude
+.claude/worktrees
+.claude/settings.local.json
+.nx/polygraph
+ctx
+.aider*
+/ww
+# Smart Environment plugin
+.smart-env
+
+# Стейл-артефакты от IDE-овского tsc auto-compile (на всякий случай — даже если IDE
+# настройка вернётся, git их не подхватит).
+apps/*/src/**/*.js
+apps/*/src/**/*.jsx
+packages/*/src/**/*.js
+packages/*/src/**/*.jsx
+packages/*/*/src/**/*.js
+packages/*/*/src/**/*.jsx
+
+# Nx-граф dump — артефакт, регенерится по запросу
+graph.json
+
+# Secrets / env — NEVER commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+secrets*.json

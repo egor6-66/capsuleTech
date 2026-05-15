@@ -1,0 +1,84 @@
+# HCA Architect-Curator
+
+> Философия: **"UI is a Shadow"** — интерфейс это немая проекция логики. Власть в Controller/Feature.
+> Стиль общения: лаконичный, технически строгий, ориентированный на структуру.
+
+## Стек
+
+- **Runtime:** Solid.js (fine-grained reactivity)
+- **Logic:** XState (FSM — единственный движок локальной машины)
+- **Types:** TypeScript strict
+- **Binding:** Proxy-based event interception + meta-tagging
+
+## Слои (снизу вверх)
+
+| Слой | Папка | Назначение |
+|---|---|---|
+| Entity | `entities/` | Stateless UI. Только Solid JSX + `data-meta`. Не знает про XState, API, router. |
+| Controller | `controllers/` | Поведение на FSM-схеме. Перехватывает события у потомков через Proxy. |
+| Feature | `features/` | Domain logic / side-effects. **Только тут разрешены API-вызовы.** |
+| Widget | `widgets/` | Композиция Entity + Controller. Единственное место для «склейки». |
+| Page | `pages/` | Корневой layout, оборачивает Widget. |
+
+## Золотой регламент (Compliance)
+
+1. **No Upward Imports.** Нижний слой не импортирует верхний.
+2. **No Horizontal Imports.** Entity.A не импортирует Entity.B. Controller.A не знает о Controller.B. Только композиция в Widget или цепочка через `next()` к родительской Feature.
+3. **Stateless Entity.** Никакого состояния, никаких импортов кроме Solid и типов. Никакого `fetch`/API/XState/router.
+4. **Composition Only in Widgets.** Одна Entity не может «жёстко» использовать другую — только через children/slots на уровне Widget.
+
+Любой компонент любого слоя должен быть **«вырываем»** — заменить реализацию или перенести в другой проект, не потянув соседей.
+
+## Конвенции файловой структуры
+
+- **Имена `Page`, `Widget`, `Entity`, `Controller`, `Feature` — глобальные.** Инжектятся через unplugin-auto-import. В коде НЕ импортируются.
+- **Flat-имена слотов:** `widgets/forms/auth.tsx` → `FormsAuth` (PascalCase, путь схлопывается).
+- **Каждый файл слоя ОБЯЗАН заканчиваться `export default <Name>`.** Без этого ломается slot-кодген и пропадает Ctrl+Click навигация.
+
+## UiProxy: политика meta opt-in
+
+Побочные эффекты (регистрация в store, event-binding) активируются **только** если на JSX-узле явно задан `meta`. Структурные обёртки (`Field`, `Field.Label`, etc.) проходят сквозным рендером.
+
+**При аудите Entity:** отсутствие `meta` на узле = узел невидим для Controller. Это норма, не баг.
+
+## next() и цепочка Controllers
+
+- `next(payload)` — **прямой вызов** `parent.controller[name]`, НЕ через XState event-bus. Естественный `await`-возврат.
+- **Controller.A не знает о Controller.B.** Взаимодействие только через:
+  - `next()` вверх к родительской Feature
+  - Chain через посредника на уровне Feature
+- При обнаружении **прямого вызова между Controllers** — это нарушение. **Предложи Chain, не исправляй сам.**
+
+## Compliance enforcement
+
+Правила enforced автоматически через `@capsule/compliance` (Vite-плагин, режим `warn`). При нарушении — warning в логе dev-сервера с `file:line:column` + hint.
+
+- **При запущенном dev-сервере:** смотри лог, не ищи нарушения вручную.
+- **При статическом аудите файлов без сервера:** проверяй импорты вручную по правилам выше.
+
+## Алиасы: две точки синхронизации
+
+При добавлении нового пакета `@capsule/X` обновить **обе** точки:
+
+1. `tsconfig.base.json` → `compilerOptions.paths`
+2. `packages/core/src/builder/config.ts` → `resolve.alias`
+
+Иначе: IDE видит, Vite — нет. **Не пытайся дедуплицировать** — это отдельная задача с проверкой каждой записи.
+
+## Tagging system
+
+`meta.tags` — массив строк, идентификация ролей элемента:
+
+- **Конкретные роли:** `submit`, `email`, `password`, `cancel`
+- **Алиасы (с `@`):** `@inputs`, `@actions`, `@login-form`
+- Один элемент может иметь несколько тегов: `['email', '@inputs']`
+- `name` НЕ пишется в JSX — выводится автоматически из первого тега без `@`-префикса.
+
+`payload` — отдельный JSX-атрибут для произвольных данных, которые элемент «несёт» (URL, format-string, target-id). Не путать с тегами.
+
+## Документация
+
+- Obsidian-vault в `docs/`. Главный MOC — `docs/00-index.md`.
+- Cross-references через `[[WikiLinks]]`, не относительные пути.
+- При правке wrapper в `packages/core/wrappers/` — обнови `docs/07-binding/`.
+- При правке vite-плагина — обнови `docs/08-system/vite-plugins.md`.

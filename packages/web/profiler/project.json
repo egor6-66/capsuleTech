@@ -1,0 +1,15 @@
+{
+  "name": "@capsule/web-profiler",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "packages/web/profiler/src",
+  "tags": [],
+  "targets": {},
+  "release": {
+    "version": {
+      "manifestRootsToUpdate": ["{projectRoot}"],
+      "currentVersionResolver": "git-tag",
+      "fallbackCurrentVersionResolver": "disk"
+    }
+  }
+}
