@@ -4,7 +4,7 @@ import { Link } from '@tanstack/solid-router';
  * Полигон роутинга. `index.tsx` в папке = root + layout одновременно.
  *
  *   /lab          → этот компонент (рендерит nav + Outlet)
- *   /lab/auth     → дочерний layout
+ *   /lab/_auth     → дочерний layout
  *   /lab/home/... → демо вложенности, params и pathless
  */
 const Lab = Page((Ui) => (

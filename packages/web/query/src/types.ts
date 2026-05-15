@@ -78,7 +78,7 @@ export interface QueryClientOptions {
    * ```
    * bases: {
    *   default: '/api',
-   *   auth: 'https://auth.example.com',
+   *   _auth: 'https://auth.example.com',
    *   cdn: 'https://cdn.example.com',
    * }
    * ```

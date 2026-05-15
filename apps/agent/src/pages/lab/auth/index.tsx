@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/solid-router';
 
 /**
- * `/lab/auth` — собственный root+layout. Под собой держит /login и /registration.
+ * `/lab/_auth` — собственный root+layout. Под собой держит /login и /registration.
  */
 const Auth = Page((Ui) => (
   <div class="flex flex-col gap-4">

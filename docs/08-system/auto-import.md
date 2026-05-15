@@ -34,7 +34,7 @@ import { lazy } from 'solid-js';
 
 export const Widgets = {
   Forms: {
-    Auth: lazy(() => import('@widgets/forms/auth') as Promise<{ default: any }>),
+    Auth: lazy(() => import('@widgets/forms/_auth') as Promise<{ default: any }>),
   },
   Lists: {
     Base: lazy(() => import('@widgets/lists/base') as Promise<{ default: any }>),

@@ -14,7 +14,7 @@ export const Widgets = {
     Main: lazy(() => import('@widgets/footers/main')) as unknown as typeof import('@widgets/footers/main').default
   },
   Forms: {
-    Auth: lazy(() => import('@widgets/forms/auth')) as unknown as typeof import('@widgets/forms/auth').default
+    Auth: lazy(() => import('@widgets/forms/_auth')) as unknown as typeof import('@widgets/forms/_auth').default
   },
   Headers: {
     Main: lazy(() => import('@widgets/headers/main')) as unknown as typeof import('@widgets/headers/main').default
@@ -44,7 +44,7 @@ export const Controllers = {
 
 export const Features = {
   Viewer: {
-    Auth: lazy(() => import('@features/viewer/auth')) as unknown as typeof import('@features/viewer/auth').default
+    Auth: lazy(() => import('@features/viewer/_auth')) as unknown as typeof import('@features/viewer/_auth').default
   }
 };
 

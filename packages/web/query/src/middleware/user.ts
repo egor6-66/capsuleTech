@@ -60,17 +60,19 @@ export const statusMapper = (): Middleware => async (ctx, next) => {
 };
 
 /**
- * Side-effect на 401 (после `statusMapper`). Типовой сценарий: `goTo('/auth')`.
+ * Side-effect на 401 (после `statusMapper`). Типовой сценарий: `goTo('/_auth')`.
  * Ошибка пробрасывается дальше — Feature всё равно увидит её в catch.
  */
-export const on401 = (handler: () => void | Promise<void>): Middleware => async (_ctx, next) => {
-  try {
-    await next();
-  } catch (err) {
-    if (err instanceof UnauthorizedError) await handler();
-    throw err;
-  }
-};
+export const on401 =
+  (handler: () => void | Promise<void>): Middleware =>
+  async (_ctx, next) => {
+    try {
+      await next();
+    } catch (err) {
+      if (err instanceof UnauthorizedError) await handler();
+      throw err;
+    }
+  };
 
 const fmt = (verb: string, url?: string) => `[api] ${verb} ${url ?? '?'}`;
 

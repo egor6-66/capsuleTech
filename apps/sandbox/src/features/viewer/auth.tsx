@@ -31,7 +31,7 @@ const Auth = Feature(({ router, query }) => ({
         //   throw new Error('Empty response');
         // } catch (apiErr) {
         //   // Mock fallback пока нет backend'а
-        //   console.warn('[auth] API недоступен, fallback на mock:', apiErr);
+        //   console.warn('[_auth] API недоступен, fallback на mock:', apiErr);
         //   if (email === '' && password === '') {
         //     router.goTo('/branches');
         //     return;

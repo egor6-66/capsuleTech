@@ -8,7 +8,7 @@ import { LAYER_TO_NAMESPACE } from './constants';
 interface Leaf {
   /** Layer dir-key: `widgets` | `entities` | `controllers` | `features`. */
   layer: string;
-  /** Импорт-путь, например `@widgets/forms/auth`. */
+  /** Импорт-путь, например `@widgets/forms/_auth`. */
   importPath: string;
   /** Сегменты пути после layer'а в PascalCase: `['Forms', 'Auth']`, `['Viewer', 'LoginForm']`. */
   segments: string[];

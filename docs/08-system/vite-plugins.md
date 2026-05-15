@@ -24,12 +24,12 @@ status: documented
 import { lazy } from 'solid-js';
 export const Widgets = {
   Forms: {
-    Auth: lazy(() => import('@widgets/forms/auth') as Promise<{ default: any }>),
+    Auth: lazy(() => import('@widgets/forms/_auth') as Promise<{ default: any }>),
   },
 };
 export const Entities = {
   Auth: {
-    LoginForm: lazy(() => import('@entities/auth/loginForm') as Promise<{ default: any }>),
+    LoginForm: lazy(() => import('@entities/_auth/loginForm') as Promise<{ default: any }>),
   },
 };
 // и т.д. для controllers, features
@@ -61,9 +61,9 @@ export const Entities = {
    Содержимое генерируется из `template/__name__.tsx.template` через `generateFromTemplates` (`@capsule/file-manager`):
    ```tsx
    import { lazy } from 'solid-js';
-   const Login = lazy(() => import('@pages/auth/login') as Promise<{ default: any }>);
+   const Login = lazy(() => import('@pages/_auth/login') as Promise<{ default: any }>);
    import { createFileRoute } from '@tanstack/solid-router';
-   export const Route = createFileRoute('/auth/login')({ component: Login });
+   export const Route = createFileRoute('/_auth/login')({ component: Login });
    ```
 
 2. **TanStackRouterVite** — стандартный плагин TanStack, который из `.capsule/routes/` собирает `routeTree.gen.ts`.

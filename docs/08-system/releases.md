@@ -102,7 +102,7 @@ $env:NEXUS_REGISTRY = "https://nexus.company.com/repository/npm-private/"
 $env:NEXUS_TOKEN = "NpmToken.abcdef123456..."
 pnpm release:web:nexus
 
-# Вариант B — basic auth (логин/пароль)
+# Вариант B — basic _auth (логин/пароль)
 $env:NEXUS_REGISTRY = "https://nexus.company.com/repository/npm-private/"
 $env:NEXUS_USERNAME = "ci-user"
 $env:NEXUS_PASSWORD = "secret"
@@ -149,12 +149,12 @@ pnpm release:web:nexus
 
 ```json
 "node_server": {
-  "projects": ["@capsule/server", "@capsule/server-auth"],
+  "projects": ["@capsule/server", "@capsule/server-_auth"],
   "projectsRelationship": "independent",
   "releaseTagPattern": "node@{version}",
   "version": {
     "conventionalCommits": true,
-    "preVersionCommand": "pnpm nx run-many -t build -p @capsule/server,@capsule/server-auth"
+    "preVersionCommand": "pnpm nx run-many -t build -p @capsule/server,@capsule/server-_auth"
   },
   "changelog": { "projectChangelogs": true }
 }

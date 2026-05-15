@@ -1,6 +1,6 @@
 import { type ISchema, Renderer } from '@capsule/renderer';
 
-// JSON-эквивалент `widgets/forms/auth.tsx`. По сравнению с оригиналом ничего
+// JSON-эквивалент `widgets/forms/_auth.tsx`. По сравнению с оригиналом ничего
 // руками не «допиливалось»: то же дерево, те же meta-теги, тот же
 // `Controllers.Universal.Form` с тем же `overrides`, та же оборачивающая
 // `Features.Viewer.Auth`.
@@ -63,7 +63,7 @@ const schema: ISchema = {
   // как в оригинальном Widget'е.
   interactions: [
     {
-      id: 'auth-feature',
+      id: '_auth-feature',
       nodeId: 'animate',
       kind: 'feature',
       ref: 'Features.Viewer.Auth',

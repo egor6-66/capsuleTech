@@ -13,7 +13,7 @@ declare global {
       Main: typeof import('@widgets/footers/main').default;
     };
     Forms: {
-      Auth: typeof import('@widgets/forms/auth').default;
+      Auth: typeof import('@widgets/forms/_auth').default;
     };
     Headers: {
       Main: typeof import('@widgets/headers/main').default;
@@ -40,7 +40,7 @@ declare global {
   }
   interface Features {
     Viewer: {
-      Auth: typeof import('@features/viewer/auth').default;
+      Auth: typeof import('@features/viewer/_auth').default;
     };
   }
   interface Shapes {

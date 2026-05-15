@@ -16,7 +16,7 @@ export interface IAppConfig {
   aliases?: Record<string, readonly string[]>;
   /**
    * API-конфиг — фабрика `({ mw }) => ApiConfig`. Получает toolbox встроенных
-   * middleware (`cookies`, `auth`, `statusMapper`, `on401`, `log`, `retry`).
+   * middleware (`cookies`, `_auth`, `statusMapper`, `on401`, `log`, `retry`).
    * Реальная сборка — в bootstrap'е через `createApi(config.api, endpoints)`.
    *
    * Сделано только в форме функции (не union с литералом), чтобы TS-контекстное

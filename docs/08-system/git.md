@@ -34,7 +34,7 @@ capsule git pull         # или sync-main если ты на feat
 
 # 2. Создай feat-ветку
 capsule git create       # выбрать type/scope/slug интерактивно
-# → feat/cli/auth-redirect
+# → feat/cli/_auth-redirect
 ```
 
 ### Работа

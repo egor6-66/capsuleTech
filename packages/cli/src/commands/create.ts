@@ -1,9 +1,4 @@
-import {
-  createApp,
-  createLayer,
-  createLib,
-  createWorkspace,
-} from '../actions';
+import { createApp, createLayer, createLib, createWorkspace } from '../actions';
 import { LAYER_ICONS, LAYER_LABELS, type Layer } from '../templates/layers';
 import type { Command } from './types';
 
@@ -18,7 +13,8 @@ const layerCommand = (layer: Layer): Command => ({
   params: [
     {
       name: 'name',
-      description: 'Имя в kebab-case, `/` для вложенности (auth/login → src/<layer>/auth/login.tsx)',
+      description:
+        'Имя в kebab-case, `/` для вложенности (_auth/login → src/<layer>/_auth/login.tsx)',
       positional: true,
       required: true,
       prompt: {

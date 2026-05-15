@@ -44,8 +44,8 @@ date: 2026-05-10
 type Layer = 'entity' | 'controller' | 'feature' | 'widget' | 'page' | 'system' | 'app';
 
 function classify(absPath: string): Layer | null;
-// '/apps/sandbox/src/entities/auth/loginForm.tsx' → 'entity'
-// '/apps/sandbox/src/widgets/forms/auth.tsx'      → 'widget'
+// '/apps/sandbox/src/entities/_auth/loginForm.tsx' → 'entity'
+// '/apps/sandbox/src/widgets/forms/_auth.tsx'      → 'widget'
 // '/packages/ui/src/components/button/button.tsx' → 'system'
 // '/.capsule/registry/wrappers.ts'                → null  (skip)
 ```

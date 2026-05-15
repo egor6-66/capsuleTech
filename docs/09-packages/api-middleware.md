@@ -80,7 +80,7 @@ export default defineAppConfig({
       mw.cookies(),                                    // управление cookies
       mw.auth({ getToken: () => localStorage.getItem('token') }),  // attach Bearer token
       mw.statusMapper(),                               // translate HTTP errors → typed errors
-      mw.on401(() => routerService.goTo('/auth')),    // redirect on 401 (опционально)
+      mw.on401(() => routerService.goTo('/_auth')),    // redirect on 401 (опционально)
       mw.log(),                                        // логирование (опционально)
     ],
   }),
@@ -124,7 +124,7 @@ export const get = defineEndpoint((z) => ({
 ### Использование в Feature
 
 ```ts
-// apps/sandbox/src/features/auth.tsx
+// apps/sandbox/src/features/_auth.tsx
 export default Feature((services) => ({
   initial: 'checking',
   states: {
@@ -241,7 +241,7 @@ Endpoint может использовать другой base URL:
 export const logout = defineEndpoint((z) => ({
   method: 'POST',
   path: '/logout',
-  base: 'auth',  // из capsule.app.ts bases: { auth: '...' }
+  base: '_auth',  // из capsule.app.ts bases: { _auth: '...' }
   request: z.object({}),
   response: z.object({ ok: z.boolean() }),
 }));
