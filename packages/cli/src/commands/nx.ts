@@ -24,8 +24,8 @@ export const nxCommands: Command[] = [
   },
   {
     id: 'nx.graph',
-    label: '🕸 Graph',
-    icon: '🕸',
+    label: '🕸️ Graph',
+    icon: '🕸️',
     description: 'Открыть интерактивный граф зависимостей в браузере',
     scope: [...WORKSPACE_SCOPE],
     category: 'nx',
@@ -42,8 +42,8 @@ export const nxCommands: Command[] = [
   },
   {
     id: 'nx.run',
-    label: '▶  Run target',
-    icon: '▶',
+    label: '▶️ Run target',
+    icon: '▶️',
     description: 'Выполнить nx-таргет: <project>:<task>',
     scope: [...WORKSPACE_SCOPE],
     category: 'nx',

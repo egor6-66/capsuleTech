@@ -8,6 +8,23 @@ export default libConfig({
   },
   name: 'CapsuleCli',
   runtime: 'node',
+  external: [
+    'react',
+    /^react\//,
+    'react/jsx-runtime',
+    'react/jsx-dev-runtime',
+    'react-reconciler',
+    /^react-reconciler\//,
+    'scheduler',
+    /^scheduler\//,
+    'yoga-layout',
+    /^yoga-layout\//,
+    'ink',
+    /^ink\//,
+    'ink-select-input',
+    'ink-text-input',
+    'string-width',
+  ],
   plugins: [
     plugins.staticCopyPlugin([
       {

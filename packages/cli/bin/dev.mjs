@@ -36,6 +36,7 @@ export const RunCli = async (entryPath) => {
   const { createJiti } = await import('jiti');
   const jiti = createJiti(import.meta.url, {
     alias: getWorkspaceAliases(),
+    jsx: { runtime: 'automatic', importSource: 'react' },
   });
 
   return jiti.import(pathToFileURL(entryPath).href);

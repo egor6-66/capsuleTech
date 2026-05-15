@@ -24,8 +24,8 @@ export const releaseCommands: Command[] = [
   },
   {
     id: 'release.tags',
-    label: '🏷  Tags',
-    icon: '🏷',
+    label: '🏷️ Tags',
+    icon: '🏷️',
     description: 'Последние 20 git-тегов (cli@x.y.z / web@x.y.z)',
     scope: [...WORKSPACE_SCOPE],
     category: 'release',

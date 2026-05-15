@@ -43,7 +43,7 @@ export const buildNavigationCommands = (ctx: CliContext): Command[] => {
   if (ctx.type === 'app' || ctx.type === 'lib') {
     cmds.push({
       id: 'open.root',
-      label: '◀  Вернуться в корень workspace',
+      label: '◀️ Вернуться в корень workspace',
       description: 'cd до workspace root',
       scope: ['app', 'lib'],
       category: 'navigation',

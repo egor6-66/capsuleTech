@@ -17,4 +17,12 @@ declare global {
   const Shapes: typeof import('../registry/wrappers').Shapes
   const Widget: typeof import('@capsule/web-core').Widget
   const Widgets: typeof import('../registry/wrappers').Widgets
+  const defineEndpoint: typeof import('@capsule/web-query').defineEndpoint
+  const endpoints: typeof import('../registry/endpoints').endpoints
+}
+// for type re-export
+declare global {
+  // @ts-ignore
+  export type { Endpoints } from '../registry/endpoints'
+  import('../registry/endpoints')
 }

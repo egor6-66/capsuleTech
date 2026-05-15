@@ -55,8 +55,8 @@ export const gitCommands: Command[] = [
   },
   {
     id: 'git.pull',
-    label: '⬇  Pull',
-    icon: '⬇',
+    label: '⬇️ Pull',
+    icon: '⬇️',
     description: 'git pull --ff-only текущей ветки',
     scope: [...WORKSPACE_SCOPE],
     category: 'git',
@@ -64,8 +64,8 @@ export const gitCommands: Command[] = [
   },
   {
     id: 'git.push',
-    label: '⬆  Push',
-    icon: '⬆',
+    label: '⬆️ Push',
+    icon: '⬆️',
     description: 'git push (авто --set-upstream при первом push)',
     scope: [...WORKSPACE_SCOPE],
     category: 'git',
@@ -82,8 +82,8 @@ export const gitCommands: Command[] = [
   },
   {
     id: 'git.sync-main',
-    label: '⬆  Sync with main',
-    icon: '⬆',
+    label: '⬆️ Sync with main',
+    icon: '⬆️',
     description: 'Подтянуть свежий origin/main в текущую feat-ветку (rebase)',
     scope: [...WORKSPACE_SCOPE],
     category: 'git',
@@ -109,8 +109,8 @@ export const gitCommands: Command[] = [
   },
   {
     id: 'git.commit',
-    label: '✍  Commit',
-    icon: '✍',
+    label: '✍️ Commit',
+    icon: '✍️',
     description: 'Conventional Commits мастер: type → scope → subject',
     scope: [...WORKSPACE_SCOPE],
     category: 'git',

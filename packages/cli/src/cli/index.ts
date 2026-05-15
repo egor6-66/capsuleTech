@@ -1,11 +1,11 @@
 import { buildProgram } from './program';
-import { runMenu } from './menu';
+import { runTuiMenu } from './tui';
 import './defines';
 
 export const program = buildProgram();
 
 export async function RunCli(): Promise<void> {
-  await runMenu();
+  await runTuiMenu();
 }
 
 export default RunCli;
