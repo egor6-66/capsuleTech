@@ -28,3 +28,12 @@ export const buildApp = async (config: any, idDev: boolean) => {
   await build(appConfig(config, idDev));
   console.log(`Сборка в режиме ${idDev ? 'develop' : 'production'} завершена успешно!`);
 };
+
+export const buildCapsuleApp = async (
+  config: UserConfig,
+  root: string,
+  workspaceRoot: string,
+): Promise<void> => {
+  const finalConfig = capsuleConfig({ config, root, workspaceRoot, isDev: false });
+  await build(finalConfig);
+};
