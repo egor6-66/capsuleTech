@@ -56,9 +56,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build workspace packages (CLI deps need their dist/)
-        # workspace-concurrency=1 enforces topological order — shared/vite
-        # imports shared/compliance from its dist, so compliance must finish first.
-        run: pnpm -r --workspace-concurrency=1 --filter "...@capsuletech/cli" --filter "...@capsuletech/shared-vite" build
+        # nx respects targetDefaults.build.dependsOn=["^build"] from nx.json,
+        # giving us topological order and per-target streaming logs.
+        run: pnpm nx run-many -t build
 
       - name: Build app frontend
         working-directory: apps/${{ inputs.app }}
