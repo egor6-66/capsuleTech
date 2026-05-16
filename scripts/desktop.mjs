@@ -39,8 +39,9 @@ const app = rawApp;
 if (!['dev', 'build'].includes(action) || !app) {
   console.error('Usage: node scripts/desktop.mjs <dev|build> <app> [flags]');
   console.error('  flags:');
-  console.error('    --url=<url>     dev: url Vite-сервера (default http://localhost:5173)');
-  console.error('    --dist=<path>   build: путь до собранного фронта (default apps/<app>/dist)');
+  console.error('    --url=<url>      dev: url Vite-сервера (default http://localhost:5173)');
+  console.error('    --dist=<path>    build: путь до собранного фронта (default apps/<app>/dist)');
+  console.error('    --version=<sem>  build: версия (default apps/<app>/package.json:version)');
   process.exit(1);
 }
 
@@ -73,9 +74,12 @@ const identifier = appPkg.capsule?.identifier ?? `tech.capsule.${app.replace(/[^
 const desktopDir = resolve(workspaceRoot, 'backend', 'desktop');
 const overridePath = join(desktopDir, `.tauri.${app}.json`);
 
+const version = flags.version ?? process.env.CAPSULE_VERSION ?? appPkg.version ?? '0.0.0';
+
 const baseOverride = {
   productName,
   identifier,
+  version,
   app: {
     windows: [{ label: 'main', title: productName }],
   },

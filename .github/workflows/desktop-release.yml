@@ -1,0 +1,91 @@
+name: Desktop release
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'Apps/<app> для релиза'
+        type: choice
+        required: true
+        options:
+          - sandbox
+          - agent
+          - ewc
+      version:
+        description: 'Версия (semver без префикса v) — попадёт в .msi и в имя тега'
+        required: true
+        default: '0.0.1'
+      draft:
+        description: 'Создать GitHub Release как draft'
+        type: boolean
+        default: true
+      prerelease:
+        description: 'Пометить как pre-release'
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    name: Build ${{ inputs.app }} v${{ inputs.version }} (Windows)
+    runs-on: windows-latest
+
+    permissions:
+      contents: write
+
+    env:
+      CAPSULE_APP: ${{ inputs.app }}
+      CAPSULE_VERSION: ${{ inputs.version }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: backend
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build app frontend
+        working-directory: apps/${{ inputs.app }}
+        run: node ../../packages/cli/bin/capsule.mjs build
+
+      - name: Build Tauri bundle
+        run: node scripts/desktop.mjs build ${{ inputs.app }} --version=${{ inputs.version }}
+
+      - name: Collect artifacts
+        id: bundle
+        shell: pwsh
+        run: |
+          $bundleRoot = "backend/desktop/target/release/bundle"
+          $files = Get-ChildItem -Path $bundleRoot -Recurse -Include *.msi,*.exe -ErrorAction SilentlyContinue
+          if (-not $files) { Write-Error "No .msi/.exe artifacts found under $bundleRoot"; exit 1 }
+          $files | ForEach-Object { Write-Host "found: $($_.FullName) ($([math]::Round($_.Length/1MB,2)) MB)" }
+          $list = ($files.FullName -join "`n")
+          "files<<EOF`n$list`nEOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: desktop/${{ inputs.app }}-v${{ inputs.version }}
+          name: Desktop ${{ inputs.app }} v${{ inputs.version }}
+          draft: ${{ inputs.draft }}
+          prerelease: ${{ inputs.prerelease }}
+          files: ${{ steps.bundle.outputs.files }}
+          fail_on_unmatched_files: true
+          body: |
+            Desktop bundle для `apps/${{ inputs.app }}`.
+
+            **Platform:** Windows (.msi/.exe)
+            **Built from:** `${{ github.sha }}`
