@@ -151,10 +151,13 @@ const run = (cmd, opts = {}) => {
 };
 
 if (SHOULD_BUILD) {
-  // shared-vite сначала со ВСЕМИ deps ("...") — иначе на свежем CI без
-  // существующего dist/ esbuild не зарезолвит shared-compliance/main.
+  // 3 фазы строго последовательно: compliance → vite → rest.
+  // pnpm не блокирует параллельные билды по topological order — на свежем CI
+  // shared-vite стартует одновременно с shared-compliance и падает на резолве
+  // compliance/main (dist ещё не создан).
   const phases = [
-    { name: 'shared-vite (+ deps)', filters: ['--filter', '@capsule/shared-vite...'] },
+    { name: 'shared-compliance', filters: ['--filter', '@capsule/shared-compliance'] },
+    { name: 'shared-vite', filters: ['--filter', '@capsule/shared-vite'] },
     {
       name: 'shared-* (rest) + web-* + cli',
       filters: [

@@ -154,15 +154,19 @@ const setupAuth = () => {
   return { cleanup };
 };
 
-// Build phases:
-//   1. shared-vite + транзитивные deps (compliance). pnpm "...<pkg>..." собирает
-//      пакет вместе со всеми его dependencies в правильном порядке. На свежем CI
-//      без существующего dist/ это критично: shared-vite в vite.config бандлит
-//      shared-compliance, для чего esbuild-у нужен resolve compliance/main → dist.
-//   2. Остальные shared-* + web-* + cli — используют готовый shared-vite/dist
-//      через libConfig.
+// Build phases (3 шт., строго последовательно — pnpm `...<pkg>...` фильтр
+// и `-r run` сами по себе НЕ гарантируют topological blocking, и параллельный
+// concurrency=4 запускает пакеты одновременно, что ломает resolve на чистом CI):
+//   0. shared-compliance — vite.config из ../vite/src/defines/libConfig.ts
+//      (импортит src, не dist — поэтому compliance собирается без vite/dist).
+//   1. shared-vite — его vite.config бандлит compliance внутрь, для чего
+//      esbuild externalize-deps плагин резолвит compliance/main → dist/index.mjs.
+//      После phase 0 dist уже есть → резолв проходит.
+//   2. Все остальные shared-* (кроме compliance/vite/biome) + web-* + cli —
+//      используют готовый shared-vite/dist через libConfig.
 const phases = [
-  { name: 'shared-vite (+ deps)', filters: ['--filter', '@capsule/shared-vite...'] },
+  { name: 'shared-compliance', filters: ['--filter', '@capsule/shared-compliance'] },
+  { name: 'shared-vite', filters: ['--filter', '@capsule/shared-vite'] },
   {
     name: 'shared-* (rest) + web-* + cli',
     filters: [
