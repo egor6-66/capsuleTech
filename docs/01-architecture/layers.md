@@ -33,7 +33,7 @@ status: documented
 **Знает только:** Solid.js + типы.
 
 ```tsx
-// apps/sandbox/src/entities/auth/loginForm.tsx
+// apps/sandbox/src/entities/_auth/loginForm.tsx
 const LoginForm = Entity(({ Field, Button }) => (
   <Field>
     <Field.Label>Email</Field.Label>

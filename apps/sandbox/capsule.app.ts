@@ -14,8 +14,8 @@ export default defineAppConfig({
       mw.cookies(),
       mw.statusMapper(),
       mw.on401(() => {
-        // В реальном проекте — `routerService.goTo('/auth')`.
-        console.warn('[api] 401 → redirect to /auth');
+        // В реальном проекте — `routerService.goTo('/_auth')`.
+        console.warn('[api] 401 → redirect to /_auth');
       }),
       mw.log(),
     ],

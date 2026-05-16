@@ -9,13 +9,17 @@ export const LAYER_LABELS: Record<Layer, string> = {
   shapes: 'Shape',
 };
 
+/**
+ * Curated double-width эмодзи без VS16 (см. `src/cli/tui/icons.ts` про политику).
+ * Заменены `🎛`, `⚡`, `🔷` — все default-text, ломают ширину.
+ */
 export const LAYER_ICONS: Record<Layer, string> = {
   pages: '📄',
-  entities: '🧩',
-  controllers: '🎛',
-  features: '⚡',
-  widgets: '🧱',
-  shapes: '🔷',
+  entities: '🧱',
+  controllers: '🎮',
+  features: '🪄',
+  widgets: '🧰',
+  shapes: '🟦',
 };
 
 export const layerTemplates: Record<Layer, (Name: string) => string> = {

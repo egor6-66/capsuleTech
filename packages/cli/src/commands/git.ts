@@ -12,6 +12,7 @@ import {
   gitSync,
   gitSyncMain,
 } from '../actions';
+import { ICONS } from '../cli/tui/icons';
 import type { Command } from './types';
 
 const WORKSPACE_SCOPE = ['workspace-root', 'app', 'lib', 'workspace-inner'] as const;
@@ -19,8 +20,8 @@ const WORKSPACE_SCOPE = ['workspace-root', 'app', 'lib', 'workspace-inner'] as c
 export const gitCommands: Command[] = [
   {
     id: 'git.status',
-    label: '📊 Status',
-    icon: '📊',
+    label: `${ICONS.status} Status`,
+    icon: ICONS.status,
     description: 'Текущая ветка + git status --short',
     scope: [...WORKSPACE_SCOPE],
     category: 'git',
@@ -28,8 +29,8 @@ export const gitCommands: Command[] = [
   },
   {
     id: 'git.branches',
-    label: '🌳 Branches',
-    icon: '🌳',
+    label: `${ICONS.branches} Branches`,
+    icon: ICONS.branches,
     description: 'Список локальных веток (в app/lib — фильтр по scope)',
     scope: [...WORKSPACE_SCOPE],
     category: 'git',
@@ -37,8 +38,8 @@ export const gitCommands: Command[] = [
   },
   {
     id: 'git.switch',
-    label: '🔀 Switch',
-    icon: '🔀',
+    label: `${ICONS.switch} Switch`,
+    icon: ICONS.switch,
     description: 'Переключиться на другую ветку (scope-ветки сверху)',
     scope: [...WORKSPACE_SCOPE],
     category: 'git',
@@ -46,8 +47,8 @@ export const gitCommands: Command[] = [
   },
   {
     id: 'git.create',
-    label: '➕ Create branch',
-    icon: '➕',
+    label: `${ICONS.createBranch} Create branch`,
+    icon: ICONS.createBranch,
     description: 'Создать новую ветку <type>/<scope>/<slug>',
     scope: [...WORKSPACE_SCOPE],
     category: 'git',
@@ -55,8 +56,8 @@ export const gitCommands: Command[] = [
   },
   {
     id: 'git.pull',
-    label: '⬇️ Pull',
-    icon: '⬇️',
+    label: `${ICONS.pull} Pull`,
+    icon: ICONS.pull,
     description: 'git pull --ff-only текущей ветки',
     scope: [...WORKSPACE_SCOPE],
     category: 'git',
@@ -64,8 +65,8 @@ export const gitCommands: Command[] = [
   },
   {
     id: 'git.push',
-    label: '⬆️ Push',
-    icon: '⬆️',
+    label: `${ICONS.push} Push`,
+    icon: ICONS.push,
     description: 'git push (авто --set-upstream при первом push)',
     scope: [...WORKSPACE_SCOPE],
     category: 'git',
@@ -73,8 +74,8 @@ export const gitCommands: Command[] = [
   },
   {
     id: 'git.sync',
-    label: '🔄 Sync',
-    icon: '🔄',
+    label: `${ICONS.sync} Sync`,
+    icon: ICONS.sync,
     description: 'fetch --all --prune + обзор ahead/behind по всем веткам',
     scope: [...WORKSPACE_SCOPE],
     category: 'git',
@@ -82,8 +83,8 @@ export const gitCommands: Command[] = [
   },
   {
     id: 'git.sync-main',
-    label: '⬆️ Sync with main',
-    icon: '⬆️',
+    label: `${ICONS.syncMain} Sync with main`,
+    icon: ICONS.syncMain,
     description: 'Подтянуть свежий origin/main в текущую feat-ветку (rebase)',
     scope: [...WORKSPACE_SCOPE],
     category: 'git',
@@ -91,8 +92,8 @@ export const gitCommands: Command[] = [
   },
   {
     id: 'git.pr',
-    label: '🚀 Open PR',
-    icon: '🚀',
+    label: `${ICONS.pr} Open PR`,
+    icon: ICONS.pr,
     description: 'Запушить ветку и открыть Create-PR на GitHub (или gh pr create)',
     scope: [...WORKSPACE_SCOPE],
     category: 'git',
@@ -100,8 +101,8 @@ export const gitCommands: Command[] = [
   },
   {
     id: 'git.clean-merged',
-    label: '🧹 Clean merged',
-    icon: '🧹',
+    label: `${ICONS.cleanMerged} Clean merged`,
+    icon: ICONS.cleanMerged,
     description: 'Удалить локальные ветки, уже смерженные в main',
     scope: [...WORKSPACE_SCOPE],
     category: 'git',
@@ -109,8 +110,8 @@ export const gitCommands: Command[] = [
   },
   {
     id: 'git.commit',
-    label: '✍️ Commit',
-    icon: '✍️',
+    label: `${ICONS.commit} Commit`,
+    icon: ICONS.commit,
     description: 'Conventional Commits мастер: type → scope → subject',
     scope: [...WORKSPACE_SCOPE],
     category: 'git',
@@ -128,8 +129,8 @@ export const gitCommands: Command[] = [
   },
   {
     id: 'git.log',
-    label: '📜 Log',
-    icon: '📜',
+    label: `${ICONS.log} Log`,
+    icon: ICONS.log,
     description: 'Последние 20 коммитов (graph, all)',
     scope: [...WORKSPACE_SCOPE],
     category: 'git',

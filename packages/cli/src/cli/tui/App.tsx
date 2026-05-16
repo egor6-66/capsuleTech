@@ -25,6 +25,10 @@ export const App = ({ title, ctxLabel, groups, onPick }: AppProps) => {
   const cols = Math.min(stdout?.columns ?? 80, 96);
   const listWidth = Math.max(22, Math.floor(cols * 0.32));
   const detailWidth = Math.max(28, cols - listWidth - 4);
+  // Reserved: header title row (1) + tabs row (1) + marginTop before content (1)
+  // + marginTop before footer (1) + footer row (1) + safety (1) = 6.
+  const rows = stdout?.rows ?? 24;
+  const viewportRows = Math.max(3, rows - 6);
 
   const categories = useMemo(() => [...groups.keys()], [groups]);
   const [tab, setTab] = useState(0);
@@ -81,9 +85,14 @@ export const App = ({ title, ctxLabel, groups, onPick }: AppProps) => {
         categories={categories}
         activeCategory={activeCategory ?? ('create' as Category)}
       />
-      <Box marginTop={1}>
-        <CommandList items={items} selectedIndex={item} width={listWidth} />
-        <Detail command={selected} width={detailWidth} />
+      <Box marginTop={1} height={viewportRows}>
+        <CommandList
+          items={items}
+          selectedIndex={item}
+          width={listWidth}
+          viewportRows={viewportRows}
+        />
+        <Detail command={selected} width={detailWidth} viewportRows={viewportRows} />
       </Box>
       <Box marginTop={1}>
         <Footer />

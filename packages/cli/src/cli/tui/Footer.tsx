@@ -1,5 +1,6 @@
 /** @jsxImportSource react */
 import { Box, Text } from 'ink';
+import { ICONS } from './icons';
 import { theme } from './theme';
 
 interface Hint {
@@ -10,7 +11,7 @@ interface Hint {
 const HINTS: Hint[] = [
   { keys: '↑↓', label: 'items' },
   { keys: '←→', label: 'tabs' },
-  { keys: '⏎', label: 'run' },
+  { keys: ICONS.enter, label: 'run' },
   { keys: 'esc', label: 'exit' },
 ];
 

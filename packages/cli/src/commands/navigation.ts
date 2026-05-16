@@ -1,4 +1,5 @@
 import { goToRoot, openProject } from '../actions';
+import { ICONS } from '../cli/tui/icons';
 import { listWorkspaceChildren } from '../context';
 import type { CliContext } from '../context';
 import type { Command } from './types';
@@ -17,8 +18,8 @@ export const buildNavigationCommands = (ctx: CliContext): Command[] => {
     for (const name of listWorkspaceChildren(ctx.root, 'apps')) {
       cmds.push({
         id: `open.app.${name}`,
-        label: `📱 ${name}`,
-        icon: '📱',
+        label: `${ICONS.navApp} ${name}`,
+        icon: ICONS.navApp,
         description: `Перейти в apps/${name}`,
         scope: ['workspace-root', 'workspace-inner'],
         category: 'navigation',
@@ -29,8 +30,8 @@ export const buildNavigationCommands = (ctx: CliContext): Command[] => {
     for (const name of listWorkspaceChildren(ctx.root, 'packages')) {
       cmds.push({
         id: `open.lib.${name}`,
-        label: `📦 ${name}`,
-        icon: '📦',
+        label: `${ICONS.navLib} ${name}`,
+        icon: ICONS.navLib,
         description: `Перейти в packages/${name}`,
         scope: ['workspace-root', 'workspace-inner'],
         category: 'navigation',
@@ -43,7 +44,8 @@ export const buildNavigationCommands = (ctx: CliContext): Command[] => {
   if (ctx.type === 'app' || ctx.type === 'lib') {
     cmds.push({
       id: 'open.root',
-      label: '◀️ Вернуться в корень workspace',
+      label: `${ICONS.navBack} Вернуться в корень workspace`,
+      icon: ICONS.navBack,
       description: 'cd до workspace root',
       scope: ['app', 'lib'],
       category: 'navigation',

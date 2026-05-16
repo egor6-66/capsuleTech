@@ -1,3 +1,4 @@
+import { CATEGORY_ICONS } from '../cli/tui/icons';
 import type { CliContext } from '../context';
 import { createCommands } from './create';
 import { devCommands } from './dev';
@@ -27,13 +28,13 @@ export const collectCommands = (ctx: CliContext): Command[] => [
 ];
 
 export const CATEGORY_META: Record<Category, { icon: string; label: string; order: number }> = {
-  create: { icon: '➕', label: 'Create', order: 1 },
-  dev: { icon: '🚀', label: 'Dev', order: 2 },
-  workspace: { icon: 'ℹ️', label: 'Workspace', order: 3 },
-  git: { icon: '🌿', label: 'Git', order: 4 },
-  release: { icon: '📦', label: 'Release', order: 5 },
-  nx: { icon: '🔀', label: 'Nx', order: 6 },
-  navigation: { icon: '📂', label: 'Navigate', order: 7 },
+  create: { icon: CATEGORY_ICONS.create, label: 'Create', order: 1 },
+  dev: { icon: CATEGORY_ICONS.dev, label: 'Dev', order: 2 },
+  workspace: { icon: CATEGORY_ICONS.workspace, label: 'Workspace', order: 3 },
+  git: { icon: CATEGORY_ICONS.git, label: 'Git', order: 4 },
+  release: { icon: CATEGORY_ICONS.release, label: 'Release', order: 5 },
+  nx: { icon: CATEGORY_ICONS.nx, label: 'Nx', order: 6 },
+  navigation: { icon: CATEGORY_ICONS.navigation, label: 'Navigate', order: 7 },
 };
 
 export const groupByCategory = (cmds: Command[]): Map<Category, Command[]> => {

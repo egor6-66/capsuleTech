@@ -30,8 +30,8 @@ export interface IStateApi {
   matches: (name: string | string[]) => boolean;
 }
 
-import type { IBridge } from '@capsule/state';
-export type { IRegisteredComponent } from '@capsule/state';
+import type { IBridge } from '@capsule/web-state';
+export type { IRegisteredComponent } from '@capsule/web-state';
 
 export interface IHandlerApi<TCtx = any> {
   target: ITarget;
@@ -92,7 +92,7 @@ export interface IDefineStateSchema<TCtx = any> {
   [methodName: string]: any;
 }
 
-import type { ICapsuleRouter } from '@capsule/router';
+import type { ICapsuleRouter } from '@capsule/web-router';
 
 export interface IServices {
   router: ICapsuleRouter;

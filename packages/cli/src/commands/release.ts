@@ -1,4 +1,5 @@
 import { nxReleaseTags, release, releasePlan } from '../actions';
+import { ICONS } from '../cli/tui/icons';
 import type { Command } from './types';
 
 const WORKSPACE_SCOPE = ['workspace-root', 'app', 'lib', 'workspace-inner'] as const;
@@ -6,8 +7,8 @@ const WORKSPACE_SCOPE = ['workspace-root', 'app', 'lib', 'workspace-inner'] as c
 export const releaseCommands: Command[] = [
   {
     id: 'release.plan',
-    label: '🔍 Plan (dry-run)',
-    icon: '🔍',
+    label: `${ICONS.plan} Plan (dry-run)`,
+    icon: ICONS.plan,
     description: 'Предпросмотр бампа: что изменится, какие версии станут — БЕЗ публикации',
     scope: [...WORKSPACE_SCOPE],
     category: 'release',
@@ -15,8 +16,8 @@ export const releaseCommands: Command[] = [
   },
   {
     id: 'release.run',
-    label: '📦 Release',
-    icon: '📦',
+    label: `${ICONS.release} Release`,
+    icon: ICONS.release,
     description: 'Релиз группы: bump → CHANGELOG → tag → опционально publish',
     scope: [...WORKSPACE_SCOPE],
     category: 'release',
@@ -24,8 +25,8 @@ export const releaseCommands: Command[] = [
   },
   {
     id: 'release.tags',
-    label: '🏷️ Tags',
-    icon: '🏷️',
+    label: `${ICONS.tags} Tags`,
+    icon: ICONS.tags,
     description: 'Последние 20 git-тегов (cli@x.y.z / web@x.y.z)',
     scope: [...WORKSPACE_SCOPE],
     category: 'release',

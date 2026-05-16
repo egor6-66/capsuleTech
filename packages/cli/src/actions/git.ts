@@ -234,7 +234,7 @@ export const gitCreateBranch: CommandAction = async (ctx) => {
 
   const rawSlug = (await kit.input(
     'Slug (kebab-case; пусто — без slug, тогда имя будет <type>/<scope>):',
-    'auth-redirect',
+    '_auth-redirect',
   )) as string;
   const slug = sanitizeSlug(rawSlug);
 
@@ -392,9 +392,7 @@ export const gitSyncMain: CommandAction = async (ctx) => {
     return;
   }
 
-  await kit.task('git fetch origin --prune', async () =>
-    git(root, ['fetch', 'origin', '--prune']),
-  );
+  await kit.task('git fetch origin --prune', async () => git(root, ['fetch', 'origin', '--prune']));
 
   if (branch === 'main') {
     kit.log.info('Текущая ветка — main. Делаю pull --ff-only.');
@@ -422,9 +420,7 @@ export const gitCleanMerged: CommandAction = async (ctx) => {
   const root = ctx.root;
   const branch = await currentBranch(root);
 
-  await kit.task('git fetch origin --prune', async () =>
-    git(root, ['fetch', 'origin', '--prune']),
-  );
+  await kit.task('git fetch origin --prune', async () => git(root, ['fetch', 'origin', '--prune']));
 
   const merged = (await git(root, ['branch', '--merged', 'main']))
     .split('\n')
@@ -481,11 +477,7 @@ export const gitPr: CommandAction = async (ctx) => {
     // Подтянем свежак, чтобы PR-URL открылся с актуальным diff.
     const ahead = parseTrack(
       (
-        await git(root, [
-          'for-each-ref',
-          '--format=%(upstream:track)',
-          `refs/heads/${branch}`,
-        ])
+        await git(root, ['for-each-ref', '--format=%(upstream:track)', `refs/heads/${branch}`])
       ).trim(),
     ).ahead;
     if (ahead > 0) {

@@ -1,4 +1,5 @@
 import { nxAffected, nxGraph, nxProjects, nxReport, nxRun } from '../actions';
+import { ICONS } from '../cli/tui/icons';
 import type { Command } from './types';
 
 const WORKSPACE_SCOPE = ['workspace-root', 'app', 'lib', 'workspace-inner'] as const;
@@ -6,8 +7,8 @@ const WORKSPACE_SCOPE = ['workspace-root', 'app', 'lib', 'workspace-inner'] as c
 export const nxCommands: Command[] = [
   {
     id: 'nx.projects',
-    label: '📋 Projects',
-    icon: '📋',
+    label: `${ICONS.projects} Projects`,
+    icon: ICONS.projects,
     description: 'Список всех проектов workspace (nx show projects)',
     scope: [...WORKSPACE_SCOPE],
     category: 'nx',
@@ -15,8 +16,8 @@ export const nxCommands: Command[] = [
   },
   {
     id: 'nx.affected',
-    label: '🔥 Affected',
-    icon: '🔥',
+    label: `${ICONS.affected} Affected`,
+    icon: ICONS.affected,
     description: 'Проекты, затронутые относительно ветки main',
     scope: [...WORKSPACE_SCOPE],
     category: 'nx',
@@ -24,8 +25,8 @@ export const nxCommands: Command[] = [
   },
   {
     id: 'nx.graph',
-    label: '🕸️ Graph',
-    icon: '🕸️',
+    label: `${ICONS.graph} Graph`,
+    icon: ICONS.graph,
     description: 'Открыть интерактивный граф зависимостей в браузере',
     scope: [...WORKSPACE_SCOPE],
     category: 'nx',
@@ -33,8 +34,8 @@ export const nxCommands: Command[] = [
   },
   {
     id: 'nx.report',
-    label: '🧾 Report',
-    icon: '🧾',
+    label: `${ICONS.report} Report`,
+    icon: ICONS.report,
     description: 'Версии nx и установленных плагинов',
     scope: [...WORKSPACE_SCOPE],
     category: 'nx',
@@ -42,8 +43,8 @@ export const nxCommands: Command[] = [
   },
   {
     id: 'nx.run',
-    label: '▶️ Run target',
-    icon: '▶️',
+    label: `${ICONS.runTarget} Run target`,
+    icon: ICONS.runTarget,
     description: 'Выполнить nx-таргет: <project>:<task>',
     scope: [...WORKSPACE_SCOPE],
     category: 'nx',

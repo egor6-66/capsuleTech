@@ -42,8 +42,8 @@ import type { Layer, IViolation, ICheckOptions } from '@capsule/compliance';
 Определяет слой файла по абсолютному пути:
 
 ```ts
-classify('/apps/sandbox/src/entities/auth/loginForm.tsx');  // 'entity'
-classify('/apps/sandbox/src/widgets/forms/auth.tsx');        // 'widget'
+classify('/apps/sandbox/src/entities/_auth/loginForm.tsx');  // 'entity'
+classify('/apps/sandbox/src/widgets/forms/_auth.tsx');        // 'widget'
 classify('/packages/ui/src/components/button/button.tsx');   // 'system'
 classify('/apps/sandbox/src/x.spec.ts');                     // 'test'
 classify('/.capsule/registry/wrappers.ts');                  // null  (skip)

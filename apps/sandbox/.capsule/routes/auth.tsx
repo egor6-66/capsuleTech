@@ -1,6 +1,6 @@
 import { lazy } from 'solid-js';
 
-const Auth = lazy(() => import('@pages/auth') as Promise<{ default: any }>);
+const Auth = lazy(() => import('@pages/_auth') as Promise<{ default: any }>);
 
 import { createFileRoute } from '@tanstack/solid-router';
 

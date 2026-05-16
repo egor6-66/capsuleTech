@@ -43,7 +43,7 @@ export const get = defineEndpoint((z) => ({
   response: z.object({ id: z.string(), email: z.string(), createdAt: z.string() }),
   map: (dto) => ({ ...dto, createdAt: new Date(dto.createdAt) }),
   // optional:
-  // base: 'auth',                       // ключ из bases в capsule.app.ts
+  // base: '_auth',                       // ключ из bases в capsule.app.ts
   // staleTime: 60_000,                  // только для GET, override defaultStaleTime
   // middleware: [mw.cache(...)],        // per-endpoint mw, в самом конце pipeline
 }));
@@ -82,7 +82,7 @@ export default defineAppConfig({
       mw.cookies(),
       mw.auth({ getToken: () => localStorage.getItem('token') }),
       mw.statusMapper(),
-      mw.on401(() => routerService.goTo('/auth')),
+      mw.on401(() => routerService.goTo('/_auth')),
       mw.log(),
     ],
   }),

@@ -23,13 +23,13 @@ status: documented
 
 > [!example]- ❌ Нарушение
 > ```ts
-> // entities/auth/loginForm.tsx
-> import { AuthFeature } from '@features/auth/login'; // ❌ Entity тянет Feature
+> // entities/_auth/loginForm.tsx
+> import { AuthFeature } from '@features/_auth/login'; // ❌ Entity тянет Feature
 > ```
 
 > [!example]- ✅ Корректно
 > ```tsx
-> // widgets/forms/auth.tsx — композиция в Widget
+> // widgets/forms/_auth.tsx — композиция в Widget
 > <Features.Auth.Login>
 >   <Entities.Auth.LoginForm />
 > </Features.Auth.Login>
