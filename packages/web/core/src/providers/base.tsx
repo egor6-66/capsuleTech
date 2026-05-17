@@ -1,5 +1,6 @@
 import { VitalsMonitoringProvider } from '@capsuletech/web-profiler';
 import {
+  type AnyRoute,
   type ICapsuleRouterContext,
   RouterContext,
   RouterProvider,
@@ -7,8 +8,8 @@ import {
 } from '@capsuletech/web-router';
 import { Show } from 'solid-js';
 
-interface IBaseProviderProps {
-  routeTree?: any;
+interface IBaseProviderProps<TRouteTree extends AnyRoute = AnyRoute> {
+  routeTree?: TRouteTree;
   /** Initial-context роутера (для guards в TanStack-роутах). */
   routerContext?: ICapsuleRouterContext;
   /**
@@ -25,17 +26,26 @@ interface IBaseProviderProps {
   children?: any;
 }
 
-export const BaseProviders = (props: IBaseProviderProps) => {
+/**
+ * `BaseProviders` — корневой набор провайдеров для apps/<app>. Generic `TRouteTree`
+ * выводится из переданного `routeTree`: если apps/<app>/.capsule/routes/routeTree.gen.ts
+ * получит реальный тип (сейчас `@ts-nocheck`), `raw.navigate({ to: '...' })` сразу
+ * заколосится автокомплитом. Если не передан — fallback к `AnyRoute` (поведение
+ * старого `routeTree?: any`).
+ */
+export function BaseProviders<TRouteTree extends AnyRoute = AnyRoute>(
+  props: IBaseProviderProps<TRouteTree>,
+) {
   const tree = (
     <Show when={props.routeTree} fallback={props.children}>
       {(routeTree) => {
-        const { raw, capsuleRouter } = createRouter({
-          routeTree: routeTree(),
+        const { raw, capsuleRouter } = createRouter<TRouteTree>({
+          routeTree: routeTree() as TRouteTree,
           context: props.routerContext,
         });
         return (
           <RouterContext.Provider value={capsuleRouter}>
-            <RouterProvider router={raw as any} />
+            <RouterProvider router={raw} />
           </RouterContext.Provider>
         );
       }}
@@ -47,4 +57,4 @@ export const BaseProviders = (props: IBaseProviderProps) => {
       <VitalsMonitoringProvider>{tree}</VitalsMonitoringProvider>
     </Show>
   );
-};
+}
