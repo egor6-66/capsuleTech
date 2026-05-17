@@ -9,6 +9,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "default": "./dist/index.mjs"
+    },
+    "./app-config": {
+      "types": "./dist/app-config.d.ts",
+      "import": "./dist/app-config.mjs",
+      "default": "./dist/app-config.mjs"
     }
   },
   "files": [
@@ -28,6 +33,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@capsuletech/lib-builder": "workspace:*",
     "@capsuletech/vite-builder": "workspace:*"
   },
   "publishConfig": {

@@ -205,7 +205,7 @@ describe('retry', () => {
       calls += 1;
       throw new ServerError(503);
     };
-    await retry({ max: 1, baseDelayMs: 0 })(ctx, next).catch(() => {});
+    await Promise.resolve(retry({ max: 1, baseDelayMs: 0 })(ctx, next)).catch(() => {});
     expect(calls).toBe(2);
   });
 
@@ -216,7 +216,7 @@ describe('retry', () => {
       calls += 1;
       throw new UnauthorizedError();
     };
-    await retry({ max: 5, baseDelayMs: 0 })(ctx, next).catch(() => {});
+    await Promise.resolve(retry({ max: 5, baseDelayMs: 0 })(ctx, next)).catch(() => {});
     expect(calls).toBe(1);
   });
 
@@ -227,11 +227,13 @@ describe('retry', () => {
       calls += 1;
       throw new UnauthorizedError();
     };
-    await retry({
-      max: 2,
-      baseDelayMs: 0,
-      shouldRetry: () => true,
-    })(ctx, next).catch(() => {});
+    await Promise.resolve(
+      retry({
+        max: 2,
+        baseDelayMs: 0,
+        shouldRetry: () => true,
+      })(ctx, next),
+    ).catch(() => {});
     expect(calls).toBe(3);
   });
 
