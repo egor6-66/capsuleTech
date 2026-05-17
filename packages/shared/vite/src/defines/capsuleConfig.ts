@@ -58,7 +58,10 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
       // и отбивает arrow-expression со стороны `[vite:define]`.
     },
     build: {
-      watch: {},
+      // watch: {} только в dev — production-сборка должна быть one-shot
+      // (иначе CI-step `capsule build` зависает после первого цикла и не
+      // освобождает workflow).
+      ...(isDev ? { watch: {} } : {}),
       rollupOptions: {
         input: join(capsuleRoot, 'index.html'),
       },
