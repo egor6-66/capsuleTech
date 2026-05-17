@@ -52,13 +52,10 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
     root: capsuleRoot,
     define: {
       __CAPSULE_CONFIG__: JSON.stringify(config),
-      // Browser-side identity-стабы для globalThis-фабрик, которыми пользователь
-      // объявляет конфиги (`capsule.app.ts` / `capsule.config.ts`). В Node-CLI
-      // эти функции выставляет `@capsuletech/cli/defines.ts` на globalThis; в браузере
-      // их нет, а `app-config.gen.ts` импортит `../capsule.app` — без define
-      // получили бы `defineAppConfig is not defined`.
-      defineAppConfig: '((__x__)=>__x__)',
-      defineCapsuleConfig: '((__x__)=>__x__)',
+      // NB: identity-unwrap для `defineAppConfig` / `defineCapsuleConfig` живёт
+      // в `AppConfigPlugin.transform` (см. plugins/appConfig.ts). Через esbuild
+      // `define:` это сделать нельзя — он валидирует value как identifier|literal
+      // и отбивает arrow-expression со стороны `[vite:define]`.
     },
     build: {
       watch: {},

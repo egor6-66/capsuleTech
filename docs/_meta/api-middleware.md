@@ -28,7 +28,7 @@ audience: claude
 | `packages/shared/vite/src/plugins/endpointsRegistry.ts` | Vite-plugin: сканит `src/endpoints/**`, эмитит `.capsule/registry/endpoints.ts` + `.capsule/@types/api.d.ts` |
 | `packages/shared/vite/src/plugins/appConfig.ts` | Эмитит `.capsule/app-config.gen.ts` с `setApiClient(createApi(appConfig.api, endpoints))` |
 | `packages/shared/vite/src/plugins/constants.ts` | `DEFINE_FACTORIES = { '@capsuletech/web-query': ['defineEndpoint'] }` — auto-import конфиг |
-| `packages/shared/vite/src/defines/capsuleConfig.ts` | Регистрация плагинов + `define: { defineAppConfig: '((__x__)=>__x__)' }` (browser-stub для globalThis-фабрик) |
+| `packages/shared/vite/src/defines/capsuleConfig.ts` | Регистрация плагинов (browser-stub для globalThis-фабрик `defineAppConfig` живёт в `AppConfigPlugin.transform`) |
 | `packages/web/core/src/wrappers/logic/utils/createLogicWrapper.tsx` | Инжект `services.api = getApiClient()` (только в Feature, не в Controller) |
 | `packages/web/core/src/wrappers/ui/interfaces.ts` | Пустой fallback `interface CapsuleApi {}` для interface-merging |
 
@@ -137,7 +137,7 @@ Vite-плагин `EndpointsRegistryPlugin` следит за `apps/*/src/endpoi
 
 ## Известные грабли
 
-1. **`defineAppConfig is not defined` в браузере** — решено через Vite `define: { defineAppConfig: '((__x__)=>__x__)' }` в `capsuleConfig.ts`. В Node CLI глобал ставит `@capsuletech/cli/defines.ts`.
+1. **`defineAppConfig is not defined` в браузере** — `AppConfigPlugin.transform` переписывает `defineAppConfig(x)` / `defineCapsuleConfig(x)` → identity прямо в исходнике `capsule.app.ts`. Через esbuild `define:` со стрелочной функцией это сделать нельзя — он валидирует value как `entity name | JS literal` и падает `[vite:define] Invalid define value`. В Node CLI глобал ставит `@capsuletech/cli/defines.ts`.
 
 2. **`endpoints.ts` пустой** — `EndpointsRegistryPlugin` не успел отсканить или папка `src/endpoints/` отсутствует. Перезапустить dev.
 

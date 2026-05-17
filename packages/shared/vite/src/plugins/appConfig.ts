@@ -114,6 +114,18 @@ const loadAndGenerate = (props: IProps) => {
   onLoad?.(config);
 };
 
+/**
+ * Identifiers фабрик, которые в Node-CLI ставит `@capsuletech/cli/defines.ts`
+ * на globalThis. В браузер эти фабрики не попадают, поэтому при бандлинге
+ * `capsule.app.ts` нужно переписать вызовы `defineAppConfig(x)` → `(x)`
+ * (identity-unwrap). Раньше это делалось через esbuild `define:` со значением
+ * `'((__x__)=>__x__)'`, но новый esbuild валидирует define-values жёстко
+ * (Invalid define value: must be entity name or JS literal) и эта схема
+ * перестала собираться.
+ */
+const BROWSER_FACTORY_NAMES = ['defineAppConfig', 'defineCapsuleConfig'] as const;
+const FACTORY_REPLACE_RE = new RegExp(`\\b(${BROWSER_FACTORY_NAMES.join('|')})\\b`, 'g');
+
 export const AppConfigPlugin = (props: IProps): Plugin => {
   return {
     name: 'app-config',
@@ -126,6 +138,15 @@ export const AppConfigPlugin = (props: IProps): Plugin => {
     },
     buildStart() {
       loadAndGenerate(props);
+    },
+    transform(code, id) {
+      if (id !== props.configPath) return null;
+      if (!FACTORY_REPLACE_RE.test(code)) return null;
+      FACTORY_REPLACE_RE.lastIndex = 0;
+      return {
+        code: code.replace(FACTORY_REPLACE_RE, '((__x__)=>__x__)'),
+        map: null,
+      };
     },
   };
 };
