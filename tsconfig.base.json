@@ -35,6 +35,8 @@
       "@capsuletech/web-style": ["packages/web/style/src/index.ts"],
       "@capsuletech/web-style/editor": ["packages/web/style/src/editor/index.ts"],
       "@capsuletech/web-style/css": ["packages/web/style/src/index.css"],
+      "@capsuletech/web-style/themes": ["packages/web/style/src/themes/index.css"],
+      "@capsuletech/web-style/themes/*": ["packages/web/style/src/themes/*"],
       "@capsuletech/web-ui": ["packages/web/ui/src/index.ts"],
       "@capsuletech/web-ui/*": [
         "packages/web/ui/src/primitives/*",

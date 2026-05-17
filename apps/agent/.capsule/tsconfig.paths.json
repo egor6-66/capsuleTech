@@ -47,6 +47,12 @@
       "@capsuletech/web-style/css": [
         "packages/web/style/src/index.css"
       ],
+      "@capsuletech/web-style/themes": [
+        "packages/web/style/src/themes/index.css"
+      ],
+      "@capsuletech/web-style/themes/*": [
+        "packages/web/style/src/themes/*"
+      ],
       "@capsuletech/web-ui": [
         "packages/web/ui/src/index.ts"
       ],

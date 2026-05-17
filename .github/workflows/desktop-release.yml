@@ -60,6 +60,8 @@ jobs:
         # nx сам разруливает порядок через source-imports (lib-config → compliance
         # → file-manager → shared-vite). Остальные web-* пакеты apps подхватывают
         # через tsconfig source-alias в dev/build режиме — их dist на CI не нужен.
+        # CSS-subpath'ы (web-style/css, /themes) тоже резолвятся на source через
+        # vite-tsconfig-paths — см. `paths` в tsconfig.base.json.
         run: pnpm nx run-many -t build --projects="@capsuletech/shared-lib-config,@capsuletech/shared-compliance,@capsuletech/shared-file-manager,@capsuletech/shared-vite"
 
       - name: Build app frontend
