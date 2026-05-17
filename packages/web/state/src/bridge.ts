@@ -1,4 +1,21 @@
 import { matchByTags, matchEntryByTags, omitByTags, pickByTags } from './helpers';
+import type { IMachineContext } from './create';
+
+/**
+ * Аргумент `state` у `createBridge`. По форме совпадает с reactive-snapshot,
+ * который отдаёт `useMachine(...)` из `@xstate/solid`. Bridge'у достаточно
+ * `.context` — он не различает `value`/`status`/etc.
+ */
+export interface IBridgeStateSnapshot {
+  context: IMachineContext;
+}
+
+/**
+ * `send` у Bridge'а — тот же, что и у XState-actor'а (`actor.send`).
+ * Bridge формирует events с известными `type`'ами (SET_DATA, REGISTER_COMPONENT, и т.п.);
+ * остальные поля event'а — payload/value/styles/...
+ */
+export type IBridgeSend = (event: { type: string; [k: string]: unknown }) => void;
 
 export interface BridgeMatchOptions {
   /** Учитывать ли dynamicMeta.tags. По умолчанию true. */
@@ -31,7 +48,7 @@ export interface IRegisteredComponent {
 /** Тип возвращаемого Bridge'ем API — для type-аннотаций в Controller/Feature. */
 export type IBridge = ReturnType<typeof createBridge>;
 
-export const createBridge = (state: any, send: any) => {
+export const createBridge = (state: IBridgeStateSnapshot, send: IBridgeSend) => {
   return {
     // снимки
     get ctx() {

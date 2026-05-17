@@ -549,9 +549,15 @@ importers:
 
   packages/web/state:
     dependencies:
+      es-toolkit:
+        specifier: ^1.46.0
+        version: 1.46.1
       solid-js:
         specifier: ^1.9.0
         version: 1.9.0
+      xstate:
+        specifier: ^5.0.0
+        version: 5.31.1
     devDependencies:
       '@capsuletech/vite-builder':
         specifier: workspace:*

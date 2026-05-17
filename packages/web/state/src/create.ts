@@ -1,15 +1,32 @@
 import { type AnyStateMachine, assign, createMachine } from 'xstate';
 
-export interface IStateHandlers {
+/**
+ * Минимальный shape per-state handlers'а, который видит engine. Concrete-handlers
+ * (`onClick`/`onInput`/...) живут в `@capsuletech/web-core` и расширяют этот
+ * интерфейс через `extends IBaseStateHandlers` — shared-base паттерн.
+ */
+export interface IBaseStateHandlers {
   onInit?: (api: any) => any;
   onExit?: (api: any) => any;
   [methodName: string]: ((api: any) => any) | undefined;
 }
 
-export interface IDefineStateSchema<TCtx = any> {
+/**
+ * Базовая HCA-схема для XState-машины. Engine читает отсюда `initial` и `states`
+ * (для построения `__GOTO_*`-переходов). Lifecycle-хуки (`onMount`/`onClick`/...)
+ * и handler-API (`IHandlerApi`) — это уровень web-core; они расширяют этот тип
+ * через `extends IBaseStateSchema` в `wrappers/interfaces.ts`.
+ *
+ * **Контракт unification (Phase F):**
+ *  - `web-state` — single source of truth для engine-shape.
+ *  - `web-core` — расширяет (`IDefineStateSchema extends IBaseStateSchema`),
+ *    добавляя UX-handlers и `onMount` lifecycle.
+ *  - НЕТ цикла: web-core зависит от web-state, не наоборот.
+ */
+export interface IBaseStateSchema<TCtx = any> {
   initial: string;
   context?: TCtx;
-  states: Record<string, IStateHandlers>;
+  states: Record<string, IBaseStateHandlers>;
   [methodName: string]: any;
 }
 
@@ -34,7 +51,7 @@ export interface IMachineContext<TCtx = any> {
  * UI-события (onClick, onInput, ...) и onInit/onExit обрабатываются НЕ через XState event-bus —
  * см. ControllerProxy + createLogicWrapper.
  */
-export const createState = <TCtx = any>(schema: IDefineStateSchema<TCtx>): AnyStateMachine => {
+export const createState = <TCtx = any>(schema: IBaseStateSchema<TCtx>): AnyStateMachine => {
   const stateNames = Object.keys(schema.states);
 
   const gotoTransitions: Record<string, any> = {};

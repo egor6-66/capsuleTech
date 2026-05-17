@@ -11,17 +11,17 @@ export interface ComponentData {
 
 type ComponentsList = Record<string, ComponentData>;
 
-interface MatchOptions {
-  /** Учитывать ли dynamicMeta.tags при поиске. По умолчанию true. */
+export interface MatchOptions {
+  /** Учитывать ли dynamicMeta.tags при поиске. По умолчанию `true`. */
   lookDynamic?: boolean;
-  /** Раскрывать ли алиасы тегов из tag-registry. По умолчанию true. */
+  /** Раскрывать ли алиасы тегов из tag-registry. По умолчанию `true`. */
   expandAliases?: boolean;
 }
 
 const hasTags = (
   item: ComponentData,
   targetTags: readonly string[],
-  opts: { lookDynamic: boolean; expandAliases: boolean },
+  opts: Required<MatchOptions>,
 ) => {
   const metaTags = item.meta?.tags ?? [];
   const dynamicTags = opts.lookDynamic ? (item.dynamicMeta?.tags ?? []) : [];
@@ -32,52 +32,37 @@ const hasTags = (
   return intersection(allItemTags, query as string[]).length > 0;
 };
 
-const normalizeOpts = (
-  opts?: MatchOptions | boolean,
-): { lookDynamic: boolean; expandAliases: boolean } => {
-  // Backwards-compat: третий аргумент мог быть просто boolean (lookDynamic).
-  if (typeof opts === 'boolean') return { lookDynamic: opts, expandAliases: true };
-  return {
-    lookDynamic: opts?.lookDynamic ?? true,
-    expandAliases: opts?.expandAliases ?? true,
-  };
-};
+const normalizeOpts = (opts?: MatchOptions): Required<MatchOptions> => ({
+  lookDynamic: opts?.lookDynamic ?? true,
+  expandAliases: opts?.expandAliases ?? true,
+});
 
 /** Оставляет компоненты, у которых есть указанные теги (с учётом алиасов). */
 export const pickByTags = (
   data: ComponentsList,
   targetTags: readonly string[],
-  opts?: MatchOptions | boolean,
-) => {
-  const o = normalizeOpts(opts);
-  return pickBy(data, (item) => hasTags(item, targetTags, o));
-};
+  opts?: MatchOptions,
+) => pickBy(data, (item) => hasTags(item, targetTags, normalizeOpts(opts)));
 
 /** Убирает компоненты, у которых есть указанные теги. */
 export const omitByTags = (
   data: ComponentsList,
   targetTags: readonly string[],
-  opts?: MatchOptions | boolean,
-) => {
-  const o = normalizeOpts(opts);
-  return omitBy(data, (item) => hasTags(item, targetTags, o));
-};
+  opts?: MatchOptions,
+) => omitBy(data, (item) => hasTags(item, targetTags, normalizeOpts(opts)));
 
 /** Первый компонент с указанными тегами. */
 export const matchByTags = (
   data: ComponentsList,
   targetTags: readonly string[],
-  opts?: MatchOptions | boolean,
-) => {
-  const o = normalizeOpts(opts);
-  return find(Object.values(data), (item) => hasTags(item, targetTags, o));
-};
+  opts?: MatchOptions,
+) => find(Object.values(data), (item) => hasTags(item, targetTags, normalizeOpts(opts)));
 
 /** Первый компонент + его id. */
 export const matchEntryByTags = (
   data: ComponentsList,
   targetTags: readonly string[],
-  opts?: MatchOptions | boolean,
+  opts?: MatchOptions,
 ) => {
   const o = normalizeOpts(opts);
   const entry = find(Object.entries(data), ([, item]) => hasTags(item, targetTags, o));

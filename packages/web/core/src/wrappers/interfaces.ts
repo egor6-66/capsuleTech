@@ -7,7 +7,11 @@
  * engine-типы (`ICtx`, `IControllerHandle`) живут в `engine/ctx.ts`.
  */
 
-import type { IBridge } from '@capsuletech/web-state';
+import type {
+  IBaseStateHandlers,
+  IBaseStateSchema,
+  IBridge,
+} from '@capsuletech/web-state';
 import type { ICapsuleRouter } from '@capsuletech/web-router';
 import type { ApiConfig, MwToolbox } from '@capsuletech/web-query';
 import type { Component, JSX, JSXElement } from 'solid-js';
@@ -141,7 +145,12 @@ export interface IHandlerApi<TCtx = any> {
   store: IBridge;
 }
 
-export interface IStateHandlers {
+/**
+ * Per-state user-handlers. Расширяет engine-shape `IBaseStateHandlers` из
+ * `@capsuletech/web-state` (shared-base паттерн, см. Phase F unification),
+ * добавляя `IHandlerApi`-типизацию для UI-событий и custom-методов.
+ */
+export interface IStateHandlers extends IBaseStateHandlers {
   onInit?: (api: IHandlerApi) => void | Promise<void>;
   onExit?: (api: IHandlerApi) => void | Promise<void>;
   onClick?: (api: IHandlerApi) => any;
@@ -154,9 +163,13 @@ export interface IStateHandlers {
   [methodName: string]: ((api: IHandlerApi) => any) | undefined;
 }
 
-export interface IDefineStateSchema<TCtx = any> {
-  initial: string;
-  context?: TCtx;
+/**
+ * Полный публичный shape HCA-схемы. Расширяет `IBaseStateSchema` из
+ * `@capsuletech/web-state` (engine-minimum: `initial`, `context`, `states`),
+ * добавляя HCA-specific lifecycle (`onMount`) и top-level fallback handlers
+ * (`onClick`/`onInput`/...).
+ */
+export interface IDefineStateSchema<TCtx = any> extends IBaseStateSchema<TCtx> {
   states: Record<string, IStateHandlers>;
   /**
    * Lifecycle: фаерит **реактивно** при каждой регистрации/анрегистрации
