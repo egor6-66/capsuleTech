@@ -4,10 +4,15 @@
   "sourceRoot": "packages/cli/src",
   "projectType": "library",
   "tags": [],
+  "implicitDependencies": [
+    "@capsuletech/shared-vite"
+  ],
   "targets": {},
   "release": {
     "version": {
-      "manifestRootsToUpdate": ["{projectRoot}"],
+      "manifestRootsToUpdate": [
+        "{projectRoot}"
+      ],
       "currentVersionResolver": "git-tag",
       "fallbackCurrentVersionResolver": "disk"
     }

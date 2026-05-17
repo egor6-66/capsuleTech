@@ -4,11 +4,16 @@
   "sourceRoot": "packages/shared/vite/src",
   "projectType": "library",
   "tags": [],
+  "implicitDependencies": [
+    "@capsuletech/shared-compliance"
+  ],
   "// targets": "to see all targets run: nx show project @capsuletech/shared-vite --web",
   "targets": {},
   "release": {
     "version": {
-      "manifestRootsToUpdate": ["{projectRoot}"],
+      "manifestRootsToUpdate": [
+        "{projectRoot}"
+      ],
       "currentVersionResolver": "git-tag",
       "fallbackCurrentVersionResolver": "disk"
     }

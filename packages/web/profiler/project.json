@@ -1,13 +1,18 @@
 {
   "name": "@capsuletech/web-profiler",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "projectType": "library",
   "sourceRoot": "packages/web/profiler/src",
+  "projectType": "library",
   "tags": [],
+  "implicitDependencies": [
+    "@capsuletech/shared-vite"
+  ],
   "targets": {},
   "release": {
     "version": {
-      "manifestRootsToUpdate": ["{projectRoot}"],
+      "manifestRootsToUpdate": [
+        "{projectRoot}"
+      ],
       "currentVersionResolver": "git-tag",
       "fallbackCurrentVersionResolver": "disk"
     }
