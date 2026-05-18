@@ -1,0 +1,33 @@
+{
+  "name": "@capsuletech/web-map",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "maplibre-gl": "^5.0.0",
+    "solid-js": "^1.9.0"
+  },
+  "devDependencies": {
+    "@capsuletech/lib-builder": "workspace:*",
+    "@capsuletech/vite-builder": "workspace:*",
+    "maplibre-gl": "^5.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "packageManager": "pnpm"
+  }
+}
