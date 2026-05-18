@@ -16,25 +16,31 @@ export class ApiError extends Error {
   readonly code: string;
   readonly status?: number;
   readonly payload?: unknown;
-  readonly cause?: unknown;
+  // ES2022 Error.cause: устанавливается через super(message, { cause }).
+  // Объявляем явно, чтобы тип был `unknown`, а не `Error | undefined` из lib.es2022.error.
+  declare readonly cause?: unknown;
 
   constructor(
     message: string,
     opts: { code: string; status?: number; payload?: unknown; cause?: unknown },
   ) {
-    super(message);
+    super(message, opts.cause !== undefined ? { cause: opts.cause } : undefined);
     this.name = new.target.name;
     this.code = opts.code;
     this.status = opts.status;
     this.payload = opts.payload;
-    this.cause = opts.cause;
   }
 }
 
 /**
  * Сырая HTTP-ошибка от `defaultFetcher` (или совместимого fetcher'а). Несёт
- * `status` и оригинальный `Response`. Конвертируется в типизированные ошибки
- * (`UnauthorizedError`, `ServerError`, ...) мидлварой `statusMapper`.
+ * `status`, оригинальный `Response` и `bodyText` — прочитанное тело ответа.
+ *
+ * **`bodyText` vs `response.text()`:** `Response.body` — стрим, читается **один
+ * раз**. `defaultFetcher` читает его перед throw'ом и кладёт в `bodyText`, чтобы
+ * consumer (error-interceptor, Sentry, statusMapper) мог обращаться к нему
+ * многократно. `response.text()` / `.json()` после броска вернут пустую строку
+ * (стрим уже выпит).
  *
  * Раньше эта роль выполнялась через `Object.assign(new Error(...), { status,
  * response })` — нетипизированный `{ status?: number }`-каст в нескольких
@@ -42,9 +48,24 @@ export class ApiError extends Error {
  */
 export class HttpError extends ApiError {
   readonly response: Response;
-  constructor(status: number, response: Response, opts: { cause?: unknown } = {}) {
-    super(`HTTP ${status} ${response.statusText}`, { code: 'http', status, ...opts });
+  /**
+   * Прочитанное тело ответа (текст). `null` если чтение упало (network drop
+   * посреди стрима, decoder error и т.п.) или если кастомный fetcher не
+   * передал его в конструктор.
+   */
+  readonly bodyText: string | null;
+  constructor(
+    status: number,
+    response: Response,
+    opts: { cause?: unknown; bodyText?: string | null } = {},
+  ) {
+    super(`HTTP ${status} ${response.statusText}`, {
+      code: 'http',
+      status,
+      cause: opts.cause,
+    });
     this.response = response;
+    this.bodyText = opts.bodyText ?? null;
   }
 }
 

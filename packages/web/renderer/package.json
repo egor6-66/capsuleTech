@@ -11,12 +11,12 @@
       "default": "./dist/index.mjs"
     }
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "build": "vite build",
-    "dev": "vite build --watch"
+    "dev": "vite build --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {},
   "peerDependencies": {
@@ -24,7 +24,10 @@
   },
   "devDependencies": {
     "@capsuletech/lib-builder": "workspace:*",
-    "@capsuletech/vite-builder": "workspace:*"
+    "@capsuletech/vite-builder": "workspace:*",
+    "@testing-library/jest-dom": "^6.9.1",
+    "jsdom": "~22.1.0",
+    "vite-plugin-solid": "^2.11.12"
   },
   "publishConfig": {
     "access": "public",

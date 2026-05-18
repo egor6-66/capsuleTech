@@ -4,7 +4,7 @@
 // runtime by `@capsuletech/cli`. TypeScript needs these declarations to know
 // their types inside `capsule.config.ts` / `capsule.app.ts`.
 
-import type { ICapsuleConfig } from '@capsuletech/shared-vite';
+import type { ICapsuleConfig } from '@capsuletech/vite-builder';
 import type { IAppConfig } from '@capsuletech/web-query/app-config';
 
 declare global {

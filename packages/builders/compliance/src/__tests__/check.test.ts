@@ -42,8 +42,8 @@ describe('check — allowed imports (no violations)', () => {
     expect(check(FEATURE_PATH, "import { loginApi } from '@app/api/auth';")).toEqual([]);
   });
 
-  it('widget importing @capsuletech/ui → ok', () => {
-    expect(check(WIDGET_PATH, "import { Card } from '@capsuletech/ui';")).toEqual([]);
+  it('widget importing @capsuletech/web-ui → ok', () => {
+    expect(check(WIDGET_PATH, "import { Card } from '@capsuletech/web-ui';")).toEqual([]);
   });
 
   it('relative imports are always allowed (intra-group)', () => {
@@ -188,5 +188,97 @@ describe('check — dynamic import()', () => {
 describe('check — parser resilience', () => {
   it('swallows parse errors and returns []', () => {
     expect(check(ENTITY_PATH, 'this is not valid (((( syntax')).toEqual([]);
+  });
+});
+
+/**
+ * Regression suite for @capsuletech/web-* package names.
+ *
+ * Real package names live under `@capsuletech/web-style|state|router|ui|query` (см.
+ * `nx.json > release.groups.web_base`). Раньше allowlist использовал legacy-имена
+ * без `web-` префикса — regex не матчил production-имена, и каждый widget/page
+ * импорт `@capsuletech/web-ui` уходил в `disallowed-import`. Не падало только
+ * потому что `CompliancePlugin({ mode: 'warn' })`.
+ *
+ * Тесты ниже зафиксируют каноничные имена и поймают регрессию, если кто-то
+ * случайно вернёт старый префикс.
+ */
+describe('check — @capsuletech/web-* package names (regression)', () => {
+  describe('web-style allowed everywhere', () => {
+    it.each([
+      ['entity', ENTITY_PATH],
+      ['controller', CONTROLLER_PATH],
+      ['feature', FEATURE_PATH],
+      ['widget', WIDGET_PATH],
+      ['page', PAGE_PATH],
+    ])('%s can import @capsuletech/web-style', (_label, path) => {
+      expect(check(path, "import { tw } from '@capsuletech/web-style';")).toEqual([]);
+    });
+
+    it('subpath import (@capsuletech/web-style/editor) is also allowed', () => {
+      expect(
+        check(PAGE_PATH, "import { ThemeEditor } from '@capsuletech/web-style/editor';"),
+      ).toEqual([]);
+    });
+  });
+
+  describe('controller / feature — web-state + web-router', () => {
+    it('controller can import @capsuletech/web-state', () => {
+      expect(check(CONTROLLER_PATH, "import { Bridge } from '@capsuletech/web-state';")).toEqual([]);
+    });
+    it('controller can import @capsuletech/web-router', () => {
+      expect(
+        check(CONTROLLER_PATH, "import { routerService } from '@capsuletech/web-router';"),
+      ).toEqual([]);
+    });
+    it('feature can import @capsuletech/web-state', () => {
+      expect(check(FEATURE_PATH, "import { Bridge } from '@capsuletech/web-state';")).toEqual([]);
+    });
+  });
+
+  describe('feature — web-query (for typed errors)', () => {
+    it('feature can import @capsuletech/web-query', () => {
+      expect(
+        check(FEATURE_PATH, "import { UnauthorizedError } from '@capsuletech/web-query';"),
+      ).toEqual([]);
+    });
+    it('controller CANNOT import @capsuletech/web-query (IO is feature-only)', () => {
+      const v = check(CONTROLLER_PATH, "import { setApiClient } from '@capsuletech/web-query';");
+      expect(v).toHaveLength(1);
+      expect(v[0].kind).toBe('disallowed-import');
+    });
+  });
+
+  describe('widget / page — web-ui', () => {
+    it('widget can import @capsuletech/web-ui', () => {
+      expect(check(WIDGET_PATH, "import { Card } from '@capsuletech/web-ui';")).toEqual([]);
+    });
+    it('page can import @capsuletech/web-ui', () => {
+      expect(check(PAGE_PATH, "import { Layout } from '@capsuletech/web-ui';")).toEqual([]);
+    });
+    it('entity CANNOT import @capsuletech/web-ui (entity is stateless leaf)', () => {
+      const v = check(ENTITY_PATH, "import { Card } from '@capsuletech/web-ui';");
+      expect(v).toHaveLength(1);
+      expect(v[0].kind).toBe('disallowed-import');
+    });
+    it('controller CANNOT import @capsuletech/web-ui', () => {
+      const v = check(CONTROLLER_PATH, "import { Card } from '@capsuletech/web-ui';");
+      expect(v).toHaveLength(1);
+      expect(v[0].kind).toBe('disallowed-import');
+    });
+  });
+
+  describe('legacy names without web- prefix are NOT allowed', () => {
+    // Гарантия что мы не вернёмся к «обоим вариантам» — старый префикс должен валиться.
+    it.each([
+      ['@capsuletech/ui', WIDGET_PATH],
+      ['@capsuletech/state', CONTROLLER_PATH],
+      ['@capsuletech/router', CONTROLLER_PATH],
+      ['@capsuletech/style', ENTITY_PATH],
+    ])('legacy "%s" → disallowed-import', (pkg, path) => {
+      const v = check(path, `import { x } from '${pkg}';`);
+      expect(v).toHaveLength(1);
+      expect(v[0].kind).toBe('disallowed-import');
+    });
   });
 });

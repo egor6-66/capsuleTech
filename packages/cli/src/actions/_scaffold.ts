@@ -1,6 +1,6 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { basename, join } from 'node:path';
-import { generateFromTemplates } from '@capsuletech/shared-file-manager';
+import { generateFromTemplates } from '../utils/generateFromTemplates';
 import { execa } from 'execa';
 import type { CliMode } from '../context';
 import { kit } from '../kit';

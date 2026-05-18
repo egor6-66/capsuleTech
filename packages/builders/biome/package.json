@@ -2,8 +2,6 @@
   "name": "@capsuletech/biome-config",
   "version": "0.0.10",
   "type": "module",
-  "main": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
   "scripts": {},
   "devDependencies": {},
   "publishConfig": {
@@ -11,11 +9,7 @@
     "packageManager": "pnpm"
   },
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "default": "./dist/index.mjs"
-    }
+    "./biome.json": "./biome.json"
   },
-  "files": ["dist"]
+  "files": ["biome.json"]
 }

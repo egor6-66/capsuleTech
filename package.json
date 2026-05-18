@@ -29,7 +29,7 @@
     "format": "biome format --write .",
     "audit:exports": "node scripts/audit-exports.mjs",
     "test": "pnpm -r --filter \"./packages/**\" --workspace-concurrency=1 test",
-    "dev:builders": "pnpm -r --parallel --filter \"./packages/builders/**\" --filter \"!@capsuletech/biome-config\" run dev",
+    "dev:builders": "pnpm -r --parallel --filter \"./packages/builders/**\" run dev",
     "report": "node scripts/feature-report.mjs",
     "report:list": "node scripts/feature-report.mjs list",
     "report:all": "node scripts/feature-report.mjs all",
@@ -57,7 +57,7 @@
     "esbuild": "^0.27.0",
     "husky": "^9.1.7",
     "jsdom": "~22.1.0",
-    "nx": "22.6.5",
+    "nx": "22.7.2",
     "prettier": "~3.6.2",
     "publint": "^0.3.21",
     "storybook": "^10",
@@ -111,7 +111,7 @@
     "vite-tsconfig-paths": "^6.1.1",
     "web-vitals": "^5.2.0",
     "xstate": "^5.0.0",
-    "zod": "^3.23.8"
+    "zod": "^4.4.3"
   },
   "nx": {
     "includedScripts": [],

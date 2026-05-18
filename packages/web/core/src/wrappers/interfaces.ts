@@ -114,13 +114,25 @@ export interface ITarget {
   /** Сценарная окраска от Widget'а. */
   dynamicMeta?: ITagMeta;
   /**
-   * Двойная семантика в зависимости от уровня цепочки:
-   *  - **На первом уровне** (прямой UI-click): JSX-declared payload автора Entity
-   *    (`<Nav.Item meta={{tags:['nav']}} payload={{href:'/branches'}}>` → `target.payload.href`).
-   *  - **При bubble через `next(arg)`** в Controller: ControllerProxy перетирает
-   *    его аргументом `next()` — Feature получит то, что Controller передал наверх.
+   * **Immutable JSX-declared payload** автора Entity:
+   * `<Nav.Item meta={{tags:['nav']}} payload={{href:'/branches'}}>` → `target.payload.href`.
+   *
+   * Не меняется при bubble через `next()` / `next.with()` — каждый уровень
+   * цепочки видит один и тот же payload, заданный в JSX. Для трансформации
+   * между уровнями используй `target.from` (см. ниже) + `next.with(arg)`.
    */
   payload?: unknown;
+  /**
+   * Данные, которые **непосредственный предыдущий уровень** цепочки передал
+   * через `next.with(arg)`. Сбрасывается в `undefined`:
+   *  - на первом уровне (прямой UI-event, нет «предыдущего»),
+   *  - при пассивном bubble через `next()` (без аргумента — нет явного сигнала).
+   *
+   * Контракт: каждый handler видит **только** `from` от своего непосредственного
+   * ребёнка, не аккумулируется через цепочку. Если хочешь форвардить дальше —
+   * пиши явно: `await next.with(target.from)`.
+   */
+  from?: unknown;
   /** для keyboard-событий */
   key?: string;
   modifiers?: { ctrl: boolean; shift: boolean; alt: boolean; meta: boolean };
@@ -134,12 +146,33 @@ export interface IStateApi {
 
 export type { IRegisteredComponent } from '@capsuletech/web-state';
 
+/**
+ * Bubble-up функция:
+ *  - `next()` — пассивный bubble к родителю; `target.payload` сохраняется (immutable),
+ *    `target.from` сбрасывается в `undefined` (нет явного сигнала от этого уровня).
+ *  - `next.with(arg)` — bubble с явной передачей `arg` родителю как `target.from`.
+ *    `target.payload` всё ещё JSX-immutable.
+ *
+ * Возврат — `null` если у Controller'а нет parent'а или у parent'а нет метода
+ * с таким именем (с учётом `overrides`). Иначе — то, что вернул handler родителя.
+ */
+export interface INext {
+  <T = any>(): Promise<T | null>;
+  with: <T = any>(arg: unknown) => Promise<T | null>;
+}
+
 export interface IHandlerApi<TCtx = any> {
   target: ITarget;
   context: TCtx;
-  next: <T = any>(payload?: any) => Promise<T | null>;
+  next: INext;
   state: IStateApi;
   store: IBridge;
+}
+
+/** Расширение `IHandlerApi` для `schema.onError` — добавляет сам `error` + `method`. */
+export interface IErrorHandlerApi<TCtx = any> extends IHandlerApi<TCtx> {
+  error: unknown;
+  method: string;
 }
 
 /**
@@ -178,13 +211,40 @@ export interface IDefineStateSchema<TCtx = any> extends IBaseStateSchema<TCtx> {
    * Обязательное условие: callback должен быть идемпотентным.
    *
    * Семантически отличается от `states[X].onInit`: последний — про вход в
-   * стейт FSM (фаер на каждом переходе FSM); `onMount` — про настройку
+   * стейт FSM (фаер на каждом переходе FSM); `onRegister` — про настройку
    * реактивного состояния по составу UI-дерева.
+   *
+   * Если нужен одноразовый hook на mount Controller'а — используй `states[initial].onInit`.
+   * Если нужен teardown — используй [[onDispose]].
    */
-  onMount?: (api: IHandlerApi) => any;
-  /** top-level fallback handlers */
-  onInit?: (api: IHandlerApi) => any;
-  onExit?: (api: IHandlerApi) => any;
+  onRegister?: (api: IHandlerApi) => any;
+  /**
+   * Lifecycle: один раз на unmount Controller/Feature (Solid `onCleanup`).
+   * Зеркало `states[initial].onInit` на конце жизни — используй для:
+   *  - отписки от внешних source'ов (event listeners, intervals, WebSocket'ы);
+   *  - финализации side-effect'ов (flushing analytics, persist state);
+   *  - явного teardown того, что было создано в `onRegister`/`onInit`.
+   *
+   * Вызывается **после** Solid disposed дочерние UiProxy-обёртки
+   * (которые сами отрабатывают `unregisterComponent`), так что `store.components`
+   * на этот момент уже пуст. Не пытайся читать состав UI-дерева отсюда.
+   */
+  onDispose?: (api: IHandlerApi) => any;
+  /**
+   * Централизованный error-hook: фаерит, когда handler (per-state или top-level)
+   * бросил/reject'нул. Получает обычный `IHandlerApi` + сам `error` + `method`
+   * (имя метода в schema, который упал).
+   *
+   * Контракт:
+   *  - вызывается **до** того как ошибка пробрасывается дальше;
+   *  - re-throw из самой `onError` логируется и **глотается** (нельзя ронять teardown);
+   *  - ошибка handler'а всё равно re-throw'ается из ControllerProxy после `onError` —
+   *    т.е. `next()` цепочка наверху ловит её через свой `try/await`. Если хочешь
+   *    подавить пробрасывание — лови в самом handler'е через `try/catch`.
+   *
+   * Полезно для: централизованный setErrors → store, sentry-репорт, fallback-логика.
+   */
+  onError?: (api: IErrorHandlerApi) => any;
   onClick?: (api: IHandlerApi) => any;
   onInput?: (api: IHandlerApi) => any;
   onChange?: (api: IHandlerApi) => any;
@@ -212,6 +272,13 @@ export interface IServices {
 export type IWrapperProps = {
   children: any;
   overrides?: Record<string, string>;
+  /**
+   * Опциональный fallback для встроенного `<Suspense>` вокруг детей Controller/Feature.
+   * Если `undefined` — Suspense без fallback'а (suspend пробросится к ближайшему
+   * предку с fallback'ом). Имеет смысл задавать, когда внутри есть lazy-импорты
+   * (UI-kit, lazy-routes), которые могут suspend'нуть.
+   */
+  fallback?: JSXElement;
 };
 
 export type IControllerWrapper = (

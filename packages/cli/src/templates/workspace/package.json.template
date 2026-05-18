@@ -21,10 +21,9 @@
   },
   "dependencies": {
     "@capsuletech/cli": "latest",
-    "@capsuletech/shared-compliance": "latest",
-    "@capsuletech/shared-file-manager": "latest",
-    "@capsuletech/shared-vite": "latest",
+    "@capsuletech/compliance": "latest",
     "@capsuletech/shared-zod": "latest",
+    "@capsuletech/vite-builder": "latest",
     "@capsuletech/web-core": "latest",
     "@capsuletech/web-dnd": "latest",
     "@capsuletech/web-editor": "latest",

@@ -19,7 +19,7 @@ const Form = Controller(() => ({
 
         state.set('loading');
         try {
-          await next(payload);
+          await next.with(payload);
           state.set('idle');
         } catch (err) {
           store.setErrors({ form: String(err) });

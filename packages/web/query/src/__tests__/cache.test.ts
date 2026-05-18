@@ -33,14 +33,31 @@ describe('QueryCache — get/set', () => {
     expect((c.get(['b', 'a']) as any)?.state.data).toBe(2);
   });
 
-  it('object-element equality is structural (JSON-serialized)', () => {
+  it('object-element equality is structural (stable-stringify — order-independent)', () => {
     const c = new QueryCache();
     c.set(['filter', { a: 1, b: 2 }], mkEntry(['filter', { a: 1, b: 2 }], 'A'));
     // Те же поля в том же порядке — попадание.
     expect((c.get(['filter', { a: 1, b: 2 }]) as any)?.state.data).toBe('A');
-    // Другой порядок ключей в объекте — другой JSON → промах.
-    // Документируем поведение JSON.stringify (это известное ограничение).
-    expect(c.get(['filter', { b: 2, a: 1 }] as any)).toBeUndefined();
+    // Другой порядок ключей в объекте — теперь тоже попадание (stable sort).
+    // До P1 #2 это был cache-miss — баг был задокументирован тестом как
+    // "known limitation". Теперь — инвариант: семантически равные input'ы
+    // дают один cache-entry.
+    expect((c.get(['filter', { b: 2, a: 1 }]) as any)?.state.data).toBe('A');
+  });
+
+  it('stable-stringify рекурсивный — вложенные объекты тоже sort-independent', () => {
+    const c = new QueryCache();
+    c.set(['users', { filter: { age: 18, role: 'admin' } }], mkEntry(['users'], 'X'));
+    expect(
+      (c.get(['users', { filter: { role: 'admin', age: 18 } }]) as any)?.state.data,
+    ).toBe('X');
+  });
+
+  it('массивы остаются order-sensitive (намеренно — ["a","b"] !== ["b","a"])', () => {
+    const c = new QueryCache();
+    c.set(['tags', ['a', 'b']], mkEntry(['tags'], 'AB'));
+    expect((c.get(['tags', ['a', 'b']]) as any)?.state.data).toBe('AB');
+    expect(c.get(['tags', ['b', 'a']])).toBeUndefined();
   });
 });
 

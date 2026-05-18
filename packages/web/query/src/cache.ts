@@ -7,7 +7,30 @@ interface CacheEntry<T = unknown> {
   inFlight: Promise<T> | null;
 }
 
-const serializeKey = (key: QueryKey): string => JSON.stringify(key);
+/**
+ * Stable JSON.stringify — сортирует ключи объектов рекурсивно, чтобы
+ * `{a:1,b:2}` и `{b:2,a:1}` давали одинаковую сериализацию.
+ *
+ * Без этого cache-key зависел от порядка полей в input'е, что приводило к
+ * silent cache-miss'ам, если разные места кода собирали объект с разным
+ * порядком полей. После zod-parse порядок детерминирован, но прямые вызовы
+ * `client.fetch(['users', input])` это не гарантировали.
+ *
+ * Массивы — order-sensitive (это намеренно: `['a','b'] !== ['b','a']`).
+ * Примитивы / Date / null / undefined обрабатываются стандартно.
+ */
+const stableStringify = (value: unknown): string => {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`;
+  // Plain object: сортируем ключи, рекурсивно сериализуем.
+  const keys = Object.keys(value as Record<string, unknown>).sort();
+  const parts = keys.map(
+    (k) => `${JSON.stringify(k)}:${stableStringify((value as Record<string, unknown>)[k])}`,
+  );
+  return `{${parts.join(',')}}`;
+};
+
+const serializeKey = (key: QueryKey): string => stableStringify(key);
 
 /**
  * Проверка: `key` начинается с `prefix`. Используется для префиксной инвалидации:

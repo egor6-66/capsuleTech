@@ -7,12 +7,12 @@ import { createContext, useContext } from 'solid-js';
  * у user-controller'ов динамические (schema-driven), поэтому index-signature
  * остаётся `any` — без него Proxy-based dispatch не типизируется без массивов
  * generic-параметров на каждый Controller.
+ *
+ * Для teardown — используй `schema.onDispose` (см. `IDefineStateSchema`).
  */
 export interface IControllerHandle {
   /** Реактивный bridge — exposed как удобный alias внутри handlers. */
   store: IBridge;
-  /** Reserved — currently no-op (см. P2 #9 cleanup-plan: возможный teardown extension point). */
-  destroy?: () => void;
   /** Schema-defined methods: `controller.<name>(target, context)`. */
   // biome-ignore lint/suspicious/noExplicitAny: см. JSDoc выше.
   [methodName: string]: any;
