@@ -63,7 +63,13 @@ type: index
 - [[state|@capsuletech/web-state]]
 - [[router|@capsuletech/web-router]]
 - [[ui|@capsuletech/web-ui]]
+  - [[conventions|UI-kit канон]]
+  - [[storybook|Storybook how-to]]
+  - [[primitives/button|Button]]
+  - [[primitives/grid|Grid]]
+  - [[primitives/layout|Layout]]
 - [[style|@capsuletech/web-style]]
+  - [[theming|Темы и data-theme]]
 - [[dnd|@capsuletech/web-dnd]]
 - [[renderer|@capsuletech/web-renderer]]
 - [[editor|@capsuletech/web-editor]] — `/manifests` + `/state` + `/inspector` subpaths
