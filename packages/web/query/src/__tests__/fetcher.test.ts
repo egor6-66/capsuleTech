@@ -91,6 +91,28 @@ describe('defaultFetcher — non-2xx', () => {
     expect(err.status).toBe(404);
     expect(err.response).toBeInstanceOf(Response);
   });
+
+  it('reads response body before throw — HttpError.bodyText содержит текст', async () => {
+    stubFetch(new Response('{"error":"oops"}', { status: 500, statusText: 'Server Error' }));
+    const err = await defaultFetcher({ method: 'GET', resolvedUrl: '/x' }).catch((e) => e);
+    expect(err.bodyText).toBe('{"error":"oops"}');
+  });
+
+  it('bodyText = "" для пустого тела (а не null)', async () => {
+    stubFetch(new Response(null, { status: 500 }));
+    const err = await defaultFetcher({ method: 'GET', resolvedUrl: '/x' }).catch((e) => e);
+    expect(err.bodyText).toBe('');
+  });
+
+  it('Response.body уже consumed — повторное чтение возвращает пусто (документируем поведение)', async () => {
+    stubFetch(new Response('body-was-here', { status: 500 }));
+    const err = await defaultFetcher({ method: 'GET', resolvedUrl: '/x' }).catch((e) => e);
+    // bodyText прочитан defaultFetcher-ом.
+    expect(err.bodyText).toBe('body-was-here');
+    // Response.body теперь locked/used — повторный .text() вернёт пусто либо упадёт.
+    // Это намеренное ограничение: consumer должен пользоваться bodyText.
+    expect(err.response.bodyUsed).toBe(true);
+  });
 });
 
 describe('defaultFetcher — request init', () => {

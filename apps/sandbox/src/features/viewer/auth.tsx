@@ -3,12 +3,15 @@ const Auth = Feature(({ router, query }) => ({
   states: {
     idle: {
       /**
-       * Получает `target.payload = { email, password }` от Form-контроллера.
+       * Получает `target.from = { email, password }` от Form-контроллера
+       * (тот зовёт `next.with(payload)` после сбора значений из inputs).
+       * `target.payload` остаётся JSX-immutable — для submit-кнопки это обычно `undefined`.
+       *
        * В sandbox реального backend'а нет, поэтому query.mutate упадёт на network,
        * и мы фоллбэчимся на mock egor/123. В реальном проекте mock уберётся.
        */
       authByLogin: async ({ target, store }) => {
-        const { email, password } = (target.payload ?? {}) as {
+        const { email, password } = (target.from ?? {}) as {
           email?: string;
           password?: string;
         };

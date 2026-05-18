@@ -21,8 +21,24 @@ export interface RequestConfig {
   base?: string;
   body?: unknown;
   headers?: Record<string, string>;
-  /** Query-string параметры — будут добавлены к URL через `URLSearchParams`. */
-  params?: Record<string, string | number | boolean>;
+  /**
+   * Query-string параметры — будут добавлены к URL.
+   *
+   * Семантика:
+   *  - `string | number | boolean` — `?k=v`.
+   *  - `undefined` / `null` — ключ пропускается (skip-if-not-set).
+   *  - `ReadonlyArray<...>` — multi-value: `?k=a&k=b`. Элементы `undefined`/`null`
+   *    внутри массива тоже пропускаются.
+   */
+  params?: Record<
+    string,
+    | string
+    | number
+    | boolean
+    | undefined
+    | null
+    | ReadonlyArray<string | number | boolean | undefined | null>
+  >;
   signal?: AbortSignal;
   /** Передаётся в `fetch(... { credentials })`. Используется mw `cookies()`. */
   credentials?: RequestCredentials;

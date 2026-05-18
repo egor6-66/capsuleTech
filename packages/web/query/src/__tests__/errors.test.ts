@@ -30,6 +30,22 @@ describe('ApiError — base shape', () => {
     expect(e.cause).toBe(cause);
     expect(e.name).toBe('ApiError');
   });
+
+  it('cause устанавливается через native Error.cause (ES2022) — видно в Object.getOwnPropertyDescriptor', () => {
+    const cause = new Error('inner');
+    const e = new ApiError('boom', { code: 'x', cause });
+    // Native Error.cause лежит на own-property самого Error (не на ApiError).
+    // Проверяем что прототипный путь видит cause — это значит super(message, {cause}) сработал.
+    const desc = Object.getOwnPropertyDescriptor(e, 'cause');
+    expect(desc).toBeDefined();
+    expect(desc?.value).toBe(cause);
+  });
+
+  it('без cause — поле undefined, дескриптор отсутствует (не ставим лишний own-property)', () => {
+    const e = new ApiError('boom', { code: 'x' });
+    expect(e.cause).toBeUndefined();
+    expect(Object.getOwnPropertyDescriptor(e, 'cause')).toBeUndefined();
+  });
 });
 
 describe.each([
@@ -86,6 +102,23 @@ describe('HttpError', () => {
     const cause = new Error('inner');
     const e = new HttpError(500, new Response(null, { status: 500 }), { cause });
     expect(e.cause).toBe(cause);
+  });
+
+  it('bodyText: null когда не передан', () => {
+    const e = new HttpError(500, new Response(null, { status: 500 }));
+    expect(e.bodyText).toBeNull();
+  });
+
+  it('bodyText: сохраняет переданный текст (прочитанный defaultFetcher-ом до throw)', () => {
+    const e = new HttpError(500, new Response(null, { status: 500 }), {
+      bodyText: '{"error":"oops"}',
+    });
+    expect(e.bodyText).toBe('{"error":"oops"}');
+  });
+
+  it('bodyText: null если кастомный fetcher явно передал null (read failure)', () => {
+    const e = new HttpError(500, new Response(null, { status: 500 }), { bodyText: null });
+    expect(e.bodyText).toBeNull();
   });
 });
 

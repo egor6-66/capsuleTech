@@ -66,6 +66,63 @@ describe('resolveUrl behaviour (через fetch)', () => {
     expect((fetcher as any).mock.calls[0][0].resolvedUrl).toBe('/x?a=1&b=2');
   });
 
+  it('params: undefined / null значения пропускаются (skip-if-not-set)', async () => {
+    const fetcher = mkFetcher();
+    const c = new QueryClient({ fetcher });
+    await c.fetch(['k'], {
+      method: 'GET',
+      url: '/x',
+      params: { a: 1, b: undefined, c: null, d: 2 },
+    });
+    const url = (fetcher as any).mock.calls[0][0].resolvedUrl;
+    expect(url).toBe('/x?a=1&d=2');
+  });
+
+  it('params: пустой набор после skip — не клеит "?"', async () => {
+    const fetcher = mkFetcher();
+    const c = new QueryClient({ fetcher });
+    await c.fetch(['k'], {
+      method: 'GET',
+      url: '/x',
+      params: { a: undefined, b: null },
+    });
+    expect((fetcher as any).mock.calls[0][0].resolvedUrl).toBe('/x');
+  });
+
+  it('params: массив → multi-value query (?tags=a&tags=b)', async () => {
+    const fetcher = mkFetcher();
+    const c = new QueryClient({ fetcher });
+    await c.fetch(['k'], { method: 'GET', url: '/x', params: { tags: ['a', 'b', 'c'] } });
+    const url = (fetcher as any).mock.calls[0][0].resolvedUrl;
+    expect(url).toBe('/x?tags=a&tags=b&tags=c');
+  });
+
+  it('params: массив с undefined/null элементами — пропускает их', async () => {
+    const fetcher = mkFetcher();
+    const c = new QueryClient({ fetcher });
+    await c.fetch(['k'], {
+      method: 'GET',
+      url: '/x',
+      params: { tags: ['a', undefined, 'b', null] },
+    });
+    expect((fetcher as any).mock.calls[0][0].resolvedUrl).toBe('/x?tags=a&tags=b');
+  });
+
+  it('params: смешанные типы (string / number / boolean / array)', async () => {
+    const fetcher = mkFetcher();
+    const c = new QueryClient({ fetcher });
+    await c.fetch(['k'], {
+      method: 'GET',
+      url: '/x',
+      params: { q: 'foo', n: 42, active: true, t: ['a', 'b'] },
+    });
+    const url = (fetcher as any).mock.calls[0][0].resolvedUrl;
+    expect(url).toContain('q=foo');
+    expect(url).toContain('n=42');
+    expect(url).toContain('active=true');
+    expect(url).toContain('t=a&t=b');
+  });
+
   it('unknown base name → empty prefix (no crash)', async () => {
     const fetcher = mkFetcher();
     const c = new QueryClient({ fetcher });
