@@ -82,13 +82,14 @@ export const streamChat = async ({
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
 
-    let idx: number;
     // Разбор по разделителю SSE-блоков.
-    while ((idx = buffer.indexOf('\n\n')) !== -1) {
+    let idx = buffer.indexOf('\n\n');
+    while (idx !== -1) {
       const block = buffer.slice(0, idx);
       buffer = buffer.slice(idx + 2);
       const event = parseSseBlock(block);
       if (event) onEvent(event);
+      idx = buffer.indexOf('\n\n');
     }
   }
 };

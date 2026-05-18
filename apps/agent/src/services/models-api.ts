@@ -104,10 +104,11 @@ export const pullModel = async (
     if (done) break;
     buffer += decoder.decode(value, { stream: true });
 
-    let idx: number;
-    while ((idx = buffer.indexOf('\n\n')) !== -1) {
+    let idx = buffer.indexOf('\n\n');
+    while (idx !== -1) {
       const block = buffer.slice(0, idx);
       buffer = buffer.slice(idx + 2);
+      idx = buffer.indexOf('\n\n');
       const parsed = parsePullBlock(block);
       if (!parsed) continue;
 

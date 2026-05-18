@@ -117,7 +117,9 @@ const SCOPE = '@capsuletech';
 //   gitlab: GITLAB_TOKEN
 //   url:    нет auth (явный URL — конфиг через .npmrc внешне)
 const setupAuth = () => {
-  let token, username, password;
+  let token;
+  let username;
+  let password;
   if (registryKey === 'nexus') {
     token = process.env.NEXUS_TOKEN;
     username = process.env.NEXUS_USERNAME;
@@ -150,7 +152,9 @@ const setupAuth = () => {
     npmrcPath,
     `${backup ?? ''}\n# release temp auth (registry=${registryKey})\n${lines.join('\n')}\n`,
   );
-  console.log(`\x1b[36m[release]\x1b[0m ${SCOPE}:registry → ${url.host} (auth=${token ? 'token' : username ? 'basic' : 'none'})`);
+  console.log(
+    `\x1b[36m[release]\x1b[0m ${SCOPE}:registry → ${url.host} (auth=${token ? 'token' : username ? 'basic' : 'none'})`,
+  );
 
   const cleanup = () => {
     try {
@@ -161,7 +165,10 @@ const setupAuth = () => {
     }
   };
   process.on('exit', cleanup);
-  process.on('SIGINT', () => { cleanup(); process.exit(130); });
+  process.on('SIGINT', () => {
+    cleanup();
+    process.exit(130);
+  });
   return { cleanup };
 };
 
@@ -181,12 +188,18 @@ const phases = [
   {
     name: 'shared-* (rest) + web-* + cli',
     filters: [
-      '--filter', '@capsuletech/shared-*',
-      '--filter', '!@capsuletech/biome-config',
-      '--filter', '!@capsuletech/vite-builder',
-      '--filter', '!@capsuletech/compliance',
-      '--filter', '@capsuletech/web-*',
-      '--filter', '@capsuletech/cli',
+      '--filter',
+      '@capsuletech/shared-*',
+      '--filter',
+      '!@capsuletech/biome-config',
+      '--filter',
+      '!@capsuletech/vite-builder',
+      '--filter',
+      '!@capsuletech/compliance',
+      '--filter',
+      '@capsuletech/web-*',
+      '--filter',
+      '@capsuletech/cli',
     ],
   },
 ];
@@ -201,7 +214,8 @@ for (const phase of phases) {
 
 // nx release <specifier> --skip-publish → bump+changelog+commit+tag (по nx.json).
 const versionStatus = run([
-  'nx', 'release',
+  'nx',
+  'release',
   ...positional,
   ...groupFlag,
   ...firstRelease,
@@ -216,11 +230,14 @@ const auth = setupAuth();
 let publishStatus = 1;
 try {
   publishStatus = run([
-    'nx', 'release', 'publish',
+    'nx',
+    'release',
+    'publish',
     ...groupFlag,
     ...firstRelease,
     ...dryRun,
-    '--registry', registry,
+    '--registry',
+    registry,
     '--verbose',
   ]);
 } finally {
