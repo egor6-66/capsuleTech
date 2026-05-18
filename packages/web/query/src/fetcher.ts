@@ -28,7 +28,11 @@ export const defaultFetcher: Fetcher = async (req) => {
   const res = await fetch(req.resolvedUrl, init);
 
   if (!res.ok) {
-    throw new HttpError(res.status, res);
+    // Прочитываем body до throw'а — стрим живёт один раз; consumer (Sentry /
+    // statusMapper / on401-handler) получит детали через HttpError.bodyText.
+    // Клонировать дешевле через ветку catch чем держать пару читателей.
+    const bodyText = await res.text().catch(() => null);
+    throw new HttpError(res.status, res, { bodyText });
   }
 
   const ct = res.headers.get('content-type') ?? '';

@@ -8,7 +8,7 @@ import {
   setApiClient,
 } from '../createApi';
 import { defineEndpoint } from '../endpoint';
-import { setQueryClient } from '../client';
+import { getQueryClient, setQueryClient, QueryClient } from '../client';
 
 // createApi склеивает endpoints в typed-proxy:
 //  - сохраняет namespace-структуру (вложенность);
@@ -207,6 +207,44 @@ describe('createApi — endpointName qualification', () => {
       const api = createApi({}, { user: { get } });
       await (api as any).user.get(undefined);
       expect(seenName).toBe('user.get');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
+describe('createApi — QueryClient publishing', () => {
+  it('после createApi getQueryClient() возвращает использующийся клиент', () => {
+    expect(getQueryClient()).toBeUndefined();
+    createApi({ bases: { default: '/api' } }, {});
+    const c = getQueryClient();
+    expect(c).toBeInstanceOf(QueryClient);
+  });
+
+  it('client из getQueryClient — тот же, что в pipeline (можно invalidate из любого места)', async () => {
+    const fetchSpy = vi.fn(async () =>
+      new Response(JSON.stringify({ id: '1' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    ) as unknown as typeof fetch;
+    vi.stubGlobal('fetch', fetchSpy);
+    try {
+      const get = defineEndpoint((z) => ({
+        method: 'GET',
+        path: '/u/:id',
+        request: z.object({ id: z.string() }),
+        response: z.object({ id: z.string() }),
+      }));
+      const api = createApi({ bases: { default: '/api' }, defaultStaleTime: 60_000 }, { get });
+      await (api as any).get({ id: '1' });
+      // Дёргаем cache через getQueryClient — это тот же client, что pipeline использовал.
+      const c = getQueryClient()!;
+      // Cache-key из httpTransport: ['__endpoint', 'get', { id: '1' }].
+      expect(c.getQueryData(['__endpoint', 'get', { id: '1' }])).toEqual({ id: '1' });
+      c.invalidate(['__endpoint', 'get']);
+      await (api as any).get({ id: '1' });
+      expect((fetchSpy as any).mock.calls.length).toBe(2); // invalidate сработал → refetch
     } finally {
       vi.unstubAllGlobals();
     }

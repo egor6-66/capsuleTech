@@ -44,12 +44,17 @@ export const buildRequest = (): Middleware => async (ctx, next) => {
   if (hasBody) {
     if (Object.keys(rest).length > 0) req.body = rest;
   } else {
-    const stringParams: Record<string, string | number | boolean> = {};
+    // Передаём rest как есть — `client.resolveUrl` сам решает что делать с
+    // undefined/null/массивами. Раньше тут было ручное `String(v)`-преобразование,
+    // которое теряло массивы и схлопывало undefined в строку "undefined".
+    const params: RequestConfig['params'] = {};
+    let hasAny = false;
     for (const [k, v] of Object.entries(rest)) {
       if (v === undefined || v === null) continue;
-      stringParams[k] = v as string | number | boolean;
+      params[k] = v as RequestConfig['params'] extends Record<string, infer V> ? V : never;
+      hasAny = true;
     }
-    if (Object.keys(stringParams).length > 0) req.params = stringParams;
+    if (hasAny) req.params = params;
   }
   ctx.request = req;
 
