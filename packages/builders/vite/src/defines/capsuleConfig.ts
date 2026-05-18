@@ -42,9 +42,9 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
     'solid-js',
     'solid-js/web',
     'solid-js/store',
-    '@capsuletech/ui',
-    '@capsuletech/state',
-    '@capsuletech/file-manager',
+    '@capsuletech/web-ui',
+    '@capsuletech/web-state',
+    '@capsuletech/shared-file-manager',
   ];
 
   const capsuleConfig = {
@@ -79,18 +79,20 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
       // в дев-сервере падает `does not provide an export named 'Actor'`).
       include: ['solid-js', 'solid-js/web', 'solid-js/store', 'xstate', '@xstate/solid'],
       // Исключаем внутренние пакеты монорепозитория из пре-бандлинга esbuild.
-      // Благодаря этому Vite будет обрабатывать их на лету через плагины (включая JSX транспиляцию).
+      // Благодаря этому Vite будет обрабатывать их на лету через плагины
+      // (включая JSX транспиляцию).
       exclude: [
         '@capsuletech/sandbox',
-        '@capsuletech/ui',
-        '@capsuletech/core',
         '@capsuletech/web-core',
-        '@capsuletech/web-ui',
-        '@capsuletech/web-style',
-        '@capsuletech/web-router',
+        '@capsuletech/web-dnd',
+        '@capsuletech/web-editor',
         '@capsuletech/web-profiler',
-        '@capsuletech/web-state',
         '@capsuletech/web-query',
+        '@capsuletech/web-renderer',
+        '@capsuletech/web-router',
+        '@capsuletech/web-state',
+        '@capsuletech/web-style',
+        '@capsuletech/web-ui',
       ],
     },
     plugins: [
