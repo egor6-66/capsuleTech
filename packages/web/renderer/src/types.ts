@@ -1,4 +1,4 @@
-import type { Component } from 'solid-js';
+import type { Component, JSX } from 'solid-js';
 
 export type NodeId = string;
 
@@ -57,9 +57,9 @@ export type RenderMode =
   | 'full'; //      + interactions.inline JSON FSM-конфиг (v1.2+, пока not implemented)
 
 /**
- * Registry — объект, в котором renderer резолвит компоненты по dot-path'у.
- * Структура произвольная (renderer просто ходит по ключам), но обычно
- * выглядит так:
+ * Registry — рекурсивный объект, в котором renderer резолвит компоненты по
+ * dot-path'у. На каждом уровне значение — либо листовой `Component<any>`,
+ * либо вложенный `Registry` (с произвольной глубиной). Обычно выглядит так:
  *
  *   {
  *     ui: { Button, Input, Field, Layout, ... },
@@ -69,9 +69,29 @@ export type RenderMode =
  *     Features: { ... },
  *   }
  *
- * Renderer-у всё равно, как именно — он использует `node.type` как путь.
+ * `node.type = 'Entities.Viewer.LoginForm'` → renderer walks `Entities → Viewer
+ * → LoginForm`. Если по пути что-то отсутствует или не-Component — `fallback`.
+ *
+ * **Контракт:** registry treated as immutable (per-registry кэш в resolve.ts).
+ * **Тип-safety:** value на каждом ключе — Component или sub-Registry, никаких
+ * сторонних значений (utils, констант и т.п.). Если хочется такого — держите
+ * вне registry.
  */
-export type Registry = Record<string, any>;
+export type Registry = { [key: string]: Component<any> | Registry };
+
+/**
+ * Аргументы errorFallback'а — что отрендерить при runtime-ошибке в компоненте.
+ *
+ * `reset` дёргает Solid'овский ErrorBoundary reset — компонент попытается
+ * отрендериться заново (полезно если ошибка временная, e.g. недостающие
+ * data в transient state).
+ */
+export interface IErrorFallbackProps {
+  type: string;
+  nodeId: NodeId;
+  error: unknown;
+  reset: () => void;
+}
 
 export interface IRendererProps {
   schema: ISchema;
@@ -80,4 +100,11 @@ export interface IRendererProps {
   mode?: RenderMode;
   /** Fallback для нерезолвящихся типов (вместо тихого пропуска). */
   fallback?: Component<{ type: string; nodeId: NodeId }>;
+  /**
+   * Fallback при runtime-ошибке внутри компонента ноды. Применяется per-RenderNode
+   * (sibling isolation). Default: `console.error` + `null`.
+   */
+  errorFallback?: Component<IErrorFallbackProps>;
+  /** Fallback для верхнеуровневого `<Suspense>` (lazy-children и т.п.). */
+  loadingFallback?: JSX.Element;
 }
