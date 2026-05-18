@@ -67,6 +67,7 @@ type: index
 - [[editor|@capsuletech/web-editor]] — `/manifests` + `/state` + `/inspector` subpaths
 - [[profiler|@capsuletech/web-profiler]]
 - [[compliance|@capsuletech/compliance]]
+- [[builders|📦 @capsuletech/builders — lib-builder + vite-builder + compliance + biome-config]]
 - [[api-middleware|🌐 API middleware — endpoints + pipeline]] — `@capsuletech/web-query`
 
 ## 🗺️ Быстрая навигация

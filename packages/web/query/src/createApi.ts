@@ -1,4 +1,4 @@
-import { createQueryClient, type QueryClient } from './client';
+import { createQueryClient, type QueryClient, setQueryClient } from './client';
 import type { Endpoint, InferInput, InferOutput } from './endpoint';
 import * as builtinMw from './middleware';
 import { compose, type ApiContext, type Middleware } from './pipeline';
@@ -142,6 +142,11 @@ export const createApi = <R extends EndpointsRegistry>(
     defaultHeaders: cfg.defaultHeaders,
     defaultStaleTime: cfg.defaultStaleTime,
   });
+  // Публикуем client в module-singleton, чтобы `getQueryClient()` возвращал
+  // **тот же** клиент, который использует pipeline. Без этого getter всегда
+  // отдавал `undefined`, и доступ к cache-API (invalidate, setQueryData) был
+  // возможен только через прямые вызовы — недоступные из Feature.
+  setQueryClient(client);
   const globalMw = cfg.middleware ?? [];
   return buildNode(endpoints, [], client, globalMw) as InferApi<R>;
 };

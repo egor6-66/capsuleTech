@@ -5,11 +5,15 @@ import type { Layer } from './classify';
  * Применяется к runtime-импортам; type-only (`import type`) пропускаются всегда.
  *
  * Расширяется через `compliancePlugin({ extraAllowed: { feature: [/^@app\/api/] } })`.
+ *
+ * NB: имена пакетов — `@capsuletech/web-*` (см. `nx.json > release.groups.web_base`).
+ * Старые имена (`@capsuletech/style`/`state`/`router`/`ui`) больше не существуют —
+ * не возвращай regex'ы под них без миграции апликейшенов.
  */
 
 const COMMON: RegExp[] = [
   /^solid-js(\/.*)?$/, // solid-js, solid-js/web, solid-js/store
-  /^@capsuletech\/style(\/.*)?$/,
+  /^@capsuletech\/web-style(\/.*)?$/,
 ];
 
 export const RUNTIME_ALLOWED: Record<Exclude<Layer, null | 'system' | 'test'>, RegExp[]> = {
@@ -23,8 +27,8 @@ export const RUNTIME_ALLOWED: Record<Exclude<Layer, null | 'system' | 'test'>, R
     /^xstate(\/.*)?$/,
     /^@xstate\/solid$/,
     /^es-toolkit(\/.*)?$/,
-    /^@capsuletech\/state$/,
-    /^@capsuletech\/router$/,
+    /^@capsuletech\/web-state(\/.*)?$/,
+    /^@capsuletech\/web-router(\/.*)?$/,
     // Тяжёлая логика, кастомные FSM-машины, утилиты — да.
     // API-клиенты — нет (это Feature).
   ],
@@ -34,22 +38,23 @@ export const RUNTIME_ALLOWED: Record<Exclude<Layer, null | 'system' | 'test'>, R
     /^xstate(\/.*)?$/,
     /^@xstate\/solid$/,
     /^es-toolkit(\/.*)?$/,
-    /^@capsuletech\/state$/,
-    /^@capsuletech\/router$/,
+    /^@capsuletech\/web-state(\/.*)?$/,
+    /^@capsuletech\/web-router(\/.*)?$/,
+    /^@capsuletech\/web-query(\/.*)?$/,
     // Feature-only:
     /^@app\/(api|services)(\/.*)?$/, // конвенция: API/services живут под @app/*
   ],
 
   widget: [
     ...COMMON,
-    /^@capsuletech\/ui(\/.*)?$/,
+    /^@capsuletech\/web-ui(\/.*)?$/,
     // Widget — чистая композиция через глобальные namespaces (Entities/Controllers/Features),
     // которые приходят через unplugin-auto-import из .capsule/registry. Их в коде не видно.
   ],
 
   page: [
     ...COMMON,
-    /^@capsuletech\/ui(\/.*)?$/,
+    /^@capsuletech\/web-ui(\/.*)?$/,
     /^@tanstack\/solid-router$/,
     // Page — корневой layout; widgets подсасываются через namespace, не импортом.
   ],

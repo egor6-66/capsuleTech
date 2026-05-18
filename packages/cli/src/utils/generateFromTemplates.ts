@@ -2,11 +2,17 @@ import * as path from 'node:path';
 import { generateFiles, names } from '@nx/devkit';
 import { FsTree, flushChanges } from 'nx/src/generators/tree.js';
 
-// Локальная копия `generateFromTemplates` из `@capsuletech/shared-file-manager`.
-// Заинлайнено, чтобы разорвать цикл: shared-vite -> file-manager (runtime),
-// file-manager devDep -> shared-vite (для своей сборки через libConfig).
-// RouterPlugin был единственным потребителем — выносить ради него ещё один
-// workspace-пакет в runtime smysla net.
+/**
+ * Раскатывает файл-дерево из `sourceDir` (с `.template`-суффиксами) в `targetDir`
+ * через `@nx/devkit.generateFiles`. Шаблоны процессятся как EJS — переменные из
+ * `vars` + `names(name)` (даёт `fileName`, `className`, `propertyName`, `constantName`).
+ * Префикс `__dot__` в имени файла → `.` при материализации (так шаблоны вида
+ * `__dot__gitignore.template` едут в публикуемом пакете без сюрпризов).
+ *
+ * Раньше жил в `@capsuletech/shared-file-manager`. Перенесён сюда, потому что
+ * CLI — единственный реальный потребитель (остальные модули пакета не
+ * использовались), а сами шаблоны лежат тут же в `src/templates/`.
+ */
 export async function generateFromTemplates({
   sourceDir,
   name,
@@ -38,8 +44,10 @@ export async function generateFromTemplates({
       return;
     }
 
-    for (const change of changes) console.log(`✨ Создаю: ${change.path}`);
+    changes.forEach((change) => console.log(`✨ Создаю: ${change.path}`));
+
     flushChanges(projectRoot, changes);
+
     console.log('✅ Успешно!');
   } catch (error) {
     console.error('❌ Ошибка:', error);

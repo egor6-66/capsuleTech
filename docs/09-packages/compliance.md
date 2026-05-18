@@ -73,11 +73,11 @@ if (violations.length) console.error(formatViolations(violations));
 
 | Слой | Разрешено |
 |---|---|
-| `entity` | `solid-js`, `@capsuletech/style`, относительные |
-| `controller` | + `xstate`, `@xstate/solid`, `es-toolkit`, `@capsuletech/state`, `@capsuletech/router` |
-| `feature` | + `@app/api/*`, `@app/services/*` (доменный API/services приложения) |
-| `widget` | `solid-js`, `@capsuletech/ui`, `@capsuletech/style` |
-| `page` | `solid-js`, `@capsuletech/ui`, `@capsuletech/style`, `@tanstack/solid-router` |
+| `entity` | `solid-js`, `@capsuletech/web-style`, относительные |
+| `controller` | + `xstate`, `@xstate/solid`, `es-toolkit`, `@capsuletech/web-state`, `@capsuletech/web-router` |
+| `feature` | + `@capsuletech/web-query` (typed errors), `@app/api/*`, `@app/services/*` |
+| `widget` | `solid-js`, `@capsuletech/web-ui`, `@capsuletech/web-style` |
+| `page` | `solid-js`, `@capsuletech/web-ui`, `@capsuletech/web-style`, `@tanstack/solid-router` |
 | `system` | без ограничений |
 | `test` | без ограничений |
 

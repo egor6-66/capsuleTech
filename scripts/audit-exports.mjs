@@ -21,7 +21,7 @@
  *     проблема (publint error, attw 💀).
  */
 import { execSync } from 'node:child_process';
-import { readFileSync, existsSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const ROOT = resolve(process.cwd());
@@ -60,7 +60,9 @@ if (targets.length === 0) {
   process.exit(1);
 }
 
-console.log(`Auditing ${targets.length} package(s):\n${targets.map((p) => `  - ${p.name}`).join('\n')}\n`);
+console.log(
+  `Auditing ${targets.length} package(s):\n${targets.map((p) => `  - ${p.name}`).join('\n')}\n`,
+);
 
 let hadCritical = false;
 
@@ -94,13 +96,21 @@ for (const pkg of targets) {
   // publint — без --strict (warnings ≠ блокер). Полный output печатаем,
   // если есть хоть что-то.
   const publint = run(`pnpm exec publint`, pkg.dir);
-  const stripAnsi = (s) => s.replace(/\x1B\[[0-9;]*m/g, '');
+  const ANSI_RE = new RegExp(String.fromCharCode(27) + '[[0-9;]*m', 'g');
+  const stripAnsi = (s) => s.replace(ANSI_RE, '');
   const clean = stripAnsi(publint.output);
   const hasErrors = /^Errors:/m.test(clean);
   const hasWarnings = /^Warnings:/m.test(clean);
-  console.log('  publint:', hasErrors ? '❌ errors' : hasWarnings ? '⚠ warnings (non-blocking)' : '✅ clean');
+  console.log(
+    '  publint:',
+    hasErrors ? '❌ errors' : hasWarnings ? '⚠ warnings (non-blocking)' : '✅ clean',
+  );
   if (hasErrors || hasWarnings) {
-    const body = clean.split('\n').filter((l) => l.trim()).map((l) => '    ' + l).join('\n');
+    const body = clean
+      .split('\n')
+      .filter((l) => l.trim())
+      .map((l) => '    ' + l)
+      .join('\n');
     console.log(body);
   }
   if (hasErrors) hadCritical = true;
@@ -163,7 +173,9 @@ for (const pkg of targets) {
       console.log('  attw bundler:', bundlerOk ? '✅' : '❌');
       if (!bundlerOk) hadCritical = true;
       if (hasNonBundlerProblems) {
-        console.log('    (node16/node10 has problems — non-blocking for Vite, but flag for future)');
+        console.log(
+          '    (node16/node10 has problems — non-blocking for Vite, but flag for future)',
+        );
       }
     }
   } finally {

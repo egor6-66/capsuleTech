@@ -14,6 +14,8 @@ export const GripIcon = () => (
       stroke-linecap="round"
       stroke-linejoin="round"
       class="size-2.5"
+      role="presentation"
+      aria-hidden="true"
     >
       <path d="M9 5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
       <path d="M9 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />

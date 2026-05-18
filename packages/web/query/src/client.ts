@@ -53,8 +53,20 @@ export class QueryClient {
     const url = (req.url ?? '').startsWith('http') ? (req.url ?? '') : `${base}${req.url ?? ''}`;
     if (!req.params) return url;
     const qs = new URLSearchParams();
-    for (const [k, v] of Object.entries(req.params)) qs.set(k, String(v));
-    return url + (url.includes('?') ? '&' : '?') + qs.toString();
+    for (const [k, v] of Object.entries(req.params)) {
+      if (v === undefined || v === null) continue;
+      if (Array.isArray(v)) {
+        for (const item of v) {
+          if (item === undefined || item === null) continue;
+          qs.append(k, String(item));
+        }
+      } else {
+        qs.append(k, String(v));
+      }
+    }
+    const qsStr = qs.toString();
+    if (!qsStr) return url;
+    return url + (url.includes('?') ? '&' : '?') + qsStr;
   }
 
   /**

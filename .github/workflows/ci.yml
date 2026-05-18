@@ -15,21 +15,85 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
         with:
           version: 9.0.0
-
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
 
-      - name: Install
-        run: pnpm install --frozen-lockfile
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9.0.0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # nx project-graph loads vite.config.mts files which import
+      # @capsuletech/{compliance,vite-builder}. Without their dist
+      # the graph creation crashes. Mirror the bootstrap phases from
+      # scripts/release.mjs: compliance → vite-builder, then anything.
+      - name: Bootstrap shared builders
+        run: |
+          pnpm --filter @capsuletech/lib-builder build
+          pnpm --filter @capsuletech/compliance build
+          pnpm --filter @capsuletech/shared-file-manager build
+          pnpm --filter @capsuletech/vite-builder build
+      - run: pnpm nx run-many -t typecheck
 
-      - name: Lint (biome check)
-        run: pnpm lint
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9.0.0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Bootstrap shared builders
+        run: |
+          pnpm --filter @capsuletech/lib-builder build
+          pnpm --filter @capsuletech/compliance build
+          pnpm --filter @capsuletech/shared-file-manager build
+          pnpm --filter @capsuletech/vite-builder build
+      # Workspace tests (vitest under vite) need every imported package's
+      # dist available — source aliases are dev-only. Build everything,
+      # then run the test suite.
+      - name: Build all workspace packages
+        run: pnpm nx run-many -t build
+      - run: pnpm test
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9.0.0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Bootstrap shared builders
+        run: |
+          pnpm --filter @capsuletech/lib-builder build
+          pnpm --filter @capsuletech/compliance build
+          pnpm --filter @capsuletech/shared-file-manager build
+          pnpm --filter @capsuletech/vite-builder build
+      - run: pnpm nx run-many -t build

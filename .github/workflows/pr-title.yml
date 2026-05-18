@@ -1,0 +1,43 @@
+name: PR title
+
+# Validates PR title against Conventional Commits format so that
+# nx release (which derives version bumps from commit subjects) sees
+# a usable signal even when GitHub squash-merges with the PR title
+# as the commit message.
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  semantic:
+    name: Semantic PR title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Subset of conventional-commits types, mirroring the list in
+          # .github/pull_request_template.md plus the standard extras.
+          types: |
+            feat
+            fix
+            refactor
+            docs
+            chore
+            build
+            ci
+            test
+            perf
+            style
+            revert
+          # Scope is optional — many PRs are workspace-wide and a forced
+          # scope would just produce empty `(*)`.
+          requireScope: false
+          # Subject must start with lowercase (matches existing repo style:
+          # "fix(desktop): cleanup", not "fix(desktop): Cleanup").
+          subjectPattern: ^[a-z].+$
+          subjectPatternError: |
+            The PR title subject "{subject}" must start with a lowercase letter.
+            Example: "feat(cli): add release flag" (not "Add release flag").
