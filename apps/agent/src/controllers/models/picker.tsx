@@ -16,7 +16,7 @@ const Picker = Controller(() => ({
           null;
 
         if (!action) return;
-        await next({ action, name });
+        await next.with({ action, name });
       },
     },
   },

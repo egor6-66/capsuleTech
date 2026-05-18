@@ -5,7 +5,7 @@ const Navigation = Controller(({ router }) => ({
    * Entity-автором через JSX-prop `payload={{href}}`) — источник истины про то
    * куда указывает таб; `meta.tags` — только идентификация (роль `nav`).
    */
-  onMount: ({ store }) =>
+  onRegister: ({ store }) =>
     store.patch(['nav'], (comp) => ({
       active: comp.payload?.href === router.current(),
     })),

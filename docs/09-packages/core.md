@@ -1,6 +1,7 @@
 ---
 tags: [hca, package, core]
 status: documented
+last-pre-adoption-sweep: 2026-05-18
 ---
 
 # @capsuletech/web-core
@@ -104,6 +105,68 @@ Shape  ────→ читает proxied Ui из ShapeUiContext, которы
 Глобальный `CapsuleApi` (для типизации `services.api.<endpoint>` в Feature) живёт в `@capsuletech/web-query/src/createApi.ts` — родной дом, поскольку это возвращаемый тип `getApiClient()`. `EndpointsRegistryPlugin` сливает в него `InferApi<Endpoints>` через `.capsule/@types/api.d.ts`.
 
 Сами реестры рантайма (`globalThis.Widgets`/`Entities`/…) кладёт `apps/<app>/.capsule/bootstrap.tsx` через `Object.assign(globalThis, registry)`.
+
+## Public API — ключевые контракты
+
+> Подробнее — в `packages/web/core/README.md` (single source of truth для пакета). Здесь — обзор для навигации в Obsidian-vault'е.
+
+### Wrapper-функции
+
+| Wrapper | Сигнатура | Где видно |
+|---|---|---|
+| `Entity` | `(ui, shapes) => JSX` | UI-stateless |
+| `Widget` | `(ui, features, controllers, entities) => JSX` | composition |
+| `Page` | `(ui, widgets) => JSX` | top-layout |
+| `Controller` | `(services) => IDefineStateSchema` | FSM (UI events), services = `{router}` |
+| `Feature` | `(services) => IDefineStateSchema` | FSM (API/IO), services = `{router, api}` |
+| `Shape` | `(z, ui) => IShapeDefinition` | data-форма с path-tracker |
+
+### FSM-схема (Controller / Feature)
+
+```ts
+interface IDefineStateSchema<TCtx> {
+  initial: string;
+  context?: TCtx;
+  states: Record<string, IStateHandlers>;
+  /** Реактивный hook на каждое register/unregister компонента в store.components. Идемпотентность обязательна. */
+  onRegister?: (api: IHandlerApi) => any;
+  /** Teardown — один раз на unmount (Solid onCleanup). Зеркало states[initial].onInit на конце жизни. */
+  onDispose?: (api: IHandlerApi) => any;
+  /** Централизованный error-hook — до re-throw. Re-throw из неё глотается. */
+  onError?: (api: IErrorHandlerApi) => any;
+  /** Top-level fallback handlers (используются если в states[current][name] нет ничего). */
+  onInit / onExit / onClick / onInput / onChange / onBlur / onFocus / onKeyDown?: ...;
+}
+```
+
+### IHandlerApi (что приходит в handler)
+
+```ts
+{
+  target: ITarget;       // имя, value, meta, payload (JSX-immutable), from (от next.with), modifiers, key
+  context: TCtx;         // store.ctx
+  next: INext;           // next() — pass-through; next.with(arg) — bubble с target.from=arg
+  state: IStateApi;      // { current, set(name), matches(name|name[]) }
+  store: IBridge;        // реактивный bridge XState ↔ Solid
+}
+```
+
+### ITarget — два канала
+
+- `payload` — JSX-declared, **immutable** через всю цепочку. Authoritative от Entity-автора.
+- `from` — данные от непосредственного child'а via `next.with(arg)`. Не аккумулируется (сбрасывается на каждом `next()` без `.with`).
+
+### IWrapperProps
+
+```ts
+{
+  children: any;
+  /** Ремап имён методов при bubble к parent'у. Пример: { onClick: 'submit' }. */
+  overrides?: Record<string, string>;
+  /** Fallback для встроенного <Suspense> вокруг детей. */
+  fallback?: JSXElement;
+}
+```
 
 ## Что **не** входит в core
 
