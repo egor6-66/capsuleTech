@@ -72,7 +72,7 @@ export const createLogicWrapper =
         prevState = current;
       });
 
-      // Top-level `onMount` фаерит РЕАКТИВНО при каждой регистрации компонента
+      // Top-level `onRegister` фаерит РЕАКТИВНО при каждой регистрации компонента
       // в `store.components`. Так оно корректно работает с lazy-детьми (lazy()
       // из registry, TanStack lazy-routes, Suspense), которые регистрируются
       // позже первого тика рендера.
@@ -83,15 +83,27 @@ export const createLogicWrapper =
       // поэтому подписка через чтение `store.components` срабатывает на каждую регистрацию.
       createEffect(() => {
         void store.components;
-        schema.onMount?.(lifecycleApi());
+        schema.onRegister?.(lifecycleApi());
       });
 
       onCleanup(() => {
-        controller.destroy?.();
+        // schema.onDispose — единственный teardown-хук. Async-возврат не ждём
+        // (Solid onCleanup синхронный); сами ошибки логируем, чтобы случайный
+        // throw не валил unmount Solid-дерева.
+        try {
+          const r = schema.onDispose?.(lifecycleApi());
+          if (r && typeof (r as Promise<unknown>).catch === 'function') {
+            (r as Promise<unknown>).catch((err) =>
+              console.error('[LogicWrapper] onDispose async failed:', err),
+            );
+          }
+        } catch (err) {
+          console.error('[LogicWrapper] onDispose sync threw:', err);
+        }
       });
 
       return (
-        <Suspense>
+        <Suspense fallback={props.fallback}>
           <Context.Provider value={{ controller, state, store, parent }}>
             {props.children}
           </Context.Provider>

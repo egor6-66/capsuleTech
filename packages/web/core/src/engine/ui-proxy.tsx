@@ -26,6 +26,32 @@ const EVENT_HANDLERS: Record<EventName, { updateStore: boolean }> = {
   onKeyDown: { updateStore: false },
 };
 
+/**
+ * Префикс/маркер для дедупликации bubbling. Один markup-узел получает несколько
+ * `addEventListener`'ов через mergeProps (когда обёртка вложена в обёртку через
+ * рекурсивный wrapper-proxy), и при bubble первый сработавший handler ставит
+ * флаг, остальные skip'ают. Имя префикса — часть _внутреннего_ контракта,
+ * не появляется в публичном API, но фиксируем константой чтобы не плодить
+ * template strings в hot path.
+ */
+const EVENT_MARKER_PREFIX = '__capsule_';
+const EVENT_MARKER_SUFFIX = '__';
+export const eventMarker = (name: string): string =>
+  `${EVENT_MARKER_PREFIX}${name}${EVENT_MARKER_SUFFIX}`;
+
+/**
+ * Pre-computed список событий — каждый item уже содержит готовый marker,
+ * чтобы внутри `wrapComponent` не делать `Object.entries` на каждый mount
+ * (`wrapComponent` зовётся под Proxy-get'ом, hot path).
+ */
+const EVENT_ENTRIES: ReadonlyArray<{
+  name: EventName;
+  updateStore: boolean;
+  marker: string;
+}> = (Object.entries(EVENT_HANDLERS) as [EventName, { updateStore: boolean }][]).map(
+  ([name, { updateStore }]) => ({ name, updateStore, marker: eventMarker(name) }),
+);
+
 const safeCall = (fn: any, ...args: any[]) => {
   try {
     const r = fn?.(...args);
@@ -95,20 +121,19 @@ export const wrapComponent = (
     });
 
     const eventBindings: Record<string, (e: AnyEvent) => void> = {};
-    for (const [eventName, opts] of Object.entries(EVENT_HANDLERS)) {
-      const flag = `__capsule_${eventName}__`;
-      eventBindings[eventName] = (e: AnyEvent) => {
+    for (const { name, updateStore, marker } of EVENT_ENTRIES) {
+      eventBindings[name] = (e: AnyEvent) => {
         // Дедупликация на bubbling: первый сработавший handler помечает event,
         // верхние обёртки в DOM-цепочке пропускают повторные вызовы.
-        if ((e as any)[flag]) return;
-        (e as any)[flag] = true;
+        if ((e as any)[marker]) return;
+        (e as any)[marker] = true;
 
         const data = getTargetData(e, props, deriveName(props.meta));
-        if (opts.updateStore && data.name) {
+        if (updateStore && data.name) {
           ctx.store.update({ [id]: data });
         }
-        safeCall(ctx.controller[eventName], data, ctx.store.ctx);
-        safeCall(props[eventName], e);
+        safeCall(ctx.controller[name], data, ctx.store.ctx);
+        safeCall(props[name], e);
       };
     }
 

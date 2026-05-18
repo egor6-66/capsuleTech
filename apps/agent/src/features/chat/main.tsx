@@ -47,7 +47,9 @@ const Main = Feature(() => {
         },
 
         sendMessage: async ({ target, store }: any) => {
-          const text = String(target.payload ?? '').trim();
+          // Chat-controller передаёт собранный текст через `next.with(text)` →
+          // читаем из target.from. JSX-payload у submit-кнопки нерелевантен.
+          const text = String(target.from ?? '').trim();
           if (!text) return;
 
           messages = [

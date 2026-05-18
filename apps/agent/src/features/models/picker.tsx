@@ -55,7 +55,9 @@ const Picker = Feature(() => {
         },
 
         modelAction: async ({ target, store }: any) => {
-          const { action, name } = (target.payload ?? {}) as { action: string; name: string };
+          // Controller picker зовёт `next.with({action, name})` после деривации
+          // action из meta.tags → читаем из target.from.
+          const { action, name } = (target.from ?? {}) as { action: string; name: string };
           if (!name) return;
 
           try {

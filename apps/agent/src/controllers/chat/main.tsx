@@ -1,8 +1,8 @@
 /**
  * Chat controller — ловит submit (click на `send` или Enter на `input`),
  * вытаскивает текущее значение инпута из store.ctx.data[inputId] и
- * пробрасывает текст наверх через `next(text)`. Feature слушает как
- * `sendMessage` (через overrides на Widget-уровне).
+ * пробрасывает текст наверх через `next.with(text)`. Feature слушает как
+ * `sendMessage` (через overrides на Widget-уровне) и читает `target.from`.
  */
 const readInput = (store: any): string => {
   const inputs = store.pick(['input']);
@@ -20,7 +20,7 @@ const submit = async ({ store, next, state }: any) => {
 
   state.set('sending');
   try {
-    await next(text);
+    await next.with(text);
   } finally {
     state.set('idle');
   }
