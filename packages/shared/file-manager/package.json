@@ -4,15 +4,6 @@
   "type": "module",
   "main": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
-  "scripts": {
-    "build": "vite build"
-  },
-  "dependencies": {},
-  "devDependencies": {},
-  "publishConfig": {
-    "access": "public",
-    "packageManager": "pnpm"
-  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -22,5 +13,22 @@
   },
   "files": [
     "dist"
-  ]
+  ],
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch"
+  },
+  "dependencies": {
+    "@nx/devkit": "^22.7.0",
+    "jiti": "2.4.2",
+    "nx": "22.6.5"
+  },
+  "devDependencies": {
+    "@capsuletech/lib-builder": "workspace:*",
+    "@capsuletech/vite-builder": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "packageManager": "pnpm"
+  }
 }

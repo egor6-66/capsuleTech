@@ -1,6 +1,7 @@
 {
   "name": "@capsuletech/shared-utils",
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "main": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -11,12 +12,15 @@
       "default": "./dist/index.mjs"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "vite build"
   },
   "dependencies": {},
   "devDependencies": {
+    "@capsuletech/lib-builder": "workspace:*",
     "@capsuletech/vite-builder": "workspace:*"
   }
 }
