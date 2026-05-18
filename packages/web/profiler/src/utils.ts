@@ -110,7 +110,6 @@ export function getNetworkMetrics() {
  * @internal
  */
 export function getMemoryMetrics(): number | null {
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const mem = (performance as any).memory;
   if (!mem) return null;
   return Math.round(mem.usedJSHeapSize / 1024 / 1024);
@@ -121,7 +120,6 @@ export function getMemoryMetrics(): number | null {
  * @internal
  */
 export function getConnectionType(): string {
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const connection = (navigator as any).connection;
   if (!connection) return 'unknown';
   return connection.effectiveType || 'unknown';

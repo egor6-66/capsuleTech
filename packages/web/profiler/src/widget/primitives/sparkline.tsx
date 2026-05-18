@@ -18,7 +18,7 @@ export function Sparkline(props: ISparklineProps) {
     if (data.length < 2) return null;
 
     const values = data
-      .map((s) => (typeof s.value === 'number' ? s.value : NaN))
+      .map((s) => (typeof s.value === 'number' ? s.value : Number.NaN))
       .filter((v) => Number.isFinite(v));
     if (values.length < 2) return null;
 
@@ -46,7 +46,10 @@ export function Sparkline(props: ISparklineProps) {
           height={height()}
           viewBox={`0 0 ${width()} ${height()}`}
           style={{ display: 'block' }}
+          role="img"
+          aria-label="Metric sparkline"
         >
+          <title>Metric sparkline</title>
           <path d={d()} fill="none" stroke={color()} stroke-width="1.5" />
         </svg>
       )}
