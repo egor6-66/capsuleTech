@@ -129,8 +129,8 @@ importers:
         specifier: ^5.0.0
         version: 5.31.1
       zod:
-        specifier: ^3.23.8
-        version: 3.25.76
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@arethetypeswrong/cli':
         specifier: ^0.18.2
@@ -630,10 +630,10 @@ importers:
         version: 1.46.1
       lucide-solid:
         specifier: ^0.460.0
-        version: 0.460.0(solid-js@1.9.0)
+        version: 0.460.0(solid-js@1.9.12)
       solid-js:
         specifier: ^1.9.0
-        version: 1.9.0
+        version: 1.9.12
       tailwind-merge:
         specifier: ^3.5.0
         version: 3.6.0
@@ -6405,6 +6405,9 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
+  zod@4.4.3:
+    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
+
 snapshots:
 
   '@adobe/css-tools@4.4.4': {}
@@ -10867,10 +10870,6 @@ snapshots:
 
   lru-cache@7.18.3: {}
 
-  lucide-solid@0.460.0(solid-js@1.9.0):
-    dependencies:
-      solid-js: 1.9.0
-
   lucide-solid@0.460.0(solid-js@1.9.12):
     dependencies:
       solid-js: 1.9.12
@@ -12644,3 +12643,5 @@ snapshots:
   yoga-layout@3.2.1: {}
 
   zod@3.25.76: {}
+
+  zod@4.4.3: {}
