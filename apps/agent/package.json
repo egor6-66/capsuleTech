@@ -14,7 +14,7 @@
     "@capsuletech/web-ui": "workspace:*",
     "@capsuletech/web-query": "workspace:*",
     "@capsuletech/shared-zod": "workspace:*",
-    "@tanstack/solid-router": "^1.169.0",
-    "solid-js": "^1.9.5"
+    "@tanstack/solid-router": "^1.170.4",
+    "solid-js": "^1.9.13"
   }
 }
