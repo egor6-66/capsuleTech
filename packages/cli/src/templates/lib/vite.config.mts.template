@@ -1,29 +1,5 @@
-import { resolve } from 'node:path';
-import { defineConfig } from 'vite';
-import dts from 'vite-plugin-dts';
+import { libConfig } from '@capsuletech/lib-builder';
 
-export default defineConfig({
-  build: {
-    outDir: 'dist',
-    sourcemap: true,
-    emptyOutDir: true,
-    lib: {
-      entry: resolve(__dirname, 'src/index.ts'),
-      formats: ['es'],
-      fileName: 'index',
-    },
-    rollupOptions: {
-      output: {
-        entryFileNames: '[name].mjs',
-        chunkFileNames: 'chunks/[name]-[hash].mjs',
-      },
-    },
-  },
-  plugins: [
-    dts({
-      include: ['src/**/*.ts'],
-      outDir: 'dist',
-      tsconfigPath: 'tsconfig.json',
-    }),
-  ],
+export default libConfig({
+  entry: 'src/index.ts',
 });

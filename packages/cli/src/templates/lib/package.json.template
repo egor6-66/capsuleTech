@@ -16,10 +16,10 @@
     "packageManager": "pnpm"
   },
   "scripts": {
-    "build": "vite build"
+    "build": "vite build",
+    "dev": "vite build --watch"
   },
   "devDependencies": {
-    "vite": "^6.0.0",
-    "vite-plugin-dts": "^4.5.0"
+    "@capsuletech/lib-builder": "<%= cap %>"
   }
 }
