@@ -532,6 +532,16 @@ importers:
         specifier: workspace:*
         version: link:../../builders/vite
 
+  packages/web/remote:
+    dependencies:
+      solid-js:
+        specifier: ^1.9.0
+        version: 1.9.12
+    devDependencies:
+      '@capsuletech/vite-builder':
+        specifier: workspace:*
+        version: link:../../builders/vite
+
   packages/web/renderer:
     dependencies:
       solid-js:
