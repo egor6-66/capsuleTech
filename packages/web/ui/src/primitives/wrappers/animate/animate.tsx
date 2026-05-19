@@ -98,13 +98,12 @@ export const Animate = (props: IAnimateProps) => {
     class: props.class,
     style: props.style as any,
   });
-  console.log('wdad');
   if (keyed) {
     return (
       <Presence exitBeforeEnter={props.exitBeforeEnter ?? true}>
         <Show when={props.keyed} keyed>
           {
-            // @ts-expect-error
+            // @ts-expect-error — Show types `children: Element` even with `keyed`, but runtime requires a deferred callback so Presence/resolveFirst can swap elements on key change (see block-comment above).
             () => <Motion {...motionAttrs()}>{props.children}</Motion>
           }
         </Show>

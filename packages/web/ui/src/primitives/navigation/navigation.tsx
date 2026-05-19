@@ -23,7 +23,7 @@ export const Navigation = (props: INavigationProps) => {
   );
 };
 
-export function NavigationList<T = any>(props: INavigationListProps<T>) {
+export function NavigationList<T = unknown>(props: INavigationListProps<T>) {
   const [local, others] = splitProps(props, ['class', 'style', 'children', 'orientation', 'items']);
 
   const { className, style } = createStyle(navigationListCva, {
@@ -33,8 +33,7 @@ export function NavigationList<T = any>(props: INavigationListProps<T>) {
   });
 
   return (
-    // @ts-expect-error
-    <ul class={className()} style={style()} {...others}>
+    <ul class={className()} style={style()} {...(others as JSX.HTMLAttributes<HTMLUListElement>)}>
       <For each={local.items}>{(item, index) => local.children(item, index)}</For>
     </ul>
   );
