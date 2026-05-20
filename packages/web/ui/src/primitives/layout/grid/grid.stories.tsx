@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
-import { MockBlock } from '../_mocks';
+import { MockBlock } from '../../_mocks';
 import { Grid } from './grid';
 
 const meta = {

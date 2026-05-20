@@ -1,5 +1,5 @@
 import type { JSX, ValidComponent } from 'solid-js';
-import type { ISlotProps } from '../slot';
+import type { ISlotProps } from '../../slot';
 
 export type FlexDirection = 'row' | 'row-reverse' | 'col' | 'col-reverse';
 export type FlexWrap = 'wrap' | 'nowrap' | 'wrap-reverse';

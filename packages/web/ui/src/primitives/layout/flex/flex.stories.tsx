@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
-import { MockBlock, MockMain, MockRightBar, MockSidebar } from '../_mocks';
+import { MockBlock, MockMain, MockRightBar, MockSidebar } from '../../_mocks';
 import { Flex } from './flex';
 
 const meta = {

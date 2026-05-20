@@ -1,5 +1,5 @@
 import type { JSX, ValidComponent } from 'solid-js';
-import type { ISlotProps } from '../slot';
+import type { ISlotProps } from '../../slot';
 import type { GridGap, GridTrack } from './utils';
 
 /**

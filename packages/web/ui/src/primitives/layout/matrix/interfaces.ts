@@ -1,6 +1,6 @@
 import type { VariantProps } from 'class-variance-authority';
 import type { JSX } from 'solid-js';
-import type { AnimateVariant } from '../wrappers/animate';
+import type { AnimateVariant } from '../../wrappers/animate';
 import type { matrixCva } from './variants';
 
 /**

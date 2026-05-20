@@ -3,7 +3,7 @@ import { createStyle } from '@capsuletech/web-style';
 import { type JSX, Show, splitProps, useContext } from 'solid-js';
 import { Flex } from '../flex/flex';
 import type { IFlexItem } from '../flex/interfaces';
-import { Animate, type AnimateVariant } from '../wrappers/animate';
+import { Animate, type AnimateVariant } from '../../wrappers/animate';
 import type { IMatrixProps, IMatrixSlots } from './interfaces';
 import { type INormalizedSlot, normalizeSlot } from './utils';
 import { matrixCva, matrixSlots } from './variants';

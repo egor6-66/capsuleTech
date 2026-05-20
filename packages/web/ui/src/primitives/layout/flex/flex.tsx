@@ -1,7 +1,7 @@
 import { cn } from '@capsuletech/web-style';
 import { createMemo, For, type JSX, Show, splitProps, type ValidComponent } from 'solid-js';
 import { mergeStyle, toGap } from '../grid/utils';
-import { Slot } from '../slot';
+import { Slot } from '../../slot';
 import { ResizableHandle, ResizablePanel, ResizableRoot } from './_resize/primitives';
 import type {
   FlexAlign,

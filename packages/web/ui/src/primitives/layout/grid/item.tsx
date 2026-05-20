@@ -1,6 +1,6 @@
 import { cn } from '@capsuletech/web-style';
 import { type JSX, splitProps, type ValidComponent } from 'solid-js';
-import { Slot } from '../slot';
+import { Slot } from '../../slot';
 import type { IGridItemProps } from './interfaces';
 import { mergeStyle } from './utils';
 
