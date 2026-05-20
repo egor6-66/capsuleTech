@@ -1,0 +1,9 @@
+@import "tailwindcss";
+@import "@capsuletech/web-style/themes";
+
+/* Tailwind utility scan. Сканит:
+     - app's src/ (для классов, которые user пишет в JSX),
+     - @capsuletech/web-ui (для классов внутри dist UI-kit).
+   @source резолвится relative к расположению этого CSS-файла (.capsule/). */
+@source "../src";
+@source "../node_modules/@capsuletech/web-ui";

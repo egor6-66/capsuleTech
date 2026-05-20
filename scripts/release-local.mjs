@@ -40,7 +40,7 @@
  *   - Bump версий и changelog — это release.mjs (prod).
  * ==========================================================================*/
 import { spawnSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -137,78 +137,17 @@ if (toPublish.length === 0) fail('Нечего публиковать — спи
 log(`К публикации: ${toPublish.map((p) => `${p.pkg.name}@${p.pkg.version}`).join(', ')}`);
 
 // ---------------------------------------------------------------------------
-// 3. Bump в `-dev.<timestamp>` суффикс + snapshot для отката.
-//    Verdaccio запрещает overwrite published version (allow_replace игнорится
-//    в 6.x), npm unpublish не сбрасывает in-memory state. Уникальная
-//    -dev.<ts> версия — единственный надёжный способ. Восстановим
-//    package.json в finally, чтобы в worktree не осталось следов.
+// 3. Версии не bump'аем — используем существующую из package.json. workspace:*
+//    deps pnpm publish подставит в tarball автоматически (исходник не трогаем).
+//    Verdaccio overwrite получаем через удаление storage пакета перед publish
+//    (см. шаг 5). Это даёт стабильный workflow:
+//      apps/<x>/package.json: "@capsuletech/web-ui": "0.2.0"
+//      release:local дёргает заново ту же 0.2.0, и consumer'ы видят свежее
+//      содержимое без version drift и без дрейфа cross-sibling pin'ов.
+//    Storage path берётся из .verdaccio/config.yml (storage: ../tmp/local-registry/storage).
 // ---------------------------------------------------------------------------
-const ts = new Date()
-  .toISOString()
-  .replace(/[-:T.Z]/g, '')
-  .slice(0, 14);
-
-// Снапшот ВСЕХ найденных пакетов (не только toPublish), чтобы при rewrite
-// workspace:* deps правильно подставить новые -dev версии соседей.
-const snapshot = new Map(); // pkgPath -> raw text
-for (const { pkgPath } of all.values()) {
-  snapshot.set(pkgPath, readFileSync(pkgPath, 'utf8'));
-}
-
-let _restored = false;
-const restore = () => {
-  if (_restored) return;
-  _restored = true;
-  for (const [path, raw] of snapshot) {
-    try {
-      writeFileSync(path, raw);
-    } catch {}
-  }
-};
-process.on('exit', restore);
-for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGBREAK']) {
-  process.on(sig, () => {
-    restore();
-    process.exit(130);
-  });
-}
-process.on('uncaughtException', (e) => {
-  restore();
-  console.error(e);
-  process.exit(1);
-});
-
-// Новые dev-версии: <текущая без -dev.*> + -dev.<ts>
-const newVersions = new Map(); // pkgName -> newVersion
-for (const { pkg } of toPublish) {
-  const base = (pkg.version || '0.0.1').replace(/-.*$/, '');
-  newVersions.set(pkg.name, `${base}-dev.${ts}`);
-}
-
-const DEP_FIELDS = ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'];
-const rewritePkgJson = ({ pkgPath, pkg }) => {
-  const newVer = newVersions.get(pkg.name);
-  if (newVer) pkg.version = newVer;
-  // Заменяем workspace:* на актуальную dev-версию соседа из той же группы,
-  // либо на текущую публичную (для пакетов вне toPublish).
-  for (const field of DEP_FIELDS) {
-    const deps = pkg[field];
-    if (!deps) continue;
-    for (const [name, range] of Object.entries(deps)) {
-      if (typeof range === 'string' && range.startsWith('workspace:')) {
-        const devVer = newVersions.get(name);
-        if (devVer) deps[name] = devVer;
-        else {
-          const neighbor = all.get(name);
-          if (neighbor) deps[name] = neighbor.pkg.version;
-        }
-      }
-    }
-  }
-  writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`, 'utf8');
-};
-for (const entry of toPublish) rewritePkgJson(entry);
-log(`bumped versions: ${[...newVersions.entries()].map(([n, v]) => `${n}@${v}`).join(', ')}`);
+const VERDACCIO_STORAGE = join(repoRoot, 'tmp', 'local-registry', 'storage');
+log(`публикуем версии из package.json как есть (без -dev.<ts> суффикса)`);
 
 // ---------------------------------------------------------------------------
 // 4. Билд (две фазы, shared-vite первым — у него нет рантайм-зависимости на
@@ -226,15 +165,24 @@ const run = (cmd, opts = {}) => {
 };
 
 if (SHOULD_BUILD) {
-  // 3 фазы строго последовательно: compliance → vite → rest.
+  // 4 фазы строго последовательно:
+  //   compliance → vite-builder → web-* (без web-style) + shared-* + cli → web-style
+  //
   // pnpm не блокирует параллельные билды по topological order — на свежем CI
   // shared-vite стартует одновременно с shared-compliance и падает на резолве
   // compliance/main (dist ещё не создан).
+  //
+  // web-style ОБЯЗАН строиться **последним** из web-*, потому что его
+  // index.css имеет `@source "../../web-{ui,core,...}/dist/**/*.mjs"` —
+  // Tailwind v4 scan'ит эти пути в момент `vite build`. Если web-ui/dist
+  // ещё не существует (параллельный build) — utility-классы из web-ui
+  // не попадают в финальный CSS, app получает поломанные стили (border-l,
+  // p-4, bg-border исчезают). Изолируем web-style в свою phase в конце.
   const phases = [
     { name: 'shared-compliance', filters: ['--filter', '@capsuletech/compliance'] },
     { name: 'shared-vite', filters: ['--filter', '@capsuletech/vite-builder'] },
     {
-      name: 'shared-* (rest) + web-* + cli',
+      name: 'shared-* (rest) + web-* (без web-style) + cli',
       filters: [
         '--filter',
         '@capsuletech/shared-*',
@@ -247,9 +195,12 @@ if (SHOULD_BUILD) {
         '--filter',
         '@capsuletech/web-*',
         '--filter',
+        '!@capsuletech/web-style',
+        '--filter',
         '@capsuletech/cli',
       ],
     },
+    { name: 'web-style (Tailwind scan dist сиблингов)', filters: ['--filter', '@capsuletech/web-style'] },
   ];
   for (const phase of phases) {
     log(`build phase: ${phase.name}`);
@@ -264,9 +215,33 @@ if (SHOULD_BUILD) {
 // 5. Publish в verdaccio. Версия берётся из package.json как есть.
 //    workspace:* deps pnpm подставит в tarball автоматически — исходник не
 //    модифицируется (pnpm применяет замену только при упаковке).
+//    Перед каждым publish удаляем папку пакета в Verdaccio storage — это
+//    обходит immutability published version (allow_replace в 6.x не работает).
+//    Storage layout: <storage>/@<scope>/<name>/ → удаляем целиком.
 // ---------------------------------------------------------------------------
+const purgeFromVerdaccio = (pkgName) => {
+  // 1) npm unpublish — заставляет Verdaccio сбросить in-memory metadata.
+  //    --force нужен для unpublish всех версий; для несуществующего пакета
+  //    команда вернёт код != 0, проглатываем.
+  spawnSync('npm', ['unpublish', pkgName, '--force', '--registry', REGISTRY], {
+    stdio: 'ignore',
+    shell: process.platform === 'win32',
+  });
+  // 2) file rm — на случай если unpublish оставил частичные артефакты.
+  //    Layout: <storage>/@<scope>/<name>/
+  const pkgDir = join(VERDACCIO_STORAGE, ...pkgName.split('/'));
+  if (existsSync(pkgDir)) {
+    try {
+      rmSync(pkgDir, { recursive: true, force: true });
+    } catch (e) {
+      warn(`purge ${pkgName}: ${e.message}`);
+    }
+  }
+};
+
 let failures = 0;
 for (const { dir, pkg } of toPublish) {
+  purgeFromVerdaccio(pkg.name);
   log(`publish ${pkg.name}@${pkg.version} → ${REGISTRY}`);
   const r = spawnSync(
     'pnpm',

@@ -1,6 +1,4 @@
-@import "tailwindcss";
 
-@custom-variant dark (&:is(.dark *));
 
 [data-theme="vescrow"] {
   --background: oklch(0.9924 0.0028 308.4292);
@@ -169,14 +167,4 @@
   --tracking-wide: calc(var(--tracking-normal) + 0.025em);
   --tracking-wider: calc(var(--tracking-normal) + 0.05em);
   --tracking-widest: calc(var(--tracking-normal) + 0.1em);
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-    letter-spacing: var(--tracking-normal);
-  }
 }

@@ -1,0 +1,34 @@
+# Isolated Verdaccio config for the smoke fixture.
+# Storage is fixture-local — does NOT touch the main monorepo Verdaccio storage.
+storage: ./verdaccio-tmp/storage
+
+uplinks:
+  npmjs:
+    url: https://registry.npmjs.org/
+    maxage: 60m
+
+packages:
+  # @capsuletech/* — local only. Never proxy to npmjs (старые published versions
+  # на npm flag'нут publish-over-existing).
+  '@capsuletech/*':
+    access: $all
+    publish: $all
+    unpublish: $all
+    allow_unpublish: true
+    allow_replace: true
+  # Всё остальное — read через uplink (npmjs).
+  '**':
+    access: $all
+    publish: $all
+    unpublish: $all
+    allow_unpublish: true
+    allow_replace: true
+    proxy: npmjs
+
+log:
+  type: stdout
+  format: pretty
+  level: warn
+
+publish:
+  allow_offline: true

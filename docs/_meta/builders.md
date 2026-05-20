@@ -52,8 +52,8 @@ biome-config → ничего (zero-deps, чисто config-файл)
 | `packages/builders/vite/src/plugins/endpointsRegistry.ts` | watcher: scan `apps/*/src/endpoints/**` → `.capsule/registry/endpoints.ts` + `.capsule/@types/api.d.ts` |
 | `packages/builders/vite/src/plugins/router/index.ts` | RouterPlugin: ensureRoot + page-mirror generator + TanStackRouterVite |
 | `packages/builders/vite/src/plugins/router/template/__root.tsx.template` | шаблон корневого route |
-| `packages/builders/vite/src/plugins/scaffold/index.ts` | EnsureScaffoldPlugin: копирует `index.html / index.ts / bootstrap.tsx / paths.config.json` в `.capsule/` если их нет |
-| `packages/builders/vite/src/plugins/scaffold/template/*.template` | 4 шаблона entry-файлов |
+| `packages/builders/vite/src/plugins/scaffold/index.ts` | EnsureScaffoldPlugin: копирует `index.html / index.ts / bootstrap.tsx / paths.config.json / styles.css` в `.capsule/` если их нет |
+| `packages/builders/vite/src/plugins/scaffold/template/*.template` | 5 шаблонов entry-файлов; `styles.css.template` — CSS entry с Tailwind + @capsuletech/web-style |
 | `packages/builders/vite/src/plugins/appConfig.ts` | AppConfigPlugin: jiti-load `capsule.app.ts` → `.capsule/@types/app-tags.d.ts` + `.capsule/app-config.gen.ts`; transform identity-unwrap для `defineAppConfig` |
 | `packages/builders/vite/src/plugins/compliance.ts` | тонкая обёртка над `check()` — режимы warn/error |
 | `packages/builders/vite/src/plugins/aliases.ts` | AliasesPlugin: мержит base + local paths → `.capsule/tsconfig.paths.json`; emit'ит Vite `resolve.alias` |
@@ -129,6 +129,8 @@ biome-config → ничего (zero-deps, чисто config-файл)
 
 12. **[[shared-vite-dist]] цикл** — после правок в `packages/builders/vite/src/` обязательно `pnpm --filter @capsuletech/vite-builder build` + рестарт dev-сервера. Без ребилда твоё изменение не видно — apps читают dist/, не src/. Smoke-test: `console.log('[plugin] loaded')` на верхнем уровне (вне transform).
 
+13. **Scaffold templates не попадают в dist автоматически** — `EnsureScaffoldPlugin` при runtime'е читает `.template`-файлы из `dist/plugins/scaffold/template/` (через `__dirname`). Но `libConfig` / rollup не копируют non-JS ресурсы — нужна явная запись в `staticCopyPlugin` в `vite/vite.config.mts`. Если добавить новый `.template`-файл в `src/` без добавления в `staticCopyPlugin` → `copyFile` бросит ENOENT при запуске dev-сервера, scaffold тихо ломается. Фикс уже применён (2026-05-20): `scaffold/template` копируется в `dist/plugins/scaffold/template/`.
+
 ## Что менять когда
 
 | Хочу… | Куда лезть |
@@ -139,7 +141,7 @@ biome-config → ничего (zero-deps, чисто config-файл)
 | Расширить compliance allowlist для app | НЕ править `rules.ts`. Передавай `extraAllowed: { feature: [/^@my\/api/] }` в `CompliancePlugin({ extraAllowed })` |
 | Добавить новое нарушение в линтер | `compliance/src/check.ts > IViolation['kind']` + handler в `traverse()` + `format.ts > ICONS` + тест в `check.test.ts` |
 | Поменять Rollup external-policy для lib | `lib/src/libConfig.ts > rollupExternalSelector` или передавай `bundleDependencies: […]` |
-| Добавить новый scaffold-файл | `vite/src/plugins/scaffold/template/<name>.template` + `vite/src/plugins/scaffold/index.ts > FILES` |
+| Добавить новый scaffold-файл | `vite/src/plugins/scaffold/template/<name>.template` + `vite/src/plugins/scaffold/index.ts > FILES` + `vite/vite.config.mts > staticCopyPlugin` (dest уже `dist/plugins/scaffold/template`) |
 | Поменять формат route-файла | `vite/src/plugins/router/index.ts > ROUTE_TEMPLATE` (inline string) |
 | Поменять формат `wrappers.ts` или `slots.d.ts` | `vite/src/plugins/exportGenerator.ts > renderRuntime / renderTypes` |
 | Поменять формат `endpoints.ts` или `api.d.ts` | `vite/src/plugins/endpointsRegistry.ts > renderRuntime / renderTypes` |

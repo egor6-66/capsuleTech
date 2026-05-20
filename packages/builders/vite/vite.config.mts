@@ -50,6 +50,10 @@ export default libConfig({
         src: path.resolve(__dirname, 'src/plugins/router/template'),
         dest: path.resolve(__dirname, 'dist/template'),
       },
+      {
+        src: path.resolve(__dirname, 'src/plugins/scaffold/template'),
+        dest: path.resolve(__dirname, 'dist/template'),
+      },
     ]),
   ],
 });

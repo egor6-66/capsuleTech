@@ -7,9 +7,9 @@ import { mergeStyle, toAreas, toGap, toTrack } from './utils';
 
 /**
  * Grid — низкоуровневая CSS Grid обёртка для страниц и виджетов. Не путать
- * с внутренним `LayoutSwitch` в `primitives/layout/switch.tsx`: тот — приватный
- * диспетчер вариантов `<Layout>`, а этот — полноценный publish primitive в
- * духе Mantine/Chakra.
+ * с `<Layout>` в `primitives/layout/`: тот — top-level раскладка с именованными
+ * слотами (header/sidebar/main/rightBar/footer), а этот — полноценный publish
+ * primitive в духе Mantine/Chakra.
  *
  * @example
  * ```tsx

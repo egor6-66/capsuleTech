@@ -1,6 +1,7 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { execa } from 'execa';
+import { isCi } from '../cli/runner';
 import type { CliMode } from '../context';
 import { kit } from '../kit';
 import { generateFromTemplates } from '../utils/generateFromTemplates';
@@ -57,10 +58,15 @@ export const scaffoldEntity = async ({
       const err = validateName(providedName);
       if (err) {
         kit.log.error(`Имя «${providedName}»: ${err}`);
+        if (isCi()) process.exit(1);
         return;
       }
       name = providedName;
     } else {
+      if (isCi()) {
+        kit.log.error(`name required in CI mode — pass it as a positional argument`);
+        process.exit(1);
+      }
       const input = await kit.input(
         `Имя ${title.toLowerCase()} (kebab-case)`,
         `my-${kind}`,
@@ -78,6 +84,12 @@ export const scaffoldEntity = async ({
   } else {
     const conflicts = readdirSync(cwd).filter((f) => !IGNORED_ENTRIES.has(f));
     if (conflicts.length > 0) {
+      if (isCi()) {
+        kit.log.error(
+          `directory not empty (${conflicts.length} entries), refusing to overwrite in CI mode — clean the directory before running the fixture`,
+        );
+        process.exit(1);
+      }
       const ok = await kit.confirm(
         `В папке уже ${conflicts.length} элементов. Скаффолдить поверх?`,
       );
@@ -111,7 +123,24 @@ export const scaffoldEntity = async ({
 
   const installCwd = kind === 'workspace' ? targetDir : cwd;
   await kit.task('pnpm install', async () => {
-    await execa('pnpm', ['install'], { cwd: installCwd, stdio: 'ignore' });
+    const ciMode = isCi();
+    const r = await execa('pnpm', ['install'], {
+      cwd: installCwd,
+      // CI: inherit so the parent process (smoke test) sees all output directly.
+      // TUI: capture into buffers so we can surface them on failure without
+      //      polluting the spinner output on success.
+      stdio: ciMode ? 'inherit' : ['ignore', 'pipe', 'pipe'],
+      reject: false,
+    });
+    if (r.failed || r.exitCode !== 0) {
+      if (!ciMode) {
+        // Flush captured output so the user/log sees the real error.
+        if (r.stderr) process.stderr.write(r.stderr);
+        if (r.stdout) process.stdout.write(r.stdout);
+      }
+      kit.log.error(`pnpm install failed (exit ${r.exitCode ?? 'unknown'})`);
+      process.exit(1);
+    }
   });
 
   return { name, targetDir };

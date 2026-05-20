@@ -19,7 +19,6 @@
     "@capsuletech/web-query": "workspace:*",
     "@capsuletech/shared-zod": "workspace:*",
     "@capsuletech/vite-builder": "workspace:*",
-    "@capsuletech/shared-file-manager": "workspace:*",
     "@capsuletech/web-style": "workspace:*"
   },
   "peerDependencies": {

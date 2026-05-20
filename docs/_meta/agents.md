@@ -50,11 +50,22 @@ status: documented
 | **`owner-web-profiler`** | `packages/web/profiler` | `web_base` (fixed) |
 | **`owner-web-map`** | `packages/web/map` | independent (iter 0) |
 | **`owner-web-remote`** | `packages/web/remote` | independent (phase 0) |
+| **`owner-tests`** | `packages/cli/e2e/` + capsule-test workflow + Verdaccio / dev / Storybook orchestration | n/a (test infra) |
+| **`owner-git`** | git workflow (branches, commits, PRs, merges, cleanup) | n/a (cross-cutting) |
+| **`owner-deps`** | dependency hygiene (singleton sync, knip/syncpack, lockfile diff, overrides registry) | n/a (cross-cutting) |
 
 **Release groups (из `nx.json:release.groups`):**
 - `cli` (tag `cli@{version}`): cli, shared-file-manager, vite-builder, compliance, lib-builder
 - `web_base` (tag `web@{version}`): все web-* + shared-zod
 - Independent: biome-config, web-map, web-remote, canvas-*, shared-utils (private)
+
+**Особые роли (не владеют пакетом, а workflow):**
+
+- **`owner-tests`** — testing infrastructure. Знает CLI flow, Verdaccio lifecycle, smoke fixture, capsule-test prod-репу. Может запускать `release-local --group=all`. При framework-bug — диагностирует класс и эскалирует с repro steps + suggested owner. **Не правит** `packages/*` и не bump'ит версии.
+
+- **`owner-git`** — git operations. Branches, commits, PRs, merge с auto-delete branches, cleanup. Полный autonomy после CI green (auto-merge). Запрещён force-push в main, history rewrites, hook bypass. Bisect / regression search.
+
+- **`owner-deps`** — dependency hygiene. Audit singletons, knip/syncpack runs, lockfile diff review, `pnpm why` queries, Verdaccio storage inspection, ведёт `docs/_meta/dep-management-plan.md`. **Не bump'ит версии** и не правит пакеты — только аудит + рекомендации главному.
 
 ### Owner-agent контракт
 

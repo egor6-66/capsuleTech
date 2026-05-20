@@ -1,6 +1,6 @@
 {
   "name": "@capsuletech/web-ui",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "type": "module",
   "main": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -90,6 +90,16 @@
       "types": "./dist/components/layout/*.d.ts",
       "import": "./dist/components/layout/*.mjs",
       "default": "./dist/components/layout/*.mjs"
+    },
+    "./matrix": {
+      "types": "./dist/components/matrix/index.d.ts",
+      "import": "./dist/components/matrix/index.mjs",
+      "default": "./dist/components/matrix/index.mjs"
+    },
+    "./matrix/*": {
+      "types": "./dist/components/matrix/*.d.ts",
+      "import": "./dist/components/matrix/*.mjs",
+      "default": "./dist/components/matrix/*.mjs"
     },
     "./list": {
       "types": "./dist/components/list/index.d.ts",
@@ -184,7 +194,12 @@
   "devDependencies": {
     "@capsuletech/lib-builder": "workspace:*",
     "@capsuletech/vite-builder": "workspace:*",
+    "@tailwindcss/vite": "^4.2.4",
     "lucide-solid": "^1.16.0",
-    "vite-plugin-solid": "^2.11.12"
+    "storybook": "^10",
+    "storybook-solidjs-vite": "^10",
+    "vite": "^8.0.13",
+    "vite-plugin-solid": "^2.11.12",
+    "vite-tsconfig-paths": "^6.1.1"
   }
 }

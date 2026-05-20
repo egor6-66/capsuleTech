@@ -6,7 +6,7 @@ import type { Plugin } from 'vite';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const FILES = ['index.html', 'index.ts', 'bootstrap.tsx', 'paths.config.json'] as const;
+const FILES = ['index.html', 'index.ts', 'bootstrap.tsx', 'paths.config.json', 'styles.css'] as const;
 
 /**
  * Гарантирует наличие entry-файлов (`index.html`, `index.ts`, `bootstrap.tsx`)

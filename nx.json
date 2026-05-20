@@ -89,7 +89,6 @@
       "cli": {
         "projects": [
           "@capsuletech/cli",
-          "@capsuletech/shared-file-manager",
           "@capsuletech/vite-builder",
           "@capsuletech/compliance",
           "@capsuletech/lib-builder"

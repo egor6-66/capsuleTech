@@ -1,6 +1,3 @@
-// `slot` — крошечный identity-хелпер ради TS-автокомплита. Импортируется sync
-// (а не lazy), чтобы `Ui.Layout.slot({...})` был доступен на этапе compile-time.
-import { slot as layoutSlot } from '@capsuletech/web-ui/layout/slot';
 import { lazy } from 'solid-js';
 
 // 1. Хелпер для сокращения записи
@@ -11,11 +8,20 @@ const createLazy = (importer: () => Promise<any>, name: string) =>
 // 2. Простые компоненты
 export const Button = createLazy(() => import('@capsuletech/web-ui/button'), 'Button');
 export const Input = createLazy(() => import('@capsuletech/web-ui/input'), 'Input');
+export const Label = createLazy(() => import('@capsuletech/web-ui/label'), 'Label');
+export const Separator = createLazy(() => import('@capsuletech/web-ui/separator'), 'Separator');
+export const Toggle = createLazy(() => import('@capsuletech/web-ui/toggle'), 'Toggle');
+export const Typography = createLazy(() => import('@capsuletech/web-ui/typography'), 'Typography');
 
-const LayoutBase = createLazy(() => import('@capsuletech/web-ui/layout'), 'Layout');
-export const Layout = Object.assign(LayoutBase, { slot: layoutSlot });
+// Layout namespace: Grid + Flex + Matrix
+export const Layout = {
+  Grid:   createLazy(() => import('@capsuletech/web-ui/grid'), 'Grid'),
+  Flex:   createLazy(() => import('@capsuletech/web-ui/flex'), 'Flex'),
+  Matrix: createLazy(() => import('@capsuletech/web-ui/matrix'), 'Matrix'),
+};
 export const List = createLazy(() => import('@capsuletech/web-ui/list'), 'List');
 export const Animate = createLazy(() => import('@capsuletech/web-ui/wrappers'), 'Animate');
+export const Resizable = createLazy(() => import('@capsuletech/web-ui/wrappers'), 'Resizable');
 
 // 5. Компонент Navigation с подкомпонентами
 const NavigationBase = createLazy(() => import('@capsuletech/web-ui/navigation'), 'Navigation');

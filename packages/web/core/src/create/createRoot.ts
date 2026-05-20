@@ -1,6 +1,3 @@
-import '@capsuletech/web-style/css';
-import '@capsuletech/web-style/themes';
-
 import type { JSX } from 'solid-js';
 import { render } from 'solid-js/web';
 

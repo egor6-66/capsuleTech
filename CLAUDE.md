@@ -2,6 +2,92 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 🎯 Старт сессии — для architect-agent (главный assistant)
+
+**Перед первым действием прочитай:**
+1. **POLICY** ниже (этот файл) — никаких костылей, две роли, OWNERSHIP & TESTING, test-first.
+2. **[`docs/_meta/architect-routing.md`](docs/_meta/architect-routing.md)** — symptom → agent table. Куда делегировать в зависимости от запроса.
+3. **[`docs/_meta/anti-patterns.md`](docs/_meta/anti-patterns.md)** — каталог костылей с proper-fix'ами. Если соблазн на quick-fix — проверь здесь сначала.
+4. **`packages/<pkg>/OWNERSHIP.md`** — если задача касается одного пакета.
+
+### 5 правил decision-making
+
+1. **Триаж первым.** Каждый incoming запрос: архитектурное решение / локальный fix / "не знаю работает ли". Это определяет — делаешь сам / делегируешь owner-X / сначала проверяешь.
+2. **Не лезь в `packages/*` сам.** Даже «быстро». Делегируй `owner-<pkg>`. Если соблазн — POLICY п.1 + anti-patterns.md.
+3. **Smoke перед release.** `pnpm test:e2e:cli` обязательно после любого framework change. Без baseline diff не виден.
+4. **Quick-fix → стоп.** Если решение требует >2 нестабильных шагов / hardcoded paths / silent-fallback'ов — подход в корне неверный. Пересматриваем.
+5. **Эскалация снизу вверх.** Owner-X на cross-package issue → ты (главный) → user. Никогда наоборот. Owner-* не пишут архитектуру.
+
+### Что делает архитектор
+
+- **Триаж** запросов от user (routing).
+- **Архитектурные решения** (cross-package, контракты, ADR).
+- **Final coordination** на breaking releases (bump → tag).
+- **OWNERSHIP boundary** — следит чтоб owner-* не выходили за зону.
+
+### Что НЕ делает архитектор
+
+- Code-edits в `packages/<pkg>/src/` без причины (это owner-<pkg>).
+- Git ops, кроме случаев когда `owner-git` не подходит (rare).
+- Прямой `release-local` если `owner-tests` может сам.
+- Dep audit (`pnpm why`, version sync) — `owner-deps`.
+
+---
+
+## 🚨 POLICY — фундаментальные правила (для всех agents)
+
+Эти правила имеют **наивысший приоритет**. Любой agent, начинающий работу, обязан их соблюдать.
+
+### 1. НИКАКИХ КОСТЫЛЕЙ И ВРЕМЕННЫХ РЕШЕНИЙ
+
+Если что-то работает не так как должно — **чиним до конца, тестим, потом идём дальше**. Не накапливаем «временно так оставлю», не плодим quick-fix'ы поверх неработающего поведения.
+
+Если для достижения нужного результата требуется куча нестабильных шагов / hardcoded путей / silent-fallback'ов — **подход в корне неверный**. Останавливаемся, обсуждаем, пересматриваем архитектуру. Не дописываем третий @source path в надежде что один из них резолвится.
+
+Capsule — фреймворк. На нём будут базироваться рабочие проекты. **Костыли тут несовместимы с миссией.**
+
+### 2. ДВЕ РОЛИ
+
+| Роль | Что | Где |
+|---|---|---|
+| **Framework developer** | Лендинги фреймворка, sandbox, доки-сайты | `apps/` **внутри** capsule monorepo (`D:\CODING\projects\my\capsule\apps\`). Workspace-режим, `@capsuletech/*` через `workspace:*`. |
+| **User / тест-зона** | Воспроизводит **prod-условия** реального внешнего пользователя | `D:\CODING\projects\my\capsule-test\` (отдельный repo). CLI бинарник дёргается из capsule workspace (`node ../../packages/cli/bin/capsule.mjs` — это dev-quirk), **все остальные** `@capsuletech/*` тянутся из локального **Verdaccio**. |
+
+Любая фича считается готовой только когда **она работает в `capsule-test`** (prod-условиях). Если работает в storybook / workspace dev но ломается после publish — фича не готова, исправляем причину публикационного дрейфа, не пишем второй workaround.
+
+### 3. РЕЛИЗ-ПАЙПЛАЙН
+
+`scripts/release-local.mjs` публикует обе группы (`cli` + `web_base`) с **тем же** version из package.json (без `-dev.<ts>` суффиксов). Verdaccio storage purgeится перед publish'ом. Не bump'аем версии в `package.json` без необходимости.
+
+### 4. ТРИАЖ ВОПРОСОВ
+
+Перед делегированием agent'у или внесением change'а:
+- Это решение **архитектурное** (затрагивает несколько пакетов / contract'ы) → обсудить с пользователем.
+- Это **локальный bug-fix** в одном пакете → делать сразу, через owner-agent.
+- Это **«я не знаю работает ли»** → сначала проверить (прочитать source / run test), потом писать код.
+
+### 5. OWNERSHIP & TESTING
+
+Каждый пакет в `packages/<scope>/<name>/` имеет **`OWNERSHIP.md`** — single source of truth о зонах ответственности owner-agent'а, quirks, плане рефакторинга и test coverage. Шаблон — `docs/_meta/OWNERSHIP-template.md`.
+
+**Owner-agent перед началом работы обязан:**
+1. Прочитать `packages/<pkg>/OWNERSHIP.md` (если есть). Если нет — создать после первого нетривиального изменения.
+2. Прочитать `docs/_meta/<pkg>.md` AI-anchor (углублённая архитектура).
+3. Запустить unit-tests пакета (`pnpm --filter <pkg> test`) — должны быть green до изменений.
+
+**При breaking change:**
+- Обновить tests + добавить новые для нового contract'а.
+- Update `OWNERSHIP.md` секция «Публичный API».
+
+**Перед release** (через главного):
+- `pnpm test:e2e:cli` — smoke fixture обязательна. Тестит full prod-сценарий первого пользователя (workspace init → install → app init → dev → curl). Self-contained (запускает свой Verdaccio в `packages/cli/e2e/verdaccio-tmp/`).
+
+**Cross-package change:**
+- Не лезть в чужой пакет. Делегировать через главного, который вызовет соответствующего owner'а.
+- Если задача касается shared infra (`scripts/release-local.mjs`, root `package.json`, `nx.json`) — делает главный assistant.
+
+---
+
 ## Project
 
 `@capsuletech/source` — экспериментальный фреймворк поверх Solid.js + XState + TanStack Solid Router. Архитектура называется **HCA (Hyper-Controlled Architecture)**, философия: *"UI is a Shadow"* — интерфейс это немая проекция логики; вся власть в Controller/Feature, общение с UI идёт через Proxy и meta-теги.

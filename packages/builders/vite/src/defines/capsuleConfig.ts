@@ -43,7 +43,6 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
     'solid-js/store',
     '@capsuletech/web-ui',
     '@capsuletech/web-state',
-    '@capsuletech/shared-file-manager',
   ];
 
   const capsuleConfig = {

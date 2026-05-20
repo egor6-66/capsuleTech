@@ -24,7 +24,7 @@ export const LAYER_ICONS: Record<Layer, string> = {
 
 export const layerTemplates: Record<Layer, (Name: string) => string> = {
   pages: (Name) => `const ${Name} = Page((Ui, _Widgets) => (
-  <Ui.Layout variant="centroid" slots={{ main: <div>${Name}</div> }} />
+  <Ui.Layout slots={{ main: <div>${Name}</div> }} />
 ));
 
 export default ${Name};

@@ -1,8 +1,0 @@
-{
-  "@pages/*": ["src/pages/*"],
-  "@widgets/*": ["src/widgets/*"],
-  "@features/*": ["src/features/*"],
-  "@entities/*": ["src/entities/*"],
-  "@controllers/*": ["src/controllers/*"],
-  "@shapes/*": ["src/shapes/*"]
-}

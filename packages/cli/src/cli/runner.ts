@@ -2,6 +2,14 @@ import type { Command, CommandParam } from '../commands';
 import type { CliContext } from '../context';
 import { kit } from '../kit';
 
+/**
+ * Returns true when running in a CI environment.
+ * Checks both `CAPSULE_CI=1` (explicit capsule flag) and `CI=true`
+ * (set automatically by most CI systems — GitHub Actions, GitLab CI, etc.).
+ */
+export const isCi = (): boolean =>
+  process.env.CAPSULE_CI === '1' || process.env.CI === 'true';
+
 const askParam = async (param: CommandParam): Promise<unknown> => {
   if (!param.prompt) return undefined;
   if (param.prompt.type === 'input') {
@@ -56,11 +64,13 @@ export const runCommand = async (
   const params = await resolveParams(cmd, provided);
   if (params === null) {
     kit.log.warn('Отменено.');
+    if (isCi()) process.exit(1);
     return;
   }
   try {
     await cmd.action(ctx, params);
   } catch (err) {
     kit.log.error(err instanceof Error ? err.message : String(err));
+    process.exit(1);
   }
 };
