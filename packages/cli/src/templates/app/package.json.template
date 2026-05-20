@@ -17,6 +17,9 @@
     "@capsuletech/web-renderer": "<%= cap %>",
     "@capsuletech/web-editor": "<%= cap %>",
     "@capsuletech/shared-zod": "<%= cap %>",
-    "solid-js": "1.9.12"
+    "@tanstack/solid-router": "^1.169.0",
+    "@xstate/solid": "^2.0.0",
+    "solid-js": "1.9.12",
+    "xstate": "^5.0.0"
   }
 }
