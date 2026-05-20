@@ -173,6 +173,7 @@
   },
   "dependencies": {
     "@corvu/resizable": "^0.2.5",
+    "class-variance-authority": "^0.7.1",
     "solid-motionone": "^1.0.4"
   },
   "peerDependencies": {
@@ -183,6 +184,7 @@
   "devDependencies": {
     "@capsuletech/lib-builder": "workspace:*",
     "@capsuletech/vite-builder": "workspace:*",
+    "lucide-solid": "^1.16.0",
     "vite-plugin-solid": "^2.11.12"
   }
 }

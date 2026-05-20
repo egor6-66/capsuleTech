@@ -376,6 +376,9 @@ importers:
       solid-js:
         specifier: 1.9.12
         version: 1.9.12
+      zod:
+        specifier: ^3.23.8
+        version: 3.25.76
     devDependencies:
       '@testing-library/jest-dom':
         specifier: ^6.9.1
@@ -579,6 +582,9 @@ importers:
       '@tanstack/solid-virtual':
         specifier: ^3.13.24
         version: 3.13.24(solid-js@1.9.12)
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
       solid-js:
         specifier: 1.9.12
         version: 1.9.12
@@ -592,6 +598,9 @@ importers:
       '@capsuletech/vite-builder':
         specifier: workspace:*
         version: link:../../builders/vite
+      lucide-solid:
+        specifier: ^1.16.0
+        version: 1.16.0(solid-js@1.9.12)
       vite-plugin-solid:
         specifier: ^2.11.12
         version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
