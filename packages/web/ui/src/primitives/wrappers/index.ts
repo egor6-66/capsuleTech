@@ -3,7 +3,7 @@
  * Use `<Flex items={[...]} withHandle />` instead.
  * This re-export is kept for backwards compatibility with consumers.
  */
-import { Flex as ResizableCompat } from '../flex/flex';
+import { Flex as ResizableCompat } from '../layout/flex/flex';
 import { Animate } from './animate';
 import { Status } from './status';
 
@@ -26,7 +26,7 @@ Wrapper.Resizable = ResizableCompat;
 export type {
   FlexOrientation as ResizableOrientation,
   IFlexItem as IResizableItem,
-} from '../flex/interfaces';
+} from '../layout/flex/interfaces';
 export type { AnimateVariant, IAnimateProps } from './animate';
 /**
  * @deprecated Use `Flex` with `items` prop instead.

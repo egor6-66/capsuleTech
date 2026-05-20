@@ -1,6 +1,13 @@
+import { Flex } from './flex';
+import { Grid } from './grid';
+import { Matrix } from './matrix';
+
+export * from './flex';
+export * from './grid';
+export * from './matrix';
+
 /**
- * @deprecated Use `@capsuletech/web-ui/matrix` instead.
- * The `layout` subpath is kept for backwards compatibility and re-exports from `matrix`.
+ * Layout namespace — compound for the three layout primitives.
+ * Usage: `<Layout.Matrix slots={...} />`, `<Layout.Grid cols={3} />`, `<Layout.Flex gap={4} />`
  */
-export type * as ILayout from '../matrix/interfaces';
-export { Matrix as Layout } from '../matrix/matrix';
+export const Layout = { Grid, Flex, Matrix };

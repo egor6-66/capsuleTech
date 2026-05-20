@@ -63,11 +63,36 @@ const remapPrimitivesDtsPlugin = (outDir: string): Plugin => ({
 
 // Multi-entry: на каждый файл внутри src/primitives/*/ и src/components/*/.
 // Примитивы (atoms) и композиции (molecules) собираются в один плоский dist:
-//   src/primitives/button/index.tsx   → dist/components/button/index.mjs
-//   src/components/text-field/index.tsx → dist/components/text-field/index.mjs
+//   src/primitives/button/index.tsx        → dist/components/button/index.mjs
+//   src/primitives/layout/flex/index.ts    → dist/components/flex/index.mjs
+//   src/components/text-field/index.tsx    → dist/components/text-field/index.mjs
 // Это нужно, чтобы exports вида `@capsuletech/web-ui/card/parts` резолвились в
 // реальный dist-файл, а имя «components» в dist оставалось стабильным для
 // внешних потребителей (см. package.json#exports).
+//
+// Папки-группировщики (например primitives/layout/) прозрачны:
+// их прямые .ts/.tsx-файлы (layout/index.ts) публикуются под своим именем,
+// а вложенные примитивы (layout/flex/, layout/grid/, layout/matrix/)
+// публикуются flat — так же, как если бы лежали напрямую в primitives/.
+
+/** Добавляет записи для одного «листового» компонента (comp-dir с .ts/.tsx-файлами). */
+const addComponentEntries = (
+  entries: Record<string, string>,
+  compDir: string,
+  compName: string,
+  srcRelBase: string,
+) => {
+  for (const file of readdirSync(compDir)) {
+    if (!/\.(ts|tsx)$/.test(file)) continue;
+    if (/\.(d\.ts|test\.ts|spec\.ts|stories\.(ts|tsx))$/.test(file)) continue;
+    const stem = file.replace(/\.(ts|tsx)$/, '');
+    entries[`components/${compName}/${stem}`] = `${srcRelBase}/${file}`;
+  }
+};
+
+/** Набор имён папок, которые являются группировщиками (не листовыми компонентами). */
+const GROUP_DIRS = new Set(['layout']);
+
 const SRC_DIRS = ['primitives', 'components'] as const;
 const componentEntries: Record<string, string> = {};
 for (const srcName of SRC_DIRS) {
@@ -84,11 +109,37 @@ for (const srcName of SRC_DIRS) {
     } catch {
       continue;
     }
-    for (const file of readdirSync(compDir)) {
-      if (!/\.(ts|tsx)$/.test(file)) continue;
-      if (/\.(d\.ts|test\.ts|spec\.ts)$/.test(file)) continue;
-      const stem = file.replace(/\.(ts|tsx)$/, '');
-      componentEntries[`components/${compName}/${stem}`] = `src/${srcName}/${compName}/${file}`;
+
+    if (GROUP_DIRS.has(compName)) {
+      // Группировщик: публикуем и его собственный barrel (layout/index.ts)
+      // и каждый вложенный примитив как отдельный flat-entry.
+      addComponentEntries(
+        componentEntries,
+        compDir,
+        compName,
+        `src/${srcName}/${compName}`,
+      );
+      for (const subName of readdirSync(compDir)) {
+        const subDir = resolve(compDir, subName);
+        try {
+          if (!statSync(subDir).isDirectory()) continue;
+        } catch {
+          continue;
+        }
+        addComponentEntries(
+          componentEntries,
+          subDir,
+          subName,
+          `src/${srcName}/${compName}/${subName}`,
+        );
+      }
+    } else {
+      addComponentEntries(
+        componentEntries,
+        compDir,
+        compName,
+        `src/${srcName}/${compName}`,
+      );
     }
   }
 }
