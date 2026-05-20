@@ -96,13 +96,24 @@ log(`Группы: ${targetGroupNames.join(', ')} → пакетов: ${targetPa
 // ---------------------------------------------------------------------------
 const findCapsulePackages = (root) => {
   const found = new Map(); // pkg.name -> { dir, pkgPath, pkg }
-  const SKIP = new Set(['node_modules', 'dist', '.git', '.nx', 'tmp']);
+  // SKIP — never recurse into:
+  //   `node_modules`, `dist`, `.git`, `.nx`, `tmp`        — common build/cache artifacts
+  //   `e2e`, `fixture`, `verdaccio-tmp`, `storage`        — test infrastructure
+  // Without these Verdaccio metadata files (which have `name` but no top-level `version`)
+  // get scanned and overwrite the real package entries (e.g. `cli@undefined`).
+  const SKIP = new Set([
+    'node_modules', 'dist', '.git', '.nx', 'tmp',
+    'e2e', 'fixture', 'verdaccio-tmp', 'storage',
+  ]);
   const walk = (dir) => {
     const pkgPath = join(dir, 'package.json');
     if (existsSync(pkgPath)) {
       try {
         const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
-        if (typeof pkg.name === 'string') found.set(pkg.name, { dir, pkgPath, pkg });
+        // Validate: must have both `name` and `version` (Verdaccio metadata lacks `version`).
+        if (typeof pkg.name === 'string' && typeof pkg.version === 'string') {
+          found.set(pkg.name, { dir, pkgPath, pkg });
+        }
       } catch {}
     }
     let entries;
