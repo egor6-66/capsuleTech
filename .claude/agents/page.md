@@ -19,17 +19,16 @@ You write Page components for the Capsule HCA framework. Page — корнево
 ## Канонический шаблон
 
 ```tsx
-const <PascalName> = Page((Ui, Widgets) => (
-  <Ui.Layout variant={'<variant>'} slots={{ main: <Widgets.<Group>.<Name> /> }} />
+const <PascalName> = Page((Ui) => (
+  <Ui.Layout.<Variant> slots={{ main: <Widgets.<Group>.<Name> /> }} />
 ));
 ```
 
 Если страница — родитель для вложенных роутов:
 
 ```tsx
-const <PascalName> = Page((Ui, Widgets) => (
-  <Ui.Layout
-    variant={'<variant>'}
+const <PascalName> = Page((Ui) => (
+  <Ui.Layout.<Variant>
     slots={{
       header: <Widgets.<Group>.<HeaderName> />,
       main: <Ui.Outlet />,
@@ -42,8 +41,8 @@ const <PascalName> = Page((Ui, Widgets) => (
 ## ЖЁСТКИЕ правила
 
 1. **Никаких `import`**, кроме одного — `export default <Name>;` в конце файла обязателен (см. конвенцию ниже).
-2. **Сигнатура — 2 позиционных аргумента**: `Page((Ui, Widgets) => JSX)`. UI это `{ Layout, Outlet }` — обращение через точку (`Ui.Layout`, `Ui.Outlet`). Widgets — глобальный namespace c вложенностью по папкам (`Widgets.Forms.Auth`, `Widgets.Headers.Main`).
-3. **Никаких Entity / Controller / Feature** напрямую. Только Widget'ы.
+2. **Сигнатура — `Page((Ui, props?) => JSX)`**. `Ui` — `{ Layout, Outlet, Animate, ... }` — обращение через точку (`Ui.Layout.Matrix`, `Ui.Outlet`). `Widgets` — **глобал** через `Object.assign(globalThis, _registry)` в bootstrap, доступен прямо из factory body (вложенность по папкам: `Widgets.Forms.Auth`, `Widgets.Headers.Main`). `props` — опциональный.
+3. **Никаких View / Shape / Controller / Feature** напрямую. Только Widget'ы.
 4. **Никакой логики**. Никаких `if`, `?:`, состояний.
 5. **Один Widget в `main`** — обычно достаточно. Если страница сложная (header/footer/sidebar) — используй именованные слоты.
 6. **Имя файла** = camelCase, в namespace станет PascalCase.
@@ -52,17 +51,18 @@ const <PascalName> = Page((Ui, Widgets) => (
 ## Пример из живого кода
 
 ```tsx
-const Login = Page((Ui, Widgets) => (
-  <Ui.Layout variant={'centroid'} slots={{ main: <Widgets.Forms.Auth /> }} />
+const Login = Page((Ui) => (
+  <Ui.Layout.Matrix slots={{ main: <Widgets.Auth.Login /> }} />
 ));
 
 export default Login;
 ```
 
-## Доступные варианты `Layout`
+## Доступные варианты `Ui.Layout.*`
 
-Зависят от реализации `@capsuletech/web-ui/layout`. Стандартные:
-- `'centroid'` — центрированное содержимое в одном слоте `main` (типично для логина).
+`Ui.Layout` — namespace с под-компонентами. Реализация в `@capsuletech/web-ui/layout`. Стандартные:
+- `Ui.Layout.Matrix` — центрированный grid-контейнер (типично для логина и простых страниц).
+- `Ui.Layout.Grid` / `Ui.Layout.Flex` — низкоуровневые layout-примитивы.
 - (другие — спроси пользователя; если работаешь в этом репо — посмотри в `packages/web/ui/src/primitives/layout/`).
 
 ## Процесс

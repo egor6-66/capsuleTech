@@ -66,38 +66,70 @@ declare global {
   // потому что зависит от web-query (для value-import getApiClient).
 }
 
-type Wrapper<T extends (...args: any[]) => JSX.Element> = (component: T) => Component<any>;
 
 /**
  * View: stateless UI. Позиционные аргументы:
  * 1. UI-примитивы view-уровня (Field, Button, Input, List, Navigation).
- * 2. Shapes — реестр data-шейпов (zod-схемы + дефолты + render-prop'ы).
+ * 2. props — внешние props, переданные в компонент-обёртку (опционально).
+ *    Используется для «generic View template» паттерна: когда View рендерится
+ *    через `<Dynamic component={Template} {...tplProps} />` (например внутри
+ *    Shape `as`), item-данные (label, type, name, tags) приходят сюда.
+ *    Если factory подписана без 2-го аргумента — backward-compat гарантирован
+ *    (лишний аргумент JS просто игнорирует).
+ *
+ * Registries (Views/Shapes/Controllers/Features) доступны как глобалы через
+ * `Object.assign(globalThis, _registry)` в bootstrap. Не нужны как args.
  */
-export type IViewRenderer = (ui: ViewUi, shapes: Shapes) => JSX.Element;
-export type IViewWrapper = Wrapper<IViewRenderer>;
+export type IViewRenderer<P extends Record<string, any> = Record<string, any>> = (
+  ui: ViewUi,
+  props: P,
+) => JSX.Element;
+
+/**
+ * IViewWrapper: `View(factory)` → `Component<P>`.
+ *
+ * Generic над `P` позволяет типизировать props на call site:
+ *   `const Field = View<FieldTplProps>((ui, props) => ...)`
+ * Без generic — `P` инферируется как `Record<string, any>`, что backward-совместимо
+ * с существующими factory'ями `(ui) => JSX` (лишний arg JS игнорирует).
+ * Constraint `P extends Record<string, any>` нужен чтобы соответствовать
+ * `Component<P>` от Solid.
+ */
+export type IViewWrapper = <P extends Record<string, any> = Record<string, any>>(
+  component: IViewRenderer<P>,
+) => Component<P>;
 
 /**
  * Widget: композиция всего что ниже. Позиционные аргументы:
- * 1. UI-примитивы widget-уровня
- * 2. Features
- * 3. Controllers
- * 4. Views
+ * 1. UI-примитивы widget-уровня.
+ * 2. props — внешние props (опционально).
+ *
+ * Registries (Views/Features/Controllers) доступны как глобалы через
+ * `Object.assign(globalThis, _registry)` в bootstrap. Не нужны как args.
  */
-export type IWidgetRenderer = (
+export type IWidgetRenderer<P extends Record<string, any> = Record<string, any>> = (
   ui: WidgetUi,
-  features: Features,
-  controllers: Controllers,
-  views: Views,
+  props: P,
 ) => JSX.Element;
-export type IWidgetWrapper = Wrapper<IWidgetRenderer>;
+export type IWidgetWrapper = <P extends Record<string, any> = Record<string, any>>(
+  component: IWidgetRenderer<P>,
+) => Component<P>;
 
 /**
- * Page: композиция widget'ов через layout. Позиционные аргументы:
- * 1. UI page-уровня (Layout, Outlet)
- * 2. Widgets
+ * Page: корневой layout. Позиционные аргументы:
+ * 1. UI page-уровня (Layout, Outlet).
+ * 2. props — внешние props (опционально).
+ *
+ * Registries (Widgets) доступны как глобалы через
+ * `Object.assign(globalThis, _registry)` в bootstrap. Не нужны как args.
  */
-export type IPageRenderer = (ui: PageUi, widgets: Widgets) => JSX.Element;
-export type IPageWrapper = Wrapper<IPageRenderer>;
+export type IPageRenderer<P extends Record<string, any> = Record<string, any>> = (
+  ui: PageUi,
+  props: P,
+) => JSX.Element;
+export type IPageWrapper = <P extends Record<string, any> = Record<string, any>>(
+  component: IPageRenderer<P>,
+) => Component<P>;
 
 // -----------------------------------------------------------------------------
 // Logic-вкус: FSM-schema + handler-API для Controller/Feature.

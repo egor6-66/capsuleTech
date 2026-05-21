@@ -30,7 +30,7 @@ You write View components for the Capsule HCA framework. Your output is **one .t
 
 ```tsx
 // Простой случай (Shape не нужен — статичная разметка)
-const <PascalName> = View((Ui, Shapes) => (
+const <PascalName> = View((Ui) => (
   <Ui.Field>
     <Ui.Field.Label>...</Ui.Field.Label>
     <Ui.Field.Content>
@@ -40,11 +40,21 @@ const <PascalName> = View((Ui, Shapes) => (
   </Ui.Field>
 ));
 
-// С повторяющимися данными — берём Shape напрямую (не нужна View-обёртка)
+// С повторяющимися данными — берём Shape напрямую через ГЛОБАЛ
 <Shapes.<Group>.<Name> />
+
+// Generic-template View (получает props снаружи — для Shape `as`-pattern)
+const <PascalName> = View<{ label?: string; type?: string }>((Ui, props) => (
+  <Ui.Field>
+    <Ui.Field.Label>{props.label}</Ui.Field.Label>
+    <Ui.Input type={props.type} meta={{ tags: ['@inputs'] }} />
+  </Ui.Field>
+));
 ```
 
-**Сигнатура**: `View((Ui, Shapes) => JSX)` — два позиционных аргумента. `Ui` — UI-примитивы view-уровня (доступ через точку), `Shapes` — реестр data-shape'ов (см. `shape` agent). Можно также destructure первый аргумент: `View(({Field, Button}, Shapes) => ...)`.
+**Сигнатура**: `View((Ui, props?) => JSX)` — один основной аргумент `Ui` + опциональный `props` для generic-template сценария (Shape `as`). Можно destructure: `View(({ Field, Button }) => ...)`.
+
+**Registries — глобалы**: `Views`, `Shapes`, `Widgets`, `Controllers`, `Features` доступны прямо из factory body без объявления в args. Они зарегистрированы один раз в bootstrap через `Object.assign(globalThis, _registry)`.
 
 ## Доступный UI-kit (первый аргумент View)
 
@@ -57,9 +67,9 @@ const <PascalName> = View((Ui, Shapes) => (
 | `Ui.Navigation` | `.List`, `.Item` |
 | `Ui.Animate` | — |
 
-## Shapes (второй аргумент View)
+## Shapes (глобал, не аргумент)
 
-`Shapes.<Group>.<Name>` — polymorphic компонент, который сам рендерит свои item'ы через template, переданный в `as`. Используется когда в JSX нужна итерация по однотипным данным (nav-items, table-rows, form-fields).
+`Shapes.<Group>.<Name>` — polymorphic компонент, который сам рендерит свои item'ы через template, переданный в `as`. Используется когда в JSX нужна итерация по однотипным данным (nav-items, table-rows, form-fields). Доступен прямо из factory body как глобал.
 
 ```tsx
 // Default — Shape сам знает template (из своего `definition.as`)
@@ -106,6 +116,25 @@ const LoginForm = View((Ui) => (
 
 export default LoginForm;
 ```
+
+## Generic-template View (для Shape `as`-pattern)
+
+Когда View нужно отрендерить через Shape (`as: Views.Forms.Field`), template-данные item'а приходят как `props`:
+
+```tsx
+const Field = View<{ label?: string; type?: string; name?: string; tags?: string[] }>((Ui, props) => (
+  <Ui.Field>
+    <Ui.Field.Label>{props.label}</Ui.Field.Label>
+    <Ui.Field.Content>
+      <Ui.Input type={props.type} meta={{ tags: props.tags ?? ['@inputs'], name: props.name }} />
+    </Ui.Field.Content>
+  </Ui.Field>
+));
+
+export default Field;
+```
+
+Shape `props: (item) => item` → данные item'а из defaults попадают как props в этот View. UiProxy event-binding работает прозрачно (View рендерится в Controller-контексте).
 
 **`export default <Name>` обязателен** — HMRWrappingPlugin его понимает, TS получает корректную типизацию для slot-кодгена.
 

@@ -11,6 +11,8 @@ last-updated: 2026-05-21
 Корневой пакет HCA-фреймворка: шесть wrapper-функций (View/Widget/Page/Controller/Feature/Shape), Proxy-механика (UiProxy + ControllerProxy), провайдеры (BaseProviders), DOM-bootstrap (createRoot) и реестр UI-примитивов (ui-kit/imports).
 
 > **BREAKING (v0.2.0):** `Entity` → `View`, `EntityUi` → `ViewUi`, `IEntityWrapper` → `IViewWrapper`, `IEntityRenderer` → `IViewRenderer`, `IWidgetRenderer` 4-й arg `entities` → `views`, global registry `Entities` (placeholder для domain layer) + новый `Views`. ShapeUiContext поднят в Widget/Page — Shape первоклассный leaf. `Layout` добавлен в `WidgetUi`. Consumer updates требуют отдельных PR (owner-builders, owner-cli, architect для docs).
+>
+> **BREAKING (v0.3.0):** Wrapper signatures упрощены до **`(Ui, props?)`**. Убраны positional registry-args: `View((Ui, Shapes) => ...)` → `View((Ui, props?) => ...)`; `Widget((Ui, Features, Controllers, Views) => ...)` → `Widget((Ui, props?) => ...)`; `Page((Ui, Widgets) => ...)` → `Page((Ui, props?) => ...)`. `Views`/`Widgets`/`Shapes`/`Controllers`/`Features` — глобалы через `Object.assign(globalThis, _registry)` в bootstrap. `ShapeUiContext` revert — несёт только `Ui` (без Views-merge): для template из View использовать `as: Views.X.Y` напрямую (global). Generic `<P>` на rendererах для типизации props (Shape `as`-pattern).
 
 ## Зона ответственности
 
@@ -116,6 +118,7 @@ import { BaseProviders } from '@capsuletech/web-core/providers';
 - [x] **Entity → View rename** — `View` = UI JSX-leaf, `Entity` зарезервирован под domain data layer (2026-05-21).
 - [x] **ShapeUiContext поднят в Widget/Page** — Shape первоклассный leaf из любого слоя (2026-05-21).
 - [x] **Layout добавлен в WidgetUi** — `Ui.Layout.Matrix` доступен в Widget (2026-05-21).
+- [x] **Wrapper signatures упрощены до `(Ui, props?)`** — registry-args убраны, `Views`/`Widgets`/`Shapes`/`Controllers`/`Features` — глобалы. `ShapeUiContext` revert (несёт только Ui, без Views-merge). Generic `<P>` для типизации props в Shape `as`-pattern (2026-05-21).
 
 ## Test coverage
 
@@ -126,6 +129,7 @@ import { BaseProviders } from '@capsuletech/web-core/providers';
 | Unit | `src/engine/__tests__/derivation.test.ts` | `deriveName`, `deriveInputType`, `TAG_TO_INPUT_TYPE` |
 | Unit | `src/engine/__tests__/getTargetData.test.ts` | `getTargetData` edge cases |
 | Unit | `src/wrappers/shape/__tests__/ui-tracker.test.ts` | Shape ui-tracker регрессии |
+| Unit (jsdom) | `src/wrappers/__tests__/view-props.test.tsx` | View `(Ui, props)` signature, generic `<P>`, Shape `as` Dynamic-pattern, reactivity |
 | E2E (косвенно) | capsule-test smoke fixture | bootstrap + routing + Controller round-trip |
 
 **Перед изменением engine:** unit-tests должны быть green (`pnpm --filter @capsuletech/web-core test`).
