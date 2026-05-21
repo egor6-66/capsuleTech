@@ -78,6 +78,10 @@ const wrapEndpoint = (
 ) => {
   const pipeline = compose<ApiContext>([
     builtinMw.validateInput(),
+    // preRequest — typed-сахар между validateInput (input уже zod-parsed)
+    // и buildRequest (URL ещё не собран). resolve(data) короткозамыкает
+    // pipeline (buildRequest/httpTransport/validateResponse/mapDomain skip).
+    builtinMw.preRequestHook(),
     builtinMw.buildRequest(),
     ...globalMw,
     builtinMw.httpTransport(),

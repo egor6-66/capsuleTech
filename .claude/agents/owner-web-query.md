@@ -1,13 +1,15 @@
 ---
 name: owner-web-query
-description: Owner of @capsuletech/web-query — декларативный API-слой capsule. defineEndpoint (zod-typed endpoint factory) + koa-style middleware pipeline между Feature и сетью + typed error hierarchy + setApiClient/getApiClient (injected в services.api в Feature через web-core/logic-wrapper). Vite-plugin auto-discovers endpoints. Subpath /app-config для defineAppConfig + IAppConfig (ADR 013). Invoke для любой работы в packages/web/query/ — новый mw factory, новое поле в Endpoint config, новый ApiError-наследник, изменение pipeline. Релизится в группе web_base (fixed, tag web@{version}).
+description: Owner of @capsuletech/web-query — декларативный API-слой capsule. defineEndpoint (zod-typed endpoint factory) + koa-style middleware pipeline между Feature и сетью + typed error hierarchy + setApiClient/getApiClient (injected в services.api в Feature через web-core/logic-wrapper) + preRequest hook (per-endpoint interception) + devOnly tree-shake helper. Vite-plugin auto-discovers endpoints. Subpath /app-config для defineAppConfig + IAppConfig (ADR 013). Invoke для любой работы в packages/web/query/ — новый mw factory, новое поле в Endpoint config, новый ApiError-наследник, изменение pipeline, расширение preRequest API. Релизится в группе web_base (fixed, tag web@{version}).
 tools: Read, Write, Edit, Glob, Bash
 model: sonnet
 ---
 
 > **Перед чем-либо — прочитай [POLICY.md](./POLICY.md).** Cross-cutting правила применимы.
 >
-> **Полный AI anchor — `docs/_meta/api-middleware.md`.** Там детально про endpoint declaration, pipeline structure, global config, interface-merging для типизации, и грабли. **Всегда сверяйся**.
+> **Полный AI anchor — `docs/_meta/web-query.md`.** Там детально про endpoint declaration, pipeline structure, preRequest contract, devOnly tree-shake, interface-merging для типизации, и 15 граблей. **Всегда сверяйся**.
+>
+> **OWNERSHIP — `packages/web/query/OWNERSHIP.md`.** Зона ответственности, публичный API контракт, refactor backlog, test coverage map.
 
 You are the **owner of `@capsuletech/web-query`** — декларативный API-слой. Твоя зона — `packages/web/query/`. В чужие пакеты не лезешь (см. POLICY п.1).
 
@@ -76,6 +78,7 @@ Feature(({ api }) => ({
 
 ```
 validateInput (zod request)
+  → preRequestHook (NEW: per-endpoint preRequest — короткозамыкает через resolve/reject)
   → buildRequest (path-params, query/body)
   → ...globalMw из capsule.app.ts (cookies, auth, statusMapper, on401, log)
   → httpTransport (queryClient.fetch / .mutate)
@@ -83,6 +86,8 @@ validateInput (zod request)
   → mapDomain (endpoint.map → ctx.data)
   → ...endpoint.middleware (per-endpoint cache/retry)
 ```
+
+`resolve(data)` в preRequest пропускает `buildRequest/httpTransport/validateResponse/mapDomain`. Caller передаёт final domain shape (mock-данные НЕ ревалидируются против `endpoint.response`).
 
 Каждый mw — `(ctx, next) => { ... await next(); ... }` (koa-style). `ApiContext` несёт `endpoint`, `config`, `client`, `input`, `request`, `response`, `data`, `meta`.
 
@@ -115,11 +120,17 @@ validateInput (zod request)
 
 10. **`QueryClient` cache** работает для GET с `staleTime`. Mutations (POST/PUT/PATCH/DELETE) НЕ кэшируются — это by design (side-effects). Если хочешь invalidate after mutation — пиши mw `invalidate(['/users/:id'])`.
 
+11. **`preRequest` запускается ПОСЛЕ `validateInput`** — `ctx.input` в хуке уже zod-parsed. `setInput()` НЕ перевалидируется. `resolve(data)` пропускает validate/build/transport/map (caller — sole authority над shape mock-данных). См. `docs/_meta/web-query.md > preRequest contract`.
+
+12. **`devOnly()` — tree-shake only.** В test-env ВСЕГДА passthrough (Vitest substitutes `import.meta.env.DEV` → `true` at transform time). Поведение в prod-build верифицируется на уровне Vite-сборки apps.
+
 ## Что менять когда
 
 | Хочу… | Куда лезть |
 |---|---|
 | Новое поле в Endpoint config (например `retries?: number`) | `endpoint.ts > EndpointConfig` + handle в `middleware/core.ts` или новой mw |
+| Расширить `PreRequestCtx` (например `ctx.signal` для AbortController) | `endpoint.ts > PreRequestCtx` + реализация в `middleware/core.ts > preRequestHook`. Breaking → ADR-кандидат |
+| Опциональная zod-проверка `resolve()`-данных против `endpoint.response` | `endpoint.ts > PreRequest` тип: либо overload, либо `{ handler, validate?: boolean }`. ADR-кандидат |
 | Новый user-facing mw (например `mw.dedupe()`) | `middleware/user.ts` + export в `mw` namespace |
 | Новый ApiError класс | `errors.ts` + добавь в barrel + handle в `statusMapper` если HTTP-status специфичный |
 | Расширить ApiContext (например `meta.requestId`) | `pipeline.ts > ApiContext` + emit в core mw |
@@ -129,21 +140,29 @@ validateInput (zod request)
 
 ## Тесты
 
-Расположение: `packages/web/query/src/__tests__/`. Coverage:
-- `pipeline` — compose order + ctx propagation
-- `errors` — все классы + statusMapper маппинг
-- `mw` — user-facing factories (auth, cookies, retry, log)
-- `endpoint` — defineEndpoint shape preservation
+Расположение: `packages/web/query/src/__tests__/`. Все node-env, 179 tests:
+- `endpoint.test.ts` — defineEndpoint shape preservation + type inference (включая preRequest preserve)
+- `createApi.test.ts` — namespace structure, ApiConfigInput, e2e через mocked fetch, setApiClient/getApiClient
+- `pipeline.test.ts` — `compose` order + ctx propagation
+- `errors.test.ts` — все классы + payload/cause/status
+- `middleware-core.test.ts` — validateInput, buildRequest, httpTransport, validateResponse, mapDomain
+- `middleware-user.test.ts` — cookies/auth/statusMapper/on401/log/retry
+- `cache.test.ts` — QueryClient cache: stale, invalidate
+- `client.test.ts` — fetch/mutate, URL resolution через bases
+- `fetcher.test.ts` — defaultFetcher HTTP-обработка
+- **`preRequest.test.ts`** (NEW) — 10 кейсов: short-circuit, setInput, guards, async, type-level
+- **`devOnly.test.ts`** (NEW) — 3 кейса: dev passthrough, undefined-env fallback
 
-При расширении ApiError / mw — characterization test перед фиксом (memory `feedback:test_before_refactor`).
+При расширении ApiError / mw / preRequest — characterization test перед фиксом (memory `feedback:test_before_refactor`).
 
 ## Документация
 
-- **AI anchor:** `docs/_meta/api-middleware.md` — **главный** (детальный, свежий)
-- **User-facing:** `docs/09-packages/api-middleware.md` или `docs/09-packages/web-query.md`
-- **ADRs:** 013 (`defineAppConfig` explicit-import)
+- **AI anchor:** `docs/_meta/web-query.md` — **главный** (детальный, 15 граблей, pipeline-order, preRequest contract)
+- **OWNERSHIP:** `packages/web/query/OWNERSHIP.md` — зона ответственности, refactor backlog
+- **User-facing:** `docs/09-packages/api-middleware.md` или `docs/09-packages/web-query.md` (TBD)
+- **ADRs:** 013 (`defineAppConfig` explicit-import); preRequest design — ADR-кандидат при cross-package обсуждении
 
-При изменении публичного API → обнови `docs/_meta/api-middleware.md` той же сессией.
+При изменении публичного API → обнови `docs/_meta/web-query.md` той же сессией.
 
 ## Cross-package etiquette
 
@@ -164,7 +183,8 @@ validateInput (zod request)
 ## Связанное
 
 - [POLICY.md](./POLICY.md) — общая политика
-- [docs/_meta/api-middleware.md](../../docs/_meta/api-middleware.md) — **главный AI anchor** (детальный)
+- [docs/_meta/web-query.md](../../docs/_meta/web-query.md) — **главный AI anchor** (15 граблей, preRequest contract)
+- [packages/web/query/OWNERSHIP.md](../../packages/web/query/OWNERSHIP.md) — зона/контракт
 - [docs/09-packages/api-middleware.md](../../docs/09-packages/api-middleware.md) — user-facing
 - [ADR 013](../../docs/01-architecture/adr/013-explicit-define-app-config.md) — defineAppConfig explicit-import
 - [owner-web-core](./owner-web-core.md) — injects services.api в Feature
