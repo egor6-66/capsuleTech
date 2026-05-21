@@ -12,12 +12,13 @@ export default defineConfig({
     // не страдают — jsdom-globals им просто не мешают.
     environment: 'jsdom',
     globals: false,
-    // @tanstack/solid-router отдаёт .jsx файлы в dev-conditions: без inline
+    // @tanstack/solid-router и @solidjs/meta отдают .jsx файлы в dev-conditions:
     // node natively не понимает .jsx и падает на резолве `Link` через
-    // ui-kit/imports.tsx → @tanstack/solid-router/dist/source/index.dev.jsx.
+    // ui-kit/imports.tsx → @tanstack/solid-router/dist/source/index.dev.jsx
+    // и на резолве web-ui (transitively use @solidjs/meta).
     server: {
       deps: {
-        inline: [/@tanstack\/solid-router/],
+        inline: [/@tanstack\/solid-router/, /@solidjs\/meta/],
       },
     },
   },

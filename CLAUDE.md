@@ -152,21 +152,34 @@ backend/
 
 | Слой | Папка | Что это | Wrapper |
 |---|---|---|---|
-| **View** | `views/` | Stateless UI в виде JSX. Только Solid JSX + `data-meta`. Не знает про XState, API, router. | `View(({ Field, Button, ... }, Shapes) => JSX)` |
+| **View** | `views/` | Stateless UI в виде JSX. Только Solid JSX + `data-meta`. Не знает про XState, API, router. | `View((Ui, props?) => JSX)` |
 | **Shape** | `shapes/` | Stateless UI в виде schema+mapper (zod + item→template). Равноправный leaf с View, для repeating data. | `Shape((z, ui) => ({ schema, defaults?, as?, props? }))` |
 | **Controller** | `controllers/` | Поведение на FSM-схеме. Через Proxy перехватывает `onClick`/`onInput` у потомков. | `Controller((services) => ({ initial, states }))` |
 | **Feature** | `features/` | Domain logic / side effects. Только тут разрешены API. | `Feature((services) => ({ initial, states }))` |
-| **Widget** | `widgets/` | Композиция View / Shape + Controller / Feature. Единственное место, где можно «склеивать». | `Widget(({ Card, Layout, ... }, features, controllers, views) => JSX)` |
-| **Page** | `pages/` | Корневой layout, оборачивает Widget. | `Page(({ Layout, Outlet }, widgets) => JSX)` |
+| **Widget** | `widgets/` | Композиция View / Shape + Controller / Feature. Единственное место, где можно «склеивать». | `Widget((Ui, props?) => JSX)` |
+| **Page** | `pages/` | Корневой layout, оборачивает Widget. | `Page((Ui, props?) => JSX)` |
 
 > **Note**: имя `Entity` зарезервировано под **будущий domain data layer** (User, Product — zod schema + meta, без UI). UI JSX-leaf теперь называется **View** (PR #109).
 
 Имена `Page`, `Widget`, `View`, `Shape`, `Controller`, `Feature` — **глобальные**, инжектятся через `unplugin-auto-import`. В коде их **не импортируют**.
 
-Слоты других слоёв приходят **позиционными аргументами** в wrapper-функцию (см. `packages/web/core/src/wrappers/interfaces.ts`):
-- `Widget((ui, features, controllers, views) => JSX)` — **nested namespace по структуре папок**: `widgets/forms/auth.tsx` → `Widgets.Forms.Auth`, `views/viewer/loginForm.tsx` → `Views.Viewer.LoginForm`, `views/auth/loginForm.tsx` → `Views.Auth.LoginForm`. Папка = namespace-уровень, имя файла = leaf. **Не** flat (`Views.AuthLoginForm` — неправильно). Корневые файлы без папки: `views/hello.tsx` → `Views.Hello`.
-- `Page((ui, widgets) => JSX)`
-- `View((ui, shapes) => JSX)`, `Shape((z, ui) => ({...}))`, `Controller(() => schema)`, `Feature((api) => schema)`
+### Что приходит param vs global (semantic rule)
+
+- **`Ui`** (UI-kit примитивы) — приходит **первым параметром** wrapper'а. Wrapper готовит per-instance проксированную копию через `UiProxy` под текущий `ControllerContext` (event-binding, meta-registration). Stable ref у одного instance, но разные у разных instance'ов.
+- **`Views` / `Widgets` / `Shapes` / `Controllers` / `Features`** — **глобалы** через `Object.assign(globalThis, _registry)` в bootstrap. Один stable ref на всё приложение. Доступны прямо из factory body без объявления в args.
+- **`services`** (Controller/Feature) — приходит параметром, per-instance (api/store/state).
+- **`props`** — опциональный второй аргумент в View/Widget/Page. Используется для template-pattern (Shape `as` через `<Dynamic component={Tpl} {...props} />`).
+
+`Compliance` (AST-линтер) ловит upward/horizontal импорты — слой защищён независимо от того, откуда берётся ref. См. ADR 004.
+
+Структура namespace: **nested по структуре папок**. `widgets/forms/auth.tsx` → `Widgets.Forms.Auth`, `views/viewer/loginForm.tsx` → `Views.Viewer.LoginForm`. Папка = namespace-уровень, имя файла = leaf. **Не** flat (`Views.AuthLoginForm` — неправильно). Корневые файлы без папки: `views/hello.tsx` → `Views.Hello`.
+
+Полные сигнатуры (см. `packages/web/core/src/wrappers/interfaces.ts`):
+- `View((Ui, props?) => JSX)` — `Shapes`/`Views` доступны как глобалы.
+- `Widget((Ui, props?) => JSX)` — `Views`/`Shapes`/`Controllers`/`Features` доступны как глобалы.
+- `Page((Ui, props?) => JSX)` — `Widgets` доступны как глобал.
+- `Shape((z, ui) => ({ schema, defaults?, as?, props? }))` — `Views` доступны как глобал (используй `as: Views.X.Y`).
+- `Controller((services) => schema)`, `Feature((services) => schema)`.
 
 Типы слотов живут в `CapsuleSlots` (`.capsule/@types/slots.d.ts`, генерится `ExportGeneratorPlugin`'ом). Каждое property типизировано как `typeof import('@<layer>/...').default` — Ctrl+Click ведёт в источник.
 

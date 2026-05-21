@@ -1,5 +1,4 @@
 import { useCtx } from '../engine/ctx';
-import { getGlobalRegistry } from '../engine/registry';
 import { UiProxy } from '../engine/ui-proxy';
 import { Ui as BaseUi } from '../ui-kit';
 import type { IViewWrapper } from './interfaces';
@@ -22,13 +21,9 @@ export const ViewWrapper: IViewWrapper = (Component) => {
     }
 
     const Ui = ctx ? UiProxy(BaseUi, ctx, wrapperProps) : BaseUi;
-    // ShapeUiContext.Provider даёт Shape'ам доступ к проксированному Ui +
-    // Views registry. Combined namespace: { ...Ui, Views } позволяет Shape'у
-    // ссылаться как на Ui-примитивы (`ui.Field`), так и на Views (`ui.Views.Forms.Field`).
-    const shapeUiNs = { ...(Ui as object), Views: getGlobalRegistry('Views') } as any;
     return (
-      <ShapeUiContext.Provider value={shapeUiNs}>
-        {Component(Ui as any, getGlobalRegistry('Shapes'))}
+      <ShapeUiContext.Provider value={Ui as any}>
+        {Component(Ui as any, wrapperProps)}
       </ShapeUiContext.Provider>
     );
   };
