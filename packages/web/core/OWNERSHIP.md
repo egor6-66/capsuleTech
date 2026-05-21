@@ -81,6 +81,8 @@ import { BaseProviders } from '@capsuletech/web-core/providers';
 
 ## Quirks / gotchas
 
+- **`IUiMetaProps` живёт в web-core, не в web-ui.** `meta`, `payload`, `dynamicMeta`, `modifiers` — props UiProxy-layer (перехватываются в `wrapComponent`, в реальный DOM не попадают). web-ui — чистый DOM/style primitive, HCA-aware props там неуместны. `WithMetaProps<T>` — mapped type в `wrappers/interfaces.ts`, применяется к `ViewUiRaw` / `WidgetUiRaw` / `PageUiRaw` → `ViewUi` / `WidgetUi` / `PageUi`. Источник: `src/wrappers/interfaces.ts:94–100`.
+
 - **`createRoot` ≠ Solid `createRoot`.** Наш — render-фабрика (`render(Bootstrap, container)` + `data-theme` inject). Solid'ская — для реактивного scope без рендера. Часто путают. Источник: `src/create/createRoot.ts`.
 
 - **CSS удалён из пакета.** `createRoot` больше не делает `import './styles.css'`. Приложение само импортирует `.capsule/styles.css` (генерится `ScaffoldPlugin` из builders). Если CSS не применяется — смотри `bootstrap.tsx.template` в vite-builder scaffold.
@@ -119,6 +121,7 @@ import { BaseProviders } from '@capsuletech/web-core/providers';
 - [x] **ShapeUiContext поднят в Widget/Page** — Shape первоклассный leaf из любого слоя (2026-05-21).
 - [x] **Layout добавлен в WidgetUi** — `Ui.Layout.Matrix` доступен в Widget (2026-05-21).
 - [x] **Wrapper signatures упрощены до `(Ui, props?)`** — registry-args убраны, `Views`/`Widgets`/`Shapes`/`Controllers`/`Features` — глобалы. `ShapeUiContext` revert (несёт только Ui, без Views-merge). Generic `<P>` для типизации props в Shape `as`-pattern (2026-05-21).
+- [x] **`IUiMetaProps` + `WithMetaProps<T>` добавлены** — `meta`/`payload`/`dynamicMeta`/`modifiers` теперь типизированы на уровне `ViewUi`/`WidgetUi`/`PageUi`. TS2322 на `<Ui.Input meta={...} />` устранён. Источник: `src/wrappers/interfaces.ts`. Тест: `src/wrappers/__tests__/ui-meta-props.test.tsx` (2026-05-21).
 
 ## Test coverage
 
@@ -130,6 +133,7 @@ import { BaseProviders } from '@capsuletech/web-core/providers';
 | Unit | `src/engine/__tests__/getTargetData.test.ts` | `getTargetData` edge cases |
 | Unit | `src/wrappers/shape/__tests__/ui-tracker.test.ts` | Shape ui-tracker регрессии |
 | Unit (jsdom) | `src/wrappers/__tests__/view-props.test.tsx` | View `(Ui, props)` signature, generic `<P>`, Shape `as` Dynamic-pattern, reactivity |
+| Unit (types+jsdom) | `src/wrappers/__tests__/ui-meta-props.test.tsx` | `IUiMetaProps` shape, `WithMetaProps` application to ViewUi/WidgetUi, runtime no-crash |
 | E2E (косвенно) | capsule-test smoke fixture | bootstrap + routing + Controller round-trip |
 
 **Перед изменением engine:** unit-tests должны быть green (`pnpm --filter @capsuletech/web-core test`).

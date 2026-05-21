@@ -52,6 +52,7 @@ import {
   type IServices, type IWrapperProps,
   type INext, type IStateApi,
   type IViewWrapper, type IViewRenderer,
+  type IUiMetaProps, type ITagMeta,                  // UiProxy meta-props для Ui-компонентов
 } from '@capsuletech/web-core';
 
 import { createRoot } from '@capsuletech/web-core/create';
@@ -142,6 +143,8 @@ Policy **C — own meta opt-in**: побочные эффекты (registration,
 8. **`next(payload)` — прямой вызов**, не XState event. `parent.controller[name]` через `await`. Не переписывай на event-bus без ADR (см. ADR 008 — гибридная FSM-схема).
 
 9. **`engine/*` — НЕ public.** `index.ts` не экспортирует ничего из `engine/`. Если что-то из engine нужно во внешнем коде — симптом, документируй причину перед public-экспортом.
+
+16. **`IUiMetaProps` (`meta`/`payload`/`dynamicMeta`/`modifiers`) — UiProxy-layer, не web-ui.** `<Ui.Input meta={{tags:['email']}} />` типизируется через `WithMetaProps<ViewUiRaw>` в `wrappers/interfaces.ts`. UiProxy перехватывает эти props в `wrapComponent` и не прокидывает их в реальный DOM-компонент. web-ui компоненты их не знают — типы расширяются здесь (web-core), не там. Источник: `src/wrappers/interfaces.ts:49–100`.
 
 10. **8 workspace deps.** `web-core` зависит от `web-profiler`, `web-router`, `web-state`, `web-ui`, `web-query`, `shared-zod`, `vite-builder`, `web-style`. При изменении контрактов в любом из них — координируй с owner'ом.
 

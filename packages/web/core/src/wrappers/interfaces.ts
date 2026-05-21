@@ -22,10 +22,88 @@ import type {
 import type { Component, JSX, JSXElement } from 'solid-js';
 
 // -----------------------------------------------------------------------------
+// UiProxy meta-props: дополнительные props, которые UiProxy перехватывает
+// и НЕ прокидывает в реальный web-ui компонент. Добавляются к каждому
+// компоненту в Ui-namespace на уровне типов — так TS принимает
+// `<Ui.Input meta={{tags: ['email']}} />` без TS2322.
+//
+// Why here (web-core) а не в web-ui:
+//   web-ui не знает ничего про UiProxy/meta-registration. Эти props существуют
+//   только в HCA-контексте, когда View рендерится внутри Controller-tree.
+//   web-ui компоненты — чистые DOM/style primitives, не HCA-aware.
+// -----------------------------------------------------------------------------
+
+/** Meta-теги для идентификации элемента в Controller store. */
+export interface ITagMeta {
+  tags?: string[];
+  [k: string]: any;
+}
+
+/**
+ * Дополнительные props, принимаемые UiProxy-обёрткой для каждого Ui-компонента.
+ * Runtime: UiProxy их перехватывает через `splitProps` / читает напрямую —
+ * в итоговый web-ui компонент они НЕ попадают (DOM их не увидит).
+ *
+ * @see engine/ui-proxy.tsx — `wrapComponent`, политика C (own meta opt-in).
+ */
+export interface IUiMetaProps {
+  /**
+   * Идентификация элемента (теги-роли). Активирует opt-in регистрацию
+   * в Controller store + event-binding для 6 событий.
+   * Без `meta` — сквозной рендер без побочных эффектов.
+   */
+  meta?: ITagMeta;
+  /**
+   * Immutable JSX-declared payload от автора View:
+   * `<Ui.Nav meta={{tags:['nav']}} payload={{href:'/home'}}>` → `target.payload.href`.
+   * Не меняется при bubble через `next()` — каждый уровень цепочки видит
+   * один и тот же payload, заданный в JSX. Для трансформации между уровнями
+   * используй `next.with(arg)` → `target.from`.
+   */
+  payload?: unknown;
+  /**
+   * Дополнительный meta из outer View-prop (Widget/Shape передаёт contextual
+   * теги). Не активирует регистрацию — только дополняет target при dispatch'е.
+   */
+  dynamicMeta?: ITagMeta;
+  /**
+   * Keyboard modifiers для `onKeyDown`. Заполняется UiProxy автоматически из
+   * KeyboardEvent; при явном указании — переопределяет.
+   */
+  modifiers?: {
+    ctrl?: boolean;
+    shift?: boolean;
+    alt?: boolean;
+    meta?: boolean;
+  };
+}
+
+/**
+ * Применяет `IUiMetaProps` к каждому компоненту в Ui-namespace рекурсивно.
+ *
+ * Правила маппинга:
+ *  - Callable `(props: P) => R` → `(props: P & IUiMetaProps) => R`
+ *  - Plain object (Layout namespace `{ Grid, Flex, Matrix }`) → рекурсивный
+ *    `WithMetaProps<T[K]>`
+ *  - Всё остальное (Outlet, примитивы) → без изменений
+ *
+ * Этот тип **намеренно не экспортируется** как публичный API — он используется
+ * только для типизации аргументов `IViewRenderer`/`IWidgetRenderer`/`IPageRenderer`.
+ * Пользователь видит расширенные типы только через autocomplete на `Ui.*`.
+ */
+type WithMetaProps<T> = {
+  [K in keyof T]: T[K] extends (props: infer P) => infer R
+    ? (props: P & IUiMetaProps) => R
+    : T[K] extends object
+      ? WithMetaProps<T[K]>
+      : T[K];
+};
+
+// -----------------------------------------------------------------------------
 // UI-вкус: что приходит wrapper'ам в первый позиционный аргумент.
 // -----------------------------------------------------------------------------
 
-type ViewUi = {
+type ViewUiRaw = {
   Field: typeof Field;
   Button: typeof Button;
   Input: typeof Input;
@@ -36,8 +114,15 @@ type ViewUi = {
 
 type Outlet = () => JSXElement;
 
-type WidgetUi = { Card: typeof Card; Outlet: Outlet; Animate: typeof Animate; Layout: typeof Layout };
-type PageUi = { Layout: typeof Layout; Outlet: Outlet; Animate: typeof Animate };
+type WidgetUiRaw = { Card: typeof Card; Outlet: Outlet; Animate: typeof Animate; Layout: typeof Layout };
+type PageUiRaw = { Layout: typeof Layout; Outlet: Outlet; Animate: typeof Animate };
+
+/** Ui namespace доступный внутри View factory — все компоненты принимают IUiMetaProps. */
+export type ViewUi = WithMetaProps<ViewUiRaw>;
+/** Ui namespace доступный внутри Widget factory — все компоненты принимают IUiMetaProps. */
+export type WidgetUi = WithMetaProps<WidgetUiRaw>;
+/** Ui namespace доступный внутри Page factory — все компоненты принимают IUiMetaProps. */
+export type PageUi = WithMetaProps<PageUiRaw>;
 
 /**
  * Глобальные slot-реестры. Заполняются codegen'ом в
@@ -134,11 +219,6 @@ export type IPageWrapper = <P extends Record<string, any> = Record<string, any>>
 // -----------------------------------------------------------------------------
 // Logic-вкус: FSM-schema + handler-API для Controller/Feature.
 // -----------------------------------------------------------------------------
-
-export interface ITagMeta {
-  tags?: string[];
-  [k: string]: any;
-}
 
 export interface ITarget {
   name?: string;
