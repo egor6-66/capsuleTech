@@ -23,7 +23,7 @@ export const LAYER_ICONS: Record<Layer, string> = {
 };
 
 export const layerTemplates: Record<Layer, (Name: string) => string> = {
-  pages: (Name) => `const ${Name} = Page((Ui, _Widgets) => (
+  pages: (Name) => `const ${Name} = Page((Ui) => (
   <Ui.Layout slots={{ main: <div>${Name}</div> }} />
 ));
 
@@ -57,7 +57,7 @@ export default ${Name};
 export default ${Name};
 `,
 
-  widgets: (Name) => `const ${Name} = Widget((Ui, _Features, _Controllers, _Views) => (
+  widgets: (Name) => `const ${Name} = Widget((Ui) => (
   <div>${Name}</div>
 ));
 

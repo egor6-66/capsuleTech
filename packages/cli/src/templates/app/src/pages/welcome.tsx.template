@@ -1,4 +1,4 @@
-const Welcome = Page((Ui, Widgets) => (
+const Welcome = Page((Ui) => (
   <Ui.Layout.Matrix slots={{ main: <Widgets.Welcome /> }} />
 ));
 
