@@ -53,7 +53,10 @@ export const runTuiMenu = async (): Promise<void> => {
     const pick = await askPick(ctx);
     if (pick.kind === 'exit' || !pick.command) {
       kit.outro('До встречи!');
-      return;
+      // Force-exit so that any in-process Vite dev server (or other open
+      // handles started during this TUI session) does not keep the Node
+      // event loop alive after the user quits the menu.
+      process.exit(0);
     }
     await runCommand(pick.command, ctx);
   }

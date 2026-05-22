@@ -37,9 +37,12 @@ const runDesktop = async (
   if (typeof params.dist === 'string') flags.push(`--dist=${params.dist}`);
   if (typeof params.version === 'string') flags.push(`--version=${params.version}`);
 
+  // cleanup:true — signal-exit kills the desktop child process tree when this
+  // process exits, preventing orphan Tauri/Vite children on Windows.
   await execa('node', [script, action, ctx.name, ...flags], {
     cwd: ctx.root,
     stdio: 'inherit',
+    cleanup: true,
   });
 };
 

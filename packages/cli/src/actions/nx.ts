@@ -49,7 +49,9 @@ export const nxAffected: CommandAction = async (ctx) => {
 export const nxGraph: CommandAction = async (ctx) => {
   if (!ctx.root) return;
   kit.log.info('Открываю граф зависимостей в браузере (Ctrl+C чтобы закрыть)…');
-  await execa('pnpm', ['exec', 'nx', 'graph'], { cwd: ctx.root, stdio: 'inherit' });
+  // cleanup:true — signal-exit kills the nx child when this process exits,
+  // preventing orphan processes if the CLI is terminated while graph is open.
+  await execa('pnpm', ['exec', 'nx', 'graph'], { cwd: ctx.root, stdio: 'inherit', cleanup: true });
 };
 
 export const nxReport: CommandAction = async (ctx) => {

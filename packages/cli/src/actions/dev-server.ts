@@ -27,5 +27,20 @@ export const devServer: CommandAction = async (ctx) => {
     kit.log.error('shared-vite не экспортирует createDevCapsuleServer');
     return;
   }
-  await fn(userConfig, ctx.cwd, ctx.root);
+
+  // Vite dev server runs in-process and holds the Node event loop open via its
+  // HTTP handles. When the user presses Ctrl-C (SIGINT) or the shell sends
+  // SIGTERM, we must explicitly exit so the process does not become an orphan.
+  // Without this handler, the process stays alive after the TUI exits or after
+  // the user terminates the terminal session on Windows.
+  const exitHandler = () => process.exit(0);
+  process.once('SIGINT', exitHandler);
+  process.once('SIGTERM', exitHandler);
+
+  try {
+    await fn(userConfig, ctx.cwd, ctx.root);
+  } finally {
+    process.off('SIGINT', exitHandler);
+    process.off('SIGTERM', exitHandler);
+  }
 };
