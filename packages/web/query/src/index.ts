@@ -8,7 +8,15 @@ export type {
   RegistryNode,
 } from './createApi';
 export { createApi, getApiClient, setApiClient } from './createApi';
-export type { Endpoint, EndpointConfig, InferInput, InferOutput } from './endpoint';
+export { devOnly } from './devOnly';
+export type {
+  Endpoint,
+  EndpointConfig,
+  InferInput,
+  InferOutput,
+  PreRequest,
+  PreRequestCtx,
+} from './endpoint';
 
 export { defineEndpoint } from './endpoint';
 export {

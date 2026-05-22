@@ -105,3 +105,61 @@ export const mapDomain = (): Middleware => async (ctx, next) => {
   ctx.data = ctx.config.map ? ctx.config.map(ctx.response) : ctx.response;
   await next();
 };
+
+/**
+ * Per-endpoint pre-request hook (см. `endpoint.ts > PreRequest`). Запускается
+ * **после** `validateInput` (input уже zod-parsed) и **до** `buildRequest`.
+ *
+ * Контракт:
+ *  - `setInput(next)` мутирует `ctx.input` для downstream pipeline.
+ *  - `resolve(data)` — short-circuit: пишет `ctx.data` и НЕ вызывает `next()`.
+ *    `buildRequest` / `httpTransport` / `validateResponse` / `mapDomain` —
+ *    пропущены. Caller передаёт уже **финальный** domain shape.
+ *  - `reject(err)` — short-circuit с throw'ом.
+ *  - Двойной `resolve()` / `reject()` — `Error` («called more than once»).
+ *  - Если хэндлера нет — middleware прозрачно делегирует `next()`.
+ *
+ * Передавать данные в `resolve(data)` zod-validation НЕ проходят (`validateResponse`
+ * пропущен): корректность mock-данных — ответственность caller'а.
+ */
+export const preRequestHook = (): Middleware => async (ctx, next) => {
+  const fn = ctx.config.preRequest;
+  if (!fn) return next();
+
+  let didShortCircuit = false;
+  let shortCircuitData: unknown;
+  let didReject = false;
+  let shortCircuitError: unknown;
+
+  const hookCtx = {
+    get input() {
+      return ctx.input;
+    },
+    setInput: (n: unknown) => {
+      ctx.input = n;
+    },
+    resolve: (data: unknown) => {
+      if (didShortCircuit) throw new Error('preRequest: resolve()/reject() called more than once');
+      didShortCircuit = true;
+      shortCircuitData = data;
+    },
+    reject: (err: unknown) => {
+      if (didShortCircuit) throw new Error('preRequest: resolve()/reject() called more than once');
+      didShortCircuit = true;
+      didReject = true;
+      shortCircuitError = err;
+    },
+    endpoint: { path: ctx.config.path, method: ctx.config.method },
+  };
+
+  await (fn as (c: unknown) => void | Promise<void>)(hookCtx);
+
+  if (didShortCircuit) {
+    if (didReject) throw shortCircuitError;
+    ctx.data = shortCircuitData;
+    // Pipeline останавливается здесь — `next()` НЕ вызывается.
+    return;
+  }
+
+  await next();
+};

@@ -33,8 +33,9 @@ describe('defineEndpoint — runtime', () => {
     expect(called).toBe(false);
   });
 
-  it('preserves map / staleTime / middleware / base', () => {
+  it('preserves map / staleTime / middleware / base / preRequest', () => {
     const map = (dto: any) => ({ ...dto, wrapped: true });
+    const preRequest = ({ resolve }: any) => resolve({ a: 0 });
     const ep = defineEndpoint((z) => ({
       method: 'GET',
       path: '/x',
@@ -43,11 +44,13 @@ describe('defineEndpoint — runtime', () => {
       map,
       staleTime: 10_000,
       middleware: [],
+      preRequest,
     }));
     expect(ep.config.base).toBe('cdn');
     expect(ep.config.map).toBe(map);
     expect(ep.config.staleTime).toBe(10_000);
     expect(ep.config.middleware).toEqual([]);
+    expect(ep.config.preRequest).toBe(preRequest);
   });
 });
 
