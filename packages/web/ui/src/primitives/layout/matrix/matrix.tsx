@@ -38,7 +38,8 @@ const renderCentroid = (
   animated: IMatrixProps['animated'],
   router: ICapsuleRouter | null,
 ): JSX.Element => {
-  const main = normalizeSlot(slots.main) as INormalizedSlot;
+  const main = normalizeSlot(slots.main);
+  if (!main) throw new Error('Layout.Matrix: `main` slot is required.');
   return (
     <div class="flex h-full w-full items-center justify-center">
       {animateMain(main.children, animated, router)}
@@ -97,7 +98,8 @@ const renderGrid = (
 ): JSX.Element => {
   const header = normalizeSlot(slots.header);
   const sidebar = normalizeSlot(slots.sidebar);
-  const main = normalizeSlot(slots.main) as INormalizedSlot;
+  const main = normalizeSlot(slots.main);
+  if (!main) throw new Error('Layout.Matrix: `main` slot is required.');
   const rightBar = normalizeSlot(slots.rightBar);
   const footer = normalizeSlot(slots.footer);
 
@@ -190,7 +192,8 @@ const renderResize = (
 ): JSX.Element => {
   const header = normalizeSlot(slots.header);
   const sidebar = normalizeSlot(slots.sidebar);
-  const main = normalizeSlot(slots.main) as INormalizedSlot;
+  const main = normalizeSlot(slots.main);
+  if (!main) throw new Error('Layout.Matrix: `main` slot is required.');
   const rightBar = normalizeSlot(slots.rightBar);
   const footer = normalizeSlot(slots.footer);
 
@@ -350,7 +353,8 @@ const MatrixImpl = (props: IMatrixProps) => {
     // Check if any slot requests resize
     const headerN = normalizeSlot(s.header);
     const sidebarN = normalizeSlot(s.sidebar);
-    const mainN = normalizeSlot(s.main) as INormalizedSlot;
+    const mainN = normalizeSlot(s.main);
+    if (!mainN) throw new Error('Layout.Matrix: `main` slot is required when other slots are provided.');
     const rightBarN = normalizeSlot(s.rightBar);
     const footerN = normalizeSlot(s.footer);
 

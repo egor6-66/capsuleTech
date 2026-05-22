@@ -111,16 +111,6 @@
       "import": "./dist/components/list/*.mjs",
       "default": "./dist/components/list/*.mjs"
     },
-    "./navigation": {
-      "types": "./dist/components/navigation/index.d.ts",
-      "import": "./dist/components/navigation/index.mjs",
-      "default": "./dist/components/navigation/index.mjs"
-    },
-    "./navigation/*": {
-      "types": "./dist/components/navigation/*.d.ts",
-      "import": "./dist/components/navigation/*.mjs",
-      "default": "./dist/components/navigation/*.mjs"
-    },
     "./separator": {
       "types": "./dist/components/separator/index.d.ts",
       "import": "./dist/components/separator/index.mjs",

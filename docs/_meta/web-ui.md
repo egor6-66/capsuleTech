@@ -1,6 +1,6 @@
 ---
 tags: [meta, web-ui]
-updated: 2026-05-20
+updated: 2026-05-22
 ---
 
 # web-ui AI anchor
@@ -114,6 +114,33 @@ When `infinite` is active:
 Defaults: `itemHeight: 36`, `overscan: 5`, `threshold: 5`.
 
 `pagination` remains working for small datasets (non-deprecated in API; deprecated in JSDoc only).
+
+### 0.6.0 — Navigation primitive removed (2026-05-22)
+
+**Breaking: `Ui.Navigation`, `Ui.NavigationList`, `Ui.NavigationItem` removed.**
+
+Old API:
+```tsx
+<Navigation orientation="horizontal">
+  <Navigation.List items={items}>
+    {(item) => <Navigation.Item active={item.active}>{item.label}</Navigation.Item>}
+  </Navigation.List>
+</Navigation>
+```
+
+New pattern — `Ui.List` batch mode + `as: Ui.Button`:
+```tsx
+<List data={items} as={Button} itemProps={(item) => ({
+  variant: item.active ? 'secondary' : 'ghost',
+  children: item.label,
+})} />
+```
+
+Or via Shape batch flow: `as: Views.Nav.Item` for custom navigation item templates.
+
+Subpath `@capsuletech/web-ui/navigation` removed from `package.json`.
+
+Migration: replace all `<Navigation>`, `<Navigation.List>`, `<Navigation.Item>` usages with `<List batch>` pattern. No `INavigation` type imports needed — use `IList` or `IButton` as appropriate.
 
 ### 0.5.0 — Table scroll context removed (2026-05-22)
 
