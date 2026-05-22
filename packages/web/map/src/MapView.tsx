@@ -118,9 +118,13 @@ export const MapView = (props: IMapViewProps) => {
     setViewport(next);
   });
 
+  // solid-map-gl types target mapbox-gl; maplibre namespace import is compatible at runtime.
+  // biome-ignore lint/suspicious/noExplicitAny: intentional any cast for cross-lib type compat
+  const MapGLAny = MapGL as any;
+
   return (
     <MapContext.Provider value={{ map }}>
-      <MapGL
+      <MapGLAny
         mapLib={maplibre}
         // biome-ignore lint/suspicious/noExplicitAny: solid-map-gl типы darkStyle заточены под mapbox; maplibre StyleSpec совместим в рантайме.
         darkStyle={(props.darkStyle ?? DEFAULT_DARK_STYLE) as any}
@@ -157,7 +161,7 @@ export const MapView = (props: IMapViewProps) => {
         }) as any}
       >
         {props.children}
-      </MapGL>
+      </MapGLAny>
     </MapContext.Provider>
   );
 };
