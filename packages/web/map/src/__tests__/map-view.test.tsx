@@ -21,7 +21,7 @@ let lastMapInstance: { once: ReturnType<typeof vi.fn>; remove: ReturnType<typeof
   null;
 
 vi.mock('maplibre-gl', () => {
-  class Map {
+  class MockMapLibreMap {
     once: ReturnType<typeof vi.fn>;
     remove: ReturnType<typeof vi.fn>;
 
@@ -29,12 +29,11 @@ vi.mock('maplibre-gl', () => {
       mapConstructorCalls++;
       this.once = vi.fn();
       this.remove = vi.fn();
-      // biome-ignore lint/suspicious/noAssignInExpressions: test helper
       lastMapInstance = this as unknown as typeof lastMapInstance;
     }
   }
 
-  return { default: { Map } };
+  return { default: { Map: MockMapLibreMap } };
 });
 
 // Import MapView AFTER the mock is set up.
@@ -127,14 +126,12 @@ afterEach(() => {
       Object.defineProperty(HTMLElement.prototype, 'clientWidth', originalClientWidthDescriptor);
     } else {
       // Property did not exist as own — delete the stub so inheritance resumes.
-      // biome-ignore lint/performance/noDelete: necessary to restore inherited property
-      delete (HTMLElement.prototype as Record<string, unknown>).clientWidth;
+      delete (HTMLElement.prototype as unknown as Record<string, unknown>).clientWidth;
     }
     if (originalClientHeightDescriptor) {
       Object.defineProperty(HTMLElement.prototype, 'clientHeight', originalClientHeightDescriptor);
     } else {
-      // biome-ignore lint/performance/noDelete: necessary to restore inherited property
-      delete (HTMLElement.prototype as Record<string, unknown>).clientHeight;
+      delete (HTMLElement.prototype as unknown as Record<string, unknown>).clientHeight;
     }
     elementSizesStubbed = false;
   }
