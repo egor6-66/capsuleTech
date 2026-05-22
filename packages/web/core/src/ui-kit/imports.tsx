@@ -67,6 +67,10 @@ export const ThemeSwitcher = createLazy(
   () => import('@capsuletech/web-style'),
   'ThemeSwitcher',
 );
+export const DarkModeToggle = createLazy(
+  () => import('@capsuletech/web-style'),
+  'DarkModeToggle',
+);
 
 // Реэкспорт сторонних утилит
 export { Link } from '@tanstack/solid-router';
