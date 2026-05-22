@@ -96,6 +96,8 @@ Bin:
 
 16. **`gitCommit` action делает `git add -A`.** Закоммитит всё включая `.env`. Удобно по UX, опасно "по уму" — `src/actions/git.ts`.
 
+19. **`devServer` exit — Vite runs in-process, holds event loop.** `createDevCapsuleServer` в vite-builder возвращает `Promise<void>` сразу после `server.listen()`, но HTTP-сервер держит event loop открытым. CLI регистрирует `SIGINT`/`SIGTERM` → `process.exit(0)` перед вызовом и снимает их в `finally`. `runTuiMenu` тоже вызывает `process.exit(0)` при выходе из цикла.
+
 18. **`welcome.tsx.template` — Matrix slot object-form only (2026-05-21).** `@capsuletech/web-ui` breaking change: `SlotValue` теперь только `IResizableSlotConfig` (object form). JSX-shorthand `slots={{ main: <X /> }}` больше не работает. Шаблон обновлён на `slots={{ main: { children: <X /> } }}`.
 
 17. **`desktop dev/build` — positional bug.** `url` и `version` не являются настоящими positional args в commander-дереве. Передаются как option flags, но UX промпт подразумевает positional.
@@ -111,6 +113,7 @@ Bin:
 - [x] **Инлайн `generateFromTemplates`** — убрана зависимость от `@capsuletech/shared-file-manager`, логика в `src/utils/generateFromTemplates.ts` (2026-05-19, `7f44f27`).
 - [x] **`CAPSULE_CI=1` + `process.exit(1)` в runner** — добавлены `isCi()` + exit в `runner.ts` (2026-05-20, `dee956c`).
 - [x] **Peer deps sweep** — CLI templates восстановлены корректно (`@tanstack/solid-router`, `xstate`, `@xstate/solid`) — PRs #91/#92/#93.
+- [x] **Orphan process fix** — `devServer` регистрирует `SIGINT`/`SIGTERM` → `process.exit(0)` пока Vite держит event loop; `runTuiMenu` вызывает `process.exit(0)` при выходе; `nxGraph`/`desktopDev/Build` используют `cleanup: true` в execa (2026-05-22).
 
 ## Test coverage
 
