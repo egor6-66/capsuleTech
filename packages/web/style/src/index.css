@@ -144,14 +144,14 @@
 :root {
   /* --- Spacing scale (geometric, base 0.25rem = 4px) --- */
   --space-0: 0;
-  --space-1: 0.25rem;   /*  4px */
-  --space-2: 0.5rem;    /*  8px */
-  --space-3: 0.75rem;   /* 12px */
-  --space-4: 1rem;      /* 16px */
-  --space-5: 1.5rem;    /* 24px */
-  --space-6: 2rem;      /* 32px */
-  --space-7: 3rem;      /* 48px */
-  --space-8: 4rem;      /* 64px */
+  --space-1: 0.25rem; /*  4px */
+  --space-2: 0.5rem; /*  8px */
+  --space-3: 0.75rem; /* 12px */
+  --space-4: 1rem; /* 16px */
+  --space-5: 1.5rem; /* 24px */
+  --space-6: 2rem; /* 32px */
+  --space-7: 3rem; /* 48px */
+  --space-8: 4rem; /* 64px */
 
   /* Density multiplier — 1 = default. .compact = 0.75, .comfortable = 1.25 */
   --density: 1;
@@ -190,15 +190,15 @@
   /* --- Typography scale ---
      Named --font-size-* to avoid collision with Tailwind's @theme inline
      --text-* namespace. Components use these directly or via Tailwind utilities. */
-  --font-size-xs: 0.75rem;      /* 12px */
-  --font-size-sm: 0.875rem;     /* 14px */
-  --font-size-base: 1rem;       /* 16px */
-  --font-size-lg: 1.125rem;     /* 18px */
-  --font-size-xl: 1.25rem;      /* 20px */
-  --font-size-2xl: 1.5rem;      /* 24px */
-  --font-size-3xl: 1.875rem;    /* 30px */
-  --font-size-4xl: 2.25rem;     /* 36px */
-  --font-size-5xl: 3rem;        /* 48px */
+  --font-size-xs: 0.75rem; /* 12px */
+  --font-size-sm: 0.875rem; /* 14px */
+  --font-size-base: 1rem; /* 16px */
+  --font-size-lg: 1.125rem; /* 18px */
+  --font-size-xl: 1.25rem; /* 20px */
+  --font-size-2xl: 1.5rem; /* 24px */
+  --font-size-3xl: 1.875rem; /* 30px */
+  --font-size-4xl: 2.25rem; /* 36px */
+  --font-size-5xl: 3rem; /* 48px */
 
   /* Line heights */
   --leading-none: 1;
@@ -242,7 +242,9 @@
   --ease-spring: cubic-bezier(0.5, 1.25, 0.75, 1.25);
   --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  --transition-colors: color var(--motion-fast) var(--ease-out), background-color var(--motion-fast) var(--ease-out), border-color var(--motion-fast) var(--ease-out);
+  --transition-colors:
+    color var(--motion-fast) var(--ease-out), background-color var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out);
   --transition-opacity: opacity var(--motion-fast) var(--ease-out);
   --transition-transform: transform var(--motion-normal) var(--ease-out);
   --transition-shadow: box-shadow var(--motion-fast) var(--ease-out);
@@ -285,8 +287,7 @@
 
 /* =============================================================================
    Scrollbar styling — theme-aware, cross-browser.
-   Global: thin scrollbar with theme colors.
-   .scrollbar-hover: opt-in hover-reveal (hidden by default, fades in on hover).
+   Global: always-visible thin scrollbar with theme colors.
    ============================================================================= */
 
 /* WebKit (Chrome, Edge, Safari) — global thin scrollbar */
@@ -317,37 +318,18 @@
   scrollbar-width: thin;
 }
 
-/* Hover-reveal utility — opt-in for containers where scrollbar should auto-hide.
-   Add .scrollbar-hover on the scrollable element.
-   scrollbar-gutter: stable prevents layout jump when scrollbar appears. */
-.scrollbar-hover {
-  scrollbar-gutter: stable;
-  /* Firefox: hide thumb until hover */
-  scrollbar-color: transparent transparent;
-  transition: scrollbar-color var(--motion-fast) var(--ease-out);
-}
-.scrollbar-hover:hover,
-.scrollbar-hover:focus-within {
-  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
-}
-
-/* WebKit: hide thumb until hover */
-.scrollbar-hover::-webkit-scrollbar-thumb {
-  background: transparent;
-  transition: background var(--motion-fast) var(--ease-out);
-}
-.scrollbar-hover:hover::-webkit-scrollbar-thumb,
-.scrollbar-hover:focus-within::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
-  background-clip: content-box;
-}
-.scrollbar-hover:hover::-webkit-scrollbar-thumb:hover,
-.scrollbar-hover:focus-within::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover);
-  background-clip: content-box;
-}
 
 @layer base {
+  /* color-scheme: tells browser which native UI variant (scrollbars, form fields,
+     focus outlines) to render. Must match the active colour palette. */
+  :root {
+    color-scheme: light;
+  }
+  :root.dark,
+  .dark {
+    color-scheme: dark;
+  }
+
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus,

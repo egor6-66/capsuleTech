@@ -136,6 +136,12 @@ import { ThemeSwitcher, ThemeEditor } from '@capsuletech/web-style/editor';
 
 **Это контракт.** Изменение themes API (variable names) или createStyle сигнатуры — breaking change для всех primitives и user-themes.
 
+## Dark mode policy
+
+`data-theme` (ThemeSwitcher) and `.dark` (DarkModeToggle) are **orthogonal axes**. Each theme CSS file carries a `[data-theme="X"]` block (light variant) and a `[data-theme="X"].dark` block (dark variant). ThemeSwitcher sets which palette; DarkModeToggle sets whether to use its dark inversion. This gives 12 themes × 2 modes = 24 combinations without extra CSS custom-properties overhead.
+
+localStorage keys: `capsule-theme` (theme name) and `capsule-theme-mode` (`"light"` / `"dark"`). DarkModeToggle falls back to `prefers-color-scheme` on first load. **Phase 2** = fill dark blocks for the remaining 10 themes (damon, deepPurple, …). Until then only `black` has a verified dark variant.
+
 ## Quirks / gotchas
 
 - **Themes должны быть БЕЗ Tailwind directives.** Никаких `@import "tailwindcss"` или `@layer base { @apply ... }` блоков в `themes/*.css`. **Только** `:root[data-theme="..."] { --background: ...; ... }` variables. Если случайно вернётся — будут duplicate base rules в bundled CSS (~100 копий box-sizing rule). Этот баг **уже** ловили (2026-05-20).
@@ -153,6 +159,8 @@ import { ThemeSwitcher, ThemeEditor } from '@capsuletech/web-style/editor';
 - **ThemeSwitcher/ThemeEditor — opt-in.** Не импортируются автоматически в web-core'е. App включает явно через `import { ThemeSwitcher } from '@capsuletech/web-style/editor'` если нужно.
 
 - **Solid-Motion / animation tokens** — пока нет (есть `pulse-subtle` keyframe но это для status-indicator). Анимации делаются через `solid-motionone` в web-ui (Animate primitive).
+
+- **Scrollbar overlay (no gutter)** — `.scrollbar-hover` намеренно НЕ содержит `scrollbar-gutter: stable`. Скроллбар рисуется поверх контента (overlay), пространство не резервируется. Trade-off: на Firefox при первом появлении скроллбара возможен однократный layout shift шириной 1× scrollbar-size. Если понадобится custom overlay scrollbar без layout shift — заводить отдельный floating-элемент (см. план рефакторинга).
 
 ## План рефакторинга / оптимизаций
 
