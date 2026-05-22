@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HMRWrappingPlugin } from '../hmrWrapping';
+import { HMRWrappingPlugin } from '../HMRWrapping';
 import type { Plugin } from 'vite';
 
 /**
