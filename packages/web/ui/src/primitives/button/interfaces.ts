@@ -4,6 +4,7 @@ import type { JSX, ValidComponent } from 'solid-js';
 import type { ISlotProps } from '../slot';
 import type { buttonCva } from './variants';
 
+
 export type ButtonVariants = VariantProps<typeof buttonCva>;
 
 /**
@@ -30,3 +31,4 @@ export interface IButtonOwnProps extends ButtonVariants {
  * ```
  */
 export type IButtonProps<T extends ValidComponent = 'button'> = ISlotProps<T> & IButtonOwnProps;
+

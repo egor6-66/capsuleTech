@@ -20,6 +20,10 @@ export const Layout = {
   Matrix: createLazy(() => import('@capsuletech/web-ui/matrix'), 'Matrix'),
 };
 export const List = createLazy(() => import('@capsuletech/web-ui/list'), 'List');
+const GroupBase = createLazy(() => import('@capsuletech/web-ui/group'), 'Group');
+export const Group = Object.assign(GroupBase, {
+  Separator: createLazy(() => import('@capsuletech/web-ui/group'), 'GroupSeparator'),
+});
 export const Animate = createLazy(() => import('@capsuletech/web-ui/wrappers'), 'Animate');
 export const Resizable = createLazy(() => import('@capsuletech/web-ui/wrappers'), 'Resizable');
 

@@ -45,3 +45,51 @@ export const resolveByPath = (root: unknown, path: readonly string[]): unknown =
   }
   return cur;
 };
+
+/**
+ * Резолв одного значения через realUi:
+ *  - tracker → резолвится через resolveByPath;
+ *  - функция → оборачивается: результат вызова, если это объект, резолвится рекурсивно;
+ *  - остальное → pass-through.
+ *
+ * Глубокая рекурсия по plain-объектам намеренно НЕ делается: только функции-возвраты
+ * и первый уровень definitionExtras. Это защищает `defaults` массивы и data-структуры
+ * от случайного резолва вложенных tracker-значений.
+ */
+export const resolveValue = (value: unknown, realUi: unknown): unknown => {
+  if (value === null || value === undefined) return value;
+
+  const path = getTrackerPath(value);
+  if (path !== undefined) {
+    if (realUi) return resolveByPath(realUi, path);
+    return value;
+  }
+
+  if (typeof value === 'function') {
+    const fn = value as (...args: unknown[]) => unknown;
+    return (...args: unknown[]) => {
+      const result = fn(...args);
+      if (result !== null && typeof result === 'object' && !Array.isArray(result)) {
+        return resolveValuesInObject(result as Record<string, unknown>, realUi);
+      }
+      return result;
+    };
+  }
+
+  return value;
+};
+
+/**
+ * Резолвит все значения в shallow-объекте через resolveValue.
+ * Используется для `definitionExtras` в Shape wrapper'е.
+ */
+export const resolveValuesInObject = (
+  obj: Record<string, unknown>,
+  realUi: unknown,
+): Record<string, unknown> => {
+  const out: Record<string, unknown> = {};
+  for (const key of Object.keys(obj)) {
+    out[key] = resolveValue(obj[key], realUi);
+  }
+  return out;
+};

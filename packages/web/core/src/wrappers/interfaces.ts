@@ -15,6 +15,7 @@ import type {
   Card,
   DataTable,
   Field,
+  Group,
   Input,
   Layout,
   List,
@@ -127,6 +128,7 @@ type WithMetaProps<T> = {
 type ViewUiRaw = {
   Field: typeof Field;
   Button: typeof Button;
+  Group: typeof Group;
   Input: typeof Input;
   List: typeof List;
   Animate: typeof Animate;
