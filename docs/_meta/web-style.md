@@ -85,7 +85,7 @@ The Scanner silently ignores non-existent paths, so both variants are safe.
 Changed `@source` directives in `src/index.css`:
 - Replaced `src/**/*.{ts,tsx}` paths (source files, not available after publish) with `dist/**/*.mjs` paths.
 - Added dual-depth paths: npm-flat (2 levels) + pnpm-store (6 levels) for each sibling package.
-- Added previously missing siblings: web-profiler, web-renderer, web-dnd, web-editor, web-query, web-remote, web-router, web-state.
+- Added previously missing siblings: web-profiler, web-renderer, web-dnd, web-ui-creator, web-query, web-remote, web-router, web-state.
 - Added dual-depth paths for app source scanning: npm (4 levels) + pnpm (7 levels).
 
 Root cause: Tailwind v4 follows symlinks when resolving `@source` base paths. The old relative paths (like `../../ui/src/`) were written for the monorepo layout but pointed to non-existent directories inside pnpm's isolated store, so all framework utilities were silently dropped from the final CSS.

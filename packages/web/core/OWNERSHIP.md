@@ -167,7 +167,7 @@ import { BaseProviders } from '@capsuletech/web-core/providers';
 
 ## Release group
 
-`web_base` — fixed-versioning, tag `web@{version}`. Соседи: web-dnd, web-editor, web-profiler, web-query, web-renderer, web-router, web-state, web-style, web-ui, shared-zod.
+`web_base` — fixed-versioning, tag `web@{version}`. Соседи: web-dnd, web-ui-creator, web-profiler, web-query, web-renderer, web-router, web-state, web-style, web-ui, shared-zod.
 
 `web-core` — самый «горячий» пакет группы. Любое изменение публичного API (wrapper-сигнатура, ITarget, IHandlerApi) — breaking change для всей группы и для apps. Bump major + согласуй со всеми owners до release.
 

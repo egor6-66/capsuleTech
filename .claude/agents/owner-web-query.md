@@ -94,7 +94,7 @@ validateInput (zod request)
 ## Release group
 
 **Группа `web_base`** (fixed, tag `web@{version}`). Соседи:
-- web-core (consumer через services.api injection в Feature), web-state, web-router, web-style, web-ui, web-dnd, web-editor, web-profiler, web-renderer, shared-zod (peer для zod)
+- web-core (consumer через services.api injection в Feature), web-state, web-router, web-style, web-ui, web-dnd, web-ui-creator, web-profiler, web-renderer, shared-zod (peer для zod)
 
 `web-query` — fundamental для apps с API. Breaking change в Endpoint config / pipeline / ApiError shape = breaking для всех Features.
 

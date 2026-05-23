@@ -156,7 +156,7 @@ export default defineAppConfig({
 
 ## Release group
 
-`web_base` — fixed-versioning, tag `web@{version}`. Соседи: web-core, web-dnd, web-editor, web-profiler, web-renderer, web-router, web-state, web-style, web-ui, shared-zod.
+`web_base` — fixed-versioning, tag `web@{version}`. Соседи: web-core, web-dnd, web-ui-creator, web-profiler, web-renderer, web-router, web-state, web-style, web-ui, shared-zod.
 
 `web-query` — fundamental: каждое приложение использует через `services.api` в Feature. Breaking change в `EndpointConfig` / `ApiContext` / pipeline-order = breaking для всех Features. Bump major + согласуй со всеми owners web_base + apps.
 

@@ -7,5 +7,5 @@ export default libConfig({
     state: 'src/state/index.ts',
     inspector: 'src/inspector/index.ts',
   },
-  name: 'CapsuleEditor',
+  name: 'CapsuleUiCreator',
 });

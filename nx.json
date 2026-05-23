@@ -106,7 +106,7 @@
         "projects": [
           "@capsuletech/web-core",
           "@capsuletech/web-dnd",
-          "@capsuletech/web-editor",
+          "@capsuletech/web-ui-creator",
           "@capsuletech/web-profiler",
           "@capsuletech/web-query",
           "@capsuletech/web-renderer",

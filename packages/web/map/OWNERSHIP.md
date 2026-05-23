@@ -112,4 +112,4 @@ last-updated: 2026-05-22
 
 `@capsuletech/web-map` **не входит** в группу `web_base`. Релизится отдельно как `@capsuletech/web-map@0.0.x`.
 
-После стабилизации (минимум после Iter 2 markers) — обсудить с главным включение в `web_base` (fixed-versioning). Соседи группы тогда: `web-core`, `web-dnd`, `web-editor`, `web-profiler`, `web-query`, `web-renderer`, `web-router`, `web-state`, `web-style`, `web-ui`, `shared-zod`.
+После стабилизации (минимум после Iter 2 markers) — обсудить с главным включение в `web_base` (fixed-versioning). Соседи группы тогда: `web-core`, `web-dnd`, `web-ui-creator`, `web-profiler`, `web-query`, `web-renderer`, `web-router`, `web-state`, `web-style`, `web-ui`, `shared-zod`.

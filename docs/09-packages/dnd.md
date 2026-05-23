@@ -97,4 +97,4 @@ Render-prop, рендерящий visual-preview под курсором. Пол
 ## Связанное
 
 - Используется демо-виджетами в `apps/sandbox/src/widgets/demos/dnd.tsx`.
-- В связке с [[editor|@capsuletech/web-editor]] — для редактора UI-дерева.
+- В связке с [[ui-creator|@capsuletech/web-ui-creator]] — для редактора UI-дерева.

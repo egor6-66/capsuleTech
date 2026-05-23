@@ -30,7 +30,7 @@ status: living-doc
 | [packages/web/router](#packagesweb-router) | ✅ | ✅ | ✅ (post-PR #24: ADR 014 — goTo opts + generic context, peerDeps fix) |
 | [packages/web/query](#packagesweb-query) | ✅ | ✅ (review 2026-05-18) | 🟡 (P1 ✅ 5/5, P2 0/6, P3 0/8) |
 | packages/web/ui | ✅ | ✅ | ✅ (periphery only, no components touched — PR #28) |
-| packages/web/editor | ✅ | ✅ | ✅ (consolidated 3 packages: manifests + editor-state + inspector → web-editor with subpaths — PR #29) |
+| packages/web/ui-creator | ✅ | ✅ | ✅ (consolidated 3 packages: manifests + editor-state + inspector → web-editor with subpaths — PR #29; renamed web-editor → web-ui-creator in 0.2.0) |
 | packages/web/renderer | ✅ | ✅ | ✅ (periphery — PR #29) |
 | [packages/web/style](#packagesweb-style) | — | — | — **← next** |
 | [packages/web/profiler](#packagesweb-profiler) | — | — | — |

@@ -72,7 +72,7 @@ type: index
   - [[theming|Темы и data-theme]]
 - [[dnd|@capsuletech/web-dnd]]
 - [[renderer|@capsuletech/web-renderer]]
-- [[editor|@capsuletech/web-editor]] — `/manifests` + `/state` + `/inspector` subpaths
+- [[ui-creator|@capsuletech/web-ui-creator]] — `/manifests` + `/state` + `/inspector` + `/generators` subpaths
 - [[profiler|@capsuletech/web-profiler]]
 - [[remote|@capsuletech/web-remote]] — 📝 skeleton (Phase 0)
 - [[compliance|@capsuletech/compliance]]

@@ -41,17 +41,17 @@
       "@capsuletech/web-map": [
         "packages/web/map/src/index.ts"
       ],
-      "@capsuletech/web-editor": [
-        "packages/web/editor/src/index.ts"
+      "@capsuletech/web-ui-creator": [
+        "packages/web/ui-creator/src/index.ts"
       ],
-      "@capsuletech/web-editor/manifests": [
-        "packages/web/editor/src/manifests/index.ts"
+      "@capsuletech/web-ui-creator/manifests": [
+        "packages/web/ui-creator/src/manifests/index.ts"
       ],
-      "@capsuletech/web-editor/state": [
-        "packages/web/editor/src/state/index.ts"
+      "@capsuletech/web-ui-creator/state": [
+        "packages/web/ui-creator/src/state/index.ts"
       ],
-      "@capsuletech/web-editor/inspector": [
-        "packages/web/editor/src/inspector/index.ts"
+      "@capsuletech/web-ui-creator/inspector": [
+        "packages/web/ui-creator/src/inspector/index.ts"
       ],
       "@capsuletech/web-profiler": [
         "packages/web/profiler/src/index.ts"

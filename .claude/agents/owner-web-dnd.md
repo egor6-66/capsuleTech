@@ -74,7 +74,7 @@ const { active, pointer, dropTargets } = useDnD();
 ## Release group
 
 **Группа `web_base`** (fixed, tag `web@{version}`). Соседи:
-- web-core, web-state, web-router, web-style, web-ui, web-editor, web-profiler, web-query, web-renderer, shared-zod
+- web-core, web-state, web-router, web-style, web-ui, web-ui-creator, web-profiler, web-query, web-renderer, shared-zod
 
 `web-dnd` — leaf-пакет (никто из repo не consumer кроме apps). При breaking change в API — bump major + сообщи в release notes; самые громкие consumers — apps использующие sortable/drag в UI.
 

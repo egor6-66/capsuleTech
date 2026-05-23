@@ -107,7 +107,7 @@ Phase 2c — kobalte Tabs, draggable + collapsible + localStorage persistence. 5
 ## Release group
 
 **Группа `web_base`** (fixed, tag `web@{version}`). Соседи:
-- web-core (BaseProviders.vitals потребляет старый VitalsMonitoringProvider — теперь shim), web-state, web-router, web-style (Dashboard styling), web-ui (Dashboard primitives), web-dnd, web-editor, web-query, web-renderer, shared-zod
+- web-core (BaseProviders.vitals потребляет старый VitalsMonitoringProvider — теперь shim), web-state, web-router, web-style (Dashboard styling), web-ui (Dashboard primitives), web-dnd, web-ui-creator, web-query, web-renderer, shared-zod
 
 `web-profiler` — observability layer. Любое изменение `IMetricId` / `MetricsBus` shape → breaking для consumers. Но `BaseProviders.vitals` API сохранён через legacy shim (см. ниже).
 
