@@ -79,7 +79,7 @@ describe('tracker-resolve — itemAs in extras resolves via ShapeUiContext', () 
   });
 
   it('nested path tracker (ui.Navigation.Item) resolves correctly as itemAs', () => {
-    const NavItemComponent = (_props: any) => <a href="#" data-testid="nav-item">nav</a>;
+    const NavItemComponent = (_props: any) => <a href="https://example.com" data-testid="nav-item">nav</a>;
 
     const fakeUi = { Navigation: { Item: NavItemComponent } };
     const tracker = createUiTracker();
@@ -112,7 +112,7 @@ describe('tracker-resolve — itemAs in extras resolves via ShapeUiContext', () 
 
 describe('tracker-resolve — itemProps callable wraps result with tracker resolution', () => {
   it('calling itemProps(item) returns object with resolved as-tracker', () => {
-    const LinkComponent = (_props: any) => <a href="#" data-testid="link">link</a>;
+    const LinkComponent = (_props: any) => <a href="https://example.com" data-testid="link">link</a>;
     const fakeUi = { Link: LinkComponent };
     const tracker = createUiTracker();
 
