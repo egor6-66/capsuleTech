@@ -3,7 +3,7 @@ import { mergeProps, splitProps } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import { useShapeUi } from './context';
 import type { IShapeComponentProps, IShapeWrapper } from './types';
-import { createUiTracker, getTrackerPath, resolveByPath } from './ui-tracker';
+import { createUiTracker, getTrackerPath, resolveByPath, resolveValuesInObject } from './ui-tracker';
 
 /**
  * Shape wrapper — single batch flow (v0.4.0+).
@@ -67,9 +67,14 @@ const shape = (factory: any) => {
     // Всё остальное (`rest`) — consumer extras, мерджятся поверх definition extras.
     const [ownProps, rest] = splitProps(consumerProps as Record<string, unknown>, ['as', 'data']);
 
-    // mergeProps: definitionExtras (статика) < rest (реактивные consumer extras).
+    // Резолв trackers в definitionExtras: `itemAs: ui.Button` → реальный компонент,
+    // `itemProps: (item) => ({ as: ui.Link })` → обёрнутая функция с резолвом результата.
+    // Non-tracker значения (primitives, plain objects, arrays) проходят без изменений.
+    const resolvedDefinitionExtras = resolveValuesInObject(definitionExtras, realUi);
+
+    // mergeProps: resolvedDefinitionExtras (статика) < rest (реактивные consumer extras).
     // mergeProps от Solid сохраняет реактивность — сигналы в `rest` работают.
-    const mergedExtras = mergeProps(definitionExtras, rest);
+    const mergedExtras = mergeProps(resolvedDefinitionExtras, rest);
 
     // data: consumer `data` overrides definition `defaults`.
     // Читаем ownProps.data прямо в JSX-разметке (через геттер) чтобы сохранить

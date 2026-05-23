@@ -56,6 +56,16 @@
       "import": "./dist/components/grid/index.mjs",
       "default": "./dist/components/grid/index.mjs"
     },
+    "./group": {
+      "types": "./dist/components/group/index.d.ts",
+      "import": "./dist/components/group/index.mjs",
+      "default": "./dist/components/group/index.mjs"
+    },
+    "./group/*": {
+      "types": "./dist/components/group/*.d.ts",
+      "import": "./dist/components/group/*.mjs",
+      "default": "./dist/components/group/*.mjs"
+    },
     "./grid/*": {
       "types": "./dist/components/grid/*.d.ts",
       "import": "./dist/components/grid/*.mjs",

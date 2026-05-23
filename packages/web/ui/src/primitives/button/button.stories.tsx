@@ -1,7 +1,7 @@
 import { ArrowRight, Loader2, Plus, Send, Trash2 } from 'lucide-solid';
 import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
-import { Button } from './button';
+import { Button } from '.';
 
 const meta = {
   title: 'Components/Button',
@@ -99,3 +99,4 @@ export const IconOnlyOutline: Story = {
 export const IconOnlyGhost: Story = {
   args: { size: 'icon', variant: 'ghost', children: <Plus /> },
 };
+
