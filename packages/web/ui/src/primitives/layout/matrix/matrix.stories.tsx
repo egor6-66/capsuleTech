@@ -382,3 +382,137 @@ export const SwapModeRawRows: Story = {
     );
   },
 };
+
+// ===========================================================================
+// Insert-mode DnD stories (Phase 1.3)
+// ===========================================================================
+
+/**
+ * Insert mode controlled: layoutMode='edit' forced. 6 tiles distributed
+ * across 2 rows. Drag within a row to reorder; drag across rows (top half →
+ * row start, bottom half → row end) to move between rows.
+ */
+export const InsertModeControlled: Story = {
+  name: 'rows · insert mode (controlled, layoutMode=edit)',
+  argTypes: {
+    onLayoutChange: { action: 'layoutChange' },
+  },
+  render: (args) => {
+    const tile = (label: string, bg: string) => (
+      <div
+        class="flex h-full w-full items-center justify-center text-lg font-bold text-foreground"
+        style={{ background: bg }}
+      >
+        {label}
+      </div>
+    );
+    return (
+      <Matrix
+        layoutMode="edit"
+        dndMode="insert"
+        onLayoutChange={(e) => args.onLayoutChange?.(e)}
+        rows={[
+          {
+            id: 'row-1',
+            resizable: true,
+            cells: [
+              {
+                id: 'a',
+                children: tile('A', 'rgba(99, 102, 241, 0.18)'),
+                width: 0.33,
+                resizable: true,
+                draggable: true,
+              },
+              {
+                id: 'b',
+                children: tile('B', 'rgba(34, 197, 94, 0.18)'),
+                width: 0.33,
+                resizable: true,
+                draggable: true,
+              },
+              {
+                id: 'c',
+                children: tile('C', 'rgba(244, 114, 182, 0.18)'),
+                width: 0.34,
+                resizable: true,
+                draggable: true,
+              },
+            ],
+          },
+          {
+            id: 'row-2',
+            resizable: true,
+            cells: [
+              {
+                id: 'd',
+                children: tile('D', 'rgba(251, 146, 60, 0.18)'),
+                width: 0.5,
+                resizable: true,
+                draggable: true,
+              },
+              {
+                id: 'e',
+                children: tile('E', 'rgba(56, 189, 248, 0.18)'),
+                width: 0.5,
+                resizable: true,
+                draggable: true,
+              },
+            ],
+          },
+        ]}
+      />
+    );
+  },
+};
+
+/**
+ * Insert mode uncontrolled with mixed sizes: 3 tiles per row, all draggable.
+ * Click the badge to enter edit mode, then reorder and migrate tiles.
+ *
+ * Note: when a tile crosses rows, layout re-flows because target row's
+ * `width` ratios re-normalize via corvu Flex (e.g. 3 cells with 0.33 each
+ * becomes 4 cells competing for the same horizontal space).
+ */
+export const InsertModeUncontrolled: Story = {
+  name: 'rows · insert mode (uncontrolled, mixed sizes)',
+  argTypes: {
+    onLayoutChange: { action: 'layoutChange' },
+  },
+  render: (args) => {
+    const tile = (label: string) => (
+      <div class="flex h-full w-full items-center justify-center border bg-card text-sm text-foreground">
+        {label}
+      </div>
+    );
+    return (
+      <Matrix
+        dndMode="insert"
+        onLayoutChange={(e) => args.onLayoutChange?.(e)}
+        rows={[
+          {
+            id: 'top',
+            resizable: true,
+            cells: [
+              { id: 't1', children: tile('Top-1'), width: 0.5, resizable: true, draggable: true },
+              { id: 't2', children: tile('Top-2'), width: 0.5, resizable: true, draggable: true },
+            ],
+          },
+          {
+            id: 'mid',
+            resizable: true,
+            cells: [
+              { id: 'm1', children: tile('Mid-1'), width: 0.33, resizable: true, draggable: true },
+              { id: 'm2', children: tile('Mid-2'), width: 0.33, resizable: true, draggable: true },
+              { id: 'm3', children: tile('Mid-3'), width: 0.34, resizable: true, draggable: true },
+            ],
+          },
+          {
+            id: 'bot',
+            resizable: true,
+            cells: [{ id: 'b1', children: tile('Bot-1'), draggable: true }],
+          },
+        ]}
+      />
+    );
+  },
+};

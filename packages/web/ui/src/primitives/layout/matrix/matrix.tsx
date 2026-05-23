@@ -15,6 +15,7 @@ import { Animate, type AnimateVariant } from '../../wrappers/animate';
 import { Flex } from '../flex/flex';
 import type { IFlexItem } from '../flex/interfaces';
 import { EditBadge } from './dnd/edit-badge';
+import { createInsertEngine } from './dnd/insert';
 import { createSwapEngine } from './dnd/swap';
 import type { ICell, IMatrixProps, IRow } from './interfaces';
 import { resolvePreset } from './presets';
@@ -113,13 +114,16 @@ const renderRow = (
   router: ICapsuleRouter | null,
   getSwappedChildren: ((cellId: string) => JSX.Element) | undefined,
   bindCell: ((cell: ICell, rowId: string | undefined) => (el: HTMLElement) => void) | undefined,
+  bindRow: ((rowId: string) => (el: HTMLElement) => void) | undefined,
 ): JSX.Element => {
   const hasResizable = rowHasResizable(row);
+  // Cross-row drop target ref — only meaningful in insert mode (bindRow defined).
+  const rowDropRef = bindRow && row.id ? bindRow(row.id) : NOOP_REF;
 
   if (hasResizable) {
     const items = rowToFlexItems(row, animated, router, getSwappedChildren, bindCell);
     return (
-      <div class="relative h-full min-h-0 flex-1 overflow-hidden">
+      <div ref={rowDropRef} class="relative h-full min-h-0 flex-1 overflow-hidden">
         <div class="absolute inset-0">
           <Flex orientation="horizontal" items={items} withHandle />
         </div>
@@ -129,6 +133,7 @@ const renderRow = (
 
   return (
     <div
+      ref={rowDropRef}
       class="flex min-h-0 w-full overflow-hidden"
       classList={{ 'flex-1': row.height === 'fr' || row.height === undefined }}
     >
@@ -152,12 +157,13 @@ const rowsToVerticalItems = (
   router: ICapsuleRouter | null,
   getSwappedChildren: ((cellId: string) => JSX.Element) | undefined,
   bindCell: ((cell: ICell, rowId: string | undefined) => (el: HTMLElement) => void) | undefined,
+  bindRow: ((rowId: string) => (el: HTMLElement) => void) | undefined,
 ): IFlexItem[] =>
   rows.map((row) => {
     const heightIsNumber = typeof row.height === 'number';
     const isResizable = row.resizable ?? true;
     return {
-      children: renderRow(row, animated, router, getSwappedChildren, bindCell),
+      children: renderRow(row, animated, router, getSwappedChildren, bindCell, bindRow),
       resizable: isResizable,
       initialSize: heightIsNumber ? (row.height as number) : undefined,
     };
@@ -186,6 +192,9 @@ interface IMatrixContentProps {
 
 const MatrixContent = (props: IMatrixContentProps) => {
   const swapEnabled = createMemo(() => props.layoutMode() === 'edit' && props.dndMode() === 'swap');
+  const insertEnabled = createMemo(
+    () => props.layoutMode() === 'edit' && props.dndMode() === 'insert',
+  );
 
   const swap = createSwapEngine({
     rows: props.rows,
@@ -193,18 +202,31 @@ const MatrixContent = (props: IMatrixContentProps) => {
     onLayoutChange: props.onLayoutChange,
   });
 
+  const insert = createInsertEngine({
+    rows: props.rows,
+    enabled: insertEnabled,
+    onLayoutChange: props.onLayoutChange,
+  });
+
+  // Effective rows: insert mode mutates layout structure; swap mode does not.
+  const effectiveRows = createMemo(() =>
+    props.dndMode() === 'insert' ? insert.rows() : props.rows(),
+  );
+
   const hasDraggableCells = createMemo(() =>
-    props.rows().some((r) => r.cells.some((c) => c.draggable)),
+    effectiveRows().some((r) => r.cells.some((c) => c.draggable)),
   );
 
   const renderContent = (): JSX.Element => {
-    const rows = props.rows();
+    const rows = effectiveRows();
 
     if (rows.length === 0) return null;
 
     const isSwap = props.dndMode() === 'swap';
+    const isInsert = props.dndMode() === 'insert';
     const swapGetChildren = isSwap ? swap.getCellChildren : undefined;
-    const swapBind = isSwap ? swap.bindCell : undefined;
+    const swapBind = isSwap ? swap.bindCell : isInsert ? insert.bindCell : undefined;
+    const insertBindRow = isInsert ? insert.bindRow : undefined;
 
     // Single row, single cell (centroid shortcut)
     if (rows.length === 1 && rows[0].cells.length === 1 && !rows[0].resizable) {
@@ -230,6 +252,7 @@ const MatrixContent = (props: IMatrixContentProps) => {
         props.router,
         swapGetChildren,
         swapBind,
+        insertBindRow,
       );
       return (
         <div class="relative h-full w-full overflow-hidden">
@@ -247,11 +270,25 @@ const MatrixContent = (props: IMatrixContentProps) => {
             if (row.height === 'auto' || (row.height === undefined && rows.length > 1)) {
               return (
                 <div class="w-full shrink-0">
-                  {renderRow(row, props.animated, props.router, swapGetChildren, swapBind)}
+                  {renderRow(
+                    row,
+                    props.animated,
+                    props.router,
+                    swapGetChildren,
+                    swapBind,
+                    insertBindRow,
+                  )}
                 </div>
               );
             }
-            return renderRow(row, props.animated, props.router, swapGetChildren, swapBind);
+            return renderRow(
+              row,
+              props.animated,
+              props.router,
+              swapGetChildren,
+              swapBind,
+              insertBindRow,
+            );
           }}
         </For>
       </div>
