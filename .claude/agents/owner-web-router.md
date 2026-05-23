@@ -73,7 +73,7 @@ apps/<app>/bootstrap.tsx
 ## Release group
 
 **Группа `web_base`** (fixed-versioning, tag `web@{version}`). Соседи:
-- web-core (главный consumer — BaseProviders импортит RouterProvider), web-state, web-style, web-ui, web-dnd, web-editor, web-profiler, web-query, web-renderer, shared-zod
+- web-core (главный consumer — BaseProviders импортит RouterProvider), web-state, web-style, web-ui, web-dnd, web-ui-creator, web-profiler, web-query, web-renderer, shared-zod
 
 `web-router` — fundamental: каждый app использует через `BaseProviders`. Breaking change в ICapsuleRouter API = breaking для всех Controller/Feature schemas (services.router).
 

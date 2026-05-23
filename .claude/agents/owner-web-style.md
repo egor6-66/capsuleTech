@@ -75,7 +75,7 @@ import '@capsuletech/web-style/themes/light.css';
 ## Release group
 
 **Группа `web_base`** (fixed, tag `web@{version}`). Соседи:
-- web-core, web-state, web-router, web-ui (главный consumer), web-dnd, web-editor, web-profiler, web-query, web-renderer, shared-zod
+- web-core, web-state, web-router, web-ui (главный consumer), web-dnd, web-ui-creator, web-profiler, web-query, web-renderer, shared-zod
 
 `web-style` — фундамент UI-стека. Все web-ui primitives используют `createStyle` + `cn`. Breaking change в API = breaking для web-ui + всех Entities в apps.
 

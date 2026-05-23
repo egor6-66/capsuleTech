@@ -44,7 +44,7 @@ status: documented
 | **`owner-web-style`** | `packages/web/style` | `web_base` (fixed) |
 | **`owner-web-ui`** | `packages/web/ui` | `web_base` (fixed) |
 | **`owner-web-dnd`** | `packages/web/dnd` | `web_base` (fixed) |
-| **`owner-web-editor`** | `packages/web/editor` | `web_base` (fixed) |
+| **`owner-web-ui-creator`** | `packages/web/ui-creator` | `web_base` (fixed) |
 | **`owner-web-query`** | `packages/web/query` | `web_base` (fixed) |
 | **`owner-web-renderer`** | `packages/web/renderer` | `web_base` (fixed) |
 | **`owner-web-profiler`** | `packages/web/profiler` | `web_base` (fixed) |

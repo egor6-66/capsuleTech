@@ -22,8 +22,8 @@ audience: claude
 | `packages/web/renderer/src/renderer.tsx` | `Renderer`, `RenderNode`, `activeInteractions`, `DefaultFallback` |
 | `packages/web/renderer/src/resolve.ts` | `resolvePath(registry, 'a.b.c')` — dot-path lookup |
 | `packages/web/renderer/src/types.ts` | `ISchema`, `IEditorNode`, `IInteraction`, `RenderMode`, `Registry`, `IRendererProps`, `NodeId` |
-| `packages/web/editor/src/state/types.ts` | Source-of-truth для `IEditorTree`/`IEditorNode` со стороны редактора (поля идентичные, дублируются) |
-| `packages/web/editor/src/state/operations.ts` | Pure-операции, продюсирующие совместимый `IEditorTree` для renderer'а |
+| `packages/web/ui-creator/src/state/types.ts` | Source-of-truth для `IEditorTree`/`IEditorNode` со стороны редактора (поля идентичные, дублируются) |
+| `packages/web/ui-creator/src/state/operations.ts` | Pure-операции, продюсирующие совместимый `IEditorTree` для renderer'а |
 
 ## Public API
 
@@ -166,7 +166,7 @@ Cтруктура свободная; конвенция выше — то, чт
 
 ## Связь с другими пакетами
 
-- **[[editor|@capsuletech/web-editor]]** — design-time. `editor/state/operations.ts` производит `IEditorTree`, совместимый с `ISchema.components` 1-в-1. `editor/manifests` описывают компоненты на edit-time (zod-схемы, defaults, drop-валидации), renderer этого ничего не видит.
+- **[[ui-creator|@capsuletech/web-ui-creator]]** — design-time. `ui-creator/state/operations.ts` производит `IEditorTree`, совместимый с `ISchema.components` 1-в-1. `ui-creator/manifests` описывают компоненты на edit-time (zod-схемы, defaults, drop-валидации), renderer этого ничего не видит. `ui-creator/generators` строит схемы procedurally (то же дерево, что и manual editor).
 - **[[core|@capsuletech/web-core]]** — `Entities`/`Widgets`/`Controllers`/`Features` обычно скармливаются в `registry`. Используется через `.capsule/registry/wrappers.ts` (генерится `ExportGeneratorPlugin`).
 - **`UiProxy` ([[ui-proxy]])** — внутри отрендеренного Controller'а Entity автоматически проксируется. Renderer не делает ничего особенного — просто следит, чтобы Context.Provider встал ДО рендера Entity (см. thunk-chain выше).
 

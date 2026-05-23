@@ -57,7 +57,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 
 **`@capsuletech/web-map` НЕ в release-группе `web_base`** (см. `nx.json:release.groups`). Релизится отдельно как `@capsuletech/web-map@0.0.x`. Это сознательно — пакет в iter 0, ещё не стабилен.
 
-Когда стабилизируется (после iter 2 markers, минимум) — обсудить с юзером добавление в `web_base` (fixed-versioning). Соседи группы тогда: `web-core`, `web-dnd`, `web-editor`, `web-profiler`, `web-query`, `web-renderer`, `web-router`, `web-state`, `web-style`, `web-ui`, `shared-zod`.
+Когда стабилизируется (после iter 2 markers, минимум) — обсудить с юзером добавление в `web_base` (fixed-versioning). Соседи группы тогда: `web-core`, `web-dnd`, `web-ui-creator`, `web-profiler`, `web-query`, `web-renderer`, `web-router`, `web-state`, `web-style`, `web-ui`, `shared-zod`.
 
 ## Roadmap (из README)
 

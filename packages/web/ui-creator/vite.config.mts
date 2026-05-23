@@ -6,6 +6,7 @@ export default libConfig({
     manifests: 'src/manifests/index.ts',
     state: 'src/state/index.ts',
     inspector: 'src/inspector/index.ts',
+    generators: 'src/generators/index.ts',
   },
-  name: 'CapsuleEditor',
+  name: 'CapsuleUiCreator',
 });

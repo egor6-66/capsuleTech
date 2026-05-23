@@ -98,7 +98,7 @@ card/
 ## Release group
 
 **Группа `web_base`** (fixed, tag `web@{version}`). Соседи:
-- web-core (consumer через Entity primitives), web-state, web-router, web-style (peer + glue), web-dnd, web-editor, web-profiler, web-query, web-renderer, shared-zod
+- web-core (consumer через Entity primitives), web-state, web-router, web-style (peer + glue), web-dnd, web-ui-creator, web-profiler, web-query, web-renderer, shared-zod
 
 `web-ui` — visible layer. Все Entities в apps композят отсюда. Breaking change в primitive API (renaming prop, removing variant) = breaking для всех Entities. Bump major + согласуй со всеми owner'ами.
 

@@ -99,7 +99,7 @@ bridge.pick(['@inputs']);  // resolved через expandTags под капото
 ## Release group
 
 **Группа `web_base`** (fixed-versioning, tag `web@{version}`). Соседи:
-- web-core (главный consumer), web-router, web-style, web-ui, web-dnd, web-editor, web-profiler, web-query, web-renderer, shared-zod
+- web-core (главный consumer), web-router, web-style, web-ui, web-dnd, web-ui-creator, web-profiler, web-query, web-renderer, shared-zod
 
 `web-state` — фундамент логического слоя. Все Controller/Feature schemas базируются на `IBaseStateSchema`. Breaking change в shape = breaking для всех schemas в apps.
 

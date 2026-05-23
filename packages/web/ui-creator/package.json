@@ -1,5 +1,5 @@
 {
-  "name": "@capsuletech/web-editor",
+  "name": "@capsuletech/web-ui-creator",
   "version": "0.1.1",
   "type": "module",
   "main": "./dist/index.mjs",
@@ -24,6 +24,11 @@
       "types": "./dist/inspector/index.d.ts",
       "import": "./dist/inspector.mjs",
       "default": "./dist/inspector.mjs"
+    },
+    "./generators": {
+      "types": "./dist/generators/index.d.ts",
+      "import": "./dist/generators.mjs",
+      "default": "./dist/generators.mjs"
     }
   },
   "files": [
@@ -31,7 +36,9 @@
   ],
   "scripts": {
     "build": "vite build",
-    "dev": "vite build --watch"
+    "dev": "vite build --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@capsuletech/shared-zod": "workspace:*",
@@ -42,7 +49,10 @@
   },
   "devDependencies": {
     "@capsuletech/lib-builder": "workspace:*",
-    "@capsuletech/vite-builder": "workspace:*"
+    "@capsuletech/vite-builder": "workspace:*",
+    "@testing-library/jest-dom": "^6.9.1",
+    "jsdom": "~29.1.1",
+    "vite-plugin-solid": "^2.11.12"
   },
   "publishConfig": {
     "access": "public",

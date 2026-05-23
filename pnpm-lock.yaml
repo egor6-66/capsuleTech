@@ -451,25 +451,6 @@ importers:
         specifier: workspace:*
         version: link:../../builders/vite
 
-  packages/web/editor:
-    dependencies:
-      '@capsuletech/shared-zod':
-        specifier: workspace:*
-        version: link:../../shared/zod
-      lucide-solid:
-        specifier: ^1.16.0
-        version: 1.16.0(solid-js@1.9.12)
-      solid-js:
-        specifier: 1.9.12
-        version: 1.9.12
-    devDependencies:
-      '@capsuletech/lib-builder':
-        specifier: workspace:*
-        version: link:../../builders/lib
-      '@capsuletech/vite-builder':
-        specifier: workspace:*
-        version: link:../../builders/vite
-
   packages/web/map:
     dependencies:
       maplibre-gl:
@@ -697,6 +678,34 @@ importers:
       vite-tsconfig-paths:
         specifier: ^6.1.1
         version: 6.1.1(typescript@5.9.3)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
+
+  packages/web/ui-creator:
+    dependencies:
+      '@capsuletech/shared-zod':
+        specifier: workspace:*
+        version: link:../../shared/zod
+      lucide-solid:
+        specifier: ^1.16.0
+        version: 1.16.0(solid-js@1.9.12)
+      solid-js:
+        specifier: 1.9.12
+        version: 1.9.12
+    devDependencies:
+      '@capsuletech/lib-builder':
+        specifier: workspace:*
+        version: link:../../builders/lib
+      '@capsuletech/vite-builder':
+        specifier: workspace:*
+        version: link:../../builders/vite
+      '@testing-library/jest-dom':
+        specifier: ^6.9.1
+        version: 6.9.1
+      jsdom:
+        specifier: ~29.1.1
+        version: 29.1.1
+      vite-plugin-solid:
+        specifier: ^2.11.12
+        version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
 
 packages:
 
