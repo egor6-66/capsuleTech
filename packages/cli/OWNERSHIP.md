@@ -106,6 +106,8 @@ Bin:
 
 19. **`scripts/desktop.mjs` больше не используется CLI-ом** (начиная с PR 5 — ADR 017). Скрипт остаётся рабочим legacy-entry до PR 8 cleanup. CLI теперь импортирует `@capsuletech/desktop` напрямую.
 
+20. **`@capsuletech/cli` в app-template использует `<%= cap %>`, не `"latest"`.** Переменная `cap` вычисляется в `_scaffold.ts` как `mode === 'dev' ? 'workspace:*' : 'latest'`. Mode приходит из `ctx.mode` → `detectMode` в `context/detect.ts` — ищет `packages/builders/vite/package.json` для детекта capsule monorepo. Внутри capsule: `workspace:*`. Снаружи: `latest`. Web-* deps уже корректно используют `cap` — cli devDep был единственным исключением (hardcode `"latest"`, пофиксен PR feat/cli-template-workspace-detect).
+
 ## План рефакторинга / оптимизаций
 
 - [ ] **CI bypass для всех команд с prompts** — `git commit`, `git pr`, `release local/prod`, `desktop dev/build`, `create *` с обязательными params. Проверять `isCi()` перед каждым `kit.select/confirm` и падать с понятным сообщением вместо зависания. (priority: high)
