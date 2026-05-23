@@ -209,6 +209,7 @@
     "solid-motionone": "^1.0.4"
   },
   "peerDependencies": {
+    "@capsuletech/web-dnd": "workspace:*",
     "@capsuletech/web-style": "workspace:*",
     "@kobalte/core": "^0.13.0",
     "@tanstack/solid-table": "^8.21.3",

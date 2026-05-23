@@ -633,6 +633,9 @@ importers:
 
   packages/web/ui:
     dependencies:
+      '@capsuletech/web-dnd':
+        specifier: workspace:*
+        version: link:../dnd
       '@capsuletech/web-style':
         specifier: workspace:*
         version: link:../style

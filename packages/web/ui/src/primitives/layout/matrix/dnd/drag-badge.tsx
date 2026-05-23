@@ -29,16 +29,15 @@ export const DragBadge = (props: IDragBadgeProps) => {
   };
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
+    <button
+      type="button"
       aria-label="Drag to swap cell"
       title="Drag to swap"
       class="absolute right-1 top-1 z-20 flex h-7 w-7 cursor-grab items-center justify-center rounded border border-border bg-card/80 opacity-80 shadow-sm backdrop-blur-sm transition-all hover:bg-accent hover:opacity-100 active:cursor-grabbing"
       onPointerDown={onPointerDown}
     >
       <GripIcon />
-    </div>
+    </button>
   );
 };
 
