@@ -1,4 +1,4 @@
-import { DnDProvider } from '@capsuletech/web-dnd';
+import { DnDProvider, useDnD } from '@capsuletech/web-dnd';
 import { type ICapsuleRouter, RouterContext } from '@capsuletech/web-router';
 import { createStyle } from '@capsuletech/web-style';
 import {
@@ -7,6 +7,7 @@ import {
   createSignal,
   For,
   type JSX,
+  Show,
   splitProps,
   useContext,
 } from 'solid-js';
@@ -62,6 +63,8 @@ interface ICellDndState {
   draggableId: string;
   isOver: Accessor<boolean>;
   canDrop: Accessor<boolean>;
+  /** Drag is active AND this cell would accept the active payload (soft highlight). */
+  canAccept: Accessor<boolean>;
   showBadge: boolean;
 }
 
@@ -75,6 +78,8 @@ const renderCell = (
   cellRef: ((el: HTMLElement) => void) | undefined,
   /** DnD state for badge rendering + drop highlight. undefined = no DnD on this cell. */
   dndState: ICellDndState | undefined,
+  /** Reactive: true when any drag is active — suppresses hover events on cell content. */
+  isDragging: Accessor<boolean>,
 ): JSX.Element => {
   const tag = cell.tag ?? 'div';
   const isMain = cell.id === 'main';
@@ -90,16 +95,34 @@ const renderCell = (
     return (
       <Dynamic
         component={tag}
+        ref={cellRef}
         class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative`}
-        classList={{
-          'ring-2 ring-primary/50 bg-primary/5': dndState.canDrop(),
-          'ring-2 ring-border': dndState.isOver() && !dndState.canDrop(),
-        }}
       >
-        {/* Inner wrapper takes the DnD ref and clips scrollable content */}
-        <div ref={cellRef} class="absolute inset-0 overflow-hidden">
+        {/* Inner scroll wrapper; pointer-events-none during drag prevents hover leaking
+            into cell content (table row hover, map hover, etc.).
+            DnD ref lives on the outer wrapper so elementFromPoint() always hits it. */}
+        <div
+          class="absolute inset-0 overflow-auto"
+          classList={{ 'pointer-events-none': isDragging() }}
+        >
           {content}
         </div>
+        {/* Absolute overlay renders above canvas / GPU layers — ring/box-shadow do not. */}
+        <Show when={dndState.canAccept() || dndState.canDrop() || dndState.isOver()}>
+          <div
+            class="pointer-events-none absolute inset-0 z-30 transition-colors duration-150"
+            classList={{
+              // Soft: drag active, cell is a valid target but pointer not over it yet
+              'border-2 border-primary/30 bg-primary/5':
+                dndState.canAccept() && !dndState.canDrop(),
+              // Strong: pointer is over this cell and it accepts the payload
+              'border-2 border-primary bg-primary/15': dndState.canDrop(),
+              // Wrong group: hovering a cell that cannot accept the active drag
+              'border-2 border-border':
+                dndState.isOver() && !dndState.canDrop() && !dndState.canAccept(),
+            }}
+          />
+        </Show>
         {dndState.showBadge && <DragBadge draggableId={dndState.draggableId} />}
       </Dynamic>
     );
@@ -127,15 +150,20 @@ const rowToFlexItems = (
   getSwappedChildren: ((cellId: string) => JSX.Element) | undefined,
   bindCell: ((cell: ICell, rowId: string | undefined) => (el: HTMLElement) => void) | undefined,
   getCellDndState: ((cell: ICell) => ICellDndState | undefined) | undefined,
+  /** Saved sizes for this row's horizontal panels (index-aligned). */
+  savedSizes: number[] | undefined,
+  isDragging: Accessor<boolean>,
 ): IFlexItem[] =>
-  row.cells.map((cell) => {
+  row.cells.map((cell, i) => {
     const widthIsNumber = typeof cell.width === 'number';
     const cellRef = cell.draggable && bindCell ? bindCell(cell, row.id) : NOOP_REF;
     const dndState = getCellDndState ? getCellDndState(cell) : undefined;
+    // Prefer session-persisted size; fall back to declared cell.width.
+    const resolvedSize = savedSizes?.[i] ?? (widthIsNumber ? (cell.width as number) : undefined);
     return {
-      children: renderCell(cell, animated, router, getSwappedChildren, cellRef, dndState),
+      children: renderCell(cell, animated, router, getSwappedChildren, cellRef, dndState, isDragging),
       resizable: cell.resizable ?? false,
-      initialSize: widthIsNumber ? (cell.width as number) : undefined,
+      initialSize: resolvedSize,
       minSize: undefined,
       maxSize: undefined,
     };
@@ -155,6 +183,11 @@ const renderRow = (
   bindCell: ((cell: ICell, rowId: string | undefined) => (el: HTMLElement) => void) | undefined,
   bindRow: ((rowId: string) => (el: HTMLElement) => void) | undefined,
   getCellDndState: ((cell: ICell) => ICellDndState | undefined) | undefined,
+  /** Saved horizontal panel sizes for this row (index-aligned, session-persisted). */
+  savedSizes: number[] | undefined,
+  /** Called when corvu reports new horizontal sizes for this row. */
+  onRowSizesChange: ((sizes: number[]) => void) | undefined,
+  isDragging: Accessor<boolean>,
 ): JSX.Element => {
   const hasResizable = rowHasResizable(row);
   // Cross-row drop target ref — only meaningful in insert mode (bindRow defined).
@@ -168,11 +201,18 @@ const renderRow = (
       getSwappedChildren,
       bindCell,
       getCellDndState,
+      savedSizes,
+      isDragging,
     );
     return (
       <div ref={rowDropRef} class="relative h-full min-h-0 flex-1 overflow-hidden">
         <div class="absolute inset-0">
-          <Flex orientation="horizontal" items={items} withHandle />
+          <Flex
+            orientation="horizontal"
+            items={items}
+            withHandle
+            onSizesChange={onRowSizesChange}
+          />
         </div>
       </div>
     );
@@ -188,7 +228,7 @@ const renderRow = (
         {(cell) => {
           const cellRef = cell.draggable && bindCell ? bindCell(cell, row.id) : NOOP_REF;
           const dndState = getCellDndState ? getCellDndState(cell) : undefined;
-          return renderCell(cell, animated, router, getSwappedChildren, cellRef, dndState);
+          return renderCell(cell, animated, router, getSwappedChildren, cellRef, dndState, isDragging);
         }}
       </For>
     </div>
@@ -207,10 +247,25 @@ const rowsToVerticalItems = (
   bindCell: ((cell: ICell, rowId: string | undefined) => (el: HTMLElement) => void) | undefined,
   bindRow: ((rowId: string) => (el: HTMLElement) => void) | undefined,
   getCellDndState: ((cell: ICell) => ICellDndState | undefined) | undefined,
+  /** Saved vertical panel sizes (index-aligned). */
+  savedVerticalSizes: number[] | undefined,
+  /** Per-row saved horizontal sizes. Key = rowId ?? "r<index>". */
+  getRowSavedSizes: ((rowKey: string) => number[] | undefined) | undefined,
+  /** Called when a horizontal row's corvu sizes change. Key = rowId ?? "r<index>". */
+  onRowSizesChange: ((rowKey: string, sizes: number[]) => void) | undefined,
+  isDragging: Accessor<boolean>,
 ): IFlexItem[] =>
-  rows.map((row) => {
+  rows.map((row, i) => {
     const heightIsNumber = typeof row.height === 'number';
     const isResizable = row.resizable ?? true;
+    const rowKey = row.id ?? `r${i}`;
+    const rowSaved = getRowSavedSizes ? getRowSavedSizes(rowKey) : undefined;
+    const rowOnChange = onRowSizesChange
+      ? (sizes: number[]) => onRowSizesChange(rowKey, sizes)
+      : undefined;
+    // Prefer session-persisted vertical size; fall back to declared row.height.
+    const resolvedHeight =
+      savedVerticalSizes?.[i] ?? (heightIsNumber ? (row.height as number) : undefined);
     return {
       children: renderRow(
         row,
@@ -220,9 +275,12 @@ const rowsToVerticalItems = (
         bindCell,
         bindRow,
         getCellDndState,
+        rowSaved,
+        rowOnChange,
+        isDragging,
       ),
       resizable: isResizable,
-      initialSize: heightIsNumber ? (row.height as number) : undefined,
+      initialSize: resolvedHeight,
     };
   });
 
@@ -246,13 +304,60 @@ interface IMatrixContentProps {
   onLayoutChange: ((e: import('./interfaces').LayoutChangeEvent) => void) | undefined;
 }
 
+// ---------------------------------------------------------------------------
+// SizesMap — session-only persistence of user-resized panel sizes.
+// Key scheme:
+//   "v"         → vertical flex (rows column)
+//   "h:<rowKey>" → horizontal flex within a row (rowKey = rowId ?? "r<index>")
+//
+// Implemented as a plain mutable object (not a signal) for two reasons:
+//   1. Reads must NOT be reactive — we deliberately read at rebuild time only,
+//      so we never want sizesMap to be a dependency of renderContent().
+//   2. corvu fires onSizesChange SYNCHRONOUSLY during panel unregistration
+//      (cleanup/unmount). These calls carry shrinking arrays (panels removed
+//      one-by-one) that would corrupt the snapshot if saved. We guard against
+//      this by discarding updates where sizes.length < snapshot[key].length.
+// ---------------------------------------------------------------------------
+
+type SizesMap = Record<string, number[]>;
+
 const MatrixContent = (props: IMatrixContentProps) => {
+  // Reactive drag-active flag — suppresses pointer-events on cell content during drag.
+  // useDnD() is safe here: MatrixContent always renders inside DnDProvider.
+  const dnd = useDnD();
+  const isDragging = createMemo(() => dnd.state.activeId() !== null);
+
   // Swap is enabled whenever dndMode is 'swap' — layoutMode is no longer the gate.
   // Badge visibility (2+ draggable cells) is the UX gate.
   const swapEnabled = createMemo(() => props.dndMode() === 'swap');
   const insertEnabled = createMemo(
     () => props.layoutMode() === 'edit' && props.dndMode() === 'insert',
   );
+
+  // Plain mutable store — intentionally NOT a signal.
+  // Reads inside renderContent() must not create reactive dependencies.
+  const sizesSnapshot: SizesMap = {};
+
+  const getSavedSizes = (key: string): number[] | undefined => sizesSnapshot[key];
+
+  const saveSizes = (key: string, sizes: number[]): void => {
+    const prev = sizesSnapshot[key];
+    // Guard against corvu's cleanup-time calls: when panels unregister one-by-one,
+    // corvu fires onSizesChange with a shrinking array. Discard those calls so
+    // we don't overwrite valid resize data with partial/empty arrays.
+    if (prev !== undefined && sizes.length < prev.length) return;
+    sizesSnapshot[key] = sizes;
+  };
+
+  const getRowSavedSizes = (rowKey: string): number[] | undefined => getSavedSizes(`h:${rowKey}`);
+
+  const onRowSizesChange = (rowKey: string, sizes: number[]): void => {
+    saveSizes(`h:${rowKey}`, sizes);
+  };
+
+  const onVerticalSizesChange = (sizes: number[]): void => {
+    saveSizes('v', sizes);
+  };
 
   const swap = createSwapEngine({
     rows: props.rows,
@@ -278,11 +383,12 @@ const MatrixContent = (props: IMatrixContentProps) => {
   // Build getCellDndState — returns per-cell badge + highlight state.
   const getCellDndState = (cell: ICell): ICellDndState | undefined => {
     if (!cell.draggable || props.dndMode() !== 'swap') return undefined;
-    const { isOver, canDrop } = swap.getCellDropState(cell.id);
+    const { isOver, canDrop, canAccept } = swap.getCellDropState(cell.id);
     return {
       draggableId: swap.getDraggableId(cell.id),
       isOver,
       canDrop,
+      canAccept,
       showBadge: showBadges(),
     };
   };
@@ -308,16 +414,33 @@ const MatrixContent = (props: IMatrixContentProps) => {
         const cellRef = cell.draggable && swapBind ? swapBind(cell, rows[0].id) : NOOP_REF;
         const dndState = cellDndState ? cellDndState(cell) : undefined;
         return (
-          <div
-            class="relative flex h-full w-full items-center justify-center"
-            classList={{
-              'ring-2 ring-primary/50 bg-primary/5': dndState?.canDrop() ?? false,
-            }}
-          >
-            {/* Inner wrapper: takes DnD ref; content may scroll inside */}
-            <div ref={cellRef} class="absolute inset-0 overflow-hidden flex items-center justify-center">
+          <div ref={cellRef} class="relative flex h-full w-full items-center justify-center">
+            {/* Inner wrapper: overflow-auto allows content to scroll.
+                pointer-events-none during drag prevents hover leaking into content.
+                DnD ref is on the outer wrapper so elementFromPoint() always hits it. */}
+            <div
+              class="absolute inset-0 overflow-auto flex items-center justify-center"
+              classList={{ 'pointer-events-none': isDragging() }}
+            >
               {isMain ? animateMain(children, props.animated, props.router) : children}
             </div>
+            {/* Absolute overlay renders above canvas / GPU layers */}
+            <Show
+              when={dndState && (dndState.canAccept() || dndState.canDrop() || dndState.isOver())}
+            >
+              <div
+                class="pointer-events-none absolute inset-0 z-30 transition-colors duration-150"
+                classList={{
+                  'border-2 border-primary/30 bg-primary/5':
+                    (dndState?.canAccept() ?? false) && !(dndState?.canDrop() ?? false),
+                  'border-2 border-primary bg-primary/15': dndState?.canDrop() ?? false,
+                  'border-2 border-border':
+                    (dndState?.isOver() ?? false) &&
+                    !(dndState?.canDrop() ?? false) &&
+                    !(dndState?.canAccept() ?? false),
+                }}
+              />
+            </Show>
             {dndState?.showBadge && <DragBadge draggableId={dndState.draggableId} />}
           </div>
         );
@@ -343,11 +466,20 @@ const MatrixContent = (props: IMatrixContentProps) => {
           swapBind,
           insertBindRow,
           cellDndState,
+          getSavedSizes('v'),
+          getRowSavedSizes,
+          onRowSizesChange,
+          isDragging,
         );
         return (
           <div class="relative h-full w-full overflow-hidden">
             <div class="absolute inset-0">
-              <Flex orientation="vertical" items={verticalItems} withHandle />
+              <Flex
+                orientation="vertical"
+                items={verticalItems}
+                withHandle
+                onSizesChange={onVerticalSizesChange}
+              />
             </div>
           </div>
         );
@@ -365,13 +497,18 @@ const MatrixContent = (props: IMatrixContentProps) => {
         swapBind,
         insertBindRow,
         cellDndState,
+        getSavedSizes('v'),
+        getRowSavedSizes,
+        onRowSizesChange,
+        isDragging,
       );
 
       // Walk rows in order: emit shrink-0 divs for auto rows, and a single flex-1
       // resizable block at the position of the first non-auto row (skipping the rest).
       let resizableBlockEmitted = false;
-      const elements: JSX.Element[] = rows.map((row) => {
+      const elements: JSX.Element[] = rows.map((row, _i) => {
         if (row.height === 'auto') {
+          const rowKey = row.id ?? `r${_i}`;
           return (
             <div class="w-full shrink-0">
               {renderRow(
@@ -382,6 +519,9 @@ const MatrixContent = (props: IMatrixContentProps) => {
                 swapBind,
                 insertBindRow,
                 cellDndState,
+                getRowSavedSizes(rowKey),
+                (sizes) => onRowSizesChange(rowKey, sizes),
+                isDragging,
               )}
             </div>
           );
@@ -391,7 +531,12 @@ const MatrixContent = (props: IMatrixContentProps) => {
         return (
           <div class="relative min-h-0 flex-1 overflow-hidden">
             <div class="absolute inset-0">
-              <Flex orientation="vertical" items={verticalItems} withHandle />
+              <Flex
+                orientation="vertical"
+                items={verticalItems}
+                withHandle
+                onSizesChange={onVerticalSizesChange}
+              />
             </div>
           </div>
         );
@@ -403,7 +548,8 @@ const MatrixContent = (props: IMatrixContentProps) => {
     return (
       <div class="flex h-full w-full flex-col overflow-hidden">
         <For each={rows}>
-          {(row) => {
+          {(row, i) => {
+            const rowKey = row.id ?? `r${i()}`;
             if (row.height === 'auto' || (row.height === undefined && rows.length > 1)) {
               return (
                 <div class="w-full shrink-0">
@@ -415,6 +561,9 @@ const MatrixContent = (props: IMatrixContentProps) => {
                     swapBind,
                     insertBindRow,
                     cellDndState,
+                    getRowSavedSizes(rowKey),
+                    (sizes) => onRowSizesChange(rowKey, sizes),
+                    isDragging,
                   )}
                 </div>
               );
@@ -427,6 +576,9 @@ const MatrixContent = (props: IMatrixContentProps) => {
               swapBind,
               insertBindRow,
               cellDndState,
+              getRowSavedSizes(rowKey),
+              (sizes) => onRowSizesChange(rowKey, sizes),
+              isDragging,
             );
           }}
         </For>
@@ -481,7 +633,7 @@ const MatrixImpl = (props: IMatrixProps) => {
   void setLocalLayoutMode;
 
   return (
-    <DnDProvider showDefaultOverlay>
+    <DnDProvider showDefaultOverlay overlayMode="thumbnail">
       <div ref={local.ref} class={`${className()} relative`} style={style()} {...(rest as object)}>
         <MatrixContent
           rows={getRows}
@@ -525,7 +677,7 @@ const MatrixImpl = (props: IMatrixProps) => {
  * - Each resizable draggable cell shows a DragBadge (grip icon) in its top-right corner.
  * - Badge is visible only when 2+ draggable cells exist in the same swapGroup.
  * - Mousedown on badge → activates drag for that cell (pointer captured).
- * - Drop targets highlight with `ring-2 ring-primary/50` during an active drag.
+ * - Drop targets highlight with inset box-shadow (renders above canvas/child layers) during an active drag.
  * - `onLayoutChange` called with `{ kind: 'swap', a, b }` after each successful swap.
  * - No global edit badge / no edit mode toggle — drag is always available via badge.
  * - `layoutMode` prop still accepted (for insert mode / controlled state future use).

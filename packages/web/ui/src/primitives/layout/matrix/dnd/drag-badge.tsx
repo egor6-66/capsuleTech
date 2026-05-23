@@ -12,6 +12,7 @@
  */
 import type { DraggableId } from '@capsuletech/web-dnd';
 import { useDnD } from '@capsuletech/web-dnd';
+import { GripIcon } from '../../flex/_resize/grip-icon';
 
 interface IDragBadgeProps {
   /** The draggable id to activate on pointerdown (matches createDraggable id). */
@@ -36,31 +37,8 @@ export const DragBadge = (props: IDragBadgeProps) => {
       class="absolute right-1 top-1 z-20 flex h-7 w-7 cursor-grab items-center justify-center rounded border border-border bg-card/80 opacity-80 shadow-sm backdrop-blur-sm transition-all hover:bg-accent hover:opacity-100 active:cursor-grabbing"
       onPointerDown={onPointerDown}
     >
-      <GripIcon />
+      {/* Shared grip icon; override wrapper to remove double-border inside the button */}
+      <GripIcon class="flex items-center justify-center" />
     </button>
   );
 };
-
-/**
- * GripIcon — 6 dots (2×3 grid), styled like a resize handle grip.
- * Matches the visual language of the resize handle in Flex/Resizable.
- */
-const GripIcon = () => (
-  <svg
-    width="10"
-    height="14"
-    viewBox="0 0 10 14"
-    fill="currentColor"
-    aria-hidden="true"
-    class="text-foreground"
-  >
-    {/* Left column: 3 dots */}
-    <circle cx="2" cy="2.5" r="1.25" />
-    <circle cx="2" cy="7" r="1.25" />
-    <circle cx="2" cy="11.5" r="1.25" />
-    {/* Right column: 3 dots */}
-    <circle cx="8" cy="2.5" r="1.25" />
-    <circle cx="8" cy="7" r="1.25" />
-    <circle cx="8" cy="11.5" r="1.25" />
-  </svg>
-);
