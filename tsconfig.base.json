@@ -53,6 +53,9 @@
       "@capsuletech/web-ui-creator/inspector": [
         "packages/web/ui-creator/src/inspector/index.ts"
       ],
+      "@capsuletech/web-ui-creator/generators": [
+        "packages/web/ui-creator/src/generators/index.ts"
+      ],
       "@capsuletech/web-profiler": [
         "packages/web/profiler/src/index.ts"
       ],
