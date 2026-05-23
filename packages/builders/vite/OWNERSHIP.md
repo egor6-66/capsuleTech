@@ -33,7 +33,8 @@ Vite-конфиг и 9 плагинов для dev-сервера HCA-apps. Дё
 - `buildCapsuleApp(workspaceRoot, appName): Promise<void>` — CLI дёргает для `capsule build`.
 - `appConfig(config, isDev): UserConfig` — минимальный конфиг для plain Vite apps без HCA.
 - `libConfig` — re-export из `@capsuletech/lib-builder` для legacy compat.
-- `type ICapsuleConfig` — тип опций capsuleConfig.
+- `type ICapsuleConfig` — тип опций capsuleConfig (включая `desktop?: IDesktopConfig` для Tauri-shell — ADR 017).
+- `type IDesktopConfig` — реэкспорт из `@capsuletech/desktop` для удобства apps (одна точка типов).
 - `type IDefineLibConfigOptions` — тип опций libConfig.
 - `plugins` namespace — все плагины как named exports (через barrel `plugins/index.ts`).
 - `defines` namespace — все define-хелперы.
@@ -88,6 +89,8 @@ Vite-конфиг и 9 плагинов для dev-сервера HCA-apps. Дё
 - **`optimizeDeps.exclude`** — список `@capsuletech/web-*` пакетов в `capsuleConfig.ts`. При добавлении нового workspace-пакета добавь его сюда, иначе esbuild попытается пре-бандлить и сломает JSX-транспиляцию.
 
 - **`solidPlugin` exclude для `entities/`.** `vite-plugin-solid` внутри использует `solid-refresh`, который оборачивает любой `const X = SomeCall(...)` в `.tsx`-файле в `(props) => SomeCall(...)(props)` для поддержки HMR компонентов. `Entity` возвращает plain config object (`{ schema, defaults }`), а не Solid-компонент — после такой обёртки `Entities.Users` становится функцией, и любой доступ к `.schema`/`.defaults` падает TypeError. `HMRWrappingPlugin` entity уже скипает (использует только `RENDER_WRAPPER_NAMES`), но `solid-refresh` — отдельный babel-pass внутри `solidPlugin`. Поэтому `solidPlugin` получает `exclude: [/[\\/]entities[\\/]/]`. Регекс покрывает оба сепаратора (Win/Unix). При добавлении других data-layer слоёв (не возвращающих Solid-компонент) — добавлять в этот же exclude-список.
+
+- **`desktop?: IDesktopConfig` — data-only**. Vite-builder секцию НЕ читает в runtime — только тип. CLI читает её через `importModule('capsule.config.ts')` и передаёт в `runDev`/`runBuild` пакета `@capsuletech/desktop` (PR 5). `@capsuletech/desktop` в `peerDependencies` с `optional: true` — apps без desktop секции не получают лишний install.
 
 - **Мёртвый код к удалению:** `vite/src/utils/generateFromTemplates.ts`, `vite/src/plugins/html.ts` (HtmlPlugin), `vite/src/defines/appConfig.ts:1` (`import { builtinModules }`).
 
