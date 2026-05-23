@@ -26,7 +26,7 @@ const meta = {
   },
   decorators: [
     (Story) => (
-      <div class="h-[600px] w-full border border-dashed border-white/15 overflow-hidden">
+      <div class="h-[600px] w-full overflow-hidden border border-dashed border-white/15">
         <Story />
       </div>
     ),
@@ -36,167 +36,106 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+// ===========================================================================
+// Preset='app-shell' stories — friendly API
+// ===========================================================================
+
 /**
- * Auto-centroid mode: only `main` is provided — no other slots.
- * Matrix renders flex items-center justify-center, no Resizable, no grid.
+ * Auto-centroid: preset='app-shell' with only `main`. Single cell, no chrome.
  */
 export const OnlyMain: Story = {
-  name: 'auto-centroid (only main)',
-  render: () => (
-    <Matrix
-      slots={{
-        main: { children: <Button>Centroid content</Button> },
-      }}
-    />
-  ),
+  name: 'preset · auto-centroid (only main)',
+  render: () => <Matrix preset="app-shell" slots={{ main: <Button>Centroid content</Button> }} />,
 };
 
 /**
- * Auto-centroid with animated main slot.
+ * Auto-centroid with animated main.
  */
 export const OnlyMainAnimated: Story = {
-  name: 'auto-centroid · animated',
+  name: 'preset · auto-centroid · animated',
   render: () => (
     <Matrix
+      preset="app-shell"
       animated="fade"
-      slots={{
-        main: { children: <Button>Fade in on mount</Button> },
-      }}
+      slots={{ main: <Button>Fade in on mount</Button> }}
     />
   ),
 };
 
 /**
- * Grid mode: header + main + footer (two-row, one column).
- * No sidebar or rightBar — grid-template-areas has two columns omitted.
+ * Header + main + footer. No sidebar/rightBar.
+ *
+ * Preset 'app-shell' always makes the middle row resizable; here middle row has
+ * a single main cell so no horizontal handle appears, but footer-row is
+ * resizable vertically (footer.height defaults to 0.3).
  */
 export const HeaderMainFooter: Story = {
-  name: 'header + main + footer',
+  name: 'preset · header + main + footer',
   render: () => (
     <Matrix
+      preset="app-shell"
       slots={{
-        header: { children: <MockHeader /> },
-        main: { children: <MockMain /> },
-        footer: { children: <MockFooter /> },
+        header: <MockHeader />,
+        main: <MockMain />,
+        footer: <MockFooter />,
       }}
     />
   ),
 };
 
 /**
- * Full grid: all 5 slots — header / sidebar | main | rightBar / footer.
- * CSS Grid with dynamic areas, no resize.
+ * Full app-shell: header / sidebar | main | rightBar / footer.
+ * Default sizes from preset: main=0.8, sidebar=0.2, rightBar=0.2, footer-height=0.3.
  */
-export const FullGrid: Story = {
-  name: 'full grid (all 5 slots)',
+export const FullAppShell: Story = {
+  name: 'preset · full app-shell (all 5 slots)',
   render: () => (
     <Matrix
+      preset="app-shell"
       slots={{
-        header: { children: <MockHeader /> },
-        sidebar: { children: <MockSidebar /> },
-        main: { children: <MockMain /> },
-        rightBar: { children: <MockRightBar /> },
-        footer: { children: <MockFooter /> },
+        header: <MockHeader />,
+        sidebar: <MockSidebar />,
+        main: <MockMain />,
+        rightBar: <MockRightBar />,
+        footer: <MockFooter />,
       }}
     />
   ),
 };
 
 /**
- * Grid: header + sidebar + main (no rightBar, no footer).
+ * App-shell with size overrides via object-form SlotValue.
  */
-export const HeaderSidebarMain: Story = {
-  name: 'header + sidebar + main',
+export const AppShellWithOverrides: Story = {
+  name: 'preset · app-shell with size overrides',
   render: () => (
     <Matrix
+      preset="app-shell"
       slots={{
-        header: { children: <MockHeader /> },
-        sidebar: { children: <MockSidebar /> },
-        main: { children: <MockMain /> },
+        header: <MockHeader />,
+        sidebar: { children: <MockSidebar />, initialSize: 0.15, minSize: 0.1 },
+        main: { children: <MockMain />, initialSize: 0.65, minSize: 0.3 },
+        rightBar: { children: <MockRightBar />, initialSize: 0.2, minSize: 0.15 },
+        footer: { children: <MockFooter />, initialSize: 0.2, minSize: 0.08 },
       }}
     />
   ),
 };
 
 /**
- * Resizable sidebars: sidebar/main/rightBar opt-in to horizontal resize.
- * Header is fixed (non-resizable) — rendered outside Resizable group,
- * does NOT participate in fillInitialSizes (bug fix vs old variant API).
- */
-export const ResizableSidebars: Story = {
-  name: 'resizable · horizontal (sidebar + main + rightBar)',
-  render: () => (
-    <Matrix
-      slots={{
-        header: { children: <MockHeader /> },
-        sidebar: { children: <MockSidebar />, resizable: true, initialSize: 0.2, minSize: 0.12 },
-        main: { children: <MockMain />, resizable: true },
-        rightBar: { children: <MockRightBar />, resizable: true, initialSize: 0.22, minSize: 0.15 },
-      }}
-    />
-  ),
-};
-
-/**
- * Resizable vertical: header is fixed, footer opts-in to vertical resize.
- * The middle row (main only) is paired with footer in vertical Resizable.
- * Header stays fixed above the Resizable group — no fillInitialSizes allocation.
- */
-export const ResizableVertical: Story = {
-  name: 'resizable · vertical (fixed header + resizable footer)',
-  render: () => (
-    <Matrix
-      slots={{
-        header: { children: <MockHeader /> },
-        main: { children: <MockMain /> },
-        footer: { children: <MockFooter />, resizable: true, initialSize: 0.15, minSize: 0.08 },
-      }}
-    />
-  ),
-};
-
-/**
- * Resizable everything: all 5 slots participate in resize.
- * Outer vertical Resizable (header / middle / footer), inner horizontal
- * Resizable for the middle row (sidebar / main / rightBar).
- */
-export const ResizableEverything: Story = {
-  name: 'resizable · all axes (full)',
-  render: () => (
-    <Matrix
-      slots={{
-        header: { children: <MockHeader />, resizable: true, initialSize: 0.12, minSize: 0.08 },
-        sidebar: { children: <MockSidebar />, resizable: true, initialSize: 0.2, minSize: 0.12 },
-        main: { children: <MockMain />, resizable: true },
-        rightBar: { children: <MockRightBar />, resizable: true, initialSize: 0.22, minSize: 0.15 },
-        footer: { children: <MockFooter />, resizable: true, initialSize: 0.1, minSize: 0.06 },
-      }}
-    />
-  ),
-};
-
-/**
- * InteractiveResize — воспроизводит сценарий из sandbox `/workspace`:
- * фиксированный header + resizable main (длинный список) + resizable rightBar
- * + resizable footer. Проверяемые паттерны вручную:
- *
- *  1. **Scroll в main**: контент (30 строк × 36px ≈ 1080px) выходит за высоту
- *     Panel → должна появиться вертикальная полоса прокрутки внутри main.
- *
- *  2. **No overlap при resize**: тяни vertical handle (footer ↑) — footer
- *     должен расти, middle-row — уменьшаться, без наложения блоков.
- *
- *  3. **Horizontal resize**: тяни handle между main и rightBar — пропорции
- *     меняются, содержимое clip'ится без «вытекания».
- *
- * После фикса (overflow-hidden на ResizablePanel) оба паттерна работают корректно.
+ * Sandbox-like layout: header + main (scrollable rows) + rightBar + footer.
+ * Verifies:
+ *   1. Scroll inside main (50 rows × 36px > panel height)
+ *   2. No overlap on resize (drag handles work, footer/main don't overlap)
+ *   3. Panel content clipped at panel boundary (overflow-hidden)
  */
 export const InteractiveResize: Story = {
-  name: 'resizable · interactive (scroll + no overlap)',
+  name: 'preset · interactive (scroll + resize)',
   render: () => (
     <Matrix
+      preset="app-shell"
       slots={{
-        header: { children: <MockHeader /> },
+        header: <MockHeader />,
         main: {
           children: (
             <div class="h-full w-full overflow-auto">
@@ -212,66 +151,368 @@ export const InteractiveResize: Story = {
               ))}
             </div>
           ),
-          resizable: true,
           initialSize: 0.8,
           minSize: 0.3,
         },
-        rightBar: {
-          children: <MockRightBar />,
-          resizable: true,
-          initialSize: 0.2,
-          minSize: 0.12,
+        rightBar: { children: <MockRightBar />, initialSize: 0.2, minSize: 0.12 },
+        footer: { children: <MockFooter />, initialSize: 0.3, minSize: 0.06 },
+      }}
+    />
+  ),
+};
+
+// ===========================================================================
+// Raw rows stories — escape-hatch API
+// ===========================================================================
+
+/**
+ * Raw rows: two rows, no preset. First row has a single header cell, second
+ * row has two resizable cells (left/right). Shows the generic engine without
+ * preset semantics.
+ */
+export const RawRowsTwoColumns: Story = {
+  name: 'rows · two columns + header',
+  render: () => (
+    <Matrix
+      rows={[
+        {
+          id: 'top',
+          height: 'auto',
+          resizable: false,
+          cells: [{ id: 'header', tag: 'header', children: <MockHeader /> }],
         },
-        footer: {
-          children: <MockFooter />,
+        {
+          id: 'middle',
           resizable: true,
-          initialSize: 0.3,
-          minSize: 0.06,
+          cells: [
+            {
+              id: 'left',
+              tag: 'aside',
+              children: <MockSidebar />,
+              width: 0.3,
+              resizable: true,
+            },
+            {
+              id: 'right',
+              tag: 'main',
+              children: <MockMain />,
+              width: 0.7,
+              resizable: true,
+            },
+          ],
         },
+      ]}
+    />
+  ),
+};
+
+/**
+ * Raw rows: dashboard-grid pattern (3 rows × N cells of equal width).
+ * Demonstrates use case "N widgets in arbitrary arrangement" — closes the gap
+ * where 5-slot app-shell could not express grid-of-widgets layout.
+ */
+export const RawRowsDashboard: Story = {
+  name: 'rows · dashboard-grid (2-1-3)',
+  render: () => {
+    const tile = (label: string) => (
+      <div class="flex h-full w-full items-center justify-center border bg-card text-sm">
+        {label}
+      </div>
+    );
+    return (
+      <Matrix
+        rows={[
+          {
+            id: 'row-1',
+            resizable: true,
+            cells: [
+              { id: 'a', children: tile('A'), width: 0.5, resizable: true },
+              { id: 'b', children: tile('B'), width: 0.5, resizable: true },
+            ],
+          },
+          {
+            id: 'row-2',
+            resizable: true,
+            cells: [{ id: 'c', children: tile('C (full)') }],
+          },
+          {
+            id: 'row-3',
+            resizable: true,
+            cells: [
+              { id: 'd', children: tile('D'), width: 0.33, resizable: true },
+              { id: 'e', children: tile('E'), width: 0.33, resizable: true },
+              { id: 'f', children: tile('F'), width: 0.34, resizable: true },
+            ],
+          },
+        ]}
+      />
+    );
+  },
+};
+
+// ===========================================================================
+// Swap-mode DnD stories (Phase 1.2)
+// ===========================================================================
+
+/**
+ * Swap mode controlled: layoutMode='edit' forced from outside, sidebar and
+ * rightBar are in the same swapGroup ('aside') — drag one onto the other to
+ * swap their contents. main is NOT draggable so it cannot be moved.
+ *
+ * Open the actions panel to watch onLayoutChange events fire.
+ */
+export const SwapModeControlled: Story = {
+  name: 'preset · swap mode (controlled, layoutMode=edit)',
+  argTypes: {
+    onLayoutChange: { action: 'layoutChange' },
+  },
+  render: (args) => (
+    <Matrix
+      layoutMode="edit"
+      dndMode="swap"
+      onLayoutChange={(e) => args.onLayoutChange?.(e)}
+      preset="app-shell"
+      slots={{
+        header: <MockHeader />,
+        sidebar: { children: <MockSidebar />, draggable: true, initialSize: 0.2 },
+        main: <MockMain />,
+        rightBar: { children: <MockRightBar />, draggable: true, initialSize: 0.2 },
+        footer: { children: <MockFooter />, initialSize: 0.3 },
       }}
     />
   ),
 };
 
 /**
- * Regression: overflowing main content must NOT expand the corvu Panel past its
- * initialSize ratio. main.overflow-auto should scroll inside the panel; footer
- * should remain at ~30% height regardless of how many rows are in main.
- *
- * Before the fix (no `min-h-0` on ResizablePanel) the middle-row Panel grew to
- * content height and the footer Panel collapsed to min-content (~21 px).
+ * Swap mode uncontrolled: no layoutMode prop. An EditBadge appears in the
+ * top-right corner — click it to enter edit mode, then drag sidebar↔rightBar.
+ * Click "✓ Done" to exit edit mode.
  */
-export const WithOverflowingMain: Story = {
-  name: 'resizable · overflowing main (regression)',
-  render: () => (
+export const SwapModeUncontrolled: Story = {
+  name: 'preset · swap mode (uncontrolled, badge toggle)',
+  argTypes: {
+    onLayoutChange: { action: 'layoutChange' },
+  },
+  render: (args) => (
     <Matrix
+      onLayoutChange={(e) => args.onLayoutChange?.(e)}
+      preset="app-shell"
       slots={{
-        header: { children: <MockHeader /> },
-        main: {
-          children: (
-            <div class="h-full w-full overflow-auto">
-              {Array.from({ length: 50 }, (_, i) => (
-                <div class="border-b px-4 py-2 text-sm">Row {i + 1} — placeholder content</div>
-              ))}
-            </div>
-          ),
-          resizable: true,
-          initialSize: 0.7,
-          minSize: 0.2,
-        },
-        rightBar: {
-          children: <MockRightBar />,
-          resizable: true,
-          initialSize: 0.3,
-          minSize: 0.15,
-        },
-        footer: {
-          children: <MockFooter />,
-          resizable: true,
-          initialSize: 0.3,
-          minSize: 0.08,
-        },
+        header: <MockHeader />,
+        sidebar: { children: <MockSidebar />, draggable: true, initialSize: 0.2 },
+        main: <MockMain />,
+        rightBar: { children: <MockRightBar />, draggable: true, initialSize: 0.2 },
+        footer: { children: <MockFooter />, draggable: true, initialSize: 0.3 },
       }}
     />
   ),
+};
+
+/**
+ * Swap mode raw rows: 4 tiles in two rows, all in the same swapGroup so any
+ * tile can be swapped with any other. Demonstrates rows-of-cells swap UX
+ * without preset semantics.
+ */
+export const SwapModeRawRows: Story = {
+  name: 'rows · swap mode (4 tiles, single swapGroup)',
+  argTypes: {
+    onLayoutChange: { action: 'layoutChange' },
+  },
+  render: (args) => {
+    const tile = (label: string, bg: string) => (
+      <div
+        class="flex h-full w-full items-center justify-center text-lg font-bold text-foreground"
+        style={{ background: bg }}
+      >
+        {label}
+      </div>
+    );
+    return (
+      <Matrix
+        layoutMode="edit"
+        dndMode="swap"
+        onLayoutChange={(e) => args.onLayoutChange?.(e)}
+        rows={[
+          {
+            id: 'row-1',
+            resizable: true,
+            cells: [
+              {
+                id: 'a',
+                children: tile('A', 'rgba(99, 102, 241, 0.18)'),
+                width: 0.5,
+                resizable: true,
+                draggable: true,
+                swapGroup: 'tiles',
+              },
+              {
+                id: 'b',
+                children: tile('B', 'rgba(34, 197, 94, 0.18)'),
+                width: 0.5,
+                resizable: true,
+                draggable: true,
+                swapGroup: 'tiles',
+              },
+            ],
+          },
+          {
+            id: 'row-2',
+            resizable: true,
+            cells: [
+              {
+                id: 'c',
+                children: tile('C', 'rgba(244, 114, 182, 0.18)'),
+                width: 0.5,
+                resizable: true,
+                draggable: true,
+                swapGroup: 'tiles',
+              },
+              {
+                id: 'd',
+                children: tile('D', 'rgba(251, 146, 60, 0.18)'),
+                width: 0.5,
+                resizable: true,
+                draggable: true,
+                swapGroup: 'tiles',
+              },
+            ],
+          },
+        ]}
+      />
+    );
+  },
+};
+
+// ===========================================================================
+// Insert-mode DnD stories (Phase 1.3)
+// ===========================================================================
+
+/**
+ * Insert mode controlled: layoutMode='edit' forced. 6 tiles distributed
+ * across 2 rows. Drag within a row to reorder; drag across rows (top half →
+ * row start, bottom half → row end) to move between rows.
+ */
+export const InsertModeControlled: Story = {
+  name: 'rows · insert mode (controlled, layoutMode=edit)',
+  argTypes: {
+    onLayoutChange: { action: 'layoutChange' },
+  },
+  render: (args) => {
+    const tile = (label: string, bg: string) => (
+      <div
+        class="flex h-full w-full items-center justify-center text-lg font-bold text-foreground"
+        style={{ background: bg }}
+      >
+        {label}
+      </div>
+    );
+    return (
+      <Matrix
+        layoutMode="edit"
+        dndMode="insert"
+        onLayoutChange={(e) => args.onLayoutChange?.(e)}
+        rows={[
+          {
+            id: 'row-1',
+            resizable: true,
+            cells: [
+              {
+                id: 'a',
+                children: tile('A', 'rgba(99, 102, 241, 0.18)'),
+                width: 0.33,
+                resizable: true,
+                draggable: true,
+              },
+              {
+                id: 'b',
+                children: tile('B', 'rgba(34, 197, 94, 0.18)'),
+                width: 0.33,
+                resizable: true,
+                draggable: true,
+              },
+              {
+                id: 'c',
+                children: tile('C', 'rgba(244, 114, 182, 0.18)'),
+                width: 0.34,
+                resizable: true,
+                draggable: true,
+              },
+            ],
+          },
+          {
+            id: 'row-2',
+            resizable: true,
+            cells: [
+              {
+                id: 'd',
+                children: tile('D', 'rgba(251, 146, 60, 0.18)'),
+                width: 0.5,
+                resizable: true,
+                draggable: true,
+              },
+              {
+                id: 'e',
+                children: tile('E', 'rgba(56, 189, 248, 0.18)'),
+                width: 0.5,
+                resizable: true,
+                draggable: true,
+              },
+            ],
+          },
+        ]}
+      />
+    );
+  },
+};
+
+/**
+ * Insert mode uncontrolled with mixed sizes: 3 tiles per row, all draggable.
+ * Click the badge to enter edit mode, then reorder and migrate tiles.
+ *
+ * Note: when a tile crosses rows, layout re-flows because target row's
+ * `width` ratios re-normalize via corvu Flex (e.g. 3 cells with 0.33 each
+ * becomes 4 cells competing for the same horizontal space).
+ */
+export const InsertModeUncontrolled: Story = {
+  name: 'rows · insert mode (uncontrolled, mixed sizes)',
+  argTypes: {
+    onLayoutChange: { action: 'layoutChange' },
+  },
+  render: (args) => {
+    const tile = (label: string) => (
+      <div class="flex h-full w-full items-center justify-center border bg-card text-sm text-foreground">
+        {label}
+      </div>
+    );
+    return (
+      <Matrix
+        dndMode="insert"
+        onLayoutChange={(e) => args.onLayoutChange?.(e)}
+        rows={[
+          {
+            id: 'top',
+            resizable: true,
+            cells: [
+              { id: 't1', children: tile('Top-1'), width: 0.5, resizable: true, draggable: true },
+              { id: 't2', children: tile('Top-2'), width: 0.5, resizable: true, draggable: true },
+            ],
+          },
+          {
+            id: 'mid',
+            resizable: true,
+            cells: [
+              { id: 'm1', children: tile('Mid-1'), width: 0.33, resizable: true, draggable: true },
+              { id: 'm2', children: tile('Mid-2'), width: 0.33, resizable: true, draggable: true },
+              { id: 'm3', children: tile('Mid-3'), width: 0.34, resizable: true, draggable: true },
+            ],
+          },
+          {
+            id: 'bot',
+            resizable: true,
+            cells: [{ id: 'b1', children: tile('Bot-1'), draggable: true }],
+          },
+        ]}
+      />
+    );
+  },
 };

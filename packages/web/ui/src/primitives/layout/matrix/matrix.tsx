@@ -1,15 +1,36 @@
+import { DnDProvider } from '@capsuletech/web-dnd';
 import { type ICapsuleRouter, RouterContext } from '@capsuletech/web-router';
 import { createStyle } from '@capsuletech/web-style';
-import { type JSX, Show, splitProps, useContext } from 'solid-js';
+import {
+  type Accessor,
+  createMemo,
+  createSignal,
+  For,
+  type JSX,
+  splitProps,
+  useContext,
+} from 'solid-js';
+import { Dynamic } from 'solid-js/web';
+import { Animate, type AnimateVariant } from '../../wrappers/animate';
 import { Flex } from '../flex/flex';
 import type { IFlexItem } from '../flex/interfaces';
-import { Animate, type AnimateVariant } from '../../wrappers/animate';
-import type { IMatrixProps, IMatrixSlots } from './interfaces';
-import { type INormalizedSlot, normalizeSlot } from './utils';
+import { EditBadge } from './dnd/edit-badge';
+import { createInsertEngine } from './dnd/insert';
+import { createSwapEngine } from './dnd/swap';
+import type { ICell, IMatrixProps, IRow } from './interfaces';
+import { resolvePreset } from './presets';
 import { matrixCva, matrixSlots } from './variants';
 
 // ---------------------------------------------------------------------------
-// animateMain helper — shared across render modes
+// No-op ref helper — Solid's `ref={undefined}` on plain HTML elements throws
+// "TypeError: fn is not a function" because the compiled JSX expects a callable.
+// `<Dynamic>` tolerates undefined refs internally, but the centroid path uses
+// a plain `<div>`. Use NOOP_REF as the default-no-bind ref.
+// ---------------------------------------------------------------------------
+const NOOP_REF = (_el: HTMLElement): void => {};
+
+// ---------------------------------------------------------------------------
+// animateMain helper — wraps content in <Animate> if `animated` is set
 // ---------------------------------------------------------------------------
 
 const animateMain = (
@@ -30,364 +51,354 @@ const animateMain = (
 };
 
 // ---------------------------------------------------------------------------
-// Auto-centroid mode: only `main` is provided
+// Cell renderer — renders one ICell as the correct HTML5 element
 // ---------------------------------------------------------------------------
 
-const renderCentroid = (
-  slots: IMatrixSlots,
-  animated: IMatrixProps['animated'],
+const renderCell = (
+  cell: ICell,
+  animated: boolean | AnimateVariant | undefined,
   router: ICapsuleRouter | null,
+  /** Reactive children override from swap engine (undefined → use cell.children directly). */
+  getSwappedChildren: ((cellId: string) => JSX.Element) | undefined,
+  /** Ref to apply drag+drop binding (undefined → no binding). */
+  cellRef: ((el: HTMLElement) => void) | undefined,
 ): JSX.Element => {
-  const main = normalizeSlot(slots.main);
-  if (!main) throw new Error('Layout.Matrix: `main` slot is required.');
-  return (
-    <div class="flex h-full w-full items-center justify-center">
-      {animateMain(main.children, animated, router)}
-    </div>
-  );
-};
-
-// ---------------------------------------------------------------------------
-// Grid mode: build dynamic grid-template-areas from present slots
-// ---------------------------------------------------------------------------
-
-/**
- * Builds CSS grid-template-areas + col/row track strings from the set of
- * present slots. Rules:
- *   - rows:    top (header), middle (sidebar/main/rightBar), bottom (footer)
- *              omitted when the slot is absent.
- *   - columns: left (sidebar), center (main), right (rightBar)
- *              omitted when the slot is absent.
- *   - main area always present (required slot).
- */
-const buildGridTemplate = (
-  hasSidebar: boolean,
-  hasRightBar: boolean,
-  hasHeader: boolean,
-  hasFooter: boolean,
-): { areas: string; cols: string; rows: string } => {
-  // Column names & tracks
-  const leftCol = hasSidebar ? 'sidebar' : null;
-  const rightCol = hasRightBar ? 'rightBar' : null;
-
-  const colNames = [leftCol, 'main', rightCol].filter(Boolean) as string[];
-  const cols = [hasSidebar ? 'auto' : null, '1fr', hasRightBar ? 'auto' : null]
-    .filter(Boolean)
-    .join(' ');
-
-  const makeRow = (areaName: string) => `'${colNames.map(() => areaName).join(' ')}'`;
-
-  const middleRow = `'${colNames.join(' ')}'`;
-
-  const rows: string[] = [];
-  if (hasHeader) rows.push(makeRow('header'));
-  rows.push(middleRow);
-  if (hasFooter) rows.push(makeRow('footer'));
-
-  const rowTracks = [hasHeader ? 'auto' : null, '1fr', hasFooter ? 'auto' : null]
-    .filter(Boolean)
-    .join(' ');
-
-  return { areas: rows.join(' '), cols, rows: rowTracks };
-};
-
-const renderGrid = (
-  slots: IMatrixSlots,
-  animated: IMatrixProps['animated'],
-  router: ICapsuleRouter | null,
-): JSX.Element => {
-  const header = normalizeSlot(slots.header);
-  const sidebar = normalizeSlot(slots.sidebar);
-  const main = normalizeSlot(slots.main);
-  if (!main) throw new Error('Layout.Matrix: `main` slot is required.');
-  const rightBar = normalizeSlot(slots.rightBar);
-  const footer = normalizeSlot(slots.footer);
-
-  const hasSidebar = sidebar !== null;
-  const hasRightBar = rightBar !== null;
-  const hasHeader = header !== null;
-  const hasFooter = footer !== null;
-
-  const { areas, cols, rows } = buildGridTemplate(hasSidebar, hasRightBar, hasHeader, hasFooter);
+  const tag = cell.tag ?? 'div';
+  const isMain = cell.id === 'main';
+  const children = getSwappedChildren ? getSwappedChildren(cell.id) : cell.children;
+  const content = isMain ? animateMain(children, animated, router) : children;
 
   return (
-    <div
-      class={matrixSlots.gridContainer}
-      style={{
-        'grid-template-areas': areas,
-        'grid-template-columns': cols,
-        'grid-template-rows': rows,
-      }}
+    <Dynamic
+      component={tag}
+      ref={cellRef}
+      class={isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot}
     >
-      <Show when={hasHeader}>
-        <header class={matrixSlots.header} style={{ 'grid-area': 'header' }}>
-          {header!.children}
-        </header>
-      </Show>
-      <Show when={hasSidebar}>
-        <aside class={matrixSlots.gridLeft} style={{ 'grid-area': 'sidebar' }}>
-          {sidebar!.children}
-        </aside>
-      </Show>
-      <main class={matrixSlots.main} style={{ 'grid-area': 'main' }}>
-        {animateMain(main.children, animated, router)}
-      </main>
-      <Show when={hasRightBar}>
-        <aside class={matrixSlots.gridRight} style={{ 'grid-area': 'rightBar' }}>
-          {rightBar!.children}
-        </aside>
-      </Show>
-      <Show when={hasFooter}>
-        <footer class={matrixSlots.footer} style={{ 'grid-area': 'footer' }}>
-          {footer!.children}
-        </footer>
-      </Show>
-    </div>
+      {content}
+    </Dynamic>
   );
 };
 
 // ---------------------------------------------------------------------------
-// Resize mode — thin wrapper over Flex
+// Row renderer — turns one IRow into a horizontal Flex (resizable or static)
 // ---------------------------------------------------------------------------
 
-/**
- * Builds Flex items for the horizontal middle row
- * (sidebar | main | rightBar). Only slots that are present are included.
- * Non-resizable present slots are still included in the group (handle
- * appears only between two adjacent resizable panels per corvu rules).
- */
-const buildHorizontalItems = (
-  sidebar: INormalizedSlot | null,
-  main: INormalizedSlot,
-  rightBar: INormalizedSlot | null,
-  animated: IMatrixProps['animated'],
+const rowToFlexItems = (
+  row: IRow,
+  animated: boolean | AnimateVariant | undefined,
   router: ICapsuleRouter | null,
-): IFlexItem[] => {
-  const items: IFlexItem[] = [];
-  if (sidebar) {
-    items.push({
-      ...sidebar,
-      children: <aside class={matrixSlots.resizeSidebar}>{sidebar.children}</aside>,
-    });
-  }
-  items.push({
-    ...main,
-    children: (
-      <main class={matrixSlots.resizeMain}>{animateMain(main.children, animated, router)}</main>
-    ),
+  getSwappedChildren: ((cellId: string) => JSX.Element) | undefined,
+  bindCell: ((cell: ICell, rowId: string | undefined) => (el: HTMLElement) => void) | undefined,
+): IFlexItem[] =>
+  row.cells.map((cell) => {
+    const widthIsNumber = typeof cell.width === 'number';
+    const cellRef = cell.draggable && bindCell ? bindCell(cell, row.id) : NOOP_REF;
+    return {
+      children: renderCell(cell, animated, router, getSwappedChildren, cellRef),
+      resizable: cell.resizable ?? false,
+      initialSize: widthIsNumber ? (cell.width as number) : undefined,
+      minSize: undefined,
+      maxSize: undefined,
+    };
   });
-  if (rightBar) {
-    items.push({
-      ...rightBar,
-      children: <aside class={matrixSlots.resizeAsideRight}>{rightBar.children}</aside>,
-    });
-  }
-  return items;
-};
 
-const renderResize = (
-  slots: IMatrixSlots,
-  animated: IMatrixProps['animated'],
+const rowHasResizable = (row: IRow): boolean => row.cells.some((c) => c.resizable === true);
+
+// ---------------------------------------------------------------------------
+// renderRow
+// ---------------------------------------------------------------------------
+
+const renderRow = (
+  row: IRow,
+  animated: boolean | AnimateVariant | undefined,
   router: ICapsuleRouter | null,
+  getSwappedChildren: ((cellId: string) => JSX.Element) | undefined,
+  bindCell: ((cell: ICell, rowId: string | undefined) => (el: HTMLElement) => void) | undefined,
+  bindRow: ((rowId: string) => (el: HTMLElement) => void) | undefined,
 ): JSX.Element => {
-  const header = normalizeSlot(slots.header);
-  const sidebar = normalizeSlot(slots.sidebar);
-  const main = normalizeSlot(slots.main);
-  if (!main) throw new Error('Layout.Matrix: `main` slot is required.');
-  const rightBar = normalizeSlot(slots.rightBar);
-  const footer = normalizeSlot(slots.footer);
+  const hasResizable = rowHasResizable(row);
+  // Cross-row drop target ref — only meaningful in insert mode (bindRow defined).
+  const rowDropRef = bindRow && row.id ? bindRow(row.id) : NOOP_REF;
 
-  const useHorizontalResize =
-    (sidebar?.resizable ?? false) || main.resizable || (rightBar?.resizable ?? false);
-  const useVerticalResize = (header?.resizable ?? false) || (footer?.resizable ?? false);
-
-  // Fixed (non-resizable) header/footer are rendered outside Flex groups —
-  // this avoids the fillInitialSizes bug where a header without an explicit
-  // initialSize would steal ~35% of the viewport height.
-  const fixedHeader =
-    header !== null && !header.resizable ? (
-      <header class={matrixSlots.header}>{header.children}</header>
-    ) : null;
-
-  const fixedFooter =
-    footer !== null && !footer.resizable ? (
-      <footer class={matrixSlots.footer}>{footer.children}</footer>
-    ) : null;
-
-  const resizableHeader = header?.resizable ? (
-    <header class={matrixSlots.resizeHeader}>{header.children}</header>
-  ) : null;
-
-  const resizableFooter = footer?.resizable ? (
-    <footer class={matrixSlots.resizeFooter}>{footer.children}</footer>
-  ) : null;
-
-  // Build horizontal items ONCE before JSX — inlining the call inside JSX would
-  // cause the Solid compiler to wrap it in a `get items()` getter, which gets
-  // evaluated on every `props.items` access inside Flex/ResizableFlex (at least
-  // 4× per render: itemsMode, hasResizable, sizes memo, For loop, Show when).
-  // Each call creates fresh JSX nodes and re-inserts slot.children DOM nodes,
-  // which moves them out of the already-rendered Panel → slot content disappears.
-  const horizontalItems = useHorizontalResize
-    ? buildHorizontalItems(sidebar, main, rightBar, animated, router)
-    : null;
-
-  // Middle row — horizontal Flex (resizable or static).
-  // NB: используем `position:absolute; inset:0` containment вместо `h-full`/`flex-1`,
-  // потому что corvu Root измеряет rootSize через ResizeObserver (offsetHeight/offsetWidth)
-  // на своём DOM-элементе. Если родительский контейнер — CSS Grid track или flex item
-  // без явной высоты, `h-full` (height:100%) не даёт корню правильные размеры: браузер
-  // сначала вычисляет высоту flex-item по content, затем h-full резолвится в эту же
-  // content-height. Итог — corvu Root 1200+px, Panel flex-basis:70% = 840px, main
-  // получает content size вместо Panel size. Absolute inset:0 зажимает элемент
-  // в positioned ancestor без участия percentage-height цепочки.
-  // When middleRow lives directly in the outer `flex-col` wrapper (horizontal-only resize,
-  // no vertical Flex), it must use `flex-1 min-h-0` so it fills remaining height like the
-  // static path. When embedded in a vertical corvu Panel (block container), `flex-1` has no
-  // effect, but `h-full` resolves to the Panel's computed height (flex-basis establishes a
-  // definite size). Using `h-full flex-1 min-h-0` covers both contexts simultaneously.
-  const middleRow: JSX.Element = useHorizontalResize ? (
-    <div class="relative h-full min-h-0 flex-1 overflow-hidden">
-      <div class="absolute inset-0">
-        <Flex
-          orientation="horizontal"
-          items={horizontalItems!}
-          withHandle
-        />
-      </div>
-    </div>
-  ) : (
-    <div class="flex min-h-0 flex-1 overflow-hidden">
-      <Show when={sidebar}>
-        <aside class={matrixSlots.gridLeft}>{sidebar!.children}</aside>
-      </Show>
-      <main class={matrixSlots.main}>{animateMain(main.children, animated, router)}</main>
-      <Show when={rightBar}>
-        <aside class={matrixSlots.gridRight}>{rightBar!.children}</aside>
-      </Show>
-    </div>
-  );
-
-  // Vertical resize: header and/or footer are resizable → outer vertical Flex
-  if (useVerticalResize) {
-    const verticalItems: IFlexItem[] = [];
-
-    if (header?.resizable) {
-      verticalItems.push({
-        ...header,
-        children: resizableHeader!,
-      });
-    }
-
-    verticalItems.push({
-      // The middle-row panel is always resizable to allow handles on both sides.
-      resizable: true,
-      children: middleRow,
-    });
-
-    if (footer?.resizable) {
-      verticalItems.push({
-        ...footer,
-        children: resizableFooter!,
-      });
-    }
-
-    // Vertical Flex root also needs absolute containment — same rootSize issue:
-    // the outer flex-1 div does not propagate an explicit height for h-full to
-    // resolve against, so corvu Root grows to content. `relative` + `absolute inset-0`
-    // breaks the chain and gives corvu a stable, viewport-anchored measure target.
+  if (hasResizable) {
+    const items = rowToFlexItems(row, animated, router, getSwappedChildren, bindCell);
     return (
-      <div class="flex h-full w-full flex-col">
-        {fixedHeader}
-        <div class="relative min-h-0 flex-1 overflow-hidden">
-          <div class="absolute inset-0">
-            <Flex orientation="vertical" items={verticalItems} withHandle />
-          </div>
+      <div ref={rowDropRef} class="relative h-full min-h-0 flex-1 overflow-hidden">
+        <div class="absolute inset-0">
+          <Flex orientation="horizontal" items={items} withHandle />
         </div>
-        {fixedFooter}
       </div>
     );
   }
 
-  // Only horizontal resize (or mixed non-resizable): fixed header/footer wrap the middle
   return (
-    <div class="flex h-full w-full flex-col">
-      {fixedHeader}
-      {middleRow}
-      {fixedFooter}
+    <div
+      ref={rowDropRef}
+      class="flex min-h-0 w-full overflow-hidden"
+      classList={{ 'flex-1': row.height === 'fr' || row.height === undefined }}
+    >
+      <For each={row.cells}>
+        {(cell) => {
+          const cellRef = cell.draggable && bindCell ? bindCell(cell, row.id) : NOOP_REF;
+          return renderCell(cell, animated, router, getSwappedChildren, cellRef);
+        }}
+      </For>
     </div>
   );
 };
 
 // ---------------------------------------------------------------------------
-// Main MatrixImpl
+// Rows-engine
+// ---------------------------------------------------------------------------
+
+const rowsToVerticalItems = (
+  rows: IRow[],
+  animated: boolean | AnimateVariant | undefined,
+  router: ICapsuleRouter | null,
+  getSwappedChildren: ((cellId: string) => JSX.Element) | undefined,
+  bindCell: ((cell: ICell, rowId: string | undefined) => (el: HTMLElement) => void) | undefined,
+  bindRow: ((rowId: string) => (el: HTMLElement) => void) | undefined,
+): IFlexItem[] =>
+  rows.map((row) => {
+    const heightIsNumber = typeof row.height === 'number';
+    const isResizable = row.resizable ?? true;
+    return {
+      children: renderRow(row, animated, router, getSwappedChildren, bindCell, bindRow),
+      resizable: isResizable,
+      initialSize: heightIsNumber ? (row.height as number) : undefined,
+    };
+  });
+
+const hasVerticalResizable = (rows: IRow[]): boolean =>
+  rows.some((r) => r.resizable === true || typeof r.height === 'number');
+
+// ---------------------------------------------------------------------------
+// MatrixContent — inner component that lives INSIDE DnDProvider
+//
+// createDraggable / createDroppable call useDnD() which reads the DnD context.
+// They must run inside the provider tree. By placing the swap engine here,
+// we guarantee the context is available when createSwapEngine runs.
+// ---------------------------------------------------------------------------
+
+interface IMatrixContentProps {
+  rows: Accessor<IRow[]>;
+  animated: boolean | AnimateVariant | undefined;
+  router: ICapsuleRouter | null;
+  layoutMode: Accessor<'view' | 'edit'>;
+  dndMode: Accessor<'swap' | 'insert'>;
+  onBadgeToggle: () => void;
+  onLayoutChange: ((e: import('./interfaces').LayoutChangeEvent) => void) | undefined;
+}
+
+const MatrixContent = (props: IMatrixContentProps) => {
+  const swapEnabled = createMemo(() => props.layoutMode() === 'edit' && props.dndMode() === 'swap');
+  const insertEnabled = createMemo(
+    () => props.layoutMode() === 'edit' && props.dndMode() === 'insert',
+  );
+
+  const swap = createSwapEngine({
+    rows: props.rows,
+    enabled: swapEnabled,
+    onLayoutChange: props.onLayoutChange,
+  });
+
+  const insert = createInsertEngine({
+    rows: props.rows,
+    enabled: insertEnabled,
+    onLayoutChange: props.onLayoutChange,
+  });
+
+  // Effective rows: insert mode mutates layout structure; swap mode does not.
+  const effectiveRows = createMemo(() =>
+    props.dndMode() === 'insert' ? insert.rows() : props.rows(),
+  );
+
+  const hasDraggableCells = createMemo(() =>
+    effectiveRows().some((r) => r.cells.some((c) => c.draggable)),
+  );
+
+  const renderContent = (): JSX.Element => {
+    const rows = effectiveRows();
+
+    if (rows.length === 0) return null;
+
+    const isSwap = props.dndMode() === 'swap';
+    const isInsert = props.dndMode() === 'insert';
+    const swapGetChildren = isSwap ? swap.getCellChildren : undefined;
+    const swapBind = isSwap ? swap.bindCell : isInsert ? insert.bindCell : undefined;
+    const insertBindRow = isInsert ? insert.bindRow : undefined;
+
+    // Single row, single cell (centroid shortcut)
+    if (rows.length === 1 && rows[0].cells.length === 1 && !rows[0].resizable) {
+      const cell = rows[0].cells[0];
+      const isMain = cell.id === 'main';
+      if (!rows[0].height || rows[0].height === 'fr') {
+        const children = swapGetChildren ? swapGetChildren(cell.id) : cell.children;
+        const cellRef = cell.draggable && swapBind ? swapBind(cell, rows[0].id) : NOOP_REF;
+        return (
+          <div class="flex h-full w-full items-center justify-center" ref={cellRef}>
+            {isMain ? animateMain(children, props.animated, props.router) : children}
+          </div>
+        );
+      }
+    }
+
+    const useVertical = hasVerticalResizable(rows);
+
+    if (useVertical) {
+      const verticalItems = rowsToVerticalItems(
+        rows,
+        props.animated,
+        props.router,
+        swapGetChildren,
+        swapBind,
+        insertBindRow,
+      );
+      return (
+        <div class="relative h-full w-full overflow-hidden">
+          <div class="absolute inset-0">
+            <Flex orientation="vertical" items={verticalItems} withHandle />
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div class="flex h-full w-full flex-col overflow-hidden">
+        <For each={rows}>
+          {(row) => {
+            if (row.height === 'auto' || (row.height === undefined && rows.length > 1)) {
+              return (
+                <div class="w-full shrink-0">
+                  {renderRow(
+                    row,
+                    props.animated,
+                    props.router,
+                    swapGetChildren,
+                    swapBind,
+                    insertBindRow,
+                  )}
+                </div>
+              );
+            }
+            return renderRow(
+              row,
+              props.animated,
+              props.router,
+              swapGetChildren,
+              swapBind,
+              insertBindRow,
+            );
+          }}
+        </For>
+      </div>
+    );
+  };
+
+  return (
+    <>
+      {renderContent()}
+      {hasDraggableCells() && <EditBadge mode={props.layoutMode} onToggle={props.onBadgeToggle} />}
+    </>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// MatrixImpl — outer shell (provides DnDProvider + layout mode signals)
 // ---------------------------------------------------------------------------
 
 const MatrixImpl = (props: IMatrixProps) => {
-  const [local, others] = splitProps(props, ['class', 'style', 'ref', 'slots', 'animated']);
+  const [local, rest] = splitProps(props, [
+    'class',
+    'style',
+    'ref',
+    'animated',
+    'preset',
+    'slots',
+    'rows',
+    'dndMode',
+    'layoutMode',
+    'onLayoutChange',
+  ]);
 
   const { className, style } = createStyle(matrixCva, {
     class: local.class,
     style: local.style,
   });
 
-  // Soft-dep on router: useContext directly (no useRouter throw when outside RouterContext)
   const router = useContext(RouterContext);
 
-  const slots = () => local.slots;
-
-  const renderContent = (): JSX.Element => {
-    const s = slots();
-
-    // Auto-centroid: only main is provided (all optional slots absent)
-    const isCentroid =
-      s.header === undefined &&
-      s.sidebar === undefined &&
-      s.rightBar === undefined &&
-      s.footer === undefined;
-
-    if (isCentroid) {
-      return renderCentroid(s, local.animated, router);
+  const getRows = createMemo((): IRow[] => {
+    if (local.preset != null) {
+      return resolvePreset(
+        local.preset as keyof import('./interfaces').LayoutPresets,
+        local.slots as never,
+      );
     }
+    return (local.rows as IRow[]) ?? [];
+  });
 
-    // Check if any slot requests resize
-    const headerN = normalizeSlot(s.header);
-    const sidebarN = normalizeSlot(s.sidebar);
-    const mainN = normalizeSlot(s.main);
-    if (!mainN) throw new Error('Layout.Matrix: `main` slot is required when other slots are provided.');
-    const rightBarN = normalizeSlot(s.rightBar);
-    const footerN = normalizeSlot(s.footer);
+  // Uncontrolled local mode
+  const [localLayoutMode, setLocalLayoutMode] = createSignal<'view' | 'edit'>('view');
+  const layoutMode = createMemo(() => local.layoutMode ?? localLayoutMode());
+  const dndMode = createMemo(() => local.dndMode ?? 'swap');
 
-    const anyResize =
-      (headerN?.resizable ?? false) ||
-      (sidebarN?.resizable ?? false) ||
-      mainN.resizable ||
-      (rightBarN?.resizable ?? false) ||
-      (footerN?.resizable ?? false);
-
-    if (anyResize) {
-      return renderResize(s, local.animated, router);
+  const handleBadgeToggle = () => {
+    if (local.layoutMode === undefined) {
+      setLocalLayoutMode((m) => (m === 'edit' ? 'view' : 'edit'));
     }
-
-    return renderGrid(s, local.animated, router);
   };
 
   return (
-    <div ref={local.ref} class={className()} style={style()} {...(others as object)}>
-      {renderContent()}
-    </div>
+    <DnDProvider>
+      <div ref={local.ref} class={`${className()} relative`} style={style()} {...(rest as object)}>
+        <MatrixContent
+          rows={getRows}
+          animated={local.animated}
+          router={router}
+          layoutMode={layoutMode}
+          dndMode={dndMode}
+          onBadgeToggle={handleBadgeToggle}
+          onLayoutChange={local.onLayoutChange}
+        />
+      </div>
+    </DnDProvider>
   );
 };
 
 /**
- * Matrix — unified top-level раскладка с 5 опциональными слотами.
+ * Matrix — rows-of-cells layout engine.
  *
- * - **Auto-centroid**: если задан только `main` — flex center на всю область.
- * - **Grid**: header/sidebar/main/rightBar/footer — CSS Grid с динамическими areas.
- * - **Resize**: если хотя бы один slot имеет `resizable: true` — включается
- *   горизонтальный и/или вертикальный `<Flex items={...}>` (thin wrapper над corvu).
+ * **Два режима:**
  *
- * Слот передаётся только object-формой: `{ children, resizable?, initialSize?, minSize?, maxSize? }`.
- * JSX-shorthand (`sidebar: <MySidebar />`) удалён в v0.3.0 — используй `{ children: <MySidebar /> }`.
+ * 1. **Preset** — именованный пресет + типизированные slots:
+ *    ```tsx
+ *    <Matrix preset="app-shell" slots={{
+ *      header:  <Header />,
+ *      main:    <Main />,
+ *      footer:  <Footer />,
+ *    }} />
+ *    ```
+ *
+ * 2. **Raw rows** — явный массив IRow[]:
+ *    ```tsx
+ *    <Matrix rows={[
+ *      { cells: [{ id: 'top', tag: 'header', children: <Header /> }] },
+ *      { resizable: true, cells: [
+ *        { id: 'a', children: <A />, width: 0.5, resizable: true, draggable: true, swapGroup: 'main-row' },
+ *        { id: 'b', children: <B />, width: 0.5, resizable: true, draggable: true, swapGroup: 'main-row' },
+ *      ]},
+ *    ]} />
+ *    ```
+ *
+ * **DnD / edit-mode (Phase 1.2):**
+ * - `layoutMode="edit"` — activates drag handles on `draggable: true` cells.
+ * - `dndMode="swap"` (default) — dragging swaps children between cells.
+ * - `onLayoutChange` — called with `{ kind: 'swap', a, b }` after each swap.
+ * - Without `layoutMode` prop (uncontrolled) — an EditBadge in the top-right
+ *   corner toggles edit mode. Badge only appears when any cell has `draggable: true`.
+ *
+ * SlotValue для preset-mode: `<MyWidget />` или
+ * `{ children: <MyWidget />, initialSize: 0.2, draggable: true }`.
  */
 export const Matrix = MatrixImpl;
