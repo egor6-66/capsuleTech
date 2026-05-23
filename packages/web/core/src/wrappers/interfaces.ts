@@ -15,6 +15,7 @@ import type {
   Card,
   DataTable,
   Field,
+  Group,
   Input,
   Layout,
   List,
@@ -93,6 +94,7 @@ export interface IUiMetaProps {
  * После применения — intersection callable + mapped static props.
  */
 type StaticProps<T> = {
+  // biome-ignore lint/complexity/noBannedTypes: intentional use of keyof Function to filter function-prototype keys in mapped type
   [K in keyof T as K extends keyof Function ? never : K]: T[K];
 };
 
@@ -127,6 +129,7 @@ type WithMetaProps<T> = {
 type ViewUiRaw = {
   Field: typeof Field;
   Button: typeof Button;
+  Group: typeof Group;
   Input: typeof Input;
   List: typeof List;
   Animate: typeof Animate;
