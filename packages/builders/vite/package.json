@@ -31,15 +31,11 @@
     "solid-refresh": "^0.6.3"
   },
   "peerDependencies": {
-    "@capsuletech/desktop": "workspace:*",
     "solid-js": "^1.9.0",
     "solid-refresh": "*",
     "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
   },
   "peerDependenciesMeta": {
-    "@capsuletech/desktop": {
-      "optional": true
-    },
     "solid-refresh": {
       "optional": true
     },
