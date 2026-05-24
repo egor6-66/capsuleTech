@@ -1,4 +1,5 @@
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { open } from '@tauri-apps/plugin-dialog';
 
 /**
  * Feature: Desktop
@@ -36,6 +37,22 @@ const Desktop = Feature(() => ({
           await getCurrentWindow().close();
         } catch (e) {
           console.warn('[Features.Desktop] close failed (Tauri unavailable?):', e);
+        }
+      },
+
+      /**
+       * dialog: native folder picker (single selection).
+       * Returns absolute path string или null если user cancel'нул.
+       * tauri-plugin-dialog @ packages/desktop/native (capability: dialog:default).
+       */
+      openFolder: async () => {
+        try {
+          const path = await open({ directory: true, multiple: false });
+          console.log('[Features.Desktop] openFolder selected:', path);
+          return path;
+        } catch (e) {
+          console.warn('[Features.Desktop] openFolder failed (Tauri unavailable?):', e);
+          return null;
         }
       },
     },
