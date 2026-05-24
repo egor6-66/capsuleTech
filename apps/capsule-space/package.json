@@ -27,6 +27,7 @@
     "@tanstack/solid-table": "^8.21.3",
     "@tanstack/solid-virtual": "^3.13.24",
     "@tauri-apps/api": "^2.0.0",
+    "@tauri-apps/plugin-dialog": "^2.0.0",
     "@xstate/solid": "^2.0.0",
     "maplibre-gl": "^4",
     "solid-js": "1.9.12",
