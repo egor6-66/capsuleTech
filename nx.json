@@ -91,7 +91,8 @@
           "@capsuletech/cli",
           "@capsuletech/vite-builder",
           "@capsuletech/compliance",
-          "@capsuletech/lib-builder"
+          "@capsuletech/lib-builder",
+          "@capsuletech/desktop"
         ],
         "projectsRelationship": "fixed",
         "releaseTagPattern": "cli@{version}",
@@ -106,6 +107,7 @@
         "projects": [
           "@capsuletech/web-core",
           "@capsuletech/web-dnd",
+          "@capsuletech/web-map",
           "@capsuletech/web-ui-creator",
           "@capsuletech/web-profiler",
           "@capsuletech/web-query",

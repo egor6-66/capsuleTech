@@ -8,7 +8,7 @@
     "build": "capsule build"
   },
   "devDependencies": {
-    "@capsuletech/cli": "latest"
+    "@capsuletech/cli": "<%= cap %>"
   },
   "dependencies": {
     "@capsuletech/web-core": "<%= cap %>",

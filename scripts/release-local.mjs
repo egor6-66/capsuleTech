@@ -40,7 +40,7 @@
  *   - Bump версий и changelog — это release.mjs (prod).
  * ==========================================================================*/
 import { spawnSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -76,6 +76,64 @@ const fail = (m) => {
   console.error(`\x1b[31m[release-local]\x1b[0m ${m}`);
   process.exit(1);
 };
+
+// ---------------------------------------------------------------------------
+// .npmrc scope-registry override (last-wins).
+// ---------------------------------------------------------------------------
+// pnpm publish для scoped пакетов читает `@<scope>:registry=` из .npmrc и
+// ИГНОРИРУЕТ CLI flag `--registry` (стандартное поведение npm/pnpm). Корневой
+// .npmrc проекта содержит `@capsuletech:registry=http://localhost:4873/` для
+// dev-workflow с Verdaccio — если пользователь поднял Verdaccio на другом
+// порту и передал `--registry=http://localhost:4874`, publish всё равно
+// уйдёт на :4873 → ECONNREFUSED.
+//
+// Решение: тот же idиом что в PROD-скрипте `scripts/release.mjs:setupAuth()`:
+// дописываем `@capsuletech:registry=<REGISTRY>` в конец .npmrc (last-wins
+// внутри файла) и восстанавливаем backup в cleanup-хуках. Действует только
+// на время publish'а, нет permanent изменений в worktree.
+const SCOPE = '@capsuletech';
+const setupNpmrcScope = () => {
+  const npmrcPath = resolve(repoRoot, '.npmrc');
+  const backup = existsSync(npmrcPath) ? readFileSync(npmrcPath, 'utf8') : null;
+  // Extract host from REGISTRY url for per-host _authToken line.
+  // npm/pnpm 8+ requires a token configured for the exact host — even when
+  // Verdaccio has `publish: $all`. Without this client-side check throws
+  // ENEEDAUTH before the request is ever sent.
+  // We reuse the same dummy token pattern used for :4873 in the root .npmrc.
+  let registryHost = '';
+  try {
+    const u = new URL(REGISTRY);
+    registryHost = `//${u.host}/`;
+  } catch {}
+  const authLine = registryHost
+    ? `${registryHost}:_authToken=secretVerdaccioToken`
+    : '';
+
+  writeFileSync(
+    npmrcPath,
+    `${backup ?? ''}\n# release-local temp scope override (registry=${REGISTRY})\n${SCOPE}:registry=${REGISTRY}\n${authLine}\n`,
+  );
+  log(`${SCOPE}:registry → ${REGISTRY} (temp, restored on exit)`);
+
+  const cleanup = () => {
+    try {
+      if (backup === null) unlinkSync(npmrcPath);
+      else writeFileSync(npmrcPath, backup);
+    } catch (e) {
+      warn(`не удалось восстановить .npmrc: ${e.message}`);
+    }
+  };
+  process.on('exit', cleanup);
+  process.on('SIGINT', () => {
+    cleanup();
+    process.exit(130);
+  });
+  process.on('SIGTERM', () => {
+    cleanup();
+    process.exit(143);
+  });
+};
+setupNpmrcScope();
 
 // ---------------------------------------------------------------------------
 // 1. Группы из nx.json
@@ -196,7 +254,7 @@ if (SHOULD_BUILD) {
     { name: 'shared-compliance', filters: ['--filter', '@capsuletech/compliance'] },
     { name: 'shared-vite', filters: ['--filter', '@capsuletech/vite-builder'] },
     {
-      name: 'shared-* (rest) + web-* (без web-style) + cli',
+      name: 'shared-* (rest) + web-* (без web-style) + cli + desktop',
       filters: [
         '--filter',
         '@capsuletech/shared-*',
@@ -212,6 +270,12 @@ if (SHOULD_BUILD) {
         '!@capsuletech/web-style',
         '--filter',
         '@capsuletech/cli',
+        // @capsuletech/desktop не подпадает под shared-*/web-*/cli pattern —
+        // явный filter. Build = только vite build (PR 3 split: cargo вынесен
+        // в build:native, дёргается через prepack hook перед publish — см.
+        // packages/desktop/OWNERSHIP.md quirk #11).
+        '--filter',
+        '@capsuletech/desktop',
       ],
     },
     { name: 'web-style (Tailwind scan dist сиблингов)', filters: ['--filter', '@capsuletech/web-style'] },
