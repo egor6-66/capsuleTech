@@ -119,6 +119,12 @@ bridge.pick(['@inputs']);  // resolved через expandTags под капото
 
 7. **`registerAliases` accumulative** — повторный вызов мержит. `clearAliases()` нужен в test-setup чтобы избежать leaks между тестами.
 
+8. **`REGISTER_COMPONENT` ≠ `UPDATE_COMPONENT`.** Register — mount-time, единоразово (meta+name). Update — runtime patch (value/type) к существующей записи. **Unknown id молча skip'ается** в UPDATE — чтобы порядок mount/event не валил app. Прецедент: PR #166 (split register/update).
+
+9. **`store.update()` (SET_DATA) ≠ `store.updateComponent()` (UPDATE_COMPONENT).** Старый pattern (до PR #166) — UiProxy писал весь target в `context.data` через SET_DATA, шумя в user namespace. Сейчас: SET_DATA остаётся **public API для user state** (`schema.context` мутации); UPDATE_COMPONENT — UiProxy internal для merge `{value, type}` в `components[id]`. **Не путать в новых API.**
+
+10. **`store.values(tags, opts)` собирает Record<name, value>** через `pickByTags(components) → join name→value`. Inputs без name skip'аются (например `<Button meta={{tags:['@submit']}}>` без name → пустой `{}`). При collision — last-write-wins (документировано как ошибка разработчика, не feature).
+
 ## Что менять когда
 
 | Хочу… | Куда лезть |
