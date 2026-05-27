@@ -14,6 +14,12 @@ const Auth = Feature(({ api }) => ({
   states: {
     idle: {
       submit: async ({ store }) => {
+        if (!api) {
+          // eslint-disable-next-line no-console
+          console.error('[auth] api client not initialized — check capsule.app.ts > api');
+          return;
+        }
+
         const payload = {
           login: (store.ctx as any).login ?? '',
           password: (store.ctx as any).password ?? '',
