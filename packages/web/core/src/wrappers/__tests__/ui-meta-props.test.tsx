@@ -390,6 +390,65 @@ describe('WidgetUi — MapView: is callable and accepts IUiMetaProps', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Compile-time: ViewUi.Layout subset — Grid + Flex present, Matrix absent
+// Added 2026-05-27. View receives Layout: ViewLayoutSubset (Pick<typeof Layout, 'Grid'|'Flex'>).
+// Matrix is intentionally excluded — it is a page-level application shell.
+// ---------------------------------------------------------------------------
+
+describe('ViewUi — Layout subset: Grid and Flex present', () => {
+  it('Ui.Layout.Grid is present in ViewUi', () => {
+    type LayoutInView = ViewUi['Layout'];
+    expectTypeOf<LayoutInView>().toHaveProperty('Grid');
+  });
+
+  it('Ui.Layout.Flex is present in ViewUi', () => {
+    type LayoutInView = ViewUi['Layout'];
+    expectTypeOf<LayoutInView>().toHaveProperty('Flex');
+  });
+
+  it('Ui.Layout.Grid is a function (callable component)', () => {
+    expectTypeOf<ViewUi['Layout']['Grid']>().toBeFunction();
+  });
+
+  it('Ui.Layout.Flex is a function (callable component)', () => {
+    expectTypeOf<ViewUi['Layout']['Flex']>().toBeFunction();
+  });
+
+  it('Ui.Layout.Grid accepts IUiMetaProps (meta prop)', () => {
+    type GridProps = Parameters<ViewUi['Layout']['Grid']>[0];
+    expectTypeOf<GridProps>().toMatchTypeOf<IUiMetaProps>();
+  });
+
+  it('Ui.Layout.Flex accepts IUiMetaProps (meta prop)', () => {
+    type FlexProps = Parameters<ViewUi['Layout']['Flex']>[0];
+    expectTypeOf<FlexProps>().toMatchTypeOf<IUiMetaProps>();
+  });
+
+  it('Ui.Layout does NOT expose Matrix (page-shell guard)', () => {
+    type LayoutInView = ViewUi['Layout'];
+    // @ts-expect-error Matrix must not exist on ViewLayoutSubset
+    type _guard = LayoutInView['Matrix'];
+  });
+});
+
+describe('WidgetUi — Layout remains full (Grid + Flex + Matrix)', () => {
+  it('Ui.Layout.Matrix is present in WidgetUi', () => {
+    type LayoutInWidget = WidgetUi['Layout'];
+    expectTypeOf<LayoutInWidget>().toHaveProperty('Matrix');
+  });
+
+  it('Ui.Layout.Grid is present in WidgetUi', () => {
+    type LayoutInWidget = WidgetUi['Layout'];
+    expectTypeOf<LayoutInWidget>().toHaveProperty('Grid');
+  });
+
+  it('Ui.Layout.Flex is present in WidgetUi', () => {
+    type LayoutInWidget = WidgetUi['Layout'];
+    expectTypeOf<LayoutInWidget>().toHaveProperty('Flex');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Runtime: ViewWrapper + UiProxy does not crash when meta is passed
 // (the actual prop stripping is in UiProxy; here we verify no runtime error)
 // ---------------------------------------------------------------------------
