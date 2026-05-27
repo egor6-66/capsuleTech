@@ -146,14 +146,14 @@ describe('AppConfigPlugin.transform — id ↔ configPath matching', () => {
   it('new template — with import: import binding preserved, call-site replaced', () => {
     const path = '/repo/apps/agent/capsule.app.ts';
     const code = [
-      `import { defineAppConfig } from '@capsuletech/web-query/app-config';`,
+      `import { defineAppConfig } from '@capsuletech/web-core/app-config';`,
       `export default defineAppConfig({ meta: { tags: ['click'] }, aliases: {} });`,
       '',
     ].join('\n');
     const out = getTransform(path)(code, path);
     expectTransformed(out);
     // The import line must keep the original identifier intact.
-    expect(out!.code).toContain(`import { defineAppConfig } from '@capsuletech/web-query/app-config'`);
+    expect(out!.code).toContain(`import { defineAppConfig } from '@capsuletech/web-core/app-config'`);
     // The call-site must be replaced.
     expect(out!.code).toContain(`((__x__)=>__x__)({ meta:`);
   });
