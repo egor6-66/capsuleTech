@@ -108,6 +108,14 @@ Enforced линтером `@capsuletech/compliance` (vite-plugin). При изм
 
 7. **`engine/*` — НЕ public.** `index.ts` экспортирует только wrappers + Providers + interfaces. Если что-то из engine нужно во внешнем коде — это симптом, документируй причину перед public-экспортом.
 
+8. **`ViewUiRaw.Layout` — это subset (Grid+Flex), не полный namespace.** Matrix отсутствует — Matrix page-level shell, не atomic UI. Если View пытается `Ui.Layout.Matrix` — TS error. Композиция через Matrix только в Widget/Page. Прецедент: PR #169.
+
+9. **`KIND_TAGS` в `engine/ui-proxy.tsx` — auto-inject `'input'/'button'` тегов** для whitelist primitives (Input/Textarea/Select/Checkbox → 'input'; Button → 'button'). View JSX пишет `meta={{tags:['login']}}` — UiProxy добавит 'input' автоматически. Расширение списка — внимательно, может сломать `store.pick`-семантику в apps. Прецедент: PR #167.
+
+10. **`Dropdown` в Ui-namespace — compound с 9 sub-components через `Object.assign + createLazy`.** Sub-components доступны как `Ui.Dropdown.Trigger/Content/Item/Separator/Group/Label/Sub/SubTrigger/SubContent`. Web-ui экспортирует им **named aliases** (`DropdownTrigger` etc.) для createLazy — без них pattern сломан. См. PR #174.
+
+11. **`AutoImport dirs:` запрещён.** Сканит generated registry-файлы и экспонирует named exports глобально → injects в framework code (например `endpoints` параметр в `createApi.ts`) → cycle → TDZ. Прецедент: PR #165. Runtime registry'ы ставятся через `Object.assign(globalThis, _registry)` в bootstrap.tsx — этого достаточно.
+
 ## Что менять когда
 
 | Хочу… | Куда лезть |

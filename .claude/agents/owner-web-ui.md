@@ -118,6 +118,18 @@ card/
 
 7. **`Number` story export → именовать `NumberInput`.** Иначе biome ругается за shadowing global `Number`.
 
+8. **Kobalte nested independent Dropdown'ы не работают.** Если composite использует свой `<Dropdown>` root и встраивается в Content другого Dropdown — outer закрывается при open inner (`onOutsideClick`). Решение — `mode='sub' | 'standalone'` prop: sub renders через `Dropdown.Sub`/`SubTrigger`/`SubContent` (Kobalte's nested API), standalone — own root. Прецедент: ThemePicker PR #177. См. [anti-patterns.md](../../docs/_meta/anti-patterns.md).
+
+9. **`createLazy` в web-core нужны named sub-exports.** Compound `Object.assign(Impl, { Header, ... })` НЕ достаточно — `createLazy(..., 'CompoundHeader')` ищет named export по имени. Добавляй aliases: `export { Header as CompoundHeader }`. Прецедент: PR #174 Dropdown.
+
+10. **`vi.mocked(setX)` вместо `(setX as ReturnType<typeof vi.fn>)`.** Vitest 2+ Mock type union не callable через as-cast. Используй `vi.mocked()` typed helper. Прецедент: PR #176, 3 файла.
+
+11. **Visual компонент с Dropdown в web-style → cycle.** web-style → web-ui forbidden (web-ui уже depends on web-style). Если нужен interactive widget с Ui-primitive — кладёшь в **web-ui composites**. web-style остаётся для CSS + stores. Прецедент: PR #176 switcher split.
+
+12. **Virtual rows + `position: absolute` ломают column alignment.** `<tr style={position:absolute}>` пытается выпрыгнуть из table flow → колонки не align'ятся. Используй **spacer-padding pattern**: один невидимый `<tr style={height:before}>` до virtual window + другой `<tr style={height:after}>` после. Прецедент: PR #170 DataTable.
+
+13. **`<tr role="presentation">` биome ругается** на `noInteractiveElementToNoninteractiveRole`. `<tr aria-hidden>` — на `noAriaHiddenOnFocusable`. Для spacer-tr — просто `<tr style={...}>` без role/aria. Прецедент: PR #170.
+
 ## Что менять когда
 
 | Хочу… | Куда лезть |

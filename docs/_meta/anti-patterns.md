@@ -236,6 +236,105 @@ pnpm test:e2e:cli   # diff поведения
 
 ---
 
+---
+
+## 🚫 `AutoImport dirs:` сканит generated-registry → cycle через framework
+
+**Симптом:** `Uncaught ReferenceError: Cannot access 'defineEndpoint' before initialization` (TDZ) при загрузке app.
+
+**Quick-fix (плохо):**
+Dynamic import обход в одном месте (`app-config.gen.ts → import('./registry/endpoints').then(...)`). Маскирует одну path в cycle'е, но **createApi.ts** (один из re-exports `@capsuletech/web-query`) всё равно статически тянет endpoints через injected import. Cycle не разорван — TDZ остался.
+
+**Корень:** `unplugin-auto-import` с `dirs: [.capsule/registry]` сканирует **named exports** в registry-файлах и экспонирует их глобально (вкл. `endpoints`). Дальше плагин **без scope-analysis** инжектит `import { endpoints }` в любой файл где видит identifier `endpoints` — включая параметр функции в **`packages/web/query/src/createApi.ts`**. Cycle: `auth.ts → web-query → createApi.ts → /registry/endpoints.ts → auth.ts`.
+
+**Proper:** Убрать `dirs:` из AutoImport. Runtime-registry'ы (`Widgets`/`Views`/...) уже ставятся через `Object.assign(globalThis, _registry)` в bootstrap.tsx, TS-типы — из `slots.d.ts` (ExportGeneratorPlugin). AutoImport `dirs:` дублирует это + создаёт катастрофу.
+
+Прецедент: PR #165 (2026-05-27).
+
+---
+
+## 🚫 Nested independent Dropdown'ы → outer закрывается при open inner
+
+**Симптом:** Open trigger inner-dropdown'а закрывает outer menu (`onOutsideClick` в Kobalte). User не видит inner-меню вообще.
+
+**Quick-fix (плохо):**
+Дублировать всю логику inner-composite'а inline в outer view — copy `<For>`, items render, setX state mutations. Дублирование, нарушение DRY, dependency на runtime state снаружи View.
+
+**Proper:** Использовать **Kobalte's `Dropdown.Sub` API** — nested submenu подписан на parent's context, не своя focus-trap. Composite должен иметь `mode='standalone' | 'sub'` prop: standalone — own `<Dropdown>` root; sub — `<Dropdown.Sub><SubTrigger>...</SubTrigger><SubContent>{items}</SubContent></Dropdown.Sub>`. Consumer выбирает.
+
+Прецедент: PR #177 (2026-05-28) ThemePicker.
+
+---
+
+## 🚫 `onMount` в lazy widget → flicker при первом open
+
+**Симптом:** При первом открытии меню/sidebar/etc — UI "скачет": тема/mode/настройка вдруг применяется. У пользователя ощущение бага.
+
+**Quick-fix (плохо):**
+Eager-mount widget'а в hidden div где-то на page-level (`<div class="hidden"><Ui.Widget /></div>`). Workaround работает, но widget рендерится дважды (один в menu, один hidden) — лишний код в app'е.
+
+**Корень:** Widget читает persisted state в `onMount` и applies его. Lazy-load widget = `onMount` происходит при первом mount (e.g. при open dropdown). Apply виден как "flicker" если state отличается от текущего DOM.
+
+**Proper:** **State-store при import** (module-level), не onMount в widget. Pattern: `const [signal, setSignal] = createSignal(initial())`. Initial читает localStorage и applies сразу. Widget просто subscribe (read-only) + onClick → setter. `onMount` не нужен.
+
+Прецедент: PR #176 (2026-05-28) — split switcher state (web-style stores) vs visual (web-ui composites). `useTheme()`/`useDarkMode()`/`useLayoutMode()` apply on module-load.
+
+---
+
+## 🚫 `as Mock` cast вместо `vi.mocked()`
+
+**Симптом:** TS2348 `Value of type 'Mock<Procedure | Constructable>' is not callable.`
+
+**Quick-fix (плохо):**
+```ts
+(setTheme as ReturnType<typeof vi.fn>)('black');
+(setTheme as ReturnType<typeof vi.fn>).mockClear();
+```
+Vitest 2+ `vi.fn()` returns Mock<...> union — `as` через ReturnType не callable + `.mockClear()` теряется.
+
+**Proper:**
+```ts
+vi.mocked(setTheme)('black');
+vi.mocked(setTheme).mockClear();
+```
+`vi.mocked()` это typed helper. Корректно works on `Mock<...>`.
+
+Прецедент: 3 файла в PR #176, fixed inline.
+
+---
+
+## 🚫 Visual компонент в `web-style` использует Dropdown из web-ui → cycle
+
+**Симптом:** При попытке добавить interactive widget с Dropdown UI в `@capsuletech/web-style` — package graph cycle: `web-style → web-ui → web-style`.
+
+**Quick-fix (плохо):**
+Inline-дублировать Dropdown HTML/CSS в web-style, или передавать Dropdown через render-prop / Context. Дублирование + scattered logic.
+
+**Proper:** **Split state vs UI**. `web-style` — только signal stores + helpers (CSS, design tokens, apply functions). Visual widgets с Dropdown — `web-ui/composites/`. Web-ui естественно depends on web-style (уже), import hooks оттуда — no cycle.
+
+Прецедент: PR #176 — `DarkModeToggle`/`ThemeSwitcher` переехали из web-style в web-ui/composites; web-style оставляет `useTheme/useDarkMode/useLayoutMode` stores.
+
+---
+
+## 🚫 `createLazy` на compound через `Object.assign(...)` без named sub-exports
+
+**Симптом:** `web-core` хочет `Ui.Compound.SubPart` lazy, но subpath экспортирует только compound: `export const Compound = Object.assign(Impl, { SubPart })`. Без named `export const SubPart = ...` web-core не может lazy-load sub-component'ы через `createLazy(..., 'SubPart')`.
+
+**Quick-fix (плохо):**
+В web-core делать lazy chain через `lazy(() => import(...).then(m => ({ default: m.Compound.SubPart })))` — это работает, но **отличается от pattern Table/Card** (где есть named sub-exports). Inconsistent: разные паттерны для разных compound'ов.
+
+**Proper:** В web-ui рядом с compound export'ом добавить **named aliases** для sub-components:
+```ts
+export const Compound = Object.assign(Impl, { SubPart, ... });
+export { SubPart as CompoundSubPart };  // alias для createLazy
+```
+
+Web-core unified pattern: `createLazy(() => import('@capsuletech/web-ui/X'), 'CompoundSubPart')`.
+
+Прецедент: PR #174 ThemePicker/Dropdown — owner-web-ui добавил named re-exports `DropdownTrigger/Content/...`.
+
+---
+
 ## Принципы
 
 1. **Корневой fix дешевле двух quick-fix'ов.** Quick-fix'ы накапливаются и формируют долг технический.

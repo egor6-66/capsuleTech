@@ -80,10 +80,11 @@ import type {
   omit(tags, opts),              // Record<id, ITarget> — отбросить с тегами
   match(tags, opts),             // ITarget | undefined  — первый совпавший
   matchEntry(tags, opts),        // (ITarget & { id }) | undefined
+  values(tags, opts),            // Record<name, value> — форм-payload (v0.2.0+, PR #166)
 }
 ```
 
-Опции для tag-операций: `{ lookDynamic?: boolean }` — учитывать ли `dynamicMeta.tags`. По умолчанию `true` (то есть Widget-сценарные теги тоже матчатся).
+Опции для tag-операций: `{ lookDynamic?: boolean, expandAliases?: boolean }` — учитывать ли `dynamicMeta.tags` и раскрывать ли алиасы. По умолчанию оба `true` (Widget-сценарные теги + alias-expansion).
 
 ### Семантика мутаций компонентов
 
@@ -97,9 +98,26 @@ import type {
 
 `update(payload)` шлёт `SET_DATA` → `context.data` — это **отдельный** user-state namespace, никак не связанный с `components`.
 
+### `values(tags, opts?)` — Form payload assembly (v0.2.0+)
+
+Собирает `{ [comp.name]: comp.value }` для компонентов, совпавших по тегам:
+
+```ts
+// В submit-хэндлере Controller/Feature
+const payload = store.values(['@inputs']);  // { email: 'user@test.com', password: '***' }
+
+// С alias-expansion (default)
+const allFormData = store.values(['@form']);  // раскроет '@form' → ['@inputs', 'select', ...]
+
+// Без alias-expansion (если тег не алиас)
+const onlyDirect = store.values(['email', 'password'], { expandAliases: false });
+```
+
+Компоненты без `name` (например, кнопки) пропускаются. Дублирующиеся `name` — last-write-wins (ошибка разработчика).
+
 ## `helpers` (низкоуровневые)
 
-Те же `pickByTags / omitByTags / matchByTags / matchEntryByTags` экспортируются напрямую — для случаев, когда работаем с `components`-картой не через bridge:
+`pickByTags / omitByTags / matchByTags / matchEntryByTags` экспортируются напрямую — для работы с `components`-картой не через bridge:
 
 ```ts
 import { pickByTags } from '@capsuletech/state';
