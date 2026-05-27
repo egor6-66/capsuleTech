@@ -194,7 +194,7 @@ function InfiniteTable<TData>(props: {
 
         <Table.Body>
           <Show when={paddingBefore() > 0}>
-            <tr aria-hidden="true" style={{ height: `${paddingBefore()}px` }} />
+            <tr style={{ height: `${paddingBefore()}px` }} />
           </Show>
 
           <For each={virtualItems()}>
@@ -219,7 +219,7 @@ function InfiniteTable<TData>(props: {
           </For>
 
           <Show when={paddingAfter() > 0}>
-            <tr aria-hidden="true" style={{ height: `${paddingAfter()}px` }} />
+            <tr style={{ height: `${paddingAfter()}px` }} />
           </Show>
         </Table.Body>
       </Table>
