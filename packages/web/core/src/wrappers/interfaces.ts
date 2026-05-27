@@ -128,6 +128,9 @@ type WithMetaProps<T> = {
 // UI-вкус: что приходит wrapper'ам в первый позиционный аргумент.
 // -----------------------------------------------------------------------------
 
+/** Layout-subset доступный внутри View — Grid + Flex (без Matrix; Matrix = page-level shell). */
+type ViewLayoutSubset = Pick<typeof Layout, 'Grid' | 'Flex'>;
+
 type ViewUiRaw = {
   Field: typeof Field;
   Button: typeof Button;
@@ -143,6 +146,8 @@ type ViewUiRaw = {
   Card: typeof Card;
   Typography: typeof Typography;
   Link: typeof Link;
+  /** Grid + Flex для internal View layout. Matrix намеренно исключён — это page-level shell. */
+  Layout: ViewLayoutSubset;
 };
 
 type Outlet = () => JSXElement;
