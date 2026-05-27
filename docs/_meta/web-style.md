@@ -16,13 +16,14 @@ Full context: `.claude/agents/owner-web-style.md` (system prompt of owner agent)
 | File | Role |
 |---|---|
 | `src/index.css` | Design token scales (spacing, typography, radii, motion) + `@theme inline` Tailwind mappings + base styles |
-| `src/index.ts` | Barrel: createStyle, cn, merge, STATUS_VARIABLES, ThemeSwitcher |
+| `src/index.ts` | Barrel: createStyle, cn, merge, STATUS_VARIABLES + state-stores (v0.2.0+: useTheme, useDarkMode, useLayoutMode, setters, DISCOVERED_THEMES, DENSITY_PRESETS) |
 | `src/createStyle.ts` | CVA wrapper (reactive, getter-based) |
 | `src/constants.ts` | STATUS_VARIABLES (success/warning/error/info) |
 | `src/utils.ts` | cn (clsx+tailwind-merge), merge (deep style merger) |
-| `src/switcher/` | ThemeSwitcher component |
+| `src/theme-store.ts` | State-only stores (useTheme, useDarkMode, useLayoutMode, setters, constants). Module-level apply on import. |
 | `src/editor/` | ThemeEditor (subpath /editor, separate bundle) |
 | `src/themes/` | CSS theme files (CSS vars, OKLCH palette) — colors + fonts + radius anchor + `--spacing` + `--tracking-normal` |
+| ~~`src/switcher/`~~ | ThemeSwitcher component **moved to web-ui** (v0.2.0+, PR #176) |
 
 ## Design token architecture (Phase 1, 2026-05-22)
 
@@ -101,7 +102,54 @@ Themes set `--font-sans` using the `Variable` suffix name so the variable font i
 
 The 7 current fonts: Inter, Geist, DM Sans, Nunito, Plus Jakarta Sans, Bricolage Grotesque, Montserrat. See `OWNERSHIP.md` for the theme-to-font mapping.
 
+## State stores (v0.2.0+, PR #176)
+
+Module-level reactive state (Solid signals). Applied on import, no onMount flicker.
+
+```ts
+import { useTheme, setTheme, useDarkMode, toggleDarkMode, useLayoutMode, setLayoutMode, toggleLayoutMode, DISCOVERED_THEMES, DENSITY_PRESETS } from '@capsuletech/web-style';
+
+// In Feature/Controller/Widget
+const theme = useTheme();            // signal: current theme name
+setTheme('dark');                    // Solid Batch: updates theme + data-theme on <html>
+
+const dark = useDarkMode();          // signal: boolean
+toggleDarkMode();                    // Solid Batch: toggles + updates data-theme
+
+const mode = useLayoutMode();        // signal: 'view' | 'edit'
+setLayoutMode('edit');               // Solid Batch: updates mode (used for Matrix DnD gating)
+
+// Constants
+DISCOVERED_THEMES;   // { theme-name: { colors: {...}, fonts: {...} }, ... }
+DENSITY_PRESETS;     // { compact: 0.75, comfortable: 1.25 }
+```
+
+**Why module-level:** Themes apply globally to `<html>` via CSS variables. Solid signals ensure reactive updates without re-render of entire app. No Provider needed — side effect of `import`.
+
 ## Changelog
+
+### 0.2.0 — Switcher state vs UI split (2026-05-27)
+
+**Breaking: Visual components moved to web-ui.**
+
+Old: `ThemeSwitcher` + `DarkModeToggle` in web-style.
+New: Composites (`DarkModeToggle`, `LayoutModeToggle`, `ThemePicker`) in web-ui; state-stores (`useTheme`, `useDarkMode`, `useLayoutMode`, setters) remain in web-style.
+
+Migration:
+```ts
+// Before
+import { ThemeSwitcher } from '@capsuletech/web-style';
+<Ui.ThemeSwitcher />
+
+// After
+import type { useTheme, setTheme } from '@capsuletech/web-style';  // for state access if needed
+// Use UI from web-ui:
+<Ui.DarkModeToggle />
+<Ui.LayoutModeToggle />
+<Ui.ThemePicker mode='standalone' />  // or mode='sub' for nested
+```
+
+Module-level apply on import ensures theme data-attribute is set before first render — no flicker.
 
 ### 0.1.1 — @source pnpm fix (2026-05-20)
 

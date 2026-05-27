@@ -50,6 +50,48 @@ Storybook guide: `docs/09-packages/ui/storybook.md`.
 
 **No setPointerCapture:** window-level listeners only (set/release capture breaks `elementFromPoint` for droppable hit-test).
 
+## New components (PR #169–#177)
+
+### Dropdown primitive + DropdownMenu composite
+
+**Dropdown** (PR #173/#174):
+- Kobalte-based compound via `@kobalte/core/dropdown-menu`
+- Sub-components: `Dropdown.{Trigger, Content, Item, Separator, Group, Label, Sub, SubTrigger, SubContent}`
+- Keyboard nav (Arrow keys, Enter, Escape), ARIA compliance, Floating UI positioning
+- Portal-mounted Content/SubContent into document.body
+- Available in ViewUi + WidgetUi via named re-exports (`DropdownTrigger`, `DropdownContent`, etc.)
+
+**DropdownMenu** (PR #175):
+- Higher-level composite for declarative menus
+- Discriminated union API: `IDropdownMenuItem` → `item | sub | separator | group`
+- Props: `trigger: JSX.Element`, `data: IDropdownMenuItem[]`, event handlers
+- Symmetry with DataTable for Shape-pattern usage
+- Replaces imperative nested `<Dropdown>` chaining
+
+### DarkModeToggle, LayoutModeToggle, ThemePicker
+
+**State split** (PR #176):
+- `web-style`: state-only stores (`useTheme()`, `useDarkMode()`, `useLayoutMode()`, setters, `DISCOVERED_THEMES`)
+- Module-level apply on import (no onMount flicker)
+- `web-ui`: visual composites (`DarkModeToggle`, `LayoutModeToggle`, `ThemePicker`)
+
+**ThemePicker** (PR #177):
+- `mode='standalone'` (default): own Dropdown root
+- `mode='sub'`: renders `Dropdown.Sub/SubTrigger/SubContent` for nesting in parent Dropdown
+
+### DataTable + Layout improvements
+
+**DataTable** (PR #170):
+- Infinite-mode: spacer-padding pattern replaced with corvu-native (column alignment fixed)
+- Container: `h-full overflow-auto`, root: `h-full flex flex-col min-h-0` (stretches to parent)
+- Sticky `<thead>`, cells: `whitespace-nowrap overflow-hidden text-ellipsis`
+- Horizontal scroll on width overflow, fixed row height (36px default, customizable)
+
+**Matrix** (PR #172):
+- `layoutMode='view'` (default): DnD/resize affordances OFF (no badges, dashed borders, swap engine)
+- `layoutMode='edit'`: all edit-affordances ON
+- Flex `handleDisabled?: boolean` prop → forwards to corvu Handle (opacity, pointer-events)
+
 ## Changelog (notable breaks)
 
 ### 0.7.0 — Matrix v2: rows-engine + presets + DnD (2026-05-23)

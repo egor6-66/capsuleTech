@@ -91,7 +91,11 @@ import '@capsuletech/web-style/themes/light.css';
 
 5. **`STATUS_VARIABLES`** — четыре пары (`success-bg`, `success-fg`, `warning-bg`, `warning-fg`, etc.). Если добавляешь новый статус — синхронизируй в `light.css`/`dark.css` + tailwind теме.
 
-6. **ThemeSwitcher requires theme list.** Не auto-discover — `<ThemeSwitcher themes={['light', 'dark']} />`. В Storybook есть toolbar для auto-discovery из `web/style/src/themes/*.css` — это feature Storybook config'а, не самого Switcher'а.
+6. **Visual switcher widgets переехали в `@capsuletech/web-ui/composites/`.** web-style оставляет **только** state-stores + helpers: `useTheme/useDarkMode/useLayoutMode` (signal accessors), `setX/toggleX` setters, `DISCOVERED_THEMES`. Причина: visual widgets хотели использовать `Ui.Dropdown` (для красивого picker'а) — web-style → web-ui создал бы cycle. Прецедент: PR #176.
+
+7. **Apply state — на module-load, не в `onMount` widget'а.** Pattern: `const [signal, set] = createSignal(initial())`; `initial()` читает localStorage и applies сразу при импорте; widget просто subscribe (read-only). Старый pattern с onMount apply внутри widget давал **flicker при lazy-mount** (тема "скачет" при первом open dropdown). Прецедент: PR #176 устранил это.
+
+8. **`useTheme`/`useLayoutMode`/`useDarkMode` — module-level singletons.** Если apps хочет multi-tenant theme — нужно extension через scope-context (не существует пока, P3+).
 
 ## Что менять когда
 

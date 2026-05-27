@@ -121,6 +121,48 @@ Shape  ────→ читает proxied Ui из ShapeUiContext, которы
 | `Feature` | `(services) => IDefineStateSchema` | FSM (API/IO), services = `{router, api}` |
 | `Shape` | `(z, ui) => IShapeDefinition` | data-форма с path-tracker |
 
+### Ui-namespace (View vs Widget vs Page)
+
+`Ui` переходит в каждый wrapper (View/Widget/Page) как первый параметр factory и содержит набор primitive-компонентов и composites.
+
+**ViewUi** (for stateless UI in View layer):
+- Primitives: Button, Input, Label, Card, Field, Grid, Flex, Table, DataTable, Separator, Toggle, List
+- Composites: DarkModeToggle, ThemePicker (mode='sub'), DropdownMenu, Dropdown (с sub-components via createLazy named exports)
+
+**WidgetUi** (for stateful composition in Widget layer) — всё из ViewUi плюс:
+- Layout.{Grid, Flex} (Matrix остаётся PageUi-only)
+- LayoutModeToggle (для гейтинга Matrix DnD/resize)
+
+**PageUi** (for top-layout in Page layer) — всё из WidgetUi плюс:
+- Layout.{Grid, Flex, Matrix} (с Matrix v2: rows-engine + DnD + resize gating через layoutMode)
+- Animate
+
+**Ключевая разница Layout:** Matrix содержит логику DnD/resize и зависит от @corvu/resizable, поэтому доступен только в Page/Widget. View используется для stateless UI, поэтому доступны только Grid/Flex (простые CSS layout).
+
+**Dropdown compound API:**
+```tsx
+// Со sub-components через createLazy named re-exports
+<Ui.Dropdown>
+  <Ui.DropdownTrigger>Open</Ui.DropdownTrigger>
+  <Ui.DropdownContent>
+    <Ui.DropdownItem>Item 1</Ui.DropdownItem>
+    <Ui.DropdownSub>
+      <Ui.DropdownSubTrigger>Submenu</Ui.DropdownSubTrigger>
+      <Ui.DropdownSubContent>
+        <Ui.DropdownItem>Sub Item</Ui.DropdownItem>
+      </Ui.DropdownSubContent>
+    </Ui.DropdownSub>
+  </Ui.DropdownContent>
+</Ui.Dropdown>
+
+// Или declarative DropdownMenu composite
+<Ui.DropdownMenu trigger={<button>Menu</button>} data={[
+  { type: 'item', label: 'Edit', onSelect: () => {...} },
+  { type: 'sub', label: 'More', items: [...] },
+  { type: 'separator' },
+]} />
+```
+
 ### FSM-схема (Controller / Feature)
 
 ```ts

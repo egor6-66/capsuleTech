@@ -73,8 +73,11 @@ Entity((z: CapsuleZ) => {
 }): { schema: ZodType; defaults?: TData }   // возвращает ровно то что вернула factory (frozen)
 
 View<P>((Ui: ViewUi, props: P) => JSX.Element): Component<P>
+  // ViewUi теперь содержит: Layout (Grid, Flex), Table, DataTable, Button, Input, Card, Field, 
+  // Dropdown, DropdownMenu, DarkModeToggle, LayoutModeToggle, ThemePicker и другие primitives/composites
 Widget<P>((Ui: WidgetUi, props: P) => JSX.Element): Component<P>
 Page<P>((Ui: PageUi, props: P) => JSX.Element): Component<P>
+  // PageUi содержит Layout (Grid, Flex, Matrix), а также Widget-доступные компоненты
 // v0.4.0: batch flow — Shape НЕ итерирует, передаёт data[] целиком в as-template
 Shape((z: ZodHelpers, ui: UiPathTracker) => {
   schema: ZodArray;
@@ -187,7 +190,7 @@ ctx.store.updateComponent({ [id]: { value: data.value, type: data.type } });
 
 3. **`Providers` — namespace, не named export.** `import { Providers } from '@capsuletech/web-core'; <Providers.BaseProviders>`. Расширяемая namespace для будущих `Providers.TestingProvider`. Не плющи в named.
 
-4. **`Ui.Layout` — plain object**, не вызываемый компонент. `{ Grid, Flex, Matrix }` — три lazy-компонента. Источник: `src/ui-kit/imports.tsx:17`. В отличие от него, `Ui.Table` — вызываемый compound (`Object.assign(TableBase, { Header, Body, Row, Head, Cell })`), доступен в `ViewUi` и `WidgetUi`. `Ui.DataTable` — простой callable (без sub-components), доступен в `ViewUi` и `WidgetUi`. Generic `<TData>` — TS инферирует тип строки из `data`/`columns` props. Subpath: `@capsuletech/web-ui/dataTable`. `Ui.ThemeSwitcher` — plain callable из `@capsuletech/web-style` (localStorage persistence + `data-theme` на `<html>`), доступен в `ViewUi` и `WidgetUi`. Импортируется из main barrel (subpath `./switcher` — framework gap в web-style, pending architect).
+4. **`Ui.Layout` — plain object**, не вызываемый компонент. `{ Grid, Flex, Matrix }` — три lazy-компонента. Источник: `src/ui-kit/imports.tsx:17`. В отличие от него, `Ui.Table` — вызываемый compound (`Object.assign(TableBase, { Header, Body, Row, Head, Cell })`), доступен в `ViewUi` и `WidgetUi`. `Ui.DataTable` — простой callable (без sub-components), доступен в `ViewUi` и `WidgetUi`. Generic `<TData>` — TS инферирует тип строки из `data`/`columns` props. Subpath: `@capsuletech/web-ui/dataTable`. **Layout subset для View:** ViewUiRaw содержит `Layout: Pick<typeof Layout, 'Grid' | 'Flex'>` (Matrix остаётся Widget/Page-only, PR #169). `Ui.Dropdown` — compound из @kobalte/core (семейство Sub-компонентов, keyboard-nav, ARIA, Portal mounting, PR #173/#174). `Ui.DropdownMenu` — higher-level composite с discriminated union API для declarative menu (PR #175). `Ui.DarkModeToggle`, `Ui.LayoutModeToggle`, `Ui.ThemePicker` — composites из web-ui (переехали из web-style) с `layoutMode='edit'`/`'view'` поддержкой (PR #176/#177). `Ui.ThemeSwitcher` удалён (BREAKING, PR #176).
 
 5. **Все `Ui.*` — lazy через `createLazy`.** Обёртка над `lazy(() => import(...).then(m => ({ default: m[name] })))`. Нужен `<Suspense>` вокруг дерева. `createRoot` оборачивает в Suspense автоматически.
 
@@ -223,13 +226,24 @@ ctx.store.updateComponent({ [id]: { value: data.value, type: data.type } });
 
 23. **AutoImport `dirs:` убран** (PR #165, ADR [[019-autoimport-dirs-drop]]). Registry-объекты (`Widgets`/`Views`/`Shapes`/...) доступны как глобалы **только** через `Object.assign(globalThis, _registry)` в bootstrap. TS-типы — из `slots.d.ts` (ExportGeneratorPlugin). Строка `dirs: [join(capsuleRoot, 'registry')]` в `capsuleConfig.ts` удалена — она экспонировала named exports из `.capsule/registry/*.ts` как глобалы и вызывала self-import TDZ цикл через `createApi.ts`.
 
+24. **ViewUi содержит Grid + Flex, но не Matrix** (PR #169). Matrix дорогая по весу (DnD, resize) — остаётся Widget/Page-only. View может использовать простые layout'ы для stateless композиции.
+
+25. **Dropdown sub-components через `createLazy`** (PR #173/#174). `Ui.Dropdown` инжектируется с named re-exports: `DropdownTrigger`, `DropdownContent`, `DropdownItem`, … — это позволяет `createLazy` резолвить их как глобалы. Compound API внутри: `<Dropdown.Trigger>` / `<Dropdown.Content>` работают через Object.assign + context. Kobalte-зависимости (Floating UI, Portal) вынесены в web-ui.
+
+26. **LayoutMode gating для Matrix** (PR #172). `layoutMode='view'` (default) → DnD/resize/affordances off. `layoutMode='edit'` → всё on. Flex также получил `handleDisabled?: boolean` для гейтинга resize-handles. `store` имеет signal `useLayoutMode()` из web-style + setter для toggle. App управляет режимом через `store.setLayoutMode('edit')`.
+
+27. **Switcher state vs UI split** (PR #176). `web-style` теперь содержит **только** state-stores: `useTheme()`, `useDarkMode()`, `useLayoutMode()` (signal accessors) + `setTheme`, `setDarkMode`, `toggleDarkMode`, `setLayoutMode`, `toggleLayoutMode` + `DISCOVERED_THEMES` и `DENSITY_PRESETS`. Visual компоненты (`DarkModeToggle`, `LayoutModeToggle`, `ThemePicker`) переехали в `web-ui` (composites). `Ui.ThemeSwitcher` **удалён из core** — это BREAKING; используй `Ui.DarkModeToggle` вместо. `Ui.LayoutModeToggle` и `Ui.ThemePicker` — новые в WidgetUi/ViewUi.
+
+28. **ThemePicker mode='sub' для nested submenus** (PR #177). Стандартный ThemePicker → `mode='standalone'` (own Dropdown root). Для встраивания в существующий Dropdown используй `mode='sub'` (генерирует Dropdown.Sub/SubTrigger/SubContent вместо top-level Dropdown).
+
 ## Что менять когда
 
 | Хочу… | Куда лезть |
 |---|---|
 | Добавить новый Entity (domain data) | `apps/<app>/src/entities/<name>.ts` → `Entity((z) => ({ schema, defaults? }))` + `export default`. Codegen подхватит в `Entities.*`. `z.infer<typeof Entities.X.schema>` для типа. |
 | Расширить IEntityDefinition (validators, relations) | `packages/web/core/src/wrappers/entity/types.ts` → добавить поле в `IEntityDefinition`. При breaking change — bump major. |
-| Добавить новый primitive в `Ui` (например `Dialog`) | `src/ui-kit/imports.tsx` (lazy + `Object.assign` для compound) + тип в `ViewUiRaw`/`WidgetUiRaw` в `src/wrappers/interfaces.ts` + характеризационные тесты в `src/wrappers/__tests__/ui-meta-props.test.tsx`. Если primitive из другого пакета (не web-ui), проверь наличие subpath в его `package.json exports` и `tsconfig.base.json paths` — иначе импортируй из main barrel (прецедент: `ThemeSwitcher` из `@capsuletech/web-style`). |
+| Добавить новый primitive в `Ui` (например `Dialog`) | `src/ui-kit/imports.tsx` (lazy + `Object.assign` для compound) + тип в `ViewUiRaw`/`WidgetUiRaw` в `src/wrappers/interfaces.ts` + характеризационные тесты в `src/wrappers/__tests__/ui-meta-props.test.tsx`. Если primitive из другого пакета (не web-ui), проверь наличие subpath в его `package.json exports` и `tsconfig.base.json paths`. Composites (Dropdown, DropdownMenu, etc.) импортируются из web-ui (иногда с sub-components как `createLazy` named re-exports для compat). |
+| Добавить Layout component в View (например новый Matrix) | Layout.Grid и Layout.Flex уже доступны в ViewUi (PR #169 — subset). Matrix остаётся Widget/Page-only (дорогая по весу). Для добавления новой layout-варианты в View — определить в web-ui, затем добавить в `ViewUiRaw` тип и `src/ui-kit/imports.tsx`. |
 | Добавить новый wrapper-слой (например `Adapter`) | `WRAPPER_NAMES` в `packages/builders/vite/src/plugins/constants.ts` (SSOT для AutoImport, делает owner-builders) + новый wrapper в `packages/web/core/src/wrappers/` + публичный API в `index.ts` + AI-anchor entry |
 | Добавить новое поле в `ITarget` (например `meta.section`) | `packages/web/core/src/wrappers/interfaces.ts > ITarget` + сборщик `target` в `engine/ui-proxy.tsx` + опционально `engine/derivation.ts` если выводится из tags. Tests! |
 | Добавить новый handler-event (`onScroll`) | `engine/ui-proxy.tsx > EVENT_HANDLERS` + (опц) `engine/derivation.ts > TAG_TO_INPUT_TYPE`. ADR 009. Tests! |

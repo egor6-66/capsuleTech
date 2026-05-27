@@ -168,7 +168,7 @@ interface BridgeMatchOptions {
 | `match(tags, opts?)` | `IRegisteredComponent \| undefined` | Первый компонент по тегам. Для single-target операций. |
 | `matchEntry(tags, opts?)` | `{ id, ...IRegisteredComponent } \| undefined` | Первый компонент + его id. Когда нужен id для последующего patch/unregister. |
 | `patch(tags, patchOrFn, opts?)` | `void` | Tag-based props-патч. Один `send(SET_PROPS)` на все совпадения. `patchOrFn` — объект (одинаковый patch для всех) или `(comp, id) => patch \| null` (per-component). |
-| `values(tags, opts?)` | `Record<name, value>` | Form-payload: `{ [comp.name]: comp.value }` для matched компонентов. Skip nameless. |
+| `values(tags, opts?)` | `Record<name, value>` | Form-payload: `{ [comp.name]: comp.value }` для matched компонентов (PR #166 v0.2.0+). Skip nameless. Дедупликация `name`: last-write-wins. Используется в submit-хэндлерах: `const payload = store.values(['@inputs'])`. |
 
 **`values` детали:** используется в submit-хэндлерах. `store.values(['@inputs'])` раскрывает алиас и собирает payload формы одной строкой. Компоненты без `name` (например кнопки) пропускаются. Дублирующиеся `name` — last-write-wins (симптом ошибки разработчика).
 

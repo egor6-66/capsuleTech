@@ -8,13 +8,69 @@ status: documented
 **Расположение:** `packages/web/style/`
 **Зависит от:** `clsx`, `tailwind-merge`, `class-variance-authority`, `es-toolkit`, `solid-js`
 
-Тонкий интеграционный слой между Tailwind v4 и Solid.js для реактивной стилизации + темовая система с 12 встроенными темами и runtime-свитчером.
+Реактивная стилизация + модульный state-store для тем и layout-режимов. Состояние хранится в Solid signals, применяется на `<html>` и доступно приложению без Provider'а.
 
-**Что это:** не CSS-framework, не компонент-либа. Это:
-1. Хелперы для мержа Tailwind-классов и CVA-вариантов (`cn`, `cva`, `createStyle`).
-2. Система CSS-переменных для тем + Tailwind-маппинг на эти переменные.
-3. Компонент `ThemeSwitcher` для runtime-переключения.
-4. Редактор тем (advanced).
+**Состав (v0.2.0+):**
+1. **Style helpers:** `cn`, `cva`, `createStyle` для мержа Tailwind-классов и CVA-вариантов.
+2. **State stores:** `useTheme()`, `useDarkMode()`, `useLayoutMode()` (Solid signals) + setters.
+3. **Design tokens:** CSS-переменные для тем + Tailwind-маппинг.
+4. **Theme editor:** редактор с live preview (advanced, subpath `/editor`).
+
+**Визуальные компоненты** (`DarkModeToggle`, `LayoutModeToggle`, `ThemePicker`) **переехали в `web-ui`** (v0.2.0). Здесь остаются только state-store'ы.
+
+## State stores (v0.2.0+)
+
+Три реактивных хранилища, применяемые на `<html>` при импорте модуля (no flicker):
+
+### `useTheme() / setTheme(name)`
+
+```ts
+import { useTheme, setTheme, DISCOVERED_THEMES } from '@capsuletech/web-style';
+
+const currentTheme = useTheme();  // signal: 'light' | 'dark' | 'custom-name' | ...
+setTheme('dark');                // Sets data-theme="dark" on <html>, updates signal
+
+Object.keys(DISCOVERED_THEMES);  // ['light', 'dark', 'blue', ...]
+```
+
+### `useDarkMode() / toggleDarkMode()`
+
+```ts
+import { useDarkMode, toggleDarkMode } from '@capsuletech/web-style';
+
+const isDark = useDarkMode();  // signal: boolean (shorthand for theme === 'dark')
+toggleDarkMode();              // Switches between 'light' and 'dark' theme
+```
+
+### `useLayoutMode() / setLayoutMode(mode)`
+
+```ts
+import { useLayoutMode, setLayoutMode } from '@capsuletech/web-style';
+
+const mode = useLayoutMode();      // signal: 'view' | 'edit'
+setLayoutMode('edit');             // For gating Matrix DnD/resize affordances
+
+// Used internally by Matrix + LayoutModeToggle
+<Ui.Layout.Matrix rows={...} />  // reads mode via useLayoutMode() hook
+```
+
+### Constants
+
+```ts
+import { DISCOVERED_THEMES, DENSITY_PRESETS } from '@capsuletech/web-style';
+
+DISCOVERED_THEMES;
+// {
+//   'light': { colors: {...}, fonts: {...} },
+//   'dark': { colors: {...}, fonts: {...} },
+//   ...
+// }
+
+DENSITY_PRESETS;
+// { compact: 0.75, comfortable: 1.25 }  // density multiplier for --space-* tokens
+```
+
+**Why module-level:** Applying theme on import (before first render) prevents flash of unstyled content. No Provider needed — signals are global to the app.
 
 ## API
 
@@ -98,6 +154,49 @@ import { STATUS_VARIABLES } from '@capsuletech/web-style/constants';
 ```
 
 Используй эти переменные в компонентах для визуализации success/error/warning (например, зелёная граница в успешной форме).
+
+## Визуальные компоненты (v0.2.0+)
+
+Все UI-компоненты для переключения теми и режимов живут в `@capsuletech/web-ui` и используют state-store'ы отсюда:
+
+```tsx
+// Не импортируй из web-style — импортируй из Ui в web-core
+import { DarkModeToggle, LayoutModeToggle, ThemePicker } from '@capsuletech/web-ui';
+
+// Или через Ui namespace
+<Ui.DarkModeToggle />
+<Ui.LayoutModeToggle />
+<Ui.ThemePicker mode='standalone' />
+```
+
+Компоненты автоматически читают и синхронизируют состояние через hooks из web-style (no manual wiring needed).
+
+## Миграция с v0.1.x → v0.2.0
+
+**Breaking change:** `ThemeSwitcher` удалён из web-style.
+
+Если использовал:
+```tsx
+// Before (v0.1.x)
+import { ThemeSwitcher } from '@capsuletech/web-style';
+<Ui.ThemeSwitcher />  // или <ThemeSwitcher />
+```
+
+Замени на:
+```tsx
+// After (v0.2.0+)
+<Ui.DarkModeToggle />      // Simple toggle dark/light
+<Ui.ThemePicker />         // Dropdown selector for all themes
+<Ui.LayoutModeToggle />    // For Matrix edit/view mode
+```
+
+Для прямого доступа к состоянию (например, в Feature logic):
+```tsx
+import { useDarkMode, toggleDarkMode } from '@capsuletech/web-style';
+
+const isDark = useDarkMode();
+toggleDarkMode();
+```
 
 ```tsx
 <Field
