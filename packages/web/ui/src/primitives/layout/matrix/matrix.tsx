@@ -1,6 +1,6 @@
 import { DnDProvider, useDnD } from '@capsuletech/web-dnd';
 import { type ICapsuleRouter, RouterContext } from '@capsuletech/web-router';
-import { createStyle } from '@capsuletech/web-style';
+import { createStyle, useLayoutMode } from '@capsuletech/web-style';
 import {
   type Accessor,
   createMemo,
@@ -725,13 +725,14 @@ const MatrixImpl = (props: IMatrixProps) => {
     return (local.rows as IRow[]) ?? [];
   });
 
-  // Uncontrolled local mode (kept for insert-mode legacy; not used by badge-UX swap)
-  const [localLayoutMode, setLocalLayoutMode] = createSignal<'view' | 'edit'>('view');
-  const layoutMode = createMemo(() => local.layoutMode ?? localLayoutMode());
+  // Default: read global layoutMode store from @capsuletech/web-style — consumer
+  // не обязан тянуть useLayoutMode сам. Если consumer всё-таки передал
+  // `layoutMode` prop явно, его значение перекрывает глобал (= lock на
+  // конкретный режим, не реагирует на global toggle). Use case: shell-layout
+  // с `layoutMode="view"` остаётся статичным даже когда global edit включён.
+  const globalLayoutMode = useLayoutMode();
+  const layoutMode = createMemo(() => local.layoutMode ?? globalLayoutMode());
   const dndMode = createMemo(() => local.dndMode ?? 'swap');
-
-  // Kept for controlled layoutMode support (insert mode, future)
-  void setLocalLayoutMode;
 
   return (
     <DnDProvider showDefaultOverlay overlayMode="thumbnail">
