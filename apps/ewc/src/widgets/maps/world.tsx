@@ -5,13 +5,13 @@
  * Из 3D-набора активен только Sky (offline-safe). BuildingsPreset/TerrainPreset
  * требуют user-supplied source/DEM (см. JSDoc этих компонентов).
  *
- * Маркеры — 200 моков из CALLS_MOCK (точки в bounding-box СПб). Click на
- * маркере возвращает full объект ICallMock + MouseEvent. Это временный
- * вариант синхронизации с Tables.Calls — в следующей итерации общие данные
- * вынесем в global store (Feature/Entity) и подключим обе плоскости (карту
+ * Маркеры — 200 моков из INCIDENTS_MOCK (точки в bounding-box СПб). Click на
+ * маркере возвращает full объект IIncidentMock + MouseEvent. Это временный
+ * вариант синхронизации с Tables.Incidents — в следующей итерации общие данные
+ * вынесем в global store (Features.Incidents) и подключим обе плоскости (карту
  * и таблицу) к одному источнику.
  */
-import { CALLS_MOCK } from '../../mocks/calls';
+import { type IIncidentMock, INCIDENTS_MOCK } from '../../mocks/incidents';
 
 const World = Widget((Ui) => (
   <Ui.MapView
@@ -22,15 +22,13 @@ const World = Widget((Ui) => (
     class="h-full w-full"
   >
     <Ui.MapView.Sky />
-    {CALLS_MOCK.map((call) => (
+    {INCIDENTS_MOCK.map((incident: IIncidentMock) => (
       <Ui.MapView.Marker
-        lng={call.location.lng}
-        lat={call.location.lat}
-        data={call}
-        onClick={(call) => {
-          // TODO(next-iteration): прокинуть в global store / Feature для
-          // подсветки строки в Tables.Calls и открытия Sidebar panel.
-          console.log('[Marker click]', call.id, call.description, call.location);
+        lng={incident.location.lng}
+        lat={incident.location.lat}
+        onClick={() => {
+          // TODO(Phase 2): controller.markerClicked(incident.id) → Features.Incidents.selectOne
+          console.log('[Marker click]', incident.id, incident.description, incident.location);
         }}
       />
     ))}

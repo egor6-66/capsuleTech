@@ -7,7 +7,7 @@
  *
  * Matrix preset='app-shell' БЕЗ header-слота (header идёт от родительского
  * workspace layout). Внутренний matrix:
- *   main     — calls table (draggable, swapGroup 'widgets')
+ *   main     — incidents table (draggable, swapGroup 'widgets')
  *   rightBar — sidebar (draggable, swapGroup 'widgets')
  *   footer   — карта (draggable, swapGroup 'widgets')
  *
@@ -20,7 +20,7 @@ const Dashboard = Page((Ui) => (
     preset="app-shell"
     slots={{
       main: {
-        children: <Widgets.Tables.Calls />,
+        children: <Widgets.Tables.Incidents />,
         draggable: true,
         swapGroup: 'widgets',
       },
