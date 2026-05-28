@@ -85,6 +85,17 @@ const DEFAULT_DARK_STYLE = DARK_MATTER;
 export const MapView = (props: IMapViewProps) => {
   const [map, setMap] = createSignal<MaplibreMap | undefined>(undefined);
 
+  // KNOWN LIMITATION (verified 2026-05-28):
+  // Каждый mount→unmount цикл MapView утекает ~5MB. Источник — upstream
+  // maplibre-gl: после `map.remove()` остаются неосвобождёнными tile
+  // worker pool, glyph atlases и sprite кэши. solid-map-gl уже зовёт
+  // `c?.remove()` в своём onCleanup; defensive дубль `map.remove()` на
+  // нашей стороне тоже не помогает (проверено в apps/ewc/dashboard).
+  // Mitigation для apps, где Map mount/unmount часто: держать MapView
+  // постоянно смонтированным и тогглить видимость через CSS вместо
+  // unmount route'ом. См. https://github.com/maplibre/maplibre-gl-js
+  // issues по `Map.remove() memory leak`.
+
   // Сборка viewport-объекта: ВКЛЮЧАЕМ только определённые поля. undefined
   // в `center`/`zoom`/`pitch`/`bearing` ломает _calcMatrices внутри maplibre
   // при инициализации.
