@@ -1,6 +1,7 @@
 /**
- * Моки экстренных карточек — 200 записей для проверки DataTable scroll + DnD
- * + остальных интерактивных слоёв workspace'а.
+ * Моки карточек происшествий — 200 записей для проверки DataTable scroll + DnD
+ * + остальных интерактивных слоёв workspace'а. В production придут через
+ * services.api.incidents.list() (см. apps/ewc/src/api/incidents.ts).
  *
  * Координаты — случайные точки в bounding-box Санкт-Петербурга
  * (примерно 59.83–60.05 lat × 30.10–30.55 lng).
@@ -98,7 +99,7 @@ const makePhone = (): string => {
   return `+7 (${a}) ${b}-${padTwo(c)}-${padTwo(d)}`;
 };
 
-export interface ICallMock {
+export interface IIncidentMock {
   id: string;
   applicant: { name: string; phone: string };
   location: { lng: number; lat: number };
@@ -106,8 +107,8 @@ export interface ICallMock {
   createdAt: string;
 }
 
-export const CALLS_MOCK: ICallMock[] = Array.from({ length: 200 }, (_, i) => ({
-  id: `call-${String(i + 1).padStart(4, '0')}`,
+export const INCIDENTS_MOCK: IIncidentMock[] = Array.from({ length: 200 }, (_, i) => ({
+  id: `incident-${String(i + 1).padStart(4, '0')}`,
   applicant: {
     name: `${pick(FIRST_NAMES)} ${pick(LAST_NAMES)}`,
     phone: makePhone(),
