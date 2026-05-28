@@ -1,54 +1,45 @@
-import { useLayoutMode } from '@capsuletech/web-style';
-
 /**
- * Workspace layout — рабочая область после логина (URL `/workspace`).
+ * Workspace shell (`/workspace`) — общий каркас для всех авторизованных
+ * страниц.
  *
- * Matrix app-shell preset:
- *   header   — fixed (resizable: false)
- *   main     — resize + DnD swap (swapGroup 'widgets') — табличка
- *   rightBar — resize + DnD swap (swapGroup 'widgets') — sidebar контент
- *   footer   — resize + DnD swap (swapGroup 'widgets') — карта
+ *   header — `Widgets.Headers.Main`
+ *   main   — `<Ui.Outlet/>` для дочерних роутов
+ *              `/workspace/dashboard` — главный операционный экран
+ *              `/workspace/cards`     — sandbox генерации форм
+ *              `/workspace/reports`   — отчёты (placeholder)
  *
- * `layoutMode` подключён к глобальному store из @capsuletech/web-style:
- *   - View — статичный layout, ресайз/DnD выключены.
- *   - Edit — handles + drag badges + dashed outlines.
- * Переключается через `<Ui.LayoutModeToggle />` в header-menu.
+ * Оба слота `resizable: false` — shell не должен ресайзиться.
  *
- * `<Ui.Outlet/>` пока не задействован: вложенных страниц нет. Будут — переедет
- * в main или развернётся в отдельный routing.
+ * `layoutMode="view"` локирует shell — global edit-toggle не подсветит
+ * header/main edit-affordances. Внутренние страницы (Dashboard) подключают
+ * `useLayoutMode` сами через Matrix internal default.
+ *
+ * **Page-transition анимация — TODO:** будем делать через проектный
+ * `Ui.Animate` (solid-motionone). Предыдущая попытка (`<For each={[pathname]}>`
+ * + локальный FadeIn на opacity-signal'е) откачена — не подходит, нужно
+ * через свою либу. Подходить надо аккуратно: тест показал что
+ * `<Animate keyed={pathname}>` не пере-mount'ит Motion на смену keyed
+ * (тот же DOM-нод остаётся, opacity не дрожит). Корень не до конца
+ * выяснен — возможно lazy-wrapping `Ui.Animate` через `createLazy()`
+ * + Presence `resolveFirst` в solid-motionone не находит swap. Когда
+ * вернёмся к задаче — копать оттуда.
  */
-const Workspace = Page((Ui) => {
-  const layoutMode = useLayoutMode();
-  return (
-    <Ui.Layout.Matrix
-      layoutMode={layoutMode()}
-      preset="app-shell"
-      slots={{
-        header: {
-          children: <Widgets.Headers.Main />,
-          resizable: false,
-          initialSize: 0.03,
-        },
-        main: {
-          children: <Widgets.Tables.Calls />,
-          draggable: true,
-          swapGroup: 'widgets',
-        },
-        rightBar: {
-          children: <Widgets.Sidebars.Main />,
-          draggable: true,
-          swapGroup: 'widgets',
-          initialSize: 0.25,
-        },
-        footer: {
-          children: <Widgets.Maps.World />,
-          draggable: true,
-          swapGroup: 'widgets',
-          initialSize: 0.35,
-        },
-      }}
-    />
-  );
-});
+const Workspace = Page((Ui) => (
+  <Ui.Layout.Matrix
+    layoutMode="view"
+    preset="app-shell"
+    slots={{
+      header: {
+        children: <Widgets.Headers.Main />,
+        resizable: false,
+        initialSize: 0.04,
+      },
+      main: {
+        children: <Ui.Outlet />,
+        resizable: false,
+      },
+    }}
+  />
+));
 
 export default Workspace;
