@@ -1,54 +1,38 @@
-import { useLayoutMode } from '@capsuletech/web-style';
-
 /**
- * Workspace layout — рабочая область после логина (URL `/workspace`).
+ * Workspace shell (`/workspace`) — общий каркас для всех авторизованных
+ * страниц. Раньше тут лежал dashboard-контент; теперь это thin layout:
  *
- * Matrix app-shell preset:
- *   header   — fixed (resizable: false)
- *   main     — resize + DnD swap (swapGroup 'widgets') — табличка
- *   rightBar — resize + DnD swap (swapGroup 'widgets') — sidebar контент
- *   footer   — resize + DnD swap (swapGroup 'widgets') — карта
+ *   header — `Widgets.Headers.Main` (с навигацией Dashboard/Cards/Reports
+ *            + WorkspaceMenu справа)
+ *   main   — `<Ui.Outlet/>` для дочерних роутов:
+ *              `/workspace/dashboard` — главный операционный экран
+ *              `/workspace/cards`     — sandbox генерации форм
+ *              `/workspace/reports`   — отчёты (placeholder)
  *
- * `layoutMode` подключён к глобальному store из @capsuletech/web-style:
- *   - View — статичный layout, ресайз/DnD выключены.
- *   - Edit — handles + drag badges + dashed outlines.
- * Переключается через `<Ui.LayoutModeToggle />` в header-menu.
+ * Оба слота `resizable: false` — shell не должен ресайзиться. layoutMode
+ * для shell неактуален (нет drag/swap); внутренние страницы (например
+ * Dashboard) подключают `useLayoutMode` сами.
  *
- * `<Ui.Outlet/>` пока не задействован: вложенных страниц нет. Будут — переедет
- * в main или развернётся в отдельный routing.
+ * Заходящий на `/workspace` напрямую видит пустую main-зону — router
+ * матчит passthrough index с `() => null`. Для default-страницы нужен
+ * либо явный `Navigate to=/workspace/dashboard`, либо клик по nav-кнопке.
  */
-const Workspace = Page((Ui) => {
-  const layoutMode = useLayoutMode();
-  return (
-    <Ui.Layout.Matrix
-      layoutMode={layoutMode()}
-      preset="app-shell"
-      slots={{
-        header: {
-          children: <Widgets.Headers.Main />,
-          resizable: false,
-          initialSize: 0.04,
-        },
-        main: {
-          children: <Widgets.Tables.Calls />,
-          draggable: true,
-          swapGroup: 'widgets',
-        },
-        rightBar: {
-          children: <Widgets.Sidebars.Main />,
-          draggable: true,
-          swapGroup: 'widgets',
-          initialSize: 0.25,
-        },
-        footer: {
-          children: <Widgets.Maps.World />,
-          draggable: true,
-          swapGroup: 'widgets',
-          initialSize: 0.35,
-        },
-      }}
-    />
-  );
-});
+const Workspace = Page((Ui) => (
+  <Ui.Layout.Matrix
+    layoutMode="view"
+    preset="app-shell"
+    slots={{
+      header: {
+        children: <Widgets.Headers.Main />,
+        resizable: false,
+        initialSize: 0.04,
+      },
+      main: {
+        children: <Ui.Outlet />,
+        resizable: false,
+      },
+    }}
+  />
+));
 
 export default Workspace;

@@ -5,7 +5,7 @@ import { useParams } from '@tanstack/solid-router';
 import { createMemo } from 'solid-js';
 
 /**
- * Card-by-id route (`/cards/$id`) — пер-id рендер сгенерированной формы.
+ * Card-by-id route (`/workspace/cards/$id`) — пер-id рендер сгенерированной формы.
  *
  * Pipeline:
  *   useParams().id → hashSeed(id) → generate(FORM_PRESET, { seed })
@@ -14,7 +14,7 @@ import { createMemo } from 'solid-js';
  * id трактуется как источник seed'а: `parseInt` если число, иначе stable
  * string-hash. Это даёт два важных свойства:
  *   - детерминизм: тот же URL → та же форма (можно копипастить, обновлять);
- *   - регенерация: layout-кнопка "Generate new" навигирует на новый id
+ *   - регенерация: parent toolbar "Generate new" навигирует на новый id
  *     (`Date.now()`), `useParams` реактивно меняется, memo пересчитывается,
  *     Renderer перерисовывает дерево.
  *
@@ -44,7 +44,7 @@ const REGISTRY: Registry = {
 };
 
 const CardById = Page(() => {
-  const params = useParams({ from: '/cards/$id' });
+  const params = useParams({ from: '/workspace/cards/$id' });
 
   const schema = createMemo<ISchema>(() => ({
     components: generate(FORM_PRESET, { seed: hashSeed(params().id) }),
