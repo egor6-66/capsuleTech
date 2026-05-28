@@ -34,6 +34,12 @@ const Navigation = Shape((z, ui) => ({
     as: ui.Link,
     to: item.to,
     variant: 'outline',
+    // Активный link получает aria-current='page' от TanStack Router — на этом
+    // селекторе подсвечиваем кнопку аксентом, чтобы было видно где находишься.
+    // `font-semibold` усиливает читаемость; `pointer-events-none` блокирует
+    // повторный клик/hover-flicker на текущей странице.
+    class:
+      'aria-[current=page]:bg-accent aria-[current=page]:text-accent-foreground aria-[current=page]:font-semibold aria-[current=page]:pointer-events-none',
     children: item.label,
   }),
   orientation: 'horizontal',
