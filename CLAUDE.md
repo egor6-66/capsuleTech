@@ -184,6 +184,7 @@ Single-platform binary на Phase 1 (multi-platform — Phase 2 отдельны
 
 - **`Ui`** (UI-kit примитивы) — приходит **первым параметром** wrapper'а. Wrapper готовит per-instance проксированную копию через `UiProxy` под текущий `ControllerContext` (event-binding, meta-registration). Stable ref у одного instance, но разные у разных instance'ов.
 - **`Views` / `Widgets` / `Shapes` / `Controllers` / `Features`** — **глобалы** через `Object.assign(globalThis, _registry)` в bootstrap. Один stable ref на всё приложение. Доступны прямо из factory body без объявления в args.
+- **`useCtx`** (контекстный hook) — **глобал** через unplugin-auto-import. Доступен в Views/Widgets для доступа к `ControllerContext` (store с reactive data). `const ctx = useCtx(); ctx.store.ctx` → читать state из родительского Controller/Feature.
 - **`services`** (Controller/Feature) — приходит параметром, per-instance (api/store/state).
 - **`props`** — опциональный второй аргумент в View/Widget/Page. Используется для template-pattern (Shape `as` через `<Dynamic component={Tpl} {...props} />`).
 

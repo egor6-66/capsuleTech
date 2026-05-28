@@ -46,6 +46,18 @@ export const WRAPPER_NAMES = [...RENDER_WRAPPER_NAMES, ...CONFIG_WRAPPER_NAMES] 
 export type WrapperName = (typeof WRAPPER_NAMES)[number];
 
 /**
+ * Hooks и вспомогательные функции, инжектящиеся в TSX-файлы через AutoImport.
+ * В отличие от `WRAPPER_NAMES` это не component-wrapper'ы (нет HMR-обёртки),
+ * а runtime-функции для доступа к контексту и сервисам.
+ *
+ * Используется в Views/Widgets/Controllers/Features:
+ *  - `useCtx()` — доступ к `ControllerContext` (store + state + controller methods)
+ */
+export const HOOK_IMPORTS = {
+  '@capsuletech/web-core': ['useCtx'],
+} as const;
+
+/**
  * Config-time фабрики, инжектящиеся в TSX-файлы через AutoImport. В отличие от
  * `WRAPPER_NAMES` это не component-wrapper'ы (нет HMR-обёртки, нет compliance),
  * а функции для декларативных конфигов: `defineEndpoint((z) => ...)`,

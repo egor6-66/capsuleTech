@@ -15,7 +15,7 @@ import {
   solidPlugin,
   tsconfigPaths,
 } from '../plugins';
-import { DEFINE_FACTORIES, WRAPPER_NAMES } from '../plugins/constants';
+import { DEFINE_FACTORIES, HOOK_IMPORTS, WRAPPER_NAMES } from '../plugins/constants';
 import { appConfig } from './appConfig';
 
 export interface ICapsuleConfig {
@@ -127,6 +127,9 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
         // в Feature идёт `services.api.X.Y(...)`, не `endpoints.X.Y`.
         imports: [
           { '@capsuletech/web-core': [...WRAPPER_NAMES] },
+          ...Object.entries(HOOK_IMPORTS).map(([mod, names]) => ({
+            [mod]: [...names],
+          })),
           ...Object.entries(DEFINE_FACTORIES).map(([mod, names]) => ({
             [mod]: [...names],
           })),

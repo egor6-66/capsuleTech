@@ -48,6 +48,7 @@ import {
   View, Widget, Page, Controller, Feature, Shape, // 6 UI-wrapper-функции
   Entity,                                          // domain data layer wrapper
   Providers,                                        // namespace: { BaseProviders }
+  useCtx,                                           // hook для доступа к ControllerContext
   useShapeUi,                                       // hook для Shape consumer'ов
   type ITarget, type IHandlerApi,                   // user-facing типы
   type IDefineStateSchema, type IStateHandlers,     // schema-типы
@@ -103,7 +104,7 @@ import { BaseProviders } from '@capsuletech/web-core/providers';
 
 - **`next(payload)` — прямой вызов**, не XState event. `parent.controller[name]` вызывается напрямую с `await`. Не переписывать на event-bus без ADR (ADR 008 — гибридная FSM-схема).
 
-- **`engine/*` — НЕ public.** `index.ts` не экспортирует ничего из `engine/`. Если что-то из engine нужно во внешнем коде — это симптом, документируй причину перед public-экспортом.
+- **`useCtx()` — публичный hook из engine.** Исключение из правила выше: `useCtx` экспортируется в главный barrel и auto-импортируется через vite-builder HOOK_IMPORTS. Нужен для Views/Widgets чтобы читать reactive state из `ControllerContext` (`const ctx = useCtx(); ctx.store.ctx.items`). Источник: `src/engine/ctx.ts`, экспортируется из `wrappers/index.ts`.
 
 - **8 workspace deps.** `web-core` зависит от `web-profiler`, `web-router`, `web-state`, `web-ui`, `web-query`, `shared-zod`, `vite-builder`, `web-style`. При изменении контрактов в любом из них — согласовывать с соответствующим owner'ом.
 
