@@ -23,6 +23,7 @@ import type {
 } from '@capsuletech/web-ui';
 import type { Dropdown } from '@capsuletech/web-ui/dropdown';
 import type { DropdownMenu } from '@capsuletech/web-ui/dropdownMenu';
+import type { PreviewCard } from '@capsuletech/web-ui/previewCard';
 import type { Typography } from '@capsuletech/web-ui/typography';
 import type { DarkModeToggle } from '@capsuletech/web-ui/darkModeToggle';
 import type { LayoutModeToggle } from '@capsuletech/web-ui/layoutModeToggle';
@@ -38,7 +39,7 @@ import type {
   Marker,
 } from '@capsuletech/web-map';
 import type { Link } from '@tanstack/solid-router';
-import type { Component, JSX, JSXElement } from 'solid-js';
+import type { Component, JSX, JSXElement, ParentComponent } from 'solid-js';
 
 // -----------------------------------------------------------------------------
 // UiProxy meta-props: дополнительные props, которые UiProxy перехватывает
@@ -153,6 +154,7 @@ type ViewUiRaw = {
   Animate: typeof Animate;
   Table: typeof Table;
   DataTable: typeof DataTable;
+  PreviewCard: typeof PreviewCard;
   Dropdown: typeof Dropdown;
   DropdownMenu: typeof DropdownMenu;
   DarkModeToggle: typeof DarkModeToggle;
@@ -183,6 +185,7 @@ type WidgetUiRaw = {
   Layout: typeof Layout;
   Table: typeof Table;
   DataTable: typeof DataTable;
+  PreviewCard: typeof PreviewCard;
   Dropdown: typeof Dropdown;
   DropdownMenu: typeof DropdownMenu;
   DarkModeToggle: typeof DarkModeToggle;
@@ -270,34 +273,48 @@ export type IViewWrapper = <P extends Record<string, any> = Record<string, any>>
 /**
  * Widget: композиция всего что ниже. Позиционные аргументы:
  * 1. UI-примитивы widget-уровня.
- * 2. props — внешние props (опционально).
+ * 2. store — реактивный IBridge из ближайшего родительского Controller/Feature.
+ *    `undefined` когда Widget рендерится вне Controller-tree (допустимый случай —
+ *    например, standalone-Storybook или top-level Page без логического родителя).
+ * 3. props — внешние props (опционально).
+ *
+ * Решение A1: store поступает только через composition layer (Widget/Page),
+ * не прямо в View/Shape — View остаётся строго props-only.
  *
  * Registries (Views/Features/Controllers) доступны как глобалы через
  * `Object.assign(globalThis, _registry)` в bootstrap. Не нужны как args.
  */
 export type IWidgetRenderer<P extends Record<string, any> = Record<string, any>> = (
   ui: WidgetUi,
+  store: IBridge | undefined,
   props: P,
 ) => JSX.Element;
 export type IWidgetWrapper = <P extends Record<string, any> = Record<string, any>>(
   component: IWidgetRenderer<P>,
-) => Component<P>;
+) => ParentComponent<P>;
 
 /**
  * Page: корневой layout. Позиционные аргументы:
  * 1. UI page-уровня (Layout, Outlet).
- * 2. props — внешние props (опционально).
+ * 2. store — реактивный IBridge из ближайшего родительского Controller/Feature.
+ *    `undefined` когда Page рендерится вне Controller-tree (типичный случай —
+ *    Page обычно является корневым компонентом дерева).
+ * 3. props — внешние props (опционально).
+ *
+ * Решение A1: store поступает только через composition layer (Widget/Page),
+ * не прямо в View/Shape — View остаётся строго props-only.
  *
  * Registries (Widgets) доступны как глобалы через
  * `Object.assign(globalThis, _registry)` в bootstrap. Не нужны как args.
  */
 export type IPageRenderer<P extends Record<string, any> = Record<string, any>> = (
   ui: PageUi,
+  store: IBridge | undefined,
   props: P,
 ) => JSX.Element;
 export type IPageWrapper = <P extends Record<string, any> = Record<string, any>>(
   component: IPageRenderer<P>,
-) => Component<P>;
+) => ParentComponent<P>;
 
 // -----------------------------------------------------------------------------
 // Logic-вкус: FSM-schema + handler-API для Controller/Feature.
