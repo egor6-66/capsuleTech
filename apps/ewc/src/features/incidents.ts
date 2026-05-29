@@ -59,6 +59,25 @@ const Incidents = Feature(({ api }) => ({
     error: null as string | null,
   },
 
+  /**
+   * onClick — универсальный роутер кликов по `target.meta.tags`.
+   *
+   * Top-level (вне `states`) → ControllerProxy находит его как fallback после
+   * `states[current]`, значит ловит клик в любом стейте. Компоненты (строки
+   * таблицы, маркеры карты) несут сырые теги (`['incident']`) + payload;
+   * решение «что делать» живёт здесь, а не в компоненте.
+   *   incident → select (idempotent).
+   */
+  onClick: ({ target, store }) => {
+    const tags = (target as { meta?: { tags?: string[] } }).meta?.tags ?? [];
+
+    if (tags.includes('incident')) {
+      const id = (target as { payload?: { id?: string } }).payload?.id;
+      if (!id || store.ctx.data.selectedId === id) return;
+      store.update({ selectedId: id });
+    }
+  },
+
   states: {
     /**
      * idle — стартовое состояние. onInit немедленно запускает загрузку:
@@ -112,17 +131,6 @@ const Incidents = Feature(({ api }) => ({
      */
     loaded: {
       /**
-       * selectOne — устанавливает выбранный incident.
-       * Idempotent: повторный вызов с тем же id ничего не меняет.
-       */
-      selectOne: ({ target, context, store }) => {
-        const id = (target as { payload?: { id?: string } }).payload?.id;
-        if (!id) return;
-        if (context.data.selectedId === id) return;
-        store.update({ selectedId: id });
-      },
-
-      /**
        * clearSelection — сбрасывает выбор (sidebar переходит в пустое состояние).
        */
       clearSelection: ({ store }) => {
@@ -133,10 +141,10 @@ const Incidents = Feature(({ api }) => ({
        * toggleVisible — переключает видимость одного маркера на карте.
        * Иммутабельное обновление через new Set.
        */
-      toggleVisible: ({ target, context, store }) => {
+      toggleVisible: ({ target, store }) => {
         const id = (target as { payload?: { id?: string } }).payload?.id;
         if (!id) return;
-        const next = new Set(context.data.visibleIds);
+        const next = new Set(store.ctx.data.visibleIds);
         if (next.has(id)) {
           next.delete(id);
         } else {
@@ -149,11 +157,11 @@ const Incidents = Feature(({ api }) => ({
        * setAllVisible — массовое управление видимостью.
        * visible=true → показать все; visible=false → скрыть все.
        */
-      setAllVisible: ({ target, context, store }) => {
+      setAllVisible: ({ target, store }) => {
         const visible = (target as { payload?: { visible?: boolean } }).payload?.visible;
         if (visible === true) {
           store.update({
-            visibleIds: new Set(context.data.items.map((i: IIncident) => i.id)),
+            visibleIds: new Set(store.ctx.data.items.map((i: IIncident) => i.id)),
           });
         } else {
           store.update({ visibleIds: new Set() });
