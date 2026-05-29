@@ -219,6 +219,7 @@ describe('bindEvents — event bubble dedup (eventMarker)', () => {
 
     // Inner: the actual DataTableRow wrapper
     const InnerComp = (props: any) => (
+      // biome-ignore lint/a11y/useKeyWithClickEvents: test fixture, not real UI
       <tr data-testid="inner-row" onClick={props.onClick}>
         <td>{props.children}</td>
       </tr>
@@ -227,6 +228,7 @@ describe('bindEvents — event bubble dedup (eventMarker)', () => {
 
     // Outer: simulates a second bindEvents layer (e.g. another wrapping composite)
     const OuterComp = (props: any) => (
+      // biome-ignore lint/a11y/useKeyWithClickEvents: test fixture, not real UI
       <tbody data-testid="outer-tbody" onClick={props.onClick}>
         {props.children}
       </tbody>

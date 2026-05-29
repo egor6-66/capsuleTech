@@ -39,7 +39,7 @@ import type {
   Marker,
 } from '@capsuletech/web-map';
 import type { Link } from '@tanstack/solid-router';
-import type { Component, JSX, JSXElement } from 'solid-js';
+import type { Component, JSX, JSXElement, ParentComponent } from 'solid-js';
 
 // -----------------------------------------------------------------------------
 // UiProxy meta-props: дополнительные props, которые UiProxy перехватывает
@@ -291,7 +291,7 @@ export type IWidgetRenderer<P extends Record<string, any> = Record<string, any>>
 ) => JSX.Element;
 export type IWidgetWrapper = <P extends Record<string, any> = Record<string, any>>(
   component: IWidgetRenderer<P>,
-) => Component<P>;
+) => ParentComponent<P>;
 
 /**
  * Page: корневой layout. Позиционные аргументы:
@@ -314,7 +314,7 @@ export type IPageRenderer<P extends Record<string, any> = Record<string, any>> =
 ) => JSX.Element;
 export type IPageWrapper = <P extends Record<string, any> = Record<string, any>>(
   component: IPageRenderer<P>,
-) => Component<P>;
+) => ParentComponent<P>;
 
 // -----------------------------------------------------------------------------
 // Logic-вкус: FSM-schema + handler-API для Controller/Feature.
