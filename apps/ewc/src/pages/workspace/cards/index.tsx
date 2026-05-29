@@ -1,30 +1,52 @@
-// import { useRouter } from '@capsuletech/web-router';
+import { useRouter } from '@capsuletech/web-router';
+import { Show } from 'solid-js';
 
 /**
- * Cards layout (`/workspace/cards`) — sandbox-каталог для генерации форм.
+ * Cards layout (`/workspace/cards`) — Matrix header + main.
  *
- * Раньше содержал собственный matrix (header/main/rightBar/footer мокнутые).
- * После переноса под workspace shell — упрощён: workspace уже даёт header
- * и общий каркас. Здесь только локальный toolbar + Outlet для `[id]/`.
+ * `main` переключается по маршруту (master-detail-replace):
+ *   /workspace/cards       → список карточек (Widgets.Tables.Incidents)
+ *   /workspace/cards/:id   → детальная карточка (<Outlet/> → [id])
  *
- * Кнопка Generate навигирует на `/workspace/cards/${Date.now()}` — `[id]`
- * пересчитывает форму из id-seed (детерминированно, URL копипастится).
+ * Переключатель реактивен: `useRouter().current()` читает router-store через
+ * Solid-сигнал, поэтому `Show` перерисовывается на каждую навигацию.
+ * `:id` активен, когда последний сегмент пути не `cards`.
  */
 const Cards = Page((Ui) => {
-  // const router = useRouter();
-  // const onGenerate = () => router.goTo(`/workspace/cards/${Date.now()}`);
+  const router = useRouter();
+  const isDetail = () => router.current().split('/').filter(Boolean).at(-1) !== 'cards';
 
   return (
-    <Ui.Layout.Flex direction="col" gap={3} class="p-4 h-full">
-      Cards
-      {/*<Ui.Layout.Flex align="center" gap={3}>*/}
-      {/*  /!*<Ui.Button onClick={onGenerate}>Generate new</Ui.Button>*!/*/}
-      {/*  <div class="text-xs opacity-60">click → /workspace/cards/&lt;timestamp&gt;</div>*/}
-      {/*</Ui.Layout.Flex>*/}
-      {/*<div class="flex-1 overflow-auto">*/}
-      {/*  <Ui.Outlet />*/}
-      {/*</div>*/}
-    </Ui.Layout.Flex>
+    <Ui.Layout.Matrix
+      layoutMode="view"
+      preset="app-shell"
+      slots={{
+        header: {
+          children: (
+            <Ui.Typography variant="lead" class="px-4 py-2 font-semibold">
+              Карточки
+            </Ui.Typography>
+          ),
+          resizable: false,
+          initialSize: 0.06,
+        },
+        main: {
+          children: (
+            <Show
+              when={isDetail()}
+              fallback={
+                <Features.Incidents>
+                  <Widgets.Tables.Incidents />
+                </Features.Incidents>
+              }
+            >
+              <Ui.Outlet />
+            </Show>
+          ),
+          resizable: false,
+        },
+      }}
+    />
   );
 });
 

@@ -7,8 +7,6 @@
  * `resolve(data)` короткозамыкает pipeline без сетевого запроса. Latency 400ms
  * симулирует round-trip — видно loading-state в UI.
  */
-import { INCIDENTS_MOCK } from '../mocks/incidents';
-
 const MOCK_LATENCY_MS = 400;
 
 export const list = defineEndpoint((z) => ({
@@ -18,6 +16,6 @@ export const list = defineEndpoint((z) => ({
   response: z.array(Entities.Incident.schema),
   preRequest: async ({ resolve }) => {
     await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS));
-    resolve(INCIDENTS_MOCK);
+    resolve(Entities.Incident.mock);
   },
 }));

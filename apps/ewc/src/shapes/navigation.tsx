@@ -26,6 +26,7 @@ const Navigation = Shape((z, ui) => ({
   defaults: [
     { label: 'Dashboard', to: '/workspace/dashboard' },
     { label: 'Cards', to: '/workspace/cards' },
+    { label: 'Map', to: '/workspace/map' },
     { label: 'Reports', to: '/workspace/reports' },
   ],
   as: ui.Group,
