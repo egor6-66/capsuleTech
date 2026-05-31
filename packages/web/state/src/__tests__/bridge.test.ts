@@ -1,3 +1,4 @@
+import { createStore, unwrap } from 'solid-js/store';
 import { describe, expect, it, vi } from 'vitest';
 import type { IBridgeStateSnapshot } from '../bridge';
 import { createBridge } from '../bridge';
@@ -338,16 +339,12 @@ describe('createBridge — values', () => {
 // wrappers (using solid-js/store's $RAW mechanism), then `structuredClone` ensures
 // no reference from the payload leaks into the actor.
 //
-// These tests verify the invariant without a real Solid reactive root (node env).
-// We synthesise proxy-like objects using the $RAW symbol that solid-js/store exposes —
-// the same mechanism `unwrap` uses internally.
+// These tests verify the invariant in a node env. The proxy case uses a REAL
+// solid-js `createStore` node (not a synthetic symbol): Solid's `$RAW` marker is a
+// module-unique symbol that can't be reproduced from outside the module, so the
+// only faithful way to exercise the unwrap path is an actual store proxy.
 // ─────────────────────────────────────────────────────────────────────────────
 describe('createBridge — update() aliasing invariant', () => {
-  // $RAW is the symbol solid-js/store uses to mark proxy nodes.
-  // unwrap checks: `if (result = item != null && item[$RAW]) return result`
-  // We use it to construct a synthetic store-proxy-like object for unit testing.
-  const $RAW = Symbol.for('store-raw'); // matches solid-js/store internal symbol name
-
   it('update clones plain objects — payload sent to actor is not the same reference', () => {
     const send = vi.fn();
     const original = { name: 'Alice', location: { lat: 1, lng: 2 } };
@@ -361,22 +358,20 @@ describe('createBridge — update() aliasing invariant', () => {
     expect(sentPayload.selected.location).not.toBe(original.location);
   });
 
-  it('update strips $RAW proxy wrappers — unwrap extracts the raw value', () => {
+  it('update unwraps real Solid store proxies — clone holds plain data, not the proxy', () => {
     const send = vi.fn();
-    // Simulate what solid-js/store does: a proxy node where [$RAW] points to the raw data.
-    const rawData = { id: 'a', name: 'Alice', location: { lat: 1, lng: 2 } };
-    const storeProxyLike = { [$RAW]: rawData } as any;
+    // A real store node — exactly what `items.find(...)` yields in the ewc flow.
+    const [store] = createStore({ id: 'a', name: 'Alice', location: { lat: 1, lng: 2 } });
 
-    createBridge(mkState(), send).update({ selected: storeProxyLike });
+    createBridge(mkState(), send).update({ selected: store });
 
     const sentPayload = send.mock.calls[0][0].payload;
-    // unwrap extracts rawData from the proxy-like object
-    // structuredClone then deep-clones it
-    expect(sentPayload.selected).toEqual(rawData);
-    // The value sent must NOT be the original proxy object
-    expect(sentPayload.selected).not.toBe(storeProxyLike);
-    // It must NOT be the raw data reference either — structuredClone ensures isolation
-    expect(sentPayload.selected).not.toBe(rawData);
+    // unwrap pulls the raw value out of the proxy, structuredClone deep-clones it.
+    expect(sentPayload.selected).toEqual({ id: 'a', name: 'Alice', location: { lat: 1, lng: 2 } });
+    // The value sent must NOT be the store proxy.
+    expect(sentPayload.selected).not.toBe(store);
+    // Nor the unwrapped raw reference — structuredClone guarantees isolation.
+    expect(sentPayload.selected).not.toBe(unwrap(store));
   });
 
   it('update payload values share no reference with the input after sanitise', () => {
