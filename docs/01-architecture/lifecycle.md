@@ -66,7 +66,7 @@ status: documented
 
 4. Биндятся 6 событий ([[009-event-interception-extension|ADR 009]]): `onClick`, `onInput`, `onChange`, `onBlur`, `onFocus`, `onKeyDown`. Каждый помечен флагом `__capsule_<eventName>__` для дедупликации на bubbling.
 
-5. `dynamicProps` подменяет реактивные `class` (с подмесом `store.styles[name]`), `disabled` (с `store.loading`) и `name` (выведенный из тегов). DOM-узел `<button name="submit">` получает атрибут «под капотом».
+5. `dynamicProps` подменяет реактивные `class` (с подмесом `store.styles[name]`) и `name` (выведенный из тегов). DOM-узел `<button name="submit">` получает атрибут «под капотом». `disabled` **НЕ** инжектится автоматически — блокировка инпутов это explicit-решение логики, а не инфраструктуры (см. Шаг 6).
 
 ## Шаг 3. Click
 
@@ -115,10 +115,12 @@ Feature.Auth.Login.states.idle.onClick({ target: { ..., payload: data }, ... })
 
 1. `bridge.setLoading` отправляет `send({ type: 'SET_LOADING', value: true })` в XState.
 2. Машина обновляет `context.loading` через `assign`.
-3. Solid реактивно ловит обращение `store.loading` (через геттер в bridge) → пересчитывает `disabled` в UiProxy → DOM-нода `<button>` обновляется.
+3. Solid реактивно ловит обращение `store.loading` (через геттер в bridge). `store.loading` — **чистый loader-сигнал**: его единственный эффект это свап лоадера в [[widget-loader|Widget]] (2-й колбэк `Widget(content, loader)`), если он задан. Никакого скрытого `disabled` под капотом.
 
 > [!info]
-> Тут работает fine-grained reactivity Solid: перерисуется **только** свойство `disabled` у конкретной кнопки, а не весь Controller/Widget.
+> `store.loading` сам по себе ничего не дизейблит. Если на время загрузки нужно заблокировать инпуты — логика делает это **явно** и адресно: `store.patch(['@inputs'], { disabled: true })` в начале операции, снять в `finally`. Не все инпуты обязаны блокироваться при загрузке (а иногда — ни один); это решение фичи, поэтому оно в логике, а не «магией» в Proxy.
+
+Реактивная подмена `class` (через `store.styles[name]`) работает так же: при `store.setStyles({...})` перерисуется **только** className конкретного компонента, а не весь Controller/Widget — fine-grained reactivity Solid.
 
 ## Связанное
 

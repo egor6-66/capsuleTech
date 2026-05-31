@@ -65,7 +65,7 @@ import { BaseProviders } from '@capsuletech/web-core/providers';
 - `id = createUniqueId()` (стабильный) + `createEffect` для re-register + `onCleanup` для unregister
 - Автоподписка на 6 событий: `onClick`, `onInput`, `onChange`, `onBlur`, `onFocus`, `onKeyDown`
 - Дедупликация bubbling через event-marker `__capsule_<eventName>__`
-- Инжект реактивных `class`/`disabled`/`name` из `meta.tags` + `store.styles/loading`
+- Инжект реактивных `class`/`name`/`type` из `meta.tags` + `store.styles`. **`disabled` НЕ инжектится** — авто-disabled из `store.loading` убран (был «магией»); теперь только `props.disabled` + адресный `store.patch([tags], { disabled })` через `store.props[id]`. `store.loading` — чистый loader-сигнал (свап лоадера у Widget'а, 2-й колбэк).
 
 ### ControllerProxy (`engine/controller-proxy.ts`)
 - Текущий стейт **читается из XState**: `state.value`. Собственного runtime нет.

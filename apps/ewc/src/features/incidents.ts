@@ -151,6 +151,11 @@ const Incidents = Feature(({ api, router }) => ({
           return;
         }
 
+        // Логический сигнал загрузки — фича знает ТОЛЬКО про «идёт загрузка»,
+        // не про presentation. Виджеты (table/map) сами решают, какой лоадер
+        // показать через 2-й колбэк `Widget(content, loader)`. Снимаем в finally,
+        // чтобы флаг гарантированно сбросился и на success, и на error.
+        store.setLoading(true);
         try {
           const result = await api.incidents.list({});
           const items = Entities.Incident.schema.array().parse(result) as IIncident[];
@@ -163,6 +168,8 @@ const Incidents = Feature(({ api, router }) => ({
           console.error('[incidents] load failed:', message);
           store.update({ error: message });
           state.set('error');
+        } finally {
+          store.setLoading(false);
         }
       },
     },

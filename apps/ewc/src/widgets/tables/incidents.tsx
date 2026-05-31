@@ -11,27 +11,34 @@
  *
  * Подсветка активной строки: `isRowActive` сравнивает row.id с выбранным
  * incident'ом из store. Реактивность highlight'а — ответственность DataTable.
+ *
+ * Loader (2-й колбэк): пока `store.loading === true` Widget рисует table-скелетон
+ * вместо контента. Presentation лоадера живёт здесь — фича знает только про
+ * логический сигнал загрузки, не про вид скелетона.
  */
 import type { IIncident, IIncidentsContext } from '../../features/incidents';
 
-const Incidents = Widget((Ui, store) => {
-  const data = () => store?.ctx.data as IIncidentsContext | undefined;
-  return (
-    <Shapes.IncidentsTable
-      data={data()?.items ?? []}
-      itemMeta={() => ({ tags: ['incident', 'table'] })}
-      itemPayload={(row: IIncident) => ({ id: row.id })}
-      isRowActive={(row: IIncident) => row.id === data()?.selected?.id}
-      getRowId={(row: IIncident) => row.id}
-      // Скроллим к строке только когда выбор пришёл из ДРУГОГО виджета (карты),
-      // не когда кликнули саму строку — она и так на виду.
-      scrollToId={
-        data()?.scrollToSelected && data()?.selectionSource !== 'table'
-          ? data()?.selected?.id
-          : undefined
-      }
-    />
-  );
-});
+const Incidents = Widget(
+  (Ui, store) => {
+    const data = () => store?.ctx.data as IIncidentsContext | undefined;
+    return (
+      <Shapes.IncidentsTable
+        data={data()?.items ?? []}
+        itemMeta={() => ({ tags: ['incident', 'table'] })}
+        itemPayload={(row: IIncident) => ({ id: row.id })}
+        isRowActive={(row: IIncident) => row.id === data()?.selected?.id}
+        getRowId={(row: IIncident) => row.id}
+        // Скроллим к строке только когда выбор пришёл из ДРУГОГО виджета (карты),
+        // не когда кликнули саму строку — она и так на виду.
+        scrollToId={
+          data()?.scrollToSelected && data()?.selectionSource !== 'table'
+            ? data()?.selected?.id
+            : undefined
+        }
+      />
+    );
+  },
+  (Ui) => <Ui.Skeleton variant="table" rows={100} />,
+);
 
 export default Incidents;

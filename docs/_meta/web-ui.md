@@ -16,6 +16,15 @@ Full context: `.claude/agents/owner-web-ui.md` (system prompt of owner agent).
 Conventions canon: `docs/09-packages/ui/conventions.md`.
 Storybook guide: `docs/09-packages/ui/storybook.md`.
 
+## Primitives registry
+
+**New (2026-06-01):**
+- **Skeleton** (`packages/web/ui/src/primitives/skeleton/`) — placeholder loader заглушка, 5 вариантов (text, table, list, card, map). Subpath: `@capsuletech/web-ui/skeleton`. User guide: `docs/09-packages/ui/primitives/skeleton.md`.
+- **Spinner** (`packages/web/ui/src/primitives/spinner/`) — крутящийся индикатор, 3 размера (sm/md/lg). Subpath: `@capsuletech/web-ui/spinner`. User guide: `docs/09-packages/ui/primitives/spinner.md`.
+
+**Existing:**
+- Button, Card, Field, Group, Input, List, Table, DataTable, Layout, Dropdown, DropdownMenu, DarkModeToggle, LayoutModeToggle, ThemePicker, WidgetSettingsToggle, PreviewCard, MapView, Typography, Link.
+
 ## Matrix v2 — rows-engine + presets + DnD (Phase 1.2 v2)
 
 **API:** discriminated union `{ rows: IRow[] } | { preset: P; slots: LayoutPresets[P] }`.

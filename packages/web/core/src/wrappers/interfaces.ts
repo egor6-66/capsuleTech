@@ -37,6 +37,8 @@ import type { DropdownMenu } from '@capsuletech/web-ui/dropdownMenu';
 import type { LayoutModeToggle } from '@capsuletech/web-ui/layoutModeToggle';
 import type { WidgetSettingsToggle } from '@capsuletech/web-ui/widgetSettingsToggle';
 import type { PreviewCard } from '@capsuletech/web-ui/previewCard';
+import type { Skeleton } from '@capsuletech/web-ui/skeleton';
+import type { Spinner } from '@capsuletech/web-ui/spinner';
 import type { ThemePicker } from '@capsuletech/web-ui/themePicker';
 import type { Typography } from '@capsuletech/web-ui/typography';
 import type { Link } from '@tanstack/solid-router';
@@ -183,6 +185,8 @@ type ViewUiRaw = {
   Table: typeof Table;
   DataTable: typeof DataTable;
   PreviewCard: typeof PreviewCard;
+  Skeleton: typeof Skeleton;
+  Spinner: typeof Spinner;
   Dropdown: typeof Dropdown;
   DropdownMenu: typeof DropdownMenu;
   DarkModeToggle: typeof DarkModeToggle;
@@ -221,6 +225,8 @@ type WidgetUiRaw = {
   Table: typeof Table;
   DataTable: typeof DataTable;
   PreviewCard: typeof PreviewCard;
+  Skeleton: typeof Skeleton;
+  Spinner: typeof Spinner;
   Dropdown: typeof Dropdown;
   DropdownMenu: typeof DropdownMenu;
   DarkModeToggle: typeof DarkModeToggle;
@@ -344,8 +350,19 @@ export type IWidgetRenderer<P extends Record<string, any> = Record<string, any>>
   store: IBridge | undefined,
   props: P,
 ) => JSX.Element;
+/**
+ * Loader render-function: same shape as IViewRenderer — (Ui, props) only, no store.
+ * The loader is stateless (no access to IBridge) — it cannot depend on data, only Ui primitives.
+ * When `store.loading === true` AND a Loader is provided, Widget renders Loader instead of content.
+ */
+export type IWidgetLoader<P extends Record<string, any> = Record<string, any>> = (
+  ui: WidgetUi,
+  props: P,
+) => JSX.Element;
+
 export type IWidgetWrapper = <P extends Record<string, any> = Record<string, any>>(
   component: IWidgetRenderer<P>,
+  loader?: IWidgetLoader<P>,
 ) => ParentComponent<P>;
 
 /**

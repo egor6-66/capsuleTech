@@ -270,6 +270,26 @@
       "types": "./dist/components/widgetSettingsToggle/*.d.ts",
       "import": "./dist/components/widgetSettingsToggle/*.mjs",
       "default": "./dist/components/widgetSettingsToggle/*.mjs"
+    },
+    "./skeleton": {
+      "types": "./dist/components/skeleton/index.d.ts",
+      "import": "./dist/components/skeleton/index.mjs",
+      "default": "./dist/components/skeleton/index.mjs"
+    },
+    "./skeleton/*": {
+      "types": "./dist/components/skeleton/*.d.ts",
+      "import": "./dist/components/skeleton/*.mjs",
+      "default": "./dist/components/skeleton/*.mjs"
+    },
+    "./spinner": {
+      "types": "./dist/components/spinner/index.d.ts",
+      "import": "./dist/components/spinner/index.mjs",
+      "default": "./dist/components/spinner/index.mjs"
+    },
+    "./spinner/*": {
+      "types": "./dist/components/spinner/*.d.ts",
+      "import": "./dist/components/spinner/*.mjs",
+      "default": "./dist/components/spinner/*.mjs"
     }
   },
   "files": [

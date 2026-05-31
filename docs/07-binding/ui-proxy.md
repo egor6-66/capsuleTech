@@ -43,7 +43,7 @@ if (!hasOwnMeta) {
   return <OriginalComponent {...mergedProps} />;
 }
 
-// иначе — registerComponent + event-bindings + name-derivation + class/disabled/type
+// иначе — registerComponent + event-bindings + name-derivation + class/name/type
 ```
 
 | Случай | Регистрируется? | Получает event-handlers? |
@@ -206,7 +206,6 @@ return (e) => {
 ```ts
 const dynamicProps = {
   get class()    { return `${props.class || ''} ${store.styles?.[name] || ''}`.trim(); },
-  get disabled() { return store.loading || props.disabled; },
   get name()     { return deriveName(props.meta); },
   get type()     { return props.type ?? deriveInputType(props.meta); },
   ...eventBindings,
@@ -215,12 +214,15 @@ const dynamicProps = {
 const finalProps = mergeProps(
   props,
   dynamicProps,
-  () => ctx.store.props?.[id] ?? {},   // patch'и от Controller (store.setProps)
+  () => ctx.store.props?.[id] ?? {},   // адресные patch'и от Controller (store.patch / store.setProps)
   local,
 );
 ```
 
-Все getter'ы реактивны — Solid пересчитает их при изменении `store.styles` / `store.loading` / `props.meta`. Patch-источник передан **функцией**, чтобы `mergeProps` вызывал её на каждом чтении и пробрасывал реактивность от XState-store в потребителя.
+> [!warning] `disabled` НЕ инжектится автоматически
+> Раньше тут был `get disabled() { return store.loading || props.disabled; }` — UiProxy дизейблил компонент по глобальному `store.loading`. **Убрано.** Блокировка инпутов это explicit-решение логики, а не «магия» инфраструктуры: не все инпуты надо блокировать при загрузке, а иногда — ни один. Теперь `disabled` приходит либо статикой (`props.disabled`), либо адресным patch'ем `store.patch(['@inputs'], { disabled: true })` → попадает в `store.props[id]` → мержится в `finalProps` тем же источником patch'ей (строка выше). А `store.loading` стал **чистым loader-сигналом** (свап лоадера в [[widget-loader|Widget]]).
+
+Все getter'ы реактивны — Solid пересчитает их при изменении `store.styles` / `props.meta`. Patch-источник (`store.props[id]`) передан **функцией**, чтобы `mergeProps` вызывал её на каждом чтении и пробрасывал реактивность от XState-store в потребителя — именно так `disabled` через `store.patch` реактивно доезжает до DOM.
 
 ## Async-ошибки
 

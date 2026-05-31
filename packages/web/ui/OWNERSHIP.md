@@ -184,6 +184,8 @@ Stateless composite for rendering one data object as an ordered list of label + 
 
 - **Все primitives stateless.** Никаких signal'ов или effect'ов в самих компонентах. State держится в Controller через UiProxy (web-core).
 
+- **Kobalte-first rule (2026-06-01).** Новые primitives обязаны оборачивать `@kobalte/core` если коответствующий компонент там есть, а не реализовывать механику с нуля. kobalte — прямой dep web-ui (0.13.11), уже подключён. Skeleton — первый прецедент: каждый блок-шард = `Skeleton.Root` из `@kobalte/core/skeleton` (a11y, data-animate/data-visible, role="group"); визуальный pulse и layout-пресеты — наш слой поверх. Импорт: `import { Root as SkeletonRoot } from '@kobalte/core/skeleton'` (именованный, не namespace — namespace-import не раскрывает `.Root` в типах TSC).
+
 - **Polymorphic через Slot.** Через Kobalte's Polymorphic system. `<Button as="a" href="...">` валиден если CVA-настройки совпадают. Не делаем custom Slot — используем Kobalte.
 
 - **Resizable namespace deprecated.** Раньше был `wrappers/resizable/`. Сейчас в `flex/_resize/` (internal). Public — через `<Flex resizable items={...}>` или `Ui.Layout.Matrix`. `Ui.Resizable` остался alias на `Flex` для backwards compat.
@@ -205,6 +207,7 @@ Stateless composite for rendering one data object as an ordered list of label + 
 - [x] **DataTable infinite scroll** — `@tanstack/solid-virtual` virtualizer, `onLoadMore` callback, `IColumn<TData>` typed wrapper (2026-05-21).
 - [x] **Table scroll context removed (BREAKING v0.5.0, 2026-05-22)** — `overflow-auto scrollbar-hover` убраны из wrapper'а `Table` primitive. Scroll context теперь ответственность parent'а. Standalone `<Table>` без outer scroll container — оберни в `<div class="overflow-auto">`. `DataTable` infinite mode (`InfiniteTable`) имеет собственный `overflow-auto` для виртуализации — не затронут.
 - [x] **Navigation primitive removed (BREAKING v0.6.0, 2026-05-22)** — `Ui.Navigation`, `Ui.NavigationList`, `Ui.NavigationItem` удалены. Используй `Ui.List` batch mode (`data + as + itemProps`) с `as: Ui.Button` для навигационных flows. Subpath `./navigation` удалён из `package.json`. Parallel: owner-web-core unregister'ит `Ui.Navigation` из imports.tsx.
+- [x] **Skeleton rewrite: kobalte-backed (2026-06-01)** — каждый шард теперь `Root` из `@kobalte/core/skeleton`. Публичный API (`ISkeletonProps`) не изменился. Пресеты text/table/list/card/map сохранены. TS clean, 281 tests green.
 - [x] **Design tokens migration (Phase 2)** — все primitives + composites переведены на design-system tokens (2026-05-22).
   - Button: `px-button py-1.5` (sm: `px-button-sm py-cell-tight`, lg: `px-button-lg py-button`) — default vertical padding tightened from `py-button-sm` (8px) to `py-1.5` (6px) for more compact UI rhythm. 2026-05-28.
   - Input: `px-input py-input` — density-aware, убрано `h-9` fixed height.

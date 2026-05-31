@@ -138,7 +138,7 @@ Policy **C — own meta opt-in**: побочные эффекты (registration,
 - `id = createUniqueId()` (стабильный) + `createEffect` для re-register на изменение props + `onCleanup` для unregister
 - автоподписка на 6 событий: `onClick`, `onInput`, `onChange`, `onBlur`, `onFocus`, `onKeyDown`
 - дедупликация bubbling через event-marker `__capsule_<event>__`
-- инжект реактивного `class` (с подмесом `store.styles[name]`), `disabled` (из `store.loading`), `name` (deriveName из tags)
+- инжект реактивного `class` (с подмесом `store.styles[name]`), `name` (deriveName из tags), `type` (deriveInputType). **`disabled` НЕ инжектится** — убран авто-`disabled` из `store.loading` (был «магией»); теперь только `props.disabled` + адресный `store.patch([tags], { disabled })` через `store.props[id]` (mergeProps-источник). `store.loading` стал чистым loader-сигналом (см. gotcha #29)
 - `target` собирается как `{ meta, dynamicMeta, key, modifiers, payload }`
 
 ### KIND_TAGS auto-inject (PR #167)
@@ -235,6 +235,8 @@ ctx.store.updateComponent({ [id]: { value: data.value, type: data.type } });
 27. **Switcher state vs UI split** (PR #176). `web-style` теперь содержит **только** state-stores: `useTheme()`, `useDarkMode()`, `useLayoutMode()` (signal accessors) + `setTheme`, `setDarkMode`, `toggleDarkMode`, `setLayoutMode`, `toggleLayoutMode` + `DISCOVERED_THEMES` и `DENSITY_PRESETS`. Visual компоненты (`DarkModeToggle`, `LayoutModeToggle`, `ThemePicker`) переехали в `web-ui` (composites). `Ui.ThemeSwitcher` **удалён из core** — это BREAKING; используй `Ui.DarkModeToggle` вместо. `Ui.LayoutModeToggle` и `Ui.ThemePicker` — новые в WidgetUi/ViewUi.
 
 28. **ThemePicker mode='sub' для nested submenus** (PR #177). Стандартный ThemePicker → `mode='standalone'` (own Dropdown root). Для встраивания в существующий Dropdown используй `mode='sub'` (генерирует Dropdown.Sub/SubTrigger/SubContent вместо top-level Dropdown).
+
+29. **Widget loader-колбэк + убран авто-`disabled`** (loader mechanism). `Widget` теперь принимает опциональный **2-й колбэк** — лоадер: `Widget(content, loader?)`, где `content = (Ui, store, props) => JSX` (как было), `loader = (Ui, props) => JSX` (stateless, БЕЗ `store` — только presentation, не зависит от данных). Рантайм в `wrappers/widget.tsx`: `<Show when={!(loader && store.loading)} fallback={loader(Ui, props)}>{content(...)}</Show>` — неактивная ветка `<Show>` **не монтируется**, поэтому тяжёлый контент (MapLibre-карта, виртуал-таблица) не инстанцируется, пока показан лоадер — это и убирает flicker при навигации. Лоадер-`Ui` содержит `Ui.Skeleton` / `Ui.Spinner` (lazy-регистрация в `ui-kit/imports.tsx`, типы в `ViewUiRaw`/`WidgetUiRaw`; сам `Skeleton` в web-ui обёрнут вокруг `@kobalte/core` Skeleton). Логика (Feature/Controller) дёргает ТОЛЬКО `store.setLoading(true/false)` (bracket вокруг async, `false` в `finally`) — про вид лоадера ничего не знает; одна Feature может оборачивать и таблицу, и карту, и каждый Widget подаёт свой скелетон. **Связанный breaking:** авто-`disabled` из `store.loading` **убран** из UiProxy (был «магией» — дизейблил инпуты по глобальному флагу). Теперь `store.loading` это чистый loader-сигнал без скрытых side-effect'ов; блокировка инпутов — explicit и адресно через `store.patch([tags], { disabled: true })`. См. [[widget-loader]], [[ui-proxy]], [[lifecycle]]. Эталон: `apps/ewc` (`features/incidents.ts` + `widgets/tables/incidents.tsx` + `widgets/maps/world.tsx`).
 
 ## Что менять когда
 

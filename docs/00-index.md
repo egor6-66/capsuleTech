@@ -44,6 +44,7 @@ type: index
 
 - [[ui-proxy|🪞 UiProxy — перехват UI-событий]]
 - [[controller-proxy|🧠 ControllerProxy — FSM + цепочка `next()`]]
+- [[widget-loader|⏳ Widget loader — fallback при загрузке (Skeleton/Spinner)]]
 - [[shape|🧬 Shape — декларативные data-формы]]
 - [[tag-registry|🏷️ Реестр тегов и алиасов]]
 - [[overrides|🔁 Overrides — ремап имён методов]]
@@ -70,6 +71,8 @@ type: index
   - [[conventions|UI-kit канон]]
   - [[storybook|Storybook how-to]]
   - [[primitives/button|Button]]
+  - [[primitives/skeleton|Skeleton]]
+  - [[primitives/spinner|Spinner]]
   - [[primitives/grid|Grid]]
   - [[primitives/layout|Layout]]
 - [[style|@capsuletech/web-style]]

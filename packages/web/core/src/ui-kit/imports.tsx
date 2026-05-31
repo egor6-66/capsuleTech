@@ -55,6 +55,11 @@ export const Field = Object.assign(FieldBase, {
 // 7. DataTable — smart table (sorting/pagination/selection/filtering), no sub-components
 export const DataTable = createLazy(() => import('@capsuletech/web-ui/dataTable'), 'DataTable');
 
+// Loading primitives — Skeleton (pulse placeholder) and Spinner (spinning indicator).
+// Both are plain callables without sub-components.
+export const Skeleton = createLazy(() => import('@capsuletech/web-ui/skeleton'), 'Skeleton');
+export const Spinner = createLazy(() => import('@capsuletech/web-ui/spinner'), 'Spinner');
+
 // 7b. PreviewCard — single-item field renderer (atomic, без outer Card chrome).
 // Принимает `data` + `fields: IPreviewCardField[]`. Mirror DataTable API
 // (accessorKey/accessorFn/cell). Используется для Shape с single-object schema.
