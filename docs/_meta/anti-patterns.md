@@ -1,7 +1,7 @@
 ---
 title: Anti-patterns Catalog — quick-fix vs proper-fix
 status: living
-last-updated: 2026-05-20
+last-updated: 2026-05-31
 ---
 
 # Anti-patterns Catalog
@@ -410,6 +410,92 @@ function useLocation(opts) {
 - `horizontal` → `'h-px w-auto'` (∞×1, горизонтальная)
 
 В `Group` parent's `sepOrientation()` мапит родительскую ось → нужную ориентацию линии (horizontal parent → vertical separator). После fix этот мап остался, но семантика стала прямой. См. regression story `HorizontalAttachedWithVisibleSeparators` в `group.stories.tsx`.
+
+---
+
+## 🚫 Класть store-proxy узел обратно в стор (`store.update({ x: store.ctx.data.list.find(...) })`)
+
+**Симптом:** Выбор из списка «залипает» — первый выбранный остаётся активным/искажается при следующем выборе; в `<For>` элемент может «исчезнуть» совсем. Интермиттентно «первый особенный, дальше норм».
+
+**Корень:** `store.ctx.data.items.find(...)` возвращает **живой Solid-store proxy узел** (`@xstate/solid`). Положив его в другое поле стора (`selected`) через `store.update({...})`, ты алиасишь `data.selected` и `data.items[k]` на один внутренний узел; на следующем reconcile мутация одного физически перезаписывает другой.
+
+**Quick-fix (плохо):** ловить симптом в UI-слое (DataTable reactivity, wrap) — баг не там.
+
+**Proper:** хранить **плоский клон**, не живой proxy: `store.update({ selected: structuredClone(unwrap(item)) })`. Никогда не клади объект, прочитанный из стора, обратно в стор. Рассматривается defensive-clone в `web-state` `update()`. Прецедент: сессия 2026-05-31 (детерминированный repro: `useMachine` + SET_DATA с aliased proxy → `items[k]` затирается).
+
+---
+
+## 🚫 DataTable `infinite` (virtual) — пустое тело на cold reload
+
+**Симптом:** Таблица в `infinite`-режиме на холодной загрузке показывает скроллбар (высота = count×itemHeight), но **0 строк**; навигация туда-обратно лечит. Данные и рендер исправны (когда виртуалайзер отдаёт items — строки рисуются верно).
+
+**Корень:** `@tanstack/solid-virtual` читает высоту scroll-элемента = 0 на mount (высота cell'а от corvu-resizable резолвится на кадр позже) → мемоизирует пустой range. Layout, **откладывающий** определённую высоту (`flex-col` + `flex-1` content-wrapper вместо `absolute inset-0`), делает баг **стабильным (100%)**.
+
+**Quick-fix (неэффективно):** `useAnimationFrameWithResizeObserver: true` на createVirtualizer — **проверено 2026-05-31, НЕ помогает** (проблема в initial rect=0, не в позднем RO-fire).
+
+**Proper (сейчас):** **`infinite: { mode: 'plain' }`** — plain-бэкенд `createInfiniteScroll` рендерит без виртуалайзера → quirk'а нет. jsdom виртуалайзер не измеряет → его тесты `it.skip`, верификация только в реальном браузере.
+
+**Proper (будущее, owner-web-ui backlog):** keyed-remount виртуалайзера по приходу реальной высоты (осторожно — прошлая митигация ломала navigate-back). Прецедент: PR #204/#205.
+
+---
+
+## 🚫 web-ui vitest резолвит workspace-deps из `dist/`, не из src
+
+**Симптом:** Добавил экспорт в `@capsuletech/web-style` source, его собственные тесты зелёные, а **web-ui тесты падают** `TypeError: useX is not a function`.
+
+**Корень:** `packages/web/ui/vitest.config.ts` НЕ использует tsconfig-paths → `@capsuletech/web-style` резолвится через node_modules в **собранный dist** (старый, без нового экспорта). Отличие от apps: app-Vite через tsconfigPaths берёт source.
+
+**Proper:** после правки source зависимого пакета — **пересобрать его** (`pnpm --filter @capsuletech/web-style build`) ПЕРЕД тестами зависимого пакета. В CI nx разруливает build-order по graph; локально — вручную. Прецедент: сессия 2026-05-31.
+
+---
+
+## 🚫 Новый composite в web-ui не виден как `Ui.X` без регистрации в web-core ui-kit
+
+**Симптом:** owner-web-ui добавил composite (+ subpath export), но `Ui.NewThing` в app = undefined.
+
+**Корень:** `Ui`-namespace собирается ЯВНО в **`packages/web/core/src/ui-kit/imports.tsx`** (`createLazy(...)` на каждый компонент) + тип в `packages/web/core/src/wrappers/interfaces.ts` (`ViewUiRaw`/`WidgetUiRaw`/`PageUi`). owner-web-ui в эту зону не лезет.
+
+**Proper:** добавление нового `Ui.*` — **двухпакетный шаг**: (1) owner-web-ui создаёт composite + subpath в package.json; (2) **owner-web-core** регистрирует его в `ui-kit/imports.tsx` (runtime) + в Ui-типе. Главный координирует. Прецедент: PR #203 (`WidgetSettingsToggle`).
+
+---
+
+## 🚫 `@capsuletech/web-ui/*` wildcard НЕ покрывает `src/lib/`
+
+**Симптом:** Положил headless-хелпер в `packages/web/ui/src/lib/`, импорт `@capsuletech/web-ui/lib/X` не резолвится.
+
+**Корень:** в `tsconfig.base.json` wildcard `@capsuletech/web-ui/*` маппится только на `primitives/* | primitives/layout/* | components/* | composites/*` — **`lib/` там нет**.
+
+**Proper:** реэкспортировать lib-хелперы из **главного входа** `src/index.ts` → `import { createX } from '@capsuletech/web-ui'` (резолвится без нового subpath). Если нужен dedicated `/lib`-subpath — добавить `packages/web/ui/src/lib/*` в wildcard (`tsconfig.base.json` = shared infra, зона главного, не owner-web-ui). Прецедент: PR #204.
+
+---
+
+## 🚫 `Ui.Toggle` (и др. composites, потребляющие свой onChange) ≠ HCA meta-routing
+
+**Симптом:** Повесил `meta={{tags:[...]}}` на `Ui.Toggle`, клик не доходит до `Feature.onClick`.
+
+**Корень:** `Ui.Toggle` сам потребляет клик и зовёт `props.onChange(boolean)` — это не DOM-событие, UiProxy meta-routing (onClick→target) с ним не стыкуется.
+
+**Proper:** для HCA-флоу использовать **`Ui.Button` с `meta`-тегом** + `onClick`-роутинг (проверенный путь, как incident/marker клики). Состояние читать из стора через `useCtx`, флипать в `Feature.onClick`. Прецедент: сессия 2026-05-31 (settings-тогглы дашборда).
+
+---
+
+## 🚫 Overlay/toolbar в `Layout.Matrix` cell не должен менять высоту контента
+
+**Симптом:** Добавил тулбар/стрип в cell → контент «съезжает» вниз; height-чувствительные дети (virtualizer, map) ломаются/чёрный экран.
+
+**Корень:** `flex-col` + `flex-1 min-h-0` content-wrapper отдаёт scroll-элементу высоту через flex-вычисление **на кадр позже** (vs `absolute inset-0` — мгновенная определённая высота).
+
+**Proper:** стрип = **absolute overlay** (`absolute inset-x-0 top-0 z-10`), контент остаётся `absolute inset-0` (мгновенная высота). DnD-бэйдж выше по z (`z-30 > z-10`). Прецедент: PR #205 (settings-стрип).
+
+---
+
+## 🚫 Браузер-автоматизация: десятки быстрых релоадов = ложные негативы
+
+**Симптом:** При диагностике через Chrome-автоматизацию карта «чёрная» / 0 маркеров / таблица пустая, хотя у пользователя в его табе всё работает.
+
+**Корень:** (1) cold-init-чувствительные компоненты (virtualizer, maplibre) флакуют под CPU-нагрузкой от агрессивных рапид-релоадов; (2) shared `localStorage` MCP-таба с живым табом пользователя → твои `setItem` перетираются.
+
+**Proper:** не молотить shared dev-сервер десятками релоадов подряд; делать паузы для частотных замеров. **Доверять наблюдению пользователя в нормальном использовании** над флаковым automation-табом. Прецедент: сессия 2026-05-31 (ложный «map black»).
 
 ---
 
