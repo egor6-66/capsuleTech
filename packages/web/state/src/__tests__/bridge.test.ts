@@ -1,3 +1,4 @@
+import { createStore, unwrap } from 'solid-js/store';
 import { describe, expect, it, vi } from 'vitest';
 import type { IBridgeStateSnapshot } from '../bridge';
 import { createBridge } from '../bridge';
@@ -322,6 +323,99 @@ describe('createBridge — values', () => {
       vi.fn(),
     );
     expect(bridge.values(['input'], { lookDynamic: false })).toEqual({ login: 'alice' });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Aliasing-invariant tests for store.update()
+//
+// Background: `store.ctx.data.items.find(...)` returns a Solid store proxy node.
+// Passing that proxy into `store.update({ selected: item })` previously caused
+// XState/Solid reconcile to alias `data.selected` and `data.items[k]` to the
+// same internal store node. The next `update({ selected: other })` then overwrote
+// `items[k]` as a side effect.
+//
+// The fix: `update()` runs `sanitisePayload` — `unwrap(payload)` strips proxy
+// wrappers (using solid-js/store's $RAW mechanism), then `structuredClone` ensures
+// no reference from the payload leaks into the actor.
+//
+// These tests verify the invariant in a node env. The proxy case uses a REAL
+// solid-js `createStore` node (not a synthetic symbol): Solid's `$RAW` marker is a
+// module-unique symbol that can't be reproduced from outside the module, so the
+// only faithful way to exercise the unwrap path is an actual store proxy.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('createBridge — update() aliasing invariant', () => {
+  it('update clones plain objects — payload sent to actor is not the same reference', () => {
+    const send = vi.fn();
+    const original = { name: 'Alice', location: { lat: 1, lng: 2 } };
+    createBridge(mkState(), send).update({ selected: original });
+
+    const sentPayload = send.mock.calls[0][0].payload;
+    // Structural equality preserved
+    expect(sentPayload.selected).toEqual({ name: 'Alice', location: { lat: 1, lng: 2 } });
+    // But it must be a deep clone — no shared reference
+    expect(sentPayload.selected).not.toBe(original);
+    expect(sentPayload.selected.location).not.toBe(original.location);
+  });
+
+  it('update unwraps real Solid store proxies — clone holds plain data, not the proxy', () => {
+    const send = vi.fn();
+    // A real store node — exactly what `items.find(...)` yields in the ewc flow.
+    const [store] = createStore({ id: 'a', name: 'Alice', location: { lat: 1, lng: 2 } });
+
+    createBridge(mkState(), send).update({ selected: store });
+
+    const sentPayload = send.mock.calls[0][0].payload;
+    // unwrap pulls the raw value out of the proxy, structuredClone deep-clones it.
+    expect(sentPayload.selected).toEqual({ id: 'a', name: 'Alice', location: { lat: 1, lng: 2 } });
+    // The value sent must NOT be the store proxy.
+    expect(sentPayload.selected).not.toBe(store);
+    // Nor the unwrapped raw reference — structuredClone guarantees isolation.
+    expect(sentPayload.selected).not.toBe(unwrap(store));
+  });
+
+  it('update payload values share no reference with the input after sanitise', () => {
+    const send = vi.fn();
+    const item = { id: 'b', nested: { deep: true } };
+    createBridge(mkState(), send).update({ item });
+
+    const sent = send.mock.calls[0][0].payload.item;
+    expect(sent).toEqual(item);
+    expect(sent).not.toBe(item);
+    expect(sent.nested).not.toBe(item.nested);
+  });
+
+  it('update preserves data integrity through multiple sends (regression: aliasing corrupts items array)', () => {
+    // Simulates the ewc pattern: items list + selecting items from it.
+    // Without the fix, selecting 'a' then 'b' would overwrite items[0] with 'b'.
+    // This test operates on plain objects (no real Solid store needed).
+    const receivedPayloads: Array<Record<string, any>> = [];
+    const send = vi.fn((event: any) => {
+      if (event.type === 'SET_DATA') receivedPayloads.push(event.payload);
+    });
+
+    const items = [
+      { id: 'a', name: 'Alice' },
+      { id: 'b', name: 'Bob' },
+    ];
+
+    const bridge = createBridge(mkState(), send);
+
+    // First selection
+    bridge.update({ selected: items[0] });
+    // Second selection
+    bridge.update({ selected: items[1] });
+
+    // Both payloads must be independent clones
+    expect(receivedPayloads[0].selected).toEqual({ id: 'a', name: 'Alice' });
+    expect(receivedPayloads[1].selected).toEqual({ id: 'b', name: 'Bob' });
+
+    // Crucially: the second send must NOT have mutated the first payload's reference
+    expect(receivedPayloads[0].selected.id).toBe('a');
+
+    // And neither payload shares a reference with the source items array
+    expect(receivedPayloads[0].selected).not.toBe(items[0]);
+    expect(receivedPayloads[1].selected).not.toBe(items[1]);
   });
 });
 
