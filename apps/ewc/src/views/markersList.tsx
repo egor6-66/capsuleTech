@@ -18,7 +18,7 @@ const MarkersList = View((Ui, props: { items?: IIncident[]; activeId?: string })
         lng={incident.location.lng}
         lat={incident.location.lat}
         active={incident.id === props.activeId}
-        meta={{ tags: ['incident'] }}
+        meta={{ tags: ['incident', 'map'] }}
         payload={{ id: incident.id }}
       />
     )}

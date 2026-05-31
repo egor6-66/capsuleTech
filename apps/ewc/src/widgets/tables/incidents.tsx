@@ -19,12 +19,17 @@ const Incidents = Widget((Ui, store) => {
   return (
     <Shapes.IncidentsTable
       data={data()?.items ?? []}
-      itemMeta={() => ({ tags: ['incident'] })}
+      itemMeta={() => ({ tags: ['incident', 'table'] })}
       itemPayload={(row: IIncident) => ({ id: row.id })}
       isRowActive={(row: IIncident) => row.id === data()?.selected?.id}
       getRowId={(row: IIncident) => row.id}
-      // Опционально: таблица скроллит к строке выбранного incident'а. Гейт по флагу.
-      scrollToId={data()?.scrollToSelected ? data()?.selected?.id : undefined}
+      // Скроллим к строке только когда выбор пришёл из ДРУГОГО виджета (карты),
+      // не когда кликнули саму строку — она и так на виду.
+      scrollToId={
+        data()?.scrollToSelected && data()?.selectionSource !== 'table'
+          ? data()?.selected?.id
+          : undefined
+      }
     />
   );
 });

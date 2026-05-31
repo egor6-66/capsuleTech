@@ -49,6 +49,12 @@ export interface IIncidentsContext {
   /** Sync prefs (opt-in) — toggled from the Matrix widget-settings strip. */
   flyToSelected: boolean;
   scrollToSelected: boolean;
+  /**
+   * Кто инициировал выбор: тег источника (`table` / `map`). Sync читает его,
+   * чтобы реагировать ТОЛЬКО на активацию из другого виджета (клик по строке
+   * не скроллит таблицу, клик по маркеру не двигает карту).
+   */
+  selectionSource: 'table' | 'map' | null;
 }
 
 const Incidents = Feature(({ api, router }) => ({
@@ -60,6 +66,7 @@ const Incidents = Feature(({ api, router }) => ({
     error: null as string | null,
     flyToSelected: false,
     scrollToSelected: false,
+    selectionSource: null as 'table' | 'map' | null,
   },
 
   /**
@@ -79,10 +86,16 @@ const Incidents = Feature(({ api, router }) => ({
       const id = (target as { payload?: { id?: string } }).payload?.id;
       if (!id || store.ctx.data.selected?.id === id) return;
       const item = store.ctx.data.items.find((i: IIncident) => i.id === id);
+      // Источник выбора из тега виджета — sync реагирует только на чужой источник.
+      const source: 'table' | 'map' | null = tags.includes('table')
+        ? 'table'
+        : tags.includes('map')
+          ? 'map'
+          : null;
       // Store a plain deep clone, NOT the live `items[k]` store-proxy node:
       // putting a store node into another store field aliases them in
       // @xstate/solid's reconcile, which corrupts items[k] on the next select.
-      store.update({ selected: item ? structuredClone(unwrap(item)) : null });
+      store.update({ selected: item ? structuredClone(unwrap(item)) : null, selectionSource: source });
     }
 
     if (tags.includes('open-card')) {

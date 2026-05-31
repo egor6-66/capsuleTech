@@ -14,7 +14,9 @@ const IncidentsTable = Shape((z, ui) => ({
   defaults: Entities.Incident.mock,
   as: ui.DataTable,
   sorting: true,
-  infinite: { itemHeight: 40 },
+  // plain (non-virtual) infinite — надёжно рендерит все подгруженные строки.
+  // virtual-режим пока с cold-empty quirk'ом (отдельный backlog owner-web-ui).
+  infinite: { itemHeight: 40, mode: 'plain' },
   columns: [
     { accessorKey: 'id', header: 'ID' },
     {

@@ -17,7 +17,11 @@ const World = Widget((Ui, store) => {
   // анимация, в отличие от center=jump). Гейт по opt-in флагу flyToSelected.
   const flyTo = (): [number, number] | undefined => {
     const sel = data()?.selected;
-    return data()?.flyToSelected && sel ? [sel.location.lng, sel.location.lat] : undefined;
+    // Летим к маркеру только когда выбор пришёл из ДРУГОГО виджета (таблицы),
+    // не когда кликнули сам маркер.
+    return data()?.flyToSelected && sel && data()?.selectionSource !== 'map'
+      ? [sel.location.lng, sel.location.lat]
+      : undefined;
   };
   return (
     <Ui.MapView
