@@ -167,19 +167,34 @@ describe('MapView — constructor options passthrough', () => {
     expect((lastMap()._ctorOptions as any).maxZoom).toBe(18);
   });
 
-  it('does NOT pass center to constructor (NaN guard)', () => {
+  it('passes center to constructor (gate ensures non-zero container)', () => {
     mountAndLoad(() => <MapView center={[30, 50]} />);
-    expect((lastMap()._ctorOptions as any).center).toBeUndefined();
+    expect((lastMap()._ctorOptions as any).center).toEqual([30, 50]);
   });
 
-  it('does NOT pass zoom to constructor (NaN guard)', () => {
+  it('passes zoom to constructor (gate ensures non-zero container)', () => {
     mountAndLoad(() => <MapView zoom={10} />);
-    expect((lastMap()._ctorOptions as any).zoom).toBeUndefined();
+    expect((lastMap()._ctorOptions as any).zoom).toBe(10);
   });
 
-  it('does NOT pass maxBounds to constructor (NaN guard)', () => {
+  it('passes maxBounds to constructor (gate ensures non-zero container)', () => {
     mountAndLoad(() => <MapView maxBounds={[-180, -90, 180, 90] as any} />);
-    expect((lastMap()._ctorOptions as any).maxBounds).toBeUndefined();
+    expect((lastMap()._ctorOptions as any).maxBounds).toEqual([-180, -90, 180, 90]);
+  });
+
+  it('passes bearing and pitch to constructor', () => {
+    mountAndLoad(() => <MapView bearing={45} pitch={30} />);
+    expect((lastMap()._ctorOptions as any).bearing).toBe(45);
+    expect((lastMap()._ctorOptions as any).pitch).toBe(30);
+  });
+
+  it('does NOT pass center/zoom/bearing/pitch to constructor when props are undefined', () => {
+    mountAndLoad(() => <MapView />);
+    const opts = lastMap()._ctorOptions as any;
+    expect(opts.center).toBeUndefined();
+    expect(opts.zoom).toBeUndefined();
+    expect(opts.bearing).toBeUndefined();
+    expect(opts.pitch).toBeUndefined();
   });
 
   it('uses POSITRON as default light style', () => {

@@ -35,14 +35,16 @@ interface MockMapInstance {
   getPitch: ReturnType<typeof vi.fn>;
   _triggerLoad: () => void;
   _triggerMoveEnd: () => void;
+  _ctorOptions: unknown;
 }
 
 let mapInstances: MockMapInstance[] = [];
 
 vi.mock('maplibre-gl', () => {
-  const MockMap = vi.fn(function (this: MockMapInstance, _options: unknown) {
+  const MockMap = vi.fn(function (this: MockMapInstance, options: unknown) {
     const loadHandlers: LoadHandler[] = [];
     const moveEndHandlers: MoveEndHandler[] = [];
+    this._ctorOptions = options;
 
     this.once = vi.fn((event: string, handler: LoadHandler) => {
       if (event === 'load') loadHandlers.push(handler);
@@ -207,8 +209,8 @@ describe('MapView — ResizeObserver-gated mount', () => {
   });
 });
 
-describe('MapView — initial camera props set after load', () => {
-  it('sets center/zoom/bearing/pitch/maxBounds after load event', () => {
+describe('MapView — initial camera via constructor (no post-load jerk)', () => {
+  it('passes center/zoom/bearing/pitch/maxBounds to constructor (gate ensures w>0,h>0)', () => {
     const center: [number, number] = [37.6, 55.75];
     dispose = render(
       () => (
@@ -223,16 +225,31 @@ describe('MapView — initial camera props set after load', () => {
       container,
     );
     lastRO().trigger(800, 600);
+    const opts = lastMap()._ctorOptions as any;
+    expect(opts.center).toEqual(center);
+    expect(opts.zoom).toBe(10);
+    expect(opts.bearing).toBe(45);
+    expect(opts.pitch).toBe(30);
+    expect(opts.maxBounds).toEqual([-180, -90, 180, 90]);
+  });
+
+  it('reactive createEffect also fires setCenter/setZoom after load (subsequent changes)', () => {
+    const center: [number, number] = [37.6, 55.75];
+    dispose = render(
+      () => <MapView center={center} zoom={10} bearing={45} pitch={30} />,
+      container,
+    );
+    lastRO().trigger(800, 600);
     const m = lastMap();
-    // Before load: initial setters not called yet (createEffect hasn't fired because map() is undefined)
+    // Before load: map() is undefined, createEffect guards on it
     expect(m.setCenter).not.toHaveBeenCalled();
 
     m._triggerLoad();
+    // After load: setMap(m) makes map() truthy → createEffect fires initial values
     expect(m.setCenter).toHaveBeenCalledWith(center);
     expect(m.setZoom).toHaveBeenCalledWith(10);
     expect(m.setBearing).toHaveBeenCalledWith(45);
     expect(m.setPitch).toHaveBeenCalledWith(30);
-    expect(m.setMaxBounds).toHaveBeenCalledWith([-180, -90, 180, 90]);
   });
 
   it('does not call setCenter/setZoom if props are undefined', () => {

@@ -111,10 +111,10 @@ function readDarkMode(): boolean {
  * **Архитектурные решения:**
  *   - Прямая интеграция с `maplibre-gl` без промежуточных обёрток.
  *   - Инициализация за ResizeObserver-gate: `new Map()` не вызывается
- *     пока container имеет нулевой размер (защита от NaN crash в `jumpTo`).
- *   - `center`/`maxBounds` передаются ТОЛЬКО через `setCenter`/`setMaxBounds`
- *     после `'load'`, НИКОГДА в конструктор — иначе `_calcMatrices` NaN при
- *     transient-0-size контейнере.
+ *     пока container имеет нулевой размер. Gate гарантирует, что на момент
+ *     вызова конструктора `w > 0 && h > 0`, поэтому `center`/`zoom`/`bearing`/
+ *     `pitch`/`maxBounds` безопасно передавать в конструктор — projection matrix
+ *     инициализируется корректно (NaN crash в `_calcMatrices` невозможен).
  *   - Тёмная тема: единый `isDark` signal обновляется MutationObserver'ом по `body.dark` классу.
  *     `prefers-color-scheme` (matchMedia) игнорируется by design — capsule app theme управляет
  *     классом `.dark` на `<body>` через ThemeSwitcher и является единственным источником истины.
@@ -141,10 +141,9 @@ export const MapView = (props: IMapViewProps) => {
     let initialized = false;
 
     // --- ResizeObserver-gated init ---
-    // Защищает от `jumpTo({center})` NaN crash: maplibre 4+ вызывает jumpTo
-    // в конструкторе при передаче center. Если container 0×0 — projection
-    // matrix ещё не готова → NaN.
-    // DO NOT pass center/maxBounds to constructor. Set after 'load' event.
+    // Gate ensures w > 0 && h > 0 before new Map() is called, so projection
+    // matrix initialises correctly. center/zoom/bearing/pitch/maxBounds are
+    // passed directly to the constructor — no post-load jump, no world-first jerk.
 
     const init = (w: number, h: number) => {
       if (initialized) return;
@@ -152,6 +151,10 @@ export const MapView = (props: IMapViewProps) => {
       initialized = true;
       observer.disconnect();
 
+      // Gate guarantees w > 0 && h > 0 here — projection matrix initialises
+      // correctly, so center/zoom/bearing/pitch/maxBounds are safe in the
+      // constructor. No post-load setters needed for initial camera position:
+      // the map opens on the configured location with no visible world-first jerk.
       const m = new maplibregl.Map({
         container: containerRef,
         // resolveStyle() читает isDark() — уже правильное значение на момент mount,
@@ -162,18 +165,14 @@ export const MapView = (props: IMapViewProps) => {
         attributionControl: props.attributionControl ? {} : false,
         ...(props.minZoom !== undefined ? { minZoom: props.minZoom } : {}),
         ...(props.maxZoom !== undefined ? { maxZoom: props.maxZoom } : {}),
-        // center/zoom/pitch/bearing — НЕ в конструктор (NaN guard).
-        // Они выставляются после 'load' через setters.
+        ...(props.center !== undefined ? { center: props.center } : {}),
+        ...(props.zoom !== undefined ? { zoom: props.zoom } : {}),
+        ...(props.bearing !== undefined ? { bearing: props.bearing } : {}),
+        ...(props.pitch !== undefined ? { pitch: props.pitch } : {}),
+        ...(props.maxBounds !== undefined ? { maxBounds: props.maxBounds } : {}),
       });
 
       m.once('load', () => {
-        // Set initial camera after load (safe: container has valid dimensions by now)
-        if (props.center !== undefined) m.setCenter(props.center);
-        if (props.zoom !== undefined) m.setZoom(props.zoom);
-        if (props.bearing !== undefined) m.setBearing(props.bearing);
-        if (props.pitch !== undefined) m.setPitch(props.pitch);
-        if (props.maxBounds !== undefined) m.setMaxBounds(props.maxBounds);
-
         instance = m;
         setMap(m);
         props.onLoad?.(m);
