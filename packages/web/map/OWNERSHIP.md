@@ -93,8 +93,8 @@ last-updated: 2026-05-28 (local CARTO JSON styles restored, 3D features opt-in)
 
 ## Quirks / gotchas
 
-1. **0-size container crash / `jumpTo` NaN** (`src/MapView.tsx`) — maplibre 5+ вызывает `jumpTo({center})` прямо в конструкторе `new Map(...)`. Если container имеет transient 0-size — projection matrix ещё не инициализирована → `_calcMatrices` → `"Invalid LngLat object: (NaN, NaN)"`.
-   **DO NOT pass `center`, `zoom`, `pitch`, `bearing`, `maxBounds` to the maplibre constructor.** Выставлять ТОЛЬКО после `'load'` через setters. ResizeObserver-gate в `onMount` защищает от вызова конструктора до появления размера контейнера.
+1. **0-size container / ResizeObserver-gate** (`src/MapView.tsx`) — maplibre 5+ вызывает `jumpTo({center})` прямо в конструкторе `new Map(...)`. Если container имеет transient 0-size — projection matrix ещё не инициализирована → `_calcMatrices` → `"Invalid LngLat object: (NaN, NaN)"`.
+   **ResizeObserver-gate (`w > 0 && h > 0`) гарантирует, что конструктор не вызывается до появления реального размера.**  Поэтому `center`, `zoom`, `pitch`, `bearing`, `maxBounds` безопасно передавать **в конструктор** — projection matrix инициализируется корректно. Пост-`'load'` setters для первоначальной камеры больше не нужны. Карта открывается сразу на сконфигурированной позиции — без "мировой" рамки и прыжка (`camera-init jerk`).
 
 2. **`maplibre-gl.css` не подключается автоматически** — consumer сам обязан сделать `import 'maplibre-gl/dist/maplibre-gl.css'`. Без этого карта рендерится, но без UI-контролов и стилей.
 
@@ -150,6 +150,7 @@ last-updated: 2026-05-28 (local CARTO JSON styles restored, 3D features opt-in)
 - [x] **Restore CARTO local styles + air-gapped fix + TerrainPreset url required** — `POSITRON`/`DARK_MATTER` восстановлены как встроенные JSON-объекты (были заменены на OpenFreeMap URLs). `TerrainPreset.url` сделан обязательным (нет default external URL). `BuildingsPreset` JSDoc честно документирует что CARTO стили не содержат `render_height` — 3D-здания требуют OpenMapTiles-based style. 127 unit-тестов. (2026-05-28)
 - [x] **Iter 2 — Marker component** — `<Marker<T>>` с реактивными lng/lat (setLngLat), anchor (recreate), data (latest at click-time). Default maplibre pin. 143 unit-тестов. (2026-05-28)
 - [x] **`flyTo` prop** — декларативный анимированный переход камеры. `IMapViewProps.flyTo?: LngLatLike` → `map.flyTo({ center })`. Независим от `center` (jump). 160 unit-тестов. (2026-05-31)
+- [x] **Camera-init jerk fix** — `center`/`zoom`/`bearing`/`pitch`/`maxBounds` переданы в конструктор `new Map(...)` (ResizeObserver-gate гарантирует ненулевой контейнер). Карта открывается сразу на сконфигурированной позиции без мирового вида. Удалены избыточные пост-`'load'` setters. 163 unit-тестов. (2026-06-01)
 - [ ] **Iter 2b — custom HTML markers** — через Solid `render(() => ..., el)` для JSX-маркеров. (priority: medium)
 - [ ] **Iter 3 — measurement / route tools** (priority: medium)
 - [ ] **Iter 4 — clusters + spiderfier** (priority: low)
@@ -175,7 +176,7 @@ last-updated: 2026-05-28 (local CARTO JSON styles restored, 3D features opt-in)
 | Integration | — | нет, WebGL требует реального браузера |
 | E2E | — | нет (пакет не в smoke fixture пока) |
 
-**Всего: 160 unit-тестов, все проходят.**
+**Всего: 163 unit-тестов, все проходят.**
 
 **Перед изменением:** `pnpm --filter @capsuletech/web-map test` должен быть green.
 **При breaking change в IMapViewProps:** обновить тесты + README.
