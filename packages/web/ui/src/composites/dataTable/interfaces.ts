@@ -98,6 +98,29 @@ export interface IDataTableProps<TData> {
   isRowActive?: (row: TData) => boolean;
 
   /**
+   * Scroll the table to the row whose id matches `scrollToId`. Reactive —
+   * whenever this value changes and resolves to a row, DataTable scrolls that
+   * row into view.
+   *
+   * - **infinite mode:** calls `virtualizer.scrollToIndex(index, { align: 'center' })`.
+   * - **standard mode:** calls `scrollIntoView({ block: 'nearest' })` on the
+   *   row DOM element (identified by `data-row-id` attribute).
+   *
+   * Row matching uses `getRowId` when provided; falls back to
+   * `(row.original as any).id`.
+   */
+  scrollToId?: string | number;
+
+  /**
+   * Custom id extractor used by `scrollToId` to find the target row.
+   * When absent, falls back to `(row.original as any).id`.
+   *
+   * Example:
+   *   getRowId={(row) => row.uuid}
+   */
+  getRowId?: (row: TData) => string | number;
+
+  /**
    * Per-row HCA payload factory. Called with each row's original data.
    * The returned object is passed as the `payload` prop on the row component
    * alongside `meta` so the events-wrapper can include it with emitted events.

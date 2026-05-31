@@ -113,6 +113,10 @@ export const ThemePicker = createLazy(
   () => import('@capsuletech/web-ui/themePicker'),
   'ThemePicker',
 );
+export const WidgetSettingsToggle = createLazy(
+  () => import('@capsuletech/web-ui/widgetSettingsToggle'),
+  'WidgetSettingsToggle',
+);
 /**
  * MapView — compound map component (Mapbox GL).
  * Source / Layer / Sky / Marker / Terrain / TerrainPreset / BuildingsPreset живут внутри

@@ -131,6 +131,8 @@ interface IDataRowProps<TData> {
   hasMeta: boolean;
   /** Reactive accessor — true when this row is the externally-active row. */
   active?: () => boolean;
+  /** Stable row id for scrollToId — placed as data-row-id attribute. */
+  rowId?: string | number;
 }
 
 /**
@@ -148,11 +150,13 @@ function DataRow<TData>(props: IDataRowProps<TData>) {
     'itemHeight',
     'hasMeta',
     'active',
+    'rowId',
   ]);
   return (
     <Table.Row
       data-state={local.selection && local.row.getIsSelected() ? 'selected' : undefined}
       data-active={local.active?.() ? 'true' : undefined}
+      data-row-id={local.rowId !== undefined ? String(local.rowId) : undefined}
       style={local.itemHeight ? { height: `${local.itemHeight}px` } : undefined}
       classList={{
         'cursor-pointer': local.hasMeta,
@@ -178,6 +182,7 @@ function StandardTableBody<TData>(props: {
   itemMeta?: (row: TData) => { tags: string[]; [k: string]: unknown };
   itemPayload?: (row: TData) => Record<string, unknown>;
   isRowActive?: (row: TData) => boolean;
+  getRowId?: (row: TData) => string | number;
   WrappedDataRow: (props: IDataRowProps<TData>) => import('solid-js').JSX.Element;
 }) {
   return (
@@ -190,6 +195,9 @@ function StandardTableBody<TData>(props: {
           // re-evaluates reactively when the external signal changes,
           // without causing the <For> loop to re-run for unrelated rows.
           const active = props.isRowActive ? () => props.isRowActive!(row.original) : undefined;
+          const rowId = props.getRowId
+            ? props.getRowId(row.original)
+            : (row.original as Record<string, unknown>).id as string | number | undefined;
           return (
             <props.WrappedDataRow
               row={row}
@@ -198,6 +206,7 @@ function StandardTableBody<TData>(props: {
               meta={meta}
               payload={payload}
               active={active}
+              rowId={rowId}
             />
           );
         }}
@@ -231,6 +240,8 @@ function InfiniteTable<TData>(props: {
   itemMeta?: (row: TData) => { tags: string[]; [k: string]: unknown };
   itemPayload?: (row: TData) => Record<string, unknown>;
   isRowActive?: (row: TData) => boolean;
+  scrollToId?: string | number;
+  getRowId?: (row: TData) => string | number;
   WrappedDataRow: (props: IDataRowProps<TData>) => import('solid-js').JSX.Element;
 }) {
   let scrollEl: HTMLDivElement | undefined;
@@ -256,6 +267,21 @@ function InfiniteTable<TData>(props: {
     if (lastIndex >= rowCount - opts.threshold) {
       props.onLoadMore();
     }
+  });
+
+  // Scroll to the row matching scrollToId when the prop changes.
+  createEffect(() => {
+    const target = props.scrollToId;
+    if (target === undefined || target === null) return;
+    const allRows = props.table.getRowModel().rows;
+    const idx = allRows.findIndex((r) => {
+      const id = props.getRowId
+        ? props.getRowId(r.original)
+        : (r.original as Record<string, unknown>).id as string | number | undefined;
+      return id === target;
+    });
+    if (idx === -1) return;
+    virtualizer.scrollToIndex(idx, { align: 'center' });
   });
 
   const rows = () => props.table.getRowModel().rows;
@@ -339,6 +365,8 @@ export function DataTable<TData>(rawProps: IDataTableProps<TData>) {
     'itemMeta',
     'itemPayload',
     'isRowActive',
+    'scrollToId',
+    'getRowId',
     'selection',
     'filtering',
     'emptyMessage',
@@ -415,6 +443,22 @@ export function DataTable<TData>(rawProps: IDataTableProps<TData>) {
 
   const isEmpty = () => local.data.length === 0;
 
+  // Ref for the standard (non-virtual) table wrapper — used by scrollToId effect.
+  let standardTableRef: HTMLDivElement | undefined;
+
+  // Standard-mode scrollToId: when scrollToId changes, find the row by data-row-id
+  // and call scrollIntoView({ block: 'nearest' }).
+  createEffect(() => {
+    if (isInfinite()) return; // InfiniteTable handles this internally
+    const target = local.scrollToId;
+    if (target === undefined || target === null) return;
+    if (!standardTableRef) return;
+    const rowEl = standardTableRef.querySelector<HTMLTableRowElement>(
+      `tr[data-row-id="${String(target)}"]`,
+    );
+    rowEl?.scrollIntoView({ block: 'nearest' });
+  });
+
   // Корневой контейнер — `h-full flex flex-col`. Toolbar/pagination — auto-height,
   // table-секция — `flex-1 min-h-0` (растягивается по родителю + min-h-0 нужен,
   // чтобы внутренний `h-full overflow-auto` InfiniteTable получил реальную
@@ -431,17 +475,20 @@ export function DataTable<TData>(rawProps: IDataTableProps<TData>) {
             when={isInfinite()}
             fallback={
               // --- Standard (non-virtual) render ---
-              <Table>
-                <TableHeaders table={table} sorting={!!local.sorting} />
-                <StandardTableBody
-                  rows={table.getRowModel().rows}
-                  selection={!!local.selection}
-                  itemMeta={local.itemMeta}
-                  itemPayload={local.itemPayload}
-                  isRowActive={local.isRowActive}
-                  WrappedDataRow={WrappedDataRow}
-                />
-              </Table>
+              <div ref={standardTableRef}>
+                <Table>
+                  <TableHeaders table={table} sorting={!!local.sorting} />
+                  <StandardTableBody
+                    rows={table.getRowModel().rows}
+                    selection={!!local.selection}
+                    itemMeta={local.itemMeta}
+                    itemPayload={local.itemPayload}
+                    isRowActive={local.isRowActive}
+                    getRowId={local.getRowId}
+                    WrappedDataRow={WrappedDataRow}
+                  />
+                </Table>
+              </div>
             }
           >
             <InfiniteTable
@@ -453,6 +500,8 @@ export function DataTable<TData>(rawProps: IDataTableProps<TData>) {
               itemMeta={local.itemMeta}
               itemPayload={local.itemPayload}
               isRowActive={local.isRowActive}
+              scrollToId={local.scrollToId}
+              getRowId={local.getRowId}
               WrappedDataRow={WrappedDataRow}
             />
           </Show>

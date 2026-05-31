@@ -40,6 +40,14 @@ export type SlotValue =
        * Если не задан — preset применяет свои defaults.
        */
       resizable?: boolean;
+      /**
+       * Per-slot settings panel. Rendered as a toolbar strip at the top of the
+       * cell when the global `settingsMode` is ON. Hidden in normal view.
+       *
+       * Usage:
+       *   `settings: <MyWidgetSettingsPanel />`
+       */
+      settings?: JSX.Element;
     };
 
 export interface IRow {
@@ -67,14 +75,14 @@ export interface ICell {
    */
   width?: number | 'auto' | 'fr';
   resizable?: boolean;
-  /**
-   * @placeholder Phase 1.2 — DnD support. Типы добавлены, runtime не реализован.
-   */
   draggable?: boolean;
-  /**
-   * @placeholder Phase 1.2 — ограничение swap-зоны. Типы добавлены, runtime не реализован.
-   */
   swapGroup?: string;
+  /**
+   * Per-cell settings panel. Rendered as a toolbar strip at the top of the
+   * cell when the global `settingsMode` is ON. Hidden in normal view.
+   * Threaded from SlotValue.settings through preset → ICell by the resolvers.
+   */
+  settings?: JSX.Element;
 }
 
 // ---------------------------------------------------------------------------
@@ -100,22 +108,10 @@ export interface LayoutPresets {
 // DnD / layout mode (Phase 1.2 placeholders)
 // ---------------------------------------------------------------------------
 
-/**
- * @placeholder Phase 1.2 — DnD режимы.
- * Типы добавлены, runtime-логика не реализована.
- */
 export type MatrixDndMode = 'swap' | 'insert';
 
-/**
- * @placeholder Phase 1.2 — edit/view mode.
- * Типы добавлены, runtime-логика не реализована.
- */
 export type MatrixLayoutMode = 'view' | 'edit';
 
-/**
- * @placeholder Phase 1.2 — event-based layout change.
- * Типы добавлены, runtime-логика не реализована.
- */
 export type LayoutChangeEvent =
   | { kind: 'swap'; a: string; b: string }
   | { kind: 'insert'; id: string; toRow: number; toIndex: number };
@@ -133,17 +129,8 @@ export interface IMatrixCommonProps extends JSX.HTMLAttributes<HTMLDivElement> {
    * - `false` / `undefined` → без анимации.
    */
   animated?: boolean | AnimateVariant;
-  /**
-   * @placeholder Phase 1.2 — DnD режим (noop в Phase 1.1).
-   */
   dndMode?: MatrixDndMode;
-  /**
-   * @placeholder Phase 1.2 — edit/view режим (noop в Phase 1.1).
-   */
   layoutMode?: MatrixLayoutMode;
-  /**
-   * @placeholder Phase 1.2 — callback при смене layout через DnD (noop в Phase 1.1).
-   */
   onLayoutChange?: (event: LayoutChangeEvent) => void;
 }
 

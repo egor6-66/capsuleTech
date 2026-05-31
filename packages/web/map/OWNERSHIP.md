@@ -67,6 +67,7 @@ last-updated: 2026-05-28 (local CARTO JSON styles restored, 3D features opt-in)
 | `darkStyle` | `string \| StyleSpecification` | DARK_MATTER | нет (только init) |
 | `attributionControl` | `boolean` | `false` | нет (только init) |
 | `center` | `LngLatLike` | undefined | да (jump, без анимации) |
+| `flyTo` | `LngLatLike` | undefined | да (анимированный `flyTo`) |
 | `zoom` | `number` | undefined | да (jump) |
 | `bearing` | `number` | undefined | да (jump) |
 | `pitch` | `number` | undefined | да (jump) |
@@ -105,7 +106,7 @@ last-updated: 2026-05-28 (local CARTO JSON styles restored, 3D features opt-in)
 
 6. **`maxBounds`, `minZoom`, `maxZoom` не реактивны** — только в initial config конструктора. Добавление `createEffect` — отдельная задача (низкий приоритет).
 
-7. **center/zoom/bearing/pitch → jump без анимации** — `setCenter/Zoom/Bearing/Pitch()`. Для `flyTo`/`easeTo` — императивно через `useMap()`.
+7. **center/zoom/bearing/pitch → jump без анимации** — `setCenter/Zoom/Bearing/Pitch()`. Для кастомного `flyTo`/`easeTo` с параметрами (duration, zoom, etc.) — императивно через `useMap()`. Декларативный `flyTo?: LngLatLike` prop даёт анимированный переход с дефолтными параметрами MapLibre.
 
 8. **WebGL недоступен в jsdom** — тесты используют `vi.mock('maplibre-gl', ...)` + `vi.stubGlobal('ResizeObserver', ...)` + `vi.stubGlobal('MutationObserver', ...)` + `vi.stubGlobal('matchMedia', ...)` для полного контроля. `matchMedia` стаббируется чтобы тесты могли подтвердить что он НЕ вызывается.
 
@@ -148,6 +149,7 @@ last-updated: 2026-05-28 (local CARTO JSON styles restored, 3D features opt-in)
 - [x] **maplibre-gl 4→5 upgrade** — `maplibre-gl ^5.24`, `setSky` теперь работает. 127 unit-тестов. (2026-05-28)
 - [x] **Restore CARTO local styles + air-gapped fix + TerrainPreset url required** — `POSITRON`/`DARK_MATTER` восстановлены как встроенные JSON-объекты (были заменены на OpenFreeMap URLs). `TerrainPreset.url` сделан обязательным (нет default external URL). `BuildingsPreset` JSDoc честно документирует что CARTO стили не содержат `render_height` — 3D-здания требуют OpenMapTiles-based style. 127 unit-тестов. (2026-05-28)
 - [x] **Iter 2 — Marker component** — `<Marker<T>>` с реактивными lng/lat (setLngLat), anchor (recreate), data (latest at click-time). Default maplibre pin. 143 unit-тестов. (2026-05-28)
+- [x] **`flyTo` prop** — декларативный анимированный переход камеры. `IMapViewProps.flyTo?: LngLatLike` → `map.flyTo({ center })`. Независим от `center` (jump). 160 unit-тестов. (2026-05-31)
 - [ ] **Iter 2b — custom HTML markers** — через Solid `render(() => ..., el)` для JSX-маркеров. (priority: medium)
 - [ ] **Iter 3 — measurement / route tools** (priority: medium)
 - [ ] **Iter 4 — clusters + spiderfier** (priority: low)
@@ -160,7 +162,7 @@ last-updated: 2026-05-28 (local CARTO JSON styles restored, 3D features opt-in)
 | Тип | Где | Что покрывает |
 |---|---|---|
 | Unit | `src/__tests__/map-view.test.tsx` | ResizeObserver-gated mount (5), camera props after load (3), memory cleanup (5), onViewportChange (1) — 14 тестов |
-| Unit | `src/__tests__/props-passthrough.test.tsx` | Constructor options (9), reactive prop sync (5), dark theme constants, useMap guard, container class/style (3) — 19 тестов |
+| Unit | `src/__tests__/props-passthrough.test.tsx` | Constructor options (9), reactive prop sync (9 — includes flyTo), dark theme constants, useMap guard, container class/style (3) — 23 тестов |
 | Unit | `src/__tests__/theme-switching.test.tsx` | Init dark (4), body.classList switching (5), matchMedia regression/isolation (4), style prop + theme (2), listener cleanup (2) — 17 тестов |
 | Unit | `src/__tests__/child-components.test.tsx` | Source lifecycle (6), Layer lifecycle (6), Terrain lifecycle (5), Sky lifecycle (5) — 22 тестов |
 | Unit | `src/__tests__/presets.test.tsx` | TerrainPreset — url required, exaggeration, tileSize, cleanup (5), BuildingsPreset (8) — 13 тестов |
@@ -173,7 +175,7 @@ last-updated: 2026-05-28 (local CARTO JSON styles restored, 3D features opt-in)
 | Integration | — | нет, WebGL требует реального браузера |
 | E2E | — | нет (пакет не в smoke fixture пока) |
 
-**Всего: 143 unit-тестов, все проходят.**
+**Всего: 160 unit-тестов, все проходят.**
 
 **Перед изменением:** `pnpm --filter @capsuletech/web-map test` должен быть green.
 **При breaking change в IMapViewProps:** обновить тесты + README.

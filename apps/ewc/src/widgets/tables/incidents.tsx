@@ -14,15 +14,19 @@
  */
 import type { IIncident, IIncidentsContext } from '../../features/incidents';
 
-const Incidents = Widget((Ui, store) => (
-  <Shapes.IncidentsTable
-    data={(store?.ctx.data as IIncidentsContext | undefined)?.items ?? []}
-    itemMeta={() => ({ tags: ['incident'] })}
-    itemPayload={(row: IIncident) => ({ id: row.id })}
-    isRowActive={(row: IIncident) =>
-      row.id === (store?.ctx.data as IIncidentsContext | undefined)?.selected?.id
-    }
-  />
-));
+const Incidents = Widget((Ui, store) => {
+  const data = () => store?.ctx.data as IIncidentsContext | undefined;
+  return (
+    <Shapes.IncidentsTable
+      data={data()?.items ?? []}
+      itemMeta={() => ({ tags: ['incident'] })}
+      itemPayload={(row: IIncident) => ({ id: row.id })}
+      isRowActive={(row: IIncident) => row.id === data()?.selected?.id}
+      getRowId={(row: IIncident) => row.id}
+      // Опционально: таблица скроллит к строке выбранного incident'а. Гейт по флагу.
+      scrollToId={data()?.scrollToSelected ? data()?.selected?.id : undefined}
+    />
+  );
+});
 
 export default Incidents;

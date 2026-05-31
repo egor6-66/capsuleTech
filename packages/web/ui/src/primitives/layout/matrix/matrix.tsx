@@ -1,15 +1,7 @@
 import { DnDProvider, useDnD } from '@capsuletech/web-dnd';
 import { type ICapsuleRouter, RouterContext } from '@capsuletech/web-router';
-import { createStyle, useLayoutMode } from '@capsuletech/web-style';
-import {
-  type Accessor,
-  createMemo,
-  For,
-  type JSX,
-  Show,
-  splitProps,
-  useContext,
-} from 'solid-js';
+import { createStyle, useLayoutMode, useSettingsMode } from '@capsuletech/web-style';
+import { type Accessor, createMemo, For, type JSX, Show, splitProps, useContext } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import { Animate, type AnimateVariant } from '../../wrappers/animate';
 import { Flex } from '../flex/flex';
@@ -97,11 +89,26 @@ const renderCell = (
    * родительский row.resizable). Только interactive-cells получают edit-border.
    */
   isInteractive: boolean,
+  /**
+   * Reactive global settingsMode. When true AND cell.settings is present,
+   * renders a toolbar strip at the top of the cell.
+   */
+  settingsMode: Accessor<boolean>,
 ): JSX.Element => {
   const tag = cell.tag ?? 'div';
   const isMain = cell.id === 'main';
   const children = getSwappedChildren ? getSwappedChildren(cell.id) : cell.children;
   const content = isMain ? animateMain(children, animated, router) : children;
+
+  // Settings toolbar strip — rendered when settingsMode is ON and cell.settings present.
+  // shrink-0 so it takes its natural height; content-wrapper gets flex-1 min-h-0
+  // so existing inner scroll/absolute still works in the remaining space.
+  const settingsStrip = (): JSX.Element =>
+    settingsMode() && cell.settings ? (
+      <div class="flex shrink-0 items-center gap-1 border-b border-border bg-card/80 px-2 py-1 text-sm">
+        {cell.settings}
+      </div>
+    ) : null;
 
   // Cells with DnD need `position: relative` to host the absolute badge.
   // The badge must live outside the scroll container so it stays pinned to
@@ -119,28 +126,36 @@ const renderCell = (
   //
   // The badge and drop overlay are `absolute` siblings to the inner wrapper in
   // both cases; they rely on the outer `relative` container, not the inner.
-  const borders = 'outline outline-1 outline-dashed outline-border outline-offset-[-1px]';
+  //
+  // When settingsMode is on and cell.settings is present we wrap the outer element
+  // in a flex-col so the strip (shrink-0) sits above the content (flex-1 min-h-0).
   if (dndState) {
-    const innerClass = rowIsAutoHeight
-      ? 'relative overflow-auto w-full'
-      : 'absolute inset-0 overflow-auto';
+    // In the DnD branch the outer Dynamic element handles position:relative and the
+    // full-cell footprint.  We add flex flex-col only when settings are active so the
+    // strip (shrink-0) stacks above the content (flex-1 min-h-0).
+    const withSettings = settingsMode() && !!cell.settings;
+    const innerClass = withSettings
+      ? 'flex-1 min-h-0 relative overflow-auto'
+      : rowIsAutoHeight
+        ? 'relative overflow-auto w-full'
+        : 'absolute inset-0 overflow-auto';
+    const outerExtra = withSettings ? ' flex flex-col' : '';
 
     return (
       <Dynamic
         component={tag}
         ref={cellRef}
-        class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative`}
-        classList={{
-          // Persistent edit-affordance: тонкая dashed-рамка на interactive
-          // cells показывает зону, которую можно перетаскивать / ресайзить.
-          // Только в layoutMode='edit'. В drag-time доминирует overlay ниже.
-          [borders]: isInteractive && layoutMode() === 'edit',
-        }}
+        class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative${outerExtra}`}
       >
+        {/* Settings strip — shrink-0, only when settingsMode ON */}
+        <Show when={withSettings}>{settingsStrip()}</Show>
         {/* Inner scroll wrapper; pointer-events-none during drag prevents hover leaking
             into cell content (table row hover, map hover, etc.).
             DnD ref lives on the outer wrapper so elementFromPoint() always hits it. */}
-        <div class={innerClass} classList={{ 'pointer-events-none': isDragging() }}>
+        <div
+          class={innerClass}
+          classList={{ 'pointer-events-none': isDragging() }}
+        >
           {content}
         </div>
         {/* Absolute overlay renders above canvas / GPU layers — ring/box-shadow do not. */}
@@ -164,16 +179,25 @@ const renderCell = (
     );
   }
 
+  // Non-DnD path: when settings are active wrap with flex-col so strip + content stack.
+  if (settingsMode() && cell.settings) {
+    return (
+      <Dynamic
+        component={tag}
+        ref={cellRef}
+        class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} flex flex-col`}
+      >
+        {settingsStrip()}
+        <div class="flex-1 min-h-0 relative overflow-auto">{content}</div>
+      </Dynamic>
+    );
+  }
+
   return (
     <Dynamic
       component={tag}
       ref={cellRef}
       class={isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot}
-      classList={{
-        // Non-DnD path: cell не draggable, но может быть resizable
-        // (через cell.resizable или row.resizable). Edit-affordance тут же.
-        [borders]: isInteractive && layoutMode() === 'edit',
-      }}
     >
       {content}
     </Dynamic>
@@ -195,6 +219,7 @@ const rowToFlexItems = (
   savedSizes: number[] | undefined,
   isDragging: Accessor<boolean>,
   layoutMode: Accessor<'view' | 'edit'>,
+  settingsMode: Accessor<boolean>,
 ): IFlexItem[] => {
   const rowIsAutoHeight = row.height === 'auto';
   return row.cells.map((cell, i) => {
@@ -216,6 +241,7 @@ const rowToFlexItems = (
         rowIsAutoHeight,
         layoutMode,
         isInteractive,
+        settingsMode,
       ),
       // resizable не gate'ится по layoutMode: иначе все items станут resizable=false,
       // Flex переключится в StaticItemsFlex (без corvu Panel) и cells схлопнутся в 0.
@@ -248,6 +274,7 @@ const renderRow = (
   onRowSizesChange: ((sizes: number[]) => void) | undefined,
   isDragging: Accessor<boolean>,
   layoutMode: Accessor<'view' | 'edit'>,
+  settingsMode: Accessor<boolean>,
 ): JSX.Element => {
   const hasResizable = rowHasResizable(row);
   // Cross-row drop target ref — only meaningful in insert mode (bindRow defined).
@@ -264,6 +291,7 @@ const renderRow = (
       savedSizes,
       isDragging,
       layoutMode,
+      settingsMode,
     );
     const isEdit = layoutMode() === 'edit';
     return (
@@ -304,6 +332,7 @@ const renderRow = (
             rowIsAutoHeight,
             layoutMode,
             isInteractive,
+            settingsMode,
           );
         }}
       </For>
@@ -331,6 +360,7 @@ const rowsToVerticalItems = (
   onRowSizesChange: ((rowKey: string, sizes: number[]) => void) | undefined,
   isDragging: Accessor<boolean>,
   layoutMode: Accessor<'view' | 'edit'>,
+  settingsMode: Accessor<boolean>,
 ): IFlexItem[] => {
   return rows.map((row, i) => {
     const heightIsNumber = typeof row.height === 'number';
@@ -357,6 +387,7 @@ const rowsToVerticalItems = (
         rowOnChange,
         isDragging,
         layoutMode,
+        settingsMode,
       ),
       resizable: isResizable,
       initialSize: resolvedHeight,
@@ -382,6 +413,7 @@ interface IMatrixContentProps {
   layoutMode: Accessor<'view' | 'edit'>;
   dndMode: Accessor<'swap' | 'insert'>;
   onLayoutChange: ((e: import('./interfaces').LayoutChangeEvent) => void) | undefined;
+  settingsMode: Accessor<boolean>;
 }
 
 // ---------------------------------------------------------------------------
@@ -495,13 +527,27 @@ const MatrixContent = (props: IMatrixContentProps) => {
         const children = swapGetChildren ? swapGetChildren(cell.id) : cell.children;
         const cellRef = cell.draggable && swapBind ? swapBind(cell, rows[0].id) : NOOP_REF;
         const dndState = cellDndState ? cellDndState(cell) : undefined;
+        const settingsStrip = (): JSX.Element =>
+          props.settingsMode() && cell.settings ? (
+            <div class="flex shrink-0 items-center gap-1 border-b border-border bg-card/80 px-2 py-1 text-sm">
+              {cell.settings}
+            </div>
+          ) : null;
+        // When settingsMode is on with settings, make outer flex-col for strip + content
+        const outerClass = props.settingsMode() && cell.settings
+          ? 'relative flex h-full w-full flex-col'
+          : 'relative flex h-full w-full items-center justify-center';
+        const innerClass = props.settingsMode() && cell.settings
+          ? 'flex-1 min-h-0 overflow-auto flex items-center justify-center'
+          : 'absolute inset-0 overflow-auto flex items-center justify-center';
         return (
-          <div ref={cellRef} class="relative flex h-full w-full items-center justify-center">
+          <div ref={cellRef} class={outerClass}>
+            <Show when={props.settingsMode() && !!cell.settings}>{settingsStrip()}</Show>
             {/* Inner wrapper: overflow-auto allows content to scroll.
                 pointer-events-none during drag prevents hover leaking into content.
                 DnD ref is on the outer wrapper so elementFromPoint() always hits it. */}
             <div
-              class="absolute inset-0 overflow-auto flex items-center justify-center"
+              class={innerClass}
               classList={{ 'pointer-events-none': isDragging() }}
             >
               {isMain ? animateMain(children, props.animated, props.router) : children}
@@ -553,6 +599,7 @@ const MatrixContent = (props: IMatrixContentProps) => {
           onRowSizesChange,
           isDragging,
           props.layoutMode,
+          props.settingsMode,
         );
         return (
           <div class="relative h-full w-full overflow-hidden">
@@ -586,6 +633,7 @@ const MatrixContent = (props: IMatrixContentProps) => {
         onRowSizesChange,
         isDragging,
         props.layoutMode,
+        props.settingsMode,
       );
 
       // Walk rows in order: emit shrink-0 divs for auto rows, and a single flex-1
@@ -608,6 +656,7 @@ const MatrixContent = (props: IMatrixContentProps) => {
                 (sizes) => onRowSizesChange(rowKey, sizes),
                 isDragging,
                 props.layoutMode,
+                props.settingsMode,
               )}
             </div>
           );
@@ -652,6 +701,7 @@ const MatrixContent = (props: IMatrixContentProps) => {
                     (sizes) => onRowSizesChange(rowKey, sizes),
                     isDragging,
                     props.layoutMode,
+                    props.settingsMode,
                   )}
                 </div>
               );
@@ -668,6 +718,7 @@ const MatrixContent = (props: IMatrixContentProps) => {
               (sizes) => onRowSizesChange(rowKey, sizes),
               isDragging,
               props.layoutMode,
+              props.settingsMode,
             );
           }}
         </For>
@@ -722,6 +773,9 @@ const MatrixImpl = (props: IMatrixProps) => {
   const layoutMode = createMemo(() => local.layoutMode ?? globalLayoutMode());
   const dndMode = createMemo(() => local.dndMode ?? 'swap');
 
+  // settingsMode is orthogonal to layoutMode — read the global signal directly.
+  const settingsMode = useSettingsMode();
+
   return (
     <DnDProvider showDefaultOverlay overlayMode="thumbnail">
       <div ref={local.ref} class={`${className()} relative`} style={style()} {...(rest as object)}>
@@ -732,6 +786,7 @@ const MatrixImpl = (props: IMatrixProps) => {
           layoutMode={layoutMode}
           dndMode={dndMode}
           onLayoutChange={local.onLayoutChange}
+          settingsMode={settingsMode}
         />
       </div>
     </DnDProvider>

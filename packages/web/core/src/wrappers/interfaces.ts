@@ -35,6 +35,7 @@ import type { DarkModeToggle } from '@capsuletech/web-ui/darkModeToggle';
 import type { Dropdown } from '@capsuletech/web-ui/dropdown';
 import type { DropdownMenu } from '@capsuletech/web-ui/dropdownMenu';
 import type { LayoutModeToggle } from '@capsuletech/web-ui/layoutModeToggle';
+import type { WidgetSettingsToggle } from '@capsuletech/web-ui/widgetSettingsToggle';
 import type { PreviewCard } from '@capsuletech/web-ui/previewCard';
 import type { ThemePicker } from '@capsuletech/web-ui/themePicker';
 import type { Typography } from '@capsuletech/web-ui/typography';
@@ -187,6 +188,7 @@ type ViewUiRaw = {
   DarkModeToggle: typeof DarkModeToggle;
   LayoutModeToggle: typeof LayoutModeToggle;
   ThemePicker: typeof ThemePicker;
+  WidgetSettingsToggle: typeof WidgetSettingsToggle;
   MapView: typeof MapView & {
     Source: typeof Source;
     Layer: typeof Layer;
@@ -224,6 +226,7 @@ type WidgetUiRaw = {
   DarkModeToggle: typeof DarkModeToggle;
   LayoutModeToggle: typeof LayoutModeToggle;
   ThemePicker: typeof ThemePicker;
+  WidgetSettingsToggle: typeof WidgetSettingsToggle;
   MapView: typeof MapView & {
     Source: typeof Source;
     Layer: typeof Layer;

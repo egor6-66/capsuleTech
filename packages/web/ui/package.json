@@ -260,6 +260,16 @@
       "types": "./dist/components/themePicker/*.d.ts",
       "import": "./dist/components/themePicker/*.mjs",
       "default": "./dist/components/themePicker/*.mjs"
+    },
+    "./widgetSettingsToggle": {
+      "types": "./dist/components/widgetSettingsToggle/index.d.ts",
+      "import": "./dist/components/widgetSettingsToggle/index.mjs",
+      "default": "./dist/components/widgetSettingsToggle/index.mjs"
+    },
+    "./widgetSettingsToggle/*": {
+      "types": "./dist/components/widgetSettingsToggle/*.d.ts",
+      "import": "./dist/components/widgetSettingsToggle/*.mjs",
+      "default": "./dist/components/widgetSettingsToggle/*.mjs"
     }
   },
   "files": [
