@@ -101,11 +101,12 @@ const renderCell = (
   const content = isMain ? animateMain(children, animated, router) : children;
 
   // Settings toolbar strip — rendered when settingsMode is ON and cell.settings present.
-  // shrink-0 so it takes its natural height; content-wrapper gets flex-1 min-h-0
-  // so existing inner scroll/absolute still works in the remaining space.
+  // Positioned ABSOLUTE so it overlays the top of the cell without perturbing the
+  // content wrapper's height. Fixed height h-9 (36px) matches the content top offset.
+  // z-10 ensures the strip renders above scrollable content (tables, maps, etc.).
   const settingsStrip = (): JSX.Element =>
     settingsMode() && cell.settings ? (
-      <div class="flex shrink-0 items-center gap-1 border-b border-border bg-card/80 px-2 py-1 text-sm">
+      <div class="absolute inset-x-0 top-0 z-10 flex h-9 items-center gap-1 border-b border-border bg-card/80 px-2 text-sm">
         {cell.settings}
       </div>
     ) : null;
@@ -127,27 +128,31 @@ const renderCell = (
   // The badge and drop overlay are `absolute` siblings to the inner wrapper in
   // both cases; they rely on the outer `relative` container, not the inner.
   //
-  // When settingsMode is on and cell.settings is present we wrap the outer element
-  // in a flex-col so the strip (shrink-0) sits above the content (flex-1 min-h-0).
+  // When settingsMode is on and cell.settings is present the strip renders as an
+  // absolute overlay (z-10, pinned top-0, h-9) so the content wrapper always keeps
+  // an absolute inset-0 box — giving the virtualizer a definite height synchronously.
   if (dndState) {
     // In the DnD branch the outer Dynamic element handles position:relative and the
-    // full-cell footprint.  We add flex flex-col only when settings are active so the
-    // strip (shrink-0) stacks above the content (flex-1 min-h-0).
+    // full-cell footprint. The strip is absolutely positioned (z-10) so the content
+    // wrapper always gets a definite height via absolute inset-0 — this is critical
+    // for the virtualizer: InfiniteTable's scroll element must get its real height
+    // synchronously at mount, not via flex computation a frame later.
+    // When settings are active the content is offset by top-9 (36px = strip height)
+    // so the strip does not cover the table header / first row.
     const withSettings = settingsMode() && !!cell.settings;
     const innerClass = withSettings
-      ? 'flex-1 min-h-0 relative overflow-auto'
+      ? 'absolute inset-0 overflow-auto'
       : rowIsAutoHeight
         ? 'relative overflow-auto w-full'
         : 'absolute inset-0 overflow-auto';
-    const outerExtra = withSettings ? ' flex flex-col' : '';
 
     return (
       <Dynamic
         component={tag}
         ref={cellRef}
-        class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative${outerExtra}`}
+        class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative`}
       >
-        {/* Settings strip — shrink-0, only when settingsMode ON */}
+        {/* Settings strip — absolute overlay at top, z-10, only when settingsMode ON */}
         <Show when={withSettings}>{settingsStrip()}</Show>
         {/* Inner scroll wrapper; pointer-events-none during drag prevents hover leaking
             into cell content (table row hover, map hover, etc.).
@@ -179,16 +184,18 @@ const renderCell = (
     );
   }
 
-  // Non-DnD path: when settings are active wrap with flex-col so strip + content stack.
+  // Non-DnD path: when settings are active render strip as absolute overlay.
+  // Content wrapper stays absolute inset-0 (immediate definite height) with top-9
+  // offset so the strip does not cover the first row/header.
   if (settingsMode() && cell.settings) {
     return (
       <Dynamic
         component={tag}
         ref={cellRef}
-        class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} flex flex-col`}
+        class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative`}
       >
         {settingsStrip()}
-        <div class="flex-1 min-h-0 relative overflow-auto">{content}</div>
+        <div class="absolute inset-0 overflow-auto">{content}</div>
       </Dynamic>
     );
   }
@@ -527,22 +534,23 @@ const MatrixContent = (props: IMatrixContentProps) => {
         const children = swapGetChildren ? swapGetChildren(cell.id) : cell.children;
         const cellRef = cell.draggable && swapBind ? swapBind(cell, rows[0].id) : NOOP_REF;
         const dndState = cellDndState ? cellDndState(cell) : undefined;
-        const settingsStrip = (): JSX.Element =>
+        // Centroid settings strip — absolute overlay, same pattern as renderCell.
+        // Strip is pinned top/absolute (z-10) so the content wrapper keeps
+        // absolute inset-0 → immediate definite height for the virtualizer.
+        const centroidSettingsStrip = (): JSX.Element =>
           props.settingsMode() && cell.settings ? (
-            <div class="flex shrink-0 items-center gap-1 border-b border-border bg-card/80 px-2 py-1 text-sm">
+            <div class="absolute inset-x-0 top-0 z-10 flex h-9 items-center gap-1 border-b border-border bg-card/80 px-2 text-sm">
               {cell.settings}
             </div>
           ) : null;
-        // When settingsMode is on with settings, make outer flex-col for strip + content
-        const outerClass = props.settingsMode() && cell.settings
-          ? 'relative flex h-full w-full flex-col'
-          : 'relative flex h-full w-full items-center justify-center';
-        const innerClass = props.settingsMode() && cell.settings
-          ? 'flex-1 min-h-0 overflow-auto flex items-center justify-center'
+        // Outer always relative; inner uses top-9 offset when strip is active.
+        const withCentroidSettings = props.settingsMode() && !!cell.settings;
+        const innerClass = withCentroidSettings
+          ? 'absolute inset-0 overflow-auto flex items-center justify-center'
           : 'absolute inset-0 overflow-auto flex items-center justify-center';
         return (
-          <div ref={cellRef} class={outerClass}>
-            <Show when={props.settingsMode() && !!cell.settings}>{settingsStrip()}</Show>
+          <div ref={cellRef} class="relative flex h-full w-full items-center justify-center">
+            <Show when={withCentroidSettings}>{centroidSettingsStrip()}</Show>
             {/* Inner wrapper: overflow-auto allows content to scroll.
                 pointer-events-none during drag prevents hover leaking into content.
                 DnD ref is on the outer wrapper so elementFromPoint() always hits it. */}

@@ -1,6 +1,8 @@
 import type { ColumnDef } from '@tanstack/solid-table';
 import type { JSX } from 'solid-js';
 
+import type { InfiniteScrollMode } from '../../lib/infiniteScroll';
+
 export type { ColumnDef } from '@tanstack/solid-table';
 
 /**
@@ -21,13 +23,26 @@ export type IColumn<TData> = Omit<ColumnDef<TData>, 'accessorKey'> & {
 export interface IDataTableInfiniteOptions {
   /** Estimated row height in px. Default: 36. */
   itemHeight?: number;
-  /** Number of rows rendered outside the visible area. Default: 5. */
+  /** Number of rows rendered outside the visible area (virtual only). Default: 5. */
   overscan?: number;
   /**
    * How many rows before the end of the list triggers `onLoadMore`.
    * Only used when `onLoadMore` is also provided. Default: 5.
    */
   threshold?: number;
+  /**
+   * Which infinite-scroll backend to use.
+   *
+   * - `'virtual'` (default): @tanstack/solid-virtual windowed rendering.
+   *   Fast for large datasets but has a confirmed cold-mount empty-body bug:
+   *   the virtualizer reads scrollHeight=0 at mount when the flex container
+   *   resolves its height a frame late. Navigate-back heals it.
+   * - `'plain'`: renders ALL loaded rows as real DOM elements. No virtualizer,
+   *   no cold-empty quirk. Use this for reliable rendering now.
+   *
+   * Default: `'virtual'`.
+   */
+  mode?: InfiniteScrollMode;
 }
 
 export interface IDataTableProps<TData> {
@@ -52,15 +67,19 @@ export interface IDataTableProps<TData> {
   pagination?: boolean | { pageSize?: number };
 
   /**
-   * Enable virtual infinite scroll via @tanstack/solid-virtual.
-   * Pass `true` for defaults or an object to tune behaviour.
+   * Enable infinite-scroll mode.
+   * Pass `true` for all defaults or an object to tune behaviour.
    *
    * When enabled:
    * - `pagination` is ignored.
    * - All rows are passed to TanStack Table (no getPaginationRowModel).
-   * - Only visible rows are rendered (row recycling).
+   * - Rows are rendered via the selected backend (see `mode`).
    *
-   * Defaults: `{ itemHeight: 36, overscan: 5, threshold: 5 }`.
+   * Defaults: `{ itemHeight: 36, overscan: 5, threshold: 5, mode: 'virtual' }`.
+   *
+   * **Note on `mode`:** The default `'virtual'` backend has a confirmed
+   * cold-mount empty-body bug. Pass `mode: 'plain'` for reliable rendering
+   * (all rows rendered as real DOM elements, no virtualizer).
    */
   infinite?: boolean | IDataTableInfiniteOptions;
 
@@ -103,7 +122,7 @@ export interface IDataTableProps<TData> {
    * row into view.
    *
    * - **infinite mode:** calls `virtualizer.scrollToIndex(index, { align: 'center' })`.
-   * - **standard mode:** calls `scrollIntoView({ block: 'nearest' })` on the
+   * - **standard mode:** calls `scrollIntoView({ block: 'center' })` on the
    *   row DOM element (identified by `data-row-id` attribute).
    *
    * Row matching uses `getRowId` when provided; falls back to

@@ -196,6 +196,39 @@ describe('IDataTableProps structural contracts', () => {
     }
   });
 
+  it('infinite.mode accepts "virtual"', () => {
+    const props: IDataTableProps<{ id: number }> = {
+      data: [],
+      columns: [],
+      infinite: { mode: 'virtual' },
+    };
+    if (typeof props.infinite === 'object') {
+      expect(props.infinite.mode).toBe('virtual');
+    }
+  });
+
+  it('infinite.mode accepts "plain"', () => {
+    const props: IDataTableProps<{ id: number }> = {
+      data: [],
+      columns: [],
+      infinite: { mode: 'plain' },
+    };
+    if (typeof props.infinite === 'object') {
+      expect(props.infinite.mode).toBe('plain');
+    }
+  });
+
+  it('infinite.mode is optional — absent by default (runtime defaults to virtual)', () => {
+    const props: IDataTableProps<{ id: number }> = {
+      data: [],
+      columns: [],
+      infinite: { itemHeight: 36 },
+    };
+    if (typeof props.infinite === 'object') {
+      expect(props.infinite.mode).toBeUndefined();
+    }
+  });
+
   it('onLoadMore is an optional callback', () => {
     let called = false;
     const props: IDataTableProps<{ id: number }> = {
@@ -425,17 +458,19 @@ describe('DataTable defaults documentation', () => {
     }
   });
 
-  it('infinite defaults: itemHeight 36, overscan 5, threshold 5', () => {
+  it('infinite defaults: itemHeight 36, overscan 5, threshold 5, mode virtual', () => {
     // Documents the constant defaults embedded in resolveInfiniteOptions.
     const DEFAULT_ITEM_HEIGHT = 36;
     const DEFAULT_OVERSCAN = 5;
     const DEFAULT_THRESHOLD = 5;
+    const DEFAULT_MODE = 'virtual';
     const opts: IDataTableProps<{ id: number }>['infinite'] = {};
     // With empty object, runtime will fall back to the defaults above.
     // This test documents the contract, not the runtime (no JSX in vitest).
     expect(DEFAULT_ITEM_HEIGHT).toBe(36);
     expect(DEFAULT_OVERSCAN).toBe(5);
     expect(DEFAULT_THRESHOLD).toBe(5);
+    expect(DEFAULT_MODE).toBe('virtual');
     expect(opts).toEqual({});
   });
 });
