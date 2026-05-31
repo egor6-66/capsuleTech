@@ -22,3 +22,8 @@ export {
   toggleLayoutMode,
   type LayoutMode,
 } from './layoutMode';
+export {
+  useSettingsMode,
+  setSettingsMode,
+  toggleSettingsMode,
+} from './settingsMode';

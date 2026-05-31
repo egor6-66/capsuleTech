@@ -46,6 +46,9 @@ export interface IIncidentsContext {
   items: IIncident[];
   selected: IIncident | null;
   error: string | null;
+  /** Sync prefs (opt-in) — toggled from the Matrix widget-settings strip. */
+  flyToSelected: boolean;
+  scrollToSelected: boolean;
 }
 
 const Incidents = Feature(({ api, router }) => ({
@@ -55,6 +58,8 @@ const Incidents = Feature(({ api, router }) => ({
     items: [] as IIncident[],
     selected: null as IIncident | null,
     error: null as string | null,
+    flyToSelected: false,
+    scrollToSelected: false,
   },
 
   /**
@@ -83,6 +88,15 @@ const Incidents = Feature(({ api, router }) => ({
     if (tags.includes('open-card')) {
       const id = store.ctx.data.selected?.id;
       if (id) router.goTo(`/workspace/cards/${id}`);
+    }
+
+    // Widget-settings toggles (rendered in the Matrix settings strip when
+    // global settingsMode is on). Each flips an opt-in sync pref.
+    if (tags.includes('toggle-fly')) {
+      store.update({ flyToSelected: !store.ctx.data.flyToSelected });
+    }
+    if (tags.includes('toggle-scroll')) {
+      store.update({ scrollToSelected: !store.ctx.data.scrollToSelected });
     }
   },
 

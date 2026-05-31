@@ -11,20 +11,27 @@
  */
 import type { IIncidentsContext } from '../../features/incidents';
 
-const World = Widget((Ui, store) => (
-  <Ui.MapView
-    center={[30.3158, 59.9311]}
-    zoom={13}
-    // pitch={45}
-    // bearing={-20}
-    // class="h-full w-full"
-  >
-    {/*<Ui.MapView.Sky />*/}
-    <Views.MarkersList
-      items={(store?.ctx.data as IIncidentsContext | undefined)?.items ?? []}
-      activeId={(store?.ctx.data as IIncidentsContext | undefined)?.selected?.id}
-    />
-  </Ui.MapView>
-));
+const World = Widget((Ui, store) => {
+  const data = () => store?.ctx.data as IIncidentsContext | undefined;
+  // Опционально: камера подлетает к маркеру выбранного incident'а (flyTo —
+  // анимация, в отличие от center=jump). Гейт по opt-in флагу flyToSelected.
+  const flyTo = (): [number, number] | undefined => {
+    const sel = data()?.selected;
+    return data()?.flyToSelected && sel ? [sel.location.lng, sel.location.lat] : undefined;
+  };
+  return (
+    <Ui.MapView
+      center={[30.3158, 59.9311]}
+      zoom={13}
+      flyTo={flyTo()}
+      // pitch={45}
+      // bearing={-20}
+      // class="h-full w-full"
+    >
+      {/*<Ui.MapView.Sky />*/}
+      <Views.MarkersList items={data()?.items ?? []} activeId={data()?.selected?.id} />
+    </Ui.MapView>
+  );
+});
 
 export default World;

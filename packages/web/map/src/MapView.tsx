@@ -72,6 +72,24 @@ export interface IMapViewProps {
    * через `center`/`zoom`/`pitch`/`bearing`.
    */
   onViewportChange?: (viewport: IViewport) => void;
+  /**
+   * Анимированный переход камеры к заданной позиции (`flyTo`).
+   *
+   * **Animate vs jump:**
+   * - `center` — мгновенный прыжок (`setCenter`, без анимации). Используй для
+   *   controlled-mode когда хочешь синхронно отразить внешний state.
+   * - `flyTo` — плавный перелёт (`map.flyTo({ center })`). Используй когда нужна
+   *   анимация при переходе между локациями (например, выбор инцидента на дашборде
+   *   плавно летит к его маркеру).
+   *
+   * При изменении значения эффект вызывает `map.flyTo({ center: target })`.
+   * Анимация использует дефолтные параметры MapLibre (duration ≈ 2000 мс,
+   * easing `cubicInOut`). Для кастомных параметров flyTo — используй `useMap()` императивно.
+   *
+   * `flyTo` и `center` независимы: можно использовать оба одновременно
+   * (редко нужно, но не конфликтуют).
+   */
+  flyTo?: LngLatLike;
   /** Дочерние компоненты (`<Source/>`, `<Layer/>`, `<Marker/>`, …). */
   children?: JSX.Element;
 }
@@ -259,6 +277,16 @@ export const MapView = (props: IMapViewProps) => {
     const m = map();
     if (!m || p === undefined) return;
     m.setPitch(p);
+  });
+
+  // flyTo — animated camera transition; distinct from `center` (jump).
+  // Fires map.flyTo({ center: target }) on every reactive change of props.flyTo.
+  // Guards on map() === undefined (only set after 'load'), so won't fire pre-init.
+  createEffect(() => {
+    const target = props.flyTo;
+    const m = map();
+    if (!m || target === undefined) return;
+    m.flyTo({ center: target });
   });
 
   return (

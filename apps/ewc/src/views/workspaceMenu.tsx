@@ -30,6 +30,13 @@ const WorkspaceMenu = View((Ui) => (
       </Ui.Dropdown.Group>
       <Ui.Dropdown.Separator />
       <Ui.Dropdown.Group>
+        <Ui.Dropdown.Label>Widget settings</Ui.Dropdown.Label>
+        <div class="px-2 py-1.5">
+          <Ui.WidgetSettingsToggle />
+        </div>
+      </Ui.Dropdown.Group>
+      <Ui.Dropdown.Separator />
+      <Ui.Dropdown.Group>
         <Ui.Dropdown.Label>Theme</Ui.Dropdown.Label>
         <div class="px-2 py-1.5">
           <Ui.DarkModeToggle />

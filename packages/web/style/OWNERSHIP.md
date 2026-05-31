@@ -122,8 +122,27 @@ These stay in `:root` so existing primitives don't break:
 // Runtime helpers
 import { createStyle, cn, merge, STATUS_VARIABLES } from '@capsuletech/web-style';
 
+// State stores (all from main entry)
+import {
+  useTheme, setTheme,
+  useDarkMode, setDarkMode, toggleDarkMode,
+  useLayoutMode, setLayoutMode, toggleLayoutMode,
+  useSettingsMode, setSettingsMode, toggleSettingsMode,
+  DISCOVERED_THEMES,
+} from '@capsuletech/web-style';
+
 // Theme editor / switcher
 import { ThemeSwitcher, ThemeEditor } from '@capsuletech/web-style/editor';
+```
+
+### `useSettingsMode / setSettingsMode / toggleSettingsMode` (added 2026-05-31)
+
+Global boolean flag for per-widget settings affordances in `Layout.Matrix`. Orthogonal to `layoutMode` — both flags are fully independent singletons. Default: `false`. localStorage key: `capsule-settings-mode`.
+
+```ts
+const isSettings = useSettingsMode(); // Accessor<boolean>
+setSettingsMode(true);               // set + persist
+toggleSettingsMode();                // flip false ⇔ true
 ```
 
 ### Subpath exports

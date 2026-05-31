@@ -14,6 +14,11 @@ export interface INormalizedSlot {
   swapGroup?: string;
   /** Explicit resizable override — undefined = preset применяет свой default. */
   resizable?: boolean;
+  /**
+   * Per-slot settings panel — forwarded to ICell.settings.
+   * Rendered as a toolbar strip at the cell top when settingsMode is ON.
+   */
+  settings?: JSX.Element;
 }
 
 /**
@@ -43,6 +48,7 @@ export const normalizeSlotValue = (slot: SlotValue | undefined): INormalizedSlot
       draggable?: boolean;
       swapGroup?: string;
       resizable?: boolean;
+      settings?: JSX.Element;
     };
     return {
       children: config.children,
@@ -52,6 +58,7 @@ export const normalizeSlotValue = (slot: SlotValue | undefined): INormalizedSlot
       draggable: config.draggable ?? false,
       swapGroup: config.swapGroup,
       resizable: config.resizable,
+      settings: config.settings,
     };
   }
 

@@ -22,6 +22,7 @@ const Dashboard = Page((Ui) => (
       slots={{
         main: {
           children: <Widgets.Tables.Incidents />,
+          settings: <Views.Settings.TableSync />,
           draggable: true,
           swapGroup: 'widgets',
         },
@@ -33,6 +34,7 @@ const Dashboard = Page((Ui) => (
         },
         footer: {
           children: <Widgets.Maps.World />,
+          settings: <Views.Settings.MapSync />,
           draggable: true,
           swapGroup: 'widgets',
           initialSize: 0.35,

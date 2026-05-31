@@ -26,6 +26,7 @@ interface MockMapInstance {
   setBearing: ReturnType<typeof vi.fn>;
   setPitch: ReturnType<typeof vi.fn>;
   setMaxBounds: ReturnType<typeof vi.fn>;
+  flyTo: ReturnType<typeof vi.fn>;
   getCenter: ReturnType<typeof vi.fn>;
   getZoom: ReturnType<typeof vi.fn>;
   getBearing: ReturnType<typeof vi.fn>;
@@ -51,6 +52,7 @@ vi.mock('maplibre-gl', () => {
     this.setBearing = vi.fn();
     this.setPitch = vi.fn();
     this.setMaxBounds = vi.fn();
+    this.flyTo = vi.fn();
     this.getCenter = vi.fn(() => ({ lng: 0, lat: 0 }));
     this.getZoom = vi.fn(() => 10);
     this.getBearing = vi.fn(() => 0);
@@ -232,6 +234,45 @@ describe('MapView — reactive prop sync', () => {
     lastMap().setStyle.mockClear();
     setStyle('https://style-b.json');
     expect(lastMap().setStyle).toHaveBeenCalledWith('https://style-b.json');
+  });
+
+  it('calls flyTo reactively when flyTo prop changes', () => {
+    const [target, setTarget] = createSignal<[number, number] | undefined>(undefined);
+    mountAndLoad(() => <MapView flyTo={target()} />);
+    const m = lastMap();
+    // Initially undefined — flyTo should NOT have been called
+    expect(m.flyTo).not.toHaveBeenCalled();
+    // Now set a target
+    setTarget([37.6, 55.75]);
+    expect(m.flyTo).toHaveBeenCalledWith({ center: [37.6, 55.75] });
+  });
+
+  it('calls flyTo again when flyTo prop changes to a new target', () => {
+    const [target, setTarget] = createSignal<[number, number]>([0, 0]);
+    mountAndLoad(() => <MapView flyTo={target()} />);
+    const m = lastMap();
+    m.flyTo.mockClear();
+    setTarget([10, 20]);
+    expect(m.flyTo).toHaveBeenCalledTimes(1);
+    expect(m.flyTo).toHaveBeenCalledWith({ center: [10, 20] });
+    m.flyTo.mockClear();
+    setTarget([30, 40]);
+    expect(m.flyTo).toHaveBeenCalledWith({ center: [30, 40] });
+  });
+
+  it('does NOT call flyTo before map is loaded', () => {
+    const [target, setTarget] = createSignal<[number, number] | undefined>(undefined);
+    // Mount but do NOT trigger load
+    dispose = render(() => <MapView flyTo={target()} />, container);
+    lastRO().trigger(800, 600);
+    // map() is undefined until 'load' fires — effect should not call flyTo
+    setTarget([5, 10]);
+    expect(lastMap().flyTo).not.toHaveBeenCalled();
+  });
+
+  it('does not call flyTo when flyTo prop is undefined', () => {
+    mountAndLoad(() => <MapView />);
+    expect(lastMap().flyTo).not.toHaveBeenCalled();
   });
 });
 
