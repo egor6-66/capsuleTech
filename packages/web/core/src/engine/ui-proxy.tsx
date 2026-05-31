@@ -178,7 +178,10 @@ export const bindEvents = <P,>(
  *    sub-component'ы;
  *  - при наличии `meta` — регистрирует в store.components, навешивает 6
  *    event handlers (с дедупликацией bubbling), injectит реактивные
- *    class/disabled/name/type, мержит patch'и `store.setProps(id)` в final-props.
+ *    class/name/type, мержит patch'и `store.props[id]` в final-props.
+ *    `disabled` НЕ инжектируется автоматически из `store.loading` — это
+ *    поведение, которым управляет логический слой явно (через
+ *    `store.props[id]` patch'и или явный `props.disabled` в JSX).
  *
  * Экспортирован отдельно (не closure внутри `UiProxy`), чтобы тесты могли
  * скармливать произвольный stub-компонент без поднятия всего `web-ui` lazy-graph'а.
@@ -264,9 +267,6 @@ export const wrapComponent = (
         const custom = name ? ctx.store.styles?.[name] || '' : '';
         return `${props.class || ''} ${custom}`.trim();
       },
-      get disabled() {
-        return ctx.store.loading || props.disabled;
-      },
       // name прокидывается под капотом — для нативных DOM-элементов (input/button/select),
       // которым нужно name-атрибут (form-data, accessibility, label-for-by-id).
       get name() {
@@ -281,7 +281,9 @@ export const wrapComponent = (
     };
 
     // Порядок mergeProps: позже = выигрывает. Дефолтные props < dynamicProps
-    // (class/disabled/name/type) < patch'и от Controller (`store.setProps`) < children.
+    // (class/name/type) < patch'и от логики (`store.props[id]`) < children.
+    // `disabled` идёт через `store.props[id]` (явный patch от логики) или через
+    // `props.disabled` (явный JSX-атрибут) — не через dynamicProps автоматически.
     //
     // Patch-источник передан **функцией** — Solid'овский mergeProps вызывает её
     // на КАЖДОМ чтении и пробрасывает реактивность от @xstate/solid (createStore)

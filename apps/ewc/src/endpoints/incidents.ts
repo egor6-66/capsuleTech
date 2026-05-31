@@ -4,10 +4,10 @@
  * `services.api.incidents.list()` — генерируется EndpointsRegistryPlugin'ом.
  * Response schema — `Entities.Incident.schema` (global, доступен после systemic
  * layer init ordering fix в ExportGeneratorPlugin). Mock через `preRequest` —
- * `resolve(data)` короткозамыкает pipeline без сетевого запроса. Latency 400ms
+ * `resolve(data)` короткозамыкает pipeline без сетевого запроса. Latency 200ms
  * симулирует round-trip — видно loading-state в UI.
  */
-const MOCK_LATENCY_MS = 400;
+const MOCK_LATENCY_MS = 200;
 
 export const list = defineEndpoint((z) => ({
   method: 'GET',

@@ -51,7 +51,7 @@ const LoginForm = Entity(({ Field, Button }) => (
 - Хранить локальное состояние (`createSignal` ради бизнес-логики).
 - Знать имя своей Feature.
 
-**Как UI узнаёт, что делать:** ничего не узнаёт. [[ui-proxy|UiProxy]] подменяет `onClick`/`onInput`/`disabled`/`class` сверху, см. [[lifecycle]].
+**Как UI узнаёт, что делать:** ничего не узнаёт. [[ui-proxy|UiProxy]] подменяет `onClick`/`onInput`/`class`/`name` сверху, см. [[lifecycle]]. (`disabled` инфраструктурой **не** подменяется — это explicit-команда логики через `store.patch`.)
 
 ---
 

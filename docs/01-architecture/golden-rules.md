@@ -60,7 +60,7 @@ status: documented
 
 Недопустимо:
 - ❌ Хранить значение поля ввода (это `store.ctx.components`).
-- ❌ Хранить флаги loading/disabled (это `store.loading`).
+- ❌ Хранить флаги loading/disabled. `loading` живёт в `store.loading` (loader-сигнал); `disabled` — адресный `store.patch([tags], { disabled: true })` из логики, инфраструктура его не подставляет.
 - ❌ Делать `fetch` в `onMount`.
 
 ---

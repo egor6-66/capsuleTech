@@ -120,7 +120,7 @@ Multiple backends — через `base: 'name'` в конфиге запроса
 1. **API-вызовы (`fetch`, `axios`) разрешены здесь и только здесь.** Compliance-линтер ловит их в Controller/Entity/Widget — там запрет.
 2. **Никаких импортов других Feature** (`@features/X` из другого Feature — horizontal-import).
 3. **Никакого знания о конкретных Entity / UI** — Feature работает через `store`, `next` (вверх), `state`. UI её вообще не видит.
-4. **Тяжёлые async-цепочки** (`try/catch/finally`) — норма. Управление loading/error через `store.setLoading` / `store.setErrors`.
+4. **Тяжёлые async-цепочки** (`try/catch/finally`) — норма. Управление loading/error через `store.setLoading` / `store.setErrors`. `store.setLoading(true/false)` — **чистый loader-сигнал**: он переключает лоадер у Widget'а (2-й колбэк `Widget(content, loader)` рисует skeleton/spinner, пока `store.loading === true`). Feature про вид лоадера НЕ знает — только сигналит «гружусь»; один сигнал может крыть несколько виджетов (таблица + карта), каждый даёт свой скелетон. Если на время загрузки надо задизейблить инпуты — это **отдельное явное** действие: `store.patch(['@inputs'], { disabled: true })` (авто-`disabled` из `store.loading` убран — под капотом его больше нет).
 5. **`router.goTo()`** — стандарт для навигации после успешной операции.
 6. **Имена методов** — те, на которые завязан Controller через `overrides` или прямо через `next()`. Если Controller делает `await next(data)` из своего `onClick` — у Feature ищется метод `onClick`. Если в Widget стоит `overrides={{ onClick: 'login' }}` — у Feature ищется `login`.
 

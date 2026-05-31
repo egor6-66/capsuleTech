@@ -91,7 +91,7 @@ const <PascalName> = Controller(({ router }) => ({
 
     // мутации (низкоуровневые, по id / на весь стейт)
     update(payload),       // SET_DATA — складывает значения инпутов в context.data
-    setLoading(value),     // SET_LOADING
+    setLoading(value),     // SET_LOADING — чистый loader-сигнал: переключает лоадер у Widget (2-й колбэк Widget(content, loader)). НЕ дизейблит инпуты — авто-disabled убран.
     setStyles(s),          // SET_STYLES — class-overrides по name
     setErrors(e),          // SET_ERRORS
     setProps(payload),     // SET_PROPS по id: { id1: { active: true } }
@@ -107,6 +107,7 @@ const <PascalName> = Controller(({ router }) => ({
     // patchOrFn: объект (одинаковый patch на всех) ИЛИ
     // функция (comp, id) => patch | null. Возврат falsy/{} пропускает id.
     // Пример: store.patch(['nav'], (c) => ({ active: c.meta?.href === path }))
+    // disabled теперь ТОЛЬКО здесь (не авто из loading): store.patch(['@inputs'], { disabled: true }) в начале, снять в finally.
   },
 }
 ```
