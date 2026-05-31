@@ -15,13 +15,24 @@
  */
 const WorkspaceMenu = View((Ui) => (
   <Ui.Dropdown modal={false}>
-    <Ui.Dropdown.Trigger>Menu</Ui.Dropdown.Trigger>
+    <Ui.Dropdown.Trigger as={Ui.Button} variant="ghost" size="icon" aria-label="Меню">
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <line x1="3" y1="6" x2="21" y2="6" />
+        <line x1="3" y1="12" x2="21" y2="12" />
+        <line x1="3" y1="18" x2="21" y2="18" />
+      </svg>
+    </Ui.Dropdown.Trigger>
     <Ui.Dropdown.Content>
-      <Ui.Dropdown.Group>
-        <Ui.Dropdown.Label>Account</Ui.Dropdown.Label>
-        <Ui.Dropdown.Item meta={{ tags: ['logout'] }}>Logout</Ui.Dropdown.Item>
-      </Ui.Dropdown.Group>
-      <Ui.Dropdown.Separator />
       <Ui.Dropdown.Group>
         <Ui.Dropdown.Label>Layout</Ui.Dropdown.Label>
         <div class="px-2 py-1.5">
@@ -42,6 +53,11 @@ const WorkspaceMenu = View((Ui) => (
           <Ui.DarkModeToggle />
         </div>
         <Ui.ThemePicker mode="sub" />
+      </Ui.Dropdown.Group>
+      <Ui.Dropdown.Separator />
+      <Ui.Dropdown.Group>
+        <Ui.Dropdown.Label>Account</Ui.Dropdown.Label>
+        <Ui.Dropdown.Item meta={{ tags: ['logout'] }}>Logout</Ui.Dropdown.Item>
       </Ui.Dropdown.Group>
     </Ui.Dropdown.Content>
   </Ui.Dropdown>
