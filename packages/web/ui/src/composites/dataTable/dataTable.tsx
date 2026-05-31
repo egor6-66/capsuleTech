@@ -11,7 +11,6 @@ import {
   type SortingState,
   type Table as TanstackTable,
 } from '@tanstack/solid-table';
-import { createVirtualizer } from '@tanstack/solid-virtual';
 import {
   createEffect,
   createSignal,
@@ -25,6 +24,7 @@ import {
 import { Button } from '../../primitives/button';
 import { Table } from '../../primitives/table';
 import { CompositeProxyContext } from '../compositeProxy';
+import { createInfiniteScroll } from '../../lib/infiniteScroll';
 import type { IDataTableInfiniteOptions, IDataTableProps } from './interfaces';
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -40,6 +40,7 @@ function resolveInfiniteOptions(
     itemHeight: base.itemHeight ?? DEFAULT_ITEM_HEIGHT,
     overscan: base.overscan ?? DEFAULT_OVERSCAN,
     threshold: base.threshold ?? DEFAULT_THRESHOLD,
+    mode: base.mode ?? 'virtual',
   };
 }
 
@@ -216,20 +217,21 @@ function StandardTableBody<TData>(props: {
 }
 
 /**
- * Virtual infinite scroll table body.
+ * Infinite-scroll table body backed by `createInfiniteScroll`.
  *
- * Container занимает 100% высоты родителя (`h-full`) и скроллится в обе оси.
- * Внутри — обычный `<table>` с виртуализированным `<tbody>`:
- *  - **spacer-padding** вместо `position: absolute` (последний ломал column
- *    alignment, потому что absolute-positioned `<tr>` выпадает из table flow);
- *  - первый `<tr>` — невидимый spacer высотой до начала первой видимой строки;
- *  - последний `<tr>` — spacer высотой от конца последней видимой строки до
- *    общей высоты scroll-области (`virtualizer.getTotalSize()`);
- *  - middle rows — реальные `<Table.Row>` с фиксированной высотой `vRow.size`.
+ * Renders using the uniform IInfiniteScrollContract — the same JSX tree
+ * regardless of whether the active backend is `virtual` or `plain`.
  *
- * `table-fixed` + `min-w-max` дают: колонки одной ширины (если не задана
- * `columnDef.size`), table растёт по width до содержимого → если общая ширина
- * больше контейнера, появляется horizontal scroll.
+ * Layout:
+ *  - Outer div: scroll container (h-full overflow-auto), ref'd via setScrollRef.
+ *  - Inner table: table-fixed min-w-max.
+ *  - Headers: sticky top-0 z-1.
+ *  - Body: spacer-padding pattern (top spacer + virtual/plain rows + bottom spacer).
+ *    paddingBefore/paddingAfter are 0 in plain mode.
+ *
+ * scrollToId:
+ *  - virtual backend: scrollToIndex via the contract.
+ *  - plain backend: DOM scrollIntoView via data-row-id attribute (same as standard mode).
  */
 function InfiniteTable<TData>(props: {
   table: TanstackTable<TData>;
@@ -244,36 +246,31 @@ function InfiniteTable<TData>(props: {
   getRowId?: (row: TData) => string | number;
   WrappedDataRow: (props: IDataRowProps<TData>) => import('solid-js').JSX.Element;
 }) {
-  let scrollEl: HTMLDivElement | undefined;
-
   const opts = resolveInfiniteOptions(props.infinite);
+  const isPlain = opts.mode === 'plain';
 
-  const virtualizer = createVirtualizer({
-    get count() {
-      return props.table.getRowModel().rows.length;
-    },
-    getScrollElement: () => scrollEl ?? null,
-    estimateSize: () => opts.itemHeight,
-    overscan: opts.overscan,
+  // Reference to the scroll container — used for plain-mode scrollToId.
+  let scrollContainerEl: HTMLDivElement | undefined;
+
+  const scroll = createInfiniteScroll({
+    count: () => props.table.getRowModel().rows.length,
+    itemHeight: () => opts.itemHeight,
+    overscan: () => opts.overscan,
+    threshold: () => opts.threshold,
+    onLoadMore: props.onLoadMore,
+    mode: () => opts.mode,
   });
 
-  // Trigger onLoadMore when near the bottom
-  createEffect(() => {
-    if (!props.onLoadMore) return;
-    const items = virtualizer.getVirtualItems();
-    if (items.length === 0) return;
-    const lastIndex = items[items.length - 1]?.index ?? 0;
-    const rowCount = props.table.getRowModel().rows.length;
-    if (lastIndex >= rowCount - opts.threshold) {
-      props.onLoadMore();
-    }
-  });
+  const rows = () => props.table.getRowModel().rows;
 
   // Scroll to the row matching scrollToId when the prop changes.
+  // virtual: scrollToIndex via the hook contract.
+  // plain: DOM scrollIntoView via data-row-id (same as standard mode).
   createEffect(() => {
     const target = props.scrollToId;
     if (target === undefined || target === null) return;
-    const allRows = props.table.getRowModel().rows;
+
+    const allRows = rows();
     const idx = allRows.findIndex((r) => {
       const id = props.getRowId
         ? props.getRowId(r.original)
@@ -281,20 +278,25 @@ function InfiniteTable<TData>(props: {
       return id === target;
     });
     if (idx === -1) return;
-    virtualizer.scrollToIndex(idx, { align: 'center' });
+
+    if (isPlain) {
+      // Plain mode: use data-row-id DOM attribute + scrollIntoView
+      const el = scrollContainerEl ?? document.body;
+      const rowEl = el.querySelector<HTMLTableRowElement>(`tr[data-row-id="${String(target)}"]`);
+      rowEl?.scrollIntoView({ block: 'center' });
+    } else {
+      scroll.scrollToIndex(idx, { align: 'center' });
+    }
   });
 
-  const rows = () => props.table.getRowModel().rows;
-  const virtualItems = () => virtualizer.getVirtualItems();
-  const paddingBefore = () => virtualItems()[0]?.start ?? 0;
-  const paddingAfter = () => {
-    const items = virtualItems();
-    const lastEnd = items[items.length - 1]?.end ?? 0;
-    return Math.max(0, virtualizer.getTotalSize() - lastEnd);
-  };
-
   return (
-    <div ref={scrollEl} class="h-full overflow-auto scrollbar-hover">
+    <div
+      ref={(el) => {
+        scrollContainerEl = el;
+        scroll.setScrollRef(el);
+      }}
+      class="h-full overflow-auto scrollbar-hover"
+    >
       <Table class="table-fixed min-w-max">
         <TableHeaders
           table={props.table}
@@ -303,38 +305,44 @@ function InfiniteTable<TData>(props: {
         />
 
         <Table.Body>
-          <Show when={paddingBefore() > 0}>
-            <tr style={{ height: `${paddingBefore()}px` }} />
+          {/* Top spacer — 0 in plain mode */}
+          <Show when={scroll.paddingBefore() > 0}>
+            <tr style={{ height: `${scroll.paddingBefore()}px` }} />
           </Show>
 
-          <For each={virtualItems()}>
-            {(vRow) => {
-              const row = () => rows()[vRow.index];
+          <For each={scroll.items()}>
+            {(item) => {
+              const row = () => rows()[item.index];
               const meta = () => (props.itemMeta ? props.itemMeta(row().original) : undefined);
               const payload = () =>
                 props.itemPayload ? props.itemPayload(row().original) : undefined;
               // Reactive getter so the highlight tracks external signal changes
-              // without re-running the virtualizer's <For> loop for other rows.
+              // without re-running the <For> loop for other rows.
               const active = props.isRowActive
                 ? () => props.isRowActive!(row().original)
                 : undefined;
+              const rowId = props.getRowId
+                ? props.getRowId(row().original)
+                : (row().original as Record<string, unknown>).id as string | number | undefined;
               return (
                 <props.WrappedDataRow
                   row={row()}
                   selection={props.selection}
-                  itemHeight={vRow.size}
+                  itemHeight={item.size}
                   hasMeta={!!props.itemMeta}
                   meta={meta()}
                   payload={payload()}
                   active={active}
-                  data-index={vRow.index}
+                  rowId={rowId}
+                  data-index={item.index}
                 />
               );
             }}
           </For>
 
-          <Show when={paddingAfter() > 0}>
-            <tr style={{ height: `${paddingAfter()}px` }} />
+          {/* Bottom spacer — 0 in plain mode */}
+          <Show when={scroll.paddingAfter() > 0}>
+            <tr style={{ height: `${scroll.paddingAfter()}px` }} />
           </Show>
         </Table.Body>
       </Table>
@@ -456,7 +464,7 @@ export function DataTable<TData>(rawProps: IDataTableProps<TData>) {
     const rowEl = standardTableRef.querySelector<HTMLTableRowElement>(
       `tr[data-row-id="${String(target)}"]`,
     );
-    rowEl?.scrollIntoView({ block: 'nearest' });
+    rowEl?.scrollIntoView({ block: 'center' });
   });
 
   // Корневой контейнер — `h-full flex flex-col`. Toolbar/pagination — auto-height,
