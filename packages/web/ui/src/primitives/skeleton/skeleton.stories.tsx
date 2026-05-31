@@ -87,7 +87,8 @@ export const Card: Story = {
   ],
 };
 
-export const Map: Story = {
+export const MapVariant: Story = {
+  name: 'Map',
   args: { variant: 'map' },
   decorators: [
     (Story) => (
