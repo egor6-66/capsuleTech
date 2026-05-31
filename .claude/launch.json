@@ -12,6 +12,13 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@capsuletech/ewc", "dev"],
       "port": 3001
+    },
+    {
+      "name": "ui-creator",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@capsuletech/ui-creator", "dev"],
+      "port": 3001,
+      "autoPort": false
     }
   ]
 }
