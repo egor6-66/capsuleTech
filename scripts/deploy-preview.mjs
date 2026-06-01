@@ -91,10 +91,12 @@ const distPath = flag('dist') ? resolve(String(flag('dist'))) : join(appRoot, 'd
 if (!args.has('no-build')) {
   log(`сборка apps/${app} (capsule build)…`);
   const cliBin = join(repoRoot, 'packages', 'cli', 'bin', 'capsule.mjs');
-  const r = spawnSync('node', [cliBin, 'build'], {
+  // process.execPath — абсолютный путь к текущему node: spawn без shell работает
+  // на всех платформах (включая Windows) и не триггерит DEP0190 (shell-concat
+  // аргументов). Раньше тут был shell:true на win32 → деприкейт-ворнинг.
+  const r = spawnSync(process.execPath, [cliBin, 'build'], {
     cwd: appRoot,
     stdio: 'inherit',
-    shell: process.platform === 'win32',
   });
   if ((r.status ?? 1) !== 0) fail('сборка упала — деплой отменён');
 } else {
