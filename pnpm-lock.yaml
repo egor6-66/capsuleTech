@@ -173,6 +173,76 @@ importers:
         specifier: workspace:*
         version: link:../../packages/cli
 
+  apps/nexus:
+    dependencies:
+      '@capsuletech/shared-zod':
+        specifier: workspace:*
+        version: link:../../packages/shared/zod
+      '@capsuletech/web-core':
+        specifier: workspace:*
+        version: link:../../packages/web/core
+      '@capsuletech/web-profiler':
+        specifier: workspace:*
+        version: link:../../packages/web/profiler
+      '@capsuletech/web-query':
+        specifier: workspace:*
+        version: link:../../packages/web/query
+      '@capsuletech/web-renderer':
+        specifier: workspace:*
+        version: link:../../packages/web/renderer
+      '@capsuletech/web-router':
+        specifier: workspace:*
+        version: link:../../packages/web/router
+      '@capsuletech/web-state':
+        specifier: workspace:*
+        version: link:../../packages/web/state
+      '@capsuletech/web-style':
+        specifier: workspace:*
+        version: link:../../packages/web/style
+      '@capsuletech/web-ui':
+        specifier: workspace:*
+        version: link:../../packages/web/ui
+      '@capsuletech/web-ui-creator':
+        specifier: workspace:*
+        version: link:../../packages/web/ui-creator
+      '@kobalte/core':
+        specifier: ^0.13.0
+        version: 0.13.11(solid-js@1.9.12)
+      '@tanstack/router-core':
+        specifier: ^1.169.0
+        version: 1.171.2
+      '@tanstack/solid-router':
+        specifier: ^1.169.0
+        version: 1.170.4(solid-js@1.9.12)
+      '@tanstack/solid-virtual':
+        specifier: ^3.13.24
+        version: 3.13.24(solid-js@1.9.12)
+      '@tauri-apps/api':
+        specifier: ^2.0.0
+        version: 2.11.0
+      '@tauri-apps/plugin-dialog':
+        specifier: ^2.0.0
+        version: 2.7.1
+      '@xstate/solid':
+        specifier: ^2.0.0
+        version: 2.0.0(solid-js@1.9.12)(xstate@5.31.1)
+      lucide-solid:
+        specifier: ^1.16.0
+        version: 1.16.0(solid-js@1.9.12)
+      solid-js:
+        specifier: 1.9.12
+        version: 1.9.12
+      xstate:
+        specifier: ^5.0.0
+        version: 5.31.1
+      zod:
+        specifier: ^3.23.8
+        version: 3.25.76
+    devDependencies:
+      '@capsuletech/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
+
   apps/ui-creator:
     dependencies:
       '@capsuletech/shared-zod':
@@ -2987,6 +3057,9 @@ packages:
     resolution: {integrity: sha512-uhOeFyxLcU41HzvrxsGpiWdcMbScY1EDgbZ5K7DVRMYInbLYWAC0EA/kx9wXAoSM8q82bUG2hRl8+EAjE6XAbA==}
     engines: {node: '>=20.19'}
 
+  '@tauri-apps/api@2.11.0':
+    resolution: {integrity: sha512-7CinYODhky9lmO23xHnUFv0Xt43fbtWMyxZcLcRBlFkcgXKuEirBvHpmtJ89YMhyeGcq20Wuc47Fa4XjyniywA==}
+
   '@tauri-apps/cli-darwin-arm64@2.11.2':
     resolution: {integrity: sha512-+4UZzLt+eOAEQCwgd+TqKgyUJMrvx+BgdXLLaqJYmPqzP+nE6YZr/hY6CWLYGQb8jFn99jEkmC6uA3tNvamA1w==}
     engines: {node: '>= 10'}
@@ -3057,6 +3130,9 @@ packages:
     resolution: {integrity: sha512-bk3HemqvGRoy+5D/dVMUQHKMYLglD0jVnMm/0iGMH6ufZ+p8r14m6BpIixwij3PBvZdvORUp1YifTD8QxVZ1Nw==}
     engines: {node: '>= 10'}
     hasBin: true
+
+  '@tauri-apps/plugin-dialog@2.7.1':
+    resolution: {integrity: sha512-OK1UBXYt+ojcmxMktzzuyonYIFta8CmAASpX+CA+DTGK24KlHjhYI6x2iOJ/TjZF4N7/ACK1oFmEOjIY9IhzOQ==}
 
   '@testing-library/dom@10.4.1':
     resolution: {integrity: sha512-o4PXJQidqJl82ckFaXUeoAW+XysPLauYI43Abki5hABd853iMhitooc6znOnczgbTYmEP6U6/y1ZyKAIsvMKGg==}
@@ -8808,6 +8884,8 @@ snapshots:
 
   '@tanstack/virtual-file-routes@1.162.0': {}
 
+  '@tauri-apps/api@2.11.0': {}
+
   '@tauri-apps/cli-darwin-arm64@2.11.2':
     optional: true
 
@@ -8854,6 +8932,10 @@ snapshots:
       '@tauri-apps/cli-win32-arm64-msvc': 2.11.2
       '@tauri-apps/cli-win32-ia32-msvc': 2.11.2
       '@tauri-apps/cli-win32-x64-msvc': 2.11.2
+
+  '@tauri-apps/plugin-dialog@2.7.1':
+    dependencies:
+      '@tauri-apps/api': 2.11.0
 
   '@testing-library/dom@10.4.1':
     dependencies:
