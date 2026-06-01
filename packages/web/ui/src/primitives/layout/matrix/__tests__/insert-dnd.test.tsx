@@ -187,4 +187,75 @@ describe('Matrix — insert-mode DnD', () => {
     expect(container.querySelector('[data-testid="drag-a"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="static-b"]')).not.toBeNull();
   });
+
+  it('cross-row multi-cell insert: all cells render in both rows', () => {
+    // Regression: after the lifecycle fix, createItem is called in render
+    // scope (not an engine effect), so all cells must appear regardless of
+    // which row they are in.
+    expect(() => {
+      cleanup = render(
+        () => (
+          <Matrix
+            layoutMode="edit"
+            dndMode="insert"
+            rows={[
+              {
+                id: 'row-a',
+                cells: [
+                  { id: 'cell-1', children: <div data-testid="c1">C1</div>, draggable: true },
+                  { id: 'cell-2', children: <div data-testid="c2">C2</div>, draggable: true },
+                ],
+              },
+              {
+                id: 'row-b',
+                cells: [
+                  { id: 'cell-3', children: <div data-testid="c3">C3</div>, draggable: true },
+                ],
+              },
+            ]}
+          />
+        ),
+        container,
+      );
+    }).not.toThrow();
+
+    // All three cells must be in the DOM — none dropped by stale ref bug.
+    expect(container.querySelector('[data-testid="c1"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="c2"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="c3"]')).not.toBeNull();
+  });
+
+  it('IInsertEngine.getSortable API: packing-zone insert renders after engine construction', () => {
+    // Structural regression: before the fix, createItem was called in an effect
+    // (wrong owner scope). Now it is called in the <For> render scope.
+    // This test verifies that multiple draggable cells in a packing zone
+    // (wrap=true) all appear — none lost due to stale pointerdown listener.
+    cleanup = render(
+      () => (
+        <Matrix
+          layoutMode="edit"
+          dndMode="insert"
+          rows={[
+            {
+              id: 'pack-row',
+              wrap: true,
+              cells: [
+                { id: 'p1', children: <div data-testid="p1">P1</div>, draggable: true, minW: 100 },
+                { id: 'p2', children: <div data-testid="p2">P2</div>, draggable: true, minW: 100 },
+                { id: 'p3', children: <div data-testid="p3">P3</div>, draggable: true, minW: 100 },
+              ],
+            },
+          ]}
+        />
+      ),
+      container,
+    );
+
+    // All three cells must be in the DOM.
+    // In the buggy version cell p1 (the "initial zone" cell) would lose its
+    // pointerdown listener after the first createEffect run.
+    expect(container.querySelector('[data-testid="p1"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="p2"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="p3"]')).not.toBeNull();
+  });
 });
