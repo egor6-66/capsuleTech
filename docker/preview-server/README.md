@@ -42,6 +42,20 @@ docker compose up -d --build
 Открой `http://<server>:8080/` — лендинг со списком развёрнутых приложений.
 Нужен открытый порт `8080` (один на весь сервер).
 
+## За reverse-proxy (nginx / traefik)
+
+Если перед сервером стоит reverse-proxy, подними лимит размера тела запроса —
+иначе заливка сборки упрётся в дефолт (nginx: 1 МБ) и вернётся `413 Request Entity
+Too Large` ещё до node. Для nginx — в блоке `http` / `server` / `location`,
+который проксирует на `:8080`:
+
+```nginx
+client_max_body_size 256m;   # под стать MAX_UPLOAD_BYTES сервера (256 МБ)
+```
+
+Затем `nginx -t && nginx -s reload`. Сам preview-сервер пускает до
+`MAX_UPLOAD_BYTES` (по умолчанию 256 МБ).
+
 ## Деплой с dev-машины
 
 Из директории приложения (имя определится автоматически):
