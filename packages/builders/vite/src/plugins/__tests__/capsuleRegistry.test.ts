@@ -226,6 +226,62 @@ describe('generateWrappersTypes — entities interface', () => {
   });
 });
 
+describe('generateWrappersTypes — const value bindings', () => {
+  it('emits const binding for populated namespace (Widgets)', () => {
+    const leaf = wrapperLeaf('widgets', '@widgets/forms/auth', ['Forms', 'Auth']);
+    const out = generateWrappersTypes([leaf]);
+    expect(out).toContain('const Widgets: Widgets;');
+  });
+
+  it('emits const binding for populated namespace (Entities)', () => {
+    const leaf = wrapperLeaf('entities', '@entities/users', ['Users']);
+    const out = generateWrappersTypes([leaf]);
+    expect(out).toContain('const Entities: Entities;');
+  });
+
+  it('emits const binding for empty namespace (Controllers)', () => {
+    // Controllers has no leaves → empty interface + const binding
+    const out = generateWrappersTypes([]);
+    expect(out).toContain('interface Controllers {}');
+    expect(out).toContain('const Controllers: Controllers;');
+  });
+
+  it('emits const binding for empty namespace (Entities)', () => {
+    const out = generateWrappersTypes([]);
+    expect(out).toContain('interface Entities {}');
+    expect(out).toContain('const Entities: Entities;');
+  });
+
+  it('emits const bindings for all six namespaces when registry is empty', () => {
+    const out = generateWrappersTypes([]);
+    const allNs = ['Widgets', 'Views', 'Controllers', 'Features', 'Shapes', 'Entities'];
+    for (const ns of allNs) {
+      expect(out).toContain(`const ${ns}: ${ns};`);
+    }
+  });
+
+  it('emits const bindings for all six namespaces when some have leaves', () => {
+    const leaves = [
+      wrapperLeaf('widgets', '@widgets/header', ['Header']),
+      wrapperLeaf('entities', '@entities/user', ['User']),
+    ];
+    const out = generateWrappersTypes(leaves);
+    const allNs = ['Widgets', 'Views', 'Controllers', 'Features', 'Shapes', 'Entities'];
+    for (const ns of allNs) {
+      expect(out).toContain(`const ${ns}: ${ns};`);
+    }
+  });
+
+  it('const binding is inside declare global block', () => {
+    const out = generateWrappersTypes([]);
+    const globalStart = out.indexOf('declare global {');
+    const globalEnd = out.lastIndexOf('}');
+    const constIdx = out.indexOf('const Widgets: Widgets;');
+    expect(constIdx).toBeGreaterThan(globalStart);
+    expect(constIdx).toBeLessThan(globalEnd);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Endpoints — runtime
 // ---------------------------------------------------------------------------

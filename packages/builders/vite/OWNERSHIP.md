@@ -96,12 +96,13 @@ Vite-конфиг и 9 плагинов для dev-сервера HCA-apps. Дё
 
 - [x] **Layer init ordering (TDZ fix) — 2026-05-28.** ESM hoisting: endpoints → features → widgets → pages → routeTree evaluate до `Object.assign(globalThis, _registry)` в bootstrap body → `Entities.X` = undefined / ReferenceError. Fix: `CapsuleRegistryPlugin.generateWrappersRuntime` добавляет `Object.assign(globalThis, { Widgets, Views, ... })` как последнюю строку генерируемого `wrappers.ts`. `bootstrap.tsx` генерируется `CapsuleRegistryPlugin` по `LAYER_INIT_ORDER`.
 - [x] **CapsuleRegistryPlugin refactor — 2026-05-28.** Удалены `ExportGeneratorPlugin`, `EndpointsRegistryPlugin`, `AppConfigPlugin` (deprecated re-exports и тесты). Все функции объединены в `CapsuleRegistryPlugin`. 39 тестов deadwood удалены.
+- [x] **slots.d.ts ambient value-binding — 2026-06-02 (PR #223).** `generateWrappersTypes` теперь эмитит `const <NS>: <NS>;` рядом с каждым `interface <NS>` для всех шести namespace'ов (Widgets, Views, Features, Shapes, Controllers, Entities), заполненных и пустых. Без этого плюральные реестры оставались type-only после коммита #165 (убрал `dirs:` из AutoImport) — fresh-apps ловили `Cannot find name 'Features'` / `'Widgets'` при использовании их как значений в TSX. Рантайм не ломался (`wrappers.ts` по-прежнему populate'ит через `Object.assign(globalThis, ...)`), регрессия была чисто type-layer. Плюрали в `AutoImport > imports` НЕ возвращались — это воскресило бы цикл #165. 7 новых unit-тестов, 91/91 green.
 
 ## Test coverage
 
 | Тип | Где | Что покрывает |
 |---|---|---|
-| Unit | `src/plugins/__tests__/capsuleRegistry.test.ts` | CapsuleRegistryPlugin — generateWrappersRuntime/Types, generateEndpointsRuntime/Types, generateAppConfigRuntime, generateBootstrap, LAYER_INIT_ORDER контракт, transform hooks |
+| Unit | `src/plugins/__tests__/capsuleRegistry.test.ts` | CapsuleRegistryPlugin — generateWrappersRuntime/Types (включая `interface + const` для всех 6 NS), generateEndpointsRuntime/Types, generateAppConfigRuntime, generateBootstrap, LAYER_INIT_ORDER контракт, transform hooks |
 | Unit | `src/plugins/__tests__/hmrWrapping.test.ts` | HMRWrappingPlugin — babel-AST transforms для всех wrapper-типов, export default injection, Entity skip |
 
 Перед изменением любого плагина: `pnpm --filter @capsuletech/vite-builder test`.
