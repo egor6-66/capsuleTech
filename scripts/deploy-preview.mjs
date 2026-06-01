@@ -22,6 +22,8 @@
  *   --token=<token>     bearer-токен deploy   (env DEPLOY_TOKEN)
  *   --dist=<path>       путь к собранному dist (default apps/<app>/dist)
  *   --no-build          не собирать заново, использовать существующий dist/
+ *   --mocks             собрать с моками (CAPSULE_MOCKS=true) — preview без бэка;
+ *                       без флага сборка идёт в реальную API
  *
  * NB: server URL и token НЕ хардкодятся (закрытый контур) — только флаги/env.
  * ==========================================================================*/
@@ -88,15 +90,19 @@ if (!token) fail('нужен --token=<token> или env DEPLOY_TOKEN');
 // ---------------------------------------------------------------------------
 const distPath = flag('dist') ? resolve(String(flag('dist'))) : join(appRoot, 'dist');
 
+const useMocks = args.has('mocks');
 if (!args.has('no-build')) {
-  log(`сборка apps/${app} (capsule build)…`);
+  log(`сборка apps/${app} (capsule build)${useMocks ? ', моки on (CAPSULE_MOCKS=true)' : ''}…`);
   const cliBin = join(repoRoot, 'packages', 'cli', 'bin', 'capsule.mjs');
   // process.execPath — абсолютный путь к текущему node: spawn без shell работает
   // на всех платформах (включая Windows) и не триггерит DEP0190 (shell-concat
   // аргументов). Раньше тут был shell:true на win32 → деприкейт-ворнинг.
+  // --mocks → CAPSULE_MOCKS=true: capsuleConfig инжектит __CAPSULE_MOCKS__=true,
+  // preRequest-моки остаются в prod-сборке (preview без реального бэка).
   const r = spawnSync(process.execPath, [cliBin, 'build'], {
     cwd: appRoot,
     stdio: 'inherit',
+    env: useMocks ? { ...process.env, CAPSULE_MOCKS: 'true' } : process.env,
   });
   if ((r.status ?? 1) !== 0) fail('сборка упала — деплой отменён');
 } else {

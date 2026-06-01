@@ -49,6 +49,14 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
   const watchDir = join(root, 'src');
   const appConfigState = { aliasKeys: new Set<string>() };
 
+  // Вычисляем флаг моков:
+  //   CAPSULE_MOCKS='true'  capsule build → prod-сборка с моками (для preview-деплоя)
+  //   CAPSULE_MOCKS='false' capsule dev   → явное отключение моков в dev
+  //   (не задан)            capsule dev   → моки on  (текущее поведение)
+  //   (не задан)            capsule build → моки off
+  const mocks =
+    process.env.CAPSULE_MOCKS != null ? process.env.CAPSULE_MOCKS === 'true' : isDev;
+
   const dedupe = [
     'solid-js',
     'solid-js/web',
@@ -67,6 +75,13 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
       // `CapsuleRegistryPlugin.transform` (см. plugins/capsuleRegistry.ts).
       // Через esbuild `define:` это сделать нельзя — он валидирует value как
       // identifier|literal и отбивает arrow-expression со стороны `[vite:define]`.
+      //
+      // Build-time флаг моков. Инжектируется как boolean-литерал (true/false),
+      // что позволяет Rollup DCE сворачивать `__CAPSULE_MOCKS__ ? mock : real`
+      // в один branch и tree-shake'ать мёртвый код.
+      // App читает:  if (__CAPSULE_MOCKS__) { ... }
+      // TS-тип:      declare const __CAPSULE_MOCKS__: boolean;  (добавь в apps/<app>/src/env.d.ts)
+      __CAPSULE_MOCKS__: String(mocks),
     },
     build: {
       // watch: {} только в dev — production-сборка должна быть one-shot

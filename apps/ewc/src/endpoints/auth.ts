@@ -23,12 +23,16 @@ export const login = defineEndpoint((z) => ({
   response: z.object({
     token: z.string(),
   }),
-  preRequest: async ({ input, resolve, reject }) => {
-    await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS));
-    if (input.login === 'user' && input.password === '123') {
-      resolve({ token: `mock-jwt-${Date.now()}` });
-      return;
-    }
-    reject(new Error('Invalid credentials'));
-  },
+  // Мок только когда __CAPSULE_MOCKS__ (build-time флаг). В реальной сборке
+  // (без флага) preRequest = undefined → endpoint идёт в сеть на `/api/auth/login`.
+  preRequest: __CAPSULE_MOCKS__
+    ? async ({ input, resolve, reject }) => {
+        await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS));
+        if (input.login === 'user' && input.password === '123') {
+          resolve({ token: `mock-jwt-${Date.now()}` });
+          return;
+        }
+        reject(new Error('Invalid credentials'));
+      }
+    : undefined,
 }));
