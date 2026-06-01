@@ -39,8 +39,19 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-Открой `http://<server>:8080/` — лендинг со списком развёрнутых приложений.
-Нужен открытый порт `8080` (один на весь сервер).
+Открой `http://<server>:8080/` — лендинг со списком развёрнутых приложений
+(один порт на весь сервер).
+
+> **Порт `8080` должен быть свободен.** Если на нём уже сидит другой сервис
+> (частый случай — внешний nginx), Docker не поднимет контейнер («address already
+> in use») или ты упрёшься в чужой сервис. Смени host-порт в `docker-compose.yml`
+> и используй его везде ниже:
+> ```yaml
+> ports:
+>   - "8090:8080"   # host:container — деплой и просмотр идут на :8090
+> ```
+> Проверь, что на порту именно наш сервер: `curl http://localhost:<порт>/` должен
+> вернуть лендинг «capsule preview builds», а не чужую страницу.
 
 ## За reverse-proxy (nginx / traefik)
 
@@ -94,6 +105,19 @@ DEPLOY_SERVER=http://<server>:8080 DEPLOY_TOKEN=<token> \
 | `DATA_DIR` | `/data` | где лежат распакованные сборки (volume) |
 | `PUBLIC_HOST` | из Host-хедера | host[:port] для построения ссылок |
 | `MAX_UPLOAD_BYTES` | `268435456` | лимит размера загрузки (256 MiB) |
+
+## Траблшутинг
+
+Ключ к диагностике: **JSON-ответ = отвечает наш сервер** (запрос дошёл до node);
+**HTML-страница nginx = упёрся в reverse-proxy / чужой сервис** раньше нашего node.
+
+| Симптом | Причина | Фикс |
+|---|---|---|
+| `413 Request Entity Too Large` (HTML nginx) | reverse-proxy режет тело запроса (дефолт 1 МБ) | `client_max_body_size 256m;` в nginx + `nginx -s reload` (см. «За reverse-proxy») |
+| `404 Not Found` (HTML nginx) | на этом порту другой сервис/прокси, не preview-сервер | `curl http://localhost:<порт>/` на сервере — должен быть лендинг «capsule preview builds». Если нет — preview-сервер на другом порту или не поднялся (порт занят, см. «Запуск») |
+| `401 {"error":"unauthorized"}` (JSON) | токен клиента ≠ `DEPLOY_TOKEN` сервера | `docker exec <контейнер> printenv DEPLOY_TOKEN` → передай ровно это в `--token`. После правки `.env` пересоздай контейнер: `docker compose up -d`. В PowerShell токен со спецсимволами оборачивай в `'…'` |
+| `503 ... DEPLOY_TOKEN не задан` (JSON) | на сервере не задан `DEPLOY_TOKEN` | задай в `.env` + `docker compose up -d` |
+| `в сборке base = "/"` (клиент) | не задан `base` в `capsule.config.ts` | добавь `base: '/<app>/'`, пересобери |
 
 ## Локальная проверка без Docker
 
