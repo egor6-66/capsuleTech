@@ -1,5 +1,5 @@
 /**
- * createInsertEngine — insert-mode DnD engine for Matrix (Phase 1.3).
+ * createInsertEngine — insert-mode DnD engine for Matrix (Phase 1.3 / ADR 022).
  *
  * Mental model: rows-of-cells where cells can be reordered within a row OR
  * moved across rows. Cell carries its own properties (width, tag, children)
@@ -11,8 +11,16 @@
  * - Each row gets a `createSortable` (web-dnd) for in-row reorder.
  * - Each row also gets a `createDroppable` whose `accepts` predicate
  *   allows items from OTHER sortables (cross-row insert).
- * - Bindings snapshot rows once at construction (same simplification as
- *   swap engine; rows changes via parent unmount/remount).
+ * - Cell bindings (createItem) are called IN THE RENDER SCOPE of each <For>
+ *   item in matrix.tsx, NOT in an engine effect. This ties each cell's
+ *   draggable/droppable lifecycle to the DOM element's lifetime — when Solid's
+ *   <For> unmounts a cell (cross-row move), onCleanup fires; when it mounts
+ *   the cell in the new row, a fresh createItem runs. No stale listeners.
+ *
+ * ADR 022 additions:
+ * - `accepts`/`group` constraint: cross-row drop accepted only when the
+ *   target row's `accepts` array contains `cell.group` (or `accepts` is
+ *   undefined). Rejected drops emit a `cannot-drop` highlight signal.
  *
  * MUST be called inside DnDProvider tree (createSortable / createDroppable
  * call useDnD internally).
@@ -30,22 +38,67 @@ interface IInsertEngineOptions {
   /** True when layoutMode === 'edit' && dndMode === 'insert'. */
   enabled: Accessor<boolean>;
   onLayoutChange?: (e: LayoutChangeEvent) => void;
+  /**
+   * Matrix-level outer axis (ADR 022 `direction` prop).
+   *
+   * - `'vertical'` (default): rows are stacked top→bottom. Cross-zone drop
+   *   insert position is determined by `ratio.y` (top half → start, bottom
+   *   half → end of zone).
+   * - `'horizontal'`: zones are placed left→right. Cross-zone drop insert
+   *   position is determined by `ratio.x` (left half → start, right half
+   *   → end of zone), which is geometrically correct when the droppable
+   *   container is a column.
+   */
+  direction?: 'vertical' | 'horizontal';
 }
 
 export interface IInsertEngine {
   /** Effective rows (mirrors props.rows, mutated on drops). */
   rows: Accessor<IRow[]>;
   /**
-   * Bind drag+drop ref to a cell element.
-   * Signature matches swap engine: `(cell, rowId)` (rowId currently unused
-   * here, since createSortable already knows the row from createItem).
+   * Returns the stable sortable for a given rowId so the caller can invoke
+   * `getSortable(rowId)?.createItem(cellId)` inside the <For> render scope
+   * of each cell. Calling createItem in render scope ties the draggable
+   * lifecycle to the DOM element — no stale listeners after cross-row moves.
+   *
+   * Returns undefined for rows without an id (not participanting in DnD).
    */
-  bindCell: (cell: ICell, rowId?: string) => (el: HTMLElement) => void;
+  getSortable: (rowId: string) => ReturnType<typeof createSortable> | undefined;
   /** Bind cross-row drop target ref to a row element. */
   bindRow: (rowId: string) => (el: HTMLElement) => void;
 }
 
 const NOOP_REF = (_el: HTMLElement): void => {};
+
+// ---------------------------------------------------------------------------
+// accepts predicate helper (model-level, pure)
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns true if `targetRow` accepts a cell with the given `group`.
+ * When `row.accepts` is undefined → accepts any group.
+ * When `group` is undefined AND `row.accepts` is defined → rejected (no match).
+ */
+export const rowAcceptsGroup = (row: IRow, group: string | undefined): boolean => {
+  if (!row.accepts || row.accepts.length === 0) return true;
+  if (group === undefined) return false;
+  return row.accepts.includes(group);
+};
+
+// ---------------------------------------------------------------------------
+// wrap-fit helper (model-level, pure)
+// ---------------------------------------------------------------------------
+
+/**
+ * Given a container width (px) and an array of cell minW values (px),
+ * returns true when ALL cells fit on a single line (no wrap needed).
+ * If no cell has minW, always returns true (no constraint).
+ */
+export const cellsFitOnOneLine = (containerWidth: number, minWidths: number[]): boolean => {
+  if (minWidths.length === 0) return true;
+  const total = minWidths.reduce((s, w) => s + w, 0);
+  return total <= containerWidth;
+};
 
 // ---------------------------------------------------------------------------
 // createInsertEngine
@@ -108,7 +161,12 @@ export const createInsertEngine = (opts: IInsertEngineOptions): IInsertEngine =>
   // Cross-row drop handler (called from row-level createDroppable.onDrop)
   // -------------------------------------------------------------------------
 
-  const handleCrossRowDrop = (cellId: string, targetRowId: string, ratioY: number): void => {
+  const handleCrossRowDrop = (
+    cellId: string,
+    targetRowId: string,
+    ratioY: number,
+    ratioX: number,
+  ): void => {
     const prev = localRows();
     const src = findCell(cellId, prev);
     if (!src) return;
@@ -116,12 +174,23 @@ export const createInsertEngine = (opts: IInsertEngineOptions): IInsertEngine =>
     if (targetRowIdx === -1 || src.rIdx === targetRowIdx) return;
 
     const movedCell = prev[src.rIdx].cells[src.cIdx];
+
+    // ADR 022: accepts-constraint check before mutating state.
+    const targetRow = prev[targetRowIdx];
+    if (!rowAcceptsGroup(targetRow, movedCell.group)) {
+      // Drop rejected — state unchanged, highlight handled by rowRejectsDrag.
+      return;
+    }
+
     const sourceCells = prev[src.rIdx].cells.filter((_, i) => i !== src.cIdx);
     const targetCells = prev[targetRowIdx].cells;
-    // Insert position: top half → beginning, bottom half → end.
-    // Proportional insert (`Math.round(ratioY * targetCells.length)`) would
-    // be a finer UX, but row geometry varies — top/end is more predictable.
-    const insertIdx = ratioY < 0.5 ? 0 : targetCells.length;
+    // Insert position depends on the Matrix outer axis (direction):
+    //   vertical   → ratio.y determines top-half (→ start) vs bottom-half (→ end)
+    //   horizontal → ratio.x determines left-half (→ start) vs right-half (→ end)
+    // This is geometrically correct: in horizontal mode zones are columns, so
+    // "top vs bottom" within a column maps to left vs right at the Matrix level.
+    const splitRatio = opts.direction === 'horizontal' ? ratioX : ratioY;
+    const insertIdx = splitRatio < 0.5 ? 0 : targetCells.length;
     const newTargetCells = [
       ...targetCells.slice(0, insertIdx),
       movedCell,
@@ -144,25 +213,37 @@ export const createInsertEngine = (opts: IInsertEngineOptions): IInsertEngine =>
   };
 
   // -------------------------------------------------------------------------
-  // Per-row sortable + droppable bindings — snapshot at construction.
+  // Per-row sortable + droppable bindings.
   //
-  // createSortable / createDroppable use createMemo / createEffect internally
-  // and must run at component construction time (inside a Solid root with an
-  // active owner). We snapshot rows() once and never re-bind. Adding cells
-  // dynamically without unmounting Matrix is unsupported in v1.
+  // One stable sortable and one stable droppable per rowId, created once at
+  // engine construction time. The sortable's items() accessor reads
+  // localRows() reactively so it always reflects the current cell order
+  // regardless of cross-row moves — no rebuild needed.
+  //
+  // Cell bindings (createItem) are NOT called here. They are called by the
+  // consumer (matrix.tsx) inside the <For each={row.cells}> render scope so
+  // that each cell's draggable/droppable lifecycle is tied to its DOM
+  // element. When <For> unmounts a cell (cross-row move), onCleanup fires
+  // and removes the pointerdown listener + unregisters the draggable.
+  // When <For> mounts the cell in the new row, a fresh createItem call in
+  // the new render scope registers it anew. This is the correct Solid
+  // lifecycle pattern — no stale listeners after reorder or cross-row move.
+  //
+  // New rows dynamically added without a Matrix remount are still not
+  // supported (same as v1).
   // -------------------------------------------------------------------------
 
-  // For each row.id, store a per-cell ref-factory from createSortable.
-  const cellRefMap = new Map<string, (el: HTMLElement) => void>();
+  // Stable per-row sortables (keyed by rowId, created once).
+  const sortableMap = new Map<string, ReturnType<typeof createSortable>>();
+  // Stable per-row droppables for cross-row insert.
   const rowDropMap = new Map<string, IDroppable>();
 
   const rowsSnapshot = opts.rows();
 
   for (const row of rowsSnapshot) {
-    if (!row.id) continue; // rows without id can't participate in insert mode
+    if (!row.id) continue;
     const rowId = row.id;
 
-    // Per-row sortable — handles in-row reorder.
     const sortable = createSortable({
       id: rowId,
       items: () =>
@@ -171,30 +252,30 @@ export const createInsertEngine = (opts: IInsertEngineOptions): IInsertEngine =>
           ?.cells.map((c) => c.id) ?? [],
       onReorder: (newOrder) => handleInRowReorder(rowId, newOrder),
     });
+    sortableMap.set(rowId, sortable);
 
-    for (const cell of row.cells) {
-      if (cell.draggable) {
-        const item = sortable.createItem(cell.id);
-        cellRefMap.set(cell.id, item.ref);
-      }
-    }
-
-    // Per-row droppable — handles cross-row insert.
     const rowDrop = createDroppable({
       id: `insert-row:${rowId}`,
       accepts: (data) => {
         const d = data as { __sortable?: string; itemId?: string };
-        return (
-          opts.enabled() &&
-          typeof d.__sortable === 'string' &&
-          d.__sortable !== rowId &&
-          typeof d.itemId === 'string'
-        );
+        if (!opts.enabled()) return false;
+        if (typeof d.__sortable !== 'string' || d.__sortable === rowId) return false;
+        if (typeof d.itemId !== 'string') return false;
+        // ADR 022: accepts-constraint check.
+        // Find the cell in current localRows to get its group.
+        const cellId = d.itemId;
+        const rows = localRows();
+        const found = findCell(cellId, rows);
+        if (!found) return false;
+        const movedCell = rows[found.rIdx].cells[found.cIdx];
+        const targetRow = rows.find((r) => r.id === rowId);
+        if (!targetRow) return false;
+        return rowAcceptsGroup(targetRow, movedCell.group);
       },
       onDrop: (data, info) => {
         const d = data as { itemId?: string };
         if (typeof d.itemId === 'string') {
-          handleCrossRowDrop(d.itemId, rowId, info.ratio.y);
+          handleCrossRowDrop(d.itemId, rowId, info.ratio.y, info.ratio.x);
         }
       },
       disabled: () => !opts.enabled(),
@@ -206,15 +287,13 @@ export const createInsertEngine = (opts: IInsertEngineOptions): IInsertEngine =>
   // Public API
   // -------------------------------------------------------------------------
 
-  const bindCell = (cell: ICell, _rowId?: string): ((el: HTMLElement) => void) => {
-    if (!cell.draggable) return NOOP_REF;
-    return cellRefMap.get(cell.id) ?? NOOP_REF;
-  };
+  const getSortable = (rowId: string): ReturnType<typeof createSortable> | undefined =>
+    sortableMap.get(rowId);
 
   const bindRow = (rowId: string): ((el: HTMLElement) => void) => {
     const drop = rowDropMap.get(rowId);
     return drop?.ref ?? NOOP_REF;
   };
 
-  return { rows: localRows, bindCell, bindRow };
+  return { rows: localRows, getSortable, bindRow };
 };
