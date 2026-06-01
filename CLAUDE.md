@@ -262,6 +262,11 @@ Single-platform binary на Phase 1 (multi-platform — Phase 2 отдельны
 - **`useAnimationFrameWithResizeObserver: true` — проверено 2026-05-31, НЕ помогает** (5/5 пусто на cold reload; корень в initial rect=0 на mount, не в позднем RO-fire). Дополнительно: flex-deferred высота content-wrapper'а (напр. settings-стрип через `flex-col`+`flex-1`) усугубляет quirk до 100% — overlay-стрип (контент остаётся `absolute inset-0`) это снимает.
 - **Правильный фикс (будущее, зона owner-web-ui):** keyed-remount виртуалайзера по приходу реальной высоты; либо апгрейд `@tanstack/solid-virtual`/`virtual-core` (проверить fixed-версию). jsdom виртуалайзер НЕ измеряет → верификация только в реальном браузере. Прецедент: PR #204/#205.
 
+**Dropdown — мелькание позиции при ПЕРВОМ (холодном) открытии.** `@capsuletech/web-ui` Dropdown (Kobalte `DropdownMenu`) при самом первом открытии за сессию на кадр показывает панель в левом-верхнем углу, потом она прыгает к якорю. Последующие открытия корректны. Косметика, first-click-only — низкий приоритет.
+- **Корень:** Kobalte positioner `[data-popper-positioner]` стартует `top:0;left:0` без `transform`; floating-ui `computePosition` асинхронный и на холодном первом вызове (cold JIT + первый замер контента/шрифтов) ставит `transform` позже первого пейнта.
+- **Что НЕ сработало (2026-06-01):** (а) opacity-fade через `@starting-style`+`data-[expanded]:opacity-100` — маскирует только ТЁПЛЫЕ открытия; на холодном fade (`duration-fast` 200ms) обгоняет позиционирование → флэш всё равно виден; (б) `usePositioned` (MutationObserver на `style` позиционера, держать `opacity:0` пока не придёт `transform`) — гейт завис в `false` (ref/observer на Portal-контенте не разрезолвился вовремя) → панель стала НЕВИДИМА совсем. Обе попытки откатаны к исходнику; флэш оставлен как есть.
+- **Правильный фикс (будущее, зона owner-web-ui):** разобраться, почему gate не разрезолвился (ref-тайминг Kobalte `Content` на Portal vs `onMount`/первый замер), либо проверить fixed-версию `@kobalte/core` (>0.13). Верификация — только реальный браузер и именно ПЕРВОЕ открытие после hard-reload (warm-reopen баг не показывает).
+
 ### Закрытые в коде
 - ✅ Копипаста между `ControllerWrapper` / `FeatureWrapper` — заменено на `createLogicWrapper(kind)` (ADR 002).
 - ✅ Утечка регистрации в UiProxy — `createUniqueId` + `createEffect` + `onCleanup` (ADR 007).
