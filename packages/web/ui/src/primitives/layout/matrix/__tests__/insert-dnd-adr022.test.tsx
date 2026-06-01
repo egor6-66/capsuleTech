@@ -25,7 +25,7 @@
 import { createRoot } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { cellsFitOnOneLine, rowAcceptsGroup } from '../dnd/insert';
+import { cellsFitOnOneLine, rowAcceptsGroup, rowToAxis } from '../dnd/insert';
 import { Matrix } from '../matrix';
 
 // ---------------------------------------------------------------------------
@@ -86,6 +86,134 @@ describe('cellsFitOnOneLine — wrap-decision model', () => {
 
   it('multiple cells, one larger than container → does not fit', () => {
     expect(cellsFitOnOneLine(300, [100, 250])).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// rowToAxis — axis mapping helper (ADR 025)
+// ---------------------------------------------------------------------------
+
+describe('rowToAxis — axis mapping', () => {
+  it("orientation:'vertical' → 'y'", () => {
+    expect(rowToAxis({ id: 'r', cells: [], orientation: 'vertical' })).toBe('y');
+  });
+
+  it("wrap:true (no orientation override) → 'grid'", () => {
+    expect(rowToAxis({ id: 'r', cells: [], wrap: true })).toBe('grid');
+  });
+
+  it("flat horizontal row (no wrap, no vertical) → 'x'", () => {
+    expect(rowToAxis({ id: 'r', cells: [] })).toBe('x');
+    expect(rowToAxis({ id: 'r', cells: [], orientation: 'horizontal' })).toBe('x');
+  });
+
+  it("orientation:'vertical' takes priority over wrap:true → 'y'", () => {
+    expect(rowToAxis({ id: 'r', cells: [], orientation: 'vertical', wrap: true })).toBe('y');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// onDrop commit logic — pure array mutation (ADR 025)
+//
+// The commit rule: remove dragged cell from source first, then insert at
+// toIndex in target. Uniform for same-zone reorder and cross-zone move.
+// We test the logic inline (not via DnD events) since getBoundingClientRect
+// returns zeros in jsdom — no geometry integration possible here.
+// ---------------------------------------------------------------------------
+
+describe('ADR 025 onDrop commit logic — pure array model', () => {
+  // Helper: simulate the commit logic from createInsertEngine.onDrop
+  function simulateDrop(params: {
+    rows: Array<{ id: string; cells: string[] }>;
+    itemId: string;
+    fromZone: string;
+    toZone: string;
+    toIndex: number;
+  }): Array<{ id: string; cells: string[] }> {
+    const { rows, itemId, fromZone, toZone, toIndex } = params;
+
+    const srcRowIdx = rows.findIndex((r) => r.id === fromZone);
+    const srcCellIdx = rows[srcRowIdx].cells.findIndex((c) => c === itemId);
+    const tgtRowIdx = rows.findIndex((r) => r.id === toZone);
+
+    const sourceCells = rows[srcRowIdx].cells.filter((_, i) => i !== srcCellIdx);
+    const targetCellsBeforeInsert =
+      srcRowIdx === tgtRowIdx ? sourceCells : rows[tgtRowIdx].cells;
+    const newTargetCells = [
+      ...targetCellsBeforeInsert.slice(0, toIndex),
+      itemId,
+      ...targetCellsBeforeInsert.slice(toIndex),
+    ];
+
+    return rows.map((r, i) => {
+      if (i === srcRowIdx && i === tgtRowIdx) return { ...r, cells: newTargetCells };
+      if (i === srcRowIdx) return { ...r, cells: sourceCells };
+      if (i === tgtRowIdx) return { ...r, cells: newTargetCells };
+      return r;
+    });
+  }
+
+  it('same-zone reorder: drag item from index 0 to index 2', () => {
+    const rows = [{ id: 'zone', cells: ['a', 'b', 'c'] }];
+    // drag 'a' to after 'c': toIndex=2 against filtered ['b','c'] → inserts at 2
+    const result = simulateDrop({ rows, itemId: 'a', fromZone: 'zone', toZone: 'zone', toIndex: 2 });
+    expect(result[0].cells).toEqual(['b', 'c', 'a']);
+  });
+
+  it('same-zone reorder: drag last item to start', () => {
+    const rows = [{ id: 'zone', cells: ['a', 'b', 'c'] }];
+    // drag 'c' to index 0
+    const result = simulateDrop({ rows, itemId: 'c', fromZone: 'zone', toZone: 'zone', toIndex: 0 });
+    expect(result[0].cells).toEqual(['c', 'a', 'b']);
+  });
+
+  it('same-zone reorder: drag middle item to end', () => {
+    const rows = [{ id: 'zone', cells: ['a', 'b', 'c'] }];
+    // drag 'b' to end: toIndex=2 against filtered ['a','c'] → ['a','c','b']
+    const result = simulateDrop({ rows, itemId: 'b', fromZone: 'zone', toZone: 'zone', toIndex: 2 });
+    expect(result[0].cells).toEqual(['a', 'c', 'b']);
+  });
+
+  it('cross-zone move: insert into empty target at index 0', () => {
+    const rows = [
+      { id: 'src', cells: ['a', 'b'] },
+      { id: 'tgt', cells: [] },
+    ];
+    const result = simulateDrop({ rows, itemId: 'a', fromZone: 'src', toZone: 'tgt', toIndex: 0 });
+    expect(result[0].cells).toEqual(['b']);
+    expect(result[1].cells).toEqual(['a']);
+  });
+
+  it('cross-zone move: insert between existing cells', () => {
+    const rows = [
+      { id: 'src', cells: ['x'] },
+      { id: 'tgt', cells: ['1', '2', '3'] },
+    ];
+    // Move 'x' to tgt at index 2 → ['1','2','x','3']
+    const result = simulateDrop({ rows, itemId: 'x', fromZone: 'src', toZone: 'tgt', toIndex: 2 });
+    expect(result[0].cells).toEqual([]);
+    expect(result[1].cells).toEqual(['1', '2', 'x', '3']);
+  });
+
+  it('cross-zone move: insert at end of target', () => {
+    const rows = [
+      { id: 'main', cells: ['w1', 'w2'] },
+      { id: 'rail', cells: ['p1'] },
+    ];
+    // Move 'w2' to rail at end (index 1)
+    const result = simulateDrop({ rows, itemId: 'w2', fromZone: 'main', toZone: 'rail', toIndex: 1 });
+    expect(result[0].cells).toEqual(['w1']);
+    expect(result[1].cells).toEqual(['p1', 'w2']);
+  });
+
+  it('cross-zone move: insert at start of target (toIndex=0)', () => {
+    const rows = [
+      { id: 'main', cells: ['w1', 'w2'] },
+      { id: 'rail', cells: ['p1', 'p2'] },
+    ];
+    const result = simulateDrop({ rows, itemId: 'w1', fromZone: 'main', toZone: 'rail', toIndex: 0 });
+    expect(result[0].cells).toEqual(['w2']);
+    expect(result[1].cells).toEqual(['w1', 'p1', 'p2']);
   });
 });
 
@@ -475,17 +603,11 @@ describe('Matrix insert-mode v2 — accepts constraint model integration', () =>
 // Task 3: rowRejectsDrag removed from IInsertEngine public API
 // ---------------------------------------------------------------------------
 
-describe('ADR 022 task 3 — rowRejectsDrag removed from IInsertEngine', () => {
-  it('createInsertEngine does not expose rowRejectsDrag on returned object', () => {
-    // Import is type-only but we can verify the runtime object at JS level.
-    // createInsertEngine must be called inside DnDProvider — use the Matrix
-    // render path which internally creates the engine. We verify indirectly:
-    // the insert engine result exposed as insert.rows / bindCell / bindRow
-    // must NOT have a rowRejectsDrag property (it was a dead stub).
-    // We verify the TypeScript interface contract holds at the type level by
-    // importing the type and asserting absence via a compile-time check.
-    // At runtime, we verify a packing-zone Matrix with no rowRejectsDrag call
-    // renders without error — the removed method was never called at runtime.
+describe('ADR 025 — IInsertEngine uses getZone (not getSortable/bindRow)', () => {
+  it('insert engine with packing zone (wrap+accepts) renders without error', () => {
+    // ADR 025: createInsertEngine now exposes getZone(rowId) backed by
+    // createSortableGroup. The old getSortable/bindRow/rowRejectsDrag API is gone.
+    // We verify the new model renders correctly via a Matrix render.
     expect(() => {
       cleanup = render(
         () => (
@@ -512,7 +634,7 @@ describe('ADR 022 task 3 — rowRejectsDrag removed from IInsertEngine', () => {
         container,
       );
     }).not.toThrow();
-    // Engine is internal — verify no JS error was thrown (engine ran without the stub).
+    // Engine is internal — verify no JS error was thrown (new zone model runs).
     expect(container.querySelector('[data-testid="w1"]')).not.toBeNull();
   });
 });

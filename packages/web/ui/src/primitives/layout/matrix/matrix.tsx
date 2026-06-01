@@ -1,4 +1,5 @@
 import { DnDProvider, useDnD } from '@capsuletech/web-dnd';
+import type { ISortableZone } from '@capsuletech/web-dnd';
 import { type ICapsuleRouter, RouterContext } from '@capsuletech/web-router';
 import { createStyle, useLayoutMode, useSettingsMode } from '@capsuletech/web-style';
 import {
@@ -17,7 +18,7 @@ import { Animate, type AnimateVariant } from '../../wrappers/animate';
 import { Flex } from '../flex/flex';
 import type { IFlexItem } from '../flex/interfaces';
 import { DragBadge } from './dnd/drag-badge';
-import { createInsertEngine, rowAcceptsGroup } from './dnd/insert';
+import { createInsertEngine } from './dnd/insert';
 import { createSwapEngine } from './dnd/swap';
 import type { ICell, IMatrixProps, IRow } from './interfaces';
 import { resolvePreset } from './presets';
@@ -301,12 +302,16 @@ const renderPackingRow = (
   router: ICapsuleRouter | null,
   getSwappedChildren: ((cellId: string) => JSX.Element) | undefined,
   bindCell: ((cell: ICell, rowId: string | undefined) => (el: HTMLElement) => void) | undefined,
-  bindRow: ((rowId: string) => (el: HTMLElement) => void) | undefined,
+  /**
+   * Optional ISortableZone for this row (insert mode only).
+   * When provided, containerRef is wired to the zone container and
+   * rejects()/activeIndex() are used for the "cannot-drop" highlight and
+   * insertion marker.
+   */
+  zone: ISortableZone | undefined,
   isDragging: Accessor<boolean>,
   layoutMode: Accessor<'view' | 'edit'>,
   settingsMode: Accessor<boolean>,
-  /** True when a drag is active AND this row rejects it (accepts-constraint). */
-  rowRejectsDrag: Accessor<boolean>,
   /** Reactive getter for the per-cell explicit px sizes (set via resize handle). */
   getCellSize: (cellId: string) => number | undefined,
   /** Setter called by the resize handle to persist a new explicit px size. */
@@ -314,7 +319,11 @@ const renderPackingRow = (
 ): JSX.Element => {
   const isVertical = row.orientation === 'vertical';
   const hasWrap = row.wrap === true;
-  const rowDropRef = bindRow && row.id ? bindRow(row.id) : NOOP_REF;
+  const rowContainerRef = zone ? zone.containerRef : NOOP_REF;
+  const rowRejectsDrag: Accessor<boolean> = zone ? zone.rejects : () => false;
+  const rowIsTarget: Accessor<boolean> = zone ? zone.isTarget : () => false;
+  const rowCanAccept: Accessor<boolean> = zone ? zone.canAccept : () => false;
+  const zoneActiveIndex: Accessor<number | null> = zone ? zone.activeIndex : () => null;
 
   // CSS flex direction + wrap
   const containerClass = [
@@ -324,22 +333,43 @@ const renderPackingRow = (
     'flex',
     isVertical ? 'flex-col' : 'flex-row',
     hasWrap ? 'flex-wrap' : 'flex-nowrap',
-    // Gap between cells — small visual breathing room
-    'gap-px',
+    // Gap between cells — subtle visual breathing room (was gap-px)
+    'gap-1',
+    // Padding so cells don't bleed to the zone edge
+    'p-1',
   ].join(' ');
 
   return (
     <div
-      ref={rowDropRef}
+      ref={rowContainerRef}
       class={containerClass}
       classList={{
         // «cannot-drop» highlight when accepts-constraint rejects active drag
         'ring-2 ring-inset ring-destructive/50': rowRejectsDrag(),
+        // Soft: drag active, this zone accepts, pointer not over it yet
+        'ring-2 ring-inset ring-primary/40 bg-primary/5':
+          rowCanAccept() && !rowIsTarget() && !rowRejectsDrag(),
+        // Strong: pointer is over this zone (it's the drop target)
+        'ring-2 ring-inset ring-primary bg-primary/10':
+          rowIsTarget() && !rowRejectsDrag(),
       }}
     >
       <For each={row.cells}>
-        {(cell) => {
-          const cellRef = cell.draggable && bindCell ? bindCell(cell, row.id) : NOOP_REF;
+        {(cell, cellIndex) => {
+          // In insert mode, wire each cell's draggable ref through the zone.
+          // createItem must be called here (in render scope) so the draggable
+          // lifecycle is tied to this cell's DOM element lifetime — when <For>
+          // unmounts the cell, onCleanup fires in createItem; when it mounts
+          // the cell in a new zone, a fresh createItem registers it anew.
+          const cellRef: (el: HTMLElement) => void = (() => {
+            if (cell.draggable && zone) {
+              return zone.createItem(cell.id).ref;
+            }
+            if (cell.draggable && bindCell) {
+              return bindCell(cell, row.id);
+            }
+            return NOOP_REF;
+          })();
           const isMain = cell.id === 'main';
           const children = getSwappedChildren ? getSwappedChildren(cell.id) : cell.children;
           const content = isMain ? animateMain(children, animated, router) : children;
@@ -428,25 +458,59 @@ const renderPackingRow = (
               ? 'absolute inset-x-0 bottom-0 z-20 h-1 cursor-ns-resize bg-border/0 hover:bg-primary/40 active:bg-primary/60 transition-colors'
               : 'absolute inset-y-0 right-0 z-20 w-1 cursor-ew-resize bg-border/0 hover:bg-primary/40 active:bg-primary/60 transition-colors';
 
-            return <div class={handleClass} onPointerDown={onPointerDown} />;
+            // data-dnd-cancel: prevent the parent cell's createDraggable from
+            // initiating a drag when the pointer goes down on this handle.
+            // createDraggable checks closest('[data-dnd-cancel]') and bails out,
+            // letting the handle's own pointerdown proceed for resizing.
+            // Keep e.stopPropagation() for other delegated listener layers.
+            return <div class={handleClass} data-dnd-cancel="" onPointerDown={onPointerDown} />;
+          };
+
+          // Insertion marker — rendered BEFORE the cell at the active index.
+          // For 'x' zones: vertical bar (2px wide, full height).
+          // For 'y' zones: horizontal bar (full width, 2px tall).
+          // For 'grid' zones: compact indicator (2px vertical bar, same as 'x').
+          const insertionMarker = (): JSX.Element => {
+            const idx = zoneActiveIndex();
+            if (idx === null || idx !== cellIndex()) return null;
+            const markerClass = isVertical
+              ? 'h-0.5 w-full shrink-0 rounded-full bg-primary pointer-events-none'
+              : 'h-full w-0.5 shrink-0 rounded-full bg-primary pointer-events-none';
+            return <div class={markerClass} />;
+          };
+
+          // End-of-list insertion marker — rendered AFTER the last cell when
+          // activeIndex === row.cells.length.
+          const endMarker = (): JSX.Element => {
+            const idx = zoneActiveIndex();
+            if (idx === null || idx !== row.cells.length) return null;
+            if (cellIndex() !== row.cells.length - 1) return null;
+            const markerClass = isVertical
+              ? 'h-0.5 w-full shrink-0 rounded-full bg-primary pointer-events-none'
+              : 'h-full w-0.5 shrink-0 rounded-full bg-primary pointer-events-none';
+            return <div class={markerClass} />;
           };
 
           return (
-            <Dynamic
-              component={tag}
-              ref={cellRef}
-              class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative overflow-hidden`}
-              style={cellStyle()}
-            >
-              <Show when={withSettings}>{settingsStrip()}</Show>
-              <div
-                class="absolute inset-0 overflow-auto"
-                classList={{ 'pointer-events-none': isDragging() }}
+            <>
+              {insertionMarker()}
+              <Dynamic
+                component={tag}
+                ref={cellRef}
+                class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative overflow-hidden rounded-sm border border-border`}
+                style={cellStyle()}
               >
-                <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
-              </div>
-              {resizeHandle()}
-            </Dynamic>
+                <Show when={withSettings}>{settingsStrip()}</Show>
+                <div
+                  class="absolute inset-0 overflow-auto"
+                  classList={{ 'pointer-events-none': isDragging() }}
+                >
+                  <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+                </div>
+                {resizeHandle()}
+              </Dynamic>
+              {endMarker()}
+            </>
           );
         }}
       </For>
@@ -516,7 +580,12 @@ const renderRow = (
   router: ICapsuleRouter | null,
   getSwappedChildren: ((cellId: string) => JSX.Element) | undefined,
   bindCell: ((cell: ICell, rowId: string | undefined) => (el: HTMLElement) => void) | undefined,
-  bindRow: ((rowId: string) => (el: HTMLElement) => void) | undefined,
+  /**
+   * ADR 025: Optional ISortableZone for insert mode.
+   * When provided, containerRef and rejects()/activeIndex() are used.
+   * When undefined (swap mode or non-packing row), falls back to NOOP_REF.
+   */
+  zone: ISortableZone | undefined,
   getCellDndState: ((cell: ICell) => ICellDndState | undefined) | undefined,
   /** Saved horizontal panel sizes for this row (index-aligned, session-persisted). */
   savedSizes: number[] | undefined,
@@ -525,11 +594,6 @@ const renderRow = (
   isDragging: Accessor<boolean>,
   layoutMode: Accessor<'view' | 'edit'>,
   settingsMode: Accessor<boolean>,
-  /**
-   * ADR 022: Reactive accessor — true when a drag is active AND this row
-   * rejects the dragged cell (accepts-constraint). Triggers «cannot-drop» highlight.
-   */
-  rowRejectsDrag: Accessor<boolean>,
   /** ADR 022: Getter for per-cell explicit px sizes (packing resize handle). */
   getCellSize: (cellId: string) => number | undefined,
   /** ADR 022: Setter for per-cell explicit px sizes (packing resize handle). */
@@ -544,19 +608,21 @@ const renderRow = (
       router,
       getSwappedChildren,
       bindCell,
-      bindRow,
+      zone,
       isDragging,
       layoutMode,
       settingsMode,
-      rowRejectsDrag,
       getCellSize,
       setCellSize,
     );
   }
 
   const hasResizable = rowHasResizable(row);
-  // Cross-row drop target ref — only meaningful in insert mode (bindRow defined).
-  const rowDropRef = bindRow && row.id ? bindRow(row.id) : NOOP_REF;
+  // In insert mode, wire the zone container ref; in swap/no-op mode use NOOP.
+  const rowContainerRef = zone ? zone.containerRef : NOOP_REF;
+  const rowRejectsDrag: Accessor<boolean> = zone ? zone.rejects : () => false;
+  const rowIsTarget: Accessor<boolean> = zone ? zone.isTarget : () => false;
+  const rowCanAccept: Accessor<boolean> = zone ? zone.canAccept : () => false;
 
   if (hasResizable) {
     const items = rowToFlexItems(
@@ -573,7 +639,17 @@ const renderRow = (
     );
     const isEdit = layoutMode() === 'edit';
     return (
-      <div ref={rowDropRef} class="relative h-full min-h-0 flex-1 overflow-hidden">
+      <div
+        ref={rowContainerRef}
+        class="relative h-full min-h-0 flex-1 overflow-hidden"
+        classList={{
+          'ring-2 ring-inset ring-destructive/50': rowRejectsDrag(),
+          'ring-2 ring-inset ring-primary/40 bg-primary/5':
+            rowCanAccept() && !rowIsTarget() && !rowRejectsDrag(),
+          'ring-2 ring-inset ring-primary bg-primary/10':
+            rowIsTarget() && !rowRejectsDrag(),
+        }}
+      >
         <div class="absolute inset-0">
           <Flex
             orientation="horizontal"
@@ -590,9 +666,16 @@ const renderRow = (
   const rowIsAutoHeight = row.height === 'auto';
   return (
     <div
-      ref={rowDropRef}
+      ref={rowContainerRef}
       class="flex h-full min-h-0 w-full overflow-hidden"
-      classList={{ 'flex-1': row.height === 'fr' || row.height === undefined }}
+      classList={{
+        'flex-1': row.height === 'fr' || row.height === undefined,
+        'ring-2 ring-inset ring-destructive/50': rowRejectsDrag(),
+        'ring-2 ring-inset ring-primary/40 bg-primary/5':
+          rowCanAccept() && !rowIsTarget() && !rowRejectsDrag(),
+        'ring-2 ring-inset ring-primary bg-primary/10':
+          rowIsTarget() && !rowRejectsDrag(),
+      }}
     >
       <For each={row.cells}>
         {(cell) => {
@@ -628,7 +711,8 @@ const rowsToVerticalItems = (
   router: ICapsuleRouter | null,
   getSwappedChildren: ((cellId: string) => JSX.Element) | undefined,
   bindCell: ((cell: ICell, rowId: string | undefined) => (el: HTMLElement) => void) | undefined,
-  bindRow: ((rowId: string) => (el: HTMLElement) => void) | undefined,
+  /** ADR 025: Zone lookup for insert mode. undefined → swap/view mode. */
+  getZone: ((rowId: string) => ISortableZone | undefined) | undefined,
   getCellDndState: ((cell: ICell) => ICellDndState | undefined) | undefined,
   /** Saved vertical panel sizes (index-aligned). */
   savedVerticalSizes: number[] | undefined,
@@ -639,8 +723,6 @@ const rowsToVerticalItems = (
   isDragging: Accessor<boolean>,
   layoutMode: Accessor<'view' | 'edit'>,
   settingsMode: Accessor<boolean>,
-  /** ADR 022: Per-row reactive accessor factory for accepts-constraint rejection. */
-  makeRowRejectsDrag: ((row: IRow) => Accessor<boolean>) | undefined,
   /** ADR 022: Getter for per-cell explicit px sizes (packing resize handle). */
   getCellSize: (cellId: string) => number | undefined,
   /** ADR 022: Setter for per-cell explicit px sizes (packing resize handle). */
@@ -658,7 +740,7 @@ const rowsToVerticalItems = (
     // Prefer session-persisted vertical size; fall back to declared row.height.
     const resolvedHeight =
       savedVerticalSizes?.[i] ?? (heightIsNumber ? (row.height as number) : undefined);
-    const rowRejectsDrag = makeRowRejectsDrag ? makeRowRejectsDrag(row) : () => false as boolean;
+    const zone = getZone && row.id ? getZone(row.id) : undefined;
     return {
       children: renderRow(
         row,
@@ -666,14 +748,13 @@ const rowsToVerticalItems = (
         router,
         getSwappedChildren,
         bindCell,
-        bindRow,
+        zone,
         getCellDndState,
         rowSaved,
         rowOnChange,
         isDragging,
         layoutMode,
         settingsMode,
-        rowRejectsDrag,
         getCellSize,
         setCellSize,
       ),
@@ -798,7 +879,6 @@ const MatrixContent = (props: IMatrixContentProps) => {
     rows: props.rows,
     enabled: insertEnabled,
     onLayoutChange: props.onLayoutChange,
-    direction: props.direction,
   });
 
   // Badge is shown on each draggable cell only when 2+ draggable cells exist
@@ -825,27 +905,6 @@ const MatrixContent = (props: IMatrixContentProps) => {
     };
   };
 
-  // ADR 022: Per-row reactive accessor for accepts-constraint rejection.
-  // Returns true when a drag is active AND the given row rejects the active cell
-  // (row.accepts defined AND active cell.group not in row.accepts).
-  // Used by renderPackingRow for «cannot-drop» highlight.
-  const makeRowRejectsDrag = (row: IRow): Accessor<boolean> =>
-    createMemo((): boolean => {
-      if (!insertEnabled()) return false;
-      if (!row.accepts || row.accepts.length === 0) return false;
-      const activeData = dnd.state.activeData();
-      if (!activeData) return false;
-      const d = activeData as { __sortable?: string; itemId?: string };
-      if (typeof d.itemId !== 'string') return false;
-      // Find the cell in current effective rows to get its group.
-      const rows = effectiveRows();
-      for (const r of rows) {
-        const cell = r.cells.find((c) => c.id === d.itemId);
-        if (cell) return !rowAcceptsGroup(row, cell.group);
-      }
-      return false;
-    });
-
   const renderContent = (): JSX.Element => {
     const rows = effectiveRows();
 
@@ -854,24 +913,16 @@ const MatrixContent = (props: IMatrixContentProps) => {
     const isSwap = props.dndMode() === 'swap';
     const isInsert = props.dndMode() === 'insert';
     const swapGetChildren = isSwap ? swap.getCellChildren : undefined;
-    // For insert mode, bindCell must be called inside a <For> render scope so
-    // that createItem (and its onCleanup for unregister) is owned by the cell's
-    // DOM lifetime, not by an engine-level effect.
-    // insertBindCell calls getSortable(rowId)?.createItem(cell.id) at the point
-    // where the <For> item renders — giving it the correct Solid owner scope.
-    const insertBindCell = isInsert
-      ? (cell: ICell, rowId?: string): ((el: HTMLElement) => void) => {
-          if (!cell.draggable || !rowId) return NOOP_REF;
-          const sortable = insert.getSortable(rowId);
-          if (!sortable) return NOOP_REF;
-          return sortable.createItem(cell.id).ref;
-        }
+    // In insert mode, cells are bound via zone.createItem (called inside <For>
+    // render scope in renderPackingRow). For non-packing rows in insert mode,
+    // cells in a standard row aren't currently using per-cell sortable bindings
+    // outside packing zones — pass undefined for bindCell in insert mode.
+    const swapBind = isSwap ? swap.bindCell : undefined;
+    // ADR 025: zone lookup for insert mode. undefined → swap/view.
+    const insertGetZone = isInsert
+      ? (rowId: string): ISortableZone | undefined => insert.getZone(rowId)
       : undefined;
-    const swapBind = isSwap ? swap.bindCell : insertBindCell;
-    const insertBindRow = isInsert ? insert.bindRow : undefined;
     const cellDndState = isSwap ? getCellDndState : undefined;
-    // ADR 022: Only meaningful in insert mode (packing zones).
-    const insertMakeRowRejectsDrag = isInsert ? makeRowRejectsDrag : undefined;
 
     // Single row, single cell (centroid shortcut)
     if (rows.length === 1 && rows[0].cells.length === 1 && !rows[0].resizable) {
@@ -954,9 +1005,7 @@ const MatrixContent = (props: IMatrixContentProps) => {
 
       const zoneItems = rows.map((row, i): IFlexItem => {
         const rowKey = row.id ?? `r${i}`;
-        const rowRejectsDrag = insertMakeRowRejectsDrag
-          ? insertMakeRowRejectsDrag(row)
-          : () => false as boolean;
+        const zone = insertGetZone && row.id ? insertGetZone(row.id) : undefined;
         const widthFraction = typeof row.height === 'number' ? row.height : undefined;
         return {
           children: (
@@ -967,14 +1016,13 @@ const MatrixContent = (props: IMatrixContentProps) => {
                 props.router,
                 swapGetChildren,
                 swapBind,
-                insertBindRow,
+                zone,
                 cellDndState,
                 getRowSavedSizes(rowKey),
                 (sizes) => onRowSizesChange(rowKey, sizes),
                 isDragging,
                 props.layoutMode,
                 props.settingsMode,
-                rowRejectsDrag,
                 getCellSize,
                 setCellSize,
               )}
@@ -1020,9 +1068,7 @@ const MatrixContent = (props: IMatrixContentProps) => {
             <For each={rows}>
               {(row, i) => {
                 const rowKey = row.id ?? `r${i()}`;
-                const rowRejectsDrag = insertMakeRowRejectsDrag
-                  ? insertMakeRowRejectsDrag(row)
-                  : () => false as boolean;
+                const zone = insertGetZone && row.id ? insertGetZone(row.id) : undefined;
                 // Mapping of row.height → CSS flex in the non-resizable horizontal path:
                 //   'auto'           → flex: 0 0 auto   (content-driven width, shrink-to-fit; for rail zones)
                 //   number (0..1)    → flex: 0 0 {n}%   (explicit fraction)
@@ -1044,14 +1090,13 @@ const MatrixContent = (props: IMatrixContentProps) => {
                       props.router,
                       swapGetChildren,
                       swapBind,
-                      insertBindRow,
+                      zone,
                       cellDndState,
                       getRowSavedSizes(rowKey),
                       (sizes) => onRowSizesChange(rowKey, sizes),
                       isDragging,
                       props.layoutMode,
                       props.settingsMode,
-                      rowRejectsDrag,
                       getCellSize,
                       setCellSize,
                     )}
@@ -1084,7 +1129,7 @@ const MatrixContent = (props: IMatrixContentProps) => {
           props.router,
           swapGetChildren,
           swapBind,
-          insertBindRow,
+          insertGetZone,
           cellDndState,
           getSavedSizes('v'),
           getRowSavedSizes,
@@ -1092,7 +1137,6 @@ const MatrixContent = (props: IMatrixContentProps) => {
           isDragging,
           props.layoutMode,
           props.settingsMode,
-          insertMakeRowRejectsDrag,
           getCellSize,
           setCellSize,
         );
@@ -1121,7 +1165,7 @@ const MatrixContent = (props: IMatrixContentProps) => {
         props.router,
         swapGetChildren,
         swapBind,
-        insertBindRow,
+        insertGetZone,
         cellDndState,
         getSavedSizes('v'),
         getRowSavedSizes,
@@ -1129,7 +1173,6 @@ const MatrixContent = (props: IMatrixContentProps) => {
         isDragging,
         props.layoutMode,
         props.settingsMode,
-        insertMakeRowRejectsDrag,
         getCellSize,
         setCellSize,
       );
@@ -1140,9 +1183,7 @@ const MatrixContent = (props: IMatrixContentProps) => {
       const elements: JSX.Element[] = rows.map((row, _i) => {
         if (row.height === 'auto') {
           const rowKey = row.id ?? `r${_i}`;
-          const rowRejectsDrag = insertMakeRowRejectsDrag
-            ? insertMakeRowRejectsDrag(row)
-            : () => false as boolean;
+          const zone = insertGetZone && row.id ? insertGetZone(row.id) : undefined;
           return (
             <div class="w-full shrink-0">
               {renderRow(
@@ -1151,14 +1192,13 @@ const MatrixContent = (props: IMatrixContentProps) => {
                 props.router,
                 swapGetChildren,
                 swapBind,
-                insertBindRow,
+                zone,
                 cellDndState,
                 getRowSavedSizes(rowKey),
                 (sizes) => onRowSizesChange(rowKey, sizes),
                 isDragging,
                 props.layoutMode,
                 props.settingsMode,
-                rowRejectsDrag,
                 getCellSize,
                 setCellSize,
               )}
@@ -1190,9 +1230,7 @@ const MatrixContent = (props: IMatrixContentProps) => {
         <For each={rows}>
           {(row, i) => {
             const rowKey = row.id ?? `r${i()}`;
-            const rowRejectsDrag = insertMakeRowRejectsDrag
-              ? insertMakeRowRejectsDrag(row)
-              : () => false as boolean;
+            const zone = insertGetZone && row.id ? insertGetZone(row.id) : undefined;
             if (row.height === 'auto' || (row.height === undefined && rows.length > 1)) {
               return (
                 <div class="w-full shrink-0">
@@ -1202,14 +1240,13 @@ const MatrixContent = (props: IMatrixContentProps) => {
                     props.router,
                     swapGetChildren,
                     swapBind,
-                    insertBindRow,
+                    zone,
                     cellDndState,
                     getRowSavedSizes(rowKey),
                     (sizes) => onRowSizesChange(rowKey, sizes),
                     isDragging,
                     props.layoutMode,
                     props.settingsMode,
-                    rowRejectsDrag,
                     getCellSize,
                     setCellSize,
                   )}
@@ -1222,14 +1259,13 @@ const MatrixContent = (props: IMatrixContentProps) => {
               props.router,
               swapGetChildren,
               swapBind,
-              insertBindRow,
+              zone,
               cellDndState,
               getRowSavedSizes(rowKey),
               (sizes) => onRowSizesChange(rowKey, sizes),
               isDragging,
               props.layoutMode,
               props.settingsMode,
-              rowRejectsDrag,
               getCellSize,
               setCellSize,
             );
