@@ -14,8 +14,12 @@ export const list = defineEndpoint((z) => ({
   path: '/incidents',
   request: z.object({}),
   response: z.array(Entities.Incident.schema),
-  preRequest: async ({ resolve }) => {
-    await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS));
-    resolve(Entities.Incident.mock);
-  },
+  // Мок только когда __CAPSULE_MOCKS__ (build-time флаг). В реальной сборке
+  // (без флага) preRequest = undefined → endpoint идёт в сеть на `/api/incidents`.
+  preRequest: __CAPSULE_MOCKS__
+    ? async ({ resolve }) => {
+        await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS));
+        resolve(Entities.Incident.mock);
+      }
+    : undefined,
 }));

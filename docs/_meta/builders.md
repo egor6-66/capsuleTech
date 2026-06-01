@@ -42,7 +42,7 @@ biome-config → ничего (zero-deps, чисто config-файл)
 |---|---|
 | `packages/builders/lib/src/libConfig.ts` | Vite `UserConfig`-фабрика для библиотек: external selector, dts, `cleanRootPkgForDist` |
 | `packages/builders/lib/src/__tests__/libConfig.test.ts` | характеризационные тесты на external + cleanRootPkgForDist (S-3 регрессия) |
-| `packages/builders/vite/src/defines/capsuleConfig.ts` | главный конфиг dev-сервера для apps; собирает плагины. `ICapsuleConfig` содержит `base?: string` — прокидывается как Vite `base` (дефолт `'/'`). |
+| `packages/builders/vite/src/defines/capsuleConfig.ts` | главный конфиг dev-сервера для apps; собирает плагины. `ICapsuleConfig` содержит `base?: string` — прокидывается как Vite `base` (дефолт `'/'`). Инжектирует `__CAPSULE_MOCKS__` (boolean-литерал) через Vite `define` для tree-shaking моков. |
 | `packages/builders/vite/src/defines/appConfig.ts` | минимальный конфиг для plain Vite apps без HCA |
 | `packages/builders/vite/src/defines/libConfig.ts` | re-export `libConfig` из `@capsuletech/lib-builder` (legacy compat) |
 | `packages/builders/vite/src/actions.ts` | `createDevCapsuleServer / buildCapsuleApp` — обёртки над Vite, дёргаются из CLI |
@@ -157,6 +157,7 @@ biome-config → ничего (zero-deps, чисто config-файл)
 | Поменять формат `app-config.gen.ts` | `vite/src/plugins/capsuleRegistry.ts > generateAppConfigRuntime` |
 | Поменять порядок import'ов в `bootstrap.tsx` | `vite/src/plugins/capsuleRegistry.ts > LAYER_INIT_ORDER` |
 | Поменять путь под которым раздаётся app (sub-path deploy) | `capsule.config.ts > base: '/path/'` → уходит в Vite `base`; `bootstrap.tsx` подхватывает через `import.meta.env.BASE_URL` |
+| Включить моки в prod-сборке (preview-deploy) | `CAPSULE_MOCKS=true capsule build` — env-флаг прокидывается в `__CAPSULE_MOCKS__`. Без флага: dev=true/build=false. App: `if (__CAPSULE_MOCKS__) { ... }`. TS-тип: `declare const __CAPSULE_MOCKS__: boolean;` в env.d.ts. |
 | Поменять biome-правила | `biome/biome.json` (root репо подхватит через extends) |
 
 ## Связь с другими подсистемами
