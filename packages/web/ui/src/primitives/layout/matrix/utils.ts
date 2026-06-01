@@ -19,6 +19,11 @@ export interface INormalizedSlot {
    * Rendered as a toolbar strip at the cell top when settingsMode is ON.
    */
   settings?: JSX.Element;
+  /**
+   * Per-slot Suspense fallback — forwarded to ICell.skeleton.
+   * Shown while the slot's child is suspended (lazy chunk loading).
+   */
+  skeleton?: JSX.Element;
 }
 
 /**
@@ -49,6 +54,7 @@ export const normalizeSlotValue = (slot: SlotValue | undefined): INormalizedSlot
       swapGroup?: string;
       resizable?: boolean;
       settings?: JSX.Element;
+      skeleton?: JSX.Element;
     };
     return {
       children: config.children,
@@ -59,6 +65,7 @@ export const normalizeSlotValue = (slot: SlotValue | undefined): INormalizedSlot
       swapGroup: config.swapGroup,
       resizable: config.resizable,
       settings: config.settings,
+      skeleton: config.skeleton,
     };
   }
 

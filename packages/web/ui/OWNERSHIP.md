@@ -70,10 +70,10 @@ import { Grid } from '@capsuletech/web-ui/grid';
 
 **IRow/ICell structure:**
 - Row: `id?`, `height?: number | 'auto' | 'fr'`, `resizable?: boolean`, `cells: ICell[]`
-- Cell: `id`, `children`, `tag?`, `width?: number | 'auto' | 'fr'`, `resizable?`, `draggable?`, `swapGroup?`
+- Cell: `id`, `children`, `tag?`, `width?: number | 'auto' | 'fr'`, `resizable?`, `draggable?`, `swapGroup?`, `skeleton?`
 
 **SlotValue (preset-mode):**
-- Either `JSX.Element` or `{ children, initialSize?, minSize?, maxSize?, draggable?, swapGroup? }`
+- Either `JSX.Element` or `{ children, initialSize?, minSize?, maxSize?, draggable?, swapGroup?, skeleton? }`
 
 **DnD (swap mode, Phase 1.2 v2):**
 - Badge-triggered UX: cell registered as `disabled: true` draggable, badge calls `dnd.startDrag()` programmatically
@@ -101,6 +101,12 @@ import { Grid } from '@capsuletech/web-ui/grid';
 - Sidebar/rightBar default width: 0.2
 - Footer default height: 0.3
 - Main width: remainder of `1 - sidebarWidth - rightBarWidth`
+
+**Per-slot Suspense (v0.7.x additive):**
+- Every cell's content is wrapped in its own `<Suspense>` boundary. A suspended lazy Widget blanks only that cell — not the whole Matrix.
+- Fallback resolution: `cell.skeleton ?? MatrixCellFallback` (full-cell `animate-pulse bg-muted` div by default).
+- `skeleton?: JSX.Element` is available on `ICell` and on the `SlotValue` object-form — it flows through `normalizeSlotValue → INormalizedSlot → preset resolver → ICell`.
+- Backward compatible: existing usages without `skeleton` get the neutral default.
 
 Migration from v0.3.0: `slots={{ header, main, rightBar, footer }}` → `preset="app-shell" slots={{ header, main, rightBar, footer }}`
 
@@ -231,6 +237,7 @@ Stateless composite for rendering one data object as an ordered list of label + 
 | Stories | `src/composites/dataTable/dataTable.stories.tsx` | Basic / WithSorting / WithPagination / WithPaginationCustomSize / WithSelection / WithToolbar / Full / EmptyState / EmptyStateDefault / WithInfinite / WithInfiniteCustomHeight / WithInfiniteLoading |
 | Unit | `src/primitives/layout/flex/__tests__/flex.test.tsx` | children mode / items-no-resizable → CSS flex / items-with-resizable → corvu / mixed items / plain-object fallback + warning (15 tests, jsdom render). |
 | Unit | `src/primitives/layout/matrix/__tests__/normalizeSlot.test.ts` | normalizeSlot: undefined/null/object-form/resizable/type-level |
+| Unit | `src/primitives/layout/matrix/__tests__/matrix-suspense.test.tsx` | Per-slot Suspense: structural (Suspense present in source, 4+ instances, MatrixCellFallback, animate-pulse), cell isolation (resolved cells render alongside null-sibling), skeleton prop flow (normalizeSlotValue, SlotValue→ICell, preset paths), default fallback no-crash (14 tests). |
 | Unit | `src/primitives/table/__tests__/table.test.ts` | interface structural contracts, data-state sentinel documentation (7 tests). Full DOM/render coverage pending vitest Solid transform (see backlog). |
 | Unit | `src/primitives/list/__tests__/list.test.ts` | IListRenderProps / IListBatchProps / IListSemanticProps / IListProps union / IVirtualListProps structural contracts (18 tests). |
 | Unit | `src/composites/dataTable/__tests__/dataTable.test.ts` | IDataTableProps structural contracts, IColumn typed wrapper, ColumnDef re-export, infinite options, onLoadMore callback, onRowClick contract + cursor-pointer UX, pagination defaults (24 tests). Full DOM/render coverage pending vitest Solid transform. |
