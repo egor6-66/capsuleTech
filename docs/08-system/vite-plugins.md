@@ -7,17 +7,24 @@ status: documented
 
 Все плагины живут в `packages/builders/vite/src/plugins/` и подключаются в `packages/builders/vite/src/defines/capsuleConfig.ts` (раньше — `packages/system/vite/src/plugins/` + `packages/core/src/builder/config.ts`, до builders-consolidation, PR #20).
 
-## ExportGeneratorPlugin
+## CapsuleRegistryPlugin
 
-**Файл:** `packages/builders/vite/src/plugins/exportGenerator.ts`
+**Файл:** `packages/builders/vite/src/plugins/capsuleRegistry.ts`
 
-Следит за изменениями в `apps/<app>/src/{widgets,entities,controllers,features}/**` и поддерживает в актуальном состоянии файл-реестр:
+Unified codegen-оркестратор. Поглотил ExportGeneratorPlugin, EndpointsRegistryPlugin и AppConfigPlugin. Поддерживает в актуальном состоянии всё, что генерируется в `.capsule/`:
 
 ```
-.capsule/registry/wrappers.ts
+.capsule/registry/wrappers.ts    — runtime реестр (lazy-импорты)
+.capsule/@types/slots.d.ts       — TS ambient-декларации реестров
+.capsule/registry/endpoints.ts   — runtime реестр endpoints
+.capsule/@types/api.d.ts         — TS типы endpoints
+.capsule/app-config.gen.ts       — сгенерированный рантайм app-конфига
+.capsule/bootstrap.tsx           — точка входа (порядок = LAYER_INIT_ORDER)
 ```
 
-Содержимое — глубокое дерево `lazy()`-импортов:
+### wrappers.ts и slots.d.ts
+
+`wrappers.ts` — глубокое дерево `lazy()`-импортов (entities — eager, так как они plain config, не Solid-компонент):
 
 ```ts
 // генерируется автоматически
@@ -28,20 +35,36 @@ export const Widgets = {
   },
 };
 export const Entities = {
-  Auth: {
-    LoginForm: lazy(() => import('@entities/_auth/loginForm') as Promise<{ default: any }>),
-  },
+  Users: (await import('@entities/users')).default,
 };
-// и т.д. для controllers, features
+// последняя строка — side-effect для глобалов:
+Object.assign(globalThis, { Widgets, Views, Features, Shapes, Controllers, Entities });
 ```
 
-Дальше этот файл подсасывается через `unplugin-auto-import` (см. [[auto-import]]).
+`slots.d.ts` генерируется функцией `generateWrappersTypes`. Для каждого из шести namespace'ов (`Widgets`, `Views`, `Features`, `Shapes`, `Controllers`, `Entities`) — как заполненных, так и пустых — эмитируется пара:
 
-**Используемые библиотеки:** `ts-morph` (правка AST), `@nx/devkit/names` (нормализация PascalCase).
+```ts
+declare global {
+  interface Widgets { Forms: { Auth: typeof import('...').default }; }
+  const Widgets: Widgets;
 
-**События:** `add`, `addDir`, `unlink`, `unlinkDir`. На `add` — добавляется ветка дерева, на `unlink` — удаляется, и если после удаления родитель пуст — удаляется и он.
+  interface Views {}
+  const Views: Views;
 
-**Initial scan:** при старте dev-сервера плагин рекурсивно обходит `entities / controllers / features / widgets` в `apps/<app>/src/` и эмулирует `add`-ивент для каждого существующего файла. Без этого Vite-чокидар (с `ignoreInitial: true`) не выстреливает на ранее существовавшие файлы — registry мог оказаться неполным после удаления `.capsule/registry/wrappers.ts` или после переключения веток.
+  // … и так для всех шести namespace'ов
+}
+export {};
+```
+
+`interface <NS>` — TS-**тип** (форма реестра). `const <NS>: <NS>;` — ambient **value-binding**, благодаря которому TypeScript принимает `<Widgets.Forms.Auth>`, `Widgets.Headers.Main` и т.п. как значения в app-TSX.
+
+**Почему value-binding живёт в slots.d.ts, а не в AutoImport.** Коммит #165 убрал `dirs:`-сканирование registry из AutoImport (правильно — оно создавало circular через `endpoints`). После этого плюральные реестры стали type-only для TS. Возврат плюралей в `AutoImport > imports` воскресил бы цикл #165. Решение — `const <NS>: <NS>;` в ambient-декларации: никакого runtime-импорта не инжектируется, значения populate'ятся `wrappers.ts` через `Object.assign(globalThis, ...)` как и раньше.
+
+**`endpoints` глобал намеренно не добавлен** в `slots.d.ts` — в Feature он приходит как `services.api.X.Y`.
+
+**Initial scan:** при старте dev-сервера плагин рекурсивно обходит `src/**` единожды (флаг `scanned`). Без этого chokidar (`ignoreInitial: true`) пропускает существующие файлы.
+
+**Порядок загрузки (LAYER_INIT_ORDER):** единственная точка контроля порядка import'ов в `bootstrap.tsx`. Добавляешь новый слой → добавляешь запись в `LAYER_INIT_ORDER`, bootstrap обновится автоматически.
 
 > [!warning]
 > При пустом файле (например, `loginForm.tsx` нулевой длины) плагин всё равно создаст запись в реестре, и при попытке использовать её в JSX произойдёт runtime-error.

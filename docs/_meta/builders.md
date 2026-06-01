@@ -129,6 +129,8 @@ biome-config → ничего (zero-deps, чисто config-файл)
 
 8. **Двойной initial-scan ЗАКРЫТ** — `CapsuleRegistryPlugin` использует единый флаг `scanned` и один `walkFiles` на `buildStart`. Больше не дублируется.
 
+14. **`slots.d.ts` даёт И тип, И значение — не возвращай плюрали в AutoImport `dirs`.** `generateWrappersTypes` эмитит `interface <NS> {...}` (тип) и `const <NS>: <NS>;` (ambient value-binding) для всех шести namespace'ов. Именно `const` делает `<Widgets.X>` и `Widgets.X.Y` валидными значениями в app-TSX — TS без него видит только тип, не значение. Коммит #165 убрал `dirs:`-сканирование registry из AutoImport (правильно: создавало circular через `endpoints`); плюрали не должны возвращаться в `AutoImport > imports` — это воскресит цикл. Value binding остаётся исключительно в `slots.d.ts`; рантайм-значения заполняет `wrappers.ts` через `Object.assign(globalThis, ...)`.
+
 9. **Мёртвый код** — `vite/src/utils/generateFromTemplates.ts`, `vite/src/plugins/html.ts` (HtmlPlugin). Можно удалять без последствий.
 
 10. **CHANGELOG.md в compliance/vite** — 60+ записей "version bump only". Побочка release-group `cli` (fixed). Не actionable.
@@ -152,7 +154,7 @@ biome-config → ничего (zero-deps, чисто config-файл)
 | Поменять Rollup external-policy для lib | `lib/src/libConfig.ts > rollupExternalSelector` или передавай `bundleDependencies: […]` |
 | Добавить новый статический scaffold-файл | `vite/src/plugins/scaffold/template/<name>.template` + `vite/src/plugins/scaffold/index.ts > FILES` + `vite/vite.config.mts > staticCopyPlugin` |
 | Поменять формат route-файла | `vite/src/plugins/router/index.ts > ROUTE_TEMPLATE` (inline string) |
-| Поменять формат `wrappers.ts` или `slots.d.ts` | `vite/src/plugins/capsuleRegistry.ts > generateWrappersRuntime / generateWrappersTypes` |
+| Поменять формат `wrappers.ts` или `slots.d.ts` | `vite/src/plugins/capsuleRegistry.ts > generateWrappersRuntime / generateWrappersTypes`. **slots.d.ts должна содержать И `interface <NS>`, И `const <NS>: <NS>;` для каждого namespace — иначе плюральные реестры станут type-only и app-TSX не скомпилируется.** |
 | Поменять формат `endpoints.ts` или `api.d.ts` | `vite/src/plugins/capsuleRegistry.ts > generateEndpointsRuntime / generateEndpointsTypes` |
 | Поменять формат `app-config.gen.ts` | `vite/src/plugins/capsuleRegistry.ts > generateAppConfigRuntime` |
 | Поменять порядок import'ов в `bootstrap.tsx` | `vite/src/plugins/capsuleRegistry.ts > LAYER_INIT_ORDER` |
