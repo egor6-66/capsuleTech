@@ -12,13 +12,30 @@ export default defineConfig({
     // не страдают — jsdom-globals им просто не мешают.
     environment: 'jsdom',
     globals: false,
-    // @tanstack/solid-router и @solidjs/meta отдают .jsx файлы в dev-conditions:
-    // node natively не понимает .jsx и падает на резолве `Link` через
-    // ui-kit/imports.tsx → @tanstack/solid-router/dist/source/index.dev.jsx
-    // и на резолве web-ui (transitively use @solidjs/meta).
+    // vitest.setup.ts stubs window.matchMedia + ResizeObserver (jsdom omits both).
+    // Required after LCP de-lazy: static web-ui imports pull web-style at collect
+    // time which reads matchMedia on module load.
+    setupFiles: ['./vitest.setup.ts'],
+    // Several deps ship .jsx/.tsx source files in dev conditions.
+    // Node natively cannot process JSX — inline these deps so Vite transforms them.
+    // - @tanstack/solid-router: ui-kit/imports.tsx re-exports Link → dev .jsx entry
+    // - @solidjs/meta: transitive via web-ui subpaths
+    // - @kobalte/core: ships .jsx in dist/polymorphic; pulled in by static web-ui
+    //   imports (Button, Input, Toggle etc.) after the LCP de-lazy in imports.tsx.
+    //   Mirror of what web-ui's vitest.config.ts does for the same reason.
+    // - solid-prevent-scroll, solid-presence: kobalte peer deps, also ship .jsx
     server: {
       deps: {
-        inline: [/@tanstack\/solid-router/, /@solidjs\/meta/],
+        inline: [
+          /@tanstack\/solid-router/,
+          /@solidjs\/meta/,
+          /@kobalte\/core/,
+          /solid-prevent-scroll/,
+          /solid-presence/,
+          /lucide-solid/,
+          /solid-motionone/,
+          /solid-map-gl/,
+        ],
       },
     },
   },

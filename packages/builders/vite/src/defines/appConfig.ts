@@ -8,7 +8,7 @@ export const appConfig = (config: UserConfig, idDev: boolean) => {
         emptyOutDir: true,
         reportCompressedSize: true,
         sourcemap: !idDev,
-        minify: idDev ? 'esbuild' : false,
+        minify: idDev ? false : 'esbuild',
         commonjsOptions: {
           transformMixedEsModules: true,
         },

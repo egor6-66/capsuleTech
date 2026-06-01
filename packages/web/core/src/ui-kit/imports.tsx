@@ -1,82 +1,74 @@
+// ---------------------------------------------------------------------------
+// Static imports — critical-path, cheap, always on the render waterfall.
+// Known to Vite at build time → emits modulepreload hints → loads in parallel.
+// ---------------------------------------------------------------------------
+import { Button } from '@capsuletech/web-ui/button';
+// Card and Field: each subpath index already assembles the compound (Card.Header etc.)
+// so a single static import gives the full compound without any Object.assign here.
+import { Card } from '@capsuletech/web-ui/card';
+import { Field } from '@capsuletech/web-ui/field';
+import { Flex } from '@capsuletech/web-ui/flex';
+import { Grid } from '@capsuletech/web-ui/grid';
+import { Group as GroupBase, GroupSeparator } from '@capsuletech/web-ui/group';
+import { Input } from '@capsuletech/web-ui/input';
+import { Label } from '@capsuletech/web-ui/label';
+import { List } from '@capsuletech/web-ui/list';
+import { Matrix } from '@capsuletech/web-ui/matrix';
+import { Separator } from '@capsuletech/web-ui/separator';
+import { Skeleton } from '@capsuletech/web-ui/skeleton';
+import { Spinner } from '@capsuletech/web-ui/spinner';
+import { Toggle } from '@capsuletech/web-ui/toggle';
+import { Typography } from '@capsuletech/web-ui/typography';
 import { For, Index, lazy, Match, Show, Switch } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 
+// Re-export static critical-path primitives
+export { Button, Input, Label, Separator, Toggle, Typography };
+
+// Layout namespace: Grid + Flex + Matrix (static)
+export const Layout = { Grid, Flex, Matrix };
+
+// List, Skeleton, Spinner (static)
+export { List, Skeleton, Spinner };
+
+// Group: web-ui/group exports flat Group + GroupSeparator; assemble compound here (static)
+export const Group = Object.assign(GroupBase, {
+  Separator: GroupSeparator,
+});
+
+// Card and Field: sub-components are already attached by web-ui/card and
+// web-ui/field index files, so the static import gives the full compound.
+export { Card, Field };
+
+// ---------------------------------------------------------------------------
+// Lazy imports — heavy / optional / route-specific.
+// These are NOT on the critical shell path and would bloat the initial bundle.
+// ---------------------------------------------------------------------------
+
 // 1. Хелпер для сокращения записи
-// m[name] вытаскивает конкретный компонент из модуля, так как у вас именованные экспорты
 const createLazy = (importer: () => Promise<any>, name: string) =>
   lazy(() => importer().then((m) => ({ default: m[name] })));
 
-// 2. Простые компоненты
-export const Button = createLazy(() => import('@capsuletech/web-ui/button'), 'Button');
-export const Input = createLazy(() => import('@capsuletech/web-ui/input'), 'Input');
-export const Label = createLazy(() => import('@capsuletech/web-ui/label'), 'Label');
-export const Separator = createLazy(() => import('@capsuletech/web-ui/separator'), 'Separator');
-export const Toggle = createLazy(() => import('@capsuletech/web-ui/toggle'), 'Toggle');
-export const Typography = createLazy(() => import('@capsuletech/web-ui/typography'), 'Typography');
-
-// Layout namespace: Grid + Flex + Matrix
-export const Layout = {
-  Grid: createLazy(() => import('@capsuletech/web-ui/grid'), 'Grid'),
-  Flex: createLazy(() => import('@capsuletech/web-ui/flex'), 'Flex'),
-  Matrix: createLazy(() => import('@capsuletech/web-ui/matrix'), 'Matrix'),
-};
-export const List = createLazy(() => import('@capsuletech/web-ui/list'), 'List');
-const GroupBase = createLazy(() => import('@capsuletech/web-ui/group'), 'Group');
-export const Group = Object.assign(GroupBase, {
-  Separator: createLazy(() => import('@capsuletech/web-ui/group'), 'GroupSeparator'),
-});
+// Animate / Resizable — motionone (~46KB), only used in specific animated sections
 export const Animate = createLazy(() => import('@capsuletech/web-ui/wrappers'), 'Animate');
 export const Resizable = createLazy(() => import('@capsuletech/web-ui/wrappers'), 'Resizable');
 
-// 3. Компонент Card со вложенными частями
-const CardBase = createLazy(() => import('@capsuletech/web-ui/card'), 'Card');
-export const Card = Object.assign(CardBase, {
-  Header: createLazy(() => import('@capsuletech/web-ui/card/parts'), 'CardHeader'),
-  Title: createLazy(() => import('@capsuletech/web-ui/card/parts'), 'CardTitle'),
-  Description: createLazy(() => import('@capsuletech/web-ui/card/parts'), 'CardDescription'),
-  Content: createLazy(() => import('@capsuletech/web-ui/card/parts'), 'CardContent'),
-  Footer: createLazy(() => import('@capsuletech/web-ui/card/parts'), 'CardFooter'),
-});
-
-// 4. Компонент Field со всеми частями
-const FieldBase = createLazy(() => import('@capsuletech/web-ui/field'), 'Field');
-export const Field = Object.assign(FieldBase, {
-  Content: createLazy(() => import('@capsuletech/web-ui/field/parts'), 'FieldContent'),
-  Description: createLazy(() => import('@capsuletech/web-ui/field/parts'), 'FieldDescription'),
-  Error: createLazy(() => import('@capsuletech/web-ui/field/parts'), 'FieldError'),
-  Group: createLazy(() => import('@capsuletech/web-ui/field/parts'), 'FieldGroup'),
-  Label: createLazy(() => import('@capsuletech/web-ui/field/parts'), 'FieldLabel'),
-  Legend: createLazy(() => import('@capsuletech/web-ui/field/parts'), 'FieldLegend'),
-  Separator: createLazy(() => import('@capsuletech/web-ui/field/parts'), 'FieldSeparator'),
-  Set: createLazy(() => import('@capsuletech/web-ui/field/parts'), 'FieldSet'),
-  Title: createLazy(() => import('@capsuletech/web-ui/field/parts'), 'FieldTitle'),
-});
-
-// 7. DataTable — smart table (sorting/pagination/selection/filtering), no sub-components
+// DataTable — 126KB (tanstack-table + virtual), not in every page
 export const DataTable = createLazy(() => import('@capsuletech/web-ui/dataTable'), 'DataTable');
 
-// Loading primitives — Skeleton (pulse placeholder) and Spinner (spinning indicator).
-// Both are plain callables without sub-components.
-export const Skeleton = createLazy(() => import('@capsuletech/web-ui/skeleton'), 'Skeleton');
-export const Spinner = createLazy(() => import('@capsuletech/web-ui/spinner'), 'Spinner');
-
-// 7b. PreviewCard — single-item field renderer (atomic, без outer Card chrome).
-// Принимает `data` + `fields: IPreviewCardField[]`. Mirror DataTable API
-// (accessorKey/accessorFn/cell). Используется для Shape с single-object schema.
+// PreviewCard — single-item renderer, optional; separate chunk
 export const PreviewCard = createLazy(
   () => import('@capsuletech/web-ui/previewCard'),
   'PreviewCard',
 );
 
-// 7a. DropdownMenu — declarative composite над Dropdown primitive. Принимает
-// `trigger` + `data: IDropdownMenuItem[]` (рекурсивная структура: item/sub/
-// separator/group) и сам строит дерево. Симметрия с DataTable: для Shape pattern.
+// DropdownMenu — declarative composite, kobalte-heavy
 export const DropdownMenu = createLazy(
   () => import('@capsuletech/web-ui/dropdownMenu'),
   'DropdownMenu',
 );
 
-// 6. Компонент Table со вложенными частями
+// Table — raw HTML table primitives (used for custom table layouts, not every page)
 const TableBase = createLazy(() => import('@capsuletech/web-ui/table'), 'Table');
 export const Table = Object.assign(TableBase, {
   Header: createLazy(() => import('@capsuletech/web-ui/table'), 'TableHeader'),
@@ -86,8 +78,7 @@ export const Table = Object.assign(TableBase, {
   Cell: createLazy(() => import('@capsuletech/web-ui/table'), 'TableCell'),
 });
 
-// 8. Dropdown — accessible menu primitive (Kobalte). Compound с 9 sub-components:
-// Trigger / Content / Item / Separator / Group / Label / Sub / SubTrigger / SubContent.
+// Dropdown — 126KB, kobalte-heavy, only used where explicit dropdown menus appear
 const DropdownBase = createLazy(() => import('@capsuletech/web-ui/dropdown'), 'Dropdown');
 export const Dropdown = Object.assign(DropdownBase, {
   Trigger: createLazy(() => import('@capsuletech/web-ui/dropdown'), 'DropdownTrigger'),
@@ -101,11 +92,7 @@ export const Dropdown = Object.assign(DropdownBase, {
   SubContent: createLazy(() => import('@capsuletech/web-ui/dropdown'), 'DropdownSubContent'),
 });
 
-// Switcher widgets — переехали из @capsuletech/web-style в @capsuletech/web-ui
-// composites (web-style теперь только signal stores + helpers, без visual UI).
-// Все три используют hooks из web-style под капотом (useTheme/useDarkMode/useLayoutMode).
-//
-// `ThemeSwitcher` (`<select>`) удалён — заменён `ThemePicker` (Dropdown-based).
+// Switcher widgets — tiny but pull web-style hooks; header-only, not critical path
 export const DarkModeToggle = createLazy(
   () => import('@capsuletech/web-ui/darkModeToggle'),
   'DarkModeToggle',
@@ -122,12 +109,8 @@ export const WidgetSettingsToggle = createLazy(
   () => import('@capsuletech/web-ui/widgetSettingsToggle'),
   'WidgetSettingsToggle',
 );
-/**
- * MapView — compound map component (Mapbox GL).
- * Source / Layer / Sky / Marker / Terrain / TerrainPreset / BuildingsPreset живут внутри
- * `<Ui.MapView>` (через MapContext) и доступны как `Ui.MapView.Source`, `Ui.MapView.Sky`, etc.
- * Аналогичен Dropdown и Card по паттерну Object.assign.
- */
+
+// MapView — ~1.5MB maplibre-gl; always lazy
 const MapViewBase = createLazy(() => import('@capsuletech/web-map'), 'MapView');
 export const MapView = Object.assign(MapViewBase, {
   Source: createLazy(() => import('@capsuletech/web-map'), 'Source'),
