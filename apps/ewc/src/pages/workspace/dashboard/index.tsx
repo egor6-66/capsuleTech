@@ -14,27 +14,37 @@
  *
  * `layoutMode` НЕ передаём — Matrix сам подцепит глобальный store от
  * `@capsuletech/web-style`.
+ *
+ * **Per-slot Suspense (chunk-load):** каждый виджет — отдельный lazy-чанк из
+ * реестра. Matrix оборачивает контент КАЖДОГО слота в собственный `<Suspense>`
+ * (под капотом), иначе любой suspend всплыл бы к единственному `<Suspense>`
+ * Feature'а и погасил ВЕСЬ Matrix до загрузки всех чанков. `skeleton` на слоте —
+ * fallback на время загрузки чанка; совпадает с data-loading скелетоном виджета
+ * (table/map) — без визуального скачка. Без `skeleton` слот получает нейтральный
+ * pulse-дефолт от Matrix.
  */
 const Dashboard = Page((Ui) => (
   <Features.Incidents>
     <Ui.Layout.Matrix
       preset="app-shell"
-      layoutMode={'edit'}
       slots={{
         main: {
           children: <Widgets.Tables.Incidents />,
+          skeleton: <Ui.Skeleton variant="table" rows={100} />,
           settings: <Views.Settings.TableSync />,
           draggable: true,
           swapGroup: 'widgets',
         },
         rightBar: {
           children: <Widgets.Sidebars.Main />,
+          skeleton: <Ui.Skeleton variant="card" />,
           draggable: true,
           swapGroup: 'widgets',
           initialSize: 0.25,
         },
         footer: {
           children: <Widgets.Maps.World />,
+          skeleton: <Ui.Skeleton variant="map" />,
           settings: <Views.Settings.MapSync />,
           draggable: true,
           swapGroup: 'widgets',

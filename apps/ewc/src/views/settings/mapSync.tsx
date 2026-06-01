@@ -1,19 +1,30 @@
 /**
- * MapSync — контрол в settings-strip карты: подлетать ли к выбранному инциденту.
+ * MapSync — контролы в settings-strip карты. Две независимые opt-in-кнопки:
  *
- * Stateless-проекция: текущее значение `flyToSelected` читается из стора через
- * `useCtx`, клик по кнопке несёт meta-тег `toggle-fly` → роутится в
- * `Features.Incidents.onClick`, который флипает флаг. Сам View ничего не мутирует.
+ *   «Синк с таблицей»       (tag `toggle-fly`, флаг `flyToSelected`) —
+ *     cross-widget: карта подлетает к выбору, пришедшему ИЗ ТАБЛИЦЫ.
+ *   «Подлететь к выбранному» (tag `toggle-fly-self`, флаг `flyOnClick`) —
+ *     self: клик по маркеру подлетает к нему.
+ *
+ * Stateless-проекция: значения читаются из стора через `useCtx`, клик несёт
+ * meta-тег → `Features.Incidents.onClick` флипает флаг. View ничего не мутирует.
  */
 import type { IIncidentsContext } from '../../features/incidents';
 
 const MapSync = View((Ui) => {
   const ctx = useCtx();
-  const on = () => !!(ctx.store.ctx.data as IIncidentsContext | undefined)?.flyToSelected;
+  const data = () => ctx.store.ctx.data as IIncidentsContext | undefined;
+  const sync = () => !!data()?.flyToSelected;
+  const fly = () => !!data()?.flyOnClick;
   return (
-    <Ui.Button size="sm" variant={on() ? 'default' : 'outline'} meta={{ tags: ['toggle-fly'] }}>
-      {on() ? '✓ Подлетать к выбранному' : 'Подлетать к выбранному'}
-    </Ui.Button>
+    <>
+      <Ui.Button size="sm" variant={sync() ? 'default' : 'outline'} meta={{ tags: ['toggle-fly'] }}>
+        {sync() ? '✓ Синк с таблицей' : 'Синк с таблицей'}
+      </Ui.Button>
+      <Ui.Button size="sm" variant={fly() ? 'default' : 'outline'} meta={{ tags: ['toggle-fly-self'] }}>
+        {fly() ? '✓ Подлететь к выбранному' : 'Подлететь к выбранному'}
+      </Ui.Button>
+    </>
   );
 });
 

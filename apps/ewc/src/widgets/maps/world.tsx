@@ -18,15 +18,17 @@ import type { IIncidentsContext } from '../../features/incidents';
 const World = Widget(
   (Ui, store) => {
     const data = () => store?.ctx.data as IIncidentsContext | undefined;
-    // Опционально: камера подлетает к маркеру выбранного incident'а (flyTo —
-    // анимация, в отличие от center=jump). Гейт по opt-in флагу flyToSelected.
+    // Камера подлетает к маркеру выбранного incident'а (flyTo — анимация, в
+    // отличие от center=jump) при одном из opt-in условий:
+    //   • flyToSelected + выбор из ТАБЛИЦЫ → «Синк с таблицей» (cross-widget)
+    //   • flyOnClick    + выбор из КАРТЫ   → «Подлететь к выбранному» (self)
     const flyTo = (): [number, number] | undefined => {
       const sel = data()?.selected;
-      // Летим к маркеру только когда выбор пришёл из ДРУГОГО виджета (таблицы),
-      // не когда кликнули сам маркер.
-      return data()?.flyToSelected && sel && data()?.selectionSource !== 'map'
-        ? [sel.location.lng, sel.location.lat]
-        : undefined;
+      if (!sel) return undefined;
+      const src = data()?.selectionSource;
+      const shouldFly =
+        (data()?.flyToSelected && src !== 'map') || (data()?.flyOnClick && src === 'map');
+      return shouldFly ? [sel.location.lng, sel.location.lat] : undefined;
     };
     return (
       <Ui.MapView

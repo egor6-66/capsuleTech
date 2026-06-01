@@ -46,13 +46,23 @@ export interface IIncidentsContext {
   items: IIncident[];
   selected: IIncident | null;
   error: string | null;
-  /** Sync prefs (opt-in) — toggled from the Matrix widget-settings strip. */
+  /**
+   * Cross-widget sync prefs (opt-in) — toggled from the Matrix widget-settings strip.
+   * - `flyToSelected`   — карта подлетает к выбору, пришедшему из ТАБЛИЦЫ («Синк с таблицей»).
+   * - `scrollToSelected`— таблица скроллит к выбору, пришедшему из КАРТЫ («Синк с картой»).
+   */
   flyToSelected: boolean;
   scrollToSelected: boolean;
   /**
-   * Кто инициировал выбор: тег источника (`table` / `map`). Sync читает его,
-   * чтобы реагировать ТОЛЬКО на активацию из другого виджета (клик по строке
-   * не скроллит таблицу, клик по маркеру не двигает карту).
+   * Self-click center prefs (opt-in) — реагируют на выбор из СВОЕГО виджета.
+   * - `centerOnClick` — клик по строке таблицы центрирует её («Скроллить к выбранному»).
+   * - `flyOnClick`    — клик по маркеру карты подлетает к нему («Подлететь к выбранному»).
+   */
+  centerOnClick: boolean;
+  flyOnClick: boolean;
+  /**
+   * Кто инициировал выбор: тег источника (`table` / `map`). Sync-prefs реагируют
+   * на ЧУЖОЙ источник, self-prefs — на СВОЙ.
    */
   selectionSource: 'table' | 'map' | null;
 }
@@ -66,6 +76,8 @@ const Incidents = Feature(({ api, router }) => ({
     error: null as string | null,
     flyToSelected: false,
     scrollToSelected: false,
+    centerOnClick: false,
+    flyOnClick: false,
     selectionSource: null as 'table' | 'map' | null,
   },
 
@@ -104,12 +116,20 @@ const Incidents = Feature(({ api, router }) => ({
     }
 
     // Widget-settings toggles (rendered in the Matrix settings strip when
-    // global settingsMode is on). Each flips an opt-in sync pref.
+    // global settingsMode is on). Each flips an opt-in pref.
+    //   cross-widget sync:
     if (tags.includes('toggle-fly')) {
       store.update({ flyToSelected: !store.ctx.data.flyToSelected });
     }
     if (tags.includes('toggle-scroll')) {
       store.update({ scrollToSelected: !store.ctx.data.scrollToSelected });
+    }
+    //   self-click center:
+    if (tags.includes('toggle-center')) {
+      store.update({ centerOnClick: !store.ctx.data.centerOnClick });
+    }
+    if (tags.includes('toggle-fly-self')) {
+      store.update({ flyOnClick: !store.ctx.data.flyOnClick });
     }
   },
 

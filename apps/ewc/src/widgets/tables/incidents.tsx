@@ -28,10 +28,13 @@ const Incidents = Widget(
         itemPayload={(row: IIncident) => ({ id: row.id })}
         isRowActive={(row: IIncident) => row.id === data()?.selected?.id}
         getRowId={(row: IIncident) => row.id}
-        // Скроллим к строке только когда выбор пришёл из ДРУГОГО виджета (карты),
-        // не когда кликнули саму строку — она и так на виду.
+        // Центрируем строку при одном из opt-in условий (DataTable scrollToId
+        // делает scrollIntoView block:'center'):
+        //   • scrollToSelected + выбор из КАРТЫ  → «Синк с картой» (cross-widget)
+        //   • centerOnClick    + выбор из ТАБЛИЦЫ → «Скроллить к выбранному» (self)
         scrollToId={
-          data()?.scrollToSelected && data()?.selectionSource !== 'table'
+          (data()?.scrollToSelected && data()?.selectionSource !== 'table') ||
+          (data()?.centerOnClick && data()?.selectionSource === 'table')
             ? data()?.selected?.id
             : undefined
         }
