@@ -11,11 +11,35 @@
  * moved across zones. Cell carries its own properties (width, tag, children)
  * with it. Layout structure (rows) stays stable — only cell membership mutates.
  *
+ * ADR 026 Phase 2b extension: grid zones participate in the SAME sortable group.
+ * When an item drops into a grid zone, `placeItem` / `moveItem` from web-dnd
+ * grid math is used to assign {x,y,w,h} coordinates. Cross-zone rail↔grid
+ * and grid↔rail transitions are handled here; within-grid moves use
+ * `moveItem` with coordinates derived from the live pointer at drop time.
+ *
  * MUST be called inside DnDProvider tree (createSortableGroup calls useDnD).
  */
-import { createSortableGroup, type ISortableZone } from '@capsuletech/web-dnd';
+import {
+  type IGridLayout,
+  moveItem,
+  placeItem,
+  pointToCell,
+  createSortableGroup,
+  type ISortableZone,
+  useDnD,
+} from '@capsuletech/web-dnd';
 import { type Accessor, createEffect, createSignal } from 'solid-js';
 import type { ICell, IRow, LayoutChangeEvent } from '../interfaces';
+
+// ---------------------------------------------------------------------------
+// Default grid dimensions (ADR 026)
+// ---------------------------------------------------------------------------
+
+const DEFAULT_COLS = 12;
+const DEFAULT_ROW_HEIGHT = 64;
+const DEFAULT_COMPACT = 'none' as const;
+const DEFAULT_GRID_W = 2;
+const DEFAULT_GRID_H = 2;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -42,6 +66,24 @@ export interface IInsertEngine {
    * Returns undefined for rows without an id (not participating in DnD).
    */
   getZone: (rowId: string) => ISortableZone | undefined;
+  /**
+   * ADR 026: Registers the grid container HTMLElement for a given grid zone.
+   * Called by the grid render-path so that `onDrop` can measure the container
+   * rect + compute `pointToCell` at drop time.
+   *
+   * Returns undefined for non-grid zones (no-op safe to call always).
+   */
+  registerGridContainer: (rowId: string, el: HTMLElement | null) => void;
+  /**
+   * ADR 026: Called by the grid render-path during pointermove for a grid-cell
+   * drag to commit an in-grid move immediately (on pointerup within the grid).
+   * This updates localRows via moveItem so the preview cell materializes on drop.
+   */
+  commitGridMove: (
+    rowId: string,
+    cellId: string,
+    pointer: { x: number; y: number },
+  ) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -83,12 +125,42 @@ export const cellsFitOnOneLine = (containerWidth: number, minWidths: number[]): 
  * - orientation:'vertical' → 'y'
  * - wrap:true (horizontal wrap grid) → 'grid'
  * - otherwise (flat horizontal row) → 'x'
+ *
+ * ADR 026: grid-canvas zones (row.grid present) use 'grid' axis so
+ * cross-zone drops work via the sortable group's nearest-center logic.
  */
 export const rowToAxis = (row: IRow): 'x' | 'y' | 'grid' => {
+  if (row.grid) return 'grid';
   if (row.orientation === 'vertical') return 'y';
   if (row.wrap) return 'grid';
   return 'x';
 };
+
+// ---------------------------------------------------------------------------
+// Grid layout helpers (model-level, pure — for testability)
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract the current IGridLayout from the cells of a grid-zone row.
+ * Only cells that have a `grid` coordinate are included.
+ */
+export const rowToGridLayout = (row: IRow): IGridLayout =>
+  row.cells
+    .filter((c): c is ICell & { grid: NonNullable<ICell['grid']> } => c.grid !== undefined)
+    .map((c) => ({ id: c.id, x: c.grid.x, y: c.grid.y, w: c.grid.w, h: c.grid.h }));
+
+/**
+ * Apply a new IGridLayout back onto the cells of a grid-zone row.
+ * Cells absent from the layout (no grid coords) are left unchanged.
+ */
+export const applyGridLayout = (row: IRow, layout: IGridLayout): IRow => ({
+  ...row,
+  cells: row.cells.map((cell) => {
+    const item = layout.find((l) => l.id === cell.id);
+    if (!item) return cell;
+    return { ...cell, grid: { x: item.x, y: item.y, w: item.w, h: item.h } };
+  }),
+});
 
 // ---------------------------------------------------------------------------
 // createInsertEngine
@@ -107,6 +179,23 @@ export const createInsertEngine = (opts: IInsertEngineOptions): IInsertEngine =>
   createEffect(() => {
     setLocalRows(opts.rows());
   });
+
+  // -------------------------------------------------------------------------
+  // ADR 026: Per-grid-zone container element registry.
+  // Keyed by rowId. Used at drop time to call getBoundingClientRect + pointToCell.
+  // -------------------------------------------------------------------------
+
+  const gridContainerEls = new Map<string, HTMLElement | null>();
+
+  const registerGridContainer = (rowId: string, el: HTMLElement | null): void => {
+    gridContainerEls.set(rowId, el);
+  };
+
+  // -------------------------------------------------------------------------
+  // useDnD — accessed here (inside DnDProvider) to read live pointer at drop time.
+  // -------------------------------------------------------------------------
+
+  const dnd = useDnD();
 
   // -------------------------------------------------------------------------
   // createSortableGroup — one group per Matrix instance (ADR 025).
@@ -135,6 +224,7 @@ export const createInsertEngine = (opts: IInsertEngineOptions): IInsertEngine =>
   for (const row of rowsSnapshot) {
     if (!row.id) continue;
     const rowId = row.id;
+    const isGridZone = !!row.grid;
 
     const zone = group.createZone({
       id: rowId,
@@ -172,17 +262,150 @@ export const createInsertEngine = (opts: IInsertEngineOptions): IInsertEngine =>
         const tgtRowIdx = prev.findIndex((r) => r.id === toZone);
         if (tgtRowIdx === -1) return;
 
+        const tgtRow = prev[tgtRowIdx];
+
+        // -----------------------------------------------------------------------
+        // ADR 026 — Grid zone drop handling
+        // -----------------------------------------------------------------------
+        if (isGridZone) {
+          const cols = tgtRow.grid?.cols ?? DEFAULT_COLS;
+          const rowHeight = tgtRow.grid?.rowHeight ?? DEFAULT_ROW_HEIGHT;
+          const compact = tgtRow.grid?.compact ?? DEFAULT_COMPACT;
+
+          // Compute target grid cell from live pointer + container rect.
+          // At drop time the pointer signal is still populated (it clears after).
+          const pointer = dnd.state.pointer();
+          const containerEl = gridContainerEls.get(toZone) ?? null;
+
+          let targetCell = { x: 0, y: 0 };
+          if (pointer && containerEl) {
+            const rect = containerEl.getBoundingClientRect();
+            targetCell = pointToCell(pointer, rect, cols, rowHeight);
+          }
+
+          // Build current grid layout (cells already in the grid zone)
+          const sourceCells = prev[srcRowIdx].cells.filter((_, i) => i !== srcCellIdx);
+
+          const isWithinGrid = srcRowIdx === tgtRowIdx;
+
+          if (isWithinGrid && movedCell.grid) {
+            // ---------------------------------------------------------------
+            // Within-grid move: use moveItem to displace neighbors.
+            // ---------------------------------------------------------------
+            const currentLayout = rowToGridLayout(tgtRow);
+            const newLayout = moveItem(currentLayout, itemId, targetCell, cols, compact);
+            const updatedTgtRow = applyGridLayout(tgtRow, newLayout);
+
+            setLocalRows((rs) =>
+              rs.map((r, i) => (i === tgtRowIdx ? updatedTgtRow : r)),
+            );
+
+            // Find the moved item's new coords for the event
+            const newItem = newLayout.find((l) => l.id === itemId);
+            if (newItem) {
+              opts.onLayoutChange?.({
+                kind: 'grid',
+                id: itemId,
+                zone: toZone,
+                x: newItem.x,
+                y: newItem.y,
+                w: newItem.w,
+                h: newItem.h,
+              });
+            }
+            return;
+          }
+
+          // ---------------------------------------------------------------
+          // Cross-zone → grid: materialize the cell (rail→grid).
+          // Use placeItem with defaultGrid size (or fallback).
+          // Strip the cell's grid coords if it had any (shouldn't, but safe).
+          // ---------------------------------------------------------------
+          const defaultW = movedCell.defaultGrid?.w ?? DEFAULT_GRID_W;
+          const defaultH = movedCell.defaultGrid?.h ?? DEFAULT_GRID_H;
+
+          const incomingItem = {
+            id: itemId,
+            x: targetCell.x,
+            y: targetCell.y,
+            w: defaultW,
+            h: defaultH,
+          };
+
+          // Current grid layout = existing grid-zone cells (excluding the incoming cell if it was already there)
+          const existingGridCells = isWithinGrid ? sourceCells : prev[tgtRowIdx].cells;
+          const currentLayout: IGridLayout = existingGridCells
+            .filter((c): c is ICell & { grid: NonNullable<ICell['grid']> } => c.grid !== undefined)
+            .map((c) => ({ id: c.id, x: c.grid.x, y: c.grid.y, w: c.grid.w, h: c.grid.h }));
+
+          const newLayout = placeItem(currentLayout, incomingItem, cols, compact);
+
+          // Reassign grid coords from layout back to cells
+          const materializedCell: ICell = {
+            ...movedCell,
+            grid: {
+              x: targetCell.x,
+              y: targetCell.y,
+              w: defaultW,
+              h: defaultH,
+            },
+          };
+
+          // Target cells = existing grid cells + materialized cell, with updated coords
+          const baseCells = isWithinGrid ? sourceCells : prev[tgtRowIdx].cells;
+          const updatedCells = [
+            ...baseCells.map((cell) => {
+              const item = newLayout.find((l) => l.id === cell.id);
+              if (!item) return cell;
+              return { ...cell, grid: { x: item.x, y: item.y, w: item.w, h: item.h } };
+            }),
+            materializedCell,
+          ];
+
+          // Find the materialized item's final coords in the layout
+          const finalItem = newLayout.find((l) => l.id === itemId) ?? incomingItem;
+
+          setLocalRows((rs) =>
+            rs.map((r, i) => {
+              if (i === srcRowIdx && i === tgtRowIdx) {
+                return { ...r, cells: updatedCells };
+              }
+              if (i === srcRowIdx) {
+                return { ...r, cells: sourceCells };
+              }
+              if (i === tgtRowIdx) {
+                return { ...r, cells: updatedCells };
+              }
+              return r;
+            }),
+          );
+
+          opts.onLayoutChange?.({
+            kind: 'grid',
+            id: itemId,
+            zone: toZone,
+            x: finalItem.x,
+            y: finalItem.y,
+            w: finalItem.w,
+            h: finalItem.h,
+          });
+          return;
+        }
+
+        // -----------------------------------------------------------------------
+        // Flow-zone drop handling (unchanged from ADR 025, + grid→rail cleanup)
+        // -----------------------------------------------------------------------
+
         // Remove the cell from its source position first.
-        // Insert it at toIndex into the target zone's cell array.
-        // This uniform rule is correct for both same-zone reorder and
-        // cross-zone move (ADR 025 §«toIndex is computed against items EXCLUDING
-        // the dragged cell»).
+        // If the cell was in a grid zone, strip its grid coords (it's now in a flow zone).
+        const cellToInsert: ICell = movedCell.grid ? { ...movedCell, grid: undefined } : movedCell;
+
         const sourceCells = prev[srcRowIdx].cells.filter((_, i) => i !== srcCellIdx);
         const targetCellsBeforeInsert =
           srcRowIdx === tgtRowIdx ? sourceCells : prev[tgtRowIdx].cells;
         const newTargetCells = [
           ...targetCellsBeforeInsert.slice(0, toIndex),
-          movedCell,
+          cellToInsert,
           ...targetCellsBeforeInsert.slice(toIndex),
         ];
 
@@ -215,10 +438,63 @@ export const createInsertEngine = (opts: IInsertEngineOptions): IInsertEngine =>
   }
 
   // -------------------------------------------------------------------------
+  // commitGridMove — called by render layer during pointermove for within-grid drags.
+  // This allows the render layer to show a live preview and commit on pointer-up.
+  // Since createSortableGroup handles the actual onDrop, this is an alternative
+  // path for "pre-commit" preview updates in the grid.
+  //
+  // NOTE: In Phase 2b we keep this simple — the real commit happens in onDrop
+  // above via pointToCell at drop time. commitGridMove is exposed for the render
+  // layer to implement a live preview (ghost cell) without mutating localRows.
+  // Phase 2c (resize) will extend this.
+  // -------------------------------------------------------------------------
+
+  const commitGridMove = (
+    rowId: string,
+    cellId: string,
+    pointer: { x: number; y: number },
+  ): void => {
+    const prev = localRows();
+    const rowIdx = prev.findIndex((r) => r.id === rowId);
+    if (rowIdx === -1) return;
+    const row = prev[rowIdx];
+    if (!row.grid) return;
+
+    const cols = row.grid.cols ?? DEFAULT_COLS;
+    const rowHeight = row.grid.rowHeight ?? DEFAULT_ROW_HEIGHT;
+    const compact = row.grid.compact ?? DEFAULT_COMPACT;
+
+    const containerEl = gridContainerEls.get(rowId) ?? null;
+    if (!containerEl) return;
+
+    const rect = containerEl.getBoundingClientRect();
+    const targetCell = pointToCell(pointer, rect, cols, rowHeight);
+
+    const currentLayout = rowToGridLayout(row);
+    const newLayout = moveItem(currentLayout, cellId, targetCell, cols, compact);
+    const updatedRow = applyGridLayout(row, newLayout);
+
+    setLocalRows((rs) => rs.map((r, i) => (i === rowIdx ? updatedRow : r)));
+
+    const newItem = newLayout.find((l) => l.id === cellId);
+    if (newItem) {
+      opts.onLayoutChange?.({
+        kind: 'grid',
+        id: cellId,
+        zone: rowId,
+        x: newItem.x,
+        y: newItem.y,
+        w: newItem.w,
+        h: newItem.h,
+      });
+    }
+  };
+
+  // -------------------------------------------------------------------------
   // Public API
   // -------------------------------------------------------------------------
 
   const getZone = (rowId: string): ISortableZone | undefined => zoneMap.get(rowId);
 
-  return { rows: localRows, getZone };
+  return { rows: localRows, getZone, registerGridContainer, commitGridMove };
 };

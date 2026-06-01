@@ -18,7 +18,7 @@ import { Animate, type AnimateVariant } from '../../wrappers/animate';
 import { Flex } from '../flex/flex';
 import type { IFlexItem } from '../flex/interfaces';
 import { DragBadge } from './dnd/drag-badge';
-import { createInsertEngine } from './dnd/insert';
+import { createInsertEngine, type IInsertEngine } from './dnd/insert';
 import { createSwapEngine } from './dnd/swap';
 import type { ICell, IMatrixProps, IRow } from './interfaces';
 import { resolvePreset } from './presets';
@@ -519,6 +519,130 @@ const renderPackingRow = (
 };
 
 // ---------------------------------------------------------------------------
+// Grid render-path (ADR 026 Phase 2b)
+// Active only when dndMode==='insert' && row.grid is present.
+// ---------------------------------------------------------------------------
+
+/** Grid-zone bindings threaded from MatrixContent → renderRow → renderGridRow. */
+interface IGridOpts {
+  registerGridContainer: IInsertEngine['registerGridContainer'];
+  commitGridMove: IInsertEngine['commitGridMove'];
+}
+
+// Default grid config constants (mirrors defaults in insert.tsx)
+const GRID_DEFAULT_COLS = 12;
+const GRID_DEFAULT_ROW_HEIGHT = 64;
+
+/**
+ * renderGridRow — CSS Grid render-path for insert-mode grid zones (ADR 026).
+ *
+ * Container: `display:grid; grid-template-columns:repeat(cols,1fr); grid-auto-rows:rowHeight`.
+ * Each cell: `grid-column:{x+1}/span {w}; grid-row:{y+1}/span {h}`.
+ * Cells without `cell.grid` coords are NOT rendered (they have no valid position).
+ *
+ * Zone highlight (canAccept/isTarget/rejects) mirrors renderPackingRow so the
+ * UX is consistent across zone types.
+ */
+const renderGridRow = (
+  row: IRow,
+  animated: boolean | AnimateVariant | undefined,
+  router: ICapsuleRouter | null,
+  getSwappedChildren: ((cellId: string) => JSX.Element) | undefined,
+  /** Zone provided by createInsertEngine (always defined in grid mode). */
+  zone: ISortableZone,
+  isDragging: Accessor<boolean>,
+  settingsMode: Accessor<boolean>,
+  gridOpts: IGridOpts,
+): JSX.Element => {
+  const cols = row.grid?.cols ?? GRID_DEFAULT_COLS;
+  const rowHeight = row.grid?.rowHeight ?? GRID_DEFAULT_ROW_HEIGHT;
+
+  // Wire container ref to BOTH zone.containerRef (for droppable) AND
+  // gridOpts.registerGridContainer (for pointToCell measurement at drop time).
+  const gridContainerRef = (el: HTMLElement | null): void => {
+    if (el) {
+      zone.containerRef(el);
+      gridOpts.registerGridContainer(row.id!, el);
+    } else {
+      gridOpts.registerGridContainer(row.id!, null);
+    }
+  };
+
+  const rowRejectsDrag: Accessor<boolean> = zone.rejects;
+  const rowIsTarget: Accessor<boolean> = zone.isTarget;
+  const rowCanAccept: Accessor<boolean> = zone.canAccept;
+
+  return (
+    <div
+      ref={gridContainerRef}
+      data-grid-zone={row.id}
+      class="relative h-full w-full overflow-auto"
+      style={{
+        display: 'grid',
+        'grid-template-columns': `repeat(${cols}, 1fr)`,
+        'grid-auto-rows': `${rowHeight}px`,
+      }}
+      classList={{
+        'ring-2 ring-inset ring-destructive/50': rowRejectsDrag(),
+        'ring-2 ring-inset ring-primary/40 bg-primary/5':
+          rowCanAccept() && !rowIsTarget() && !rowRejectsDrag(),
+        'ring-2 ring-inset ring-primary bg-primary/10':
+          rowIsTarget() && !rowRejectsDrag(),
+      }}
+    >
+      <For each={row.cells}>
+        {(cell) => {
+          // Only render cells that have grid coordinates.
+          // Cells without coords (e.g. just materialized but not yet positioned)
+          // are skipped — this should not happen in practice since onDrop always
+          // assigns coords, but is a safety guard.
+          if (!cell.grid) return null;
+
+          const { x, y, w, h } = cell.grid;
+
+          // Bind via zone.createItem so cross-zone DnD and droppable
+          // membership stay correct. Called in <For> render scope so
+          // lifecycle is tied to the cell's DOM element.
+          const zoneItem = zone.createItem(cell.id);
+
+          const isMain = cell.id === 'main';
+          const children = getSwappedChildren ? getSwappedChildren(cell.id) : cell.children;
+          const content = isMain ? animateMain(children, animated, router) : children;
+          const withSettings = settingsMode() && !!cell.settings;
+
+          const settingsStrip = (): JSX.Element =>
+            withSettings ? (
+              <div class="absolute inset-x-0 top-0 z-10 flex h-9 items-center gap-1 border-b border-border bg-card/80 px-2 text-sm">
+                {cell.settings}
+              </div>
+            ) : null;
+
+          return (
+            <div
+              ref={zoneItem.ref}
+              data-grid-cell={cell.id}
+              class="relative overflow-hidden rounded-sm border border-border"
+              style={{
+                'grid-column': `${x + 1} / span ${w}`,
+                'grid-row': `${y + 1} / span ${h}`,
+              }}
+            >
+              <Show when={withSettings}>{settingsStrip()}</Show>
+              <div
+                class="absolute inset-0 overflow-auto"
+                classList={{ 'pointer-events-none': isDragging() }}
+              >
+                <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+              </div>
+            </div>
+          );
+        }}
+      </For>
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
 // Row renderer — turns one IRow into a horizontal Flex (resizable or static)
 // ---------------------------------------------------------------------------
 
@@ -598,7 +722,30 @@ const renderRow = (
   getCellSize: (cellId: string) => number | undefined,
   /** ADR 022: Setter for per-cell explicit px sizes (packing resize handle). */
   setCellSize: (cellId: string, px: number) => void,
+  /**
+   * ADR 026: Grid-zone bindings. Only passed in insert mode when row.grid is set.
+   * undefined → the grid path is never entered (swap / view / non-grid rows).
+   */
+  gridOpts?: IGridOpts,
 ): JSX.Element => {
+  // ---------------------------------------------------------------------------
+  // ADR 026: Grid-canvas render-path.
+  // Gate: dndMode==='insert' (zone is defined) AND row.grid is present.
+  // Swap, corvu resize, packing flow, presets are byte-identical.
+  // ---------------------------------------------------------------------------
+  if (zone && row.grid && gridOpts && row.id) {
+    return renderGridRow(
+      row,
+      animated,
+      router,
+      getSwappedChildren,
+      zone,
+      isDragging,
+      settingsMode,
+      gridOpts,
+    );
+  }
+
   // ADR 022: Packing zones (wrap/vertical/min-size) use a separate render-path
   // instead of corvu fractional panels.
   if (isPackingZone(row)) {
@@ -727,6 +874,8 @@ const rowsToVerticalItems = (
   getCellSize: (cellId: string) => number | undefined,
   /** ADR 022: Setter for per-cell explicit px sizes (packing resize handle). */
   setCellSize: (cellId: string, px: number) => void,
+  /** ADR 026: Grid-zone bindings (insert mode only). */
+  gridOpts?: IGridOpts,
 ): IFlexItem[] => {
   return rows.map((row, i) => {
     const heightIsNumber = typeof row.height === 'number';
@@ -757,6 +906,7 @@ const rowsToVerticalItems = (
         settingsMode,
         getCellSize,
         setCellSize,
+        gridOpts,
       ),
       resizable: isResizable,
       initialSize: resolvedHeight,
@@ -924,6 +1074,15 @@ const MatrixContent = (props: IMatrixContentProps) => {
       : undefined;
     const cellDndState = isSwap ? getCellDndState : undefined;
 
+    // ADR 026: Grid-zone bindings — only active in insert mode.
+    // Passed to renderRow so that rows with row.grid can dispatch to renderGridRow.
+    const insertGridOpts: IGridOpts | undefined = isInsert
+      ? {
+          registerGridContainer: insert.registerGridContainer,
+          commitGridMove: insert.commitGridMove,
+        }
+      : undefined;
+
     // Single row, single cell (centroid shortcut)
     if (rows.length === 1 && rows[0].cells.length === 1 && !rows[0].resizable) {
       const cell = rows[0].cells[0];
@@ -1025,6 +1184,7 @@ const MatrixContent = (props: IMatrixContentProps) => {
                 props.settingsMode,
                 getCellSize,
                 setCellSize,
+                insertGridOpts,
               )}
             </div>
           ),
@@ -1099,6 +1259,7 @@ const MatrixContent = (props: IMatrixContentProps) => {
                       props.settingsMode,
                       getCellSize,
                       setCellSize,
+                      insertGridOpts,
                     )}
                   </div>
                 );
@@ -1139,6 +1300,7 @@ const MatrixContent = (props: IMatrixContentProps) => {
           props.settingsMode,
           getCellSize,
           setCellSize,
+          insertGridOpts,
         );
         return (
           <div class="relative h-full w-full overflow-hidden">
@@ -1175,6 +1337,7 @@ const MatrixContent = (props: IMatrixContentProps) => {
         props.settingsMode,
         getCellSize,
         setCellSize,
+        insertGridOpts,
       );
 
       // Walk rows in order: emit shrink-0 divs for auto rows, and a single flex-1
@@ -1201,6 +1364,7 @@ const MatrixContent = (props: IMatrixContentProps) => {
                 props.settingsMode,
                 getCellSize,
                 setCellSize,
+                insertGridOpts,
               )}
             </div>
           );
@@ -1249,6 +1413,7 @@ const MatrixContent = (props: IMatrixContentProps) => {
                     props.settingsMode,
                     getCellSize,
                     setCellSize,
+                    insertGridOpts,
                   )}
                 </div>
               );
@@ -1268,6 +1433,7 @@ const MatrixContent = (props: IMatrixContentProps) => {
               props.settingsMode,
               getCellSize,
               setCellSize,
+              insertGridOpts,
             );
           }}
         </For>
