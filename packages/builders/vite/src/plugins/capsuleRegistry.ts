@@ -15,12 +15,12 @@
  */
 
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { createJiti } from 'jiti';
 import { dirname, relative, resolve } from 'node:path';
 import { names } from '@nx/devkit';
+import { createJiti } from 'jiti';
 import type { Plugin, ViteDevServer } from 'vite';
-import { DEFINE_FACTORIES, EAGER_IMPORT_LAYERS, LAYER_TO_NAMESPACE } from './constants';
 import { walkFiles, watcherManager } from '../utils';
+import { DEFINE_FACTORIES, EAGER_IMPORT_LAYERS, LAYER_TO_NAMESPACE } from './constants';
 
 // ---------------------------------------------------------------------------
 // Shared utilities
@@ -169,7 +169,10 @@ const renderWrapperTypeNode = (node: TreeNode<WrapperLeaf>, indent: string): str
   const childIndent = `${indent}  `;
   const keys = [...node.children.keys()].sort();
   const props = keys
-    .map((key) => `${childIndent}${key}: ${renderWrapperTypeNode(node.children.get(key)!, childIndent)};`)
+    .map(
+      (key) =>
+        `${childIndent}${key}: ${renderWrapperTypeNode(node.children.get(key)!, childIndent)};`,
+    )
     .join('\n');
   return `{\n${props}\n${indent}}`;
 };
@@ -273,7 +276,8 @@ export const generateWrappersTypes = (leaves: WrapperLeaf[]): string => {
     const keys = [...tree.children.keys()].sort();
     const props = keys
       .map(
-        (key) => `${childIndent}${key}: ${renderWrapperTypeNode(tree.children.get(key)!, childIndent)};`,
+        (key) =>
+          `${childIndent}${key}: ${renderWrapperTypeNode(tree.children.get(key)!, childIndent)};`,
       )
       .join('\n');
     lines.push(`  interface ${namespace} {`);
@@ -316,7 +320,8 @@ const renderEndpointRuntimeNode = (node: TreeNode<EndpointLeaf>, indent: string)
   const keys = [...node.children.keys()].sort();
   const entries = keys
     .map(
-      (key) => `${childIndent}${key}: ${renderEndpointRuntimeNode(node.children.get(key)!, childIndent)}`,
+      (key) =>
+        `${childIndent}${key}: ${renderEndpointRuntimeNode(node.children.get(key)!, childIndent)}`,
     )
     .join(',\n');
   return `{\n${entries}\n${indent}}`;
@@ -351,7 +356,8 @@ export const generateEndpointsRuntime = (
   const keys = [...tree.children.keys()].sort();
   const entries = keys
     .map(
-      (key) => `${childIndent}${key}: ${renderEndpointRuntimeNode(tree.children.get(key)!, childIndent)}`,
+      (key) =>
+        `${childIndent}${key}: ${renderEndpointRuntimeNode(tree.children.get(key)!, childIndent)}`,
     )
     .join(',\n');
   lines.push(`export const endpoints = {\n${entries}\n} as const;`);
@@ -488,7 +494,9 @@ export const generateBootstrap = (): string => {
 
   lines.push('');
   lines.push('export const Bootstrap = () => {');
-  lines.push('  return <BaseProviders routeTree={routeTree} />;');
+  lines.push(
+    '  return <BaseProviders routeTree={routeTree} basepath={import.meta.env.BASE_URL} />;',
+  );
   lines.push('};');
   lines.push('');
 

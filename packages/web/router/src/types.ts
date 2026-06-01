@@ -52,12 +52,40 @@ export interface ICapsuleRouter<TRouteTree extends AnyRoute = AnyRoute> {
 
 /**
  * Опции фабрики. `routeTree` обязателен, generic выводится из него; `context` —
- * initial-context роутера для guards.
+ * initial-context роутера для guards; `basepath` — URL-префикс приложения
+ * (для раздачи под под-путём, например `/ewc`).
  */
 export interface ICreateRouterOpts<TRouteTree extends AnyRoute = AnyRoute> {
   routeTree: TRouteTree;
   context?: ICapsuleRouterContext;
+  /**
+   * URL-базовый путь приложения (под-путь раздачи).
+   * Обычно из `import.meta.env.BASE_URL`.
+   *
+   * Trailing slash нормализуется автоматически: `/ewc/` → `/ewc`.
+   * Значения `undefined`, `''`, `'/'` трактуются как «корень» — basepath не задаётся.
+   *
+   * Пример: `basepath: '/ewc'` при браузерном URL `/ewc/dashboard`
+   * → TanStack видит маршрут `/dashboard`, `current()` возвращает `/dashboard`.
+   */
+  basepath?: string;
 }
+
+/**
+ * Нормализует `basepath` для передачи в TanStack `createRouter`.
+ *
+ * Правила:
+ * - Убирает trailing slash: `/ewc/` → `/ewc`.
+ * - Если результат пустой, `'/'` или falsy — возвращает `undefined`
+ *   (TanStack по умолчанию работает с корневым путём, без явного basepath).
+ *
+ * Экспортируется для unit-тестирования как чистая функция (node-env, без jsdom).
+ */
+export const normalizeBase = (b?: string): string | undefined => {
+  if (!b) return undefined;
+  const t = b.replace(/\/+$/, '');
+  return t === '' || t === '/' ? undefined : t;
+};
 
 /**
  * Пакетная обёртка над сырым TanStack-роутером. Вынесена отдельно от `createRouter`,

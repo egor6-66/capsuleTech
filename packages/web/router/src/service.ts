@@ -8,6 +8,7 @@ import {
   type ICapsuleRouterContext,
   type ICreateRouterOpts,
   type IGoToOpts,
+  normalizeBase,
   wrap,
 } from './types';
 
@@ -23,6 +24,7 @@ export const createRouter = <TRouteTree extends AnyRoute>(opts: ICreateRouterOpt
   const raw = createTanStackRouter({
     routeTree: opts.routeTree,
     context: opts.context ?? {},
+    basepath: normalizeBase(opts.basepath),
   });
 
   return {

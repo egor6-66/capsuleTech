@@ -14,6 +14,12 @@ interface IBaseProviderProps<TRouteTree extends AnyRoute = AnyRoute> {
   /** Initial-context роутера (для guards в TanStack-роутах). */
   routerContext?: ICapsuleRouterContext;
   /**
+   * URL-базовый путь приложения (под-путь раздачи, например `/ewc/`).
+   * Обычно прокидывается генерируемым bootstrap'ом как `import.meta.env.BASE_URL`.
+   * Передаётся в роутер как `basepath` → клиентская навигация работает под под-путём.
+   */
+  basepath?: string;
+  /**
    * Включить Vitals-мониторинг (Web Vitals + 4 doп. coll.). По умолчанию выключен,
    * чтобы прод-бандлы apps/<app> не тянули overhead профайлера без необходимости.
    *
@@ -48,6 +54,7 @@ export function BaseProviders<TRouteTree extends AnyRoute = AnyRoute>(
         const { raw, capsuleRouter } = createRouter<TRouteTree>({
           routeTree: routeTree() as TRouteTree,
           context: props.routerContext,
+          basepath: props.basepath,
         });
         return (
           // RouterContext is parameterised on the default AnyRoute branch;
