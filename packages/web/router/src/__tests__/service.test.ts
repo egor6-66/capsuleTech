@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { wrap } from '../types';
+import { normalizeBase, wrap } from '../types';
 
 // wrap(raw) — pure обёртка над TanStack-роутером (AnyRouter), вынесена в types.ts
 // без value-импорта @tanstack/solid-router. Благодаря этому покрывается в
@@ -116,5 +116,50 @@ describe('wrap — current', () => {
     expect(w.current()).toBe('/cur');
     raw.state.location.pathname = '/next';
     expect(w.current()).toBe('/next');
+  });
+
+  // TanStack rewriteBasepath strips the basepath from location.pathname via its
+  // input rewrite: browser URL `/ewc/dashboard` → TanStack stores `/dashboard`.
+  // So current() is already app-relative; no manual stripping needed in wrap().
+  it('returns app-relative pathname (TanStack strips basepath internally)', () => {
+    // Simulate what TanStack does after input rewrite: pathname is already stripped.
+    const { raw } = mkRaw({ state: { location: { pathname: '/dashboard' } } });
+    expect(wrap(raw).current()).toBe('/dashboard');
+  });
+});
+
+// normalizeBase is a pure helper exported from types.ts — testable in node-env.
+describe('normalizeBase', () => {
+  it('returns undefined for undefined input', () => {
+    expect(normalizeBase(undefined)).toBeUndefined();
+  });
+
+  it('returns undefined for empty string', () => {
+    expect(normalizeBase('')).toBeUndefined();
+  });
+
+  it('returns undefined for bare slash', () => {
+    expect(normalizeBase('/')).toBeUndefined();
+  });
+
+  it('strips trailing slash', () => {
+    expect(normalizeBase('/ewc/')).toBe('/ewc');
+  });
+
+  it('strips multiple trailing slashes', () => {
+    expect(normalizeBase('/ewc///')).toBe('/ewc');
+  });
+
+  it('returns path unchanged when no trailing slash', () => {
+    expect(normalizeBase('/ewc')).toBe('/ewc');
+  });
+
+  it('returns undefined for slash-only after stripping', () => {
+    // edge: input '/' → stripped '' → undefined
+    expect(normalizeBase('/')).toBeUndefined();
+  });
+
+  it('handles nested sub-path', () => {
+    expect(normalizeBase('/apps/ewc/')).toBe('/apps/ewc');
   });
 });

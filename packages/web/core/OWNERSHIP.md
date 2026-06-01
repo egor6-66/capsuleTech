@@ -73,7 +73,7 @@ createRoot(Bootstrap, { container: 'my-app', defaultTheme: 'light' });
 
 ```ts
 import { BaseProviders } from '@capsuletech/web-core/providers';
-<BaseProviders routeTree={routeTree} routerContext={...} vitals showDashboard>
+<BaseProviders routeTree={routeTree} routerContext={...} basepath={import.meta.env.BASE_URL} vitals showDashboard>
   ...
 </BaseProviders>
 ```

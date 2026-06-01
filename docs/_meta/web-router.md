@@ -22,13 +22,13 @@ Context-based (ADR 003) обёртка над `@tanstack/solid-router`. Factory 
 | `packages/web/router/src/service.ts` | `createRouter<TRouteTree>({ routeTree, context? })` — фабрика, value-импорт TanStack |
 | `packages/web/router/src/types.ts` | `wrap()` + типы (`ICapsuleRouter`, `ICreateRouterOpts`, `ICapsuleRouterContext`) |
 | `packages/web/router/src/context.ts` | `RouterContext` (Solid Context) + `useRouter()` hook с throw'ом вне Provider'а |
-| `packages/web/router/src/__tests__/` | node-env: `wrap` (7), `useRouter` (2) — без jsdom |
+| `packages/web/router/src/__tests__/` | node-env: `wrap` + `normalizeBase` (20), `useRouter` (2) — без jsdom |
 
 ## Public API
 
 ```ts
 // Фабрика
-createRouter<TRouteTree>({ routeTree, context? }): {
+createRouter<TRouteTree>({ routeTree, context?, basepath? }): {
   raw: TanStackRouter<TRouteTree>;
   capsuleRouter: ICapsuleRouter<TRouteTree>;
 }
@@ -40,9 +40,10 @@ useRouter(): ICapsuleRouter   // generic TRouteTree теряется (см. го
 ICapsuleRouter<TRouteTree>             // { goTo, back, current, raw }
 ICapsuleRouterContext<TUser = {}>      // TUser & { [k: string]: unknown }
 IGoToOpts                              // { params?, search?, hash?, replace? }
-ICreateRouterOpts<TRouteTree>
+ICreateRouterOpts<TRouteTree>          // { routeTree, context?, basepath? }
 TanStackRouter                         // re-export @tanstack/solid-router Router
 AnyRoute                               // re-export @tanstack/router-core
+normalizeBase                          // pure helper: нормализует basepath для TanStack
 ```
 
 ### Методы `ICapsuleRouter`
@@ -91,6 +92,10 @@ apps/<app>/bootstrap.tsx
 
 10. **`AnyRoute` ре-экспортнут именно из `@capsuletech/web-router`** — `web-core/BaseProviders` использует его как default-bound. НЕ импортируй `@tanstack/router-core` напрямую из web-core — это горизонтальный обход слоя.
 
+11. **`basepath` нормализуется через `normalizeBase()`** — trailing slash убирается, пустая строка / `'/'` → `undefined` (корень). Передавать `import.meta.env.BASE_URL` напрямую без нормализации нельзя: Vite по умолчанию возвращает `'/'`, что привело бы к `basepath: '/'` в TanStack вместо отсутствия basepath.
+
+12. **`current()` всегда app-relative, даже с basepath** — TanStack внутри запускает `rewriteBasepath` input-rewrite, который стрипает базовый путь из `location.pathname` до сохранения в store. Браузерный `/ewc/dashboard` при `basepath: '/ewc'` → `raw.state.location.pathname === '/dashboard'`. Вручную резать в `wrap()` не нужно.
+
 ## Pattern: derived signals from location
 
 `useLocation()` **without** `select` returns `() => router.stores.location.get()` — accessor but **without createMemo**. Solid sometimes inlines such as pure value → derived signals don't track.
@@ -111,6 +116,7 @@ Precedent: page-transition attempt in ewc 2026-05-28; `<Animate keyed={location(
 | Дать typed `TRouteTree` в `useRouter()` | Module-augmentation TanStack `Register` — отдельный refactor (P3) |
 | Интегрировать в SSR | `wrap().back()` уже на `raw.history`; в `createRouter` добавить history-injection |
 | Использовать TanStack hooks напрямую (`useNavigate`, `useRouterState`) | НЕ надо — иди через `useRouter()` → `router.raw.*` (ADR 003 раздел B) |
+| Пробросить `basepath` из `BaseProviders` в web-core | Задача `owner-web-core` — добавить `basepath?` проп в `BaseProviders` и передать в `createRouter`. `normalizeBase` уже в `web-router/types.ts`. |
 
 ## Cross-links
 

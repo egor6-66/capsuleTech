@@ -1,0 +1,25 @@
+# capsule preview-server — self-hosted хостинг web-сборок для тестеров.
+# Запуск на сервере:  cp .env.example .env && отредактируй DEPLOY_TOKEN, потом
+#   docker compose up -d --build
+services:
+  preview:
+    build: .
+    image: capsule-preview-server
+    container_name: capsule-preview
+    restart: unless-stopped
+    environment:
+      # Токен, который deploy-клиент шлёт в Authorization: Bearer <token>.
+      # Без него POST /api/deploy отвечает 503 (deploy отключён).
+      DEPLOY_TOKEN: ${DEPLOY_TOKEN:?set DEPLOY_TOKEN in .env}
+      PORT: 8080
+      # host[:port], который тестеры используют для доступа (для построения
+      # ссылок). Пусто → берётся из Host-хедера запроса.
+      PUBLIC_HOST: ${PUBLIC_HOST:-}
+    ports:
+      # Один порт — приложения раздаются под своими base-путями (/ewc/, …).
+      - "8080:8080"
+    volumes:
+      - preview-data:/data
+
+volumes:
+  preview-data:

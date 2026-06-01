@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import type { IDesktopConfig } from '@capsuletech/desktop';
 import tailwindcss from '@tailwindcss/vite';
 import AutoImport from 'unplugin-auto-import/vite';
-import type { IDesktopConfig } from '@capsuletech/desktop';
 import {
   AliasesPlugin,
   CapsuleRegistryPlugin,
@@ -18,6 +18,13 @@ import { appConfig } from './appConfig';
 
 export interface ICapsuleConfig {
   devServerPort?: number;
+  /**
+   * URL-базовый путь приложения для раздачи под под-путём (Vite `base`).
+   * Дефолт `'/'`. Пример: `'/ewc/'` — ассеты будут `/ewc/assets/...`, dev и build
+   * под этим путём. Прокидывается в роутер как basepath через import.meta.env.BASE_URL.
+   * Соглашение Vite: ведущий и завершающий слеш (`/ewc/`).
+   */
+  base?: string;
   /**
    * Опциональная секция для Tauri-shell. Читается @capsuletech/cli командой
    * `capsule desktop dev|build <app>` (см. ADR 017). vite-builder сам секцию
@@ -53,6 +60,7 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
   const capsuleConfig = {
     ...config,
     root: capsuleRoot,
+    base: config.base ?? '/',
     define: {
       __CAPSULE_CONFIG__: JSON.stringify(config),
       // NB: identity-unwrap для `defineAppConfig` живёт в

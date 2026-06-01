@@ -48,17 +48,17 @@
  */
 
 import { join, resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
 import type { Plugin } from 'vite';
+import { describe, expect, it } from 'vitest';
 import {
-  generateWrappersRuntime,
-  generateWrappersTypes,
-  generateEndpointsRuntime,
-  generateEndpointsTypes,
+  CapsuleRegistryPlugin,
   generateAppConfigRuntime,
   generateBootstrap,
+  generateEndpointsRuntime,
+  generateEndpointsTypes,
+  generateWrappersRuntime,
+  generateWrappersTypes,
   LAYER_INIT_ORDER,
-  CapsuleRegistryPlugin,
 } from '../capsuleRegistry';
 
 // ---------------------------------------------------------------------------
@@ -76,11 +76,11 @@ interface EndpointLeaf {
   relPath: string;
 }
 
-const wrapperLeaf = (
-  layer: string,
-  importPath: string,
-  segments: string[],
-): WrapperLeaf => ({ layer, importPath, segments });
+const wrapperLeaf = (layer: string, importPath: string, segments: string[]): WrapperLeaf => ({
+  layer,
+  importPath,
+  segments,
+});
 
 const endpointLeaf = (segments: string[], relPath: string): EndpointLeaf => ({
   segments,
@@ -357,7 +357,9 @@ describe('generateBootstrap — structure', () => {
   it('contains Bootstrap component export', () => {
     const out = generateBootstrap();
     expect(out).toContain('export const Bootstrap = () => {');
-    expect(out).toContain('<BaseProviders routeTree={routeTree} />');
+    expect(out).toContain(
+      '<BaseProviders routeTree={routeTree} basepath={import.meta.env.BASE_URL} />',
+    );
   });
 
   it('starts with generated comment (not user-editable)', () => {
@@ -606,7 +608,9 @@ describe('CapsuleRegistryPlugin.transform — defineAppConfig identity-unwrap', 
     ].join('\n');
     const result = callTransform(plugin, code, APP_CONFIG_PATH);
     expect(result).not.toBeNull();
-    expect(result!.code).toContain(`import { defineAppConfig } from '@capsuletech/web-core/app-config'`);
+    expect(result!.code).toContain(
+      `import { defineAppConfig } from '@capsuletech/web-core/app-config'`,
+    );
     expect(result!.code).toContain('((__x__)=>__x__)({ meta:');
   });
 });
@@ -646,9 +650,7 @@ describe('Cross-concern ordering regression — ESM TDZ fix', () => {
     // so any new entry will automatically propagate.
     // We cannot mutate the const here, but we verify the mapping is exhaustive:
     const bootstrap = generateBootstrap();
-    const missingEntries = LAYER_INIT_ORDER.filter(
-      (e) => !bootstrap.includes(e.importPath),
-    );
+    const missingEntries = LAYER_INIT_ORDER.filter((e) => !bootstrap.includes(e.importPath));
     expect(missingEntries).toHaveLength(0);
   });
 });
