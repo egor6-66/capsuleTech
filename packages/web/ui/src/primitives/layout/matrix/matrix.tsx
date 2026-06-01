@@ -1,13 +1,22 @@
 import { DnDProvider, useDnD } from '@capsuletech/web-dnd';
 import { type ICapsuleRouter, RouterContext } from '@capsuletech/web-router';
 import { createStyle, useLayoutMode, useSettingsMode } from '@capsuletech/web-style';
-import { type Accessor, createMemo, For, type JSX, Show, splitProps, useContext } from 'solid-js';
+import {
+  type Accessor,
+  createMemo,
+  createSignal,
+  For,
+  type JSX,
+  Show,
+  splitProps,
+  useContext,
+} from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import { Animate, type AnimateVariant } from '../../wrappers/animate';
 import { Flex } from '../flex/flex';
 import type { IFlexItem } from '../flex/interfaces';
 import { DragBadge } from './dnd/drag-badge';
-import { createInsertEngine } from './dnd/insert';
+import { createInsertEngine, rowAcceptsGroup } from './dnd/insert';
 import { createSwapEngine } from './dnd/swap';
 import type { ICell, IMatrixProps, IRow } from './interfaces';
 import { resolvePreset } from './presets';
@@ -157,10 +166,7 @@ const renderCell = (
         {/* Inner scroll wrapper; pointer-events-none during drag prevents hover leaking
             into cell content (table row hover, map hover, etc.).
             DnD ref lives on the outer wrapper so elementFromPoint() always hits it. */}
-        <div
-          class={innerClass}
-          classList={{ 'pointer-events-none': isDragging() }}
-        >
+        <div class={innerClass} classList={{ 'pointer-events-none': isDragging() }}>
           {content}
         </div>
         {/* Absolute overlay renders above canvas / GPU layers — ring/box-shadow do not. */}
@@ -208,6 +214,225 @@ const renderCell = (
     >
       {content}
     </Dynamic>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// Packing-zone helpers (ADR 022)
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns true when a row should use the packing render-path instead of
+ * corvu fractional. Criteria (any one is sufficient):
+ *   - `row.wrap === true`
+ *   - `row.orientation === 'vertical'`
+ *   - any cell has `minW` or `minH`
+ */
+const isPackingZone = (row: IRow): boolean => {
+  if (row.wrap) return true;
+  if (row.orientation === 'vertical') return true;
+  return row.cells.some((c) => c.minW !== undefined || c.minH !== undefined);
+};
+
+// ---------------------------------------------------------------------------
+// Per-cell explicit size map — session-only, keyed by cellId.
+// Used in packing zones for manual resize: when the user drags a handle the
+// cell gets an explicit px width (horizontal) or height (vertical). Cells
+// that have not been resized remain flex:1 so they auto-fill the line.
+// Stored as a reactive signal so the handle can write and the cell style
+// getter can read reactively within the <For> computation.
+// ---------------------------------------------------------------------------
+
+type CellSizeMap = Map<string, number>;
+
+/**
+ * renderPackingRow — packing render-path for zones with wrap/vertical/min-size.
+ *
+ * Layout strategy:
+ *   - `orientation:'horizontal'` (default) + `wrap:true`:
+ *       CSS `display:flex; flex-wrap:wrap` — cells flow left→right,
+ *       wrap to next line when minW is exceeded. Vertical overflow → scroll.
+ *   - `orientation:'vertical'` + `wrap:true`:
+ *       CSS `display:flex; flex-direction:column; flex-wrap:wrap` —
+ *       cells stack top→bottom, wrap to next column.
+ *   - Without `wrap`: no CSS wrap, but min-size constraints still apply.
+ *
+ * Each cell gets `min-width: minW px` (horizontal) or `min-height: minH px`
+ * (vertical) so the browser enforces the minimum during resize/reflow.
+ * Cells that have been manually resized via the handle get an explicit px
+ * `width`/`height` written into a reactive signal; unresized cells stay
+ * `flex:1`. Because the container is `flex-wrap`, cells that no longer fit
+ * reflow automatically onto the next line — no JS geometry math needed.
+ *
+ * Resize handle:
+ *   - Visible only when `layoutMode==='edit'`.
+ *   - Trailing edge: right side for horizontal cells, bottom for vertical.
+ *   - Pointer-drag (pointerdown → pointermove → pointerup) writes the new
+ *     px size into the reactive CellSizeMap signal.
+ *   - Floor is `cell.minW` / `cell.minH` (cannot resize below minimum).
+ *
+ * This is a pure CSS approach for the layout itself — no JS reflow
+ * measurement. Geometry verification requires a real browser (jsdom does
+ * not measure layout).
+ *
+ * The row-level drop ref (for cross-row insert) is attached to the outer div.
+ */
+const renderPackingRow = (
+  row: IRow,
+  animated: boolean | AnimateVariant | undefined,
+  router: ICapsuleRouter | null,
+  getSwappedChildren: ((cellId: string) => JSX.Element) | undefined,
+  bindCell: ((cell: ICell, rowId: string | undefined) => (el: HTMLElement) => void) | undefined,
+  bindRow: ((rowId: string) => (el: HTMLElement) => void) | undefined,
+  isDragging: Accessor<boolean>,
+  layoutMode: Accessor<'view' | 'edit'>,
+  settingsMode: Accessor<boolean>,
+  /** True when a drag is active AND this row rejects it (accepts-constraint). */
+  rowRejectsDrag: Accessor<boolean>,
+  /** Reactive getter for the per-cell explicit px sizes (set via resize handle). */
+  getCellSize: (cellId: string) => number | undefined,
+  /** Setter called by the resize handle to persist a new explicit px size. */
+  setCellSize: (cellId: string, px: number) => void,
+): JSX.Element => {
+  const isVertical = row.orientation === 'vertical';
+  const hasWrap = row.wrap === true;
+  const rowDropRef = bindRow && row.id ? bindRow(row.id) : NOOP_REF;
+
+  // CSS flex direction + wrap
+  const containerClass = [
+    'relative w-full',
+    // Vertical overflow scroll for horizontal packing (wrap may grow zone height)
+    isVertical ? 'h-full overflow-x-auto' : 'h-full overflow-y-auto',
+    'flex',
+    isVertical ? 'flex-col' : 'flex-row',
+    hasWrap ? 'flex-wrap' : 'flex-nowrap',
+    // Gap between cells — small visual breathing room
+    'gap-px',
+  ].join(' ');
+
+  return (
+    <div
+      ref={rowDropRef}
+      class={containerClass}
+      classList={{
+        // «cannot-drop» highlight when accepts-constraint rejects active drag
+        'ring-2 ring-inset ring-destructive/50': rowRejectsDrag(),
+      }}
+    >
+      <For each={row.cells}>
+        {(cell) => {
+          const cellRef = cell.draggable && bindCell ? bindCell(cell, row.id) : NOOP_REF;
+          const isMain = cell.id === 'main';
+          const children = getSwappedChildren ? getSwappedChildren(cell.id) : cell.children;
+          const content = isMain ? animateMain(children, animated, router) : children;
+
+          // Reactive cell style: explicit px size when set via handle,
+          // otherwise flex:1 with min constraints applied.
+          const cellStyle = (): JSX.CSSProperties => {
+            const explicit = getCellSize(cell.id);
+            const s: JSX.CSSProperties = {};
+            if (!isVertical) {
+              if (explicit !== undefined) {
+                // Explicit width set via handle — disables flex-grow so CSS
+                // flex-wrap can reflow the cell onto the next line if the
+                // container shrinks below the explicit width + its minW.
+                s.width = `${explicit}px`;
+                s['flex-shrink'] = '0';
+                s['flex-grow'] = '0';
+              } else {
+                s.flex = '1';
+              }
+              if (cell.minW !== undefined) s['min-width'] = `${cell.minW}px`;
+            } else {
+              if (explicit !== undefined) {
+                s.height = `${explicit}px`;
+                s['flex-shrink'] = '0';
+                s['flex-grow'] = '0';
+              } else {
+                s.flex = '1';
+              }
+              if (cell.minH !== undefined) s['min-height'] = `${cell.minH}px`;
+            }
+            return s;
+          };
+
+          const tag = cell.tag ?? 'div';
+          const withSettings = settingsMode() && !!cell.settings;
+
+          // Settings strip (same pattern as renderCell)
+          const settingsStrip = (): JSX.Element =>
+            withSettings ? (
+              <div class="absolute inset-x-0 top-0 z-10 flex h-9 items-center gap-1 border-b border-border bg-card/80 px-2 text-sm">
+                {cell.settings}
+              </div>
+            ) : null;
+
+          // Resize handle — visible only in edit mode.
+          // Trailing edge: right for horizontal cells, bottom for vertical.
+          // Pointer-drag writes explicit px size into the CellSizeMap signal.
+          // Floor = minW / minH so the cell cannot be dragged below minimum.
+          const resizeHandle = (): JSX.Element => {
+            if (layoutMode() !== 'edit') return null;
+
+            const onPointerDown = (e: PointerEvent): void => {
+              e.preventDefault();
+              e.stopPropagation();
+              const handle = e.currentTarget as HTMLElement;
+              // setPointerCapture not available in all environments (jsdom).
+              handle.setPointerCapture?.(e.pointerId);
+
+              // Snapshot the cell element's current size at drag start.
+              const cellEl = handle.parentElement;
+              if (!cellEl) return;
+
+              const startPx = isVertical ? cellEl.offsetHeight : cellEl.offsetWidth;
+              const startCoord = isVertical ? e.clientY : e.clientX;
+              const minFloor = isVertical ? (cell.minH ?? 0) : (cell.minW ?? 0);
+
+              const onMove = (ev: PointerEvent): void => {
+                const delta = (isVertical ? ev.clientY : ev.clientX) - startCoord;
+                const newSize = Math.max(minFloor, startPx + delta);
+                setCellSize(cell.id, newSize);
+              };
+
+              const onUp = (): void => {
+                handle.removeEventListener('pointermove', onMove);
+                handle.removeEventListener('pointerup', onUp);
+              };
+
+              handle.addEventListener('pointermove', onMove);
+              handle.addEventListener('pointerup', onUp);
+            };
+
+            // Horizontal: right-edge handle (4px wide, full height, cursor ew-resize)
+            // Vertical:   bottom-edge handle (full width, 4px tall, cursor ns-resize)
+            const handleClass = isVertical
+              ? 'absolute inset-x-0 bottom-0 z-20 h-1 cursor-ns-resize bg-border/0 hover:bg-primary/40 active:bg-primary/60 transition-colors'
+              : 'absolute inset-y-0 right-0 z-20 w-1 cursor-ew-resize bg-border/0 hover:bg-primary/40 active:bg-primary/60 transition-colors';
+
+            return <div class={handleClass} onPointerDown={onPointerDown} />;
+          };
+
+          return (
+            <Dynamic
+              component={tag}
+              ref={cellRef}
+              class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative overflow-hidden`}
+              style={cellStyle()}
+            >
+              <Show when={withSettings}>{settingsStrip()}</Show>
+              <div
+                class="absolute inset-0 overflow-auto"
+                classList={{ 'pointer-events-none': isDragging() }}
+              >
+                {content}
+              </div>
+              {resizeHandle()}
+            </Dynamic>
+          );
+        }}
+      </For>
+    </div>
   );
 };
 
@@ -282,7 +507,35 @@ const renderRow = (
   isDragging: Accessor<boolean>,
   layoutMode: Accessor<'view' | 'edit'>,
   settingsMode: Accessor<boolean>,
+  /**
+   * ADR 022: Reactive accessor — true when a drag is active AND this row
+   * rejects the dragged cell (accepts-constraint). Triggers «cannot-drop» highlight.
+   */
+  rowRejectsDrag: Accessor<boolean>,
+  /** ADR 022: Getter for per-cell explicit px sizes (packing resize handle). */
+  getCellSize: (cellId: string) => number | undefined,
+  /** ADR 022: Setter for per-cell explicit px sizes (packing resize handle). */
+  setCellSize: (cellId: string, px: number) => void,
 ): JSX.Element => {
+  // ADR 022: Packing zones (wrap/vertical/min-size) use a separate render-path
+  // instead of corvu fractional panels.
+  if (isPackingZone(row)) {
+    return renderPackingRow(
+      row,
+      animated,
+      router,
+      getSwappedChildren,
+      bindCell,
+      bindRow,
+      isDragging,
+      layoutMode,
+      settingsMode,
+      rowRejectsDrag,
+      getCellSize,
+      setCellSize,
+    );
+  }
+
   const hasResizable = rowHasResizable(row);
   // Cross-row drop target ref — only meaningful in insert mode (bindRow defined).
   const rowDropRef = bindRow && row.id ? bindRow(row.id) : NOOP_REF;
@@ -368,6 +621,12 @@ const rowsToVerticalItems = (
   isDragging: Accessor<boolean>,
   layoutMode: Accessor<'view' | 'edit'>,
   settingsMode: Accessor<boolean>,
+  /** ADR 022: Per-row reactive accessor factory for accepts-constraint rejection. */
+  makeRowRejectsDrag: ((row: IRow) => Accessor<boolean>) | undefined,
+  /** ADR 022: Getter for per-cell explicit px sizes (packing resize handle). */
+  getCellSize: (cellId: string) => number | undefined,
+  /** ADR 022: Setter for per-cell explicit px sizes (packing resize handle). */
+  setCellSize: (cellId: string, px: number) => void,
 ): IFlexItem[] => {
   return rows.map((row, i) => {
     const heightIsNumber = typeof row.height === 'number';
@@ -381,6 +640,7 @@ const rowsToVerticalItems = (
     // Prefer session-persisted vertical size; fall back to declared row.height.
     const resolvedHeight =
       savedVerticalSizes?.[i] ?? (heightIsNumber ? (row.height as number) : undefined);
+    const rowRejectsDrag = makeRowRejectsDrag ? makeRowRejectsDrag(row) : () => false as boolean;
     return {
       children: renderRow(
         row,
@@ -395,9 +655,15 @@ const rowsToVerticalItems = (
         isDragging,
         layoutMode,
         settingsMode,
+        rowRejectsDrag,
+        getCellSize,
+        setCellSize,
       ),
       resizable: isResizable,
       initialSize: resolvedHeight,
+      // ADR 022: minHeight is a fraction (0..1) matching corvu minSize semantics.
+      // Pass-through directly — no px→fraction conversion needed.
+      minSize: row.minHeight,
     };
   });
 };
@@ -421,6 +687,12 @@ interface IMatrixContentProps {
   dndMode: Accessor<'swap' | 'insert'>;
   onLayoutChange: ((e: import('./interfaces').LayoutChangeEvent) => void) | undefined;
   settingsMode: Accessor<boolean>;
+  /**
+   * Matrix-level outer axis (ADR 022).
+   * `'vertical'` (default) = rows stacked top→bottom.
+   * `'horizontal'` = zones placed side-by-side left→right.
+   */
+  direction: 'vertical' | 'horizontal';
 }
 
 // ---------------------------------------------------------------------------
@@ -478,6 +750,26 @@ const MatrixContent = (props: IMatrixContentProps) => {
     saveSizes('v', sizes);
   };
 
+  // ---------------------------------------------------------------------------
+  // ADR 022: Per-cell explicit px sizes for packing-zone resize handles.
+  // Stored as a reactive signal (Map) so the resize handle can write and
+  // the cell style getter reads reactively inside <For>.
+  // Session-only: cleared on Matrix remount (same as sizesSnapshot).
+  // ---------------------------------------------------------------------------
+  const [cellSizeMap, setCellSizeMap] = createSignal<CellSizeMap>(new Map(), {
+    equals: false, // always notify (Map mutations are not value-equal)
+  });
+
+  const getCellSize = (cellId: string): number | undefined => cellSizeMap().get(cellId);
+
+  const setCellSize = (cellId: string, px: number): void => {
+    setCellSizeMap((prev) => {
+      const next = new Map(prev);
+      next.set(cellId, px);
+      return next;
+    });
+  };
+
   const swap = createSwapEngine({
     rows: props.rows,
     enabled: swapEnabled,
@@ -488,6 +780,7 @@ const MatrixContent = (props: IMatrixContentProps) => {
     rows: props.rows,
     enabled: insertEnabled,
     onLayoutChange: props.onLayoutChange,
+    direction: props.direction,
   });
 
   // Badge is shown on each draggable cell only when 2+ draggable cells exist
@@ -514,6 +807,27 @@ const MatrixContent = (props: IMatrixContentProps) => {
     };
   };
 
+  // ADR 022: Per-row reactive accessor for accepts-constraint rejection.
+  // Returns true when a drag is active AND the given row rejects the active cell
+  // (row.accepts defined AND active cell.group not in row.accepts).
+  // Used by renderPackingRow for «cannot-drop» highlight.
+  const makeRowRejectsDrag = (row: IRow): Accessor<boolean> =>
+    createMemo((): boolean => {
+      if (!insertEnabled()) return false;
+      if (!row.accepts || row.accepts.length === 0) return false;
+      const activeData = dnd.state.activeData();
+      if (!activeData) return false;
+      const d = activeData as { __sortable?: string; itemId?: string };
+      if (typeof d.itemId !== 'string') return false;
+      // Find the cell in current effective rows to get its group.
+      const rows = effectiveRows();
+      for (const r of rows) {
+        const cell = r.cells.find((c) => c.id === d.itemId);
+        if (cell) return !rowAcceptsGroup(row, cell.group);
+      }
+      return false;
+    });
+
   const renderContent = (): JSX.Element => {
     const rows = effectiveRows();
 
@@ -522,9 +836,24 @@ const MatrixContent = (props: IMatrixContentProps) => {
     const isSwap = props.dndMode() === 'swap';
     const isInsert = props.dndMode() === 'insert';
     const swapGetChildren = isSwap ? swap.getCellChildren : undefined;
-    const swapBind = isSwap ? swap.bindCell : isInsert ? insert.bindCell : undefined;
+    // For insert mode, bindCell must be called inside a <For> render scope so
+    // that createItem (and its onCleanup for unregister) is owned by the cell's
+    // DOM lifetime, not by an engine-level effect.
+    // insertBindCell calls getSortable(rowId)?.createItem(cell.id) at the point
+    // where the <For> item renders — giving it the correct Solid owner scope.
+    const insertBindCell = isInsert
+      ? (cell: ICell, rowId?: string): ((el: HTMLElement) => void) => {
+          if (!cell.draggable || !rowId) return NOOP_REF;
+          const sortable = insert.getSortable(rowId);
+          if (!sortable) return NOOP_REF;
+          return sortable.createItem(cell.id).ref;
+        }
+      : undefined;
+    const swapBind = isSwap ? swap.bindCell : insertBindCell;
     const insertBindRow = isInsert ? insert.bindRow : undefined;
     const cellDndState = isSwap ? getCellDndState : undefined;
+    // ADR 022: Only meaningful in insert mode (packing zones).
+    const insertMakeRowRejectsDrag = isInsert ? makeRowRejectsDrag : undefined;
 
     // Single row, single cell (centroid shortcut)
     if (rows.length === 1 && rows[0].cells.length === 1 && !rows[0].resizable) {
@@ -554,10 +883,7 @@ const MatrixContent = (props: IMatrixContentProps) => {
             {/* Inner wrapper: overflow-auto allows content to scroll.
                 pointer-events-none during drag prevents hover leaking into content.
                 DnD ref is on the outer wrapper so elementFromPoint() always hits it. */}
-            <div
-              class={innerClass}
-              classList={{ 'pointer-events-none': isDragging() }}
-            >
+            <div class={innerClass} classList={{ 'pointer-events-none': isDragging() }}>
               {isMain ? animateMain(children, props.animated, props.router) : children}
             </div>
             {/* Absolute overlay renders above canvas / GPU layers */}
@@ -583,6 +909,144 @@ const MatrixContent = (props: IMatrixContentProps) => {
       }
     }
 
+    // ---------------------------------------------------------------------------
+    // ADR 022: direction='horizontal' — zones placed side-by-side (columns).
+    //
+    // Each IRow becomes a vertical column; rows sit LEFT→RIGHT via a horizontal
+    // Flex. `row.height` is re-interpreted as the zone's width (fraction 0..1
+    // or 'fr'). The resize handle between zones is horizontal (cursor ew-resize).
+    //
+    // Per-zone inner rendering is delegated to renderRow(), which handles the
+    // packing/corvu paths for that zone's cells exactly as in vertical mode.
+    //
+    // This path is fully additive — direction default is 'vertical', so all
+    // existing behaviour is unchanged when direction is omitted or 'vertical'.
+    // ---------------------------------------------------------------------------
+    if (props.direction === 'horizontal') {
+      // Build Flex items: each row → one horizontal zone (column).
+      // row.height doubles as the column's initial width fraction.
+      // Only enter the corvu-Flex path when at least one zone actually opts into
+      // resize (`resizable: true`). Zones with a numeric `height` (= width fraction)
+      // but `resizable: false` MUST go through the colStyle() path below — otherwise
+      // Flex.StaticItemsFlex renders a bare `flex flex-row` div (no h-full, no per-
+      // zone flex sizing) because it ignores `initialSize` on non-resizable items.
+      const hasResizableZones = rows.some((r) => r.resizable === true);
+
+      const zoneItems = rows.map((row, i): IFlexItem => {
+        const rowKey = row.id ?? `r${i}`;
+        const rowRejectsDrag = insertMakeRowRejectsDrag
+          ? insertMakeRowRejectsDrag(row)
+          : () => false as boolean;
+        const widthFraction = typeof row.height === 'number' ? row.height : undefined;
+        return {
+          children: (
+            <div class="relative h-full min-w-0 flex-1 overflow-hidden">
+              {renderRow(
+                row,
+                props.animated,
+                props.router,
+                swapGetChildren,
+                swapBind,
+                insertBindRow,
+                cellDndState,
+                getRowSavedSizes(rowKey),
+                (sizes) => onRowSizesChange(rowKey, sizes),
+                isDragging,
+                props.layoutMode,
+                props.settingsMode,
+                rowRejectsDrag,
+                getCellSize,
+                setCellSize,
+              )}
+            </div>
+          ),
+          resizable: row.resizable ?? false,
+          initialSize: getSavedSizes(`hz:${rowKey}`)?.[0] ?? widthFraction,
+          minSize: row.minHeight, // minHeight reused as column minWidth fraction
+        };
+      });
+
+      if (hasResizableZones) {
+        return (
+          <div class="relative h-full w-full overflow-hidden">
+            <div class="absolute inset-0">
+              <Flex
+                orientation="horizontal"
+                items={zoneItems}
+                withHandle={props.layoutMode() === 'edit'}
+                handleDisabled={props.layoutMode() !== 'edit'}
+                onSizesChange={(sizes) => {
+                  // Persist each zone's width under a per-zone key.
+                  for (let k = 0; k < rows.length; k++) {
+                    const rk = rows[k].id ?? `r${k}`;
+                    if (sizes[k] !== undefined) saveSizes(`hz:${rk}`, [sizes[k]]);
+                  }
+                }}
+              />
+            </div>
+          </div>
+        );
+      }
+
+      // Non-resizable horizontal zones — plain flex row.
+      // Wrap in relative h-full w-full + absolute inset-0 to give the flex-row a
+      // definite height from its positioned ancestor instead of content-height.
+      // Without this envelope the flex-row collapses to ~3px (content-height of
+      // h-full children that have no definite pixel height to inherit from).
+      // This mirrors the resizable horizontal path (relative/absolute inset-0 + Flex).
+      return (
+        <div class="relative h-full w-full overflow-hidden">
+          <div class="absolute inset-0 flex flex-row overflow-hidden">
+            <For each={rows}>
+              {(row, i) => {
+                const rowKey = row.id ?? `r${i()}`;
+                const rowRejectsDrag = insertMakeRowRejectsDrag
+                  ? insertMakeRowRejectsDrag(row)
+                  : () => false as boolean;
+                // Mapping of row.height → CSS flex in the non-resizable horizontal path:
+                //   'auto'           → flex: 0 0 auto   (content-driven width, shrink-to-fit; for rail zones)
+                //   number (0..1)    → flex: 0 0 {n}%   (explicit fraction)
+                //   'fr' / undefined → flex: 1           (fills remaining space)
+                const colStyle = (): JSX.CSSProperties => {
+                  if (row.height === 'auto') {
+                    return { flex: '0 0 auto', 'min-width': '0' };
+                  }
+                  if (typeof row.height === 'number') {
+                    return { flex: `0 0 ${row.height * 100}%`, 'min-width': '0' };
+                  }
+                  return { flex: '1', 'min-width': '0' };
+                };
+                return (
+                  <div class="relative h-full overflow-hidden" style={colStyle()}>
+                    {renderRow(
+                      row,
+                      props.animated,
+                      props.router,
+                      swapGetChildren,
+                      swapBind,
+                      insertBindRow,
+                      cellDndState,
+                      getRowSavedSizes(rowKey),
+                      (sizes) => onRowSizesChange(rowKey, sizes),
+                      isDragging,
+                      props.layoutMode,
+                      props.settingsMode,
+                      rowRejectsDrag,
+                      getCellSize,
+                      setCellSize,
+                    )}
+                  </div>
+                );
+              }}
+            </For>
+          </div>
+        </div>
+      );
+    }
+
+    // ---------------------------------------------------------------------------
+    // direction='vertical' (default) — existing behaviour, unchanged.
+    // ---------------------------------------------------------------------------
     const useVertical = hasVerticalResizable(rows);
 
     if (useVertical) {
@@ -608,6 +1072,9 @@ const MatrixContent = (props: IMatrixContentProps) => {
           isDragging,
           props.layoutMode,
           props.settingsMode,
+          insertMakeRowRejectsDrag,
+          getCellSize,
+          setCellSize,
         );
         return (
           <div class="relative h-full w-full overflow-hidden">
@@ -642,6 +1109,9 @@ const MatrixContent = (props: IMatrixContentProps) => {
         isDragging,
         props.layoutMode,
         props.settingsMode,
+        insertMakeRowRejectsDrag,
+        getCellSize,
+        setCellSize,
       );
 
       // Walk rows in order: emit shrink-0 divs for auto rows, and a single flex-1
@@ -650,6 +1120,9 @@ const MatrixContent = (props: IMatrixContentProps) => {
       const elements: JSX.Element[] = rows.map((row, _i) => {
         if (row.height === 'auto') {
           const rowKey = row.id ?? `r${_i}`;
+          const rowRejectsDrag = insertMakeRowRejectsDrag
+            ? insertMakeRowRejectsDrag(row)
+            : () => false as boolean;
           return (
             <div class="w-full shrink-0">
               {renderRow(
@@ -665,6 +1138,9 @@ const MatrixContent = (props: IMatrixContentProps) => {
                 isDragging,
                 props.layoutMode,
                 props.settingsMode,
+                rowRejectsDrag,
+                getCellSize,
+                setCellSize,
               )}
             </div>
           );
@@ -694,6 +1170,9 @@ const MatrixContent = (props: IMatrixContentProps) => {
         <For each={rows}>
           {(row, i) => {
             const rowKey = row.id ?? `r${i()}`;
+            const rowRejectsDrag = insertMakeRowRejectsDrag
+              ? insertMakeRowRejectsDrag(row)
+              : () => false as boolean;
             if (row.height === 'auto' || (row.height === undefined && rows.length > 1)) {
               return (
                 <div class="w-full shrink-0">
@@ -710,6 +1189,9 @@ const MatrixContent = (props: IMatrixContentProps) => {
                     isDragging,
                     props.layoutMode,
                     props.settingsMode,
+                    rowRejectsDrag,
+                    getCellSize,
+                    setCellSize,
                   )}
                 </div>
               );
@@ -727,6 +1209,9 @@ const MatrixContent = (props: IMatrixContentProps) => {
               isDragging,
               props.layoutMode,
               props.settingsMode,
+              rowRejectsDrag,
+              getCellSize,
+              setCellSize,
             );
           }}
         </For>
@@ -753,6 +1238,7 @@ const MatrixImpl = (props: IMatrixProps) => {
     'dndMode',
     'layoutMode',
     'onLayoutChange',
+    'direction',
   ]);
 
   const { className, style } = createStyle(matrixCva, {
@@ -795,6 +1281,7 @@ const MatrixImpl = (props: IMatrixProps) => {
           dndMode={dndMode}
           onLayoutChange={local.onLayoutChange}
           settingsMode={settingsMode}
+          direction={local.direction ?? 'vertical'}
         />
       </div>
     </DnDProvider>

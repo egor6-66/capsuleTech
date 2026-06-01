@@ -44,7 +44,8 @@ describe('Matrix — badge-UX swap DnD', () => {
     cleanup = render(
       () => (
         <Matrix
-          dndMode="swap" layoutMode="edit"
+          dndMode="swap"
+          layoutMode="edit"
           rows={[
             {
               id: 'r',
@@ -85,7 +86,8 @@ describe('Matrix — badge-UX swap DnD', () => {
     cleanup = render(
       () => (
         <Matrix
-          dndMode="swap" layoutMode="edit"
+          dndMode="swap"
+          layoutMode="edit"
           rows={[
             {
               id: 'r',
@@ -133,7 +135,8 @@ describe('Matrix — badge-UX swap DnD', () => {
     cleanup = render(
       () => (
         <Matrix
-          dndMode="swap" layoutMode="edit"
+          dndMode="swap"
+          layoutMode="edit"
           rows={[
             {
               id: 'r',
@@ -179,7 +182,8 @@ describe('Matrix — badge-UX swap DnD', () => {
     cleanup = render(
       () => (
         <Matrix
-          dndMode="swap" layoutMode="edit"
+          dndMode="swap"
+          layoutMode="edit"
           rows={[
             {
               id: 'r',
@@ -238,7 +242,8 @@ describe('Matrix — badge-UX swap DnD', () => {
     cleanup = render(
       () => (
         <Matrix
-          dndMode="swap" layoutMode="edit"
+          dndMode="swap"
+          layoutMode="edit"
           rows={[
             {
               id: 'r',
@@ -287,7 +292,8 @@ describe('Matrix — badge-UX swap DnD', () => {
       cleanup = render(
         () => (
           <Matrix
-            dndMode="swap" layoutMode="edit"
+            dndMode="swap"
+            layoutMode="edit"
             onLayoutChange={onLayoutChange}
             rows={[
               {

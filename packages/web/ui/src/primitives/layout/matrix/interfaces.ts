@@ -61,6 +61,44 @@ export interface IRow {
   height?: number | 'auto' | 'fr';
   resizable?: boolean;
   cells: ICell[];
+  // -------------------------------------------------------------------------
+  // Packing-zone props (ADR 022) — все опциональны.
+  // Зоны БЕЗ этих полей рендерятся через текущий corvu-fractional путь.
+  // -------------------------------------------------------------------------
+  /**
+   * Ориентация пакинга cells внутри зоны.
+   * - `'horizontal'` (default) — cells в строку, wrap по ширине
+   * - `'vertical'` — cells в колонку, wrap по высоте
+   *
+   * `'vertical'` активирует packing render-path вместо corvu fractional.
+   */
+  orientation?: 'horizontal' | 'vertical';
+  /**
+   * Включает перенос cells на новую линию когда cell не помещается по minW
+   * (horizontal) / minH (vertical). Активирует packing render-path.
+   *
+   * Вертикальный overflow при wrap → вертикальный скролл зоны.
+   */
+  wrap?: boolean;
+  /**
+   * Набор `cell.group`, которые эта зона принимает при insert-drop.
+   * `undefined` → принимает любые cells.
+   * Конфликт → drop отклоняется с «нельзя»-highlight.
+   */
+  accepts?: string[];
+  /**
+   * Нижняя граница высоты ряда при вертикальном resize (height-borrow).
+   * Значение — **доля (0..1)** от высоты corvu-контейнера (аналогично
+   * `IFlexItem.minSize` / corvu Panel `minSize`). Ручка стопорится при
+   * упоре (capped, без скролла).
+   *
+   * Px-семантика не используется: конвертация px → доля требует измерения
+   * контейнера в рантайме (jsdom не меряет); доля — прагматичный
+   * компромисс (задокументировано в ADR 022).
+   *
+   * Пример: `minHeight: 0.1` → ряд не схлопнется ниже 10 % высоты лейаута.
+   */
+  minHeight?: number;
 }
 
 export interface ICell {
@@ -83,6 +121,27 @@ export interface ICell {
    * Threaded from SlotValue.settings through preset → ICell by the resolvers.
    */
   settings?: JSX.Element;
+  // -------------------------------------------------------------------------
+  // Packing-zone props (ADR 022) — все опциональны.
+  // -------------------------------------------------------------------------
+  /**
+   * Минимальная ширина cell (px) для пакинга/wrap-reflow.
+   * Используется только в зонах с `wrap` или `orientation:'vertical'`.
+   * Активирует packing render-path для родительской зоны.
+   */
+  minW?: number;
+  /**
+   * Минимальная высота cell (px) для пакинга в вертикальных зонах.
+   * Используется только в зонах с `orientation:'vertical'`.
+   */
+  minH?: number;
+  /**
+   * Метка группы для `accepts` предиката insert-drop.
+   * Обобщает `swapGroup` на insert-режим.
+   * Зона принимает cell только если `row.accepts ∋ cell.group`
+   * (или `row.accepts` не задан).
+   */
+  group?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -132,6 +191,29 @@ export interface IMatrixCommonProps extends JSX.HTMLAttributes<HTMLDivElement> {
   dndMode?: MatrixDndMode;
   layoutMode?: MatrixLayoutMode;
   onLayoutChange?: (event: LayoutChangeEvent) => void;
+  /**
+   * **Matrix-level outer axis** — controls how rows (zones) are laid out
+   * relative to each other. This is the **outer** axis; each zone's
+   * `orientation` / `wrap` remain the **inner** packing axis (ADR 022).
+   *
+   * - `'vertical'` (default) — rows stack top-to-bottom (vertical Flex /
+   *   corvu). `row.height` controls the vertical size of each zone. This is
+   *   the pre-existing behaviour; nothing changes.
+   *
+   * - `'horizontal'` — zones are placed **side by side** left-to-right (a
+   *   horizontal Flex / corvu column). In this mode `row.height` is
+   *   **re-interpreted as the zone's width** (fraction 0..1 or `'fr'`).
+   *   This lets the consumer pass a "main" zone (large, `height:'fr'`) next
+   *   to a "rightbar" zone (narrow, `height: 0.25`) without any additional
+   *   prop. The resize handle between zones is horizontal (cursor ew-resize).
+   *
+   * **Scope note:** this is a single-level split only. True 2D nesting (a
+   * zone inside another zone) is out of scope for ADR 022 and planned as a
+   * future ADR.
+   *
+   * @default 'vertical'
+   */
+  direction?: 'vertical' | 'horizontal';
 }
 
 /**

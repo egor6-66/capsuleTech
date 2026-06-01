@@ -516,3 +516,634 @@ export const InsertModeUncontrolled: Story = {
     );
   },
 };
+
+// ===========================================================================
+// Packing-zones stories (ADR 022 — insert-mode v2)
+// ===========================================================================
+
+/**
+ * Packing wrap (horizontal): 3 widgets with minW=220px in a wrap=true zone.
+ * Resize the Storybook panel to below 660px width to trigger wrap reflow —
+ * the third widget should move to the next line. Vertical overflow scrolls.
+ */
+export const PackingWrapHorizontal: Story = {
+  name: 'insert v2 · packing wrap (horizontal, minW)',
+  argTypes: {
+    onLayoutChange: { action: 'layoutChange' },
+  },
+  render: (args) => {
+    const widget = (label: string, bg: string) => (
+      <div
+        class="flex h-full w-full items-center justify-center rounded text-sm font-bold text-foreground"
+        style={{ background: bg, 'min-height': '120px' }}
+      >
+        {label}
+      </div>
+    );
+    return (
+      <Matrix
+        layoutMode="edit"
+        dndMode="insert"
+        onLayoutChange={(e) => args.onLayoutChange?.(e)}
+        rows={[
+          {
+            id: 'main',
+            wrap: true,
+            resizable: false,
+            accepts: ['widget'],
+            cells: [
+              {
+                id: 'map',
+                children: widget('Map Widget', 'rgba(99,102,241,0.18)'),
+                draggable: true,
+                minW: 220,
+                group: 'widget',
+              },
+              {
+                id: 'chat',
+                children: widget('Chat Widget', 'rgba(34,197,94,0.18)'),
+                draggable: true,
+                minW: 220,
+                group: 'widget',
+              },
+              {
+                id: 'stats',
+                children: widget('Stats Widget', 'rgba(244,114,182,0.18)'),
+                draggable: true,
+                minW: 220,
+                group: 'widget',
+              },
+            ],
+          },
+          {
+            id: 'palette',
+            height: 'auto',
+            resizable: false,
+            accepts: ['widget'],
+            cells: [
+              {
+                id: 'palette-placeholder',
+                children: (
+                  <div class="flex items-center justify-center p-3 text-xs text-muted-foreground">
+                    Palette (drop widget here to remove from main)
+                  </div>
+                ),
+                draggable: false,
+              },
+            ],
+          },
+        ]}
+      />
+    );
+  },
+};
+
+/**
+ * Vertical zone (orientation='vertical'): rightbar with panels stacked top→bottom.
+ * Panels have minH=100px. On narrow vertical space, excess panels would scroll.
+ */
+export const PackingVerticalZone: Story = {
+  name: 'insert v2 · vertical zone (orientation=vertical, minH)',
+  argTypes: {
+    onLayoutChange: { action: 'layoutChange' },
+  },
+  render: (args) => {
+    const panel = (label: string, bg: string) => (
+      <div
+        class="flex h-full w-full items-center justify-center text-sm font-bold text-foreground"
+        style={{ background: bg }}
+      >
+        {label}
+      </div>
+    );
+    return (
+      <Matrix
+        layoutMode="edit"
+        dndMode="insert"
+        onLayoutChange={(e) => args.onLayoutChange?.(e)}
+        rows={[
+          {
+            id: 'main',
+            resizable: false,
+            accepts: ['widget'],
+            cells: [
+              {
+                id: 'main-content',
+                children: (
+                  <div class="flex h-full w-full items-center justify-center bg-muted/20 text-sm text-muted-foreground">
+                    Main area — drag panels from rightbar here
+                  </div>
+                ),
+                draggable: true,
+                group: 'widget',
+              },
+            ],
+          },
+          {
+            id: 'rightbar',
+            orientation: 'vertical',
+            wrap: false,
+            resizable: false,
+            accepts: ['panel'],
+            cells: [
+              {
+                id: 'status',
+                children: panel('Status', 'rgba(99,102,241,0.25)'),
+                draggable: true,
+                minH: 100,
+                group: 'panel',
+              },
+              {
+                id: 'logs',
+                children: panel('Logs', 'rgba(34,197,94,0.25)'),
+                draggable: true,
+                minH: 100,
+                group: 'panel',
+              },
+              {
+                id: 'alerts',
+                children: panel('Alerts', 'rgba(244,114,182,0.25)'),
+                draggable: true,
+                minH: 100,
+                group: 'panel',
+              },
+            ],
+          },
+        ]}
+      />
+    );
+  },
+};
+
+/**
+ * Accepts constraints: main accepts 'widget', rightbar accepts 'panel'.
+ * Dragging a widget to rightbar → rejected (ring-destructive highlight).
+ * Dragging a panel to main → rejected. Same-group drops → accepted.
+ */
+export const PackingAcceptsConstraints: Story = {
+  name: 'insert v2 · accepts constraints (cross-group reject)',
+  argTypes: {
+    onLayoutChange: { action: 'layoutChange' },
+  },
+  render: (args) => {
+    const widget = (label: string) => (
+      <div class="flex h-full w-full items-center justify-center rounded bg-primary/15 text-sm font-bold">
+        {label}
+        <br />
+        <span class="text-xs font-normal text-muted-foreground">group=widget</span>
+      </div>
+    );
+    const panel = (label: string) => (
+      <div class="flex h-full w-full items-center justify-center rounded bg-accent/30 text-sm font-bold">
+        {label}
+        <br />
+        <span class="text-xs font-normal text-muted-foreground">group=panel</span>
+      </div>
+    );
+    return (
+      <Matrix
+        layoutMode="edit"
+        dndMode="insert"
+        onLayoutChange={(e) => args.onLayoutChange?.(e)}
+        rows={[
+          {
+            id: 'main',
+            wrap: true,
+            resizable: false,
+            accepts: ['widget'],
+            cells: [
+              {
+                id: 'w1',
+                children: widget('Widget A'),
+                draggable: true,
+                minW: 180,
+                group: 'widget',
+              },
+              {
+                id: 'w2',
+                children: widget('Widget B'),
+                draggable: true,
+                minW: 180,
+                group: 'widget',
+              },
+            ],
+          },
+          {
+            id: 'sidebar',
+            orientation: 'vertical',
+            wrap: false,
+            resizable: false,
+            accepts: ['panel'],
+            cells: [
+              {
+                id: 'p1',
+                children: panel('Panel X'),
+                draggable: true,
+                minH: 100,
+                group: 'panel',
+              },
+              {
+                id: 'p2',
+                children: panel('Panel Y'),
+                draggable: true,
+                minH: 100,
+                group: 'panel',
+              },
+            ],
+          },
+        ]}
+      />
+    );
+  },
+};
+
+/**
+ * Manual resize in packing zone (ADR 022 task 1).
+ *
+ * Each cell in the wrap=true packing zone has a 4px trailing-edge resize handle
+ * (visible in edit mode — thin strip on the right of each cell). Drag the handle
+ * to set an explicit px width; cells that no longer fit wrap to the next line
+ * automatically via CSS flex-wrap. minW (200px) is the floor — handle stopsmoving
+ * at 200px. Cells that have NOT been manually resized stay flex:1.
+ *
+ * Vertical orientation (orientation='vertical') uses a bottom-edge ns-resize handle
+ * instead. See PackingVerticalZone story for the vertical variant.
+ *
+ * Geometry (wrap reflow, actual pixel snap) is only verifiable in a real browser;
+ * jsdom does not measure layout.
+ */
+export const PackingManualResize: Story = {
+  name: 'insert v2 · manual resize (handle + wrap reflow)',
+  argTypes: {
+    onLayoutChange: { action: 'layoutChange' },
+  },
+  render: (args) => {
+    const widget = (label: string, bg: string) => (
+      <div
+        class="flex h-full w-full items-center justify-center text-sm font-bold text-foreground"
+        style={{ background: bg, 'min-height': '120px' }}
+      >
+        {label}
+        <br />
+        <span class="text-xs font-normal text-muted-foreground">drag right edge to resize</span>
+      </div>
+    );
+    return (
+      <Matrix
+        layoutMode="edit"
+        dndMode="insert"
+        onLayoutChange={(e) => args.onLayoutChange?.(e)}
+        rows={[
+          {
+            id: 'main',
+            wrap: true,
+            resizable: false,
+            accepts: ['widget'],
+            cells: [
+              {
+                id: 'alpha',
+                children: widget('Alpha (resize me)', 'rgba(99,102,241,0.18)'),
+                draggable: true,
+                minW: 200,
+                group: 'widget',
+              },
+              {
+                id: 'beta',
+                children: widget('Beta', 'rgba(34,197,94,0.18)'),
+                draggable: true,
+                minW: 200,
+                group: 'widget',
+              },
+              {
+                id: 'gamma',
+                children: widget('Gamma', 'rgba(244,114,182,0.18)'),
+                draggable: true,
+                minW: 200,
+                group: 'widget',
+              },
+            ],
+          },
+          {
+            id: 'palette',
+            height: 'auto',
+            resizable: false,
+            accepts: ['widget'],
+            cells: [
+              {
+                id: 'palette-placeholder',
+                children: (
+                  <div class="flex items-center justify-center p-3 text-xs text-muted-foreground">
+                    Palette — drop widgets here
+                  </div>
+                ),
+                draggable: false,
+              },
+            ],
+          },
+        ]}
+      />
+    );
+  },
+};
+
+/**
+ * Drag-back after cross-row move: demonstrates the re-bind fix (ADR 022).
+ * Move a widget from row-1 to row-2, then move it back. Without the fix,
+ * the second drag would silently no-op (cell was not re-bound to its new row's sortable).
+ */
+export const InsertModeRebindAfterMove: Story = {
+  name: 'insert v2 · drag-back after cross-row move (re-bind fix)',
+  argTypes: {
+    onLayoutChange: { action: 'layoutChange' },
+  },
+  render: (args) => {
+    const tile = (label: string, bg: string) => (
+      <div
+        class="flex h-full w-full items-center justify-center text-base font-bold text-foreground"
+        style={{ background: bg }}
+      >
+        {label}
+      </div>
+    );
+    return (
+      <Matrix
+        layoutMode="edit"
+        dndMode="insert"
+        onLayoutChange={(e) => args.onLayoutChange?.(e)}
+        rows={[
+          {
+            id: 'row-top',
+            resizable: true,
+            cells: [
+              {
+                id: 'alpha',
+                children: tile('Alpha (drag me across)', 'rgba(99,102,241,0.22)'),
+                width: 0.5,
+                resizable: true,
+                draggable: true,
+              },
+              {
+                id: 'beta',
+                children: tile('Beta', 'rgba(34,197,94,0.22)'),
+                width: 0.5,
+                resizable: true,
+                draggable: true,
+              },
+            ],
+          },
+          {
+            id: 'row-bottom',
+            resizable: true,
+            cells: [
+              {
+                id: 'gamma',
+                children: tile('Gamma', 'rgba(244,114,182,0.22)'),
+                width: 0.5,
+                resizable: true,
+                draggable: true,
+              },
+              {
+                id: 'delta',
+                children: tile('Delta', 'rgba(251,146,60,0.22)'),
+                width: 0.5,
+                resizable: true,
+                draggable: true,
+              },
+            ],
+          },
+        ]}
+      />
+    );
+  },
+};
+
+// ===========================================================================
+// direction='horizontal' — side-by-side zones (ADR 022 §side-by-side)
+// ===========================================================================
+
+/**
+ * Fixed-rail layout: main (flex:1, fills remaining space) + rightbar (fixed
+ * narrow rail, content-driven width ~60px). Both zones are NON-resizable and
+ * NON-draggable (no corvu handle between them, no DnD at zone level).
+ *
+ * `direction='horizontal'` lays zones LEFT→RIGHT.
+ * `height:'auto'` on the rightbar row → `flex: 0 0 auto` in CSS, so the zone
+ * shrinks to its content width (icon buttons ~60px) with no grow.
+ * `height` omitted on main → `flex: 1`, fills all remaining space.
+ *
+ * Widgets INSIDE main still have packing resize handles (edit mode) because
+ * `renderPackingRow` gates handle visibility on `layoutMode`, NOT `row.resizable`.
+ * This demonstrates cell-level resize being independent of zone-level resizable.
+ *
+ * Verify in browser: rightbar should be exactly as wide as its icon content;
+ * main should fill the rest. No drag handle (corvu splitter) appears between the zones.
+ */
+export const FixedRailZone: Story = {
+  name: 'direction=horizontal · fixed-rail (main flex:1 + rightbar content-width)',
+  argTypes: {
+    onLayoutChange: { action: 'layoutChange' },
+  },
+  render: (args) => {
+    const iconButton = (icon: string, label: string) => (
+      <button
+        type="button"
+        class="flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded hover:bg-muted/60"
+        title={label}
+      >
+        <span class="text-lg leading-none">{icon}</span>
+        <span class="text-[9px] text-muted-foreground">{label}</span>
+      </button>
+    );
+    const widget = (label: string, bg: string) => (
+      <div
+        class="flex h-full w-full items-center justify-center rounded text-sm font-bold text-foreground"
+        style={{ background: bg, 'min-height': '120px' }}
+      >
+        {label}
+        <br />
+        <span class="text-xs font-normal text-muted-foreground">(drag right edge to resize)</span>
+      </div>
+    );
+    return (
+      <Matrix
+        layoutMode="edit"
+        dndMode="insert"
+        direction="horizontal"
+        onLayoutChange={(e) => args.onLayoutChange?.(e)}
+        rows={[
+          {
+            id: 'main',
+            // height omitted → flex: 1, fills remaining space.
+            // resizable: false → no corvu handle at zone level.
+            // wrap: true + minW → packing resize handles still work at cell level.
+            resizable: false,
+            wrap: true,
+            accepts: ['widget'],
+            cells: [
+              {
+                id: 'map-widget',
+                children: widget('Map Widget', 'rgba(99,102,241,0.18)'),
+                draggable: true,
+                minW: 220,
+                group: 'widget',
+              },
+              {
+                id: 'chat-widget',
+                children: widget('Chat Widget', 'rgba(34,197,94,0.18)'),
+                draggable: true,
+                minW: 220,
+                group: 'widget',
+              },
+            ],
+          },
+          {
+            id: 'rightbar',
+            // height: 'auto' → flex: 0 0 auto → content-driven width (~60px icons).
+            // resizable: false → no corvu handle at zone level.
+            height: 'auto',
+            resizable: false,
+            orientation: 'vertical',
+            accepts: [],
+            cells: [
+              {
+                id: 'rail-content',
+                children: (
+                  <div class="flex h-full flex-col items-center gap-1 border-l border-border bg-card px-1 py-2">
+                    {iconButton('', 'Nodes')}
+                    {iconButton('', 'Map')}
+                    {iconButton('', 'Chat')}
+                    {iconButton('', 'Stats')}
+                    {iconButton('', 'Settings')}
+                  </div>
+                ),
+                draggable: false,
+              },
+            ],
+          },
+        ]}
+      />
+    );
+  },
+};
+
+/**
+ * Side-by-side zones: main (horizontal wrap-packing zone) on the left +
+ * rightbar (vertical packing column) on the right. DnD between zones via
+ * insert mode.
+ *
+ * `direction='horizontal'` lays zones out LEFT→RIGHT instead of the default
+ * TOP→BOTTOM. `row.height` is re-used as the zone's **width** fraction:
+ *   main:     height=0.72 → takes 72% of the horizontal space.
+ *   rightbar: height=0.28 → takes 28% of the horizontal space.
+ *
+ * Each zone keeps its own inner `orientation` for cell packing:
+ *   main     → `wrap:true` (horizontal wrap grid, minW=220px)
+ *   rightbar → `orientation:'vertical'` (vertical column, minH=100px)
+ *
+ * Drag a widget from main to rightbar → rejected (accepts-constraint).
+ * Drag a panel from rightbar to main → rejected.
+ * Drag within the same zone → accepted, reorder.
+ *
+ * The resize handle between the two zones is a vertical splitter (ew-resize)
+ * that redistributes their widths. Geometry is verifiable only in a real browser.
+ */
+export const SideBySideZones: Story = {
+  name: 'direction=horizontal · side-by-side (main | rightbar)',
+  argTypes: {
+    onLayoutChange: { action: 'layoutChange' },
+  },
+  render: (args) => {
+    const widget = (label: string, bg: string) => (
+      <div
+        class="flex h-full w-full items-center justify-center rounded text-sm font-bold text-foreground"
+        style={{ background: bg, 'min-height': '120px' }}
+      >
+        {label}
+        <br />
+        <span class="text-xs font-normal text-muted-foreground">group=widget</span>
+      </div>
+    );
+    const panel = (label: string, bg: string) => (
+      <div
+        class="flex h-full w-full items-center justify-center text-sm font-bold text-foreground"
+        style={{ background: bg }}
+      >
+        {label}
+        <br />
+        <span class="text-xs font-normal text-muted-foreground">group=panel</span>
+      </div>
+    );
+    return (
+      <Matrix
+        layoutMode="edit"
+        dndMode="insert"
+        direction="horizontal"
+        onLayoutChange={(e) => args.onLayoutChange?.(e)}
+        rows={[
+          {
+            id: 'main',
+            // In direction='horizontal', row.height is re-interpreted as the zone width fraction.
+            height: 0.72,
+            resizable: true,
+            wrap: true,
+            accepts: ['widget'],
+            cells: [
+              {
+                id: 'map-widget',
+                children: widget('Map Widget', 'rgba(99,102,241,0.18)'),
+                draggable: true,
+                minW: 220,
+                group: 'widget',
+              },
+              {
+                id: 'chat-widget',
+                children: widget('Chat Widget', 'rgba(34,197,94,0.18)'),
+                draggable: true,
+                minW: 220,
+                group: 'widget',
+              },
+              {
+                id: 'stats-widget',
+                children: widget('Stats Widget', 'rgba(244,114,182,0.18)'),
+                draggable: true,
+                minW: 220,
+                group: 'widget',
+              },
+            ],
+          },
+          {
+            id: 'rightbar',
+            // In direction='horizontal', row.height is re-interpreted as the zone width fraction.
+            height: 0.28,
+            resizable: true,
+            orientation: 'vertical',
+            accepts: ['panel'],
+            cells: [
+              {
+                id: 'status-panel',
+                children: panel('Status', 'rgba(99,102,241,0.25)'),
+                draggable: true,
+                minH: 100,
+                group: 'panel',
+              },
+              {
+                id: 'logs-panel',
+                children: panel('Logs', 'rgba(34,197,94,0.25)'),
+                draggable: true,
+                minH: 100,
+                group: 'panel',
+              },
+              {
+                id: 'alerts-panel',
+                children: panel('Alerts', 'rgba(244,114,182,0.25)'),
+                draggable: true,
+                minH: 100,
+                group: 'panel',
+              },
+            ],
+          },
+        ]}
+      />
+    );
+  },
+};
