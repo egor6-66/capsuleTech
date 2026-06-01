@@ -171,9 +171,13 @@ export const MapView = (props: IMapViewProps) => {
         ...(props.pitch !== undefined ? { pitch: props.pitch } : {}),
         ...(props.maxBounds !== undefined ? { maxBounds: props.maxBounds } : {}),
       });
+      // Capture instance SYNCHRONOUSLY so onCleanup can always dispose, even if
+      // the component unmounts before the 'load' event fires (pre-load navigation).
+      // maplibre-gl v5.x Map.remove() is safe at any point post-construction:
+      // it aborts pending tile fetches and tears down the WebGL context cleanly.
+      instance = m;
 
       m.once('load', () => {
-        instance = m;
         setMap(m);
         props.onLoad?.(m);
       });

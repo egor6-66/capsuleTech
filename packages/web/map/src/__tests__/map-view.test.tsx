@@ -353,3 +353,54 @@ describe('MapView — onViewportChange', () => {
     });
   });
 });
+
+describe('MapView — pre-load unmount (memory leak regression)', () => {
+  it('calls map.remove() when unmounted BEFORE load fires', () => {
+    // Regression: instance was only captured inside m.once('load', ...), so
+    // unmounting before 'load' left instance === undefined and remove() was never called.
+    dispose = render(() => <MapView />, container);
+    lastRO().trigger(800, 600);
+    const m = lastMap();
+
+    // Confirm map was constructed but 'load' has NOT fired yet
+    expect(mapInstances).toHaveLength(1);
+    expect(m.remove).not.toHaveBeenCalled();
+
+    // Unmount BEFORE triggering 'load'
+    dispose();
+    dispose = () => {};
+
+    // Must dispose the Map regardless of load state
+    expect(m.remove).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls map.remove() exactly once when unmounted AFTER load fires (happy path unaffected)', () => {
+    dispose = render(() => <MapView />, container);
+    lastRO().trigger(800, 600);
+    const m = lastMap();
+
+    // Normal path: load fires, then component unmounts
+    m._triggerLoad();
+    expect(m.remove).not.toHaveBeenCalled();
+
+    dispose();
+    dispose = () => {};
+
+    expect(m.remove).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not call onLoad when unmounted before load fires', () => {
+    const onLoad = vi.fn();
+    dispose = render(() => <MapView onLoad={onLoad} />, container);
+    lastRO().trigger(800, 600);
+
+    // Unmount before 'load'
+    dispose();
+    dispose = () => {};
+
+    // 'load' never fired — onLoad must not be called
+    expect(onLoad).not.toHaveBeenCalled();
+    // But map instance must still be cleaned up
+    expect(lastMap().remove).toHaveBeenCalledTimes(1);
+  });
+});
