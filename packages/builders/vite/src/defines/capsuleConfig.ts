@@ -54,8 +54,7 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
   //   CAPSULE_MOCKS='false' capsule dev   → явное отключение моков в dev
   //   (не задан)            capsule dev   → моки on  (текущее поведение)
   //   (не задан)            capsule build → моки off
-  const mocks =
-    process.env.CAPSULE_MOCKS != null ? process.env.CAPSULE_MOCKS === 'true' : isDev;
+  const mocks = process.env.CAPSULE_MOCKS != null ? process.env.CAPSULE_MOCKS === 'true' : isDev;
 
   const dedupe = [
     'solid-js',
@@ -90,6 +89,56 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
       ...(isDev ? { watch: {} } : {}),
       rollupOptions: {
         input: join(capsuleRoot, 'index.html'),
+        // Generic vendor-split for ALL capsule apps (no app-specific paths).
+        // Goals:
+        //  1. Move heavy stable vendor libs out of the entry chunk so the entry
+        //     is smaller and can be fetched in parallel with vendor chunks.
+        //  2. Make Vite emit <link rel="modulepreload"> for these static chunks
+        //     (Vite only emits preload for statically-imported chunks).
+        //  3. Deduplicate shared runtime (solid-js, kobalte) across lazy chunks
+        //     that are already in the tree (e.g. map, dropdown, dataTable).
+        //
+        // Buckets are conservative to avoid Solid/XState init-order breakage:
+        //  - 'maplibre'     — geospatial lib, has NO dependency on solid/xstate;
+        //                     safe to split completely.
+        //  - 'vendor-core'  — solid-js + xstate + router: always co-initialised,
+        //                     kept together to preserve module evaluation order.
+        //  - 'vendor-ui'    — kobalte + its peer deps (solid-prevent-scroll,
+        //                     solid-presence): UI primitives, no side-effects on
+        //                     import, deduplicates across lazy dropdown/table chunks.
+        //
+        // Function form (not object form) lets us inspect the full resolved id and
+        // apply rules without hardcoding internal chunk names.
+        output: {
+          ...(!isDev
+            ? {
+                manualChunks(id: string) {
+                  if (
+                    id.includes('node_modules/maplibre-gl') ||
+                    id.includes('node_modules/@maplibre/')
+                  ) {
+                    return 'maplibre';
+                  }
+                  if (
+                    id.includes('node_modules/solid-js') ||
+                    id.includes('node_modules/@solidjs/') ||
+                    id.includes('node_modules/xstate') ||
+                    id.includes('node_modules/@xstate/') ||
+                    id.includes('node_modules/@tanstack/solid-router')
+                  ) {
+                    return 'vendor-core';
+                  }
+                  if (
+                    id.includes('node_modules/@kobalte/') ||
+                    id.includes('node_modules/solid-prevent-scroll') ||
+                    id.includes('node_modules/solid-presence')
+                  ) {
+                    return 'vendor-ui';
+                  }
+                },
+              }
+            : {}),
+        },
       },
       // outDir — `apps/<app>/dist/` (не `.capsule/dist/`). Vite-root указан в
       // `.capsule/`, но артефакт должен лежать рядом с `src/`, как ожидает
