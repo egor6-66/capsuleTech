@@ -19,6 +19,7 @@ const Dashboard = Page((Ui) => (
   <Features.Incidents>
     <Ui.Layout.Matrix
       preset="app-shell"
+      layoutMode={'edit'}
       slots={{
         main: {
           children: <Widgets.Tables.Incidents />,
