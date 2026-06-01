@@ -9,6 +9,7 @@ import {
   type JSX,
   Show,
   splitProps,
+  Suspense,
   useContext,
 } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
@@ -50,6 +51,19 @@ const animateMain = (
   }
   return <Animate variant={variant}>{content}</Animate>;
 };
+
+// ---------------------------------------------------------------------------
+// MatrixCellFallback — neutral default Suspense fallback for a Matrix cell.
+//
+// Full-cell pulse placeholder: fills h-full w-full so it occupies the slot's
+// box while the lazy chunk streams in. Uses bg-muted + animate-pulse (same
+// visual as Skeleton Block) without importing the full Skeleton primitive
+// (avoids a kobalte dependency in this render path).
+// ---------------------------------------------------------------------------
+
+const MatrixCellFallback = (): JSX.Element => (
+  <div class="h-full w-full animate-pulse rounded-sm bg-muted" />
+);
 
 // ---------------------------------------------------------------------------
 // Cell renderer — renders one ICell as the correct HTML5 element
@@ -167,7 +181,7 @@ const renderCell = (
             into cell content (table row hover, map hover, etc.).
             DnD ref lives on the outer wrapper so elementFromPoint() always hits it. */}
         <div class={innerClass} classList={{ 'pointer-events-none': isDragging() }}>
-          {content}
+          <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
         </div>
         {/* Absolute overlay renders above canvas / GPU layers — ring/box-shadow do not. */}
         <Show when={dndState.canAccept() || dndState.canDrop() || dndState.isOver()}>
@@ -201,7 +215,9 @@ const renderCell = (
         class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative`}
       >
         {settingsStrip()}
-        <div class="absolute inset-0 overflow-auto">{content}</div>
+        <div class="absolute inset-0 overflow-auto">
+          <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+        </div>
       </Dynamic>
     );
   }
@@ -210,9 +226,11 @@ const renderCell = (
     <Dynamic
       component={tag}
       ref={cellRef}
-      class={isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot}
+      class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative`}
     >
-      {content}
+      <div class="absolute inset-0 overflow-auto">
+        <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+      </div>
     </Dynamic>
   );
 };
@@ -425,7 +443,7 @@ const renderPackingRow = (
                 class="absolute inset-0 overflow-auto"
                 classList={{ 'pointer-events-none': isDragging() }}
               >
-                {content}
+                <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
               </div>
               {resizeHandle()}
             </Dynamic>
@@ -884,7 +902,9 @@ const MatrixContent = (props: IMatrixContentProps) => {
                 pointer-events-none during drag prevents hover leaking into content.
                 DnD ref is on the outer wrapper so elementFromPoint() always hits it. */}
             <div class={innerClass} classList={{ 'pointer-events-none': isDragging() }}>
-              {isMain ? animateMain(children, props.animated, props.router) : children}
+              <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>
+                {isMain ? animateMain(children, props.animated, props.router) : children}
+              </Suspense>
             </div>
             {/* Absolute overlay renders above canvas / GPU layers */}
             <Show
@@ -1322,5 +1342,12 @@ const MatrixImpl = (props: IMatrixProps) => {
  * - No global edit badge / no edit mode toggle — drag is always available via badge.
  * - `layoutMode` prop still accepted (for insert mode / controlled state future use).
  * - `dndMode` defaults to `'swap'`.
+ *
+ * **Per-slot Suspense boundaries:**
+ * Every cell's content is wrapped in its own `<Suspense>` so a suspended lazy
+ * Widget chunk blanks only that cell — not the whole Matrix. The fallback is
+ * `cell.skeleton` if provided, otherwise a full-cell pulse placeholder
+ * (`h-full w-full animate-pulse bg-muted`). Pass `skeleton` in SlotValue to
+ * customise: `main: { children: <Lazy />, skeleton: <Skeleton variant="map" /> }`.
  */
 export const Matrix = MatrixImpl;

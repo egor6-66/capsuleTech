@@ -48,6 +48,15 @@ export type SlotValue =
        *   `settings: <MyWidgetSettingsPanel />`
        */
       settings?: JSX.Element;
+      /**
+       * Fallback shown inside the per-cell `<Suspense>` boundary while the
+       * slot's child (e.g. a lazy Widget chunk) is loading.
+       *
+       * Defaults to a full-cell pulse placeholder (`h-full w-full` muted bg).
+       * Override per-slot to show a content-shaped skeleton:
+       *   `skeleton: <Skeleton variant="table" />`
+       */
+      skeleton?: JSX.Element;
     };
 
 export interface IRow {
@@ -121,6 +130,14 @@ export interface ICell {
    * Threaded from SlotValue.settings through preset → ICell by the resolvers.
    */
   settings?: JSX.Element;
+  /**
+   * Fallback shown inside the per-cell `<Suspense>` boundary while the cell's
+   * child is suspended (e.g. a lazy Widget chunk that hasn't resolved yet).
+   *
+   * Defaults to a full-cell pulse placeholder (`h-full w-full` muted bg).
+   * Threaded from SlotValue.skeleton through preset → ICell by the resolvers.
+   */
+  skeleton?: JSX.Element;
   // -------------------------------------------------------------------------
   // Packing-zone props (ADR 022) — все опциональны.
   // -------------------------------------------------------------------------
