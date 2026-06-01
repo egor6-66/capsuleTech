@@ -269,6 +269,7 @@ export const generateWrappersTypes = (leaves: WrapperLeaf[]): string => {
     const layerLeaves = byLayer[layer] ?? [];
     if (layerLeaves.length === 0) {
       lines.push(`  interface ${namespace} {}`);
+      lines.push(`  const ${namespace}: ${namespace};`);
       continue;
     }
     const tree = buildTree(layerLeaves);
@@ -283,6 +284,7 @@ export const generateWrappersTypes = (leaves: WrapperLeaf[]): string => {
     lines.push(`  interface ${namespace} {`);
     lines.push(props);
     lines.push('  }');
+    lines.push(`  const ${namespace}: ${namespace};`);
   }
 
   lines.push('}');
