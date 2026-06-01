@@ -100,6 +100,16 @@ export function runBuild(opts: RunBuildOptions): Promise<void>;
 
 12. **`prepack` hook = `node scripts/build-native.mjs`** (PR 6). На каждый `pnpm publish` (release-local.mjs или ручной) cargo build + copy запускается автоматически перед pack — гарантирует `dist/bin/capsule-desktop.exe` в tarball'е. Idempotent (cargo cache); fresh build ~1-2 min, cached ~1-5s. Без prepack tarball был бы broken — `runDev`/`runBuild` consumer'ов (`@capsuletech/cli`) не нашли бы бинарь.
 
+13. **Температуры на Windows (ADR 023).** `sysinfo::Components` возвращает пустой список без admin-прав или специальных WMI-драйверов. `components: []` — норма, не баг. UI должен gracefully обрабатывать пустой массив.
+
+14. **GPU — только NVIDIA в Phase A (ADR 023).** `nvml-wrapper` использует `libloading` (runtime dlopen). На машинах без NVIDIA или без драйвера `Nvml::init()` → Err → провайдер не регистрируется → `gpus: []`. AMD/Intel добавляются в Phase B без изменения контракта фронта.
+
+15. **CPU% ≈ 0 на первом `get_system_snapshot` (холодный старт).** sysinfo считает CPU% как разницу двух refresh'ей. `SystemSampler::new()` делает начальный seed. Если `start_monitoring` не запускался перед первым `get_system_snapshot`, первый результат может показывать CPU ≈ 0. Решение: или запустить `start_monitoring` заблаговременно, или выдержать ≥200ms паузу между двумя pull-вызовами.
+
+16. **`start_monitoring`/`stop_monitoring` — idempotent.** Повторный `start` прерывает предыдущий task и запускает новый. `stop` при остановленном — no-op.
+
+17. **`./metrics` subpath — ТОЛЬКО types, нет JS entry.** `exports["./metrics"]` содержит только `"types"`, нет `"import"`. Используй исключительно `import type { ... } from '@capsuletech/desktop/metrics'`.
+
 ## План рефакторинга / оптимизаций
 
 PR 1-8 (см. ADR 017 Roadmap):
@@ -131,19 +141,49 @@ pnpm --filter @capsuletech/desktop test
 pnpm test:e2e:cli   # включает desktop tarball assertion (после PR 6)
 ```
 
+## Публичный API — metrics (ADR 023, Phase A)
+
+### Tauri command/event surface
+
+| Surface | Signature | Description |
+|---|---|---|
+| command `get_system_snapshot` | `() -> SystemSnapshot` | One-shot pull of full host metrics |
+| command `start_monitoring` | `(intervalMs: u64, topProcesses: u32) -> ()` | Start background push. Idempotent — restarts with new params if already running. `intervalMs` clamped to ≥ 200. `topProcesses = 0` → default 10 |
+| command `stop_monitoring` | `() -> ()` | Stop background push. Idempotent |
+| event `"system://metrics"` | payload: `SystemSnapshot` | Emitted every `intervalMs` while monitoring is active |
+
+**Cleanup:** background task is aborted on `WindowEvent::Destroyed` — prevents emitting into a dead window.
+
+### Type-only subpath
+
+```ts
+import type { SystemSnapshot } from '@capsuletech/desktop/metrics';
+```
+
+`src/metrics.ts` → `dist/metrics.d.ts` (auto-emitted by dts plugin). Zero runtime — `export interface` / `export type` only. No JS entry for `./metrics`.
+
 ## Зависимости (Rust crate) — active plugins
 
 | Crate | Version | Purpose |
 |---|---|---|
 | `tauri` | `2` (resolved `2.11.2`) | Tauri core shell |
 | `tauri-plugin-dialog` | `2` (resolved `2.7.1`) | Native file/folder/message dialogs |
-| `serde` / `serde_json` | `1` | JSON serialization (override config) |
+| `serde` / `serde_json` | `1` | JSON serialization (override config + SystemSnapshot) |
+| `sysinfo` | `0.39` (resolved `0.39.3`) | Cross-platform host metrics: CPU/RAM/swap/disks/networks/processes/components |
+| `nvml-wrapper` | `0.12` (resolved `0.12.1`) | NVIDIA GPU metrics via NVML (feature `gpu-nvidia`, default-on). Uses `libloading` (runtime dlopen) — `cargo check`/CI without NVIDIA drivers is safe |
+| `log` | `0.4` (resolved `0.4.30`) | Logging for NVML graceful-init failure |
+| `tokio` | `1` (resolved `1.52.3`) | Async interval timer for background monitoring task |
 
-Capability key: `dialog:default` — grants all dialog permissions (open file, save file, message, ask). Added to `capabilities/default.json`.
+Capability keys in `capabilities/default.json`:
+- `core:default` — base Tauri permissions
+- `dialog:default` — all dialog permissions (open/save/message/ask)
+- `core:event:default` — allows webview to `listen()` on `"system://metrics"`
 
 **JS bindings for consumers:** `@tauri-apps/plugin-dialog` — NOT a dep/peerDep of `@capsuletech/desktop`. Apps install it directly alongside `@tauri-apps/api`. Rationale: `@capsuletech/desktop` is a build-time library (node process, spawns Tauri); it has no runtime in the webview. The JS plugin bindings live in the webview context of the consuming app. Mixing concerns into `@capsuletech/desktop` peerDeps would create a fake coupling.
 
 **Adding a new Tauri plugin:** (1) add crate dep to `Cargo.toml`, (2) `.plugin(tauri_plugin_X::init())` in `lib.rs`, (3) add `"X:default"` to `capabilities/default.json`, (4) `cargo check` to verify, (5) update this table + OWNERSHIP.md.
+
+**Adding a new GPU provider (Phase B):** (1) add `impl GpuProvider` in `native/src/metrics.rs`, (2) try-init in `build_gpu_providers()` (marked with Phase B comment), (3) update this table. Contract `SystemSnapshot.gpus[]` does NOT change.
 
 ## Cross-package dependencies
 

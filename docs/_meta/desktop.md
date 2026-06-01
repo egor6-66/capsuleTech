@@ -18,18 +18,21 @@ audience: claude
 
 | Файл | Что |
 |---|---|
-| `packages/desktop/src/index.ts` | Public API: `runDev`, `runBuild`, re-export типов |
+| `packages/desktop/src/index.ts` | Public API: `runDev`, `runBuild`, re-export типов + metrics |
+| `packages/desktop/src/metrics.ts` | **Type-only** — `SystemSnapshot` + 9 sub-types. Zero runtime |
 | `packages/desktop/src/override.ts` | Scaffolding `.tauri.<app>.json` (input → expected JSON) |
 | `packages/desktop/src/runner.ts` | Child-process orchestration (spawn tauri + cleanup hooks) |
 | `packages/desktop/src/types.ts` | `IDesktopConfig`, `RunDevOptions`, `RunBuildOptions` |
 | `packages/desktop/src/__tests__/override.test.ts` | Unit: scaffolding logic |
 | `packages/desktop/src/__tests__/runner.test.ts` | Integration: spawn + cleanup |
-| `packages/desktop/native/Cargo.toml` | Standalone crate (не workspace member backend/) |
-| `packages/desktop/native/src/{main.rs,lib.rs}` | Tauri shell entry (pure, no custom plugins) |
+| `packages/desktop/src/__tests__/metrics.test.ts` | Characterization: contract shape + null-semantics |
+| `packages/desktop/native/Cargo.toml` | Standalone crate; features: `gpu-nvidia` (default-on) |
+| `packages/desktop/native/src/lib.rs` | Tauri entry + 3 commands + managed state + window-event hook |
+| `packages/desktop/native/src/metrics.rs` | `SystemSampler`, `CoreProvider`, `GpuProvider` trait, `NvmlGpuProvider` |
 | `packages/desktop/native/tauri.conf.json` | Base config (override'ится runDev/runBuild) |
 | `packages/desktop/scripts/build-native.mjs` | Platform-dependent copy cargo output → `dist/bin/` |
 | `packages/desktop/vite.config.mts` | Lib build через `@capsuletech/lib-builder` |
-| `packages/desktop/package.json` | Exports, scripts (build/build:native/build:all, test, prepack) |
+| `packages/desktop/package.json` | Exports (`.` + `./metrics`), scripts |
 
 ## Публичный API (контракт)
 
@@ -68,6 +71,62 @@ export function runBuild(opts: RunBuildOptions): Promise<void>;
 
 **Breaking changes в API:** coordinate с owner-cli (consumer через `@capsuletech/cli` action) + owner-builders (type re-export в `defineCapsuleConfig`).
 
+## Metrics API (ADR 023, Phase A)
+
+### Tauri command/event surface
+
+```ts
+// pull — one-shot snapshot
+const snap = await invoke<SystemSnapshot>('get_system_snapshot');
+
+// push — subscribe to interval stream
+await invoke('start_monitoring', { intervalMs: 1000, topProcesses: 10 });
+const unlisten = await listen<SystemSnapshot>('system://metrics', (e) => {
+  // e.payload : SystemSnapshot
+});
+
+// stop
+await invoke('stop_monitoring');
+```
+
+| Command / Event | Rust signature | Notes |
+|---|---|---|
+| `get_system_snapshot` | `fn get_system_snapshot(sampler: State<Arc<Mutex<SystemSampler>>>) -> SystemSnapshot` | Reuses persistent sampler; safe to call any time |
+| `start_monitoring` | `async fn start_monitoring(interval_ms, top_processes, app, sampler, monitor)` | Idempotent restart; clamps `interval_ms` ≥ 200 |
+| `stop_monitoring` | `async fn stop_monitoring(monitor)` | Idempotent abort |
+| `"system://metrics"` event | payload: `SystemSnapshot` | Push on every interval tick; stops on `WindowEvent::Destroyed` |
+
+### Type-only subpath
+
+```ts
+import type { SystemSnapshot, CpuMetrics, GpuMetrics, GpuVendor } from '@capsuletech/desktop/metrics';
+// import type — NOT import (no JS entry exists)
+```
+
+`dist/metrics.d.ts` emitted automatically by dts plugin from `src/metrics.ts`. No JS bundle, no runtime deps added.
+
+### Provider architecture
+
+```
+SystemSampler (held in Tauri State<Arc<Mutex<...>>>)
+├── CoreProvider (sysinfo 0.39.3) — always active
+│     cpu / memory / swap / disks / networks / processes / components
+└── Vec<Box<dyn GpuProvider>>
+      └── NvmlGpuProvider (nvml-wrapper 0.12.1, feature gpu-nvidia) ← Phase A
+          [Phase B: WmiGpuProvider, AmdGpuProvider, IntelGpuProvider]
+```
+
+**GpuProvider trait** — extension point: add vendor = new `impl GpuProvider` + push in `build_gpu_providers()`. Contract `SystemSnapshot.gpus[]` never changes.
+
+### Cross-platform caveats
+
+| Platform | Behaviour |
+|---|---|
+| Windows (no admin) | `components: []` — WMI temp sensors require elevation or drivers |
+| Non-NVIDIA hardware | `gpus: []` — NVML init fails gracefully; AMD/Intel = Phase B |
+| First snapshot (cold) | CPU% may be ≈ 0 — sysinfo needs two refresh cycles (≥200ms) |
+| sysinfo processes CPU% | May exceed 100% on multi-core (per-core basis, not global) |
+
 ## Lifecycle: runDev / runBuild
 
 ### runDev flow
@@ -99,12 +158,13 @@ CI (`pnpm nx run-many -t build`) runs only `pnpm build` (no cargo). `pnpm build:
 ## Rust crate (`packages/desktop/native/`)
 
 - **Standalone:** `edition = "2021"` + `version = "0.1.0"` explicit (no workspace inheritance)
-- **Deps:** `tauri = "2"`, `serde`, `serde_json`, `tauri-build` (build-deps)
-- **No custom plugins:** pure shell. Tauri features (keyring, dialog, fs, etc.) add per request.
+- **Deps:** `tauri = "2"`, `serde`, `serde_json`, `sysinfo = "0.39"`, `nvml-wrapper = "0.12"` (opt, feature `gpu-nvidia`), `log = "0.4"`, `tokio = "1"`, `tauri-build` (build-deps)
+- **Features:** `gpu-nvidia` (default-on) — NVIDIA GPU via `nvml-wrapper` + `libloading` (runtime, CI-safe without NVIDIA)
 - **Not workspace member:** independent of `backend/scriber/` + `backend/fs/` (different owner zones)
 - **Cargo.lock committed** — binary workspace convention
 - **`src/main.rs`:** `fn main() { capsule_desktop_lib::run(); }`
-- **`src/lib.rs`:** `pub fn run() { tauri::Builder::default().run(...) }`
+- **`src/lib.rs`:** 3 Tauri commands + managed state (`Arc<Mutex<SystemSampler>>` + monitor handle) + window-event cleanup
+- **`src/metrics.rs`:** `SystemSampler`, `CoreProvider` (sysinfo), `GpuProvider` trait, `NvmlGpuProvider` (cfg feature)
 
 ## Override scaffolding (`runner.ts` + `override.ts`)
 
@@ -174,13 +234,16 @@ CI (`pnpm nx run-many -t build`) runs only `pnpm build` (no cargo). `pnpm build:
 
 | Хочу… | Куда лезть |
 |---|---|
-| Добавить Tauri plugin (keyring, dialog, fs) | `native/Cargo.toml` deps + `src/lib.rs` `.plugin(...)` call |
+| Добавить Tauri plugin (keyring, dialog, fs) | `native/Cargo.toml` deps + `src/lib.rs` `.plugin(...)` call + `capabilities/default.json` |
 | Расширить `IDesktopConfig` (новое окно свойство) | `src/types.ts` (breaking change — coordinate) |
 | Изменить override scaffolding logic | `src/override.ts` + обновить тесты |
 | Изменить child-process spawn | `src/runner.ts` (watch для idempotency cleanup + spawn args) |
 | Поменять Vite lib config | `vite.config.mts` (через `@capsuletech/lib-builder`) |
 | Добавить новый platform support | Phase 2 ADR (matrix build, optional deps) |
 | Добавить code signing | Phase 3 ADR (installer infrastructure) |
+| Добавить GPU-вендора (AMD/Intel) | `native/src/metrics.rs` — новый `impl GpuProvider` + регистрация в `build_gpu_providers()` (Phase B comment). Контракт `SystemSnapshot.gpus[]` НЕ меняется |
+| Изменить `SystemSnapshot` контракт | `native/src/metrics.rs` serde struct + `src/metrics.ts` TS type (оба вручную!) + обновить тест `metrics.test.ts` — это breaking change для app-фронта |
+| Изменить интервал/топ-процессов мониторинга | `start_monitoring(intervalMs, topProcesses)` — параметры runtime, не compile-time |
 
 ## Cross-package dependencies
 
