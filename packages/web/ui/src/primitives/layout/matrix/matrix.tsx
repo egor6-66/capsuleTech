@@ -528,11 +528,13 @@ interface IGridOpts {
   registerGridContainer: IInsertEngine['registerGridContainer'];
   commitGridMove: IInsertEngine['commitGridMove'];
   commitGridResize: IInsertEngine['commitGridResize'];
+  finalizeGridResize: IInsertEngine['finalizeGridResize'];
+  getLiveGridCoords: IInsertEngine['getLiveGridCoords'];
 }
 
-// Default grid config constants (mirrors defaults in insert.tsx)
-const GRID_DEFAULT_COLS = 12;
-const GRID_DEFAULT_ROW_HEIGHT = 64;
+// Default grid config constants (mirrors defaults in insert.tsx — keep in sync)
+const GRID_DEFAULT_COLS = 24;
+const GRID_DEFAULT_ROW_HEIGHT = 20;
 
 /**
  * renderGridRow — CSS Grid render-path for insert-mode grid zones (ADR 026).
@@ -601,8 +603,6 @@ const renderGridRow = (
           // assigns coords, but is a safety guard.
           if (!cell.grid) return null;
 
-          const { x, y, w, h } = cell.grid;
-
           // Bind via zone.createItem so cross-zone DnD and droppable
           // membership stay correct. Called in <For> render scope so
           // lifecycle is tied to the cell's DOM element.
@@ -619,6 +619,27 @@ const renderGridRow = (
                 {cell.settings}
               </div>
             ) : null;
+
+          // -----------------------------------------------------------------------
+          // Reactive grid coords — read live signal first (during resize drag),
+          // fall back to cell.grid from localRows (static).
+          //
+          // getLiveGridCoords is a reactive signal accessor: when it changes,
+          // only the `gridStyle()` computation re-runs and Solid patches the
+          // style attribute in-place. The <For> item itself does NOT remount
+          // (no new cell object reference), so resize handles stay attached and
+          // the drag continues without the pointermove listener being detached.
+          // -----------------------------------------------------------------------
+          const gridCoords = (): { x: number; y: number; w: number; h: number } =>
+            gridOpts.getLiveGridCoords(cell.id) ?? cell.grid!;
+
+          const gridStyle = (): JSX.CSSProperties => {
+            const { x, y, w, h } = gridCoords();
+            return {
+              'grid-column': `${x + 1} / span ${w}`,
+              'grid-row': `${y + 1} / span ${h}`,
+            };
+          };
 
           // -----------------------------------------------------------------------
           // ADR 026 Phase 2c: Grid resize handles.
@@ -642,12 +663,15 @@ const renderGridRow = (
           //   - deltaX_px   = currentPointer.clientX - startPointer.clientX
           //   - deltaY_px   = currentPointer.clientY - startPointer.clientY
           //   - newW = max(1, round( (startW * colWidthPx + deltaX_px) / colWidthPx ))
-          //   - newH = max(1, round( (startH * rowHeight  + deltaY_px) / rowHeight  ))
-          //   Clamped to [1, cols - x] for w; [1, ∞) for h.
+          //   - newH = max(1, round( (startH * rowHeight  + deltaY_px) / rowHeightPx ))
           //
-          // commitGridResize is called on every pointermove (live update). Neighbors
-          // are displaced immediately by resizeItem so the grid reflects the new
-          // layout in real time.
+          // KEY FIX: startW/startH are read from the LIVE coord signal at pointerdown
+          // time (not from the closed-over cell object from the <For> render). The live
+          // signal always reflects the most recent committed state (post-finalize), so
+          // the second drag starts from the correct size, not a stale render-time value.
+          //
+          // commitGridResize writes live coords only (no localRows mutation mid-drag).
+          // finalizeGridResize is called on pointerup to persist to localRows once.
           //
           // NOTE: getBoundingClientRect returns all-zeros in jsdom — pixel-accurate
           // drag geometry is deferred to Phase 3 browser verification. The structural
@@ -672,8 +696,12 @@ const renderGridRow = (
                 handle.setPointerCapture?.(e.pointerId);
 
                 // Snapshot the cell's current grid coordinates at drag-start.
-                const startW = cell.grid?.w ?? w;
-                const startH = cell.grid?.h ?? h;
+                // Read from liveGridCoords first (reflects post-finalize state),
+                // then fall back to cell.grid (initial render coords).
+                // This ensures consecutive resize drags start from the correct size.
+                const currentCoords = gridOpts.getLiveGridCoords(cell.id) ?? cell.grid!;
+                const startW = currentCoords.w;
+                const startH = currentCoords.h;
                 const startClientX = e.clientX;
                 const startClientY = e.clientY;
 
@@ -708,6 +736,8 @@ const renderGridRow = (
                 const onUp = (): void => {
                   handle.removeEventListener('pointermove', onMove);
                   handle.removeEventListener('pointerup', onUp);
+                  // Persist the final live coords to localRows exactly once.
+                  gridOpts.finalizeGridResize(rowId, cell.id);
                 };
 
                 handle.addEventListener('pointermove', onMove);
@@ -760,10 +790,7 @@ const renderGridRow = (
               ref={zoneItem.ref}
               data-grid-cell={cell.id}
               class="relative overflow-hidden rounded-sm border border-border"
-              style={{
-                'grid-column': `${x + 1} / span ${w}`,
-                'grid-row': `${y + 1} / span ${h}`,
-              }}
+              style={gridStyle()}
             >
               <Show when={withSettings}>{settingsStrip()}</Show>
               <div
@@ -1221,6 +1248,8 @@ const MatrixContent = (props: IMatrixContentProps) => {
           registerGridContainer: insert.registerGridContainer,
           commitGridMove: insert.commitGridMove,
           commitGridResize: insert.commitGridResize,
+          finalizeGridResize: insert.finalizeGridResize,
+          getLiveGridCoords: insert.getLiveGridCoords,
         }
       : undefined;
 

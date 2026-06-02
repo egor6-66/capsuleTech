@@ -34,10 +34,16 @@ import type { ICell, IRow, LayoutChangeEvent } from '../interfaces';
 
 // ---------------------------------------------------------------------------
 // Default grid dimensions (ADR 026)
+//
+// Granularity rationale: 24 cols × 20px row-height gives ~33px per col unit
+// (at 800px container) and 20px per row unit. This is fine-grained enough
+// that a small drag crosses at least one unit boundary — making resize and
+// move feel smooth. The old defaults (12 / 64) gave ~80px / 64px units which
+// caused "nothing changes" UX on short drags.
 // ---------------------------------------------------------------------------
 
-const DEFAULT_COLS = 12;
-const DEFAULT_ROW_HEIGHT = 64;
+const DEFAULT_COLS = 24;
+const DEFAULT_ROW_HEIGHT = 20;
 const DEFAULT_COMPACT = 'none' as const;
 const DEFAULT_GRID_W = 2;
 const DEFAULT_GRID_H = 2;
@@ -86,10 +92,11 @@ export interface IInsertEngine {
     pointer: { x: number; y: number },
   ) => void;
   /**
-   * ADR 026 Phase 2c: Called by the grid resize handle during pointermove to
+   * ADR 026 Phase 2c: Called by the grid resize handle (SE/E/S) on each pointermove to
    * grow/shrink a cell's {w,h} in grid units. Neighbor cells are displaced by
-   * resizeItem (the resized cell's x/y NEVER change — invariant). Committed live
-   * on each pointermove so the grid updates in real time as the user drags.
+   * resizeItem (the resized cell's x/y NEVER change — invariant). Updates only
+   * the reactive coord signal (not localRows) so the cell DOM does not remount
+   * mid-drag. Call `finalizeGridResize` on pointerup to persist to localRows.
    *
    * @param rowId  - id of the grid zone row
    * @param cellId - id of the cell being resized
@@ -100,6 +107,25 @@ export interface IInsertEngine {
     cellId: string,
     size: { w: number; h: number },
   ) => void;
+  /**
+   * ADR 026 Phase 2c: Called on pointerup after a resize drag completes.
+   * Persists the live coord signal values back to localRows so cross-zone
+   * DnD and onLayoutChange see the final layout. No-op if no live resize
+   * is in progress for the given cell.
+   *
+   * @param rowId  - id of the grid zone row
+   * @param cellId - id of the cell that was resized
+   */
+  finalizeGridResize: (rowId: string, cellId: string) => void;
+  /**
+   * ADR 026 Phase 2c: Reactive getter for the live grid coordinates of a cell
+   * during a resize drag. Returns undefined when no live resize is in progress
+   * (render path then falls back to cell.grid from localRows).
+   *
+   * Backed by a separate signal — updating it does NOT cause <For> to remount
+   * the cell, enabling smooth live resize without DOM destruction.
+   */
+  getLiveGridCoords: (cellId: string) => { x: number; y: number; w: number; h: number } | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -206,6 +232,31 @@ export const createInsertEngine = (opts: IInsertEngineOptions): IInsertEngine =>
   const registerGridContainer = (rowId: string, el: HTMLElement | null): void => {
     gridContainerEls.set(rowId, el);
   };
+
+  // -------------------------------------------------------------------------
+  // ADR 026 Phase 2c: Live grid-coord signal for smooth resize.
+  //
+  // During a resize drag, commitGridResize writes the running cell coords into
+  // this Map signal INSTEAD of mutating localRows. The render path reads coords
+  // via getLiveGridCoords() which is reactive to this signal — so grid-column /
+  // grid-row styles update every pointermove frame without triggering a <For>
+  // reconcile (no cell remount, no stale listener detach).
+  //
+  // On pointerup, finalizeGridResize() reads the accumulated final layout from
+  // the live state (re-running resizeItem against current localRows) and commits
+  // it to localRows once, then clears the live entries for those cells.
+  //
+  // Neighbor cells that were displaced during live preview are also tracked in
+  // liveGridCoords so their styles update reactively too.
+  // -------------------------------------------------------------------------
+
+  type GridCoord = { x: number; y: number; w: number; h: number };
+  const [liveGridCoords, setLiveGridCoords] = createSignal<Map<string, GridCoord>>(new Map(), {
+    equals: false,
+  });
+
+  const getLiveGridCoords = (cellId: string): GridCoord | undefined =>
+    liveGridCoords().get(cellId);
 
   // -------------------------------------------------------------------------
   // useDnD — accessed here (inside DnDProvider) to read live pointer at drop time.
@@ -511,6 +562,11 @@ export const createInsertEngine = (opts: IInsertEngineOptions): IInsertEngine =>
   // Called by the grid resize handle (SE/E/S) on each pointermove.
   // resizeItem NEVER changes x/y of the resized cell — only w/h grow.
   // Displaced neighbors are pushed downward (compact:'none' default).
+  //
+  // SMOOTH RESIZE: updates liveGridCoords signal (not localRows) on each frame
+  // so only the cell's CSS style changes reactively — no <For> remount, no stale
+  // pointermove listener detachment. finalizeGridResize() persists to localRows
+  // on pointerup.
   // -------------------------------------------------------------------------
 
   const commitGridResize = (
@@ -527,11 +583,66 @@ export const createInsertEngine = (opts: IInsertEngineOptions): IInsertEngine =>
     const cols = row.grid.cols ?? DEFAULT_COLS;
     const compact = row.grid.compact ?? DEFAULT_COMPACT;
 
+    // Use liveGridCoords as the base layout during a drag so neighbors reflect
+    // the accumulated live state (not the stale localRows snapshot).
+    const baseLayout = rowToGridLayout(row).map((item) => {
+      const live = liveGridCoords().get(item.id);
+      return live ? { ...item, ...live } : item;
+    });
+
+    const newLayout = resizeItem(baseLayout, cellId, size, cols, compact);
+
+    // Write all changed coords into the live signal. The render path reads from
+    // liveGridCoords reactively, so grid-column/grid-row styles update immediately
+    // without touching localRows (prevents <For> from seeing new cell object
+    // references and remounting the cell DOM).
+    setLiveGridCoords((prev) => {
+      const next = new Map(prev);
+      for (const item of newLayout) {
+        next.set(item.id, { x: item.x, y: item.y, w: item.w, h: item.h });
+      }
+      return next;
+    });
+  };
+
+  // -------------------------------------------------------------------------
+  // finalizeGridResize — ADR 026 Phase 2c.
+  // Called on pointerup to commit live coords to localRows and fire onLayoutChange.
+  // Clears liveGridCoords entries for all cells in the affected row.
+  // -------------------------------------------------------------------------
+
+  const finalizeGridResize = (rowId: string, cellId: string): void => {
+    const prev = localRows();
+    const rowIdx = prev.findIndex((r) => r.id === rowId);
+    if (rowIdx === -1) return;
+    const row = prev[rowIdx];
+    if (!row.grid) return;
+
+    const live = liveGridCoords();
+    // Check if any live coords exist for cells in this row
+    const haslive = row.cells.some((c) => live.has(c.id));
+    if (!haslive) return;
+
+    const cols = row.grid.cols ?? DEFAULT_COLS;
+    const compact = row.grid.compact ?? DEFAULT_COMPACT;
+
+    // Re-run resizeItem on localRows base to produce the canonical final layout.
+    // This ensures the committed layout is consistent (not accumulating live drift).
+    const liveCoord = live.get(cellId);
+    if (!liveCoord) return;
+
     const currentLayout = rowToGridLayout(row);
-    const newLayout = resizeItem(currentLayout, cellId, size, cols, compact);
+    const newLayout = resizeItem(currentLayout, cellId, { w: liveCoord.w, h: liveCoord.h }, cols, compact);
     const updatedRow = applyGridLayout(row, newLayout);
 
     setLocalRows((rs) => rs.map((r, i) => (i === rowIdx ? updatedRow : r)));
+
+    // Clear live coords for this row's cells
+    setLiveGridCoords((prev) => {
+      const next = new Map(prev);
+      for (const cell of row.cells) next.delete(cell.id);
+      return next;
+    });
 
     const newItem = newLayout.find((l) => l.id === cellId);
     if (newItem) {
@@ -553,5 +664,13 @@ export const createInsertEngine = (opts: IInsertEngineOptions): IInsertEngine =>
 
   const getZone = (rowId: string): ISortableZone | undefined => zoneMap.get(rowId);
 
-  return { rows: localRows, getZone, registerGridContainer, commitGridMove, commitGridResize };
+  return {
+    rows: localRows,
+    getZone,
+    registerGridContainer,
+    commitGridMove,
+    commitGridResize,
+    finalizeGridResize,
+    getLiveGridCoords,
+  };
 };

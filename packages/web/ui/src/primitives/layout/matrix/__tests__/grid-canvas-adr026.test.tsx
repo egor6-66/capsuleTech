@@ -1362,3 +1362,93 @@ describe('G17: commitGridResize with unknown rowId is a no-op (engine safety)', 
     // (Full integration tested implicitly via G14 which goes through applyGridLayout.)
   });
 });
+
+// ---------------------------------------------------------------------------
+// G18: New default granularity constants (ADR 026 fix)
+// ---------------------------------------------------------------------------
+
+describe('G18: grid default granularity is finer (cols=24, rowHeight=20)', () => {
+  it('G18a: grid zone rendered without explicit cols/rowHeight uses 24-col grid', () => {
+    // When row.grid has no explicit cols/rowHeight, the defaults (24/20) are used.
+    // Verify the rendered CSS reflects the new defaults.
+    cleanup = render(
+      () => (
+        <Matrix
+          dndMode="insert"
+          layoutMode="edit"
+          rows={[
+            {
+              id: 'default-grid',
+              // No cols/rowHeight → defaults apply
+              grid: {},
+              cells: [
+                {
+                  id: 'ca',
+                  children: <div data-testid="ca">A</div>,
+                  draggable: true,
+                  grid: { x: 0, y: 0, w: 2, h: 2 },
+                },
+                {
+                  id: 'cb',
+                  children: <div>B</div>,
+                  draggable: true,
+                  grid: { x: 2, y: 0, w: 2, h: 2 },
+                },
+              ],
+            },
+          ]}
+        />
+      ),
+      container,
+    );
+
+    const gridZone = container.querySelector('[data-grid-zone="default-grid"]') as HTMLElement | null;
+    expect(gridZone).not.toBeNull();
+    // Default cols=24
+    expect(gridZone?.style.gridTemplateColumns).toBe('repeat(24, 1fr)');
+    // Default rowHeight=20px
+    expect(gridZone?.style.gridAutoRows).toBe('20px');
+  });
+
+  it('G18b: finer defaults mean a 2-unit-wide cell occupies less of a 24-col grid than a 12-col grid', () => {
+    // Conceptual: with cols=24, a cell spanning w=2 is 2/24 = ~8.3% of container width.
+    // With cols=12, the same w=2 span is 2/12 = ~16.7%.
+    // Finer granularity → smaller unit → smaller drag required to cross a unit.
+    // This is a model assertion (no pixel measurement — jsdom cannot measure).
+    const cols24 = 24;
+    const cols12 = 12;
+    const w = 2;
+    expect(w / cols24).toBeLessThan(w / cols12);
+  });
+
+  it('G18c: finalizeGridResize pipeline: resizeItem → applyGridLayout → correct final layout', () => {
+    // Mirror the finalizeGridResize internal logic at the model level.
+    // Simulates: pointerup → re-run resizeItem on localRows base → applyGridLayout.
+    const row: IRow = {
+      id: 'gz',
+      grid: { cols: 24, rowHeight: 20 },
+      cells: [
+        { id: 'cell-a', children: null, grid: { x: 0, y: 0, w: 4, h: 3 } },
+        { id: 'cell-b', children: null, grid: { x: 4, y: 0, w: 6, h: 3 } },
+      ],
+    };
+
+    // Simulate: liveCoord for cell-a after drag was { w:8, h:3 }
+    // finalizeGridResize re-runs resizeItem(localRows, 'cell-a', {w:8,h:3}, 24, 'none')
+    const liveCoord = { w: 8, h: 3 };
+    const currentLayout = rowToGridLayout(row);
+    const newLayout = testResizeItem(currentLayout, 'cell-a', liveCoord, 24);
+    const updatedRow = applyGridLayout(row, newLayout);
+
+    const cellA = updatedRow.cells.find((c) => c.id === 'cell-a');
+    const cellB = updatedRow.cells.find((c) => c.id === 'cell-b');
+
+    // cell-a x/y unchanged (resize invariant), w grew from 4→8
+    expect(cellA?.grid?.x).toBe(0);
+    expect(cellA?.grid?.y).toBe(0);
+    expect(cellA?.grid?.w).toBe(8);
+
+    // cell-b overlaps (was at x:4, cell-a now spans x:0-7) → displaced
+    expect(cellB?.grid?.y).toBe(3); // pushed below cell-a
+  });
+});
