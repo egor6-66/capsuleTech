@@ -37,7 +37,7 @@ const Constructor = Page((Ui) => (
                 ]}
               />
             ),
-            initialSize: 0.2,
+            initialSize: 0.14,
             draggable: true,
           },
           main: {
@@ -49,7 +49,7 @@ const Constructor = Page((Ui) => (
                 Inspector
               </div>
             ),
-            initialSize: 0.2,
+            initialSize: 0.14,
             draggable: true,
           },
         }}

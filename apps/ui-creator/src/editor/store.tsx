@@ -14,6 +14,8 @@ import { createEmptyTree, type IEditorTree, type NodeId } from '@capsuletech/web
 import { createContext, createSignal, type JSX, useContext } from 'solid-js';
 
 const createEditorStore = () => {
+  // Пустой старт. Демо-набросок карточки — buildIncidentCard() из
+  // ./seeds/incidentCard (вернём позже).
   const [tree, setTree] = createSignal<IEditorTree>(createEmptyTree('ui.Layout.Grid'));
   const [selectedId, setSelectedId] = createSignal<NodeId | null>(null);
   return { tree, setTree, selectedId, setSelectedId };

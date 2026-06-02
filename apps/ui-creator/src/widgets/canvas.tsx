@@ -7,9 +7,10 @@
  *
  * Render-схема = дерево + редакторские инъекции (исходное дерево не трогаем):
  *  - `data-node-id` на каждую ноду → по нему находим target-контейнер при drop;
- *  - ЛЮБОМУ контейнеру-приёмнику — `min-height` (`ROOM`): пустой → есть куда
- *    прицелиться; непустой → остаётся место добавить ещё (контент не схлопывает
- *    контейнер до своей высоты). Пустому дополнительно — dashed-рамка;
+ *  - `min-height` (`ROOM`) и dashed-рамка — только у ПУСТЫХ контейнеров (всегда
+ *    есть куда целиться) либо у валидных целей ВО ВРЕМЯ drag; непустым при drag
+ *    добавляется `pb-6` («добавить ещё»). В покое вёрстка чистая — иначе room/pb
+ *    раздувают вложенные Field/Content/Card;
  *  - пока тащим: валидные цели получают маркер `data-drop-ok`, а CSS
  *    (`DROP_HL_CSS`) рисует слабый ring на всех и ЯРЧЕ — только на самой
  *    внутренней под курсором (`:hover:not(:has(...))` отсекает предков). `:hover`
@@ -59,12 +60,16 @@ const Canvas = Widget((Ui) => {
     const nodes: ISchema['components']['nodes'] = {};
     for (const [id, n] of Object.entries(src.nodes)) {
       const accepts = acceptsChildren(n);
+      const empty = accepts && n.children.length === 0;
       const valid = dragType != null && id !== src.root && canDropInto(n.type, dragType);
+      // Editor-affordance (room/padding/dashed) — только у ПУСТЫХ контейнеров
+      // (всегда есть куда целиться) или валидных целей ВО ВРЕМЯ drag. В покое
+      // вёрстка чистая — иначе min-h/pb раздувает вложенные Field/Content/Card.
       const cls = [
         n.props.class,
-        accepts ? ROOM : '',
-        accepts && n.children.length > 0 ? 'pb-6' : '',
-        accepts && n.children.length === 0 ? EMPTY_CUE : '',
+        empty || valid ? ROOM : '',
+        empty ? EMPTY_CUE : '',
+        valid && !empty ? 'pb-6' : '',
       ]
         .filter(Boolean)
         .join(' ');
@@ -119,13 +124,9 @@ const Canvas = Widget((Ui) => {
 
   return (
     <div class="flex h-full flex-col">
-      <style>{DROP_HL_CSS}</style>
-      <div class="shrink-0 border-b px-3 py-2 text-xs font-semibold uppercase tracking-wide text-foreground/70">
-        Canvas
-      </div>
       <div
         ref={drop.ref}
-        class="relative min-h-0 flex-1 overflow-auto p-4 transition-colors"
+        class="relative min-h-0 flex-1 overflow-auto transition-colors"
         classList={{ 'bg-primary/5': rootValid() }}
       >
         <Show
