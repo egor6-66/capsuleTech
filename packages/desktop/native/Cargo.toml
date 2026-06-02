@@ -32,4 +32,4 @@ sysinfo = "0.39"
 nvml-wrapper = { version = "0.12", optional = true }
 # Explicit deps on crates that tauri brings transitively — needed for direct use.
 log = "0.4"
-tokio = { version = "1", features = ["time"] }
+tokio = { version = "1", features = ["time", "sync"] }
