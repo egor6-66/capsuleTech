@@ -227,3 +227,14 @@ export const subscribeMetrics = (cb: (s: IMetricsSnapshot) => void): (() => void
     if (listeners.size === 0) void stop();
   };
 };
+
+// HMR safety: on hot-reload, drop all listeners + tear down the collector
+// (interval / tauri listener). Without this, repeated dev edits leak intervals
+// and stale subscriptions that pile up into a render storm.
+const hot = (import.meta as { hot?: { dispose: (cb: () => void) => void } }).hot;
+if (hot) {
+  hot.dispose(() => {
+    listeners.clear();
+    void stop();
+  });
+}
