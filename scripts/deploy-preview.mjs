@@ -24,8 +24,6 @@
  *   --no-build          не собирать заново, использовать существующий dist/
  *   --mocks             собрать с моками (CAPSULE_MOCKS=true) — preview без бэка;
  *                       без флага сборка идёт в реальную API
- *   --root              деплой как корневой (хаб): base '/', раздаётся на '/' и
- *                       на всё непокрытое. Требует сборку с base '/' (ADR 025).
  *
  * NB: server URL и token НЕ хардкодятся (закрытый контур) — только флаги/env.
  * ==========================================================================*/
@@ -124,22 +122,16 @@ if (!existsSync(join(distPath, 'index.html'))) {
 // ---------------------------------------------------------------------------
 const indexHtml = readFileSync(join(distPath, 'index.html'), 'utf8');
 const baseMatch = indexHtml.match(/(?:src|href)=["'](\/(?:[^"']*\/)?)assets\//);
-const useRoot = args.has('root');
 const base = baseMatch ? baseMatch[1] : '/';
-if (useRoot && base !== '/') {
-  fail(
-    `--root требует сборку с base '/', а в dist base="${base}".\n` +
-      `Убери base из apps/${app}/capsule.config.ts (или не передавай --root).`,
-  );
-}
-if (base === '/' && !useRoot) {
+if (base === '/') {
   fail(
     `в сборке base = "/" (корень) — path-based preview так не раздать.\n` +
-      `Если это корневое (хаб) приложение — передай --root.\n` +
-      `Иначе задай непустой base в apps/${app}/capsule.config.ts, напр. base: '/${app}/'.`,
+      `Задай непустой base в apps/${app}/capsule.config.ts, напр.:\n` +
+      `  defineCapsuleConfig({ base: '/${app}/' })\n` +
+      `затем пересобери и повтори деплой.`,
   );
 }
-log(useRoot ? 'деплой как root-app (base /)' : `base из сборки: ${base}`);
+log(`base из сборки: ${base}`);
 
 // ---------------------------------------------------------------------------
 // 4. Упаковка dist в gzip-tar (файлы в корне архива: `-C dist .`)
@@ -155,7 +147,7 @@ if ((tarRes.status ?? 1) !== 0) {
 // 5. POST на сервер (base — в заголовке X-Capsule-Base)
 // ---------------------------------------------------------------------------
 const endpoint = `${server.replace(/\/$/, '')}/api/deploy/${app}`;
-log(`POST ${endpoint} (${useRoot ? 'root' : `base=${base}`})`);
+log(`POST ${endpoint} (base=${base})`);
 try {
   const body = readFileSync(tmp);
   const resp = await fetch(endpoint, {
@@ -163,8 +155,7 @@ try {
     headers: {
       authorization: `Bearer ${token}`,
       'content-type': 'application/gzip',
-      // root-app → X-Capsule-Root; обычная аппа → X-Capsule-Base.
-      ...(useRoot ? { 'x-capsule-root': 'true' } : { 'x-capsule-base': base }),
+      'x-capsule-base': base,
     },
     body,
   });
