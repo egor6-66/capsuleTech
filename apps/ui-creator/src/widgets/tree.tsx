@@ -1,45 +1,49 @@
 /**
- * Tree — иерархия нод (аналог devtools) + DnD-перемещение, нижняя секция сайдбара.
+ * Tree — иерархия нод (devtools-стиль) + DnD на общем слое `editor/dnd.ts`.
  *
- * Источник — общий `useEditor()`. Каждый узел рисуется по-разному:
- *  - КОНТЕЙНЕР (принимает детей) — это БОКС-обёртка (заголовок + блок детей);
- *    droppable висит на ВСЁМ боксе, поэтому drop «внутрь» ловится в любой точке
- *    области контейнера, и подсвечивается весь бокс — а не только заголовок;
- *  - ЛИСТ (Input/Button/…) — обычная строка только с reorder before/after.
+ * Каждый узел:
+ *  - КОНТЕЙНЕР — БОКС-обёртка (заголовок + блок детей); droppable на всём боксе,
+ *    поэтому drop ловится в любой точке области, подсвечивается весь бокс;
+ *  - ЛИСТ — строка только с reorder before/after.
  *
- * Вложенность работает за счёт hit-теста web-dnd (innermost droppable побеждает):
- * над строкой-листом → reorder этого листа (вставка в его родителя по позиции);
- * над пустым местом/паддингом бокса контейнера → drop ВНУТРЬ этого контейнера;
- * над вложенным контейнером → внутрь него. Линия-вставка = before/after, ring +
- * заливка бокса = «внутрь». Корень — только «внутрь» (нет соседей).
+ * Поверхность считает лишь зону (геометрия строки/бокса) → `treeIntent` сводит
+ * к `DropIntent`, `applyDrop` применяет. Принимаем И палитру (add), И ноды
+ * дерева (move) — единый `DragSpec`. Валидность — `canInto`/`canBeside`.
  *
- * Пока тащим, контейнеры-кандидаты (куда можно «внутрь») — слабый dashed-outline.
- * Чеврон сворачивает поддерево; `data-dnd-cancel` → клик по нему не стартует drag.
+ * Подсветка как в канвасе: кандидаты — штриховой бордер, цель — ring+заливка,
+ * линия — before/after. Чеврон сворачивает поддерево (`data-dnd-cancel` —
+ * клик по нему не стартует drag). Drag-id — `createUniqueId()` (per-instance),
+ * чтобы перенос между разными `<For>` не ломал регистрацию в web-dnd.
  *
- * Drag-id — `createUniqueId()` (per-instance), НЕ `tree:${nodeId}`: при переносе
- * между разными `<For>` стабильный доменный id даёт коллизию ключей в реестре
- * web-dnd (cleanup старого Row стирает регистрацию нового) → нода теряет
- * draggable. Уникальный per-instance id это исключает.
+ * `dropTargetId` из стора — кросс-подсветка цели, на которую наводят в канвасе.
  */
-import { createDraggable, createDroppable, type DragData, useDnD } from '@capsuletech/web-dnd';
+import { createDraggable, createDroppable, useDnD } from '@capsuletech/web-dnd';
 import { getManifest } from '@capsuletech/web-ui-creator/manifests';
-import { moveNode, type NodeId } from '@capsuletech/web-ui-creator/state';
-import { createSignal, createUniqueId, For, type JSX, Show } from 'solid-js';
-import { acceptsChildren, canMoveInto } from '../editor/rules';
+import type { NodeId } from '@capsuletech/web-ui-creator/state';
+import { createEffect, createSignal, createUniqueId, For, type JSX, Show } from 'solid-js';
+import {
+  applyDrop,
+  canBeside,
+  canInto,
+  type DragSpec,
+  dragSpec,
+  treeIntent,
+  type TreeZone,
+} from '../editor/dnd';
+import { acceptsChildren } from '../editor/rules';
 import { useEditor } from '../editor/store';
 
-type Zone = 'before' | 'after' | 'inside';
 /** Толщина краевых полос «before»/«after» у контейнера (px). */
 const EDGE = 6;
 
 const label = (type: string): string => getManifest(type)?.label ?? type.split('.').pop() ?? type;
 const icon = (type: string) => getManifest(type)?.icon;
-const draggedId = (d: DragData | null): NodeId | null =>
-  d && d.source === 'tree' && typeof d.nodeId === 'string' ? d.nodeId : null;
 
 const Tree = Widget(() => {
-  const { tree, setTree, dropTargetId } = useEditor();
+  const { tree, setTree, dropTargetId, setDropTargetId } = useEditor();
   const dnd = useDnD();
+
+  const spec = (): DragSpec | null => dragSpec(dnd.state.activeData());
 
   const [collapsed, setCollapsed] = createSignal<ReadonlySet<NodeId>>(new Set());
   const isCollapsed = (id: NodeId) => collapsed().has(id);
@@ -51,84 +55,60 @@ const Tree = Widget(() => {
       return next;
     });
 
-  const dragging = (): NodeId | null => draggedId(dnd.state.activeData());
-
   const Row = (p: { id: NodeId; depth: number }): JSX.Element => {
     const uid = createUniqueId();
     let headerEl: HTMLElement | undefined;
     let boxEl: HTMLElement | undefined;
     const node = () => tree().nodes[p.id];
     const hasChildren = () => node().children.length > 0;
-    const isRoot = () => p.id === tree().root;
     const isContainer = () => acceptsChildren(node());
 
-    const canInside = (d: NodeId) => canMoveInto(tree(), d, p.id);
-    const canSibling = (d: NodeId) => {
-      const par = node()?.parentId;
-      return par != null && canMoveInto(tree(), d, par);
+    /** Зона контейнера по позиции курсора: кромки → before/after, иначе inside. */
+    const containerZone = (s: DragSpec, clientY: number): TreeZone | null => {
+      const sib = canBeside(tree(), s, p.id);
+      if (sib && headerEl && clientY < headerEl.getBoundingClientRect().top + EDGE) return 'before';
+      if (sib && boxEl && clientY > boxEl.getBoundingClientRect().bottom - EDGE) return 'after';
+      if (canInto(tree(), s, p.id)) return 'inside';
+      return sib ? 'after' : null;
+    };
+    /** Зона листа: пополам before/after (только сосед). */
+    const leafZone = (s: DragSpec, ratioY: number): TreeZone | null => {
+      if (!canBeside(tree(), s, p.id)) return null;
+      return ratioY < 0.5 ? 'before' : 'after';
     };
 
-    /** Применить drop по вычисленной зоне. */
-    const apply = (d: NodeId, z: Zone | null) => {
-      if (!z) return;
-      try {
-        if (z === 'inside') {
-          setTree(moveNode(tree(), { nodeId: d, newParentId: p.id }));
-          return;
-        }
-        const parentId = node().parentId;
-        if (parentId == null) return;
-        const sibs = tree().nodes[parentId].children.filter((c) => c !== d);
-        let idx = sibs.indexOf(p.id);
-        if (z === 'after') idx += 1;
-        setTree(moveNode(tree(), { nodeId: d, newParentId: parentId, index: idx }));
-      } catch {
-        /* EditorOpError — тихо игнорим */
-      }
+    const commit = (s: DragSpec, zone: TreeZone | null) => {
+      if (!zone) return;
+      const it = treeIntent(tree(), s, p.id, zone);
+      if (it) setTree(applyDrop(tree(), s, it));
     };
 
     const drag = createDraggable({
       id: uid,
       data: () => ({ source: 'tree', nodeId: p.id }),
     });
-
-    // ── Контейнер: бокс-обёртка. Зона по позиции курсора:
-    //   верхняя кромка → before (сосед), нижняя кромка → after, иначе → inside.
-    const containerZone = (d: NodeId, clientY: number): Zone | null => {
-      const sib = canSibling(d);
-      if (sib && headerEl && clientY < headerEl.getBoundingClientRect().top + EDGE) return 'before';
-      if (sib && boxEl && clientY > boxEl.getBoundingClientRect().bottom - EDGE) return 'after';
-      if (canInside(d)) return 'inside';
-      return sib ? 'after' : null;
-    };
     const boxDrop = createDroppable({
       id: `tree-box:${uid}`,
       disabled: () => !isContainer(),
       accepts: (data) => {
-        const d = draggedId(data);
-        return d != null && (canInside(d) || canSibling(d));
+        const s = dragSpec(data);
+        return s != null && (canInto(tree(), s, p.id) || canBeside(tree(), s, p.id));
       },
       onDrop: (data, info) => {
-        const d = draggedId(data);
-        if (d) apply(d, containerZone(d, info.pointer.y));
+        const s = dragSpec(data);
+        if (s) commit(s, containerZone(s, info.pointer.y));
       },
     });
-
-    // ── Лист: строка только reorder (before/after как сосед).
-    const leafZone = (d: NodeId, ratioY: number): Zone | null => {
-      if (!canSibling(d)) return null;
-      return ratioY < 0.5 ? 'before' : 'after';
-    };
     const leafDrop = createDroppable({
       id: `tree-leaf:${uid}`,
       disabled: () => isContainer(),
       accepts: (data) => {
-        const d = draggedId(data);
-        return d != null && canSibling(d);
+        const s = dragSpec(data);
+        return s != null && canBeside(tree(), s, p.id);
       },
       onDrop: (data, info) => {
-        const d = draggedId(data);
-        if (d) apply(d, leafZone(d, info.ratio.y));
+        const s = dragSpec(data);
+        if (s) commit(s, leafZone(s, info.ratio.y));
       },
     });
 
@@ -146,26 +126,35 @@ const Tree = Widget(() => {
       leafDrop.ref(el);
     };
 
-    /** Зона на наведённом контейнере (для линии/ring). */
-    const boxZone = (): Zone | null => {
+    const boxZone = (): TreeZone | null => {
       if (!boxDrop.isOver()) return null;
-      const d = dragging();
+      const s = spec();
       const pt = dnd.state.pointer();
-      return d && pt ? containerZone(d, pt.y) : null;
+      return s && pt ? containerZone(s, pt.y) : null;
     };
-    const leafLine = (): Zone | null => {
+    const leafLine = (): TreeZone | null => {
       if (!leafDrop.isOver()) return null;
-      const d = dragging();
+      const s = spec();
       const pt = dnd.state.pointer();
-      if (!d || !pt || !headerEl) return null;
+      if (!s || !pt || !headerEl) return null;
       const r = headerEl.getBoundingClientRect();
-      return leafZone(d, r.height ? (pt.y - r.top) / r.height : 0.5);
+      return leafZone(s, r.height ? (pt.y - r.top) / r.height : 0.5);
     };
-    /** Контейнер-кандидат для drop «внутрь» — слабая подсветка пока тащим. */
+    /** Контейнер-кандидат для drop «внутрь» — слабый штрих пока тащим. */
     const insideCandidate = (): boolean => {
-      const d = dragging();
-      return d != null && d !== p.id && canInside(d);
+      const s = spec();
+      return s != null && canInto(tree(), s, p.id);
     };
+
+    // Двусторонний синк: пока курсор над этой строкой — пишем цель в общий стор,
+    // канвас подсветит тот же контейнер. Очистку по концу drag делает Canvas.
+    createEffect(() => {
+      const s = spec();
+      if (!s) return;
+      const zone = boxZone() ?? leafLine();
+      if (!zone) return;
+      setDropTargetId(treeIntent(tree(), s, p.id, zone)?.parentId ?? null);
+    });
 
     const Header = (props: { ref: (el: HTMLElement) => void }) => (
       <div
@@ -210,9 +199,9 @@ const Tree = Widget(() => {
         class="relative rounded pb-1"
         classList={{
           'bg-primary/10 ring-1 ring-primary ring-inset': boxZone() === 'inside',
-          'outline outline-1 outline-dashed outline-primary/30':
+          'outline outline-1 outline-dashed outline-primary/40 [outline-offset:-1px]':
             insideCandidate() && boxZone() !== 'inside',
-          // Кросс-подсветка: цель drop'а из канваса (перетаскивание из палитры).
+          // Кросс-подсветка: цель drop'а из канваса.
           'ring-2 ring-primary ring-inset bg-primary/10': dropTargetId() === p.id,
         }}
       >
