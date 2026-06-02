@@ -229,6 +229,44 @@ describe('buildOverride — IDesktopConfig.window overrides', () => {
   });
 });
 
+describe('buildOverride — dragDropEnabled', () => {
+  it('defaults dragDropEnabled to false when window is not specified', () => {
+    const result = buildOverride({
+      kind: 'dev',
+      app: 'sandbox',
+      devUrl: 'http://localhost:3000',
+      desktop: baseDesktop,
+      version: '1.0.0',
+    });
+    const app = result.app as { windows: Array<Record<string, unknown>> };
+    expect(app.windows[0].dragDropEnabled).toBe(false);
+  });
+
+  it('defaults dragDropEnabled to false when window is set but dragDropEnabled is not', () => {
+    const result = buildOverride({
+      kind: 'dev',
+      app: 'sandbox',
+      devUrl: 'http://localhost:3000',
+      desktop: { ...baseDesktop, window: { width: 1920 } },
+      version: '1.0.0',
+    });
+    const app = result.app as { windows: Array<Record<string, unknown>> };
+    expect(app.windows[0].dragDropEnabled).toBe(false);
+  });
+
+  it('passes dragDropEnabled: true through when explicitly set', () => {
+    const result = buildOverride({
+      kind: 'dev',
+      app: 'sandbox',
+      devUrl: 'http://localhost:3000',
+      desktop: { ...baseDesktop, window: { dragDropEnabled: true } },
+      version: '1.0.0',
+    });
+    const app = result.app as { windows: Array<Record<string, unknown>> };
+    expect(app.windows[0].dragDropEnabled).toBe(true);
+  });
+});
+
 describe('buildOverride — IDesktopConfig.icon', () => {
   it('sets bundle.icon when desktop.icon is provided (dev mode)', () => {
     const result = buildOverride({

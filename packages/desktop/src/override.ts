@@ -33,6 +33,10 @@ export function buildOverride(input: OverrideInput): Record<string, unknown> {
   const windowMinWidth = desktop.window?.minWidth ?? 800;
   const windowMinHeight = desktop.window?.minHeight ?? 600;
   const windowTitle = desktop.window?.title ?? desktop.productName;
+  // Default false: capsule apps use HTML5 DnD (palettes, sortables).
+  // Tauri's OS-level drag handler intercepts drag events before the webview
+  // sees them; disabling it restores standard HTML5 DnD behavior.
+  const windowDragDropEnabled = desktop.window?.dragDropEnabled ?? false;
 
   const override: Record<string, unknown> = {
     productName: desktop.productName,
@@ -47,6 +51,7 @@ export function buildOverride(input: OverrideInput): Record<string, unknown> {
           height: windowHeight,
           minWidth: windowMinWidth,
           minHeight: windowMinHeight,
+          dragDropEnabled: windowDragDropEnabled,
         },
       ],
     },

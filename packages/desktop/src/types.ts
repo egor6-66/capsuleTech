@@ -8,6 +8,12 @@ export interface IDesktopConfig {
     minWidth?: number;
     minHeight?: number;
     title?: string;
+    /**
+     * Tauri window drag-drop handler. Default `false` so HTML5 drag-and-drop
+     * (palettes, sortable) works in the webview. Set `true` only if you need
+     * native OS file-drop (it suppresses HTML5 DnD).
+     */
+    dragDropEnabled?: boolean;
   };
 }
 
