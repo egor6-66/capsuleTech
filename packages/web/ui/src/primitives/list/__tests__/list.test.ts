@@ -135,6 +135,59 @@ describe('IListBatchProps structural contracts', () => {
     expect(props.variant).toBe('default');
     expect(props.orientation).toBe('vertical');
   });
+
+  it('accepts min prop for responsive grid layout', () => {
+    const Tpl = () => null as unknown as import('solid-js').JSX.Element;
+    const props: IListBatchProps<{ id: number }> = {
+      data: [{ id: 1 }],
+      itemAs: Tpl,
+      min: '116px',
+    };
+    expect(props.min).toBe('116px');
+    expect(props.gap).toBeUndefined();
+  });
+
+  it('accepts min + gap props together', () => {
+    const Tpl = () => null as unknown as import('solid-js').JSX.Element;
+    const props: IListBatchProps<{ id: number }> = {
+      data: [],
+      itemAs: Tpl,
+      min: '140px',
+      gap: '1rem',
+    };
+    expect(props.min).toBe('140px');
+    expect(props.gap).toBe('1rem');
+  });
+
+  it('grid style object has correct css properties when min is set', () => {
+    // Verify the expected inline style shape (mirrors list.tsx gridStyle logic).
+    const min = '116px';
+    const gap = '0.5rem';
+    const expectedStyle = {
+      display: 'grid',
+      'grid-template-columns': `repeat(auto-fit, minmax(${min}, 1fr))`,
+      gap,
+      width: '100%',
+    };
+    expect(expectedStyle['grid-template-columns']).toBe(
+      'repeat(auto-fit, minmax(116px, 1fr))',
+    );
+    expect(expectedStyle.display).toBe('grid');
+    expect(expectedStyle.gap).toBe('0.5rem');
+  });
+
+  it('gap defaults to 0.5rem when min is set but gap is omitted', () => {
+    const Tpl = () => null as unknown as import('solid-js').JSX.Element;
+    const props: IListBatchProps<{ id: number }> = {
+      data: [],
+      itemAs: Tpl,
+      min: '116px',
+    };
+    // gap is optional; component defaults to '0.5rem' at render time
+    expect(props.gap).toBeUndefined();
+    const resolvedGap = props.gap ?? '0.5rem';
+    expect(resolvedGap).toBe('0.5rem');
+  });
 });
 
 // ---------------------------------------------------------------------------

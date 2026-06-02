@@ -140,6 +140,64 @@ export const BatchModeItemAs: Story = {
   ),
 };
 
+// Grid mode: gauge/stat card tiles
+function StatCard(props: { label: string; value: string }) {
+  return (
+    <li class="rounded-lg border border-border bg-card p-4 text-sm">
+      <div class="text-muted-foreground text-xs">{props.label}</div>
+      <div class="mt-1 text-xl font-semibold text-foreground">{props.value}</div>
+    </li>
+  );
+}
+
+const STATS = [
+  { label: 'CPU', value: '42 %' },
+  { label: 'RAM', value: '6.1 GB' },
+  { label: 'Disk', value: '78 %' },
+  { label: 'Net', value: '1.2 MB/s' },
+  { label: 'GPU', value: '31 %' },
+  { label: 'Temp', value: '64 °C' },
+];
+
+export const GridAutoFit: Story = {
+  name: 'batch mode · grid auto-fit (min="116px")',
+  decorators: [
+    (Story) => (
+      <div class="w-full p-4">
+        <Story />
+      </div>
+    ),
+  ],
+  render: () => (
+    <List
+      data={STATS}
+      itemAs={StatCard}
+      itemProps={(item) => ({ label: item.label, value: item.value })}
+      min="116px"
+    />
+  ),
+};
+
+export const GridAutoFitCustomGap: Story = {
+  name: 'batch mode · grid auto-fit with custom gap',
+  decorators: [
+    (Story) => (
+      <div class="w-full p-4">
+        <Story />
+      </div>
+    ),
+  ],
+  render: () => (
+    <List
+      data={STATS}
+      itemAs={StatCard}
+      itemProps={(item) => ({ label: item.label, value: item.value })}
+      min="140px"
+      gap="1rem"
+    />
+  ),
+};
+
 export const Semantic: Story = {
   name: 'semantic · plain children',
   render: (args) => (

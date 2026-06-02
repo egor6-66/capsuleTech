@@ -51,6 +51,19 @@ export interface IListBatchProps<T> extends Omit<JSX.HTMLAttributes<HTMLDivEleme
   as?: Component<any>;
   /** Maps each item to props for the template. Defaults to identity (item as-is). */
   itemProps?: (item: T) => Record<string, unknown>;
+  /**
+   * When set, switches the `<ul>` to a responsive CSS Grid:
+   * `grid-template-columns: repeat(auto-fit, minmax(<min>, 1fr))`.
+   * Items wrap automatically by the list's own width.
+   * Any valid CSS length is accepted (e.g. `'116px'`, `'8rem'`).
+   * When omitted the existing flex layout (vertical/horizontal) is used unchanged.
+   */
+  min?: string;
+  /**
+   * Grid gap when `min` is set. Accepts any valid CSS length (e.g. `'0.5rem'`, `'8px'`).
+   * Defaults to `'0.5rem'` when `min` is provided.
+   */
+  gap?: string;
   /** items/children must be absent in batch mode. */
   items?: never;
   children?: never;
