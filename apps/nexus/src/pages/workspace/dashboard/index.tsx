@@ -1,67 +1,30 @@
-import { Activity, Bot, FileText } from 'lucide-solid';
-
 /**
- * Dashboard (`/workspace/dashboard`) — главный операционный экран Nexus.
+ * Dashboard (`/workspace/dashboard`) — нод-канвас + палитра (ADR 027).
  *
- * Matrix insert-mode v2 (ADR 022), `direction="horizontal"`:
- *   main     — рабочая зона СЛЕВА, по умолчанию ПУСТАЯ. `wrap` → виджеты
- *              раскладываются и переносятся; внутри main слоты DnD + resize.
- *   rightbar — узкий icon-rail СПРАВА (`height:'auto'` ≈ ширина иконок ~60px),
- *              `orientation:'vertical'` → узлы стопкой.
- *
- * Обе зоны `resizable:false` → фиксированы (нет хэндла между ними, не двигаются).
- * Узлы: `group:'node'`, обе зоны `accepts:['node']` → перенос rail↔main в обе
- * стороны. Каждый узел responsive: иконка в rail, полный виджет в main.
- * `layoutMode="edit"` — DnD/resize слотов внутри main всегда активны.
+ * `direction='horizontal'`: канвас слева (fill), палитра справа (узкая).
+ * `Canvas` / `Palette` — top-level widgets; страница компонует их в
+ * `Layout.Matrix`. Тащишь вид из палитры на канвас → нода материализуется.
  */
+
 const Dashboard = Page((Ui) => (
   <Ui.Layout.Matrix
-    layoutMode="edit"
-    dndMode="insert"
-    direction="horizontal"
-    rows={[
-      {
-        id: 'main',
-        resizable: false,
-        wrap: true,
-        accepts: ['node'],
-        cells: [],
+    preset="app-shell"
+    slots={{
+      main: {
+        children: <Widgets.Canvas />,
+        skeleton: <Ui.Skeleton variant="table" rows={100} />,
+        draggable: true,
+
+        swapGroup: 'widgets',
       },
-      {
-        id: 'rightbar',
-        height: 0.05,
-        resizable: false,
-        orientation: 'vertical',
-        accepts: ['node'],
-        cells: [
-          {
-            id: 'node-files',
-            children: <Widgets.Nodes.FilePicker />,
-            group: 'node',
-            draggable: true,
-          },
-          {
-            id: 'node-monitor',
-            children: <Widgets.Nodes.Placeholder title="Мониторинг" icon={Activity} />,
-            group: 'node',
-            draggable: true,
-          },
-          {
-            id: 'node-agent',
-            children: <Widgets.Nodes.Placeholder title="Агент" icon={Bot} />,
-            group: 'node',
-            draggable: true,
-          },
-          {
-            id: 'node-docs',
-            children: <Widgets.Nodes.Placeholder title="Доки" icon={FileText} />,
-            group: 'node',
-            draggable: true,
-          },
-        ],
+      rightBar: {
+        children: <Widgets.Palette />,
+        skeleton: <Ui.Skeleton variant="card" />,
+        draggable: true,
+        swapGroup: 'widgets',
+        initialSize: 0.1,
       },
-    ]}
+    }}
   />
 ));
-
 export default Dashboard;
