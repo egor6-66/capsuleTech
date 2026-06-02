@@ -17,11 +17,21 @@
  *   createRouter). См. ADR 024 + docs/_meta/web-router.md.
  *
  * ENDPOINTS
- *   GET  /                   HTML-лендинг со списком развёрнутых приложений
- *   GET  /api/apps           JSON-список { app, base, url, deployedAt }
+ *   GET  /                   root-app (если развёрнут) ИЛИ HTML-лендинг со
+ *                             списком развёрнутых приложений (fallback)
+ *   GET  /api/apps           JSON-список { name, base, url, deployedAt }
+ *                             (root-app исключён — он сам и есть этот список)
  *   POST /api/deploy/:app     приём gzip-tar (Authorization: Bearer <token>,
- *                             base в заголовке X-Capsule-Base или ?base=)
+ *                             base в заголовке X-Capsule-Base или ?base=;
+ *                             X-Capsule-Root: 1 → раздавать под корнем `/`)
  *   GET  /<base>/...          статика приложения + SPA-fallback на index.html
+ *
+ * ROOT-APP (testing-hub)
+ *   Одно приложение можно развернуть «корнем» (флаг `--root` у deploy-клиента →
+ *   заголовок X-Capsule-Root). Оно раздаётся под `/` вместо inline-лендинга и
+ *   служит SPA-fallback'ом для всех путей, не перехваченных другими base. Это
+ *   testing-hub: сам фетчит /api/apps и рисует каталог. Из /api/apps исключён
+ *   (иначе показал бы сам себя). Корень всегда один — новый root вытесняет старый.
  *
  * ENV
  *   PORT                 HTTP port (default 8080)
@@ -176,10 +186,19 @@ const serveFile = (appDir, rel, res) => {
   createReadStream(filePath).pipe(res);
 };
 
+// Найти развёрнутый root-app (раздаётся под `/`). Корень всегда один.
+const findRoot = (reg) => Object.entries(reg).find(([, e]) => e.root) || null;
+
 // Подобрать приложение по самому длинному base-префиксу запроса.
+// root-app (base `/`) — самый низкий приоритет: ловит всё, что не перехватили
+// более длинные base, как SPA-fallback. Сортировка по длине base это даёт.
 const matchApp = (reg, urlPath) => {
   const entries = Object.entries(reg).sort(([, a], [, b]) => b.base.length - a.base.length);
   for (const [app, e] of entries) {
+    if (e.root) {
+      // Корень: rel = весь путь без ведущего слеша, без redirect.
+      return { app, base: '/', rel: urlPath.replace(/^\//, '') };
+    }
     const bare = e.base.slice(0, -1); // '/ewc/' → '/ewc'
     if (urlPath === bare) return { app, base: e.base, rel: '', redirect: true };
     if (urlPath.startsWith(e.base)) return { app, base: e.base, rel: urlPath.slice(e.base.length) };
@@ -204,9 +223,18 @@ const handleDeploy = (req, res, app) => {
     json(res, 401, { error: 'unauthorized' });
     return;
   }
-  const rawBase =
-    req.headers['x-capsule-base'] || new URL(req.url, 'http://x').searchParams.get('base');
-  const base = normalizeBase(Array.isArray(rawBase) ? rawBase[0] : rawBase);
+  // root-deploy (X-Capsule-Root / ?root=1): раздавать под корнем `/`, минуя
+  // base-нормализацию (которая корень как раз запрещает).
+  const rawRoot =
+    req.headers['x-capsule-root'] || new URL(req.url, 'http://x').searchParams.get('root');
+  const isRoot = rawRoot === '1' || rawRoot === 'true';
+  const base = isRoot
+    ? '/'
+    : normalizeBase(
+        Array.isArray(req.headers['x-capsule-base'])
+          ? req.headers['x-capsule-base'][0]
+          : req.headers['x-capsule-base'] || new URL(req.url, 'http://x').searchParams.get('base'),
+      );
   if (!base) {
     json(res, 400, {
       error: 'нужен непустой не-корневой base (X-Capsule-Base или ?base=). Пример: /ewc/',
@@ -253,10 +281,16 @@ const handleDeploy = (req, res, app) => {
         return;
       }
       const reg = loadRegistry();
-      reg[app] = { base, deployedAt: ts() };
+      // Корень всегда один: новый root вытесняет прежний (снимаем флаг со старых).
+      if (isRoot) {
+        for (const e of Object.values(reg)) {
+          if (e.root) e.root = false;
+        }
+      }
+      reg[app] = { base, deployedAt: ts(), root: isRoot };
       saveRegistry(reg);
-      log(`deploy "${app}" (${size} bytes) → ${urlFor(req, base)}`);
-      json(res, 200, { app, base, url: urlFor(req, base) });
+      log(`deploy "${app}"${isRoot ? ' (root)' : ''} (${size} bytes) → ${urlFor(req, base)}`);
+      json(res, 200, { app, base, root: isRoot, url: urlFor(req, base) });
     } catch (e) {
       json(res, 500, { error: e.message });
     } finally {
@@ -307,16 +341,25 @@ const server = createServer((req, res) => {
     json(
       res,
       200,
-      Object.entries(reg).map(([app, e]) => ({
-        app,
-        base: e.base,
-        url: urlFor(req, e.base),
-        deployedAt: e.deployedAt || null,
-      })),
+      Object.entries(reg)
+        // root-app исключён: это сам hub, он не показывает себя в каталоге.
+        .filter(([, e]) => !e.root)
+        .map(([name, e]) => ({
+          name,
+          base: e.base,
+          url: urlFor(req, e.base),
+          deployedAt: e.deployedAt || null,
+        })),
     );
     return;
   }
   if (urlPath === '/' && method === 'GET') {
+    // root-app развёрнут → отдаём его index.html (SPA). Иначе inline-лендинг.
+    const root = findRoot(loadRegistry());
+    if (root) {
+      serveFile(join(DATA_DIR, root[0]), '', res);
+      return;
+    }
     landing(req, res);
     return;
   }

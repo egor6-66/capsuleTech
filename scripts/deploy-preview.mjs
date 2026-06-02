@@ -24,6 +24,9 @@
  *   --no-build          не собирать заново, использовать существующий dist/
  *   --mocks             собрать с моками (CAPSULE_MOCKS=true) — preview без бэка;
  *                       без флага сборка идёт в реальную API
+ *   --root              развернуть приложение «корнем» (раздача под `/`) — это
+ *                       testing-hub. Требует base `/` в сборке; вытесняет прежний
+ *                       root. На сервер уходит X-Capsule-Root вместо X-Capsule-Base.
  *
  * NB: server URL и token НЕ хардкодятся (закрытый контур) — только флаги/env.
  * ==========================================================================*/
@@ -120,18 +123,29 @@ if (!existsSync(join(distPath, 'index.html'))) {
 // 3. base выводим из собранного index.html. Vite вставляет ассеты с префиксом
 //    base ('/ewc/' → <script src="/ewc/assets/...">). Это и есть путь раздачи.
 // ---------------------------------------------------------------------------
+const isRoot = args.has('root');
 const indexHtml = readFileSync(join(distPath, 'index.html'), 'utf8');
 const baseMatch = indexHtml.match(/(?:src|href)=["'](\/(?:[^"']*\/)?)assets\//);
 const base = baseMatch ? baseMatch[1] : '/';
-if (base === '/') {
+if (isRoot) {
+  // root-app раздаётся под `/` — base обязан быть корнем.
+  if (base !== '/') {
+    fail(
+      `--root требует base "/" в сборке, а сейчас "${base}".\n` +
+        `Убери base из apps/${app}/capsule.config.ts (или задай '/'), пересобери и повтори.`,
+    );
+  }
+  log('режим --root: раздача под корнем `/`');
+} else if (base === '/') {
   fail(
     `в сборке base = "/" (корень) — path-based preview так не раздать.\n` +
       `Задай непустой base в apps/${app}/capsule.config.ts, напр.:\n` +
       `  defineCapsuleConfig({ base: '/${app}/' })\n` +
-      `затем пересобери и повтори деплой.`,
+      `затем пересобери и повтори деплой (или используй --root для testing-hub).`,
   );
+} else {
+  log(`base из сборки: ${base}`);
 }
-log(`base из сборки: ${base}`);
 
 // ---------------------------------------------------------------------------
 // 4. Упаковка dist в gzip-tar (файлы в корне архива: `-C dist .`)
@@ -147,7 +161,7 @@ if ((tarRes.status ?? 1) !== 0) {
 // 5. POST на сервер (base — в заголовке X-Capsule-Base)
 // ---------------------------------------------------------------------------
 const endpoint = `${server.replace(/\/$/, '')}/api/deploy/${app}`;
-log(`POST ${endpoint} (base=${base})`);
+log(`POST ${endpoint} (${isRoot ? 'root' : `base=${base}`})`);
 try {
   const body = readFileSync(tmp);
   const resp = await fetch(endpoint, {
@@ -155,7 +169,7 @@ try {
     headers: {
       authorization: `Bearer ${token}`,
       'content-type': 'application/gzip',
-      'x-capsule-base': base,
+      ...(isRoot ? { 'x-capsule-root': '1' } : { 'x-capsule-base': base }),
     },
     body,
   });
