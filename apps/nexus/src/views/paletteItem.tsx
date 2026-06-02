@@ -10,9 +10,8 @@ import { Dynamic } from 'solid-js/web';
  */
 const PaletteItem = View(
   (_Ui, props: { type: string; label?: string; icon?: Component<{ class?: string }> }) => (
-    <div
-      role="button"
-      tabIndex={0}
+    <button
+      type="button"
       draggable={true}
       onDragStart={(e) => {
         e.dataTransfer?.setData(FLOW_NODE_MIME, props.type);
@@ -22,7 +21,7 @@ const PaletteItem = View(
     >
       <Dynamic component={props.icon} class="size-4 shrink-0" />
       <span class="truncate">{props.label}</span>
-    </div>
+    </button>
   ),
 );
 

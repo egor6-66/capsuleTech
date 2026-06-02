@@ -33,9 +33,8 @@ export const FlowPalette = (props: IFlowPaletteProps): JSX.Element => {
     <div class={`flex h-full w-full flex-col gap-2 overflow-auto p-2 ${props.class ?? ''}`}>
       <For each={props.items}>
         {(item) => (
-          <div
-            role="button"
-            tabIndex={0}
+          <button
+            type="button"
             draggable={true}
             onDragStart={(e) => onDragStart(e, item.type)}
             class="flex cursor-grab items-center gap-2 rounded-md border border-border bg-card p-2 text-sm hover:bg-muted active:cursor-grabbing"
@@ -44,7 +43,7 @@ export const FlowPalette = (props: IFlowPaletteProps): JSX.Element => {
               {(icon) => <Dynamic component={icon()} class="h-4 w-4 shrink-0" />}
             </Show>
             <span class="truncate">{item.label}</span>
-          </div>
+          </button>
         )}
       </For>
     </div>

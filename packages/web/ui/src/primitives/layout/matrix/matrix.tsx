@@ -107,12 +107,12 @@ const renderCell = (
    * на interactive cells + drag-badges). В `'view'` — чистый рендер без какого
    * либо UI-намёка на возможность ресайза/переноса.
    */
-  layoutMode: Accessor<'view' | 'edit'>,
+  _layoutMode: Accessor<'view' | 'edit'>,
   /**
    * True если эта cell хоть как-то interactive (draggable | cell.resizable |
    * родительский row.resizable). Только interactive-cells получают edit-border.
    */
-  isInteractive: boolean,
+  _isInteractive: boolean,
   /**
    * Reactive global settingsMode. When true AND cell.settings is present,
    * renders a toolbar strip at the top of the cell.
