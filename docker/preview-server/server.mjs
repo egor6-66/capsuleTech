@@ -16,11 +16,18 @@
  *   навигация под `/ewc/`, через import.meta.env.BASE_URL → BaseProviders →
  *   createRouter). См. ADR 024 + docs/_meta/web-router.md.
  *
+ * ROOT-APP (хаб)
+ *   Приложение, задеплоенное с X-Capsule-Root=true, получает base '/' и
+ *   становится КОРНЕВЫМ: раздаётся на '/' и на всё, что не /api/* и не покрыто
+ *   зарегистрированным app-base (SPA-fallback). Это место под testing-hub
+ *   (ADR 025) — он заменяет inline-лендинг. Root-app один; /api/apps его не
+ *   листит (хаб не показывает сам себя).
+ *
  * ENDPOINTS
- *   GET  /                   HTML-лендинг со списком развёрнутых приложений
- *   GET  /api/apps           JSON-список { app, base, url, deployedAt }
+ *   GET  /                   root-app (хаб); если не задеплоен — fallback-лендинг
+ *   GET  /api/apps           JSON-список не-корневых { app, base, url, deployedAt }
  *   POST /api/deploy/:app     приём gzip-tar (Authorization: Bearer <token>,
- *                             base в заголовке X-Capsule-Base или ?base=)
+ *                             base в X-Capsule-Base | ?base=, либо X-Capsule-Root)
  *   GET  /<base>/...          статика приложения + SPA-fallback на index.html
  *
  * ENV
@@ -204,14 +211,22 @@ const handleDeploy = (req, res, app) => {
     json(res, 401, { error: 'unauthorized' });
     return;
   }
-  const rawBase =
-    req.headers['x-capsule-base'] || new URL(req.url, 'http://x').searchParams.get('base');
-  const base = normalizeBase(Array.isArray(rawBase) ? rawBase[0] : rawBase);
-  if (!base) {
-    json(res, 400, {
-      error: 'нужен непустой не-корневой base (X-Capsule-Base или ?base=). Пример: /ewc/',
-    });
-    return;
+  // root-app (хаб): X-Capsule-Root=true → base '/'. Иначе — обычный path-based
+  // app с непустым не-корневым base.
+  const isRoot = String(req.headers['x-capsule-root'] || '').toLowerCase() === 'true';
+  let base;
+  if (isRoot) {
+    base = '/';
+  } else {
+    const rawBase =
+      req.headers['x-capsule-base'] || new URL(req.url, 'http://x').searchParams.get('base');
+    base = normalizeBase(Array.isArray(rawBase) ? rawBase[0] : rawBase);
+    if (!base) {
+      json(res, 400, {
+        error: 'нужен непустой не-корневой base (X-Capsule-Base или ?base=). Пример: /ewc/',
+      });
+      return;
+    }
   }
 
   const chunks = [];
@@ -253,7 +268,11 @@ const handleDeploy = (req, res, app) => {
         return;
       }
       const reg = loadRegistry();
-      reg[app] = { base, deployedAt: ts() };
+      // root-app один: сбрасываем прежний root, если это другая аппа.
+      if (isRoot) {
+        for (const k of Object.keys(reg)) if (reg[k].root && k !== app) delete reg[k];
+      }
+      reg[app] = { base, deployedAt: ts(), ...(isRoot ? { root: true } : {}) };
       saveRegistry(reg);
       log(`deploy "${app}" (${size} bytes) → ${urlFor(req, base)}`);
       json(res, 200, { app, base, url: urlFor(req, base) });
@@ -268,9 +287,13 @@ const handleDeploy = (req, res, app) => {
 // ---------------------------------------------------------------------------
 // Landing page
 // ---------------------------------------------------------------------------
+// Fallback-лендинг: показывается только когда root-app (хаб) НЕ задеплоен.
+// Задеплой хаб (`deploy-preview.mjs --root`) — он заменит эту страницу.
 const landing = (req, res) => {
   const reg = loadRegistry();
-  const apps = Object.entries(reg).sort(([a], [b]) => a.localeCompare(b));
+  const apps = Object.entries(reg)
+    .filter(([, e]) => !e.root)
+    .sort(([a], [b]) => a.localeCompare(b));
   const rows = apps.length
     ? apps
         .map(([name, e]) => {
@@ -283,9 +306,11 @@ const landing = (req, res) => {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>capsule preview</title>
 <style>body{font:15px/1.5 system-ui,sans-serif;max-width:720px;margin:3rem auto;padding:0 1rem;color:#1a1a1a}
-h1{font-size:1.3rem}ul{list-style:none;padding:0}li{padding:.4rem 0;border-bottom:1px solid #eee}
+h1{font-size:1.3rem}p{color:#666}ul{list-style:none;padding:0}li{padding:.4rem 0;border-bottom:1px solid #eee}
 a{color:#2563eb;text-decoration:none}a:hover{text-decoration:underline}small{color:#888;margin-left:.5rem}</style>
-</head><body><h1>capsule preview builds</h1><ul>${rows}</ul></body></html>`;
+</head><body><h1>capsule preview builds</h1>
+<p>Хаб (root-app) ещё не задеплоен — задеплой его через <code>deploy-preview.mjs --root</code>. Пока — список сборок:</p>
+<ul>${rows}</ul></body></html>`;
   res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
   res.end(html);
 };
@@ -307,21 +332,20 @@ const server = createServer((req, res) => {
     json(
       res,
       200,
-      Object.entries(reg).map(([app, e]) => ({
-        app,
-        base: e.base,
-        url: urlFor(req, e.base),
-        deployedAt: e.deployedAt || null,
-      })),
+      Object.entries(reg)
+        .filter(([, e]) => !e.root) // хаб (root-app) сам себя не листит
+        .map(([app, e]) => ({
+          app,
+          base: e.base,
+          url: urlFor(req, e.base),
+          deployedAt: e.deployedAt || null,
+        })),
     );
     return;
   }
-  if (urlPath === '/' && method === 'GET') {
-    landing(req, res);
-    return;
-  }
 
-  // статика приложений по base-префиксу
+  // Раздача: зарегистрированные app по base-префиксу. root-app (base '/')
+  // отсортирован в matchApp последним и ловит всё непокрытое, включая '/'.
   if (method === 'GET') {
     const hit = matchApp(loadRegistry(), urlPath);
     if (hit) {
@@ -330,6 +354,11 @@ const server = createServer((req, res) => {
         return;
       }
       serveFile(join(DATA_DIR, hit.app), hit.rel, res);
+      return;
+    }
+    // Ничего не совпало → root-app (хаб) не задеплоен. '/' → fallback-лендинг.
+    if (urlPath === '/') {
+      landing(req, res);
       return;
     }
   }
