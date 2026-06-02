@@ -175,9 +175,15 @@ importers:
 
   apps/nexus:
     dependencies:
+      '@capsuletech/desktop':
+        specifier: workspace:*
+        version: link:../../packages/desktop
       '@capsuletech/shared-zod':
         specifier: workspace:*
         version: link:../../packages/shared/zod
+      '@capsuletech/web-charts':
+        specifier: workspace:*
+        version: link:../../packages/web/charts
       '@capsuletech/web-core':
         specifier: workspace:*
         version: link:../../packages/web/core
@@ -526,6 +532,34 @@ importers:
         specifier: workspace:*
         version: link:../../builders/vite
 
+  packages/web/charts:
+    dependencies:
+      '@capsuletech/web-style':
+        specifier: workspace:*
+        version: link:../style
+      chart.js:
+        specifier: ^4.5.1
+        version: 4.5.1
+      solid-chartjs:
+        specifier: ^1.3.11
+        version: 1.3.11(chart.js@4.5.1)(solid-js@1.9.12)
+      solid-js:
+        specifier: 1.9.12
+        version: 1.9.12
+    devDependencies:
+      '@capsuletech/lib-builder':
+        specifier: workspace:*
+        version: link:../../builders/lib
+      '@capsuletech/vite-builder':
+        specifier: workspace:*
+        version: link:../../builders/vite
+      vite:
+        specifier: ^8.0.13
+        version: 8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0)
+      vite-plugin-solid:
+        specifier: ^2.11.12
+        version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
+
   packages/web/core:
     dependencies:
       '@capsuletech/shared-zod':
@@ -534,6 +568,9 @@ importers:
       '@capsuletech/vite-builder':
         specifier: workspace:*
         version: link:../../builders/vite
+      '@capsuletech/web-charts':
+        specifier: workspace:*
+        version: link:../charts
       '@capsuletech/web-map':
         specifier: workspace:*
         version: link:../map
@@ -1947,6 +1984,9 @@ packages:
     resolution: {integrity: sha512-eeU60A3kprIiBDAfv9gUJX1tXGLuZiKMajUfSQURAF2pk4ZoMYiqIzmrMBvzcxP39xnYttgTyQEVLwiTZnrV4w==}
     peerDependencies:
       solid-js: 1.9.12
+
+  '@kurkle/color@0.3.4':
+    resolution: {integrity: sha512-M5UknZPHRu3DEDWoipU6sE8PdkZ6Z/S+v4dD+Ke8IaNlpdSQah50lz1KtcFBa2vsdOnwbbnxJwVM4wty6udA5w==}
 
   '@loaderkit/resolve@1.0.6':
     resolution: {integrity: sha512-G8FdIoF5CypfwmD9rl8BXod5HDn8JqB0CCNBXDTaRZ+yRYhARrrSToX1zg1zy9jX3zLqigsELwhT4gNtkdQAUg==}
@@ -3830,6 +3870,10 @@ packages:
   char-regex@1.0.2:
     resolution: {integrity: sha512-kWWXztvZ5SBQV+eRgKFeh8q5sLuZY2+8WUIzlxWVTg+oGwY14qylx1KbKzHd8P6ZYkAg0xyIDU9JMHhyJMZ1jw==}
     engines: {node: '>=10'}
+
+  chart.js@4.5.1:
+    resolution: {integrity: sha512-GIjfiT9dbmHRiYi6Nl2yFCq7kkwdkp1W/lp2J99rX0yo9tgJGn3lKQATztIjb5tVtevcBtIdICNWqlq5+E8/Pw==}
+    engines: {pnpm: '>=8'}
 
   check-error@2.1.3:
     resolution: {integrity: sha512-PAJdDJusoxnwm1VwW07VWwUN1sl7smmC3OKggvndJFadxxDRyFJBX/ggnu/KE4kQAB7a3Dp8f/YXC1FlUprWmA==}
@@ -5894,6 +5938,12 @@ packages:
     resolution: {integrity: sha512-dWUG8F5sIIARXih1DTaQAX4SsiTXhInKf1buxdY9DIg4ZYPZK5nGM1VRIYmEbDbsHt7USo99xSLFu5Q1IqTmsg==}
     engines: {node: '>= 18'}
 
+  solid-chartjs@1.3.11:
+    resolution: {integrity: sha512-m8j4xRTAK/AGwTvyXtUhExZh7CtwvDd6Ad2l3IxDCH/ertPPO0MWn8LhajkKnE2KQP74+4o2sVg8FAMNxitIGw==}
+    peerDependencies:
+      chart.js: ^4.3.0
+      solid-js: 1.9.12
+
   solid-js@1.9.12:
     resolution: {integrity: sha512-QzKaSJq2/iDrWR1As6MHZQ8fQkdOBf8GReYb7L5iKwMGceg7HxDcaOHk0at66tNgn9U2U7dXo8ZZpLIAmGMzgw==}
 
@@ -7872,6 +7922,8 @@ snapshots:
       '@solid-primitives/refs': 1.1.3(solid-js@1.9.12)
       '@solid-primitives/utils': 6.4.0(solid-js@1.9.12)
       solid-js: 1.9.12
+
+  '@kurkle/color@0.3.4': {}
 
   '@loaderkit/resolve@1.0.6':
     dependencies:
@@ -9883,6 +9935,10 @@ snapshots:
   chalk@5.6.2: {}
 
   char-regex@1.0.2: {}
+
+  chart.js@4.5.1:
+    dependencies:
+      '@kurkle/color': 0.3.4
 
   check-error@2.1.3: {}
 
@@ -12170,6 +12226,11 @@ snapshots:
       is-fullwidth-code-point: 5.1.0
 
   smol-toml@1.6.1: {}
+
+  solid-chartjs@1.3.11(chart.js@4.5.1)(solid-js@1.9.12):
+    dependencies:
+      chart.js: 4.5.1
+      solid-js: 1.9.12
 
   solid-js@1.9.12:
     dependencies:

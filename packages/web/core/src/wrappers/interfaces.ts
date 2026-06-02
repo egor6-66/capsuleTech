@@ -17,6 +17,13 @@ import type {
   Terrain,
   TerrainPreset,
 } from '@capsuletech/web-map';
+import type {
+  AreaChart,
+  BarChart,
+  Doughnut,
+  Gauge,
+  LineChart,
+} from '@capsuletech/web-charts';
 import type { ICapsuleRouter } from '@capsuletech/web-router';
 import type { IBaseStateHandlers, IBaseStateSchema, IBridge } from '@capsuletech/web-state';
 import type {
@@ -202,6 +209,13 @@ type ViewUiRaw = {
     TerrainPreset: typeof TerrainPreset;
     BuildingsPreset: typeof BuildingsPreset;
   };
+  Chart: {
+    Line: typeof LineChart;
+    Area: typeof AreaChart;
+    Bar: typeof BarChart;
+    Doughnut: typeof Doughnut;
+    Gauge: typeof Gauge;
+  };
   Card: typeof Card;
   Typography: typeof Typography;
   Link: typeof Link;
@@ -241,6 +255,13 @@ type WidgetUiRaw = {
     Marker: typeof Marker;
     TerrainPreset: typeof TerrainPreset;
     BuildingsPreset: typeof BuildingsPreset;
+  };
+  Chart: {
+    Line: typeof LineChart;
+    Area: typeof AreaChart;
+    Bar: typeof BarChart;
+    Doughnut: typeof Doughnut;
+    Gauge: typeof Gauge;
   };
   /**
    * Solid control-flow primitives. Raw — NOT UiProxy-wrapped.
