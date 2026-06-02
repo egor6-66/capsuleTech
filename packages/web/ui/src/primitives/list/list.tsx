@@ -5,9 +5,10 @@ import type { JSX } from 'solid-js';
 import type { IListBatchProps, IListProps, IListRenderProps, IVirtualListProps } from './interfaces';
 import { listVariants } from './variants';
 
-/** Type guard: batch mode — data + as present. */
+/** Type guard: batch mode — data + (itemAs or as) present. */
 function isBatchMode<T>(props: IListProps<T>): props is IListBatchProps<T> {
-  return (props as IListBatchProps<T>).data !== undefined && (props as IListBatchProps<T>).as !== undefined;
+  const p = props as IListBatchProps<T>;
+  return p.data !== undefined && (p.itemAs !== undefined || p.as !== undefined);
 }
 
 /** Type guard: render-prop mode — items + children (function) present. */
@@ -20,22 +21,38 @@ export function List<T = unknown>(props: IListProps<T>) {
   if (isBatchMode(props)) {
     const [local, variants, others] = splitProps(
       props,
-      ['class', 'style', 'data', 'as', 'itemProps'],
+      ['class', 'style', 'data', 'itemAs', 'as', 'itemProps', 'min', 'gap'],
       ['variant', 'orientation'],
     );
 
     const { className, style } = createStyle(listVariants, {
       variant: variants.variant,
-      orientation: variants.orientation,
-      class: local.class,
-      style: local.style,
+      orientation: local.min ? undefined : variants.orientation,
+      class: local.min ? undefined : local.class,
+      style: local.min ? undefined : local.style,
     });
 
     const getItemProps = local.itemProps ?? ((item: T) => item as Record<string, unknown>);
-    const ItemTpl = local.as;
+    // `itemAs` is canonical (Shape-compatible); `as` is the deprecated alias.
+    const ItemTpl = (local.itemAs ?? local.as) as NonNullable<typeof local.itemAs>;
+
+    const gridStyle = (): JSX.CSSProperties | undefined =>
+      local.min
+        ? {
+            display: 'grid',
+            'grid-template-columns': `repeat(auto-fit, minmax(${local.min}, 1fr))`,
+            gap: local.gap ?? '0.5rem',
+            width: '100%',
+            ...(typeof local.style === 'object' ? local.style : {}),
+          }
+        : undefined;
 
     return (
-      <ul class={className()} style={style() as JSX.CSSProperties} {...(others as object)}>
+      <ul
+        class={local.min ? local.class : className()}
+        style={(local.min ? gridStyle() : style()) as JSX.CSSProperties}
+        {...(others as object)}
+      >
         <For each={local.data}>
           {(item) => <ItemTpl {...getItemProps(item)} />}
         </For>

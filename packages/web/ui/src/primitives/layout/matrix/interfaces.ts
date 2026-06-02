@@ -108,6 +108,26 @@ export interface IRow {
    * Пример: `minHeight: 0.1` → ряд не схлопнется ниже 10 % высоты лейаута.
    */
   minHeight?: number;
+  // -------------------------------------------------------------------------
+  // Grid-canvas props (ADR 026) — опциональны.
+  // Присутствие `grid` переключает зону в grid-режим (только при dndMode:'insert').
+  // Отсутствует → текущий flow/corvu/packing путь без изменений.
+  // -------------------------------------------------------------------------
+  /**
+   * Включает grid-канвас для этой зоны (ADR 026).
+   * Активен только при `dndMode:'insert'`. В остальных режимах игнорируется.
+   *
+   * - `cols` — ширина сетки (колонок). Default: 12.
+   * - `rowHeight` — высота одного grid-row юнита (px). Default: 64.
+   * - `compact` — стратегия разрешения коллизий:
+   *     - `'none'` (default) — displacement-only; дырки допустимы.
+   *     - `'vertical'` — после любого изменения компактирует все ячейки вверх.
+   */
+  grid?: {
+    cols?: number;
+    rowHeight?: number;
+    compact?: 'none' | 'vertical';
+  };
 }
 
 export interface ICell {
@@ -159,6 +179,20 @@ export interface ICell {
    * (или `row.accepts` не задан).
    */
   group?: string;
+  // -------------------------------------------------------------------------
+  // Grid-canvas props (ADR 026) — опциональны.
+  // -------------------------------------------------------------------------
+  /**
+   * Позиция и размер в grid-зоне (grid-юниты, 0-based).
+   * Игнорируется в flow-зонах. Обязателен для cells, уже размещённых в grid-зоне.
+   * Устанавливается движком при rail→grid материализации.
+   */
+  grid?: { x: number; y: number; w: number; h: number };
+  /**
+   * Размер по умолчанию при drag'е из rail в grid-зону (ADR 026).
+   * Если не задан — используется fallback { w: 2, h: 2 }.
+   */
+  defaultGrid?: { w: number; h: number };
 }
 
 // ---------------------------------------------------------------------------
@@ -190,7 +224,8 @@ export type MatrixLayoutMode = 'view' | 'edit';
 
 export type LayoutChangeEvent =
   | { kind: 'swap'; a: string; b: string }
-  | { kind: 'insert'; id: string; toRow: number; toIndex: number };
+  | { kind: 'insert'; id: string; toRow: number; toIndex: number }
+  | { kind: 'grid'; id: string; zone: string; x: number; y: number; w: number; h: number };
 
 // ---------------------------------------------------------------------------
 // Props

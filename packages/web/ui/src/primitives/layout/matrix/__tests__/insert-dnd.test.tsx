@@ -225,9 +225,8 @@ describe('Matrix — insert-mode DnD', () => {
     expect(container.querySelector('[data-testid="c3"]')).not.toBeNull();
   });
 
-  it('IInsertEngine.getSortable API: packing-zone insert renders after engine construction', () => {
-    // Structural regression: before the fix, createItem was called in an effect
-    // (wrong owner scope). Now it is called in the <For> render scope.
+  it('IInsertEngine.getZone API: packing-zone insert renders after engine construction', () => {
+    // ADR 025: new engine uses getZone(rowId) instead of getSortable(rowId).
     // This test verifies that multiple draggable cells in a packing zone
     // (wrap=true) all appear — none lost due to stale pointerdown listener.
     cleanup = render(
@@ -252,8 +251,8 @@ describe('Matrix — insert-mode DnD', () => {
     );
 
     // All three cells must be in the DOM.
-    // In the buggy version cell p1 (the "initial zone" cell) would lose its
-    // pointerdown listener after the first createEffect run.
+    // In the new model, zone.createItem is called inside the <For> render scope
+    // for each cell — ensuring correct Solid lifecycle ownership.
     expect(container.querySelector('[data-testid="p1"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="p2"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="p3"]')).not.toBeNull();

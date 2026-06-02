@@ -1026,6 +1026,199 @@ export const FixedRailZone: Story = {
   },
 };
 
+// ===========================================================================
+// Grid-canvas stories (ADR 026 — dndMode:'insert' + row.grid)
+// ===========================================================================
+
+/**
+ * Grid-canvas: a 24-column CSS Grid zone with 4 freely-positioned tiles.
+ *
+ * Each tile carries `grid: { x, y, w, h }` coordinates. In edit mode:
+ *   - SE corner handle (12×12 px, bottom-right) resizes both axes.
+ *   - E handle (right edge) resizes width only.
+ *   - S handle (bottom edge) resizes height only.
+ *   - Dragging a tile (grab anywhere that is NOT a handle) moves it; neighbors
+ *     are displaced on collision (resizeItem invariant: resized cell x/y unchanged).
+ *
+ * Defaults: cols=24, rowHeight=20px → each unit ≈ 33px wide × 20px tall at
+ * standard panel width. This granularity makes a small drag (≥17px horizontal
+ * or ≥10px vertical) cross at least one unit boundary, so resize and move feel
+ * immediately responsive without needing to drag far.
+ *
+ * The `onLayoutChange` action fires with `{ kind:'grid', id, zone, x, y, w, h }`
+ * on every finalized resize (pointerup) or drop.
+ */
+export const GridCanvasBasic: Story = {
+  name: 'grid-canvas · basic (4 tiles, edit mode)',
+  argTypes: {
+    onLayoutChange: { action: 'layoutChange' },
+  },
+  render: (args) => {
+    const tile = (label: string, bg: string, detail: string) => (
+      <div
+        class="flex h-full w-full flex-col items-center justify-center gap-1 rounded text-xs font-bold text-foreground"
+        style={{ background: bg }}
+      >
+        <span class="text-sm">{label}</span>
+        <span class="font-normal text-muted-foreground">{detail}</span>
+      </div>
+    );
+    return (
+      <Matrix
+        layoutMode="edit"
+        dndMode="insert"
+        onLayoutChange={(e) => args.onLayoutChange?.(e)}
+        rows={[
+          {
+            id: 'grid-main',
+            // grid activates the free-form CSS Grid canvas (ADR 026).
+            // cols/rowHeight default to 24/20 — override here for legibility.
+            grid: { cols: 24, rowHeight: 20, compact: 'none' },
+            cells: [
+              {
+                id: 'tile-a',
+                children: tile('Tile A', 'rgba(99,102,241,0.22)', 'x:0 y:0 w:8 h:6'),
+                draggable: true,
+                group: 'tile',
+                grid: { x: 0, y: 0, w: 8, h: 6 },
+                defaultGrid: { w: 8, h: 6 },
+              },
+              {
+                id: 'tile-b',
+                children: tile('Tile B', 'rgba(34,197,94,0.22)', 'x:8 y:0 w:8 h:4'),
+                draggable: true,
+                group: 'tile',
+                grid: { x: 8, y: 0, w: 8, h: 4 },
+                defaultGrid: { w: 8, h: 4 },
+              },
+              {
+                id: 'tile-c',
+                children: tile('Tile C', 'rgba(244,114,182,0.22)', 'x:16 y:0 w:8 h:8'),
+                draggable: true,
+                group: 'tile',
+                grid: { x: 16, y: 0, w: 8, h: 8 },
+                defaultGrid: { w: 8, h: 8 },
+              },
+              {
+                id: 'tile-d',
+                children: tile('Tile D', 'rgba(251,146,60,0.22)', 'x:0 y:6 w:16 h:6'),
+                draggable: true,
+                group: 'tile',
+                grid: { x: 0, y: 6, w: 16, h: 6 },
+                defaultGrid: { w: 16, h: 6 },
+              },
+            ],
+          },
+        ]}
+      />
+    );
+  },
+};
+
+/**
+ * Grid-canvas + rail: a left rail zone (vertical packing, flow) alongside a right
+ * grid-canvas zone. Drag tiles from the rail into the grid to materialize them
+ * at the dropped position (placeItem assigns grid coords). Drag tiles within the
+ * grid to move them (moveItem displaces neighbors).
+ *
+ * This is the primary ADR 026 use-case: free-form tile-dashboard with a widget
+ * palette on the left.
+ */
+export const GridCanvasWithRail: Story = {
+  name: 'grid-canvas · rail + grid (drag from rail → place in grid)',
+  argTypes: {
+    onLayoutChange: { action: 'layoutChange' },
+  },
+  render: (args) => {
+    const railTile = (label: string, bg: string) => (
+      <div
+        class="flex h-full w-full items-center justify-center rounded text-xs font-bold text-foreground"
+        style={{ background: bg, 'min-height': '60px' }}
+      >
+        {label}
+        <br />
+        <span class="font-normal opacity-60">drag to grid →</span>
+      </div>
+    );
+    const gridTile = (label: string, bg: string) => (
+      <div
+        class="flex h-full w-full items-center justify-center rounded text-xs font-bold text-foreground"
+        style={{ background: bg }}
+      >
+        {label}
+      </div>
+    );
+    return (
+      <Matrix
+        layoutMode="edit"
+        dndMode="insert"
+        direction="horizontal"
+        onLayoutChange={(e) => args.onLayoutChange?.(e)}
+        rows={[
+          {
+            id: 'rail',
+            height: 0.2,
+            resizable: false,
+            orientation: 'vertical',
+            accepts: ['tile'],
+            cells: [
+              {
+                id: 'rail-map',
+                children: railTile('Map', 'rgba(99,102,241,0.18)'),
+                draggable: true,
+                minH: 60,
+                group: 'tile',
+                defaultGrid: { w: 8, h: 6 },
+              },
+              {
+                id: 'rail-chat',
+                children: railTile('Chat', 'rgba(34,197,94,0.18)'),
+                draggable: true,
+                minH: 60,
+                group: 'tile',
+                defaultGrid: { w: 6, h: 5 },
+              },
+              {
+                id: 'rail-stats',
+                children: railTile('Stats', 'rgba(244,114,182,0.18)'),
+                draggable: true,
+                minH: 60,
+                group: 'tile',
+                defaultGrid: { w: 10, h: 4 },
+              },
+            ],
+          },
+          {
+            id: 'canvas',
+            height: 0.8,
+            resizable: false,
+            grid: { cols: 24, rowHeight: 20, compact: 'none' },
+            accepts: ['tile'],
+            cells: [
+              {
+                id: 'placed-a',
+                children: gridTile('Analytics', 'rgba(99,102,241,0.22)'),
+                draggable: true,
+                group: 'tile',
+                grid: { x: 0, y: 0, w: 12, h: 8 },
+                defaultGrid: { w: 12, h: 8 },
+              },
+              {
+                id: 'placed-b',
+                children: gridTile('Timeline', 'rgba(251,146,60,0.22)'),
+                draggable: true,
+                group: 'tile',
+                grid: { x: 12, y: 0, w: 12, h: 8 },
+                defaultGrid: { w: 12, h: 8 },
+              },
+            ],
+          },
+        ]}
+      />
+    );
+  },
+};
+
 /**
  * Side-by-side zones: main (horizontal wrap-packing zone) on the left +
  * rightbar (vertical packing column) on the right. DnD between zones via

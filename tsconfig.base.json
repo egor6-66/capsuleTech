@@ -41,6 +41,12 @@
       "@capsuletech/web-dnd": [
         "packages/web/dnd/src/index.ts"
       ],
+      "@capsuletech/web-flow": [
+        "packages/web/flow/src/index.ts"
+      ],
+      "@capsuletech/web-charts": [
+        "packages/web/charts/src/index.ts"
+      ],
       "@capsuletech/web-map": [
         "packages/web/map/src/index.ts"
       ],
@@ -124,6 +130,9 @@
       ],
       "@capsuletech/desktop": [
         "packages/desktop/src/index.ts"
+      ],
+      "@capsuletech/desktop/metrics": [
+        "packages/desktop/src/metrics.ts"
       ]
     }
   }

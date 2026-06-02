@@ -100,15 +100,17 @@ export function runBuild(opts: RunBuildOptions): Promise<void>;
 
 12. **`prepack` hook = `node scripts/build-native.mjs`** (PR 6). На каждый `pnpm publish` (release-local.mjs или ручной) cargo build + copy запускается автоматически перед pack — гарантирует `dist/bin/capsule-desktop.exe` в tarball'е. Idempotent (cargo cache); fresh build ~1-2 min, cached ~1-5s. Без prepack tarball был бы broken — `runDev`/`runBuild` consumer'ов (`@capsuletech/cli`) не нашли бы бинарь.
 
-13. **Температуры на Windows (ADR 023).** `sysinfo::Components` возвращает пустой список без admin-прав или специальных WMI-драйверов. `components: []` — норма, не баг. UI должен gracefully обрабатывать пустой массив.
+13. **COM-апартмент на Windows (actor-thread, критично).** `tao` (Tauri windowing) вызывает `OleInitialize` на **главном потоке** в режиме STA. sysinfo `Components` (WMI) и nvml-wrapper `Nvml::init()` инициализируют COM в режиме **MTA**. Если любой из них запустится на главном потоке до `tauri::Builder::run()` — `OleInitialize` вернёт `RPC_E_CHANGED_MODE` → паника (exit code 101) при создании окна. **Инвариант:** `SystemSampler::new()` и все COM-инициализирующие вызовы ДОЛЖНЫ происходить на выделенном `std::thread` (sampler actor), а не на главном потоке. В `lib.rs` это обеспечено: канал `mpsc::unbounded_channel` создаётся до `tauri::Builder`, `std::thread::spawn` запускает `SystemSampler::new()` внутри потока. При добавлении Phase-B провайдеров (WMI, AMD, Intel) в `build_gpu_providers()` — они автоматически вызываются из `SystemSampler::new()` на sampler-потоке, инвариант сохраняется.
 
-14. **GPU — только NVIDIA в Phase A (ADR 023).** `nvml-wrapper` использует `libloading` (runtime dlopen). На машинах без NVIDIA или без драйвера `Nvml::init()` → Err → провайдер не регистрируется → `gpus: []`. AMD/Intel добавляются в Phase B без изменения контракта фронта.
+14. **Температуры на Windows (ADR 023).** `sysinfo::Components` возвращает пустой список без admin-прав или специальных WMI-драйверов. `components: []` — норма, не баг. UI должен gracefully обрабатывать пустой массив.
 
-15. **CPU% ≈ 0 на первом `get_system_snapshot` (холодный старт).** sysinfo считает CPU% как разницу двух refresh'ей. `SystemSampler::new()` делает начальный seed. Если `start_monitoring` не запускался перед первым `get_system_snapshot`, первый результат может показывать CPU ≈ 0. Решение: или запустить `start_monitoring` заблаговременно, или выдержать ≥200ms паузу между двумя pull-вызовами.
+15. **GPU — только NVIDIA в Phase A (ADR 023).** `nvml-wrapper` использует `libloading` (runtime dlopen). На машинах без NVIDIA или без драйвера `Nvml::init()` → Err → провайдер не регистрируется → `gpus: []`. AMD/Intel добавляются в Phase B без изменения контракта фронта.
 
-16. **`start_monitoring`/`stop_monitoring` — idempotent.** Повторный `start` прерывает предыдущий task и запускает новый. `stop` при остановленном — no-op.
+16. **CPU% ≈ 0 на первом `get_system_snapshot` (холодный старт).** sysinfo считает CPU% как разницу двух refresh'ей. `SystemSampler::new()` делает начальный seed. Если `start_monitoring` не запускался перед первым `get_system_snapshot`, первый результат может показывать CPU ≈ 0. Решение: или запустить `start_monitoring` заблаговременно, или выдержать ≥200ms паузу между двумя pull-вызовами.
 
-17. **`./metrics` subpath — ТОЛЬКО types, нет JS entry.** `exports["./metrics"]` содержит только `"types"`, нет `"import"`. Используй исключительно `import type { ... } from '@capsuletech/desktop/metrics'`.
+17. **`start_monitoring`/`stop_monitoring` — idempotent.** Повторный `start` прерывает предыдущий task и запускает новый. `stop` при остановленном — no-op.
+
+18. **`./metrics` subpath — ТОЛЬКО types, нет JS entry.** `exports["./metrics"]` содержит только `"types"`, нет `"import"`. Используй исключительно `import type { ... } from '@capsuletech/desktop/metrics'`.
 
 ## План рефакторинга / оптимизаций
 

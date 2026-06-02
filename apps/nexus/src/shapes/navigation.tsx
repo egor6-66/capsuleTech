@@ -11,7 +11,7 @@
  * Items рендерятся через `ui.Button as={ui.Link}` — Button-стили на TanStack
  * `Link` → кликабельная навигационная кнопка, ходит через router (не reload).
  *
- * Mount-сайт — `Widgets.Headers.Main`.
+ * Mount-сайт — `Widgets.Header`.
  */
 const Navigation = Shape((z, ui) => ({
   schema: z.array(

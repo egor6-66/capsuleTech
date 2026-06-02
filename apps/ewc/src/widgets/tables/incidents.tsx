@@ -19,7 +19,7 @@
 import type { IIncident, IIncidentsContext } from '../../features/incidents';
 
 const Incidents = Widget(
-  (Ui, store) => {
+  (_Ui, store) => {
     const data = () => store?.ctx.data as IIncidentsContext | undefined;
     return (
       <Shapes.IncidentsTable

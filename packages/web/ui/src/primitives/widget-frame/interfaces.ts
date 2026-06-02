@@ -1,0 +1,28 @@
+import type { VariantProps } from 'class-variance-authority';
+import type { JSX } from 'solid-js';
+
+import type { widgetFrameCva } from './variants';
+
+export type WidgetFrameVariants = VariantProps<typeof widgetFrameCva>;
+
+export interface IWidgetFrameProps extends JSX.HTMLAttributes<HTMLDivElement>, WidgetFrameVariants {
+  /** Selected/active — reveals the `handles` slot + switches rim to ring color + glow. */
+  active?: boolean;
+  /** Drag-grip corner content (default: a grip glyph). */
+  grip?: JSX.Element;
+  /** Class applied to the grip element so a host can target it (e.g. xyflow dragHandle). Default 'cap-widget-grip'. */
+  gripClass?: string;
+  /** Which corner is chamfered and hosts the grip. Default 'top-right'. */
+  gripCorner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  /** Top-left control when grip is top-right (or top-right otherwise), ALWAYS visible (default: a control glyph). */
+  controls?: JSX.Element;
+  /** Resize handles — rendered ONLY when `active`. Host provides them (e.g. xyflow NodeResizeControl). */
+  handles?: JSX.Element;
+}
+
+export interface IWidgetFrameHandleProps {
+  /** Which corner this bracket sits on. */
+  corner: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  /** Extra classes. */
+  class?: string;
+}
