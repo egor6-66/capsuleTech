@@ -11,6 +11,8 @@ import { Dynamic } from 'solid-js/web';
 const PaletteItem = View(
   (_Ui, props: { type: string; label?: string; icon?: Component<{ class?: string }> }) => (
     <div
+      role="button"
+      tabIndex={0}
       draggable={true}
       onDragStart={(e) => {
         e.dataTransfer?.setData(FLOW_NODE_MIME, props.type);

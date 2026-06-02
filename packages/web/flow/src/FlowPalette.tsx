@@ -34,6 +34,8 @@ export const FlowPalette = (props: IFlowPaletteProps): JSX.Element => {
       <For each={props.items}>
         {(item) => (
           <div
+            role="button"
+            tabIndex={0}
             draggable={true}
             onDragStart={(e) => onDragStart(e, item.type)}
             class="flex cursor-grab items-center gap-2 rounded-md border border-border bg-card p-2 text-sm hover:bg-muted active:cursor-grabbing"
