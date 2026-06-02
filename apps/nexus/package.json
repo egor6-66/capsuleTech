@@ -11,7 +11,9 @@
     "@capsuletech/cli": "workspace:*"
   },
   "dependencies": {
+    "@capsuletech/desktop": "workspace:*",
     "@capsuletech/shared-zod": "workspace:*",
+    "@capsuletech/web-charts": "workspace:*",
     "@capsuletech/web-core": "workspace:*",
     "@capsuletech/web-flow": "workspace:*",
     "@capsuletech/web-profiler": "workspace:*",

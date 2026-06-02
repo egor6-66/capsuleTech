@@ -22,7 +22,7 @@ const WidgetNode = (props: NodeProps<{ type: string }>) => {
     <div class="relative h-full w-full">
       <NodeResizer minWidth={200} minHeight={140} visible={!!props.selected} />
       <Handle type="target" position="left" />
-      <Views.NodeCard label={kind()?.label} icon={kind()?.icon} />
+      <Widgets.NodeBody type={props.data?.type} label={kind()?.label} icon={kind()?.icon} />
       <Handle type="source" position="right" />
     </div>
   );
