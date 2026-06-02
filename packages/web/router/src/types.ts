@@ -69,6 +69,21 @@ export interface ICreateRouterOpts<TRouteTree extends AnyRoute = AnyRoute> {
    * → TanStack видит маршрут `/dashboard`, `current()` возвращает `/dashboard`.
    */
   basepath?: string;
+  /**
+   * URL-путь, на который редиректить при отсутствии совпавшего маршрута,
+   * если ни один route не задал собственный `notFoundComponent`.
+   * Резолвится относительно `basepath`.
+   *
+   * `undefined` — редиректа нет: TanStack отрисует дефолтный экран «Not Found».
+   *
+   * Если конкретный route или rootRoute задаёт `notFoundComponent` —
+   * он имеет приоритет; этот редирект работает только как фреймворковый дефолт
+   * через `defaultNotFoundComponent`.
+   *
+   * Пример: `notFoundRedirect: '/dashboard'` — любой 404 → replace-навигация
+   * на `/dashboard`, без записи в history.
+   */
+  notFoundRedirect?: string;
 }
 
 /**

@@ -35,6 +35,12 @@ interface IBaseProviderProps<TRouteTree extends AnyRoute = AnyRoute> {
    * Default — `true` (вместе с `vitals`).
    */
   showDashboard?: boolean;
+  /**
+   * Путь редиректа при notFound. По умолчанию '/' — несовпавшие маршруты ведут
+   * на корень basepath, откуда app-роутинг/auth решает дальше. Прокидывается
+   * генерируемым bootstrap'ом из capsule.app.ts → router.notFoundRedirect.
+   */
+  notFoundRedirect?: string;
   children?: any;
 }
 
@@ -55,6 +61,7 @@ export function BaseProviders<TRouteTree extends AnyRoute = AnyRoute>(
           routeTree: routeTree() as TRouteTree,
           context: props.routerContext,
           basepath: props.basepath,
+          notFoundRedirect: props.notFoundRedirect ?? '/',
         });
         return (
           // RouterContext is parameterised on the default AnyRoute branch;

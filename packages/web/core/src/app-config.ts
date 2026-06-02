@@ -24,6 +24,17 @@ export interface IAppConfig {
    * Реальная сборка — в bootstrap'е через `createApi(config.api, endpoints)`.
    */
   api?: (ctx: { mw: MwToolbox }) => ApiConfig;
+  /**
+   * Настройки роутера приложения.
+   */
+  router?: {
+    /**
+     * Путь редиректа при notFound (нет совпавшего маршрута и нет собственного
+     * notFoundComponent на route). Резолвится относительно basepath.
+     * Дефолт — '/' (задаётся в BaseProviders).
+     */
+    notFoundRedirect?: string;
+  };
 }
 
 /**

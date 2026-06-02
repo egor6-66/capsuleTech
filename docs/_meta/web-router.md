@@ -19,16 +19,16 @@ Context-based (ADR 003) обёртка над `@tanstack/solid-router`. Factory 
 | Файл | Что |
 |---|---|
 | `packages/web/router/src/index.ts` | barrel: переэкспорт `createRouter`, `useRouter`, `RouterContext`, `RouterProvider`, `AnyRoute` + типы |
-| `packages/web/router/src/service.ts` | `createRouter<TRouteTree>({ routeTree, context? })` — фабрика, value-импорт TanStack |
+| `packages/web/router/src/service.ts` | `createRouter<TRouteTree>({ routeTree, context?, notFoundRedirect? })` — фабрика, value-импорт TanStack |
 | `packages/web/router/src/types.ts` | `wrap()` + типы (`ICapsuleRouter`, `ICreateRouterOpts`, `ICapsuleRouterContext`) |
 | `packages/web/router/src/context.ts` | `RouterContext` (Solid Context) + `useRouter()` hook с throw'ом вне Provider'а |
-| `packages/web/router/src/__tests__/` | node-env: `wrap` + `normalizeBase` (20), `useRouter` (2) — без jsdom |
+| `packages/web/router/src/__tests__/` | node-env: `wrap` + `normalizeBase` (20), `useRouter` (2), `notFoundRedirect` (5) — без jsdom |
 
 ## Public API
 
 ```ts
 // Фабрика
-createRouter<TRouteTree>({ routeTree, context?, basepath? }): {
+createRouter<TRouteTree>({ routeTree, context?, basepath?, notFoundRedirect? }): {
   raw: TanStackRouter<TRouteTree>;
   capsuleRouter: ICapsuleRouter<TRouteTree>;
 }
@@ -40,7 +40,7 @@ useRouter(): ICapsuleRouter   // generic TRouteTree теряется (см. го
 ICapsuleRouter<TRouteTree>             // { goTo, back, current, raw }
 ICapsuleRouterContext<TUser = {}>      // TUser & { [k: string]: unknown }
 IGoToOpts                              // { params?, search?, hash?, replace? }
-ICreateRouterOpts<TRouteTree>          // { routeTree, context?, basepath? }
+ICreateRouterOpts<TRouteTree>          // { routeTree, context?, basepath?, notFoundRedirect? }
 TanStackRouter                         // re-export @tanstack/solid-router Router
 AnyRoute                               // re-export @tanstack/router-core
 normalizeBase                          // pure helper: нормализует basepath для TanStack
@@ -117,6 +117,7 @@ Precedent: page-transition attempt in ewc 2026-05-28; `<Animate keyed={location(
 | Интегрировать в SSR | `wrap().back()` уже на `raw.history`; в `createRouter` добавить history-injection |
 | Использовать TanStack hooks напрямую (`useNavigate`, `useRouterState`) | НЕ надо — иди через `useRouter()` → `router.raw.*` (ADR 003 раздел B) |
 | Пробросить `basepath` из `BaseProviders` в web-core | Задача `owner-web-core` — добавить `basepath?` проп в `BaseProviders` и передать в `createRouter`. `normalizeBase` уже в `web-router/types.ts`. |
+| Пробросить `notFoundRedirect` из `BaseProviders` в web-core | Задача `owner-web-core` — добавить `notFoundRedirect?` проп в `BaseProviders` и передать в `createRouter`. Механизм уже реализован в `web-router/service.ts`. |
 
 ## Cross-links
 
