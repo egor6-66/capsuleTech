@@ -15,16 +15,33 @@ import {
   FieldLabelManifest,
   FieldManifest,
 } from './manifests/field';
+import { GroupManifest } from './manifests/group';
 import { InputManifest } from './manifests/input';
+import { LabelManifest } from './manifests/label';
+import { FlexManifest, GridManifest } from './manifests/layout';
+import { ListManifest } from './manifests/list';
+import { SeparatorManifest } from './manifests/separator';
+import { SkeletonManifest } from './manifests/skeleton';
+import { SpinnerManifest } from './manifests/spinner';
+import { ToggleManifest } from './manifests/toggle';
+import { TypographyManifest } from './manifests/typography';
 import type { ComponentCategory, IComponentManifest, IManifestSummary } from './types';
 
 const ALL: IComponentManifest[] = [
   // controls
   ButtonManifest,
   InputManifest,
+  ToggleManifest,
+  // typography
+  TypographyManifest,
+  LabelManifest,
   // containers
   CardManifest,
   FieldManifest,
+  GridManifest,
+  FlexManifest,
+  GroupManifest,
+  ListManifest,
   // composite parts
   CardHeaderManifest,
   CardTitleManifest,
@@ -35,6 +52,10 @@ const ALL: IComponentManifest[] = [
   FieldContentManifest,
   FieldDescriptionManifest,
   FieldErrorManifest,
+  // feedback
+  SeparatorManifest,
+  SpinnerManifest,
+  SkeletonManifest,
   // wrappers
   AnimateManifest,
 ];
