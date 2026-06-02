@@ -11,6 +11,8 @@
 /* @vitest-environment jsdom */
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createDraggable } from '../draggable';
+import { createDroppable } from '../droppable';
 import { DnDProvider, useDnD } from '../context';
 
 let container: HTMLDivElement;
@@ -210,7 +212,7 @@ describe('DnDProvider — window listeners lifecycle', () => {
   // -------------------------------------------------------------------------
   // Test 5: Escape key also cleans up listeners
   // -------------------------------------------------------------------------
-  it('Escape keydown removes all 4 window listeners', () => {
+  it('Escape keydown removes all 4 window listeners (direct startDrag)', () => {
     const removeSpy = vi.spyOn(window, 'removeEventListener');
     let capturedDnD: ReturnType<typeof useDnD> | null = null;
 
@@ -253,5 +255,267 @@ describe('DnDProvider — window listeners lifecycle', () => {
 
     dispose();
     removeSpy.mockRestore();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Activation threshold — plain click must NOT trigger drag or onDrop
+// ---------------------------------------------------------------------------
+
+describe('activation threshold (createDraggable)', () => {
+  // jsdom does not implement document.elementFromPoint — stub it so that
+  // droppable hit-testing inside DnDProvider.onPointerUp doesn't crash if
+  // somehow startDrag fires unexpectedly.
+  let origEFP: typeof document.elementFromPoint;
+  beforeEach(() => {
+    origEFP = document.elementFromPoint;
+    document.elementFromPoint = () => null;
+  });
+  afterEach(() => {
+    document.elementFromPoint = origEFP;
+  });
+
+  // -------------------------------------------------------------------------
+  // Test: pointerdown + pointerup without movement → onDrop NOT called
+  // -------------------------------------------------------------------------
+  it('plain click (no movement) does not call onDrop', () => {
+    const onDrop = vi.fn();
+
+    let draggableEl!: HTMLElement;
+    let droppableEl!: HTMLElement;
+
+    const Harness = () => {
+      const drag = createDraggable({ id: 'click-drag', data: { kind: 'test' } });
+      const drop = createDroppable({
+        id: 'click-drop',
+        accepts: () => true,
+        onDrop,
+      });
+
+      return (
+        <div>
+          <div ref={(el) => { draggableEl = el; drag.ref(el); }} id="drag-el">drag</div>
+          <div ref={(el) => { droppableEl = el; drop.ref(el); }} id="drop-el">drop</div>
+        </div>
+      );
+    };
+
+    const dispose = render(
+      () => (
+        // activationDistance=10 — far higher than zero movement in this test
+        <DnDProvider activationDistance={10}>
+          <Harness />
+        </DnDProvider>
+      ),
+      container,
+    );
+
+    // Simulate plain click: pointerdown then immediate pointerup at same coords
+    const down = new PointerEvent('pointerdown', {
+      bubbles: true,
+      cancelable: true,
+      clientX: 50,
+      clientY: 50,
+      button: 0,
+    });
+    draggableEl.dispatchEvent(down);
+
+    // pointerup fires on window without any intervening pointermove
+    window.dispatchEvent(
+      new PointerEvent('pointerup', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 50,
+        clientY: 50,
+      }),
+    );
+
+    expect(onDrop).not.toHaveBeenCalled();
+
+    dispose();
+  });
+
+  // -------------------------------------------------------------------------
+  // Test: movement past threshold triggers startDrag → window listeners added
+  // -------------------------------------------------------------------------
+  it('movement >= activationDistance triggers startDrag (window listeners attached)', () => {
+    const addSpy = vi.spyOn(window, 'addEventListener');
+
+    let draggableEl!: HTMLElement;
+
+    const Harness = () => {
+      const drag = createDraggable({ id: 'threshold-drag', data: { kind: 'test' } });
+      return (
+        <div ref={(el) => { draggableEl = el; drag.ref(el); }} id="drag-threshold">drag</div>
+      );
+    };
+
+    const dispose = render(
+      () => (
+        <DnDProvider activationDistance={5}>
+          <Harness />
+        </DnDProvider>
+      ),
+      container,
+    );
+
+    // pointerdown at (0, 0)
+    draggableEl.dispatchEvent(
+      new PointerEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 0,
+        clientY: 0,
+        button: 0,
+      }),
+    );
+
+    // Clear spy — we only want to count window.addEventListener calls that happen
+    // AFTER the threshold is crossed (those come from DnDProvider.startDrag).
+    addSpy.mockClear();
+
+    // Move 10px — past the 5px threshold
+    window.dispatchEvent(
+      new PointerEvent('pointermove', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 10,
+        clientY: 0,
+      }),
+    );
+
+    // DnDProvider.startDrag should have attached exactly 4 window listeners
+    const dragEvents = ['pointermove', 'pointerup', 'pointercancel', 'keydown'];
+    for (const evt of dragEvents) {
+      const calls = addSpy.mock.calls.filter((c) => c[0] === evt);
+      expect(calls.length, `${evt} should be added once after threshold`).toBe(1);
+    }
+
+    // Cleanup
+    window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 10, clientY: 0 }));
+    dispose();
+    addSpy.mockRestore();
+  });
+
+  // -------------------------------------------------------------------------
+  // Test: movement below threshold does NOT trigger startDrag
+  // -------------------------------------------------------------------------
+  it('movement < activationDistance does NOT trigger startDrag', () => {
+    const addSpy = vi.spyOn(window, 'addEventListener');
+
+    let draggableEl!: HTMLElement;
+
+    const Harness = () => {
+      const drag = createDraggable({ id: 'below-threshold', data: { kind: 'test' } });
+      return (
+        <div ref={(el) => { draggableEl = el; drag.ref(el); }} id="drag-below">drag</div>
+      );
+    };
+
+    const dispose = render(
+      () => (
+        // activationDistance=20 — we'll only move 5px
+        <DnDProvider activationDistance={20}>
+          <Harness />
+        </DnDProvider>
+      ),
+      container,
+    );
+
+    draggableEl.dispatchEvent(
+      new PointerEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 0,
+        clientY: 0,
+        button: 0,
+      }),
+    );
+
+    addSpy.mockClear();
+
+    // Move only 5px — below 20px threshold
+    window.dispatchEvent(
+      new PointerEvent('pointermove', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 5,
+        clientY: 0,
+      }),
+    );
+
+    const dragEvents = ['pointermove', 'pointerup', 'pointercancel', 'keydown'];
+    for (const evt of dragEvents) {
+      const calls = addSpy.mock.calls.filter((c) => c[0] === evt);
+      expect(calls.length, `${evt} should NOT be added (threshold not crossed)`).toBe(0);
+    }
+
+    // Release without crossing threshold
+    window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 5, clientY: 0 }));
+    dispose();
+    addSpy.mockRestore();
+  });
+
+  // -------------------------------------------------------------------------
+  // Test: per-draggable activationDistance overrides provider value
+  // -------------------------------------------------------------------------
+  it('per-draggable activationDistance overrides provider default', () => {
+    const addSpy = vi.spyOn(window, 'addEventListener');
+
+    let draggableEl!: HTMLElement;
+
+    const Harness = () => {
+      // Provider says 50px, but this draggable overrides to 2px
+      const drag = createDraggable({
+        id: 'per-drag-threshold',
+        data: { kind: 'test' },
+        activationDistance: 2,
+      });
+      return (
+        <div ref={(el) => { draggableEl = el; drag.ref(el); }} id="drag-per">drag</div>
+      );
+    };
+
+    const dispose = render(
+      () => (
+        <DnDProvider activationDistance={50}>
+          <Harness />
+        </DnDProvider>
+      ),
+      container,
+    );
+
+    draggableEl.dispatchEvent(
+      new PointerEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 0,
+        clientY: 0,
+        button: 0,
+      }),
+    );
+
+    addSpy.mockClear();
+
+    // Move only 3px — below provider's 50px but above draggable's 2px
+    window.dispatchEvent(
+      new PointerEvent('pointermove', {
+        bubbles: true,
+        cancelable: true,
+        clientX: 3,
+        clientY: 0,
+      }),
+    );
+
+    // Draggable override of 2px should be respected → startDrag fired
+    const dragEvents = ['pointermove', 'pointerup', 'pointercancel', 'keydown'];
+    for (const evt of dragEvents) {
+      const calls = addSpy.mock.calls.filter((c) => c[0] === evt);
+      expect(calls.length, `${evt} should be added once (draggable override)`).toBe(1);
+    }
+
+    window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 3, clientY: 0 }));
+    dispose();
+    addSpy.mockRestore();
   });
 });

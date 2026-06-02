@@ -30,6 +30,8 @@ interface IDnDContext {
     overId: Accessor<DroppableId | null>;
     canDrop: Accessor<boolean>;
   };
+  /** Порог активации drag'а в px. Берётся из IDnDProviderProps.activationDistance. */
+  activationDistance: number;
   registerDraggable: (entry: IDraggableEntry) => () => void;
   registerDroppable: (entry: IDroppableEntry) => () => void;
   startDrag: (id: DraggableId, e: PointerEvent) => void;
@@ -340,6 +342,7 @@ export const DnDProvider: Component<IDnDProviderProps> = (props) => {
 
   const api: IDnDContext = {
     state: { activeId, activeData, pointer, overId, canDrop },
+    activationDistance: props.activationDistance ?? 4,
     registerDraggable: (entry) => {
       draggables.set(entry.id, entry);
       return () => {
