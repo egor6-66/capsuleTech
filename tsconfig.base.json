@@ -41,6 +41,9 @@
       "@capsuletech/web-dnd": [
         "packages/web/dnd/src/index.ts"
       ],
+      "@capsuletech/web-flow": [
+        "packages/web/flow/src/index.ts"
+      ],
       "@capsuletech/web-map": [
         "packages/web/map/src/index.ts"
       ],

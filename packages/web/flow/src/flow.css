@@ -1,0 +1,31 @@
+/**
+ * Тема @dschz/solid-flow под токены capsule (web-style).
+ * `colorMode` даёт тёмный/светлый базис для всего; эти оверрайды подводят
+ * pane / minimap / controls под активную тему через --xy-* переменные
+ * (значения из наших --background/--card/--border/--primary/...).
+ * Загружается ПОСЛЕ @dschz/solid-flow/styles → перекрывает дефолты.
+ */
+.solid-flow {
+  /* холст */
+  --xy-background-color: var(--background);
+
+  /* minimap */
+  --xy-minimap-background-color: var(--card);
+  --xy-minimap-mask-background-color: color-mix(in oklab, var(--background), transparent 30%);
+  --xy-minimap-node-background-color: var(--primary);
+
+  /* controls */
+  --xy-controls-button-background-color: var(--card);
+  --xy-controls-button-background-color-hover: var(--muted);
+  --xy-controls-button-color: var(--foreground);
+  --xy-controls-button-color-hover: var(--foreground);
+  --xy-controls-button-border-color: var(--border);
+}
+
+/* minimap / controls — скруглить и обвести как наши карточки */
+.solid-flow__minimap,
+.solid-flow__controls {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}

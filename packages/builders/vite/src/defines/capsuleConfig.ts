@@ -159,6 +159,7 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
       exclude: [
         '@capsuletech/web-core',
         '@capsuletech/web-dnd',
+        '@capsuletech/web-flow',
         '@capsuletech/web-ui-creator',
         '@capsuletech/web-map',
         '@capsuletech/web-profiler',
