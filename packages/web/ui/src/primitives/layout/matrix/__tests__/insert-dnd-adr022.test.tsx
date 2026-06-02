@@ -133,12 +133,11 @@ describe('ADR 025 onDrop commit logic — pure array model', () => {
     const { rows, itemId, fromZone, toZone, toIndex } = params;
 
     const srcRowIdx = rows.findIndex((r) => r.id === fromZone);
-    const srcCellIdx = rows[srcRowIdx].cells.findIndex((c) => c === itemId);
+    const srcCellIdx = rows[srcRowIdx].cells.indexOf(itemId);
     const tgtRowIdx = rows.findIndex((r) => r.id === toZone);
 
     const sourceCells = rows[srcRowIdx].cells.filter((_, i) => i !== srcCellIdx);
-    const targetCellsBeforeInsert =
-      srcRowIdx === tgtRowIdx ? sourceCells : rows[tgtRowIdx].cells;
+    const targetCellsBeforeInsert = srcRowIdx === tgtRowIdx ? sourceCells : rows[tgtRowIdx].cells;
     const newTargetCells = [
       ...targetCellsBeforeInsert.slice(0, toIndex),
       itemId,
@@ -156,21 +155,39 @@ describe('ADR 025 onDrop commit logic — pure array model', () => {
   it('same-zone reorder: drag item from index 0 to index 2', () => {
     const rows = [{ id: 'zone', cells: ['a', 'b', 'c'] }];
     // drag 'a' to after 'c': toIndex=2 against filtered ['b','c'] → inserts at 2
-    const result = simulateDrop({ rows, itemId: 'a', fromZone: 'zone', toZone: 'zone', toIndex: 2 });
+    const result = simulateDrop({
+      rows,
+      itemId: 'a',
+      fromZone: 'zone',
+      toZone: 'zone',
+      toIndex: 2,
+    });
     expect(result[0].cells).toEqual(['b', 'c', 'a']);
   });
 
   it('same-zone reorder: drag last item to start', () => {
     const rows = [{ id: 'zone', cells: ['a', 'b', 'c'] }];
     // drag 'c' to index 0
-    const result = simulateDrop({ rows, itemId: 'c', fromZone: 'zone', toZone: 'zone', toIndex: 0 });
+    const result = simulateDrop({
+      rows,
+      itemId: 'c',
+      fromZone: 'zone',
+      toZone: 'zone',
+      toIndex: 0,
+    });
     expect(result[0].cells).toEqual(['c', 'a', 'b']);
   });
 
   it('same-zone reorder: drag middle item to end', () => {
     const rows = [{ id: 'zone', cells: ['a', 'b', 'c'] }];
     // drag 'b' to end: toIndex=2 against filtered ['a','c'] → ['a','c','b']
-    const result = simulateDrop({ rows, itemId: 'b', fromZone: 'zone', toZone: 'zone', toIndex: 2 });
+    const result = simulateDrop({
+      rows,
+      itemId: 'b',
+      fromZone: 'zone',
+      toZone: 'zone',
+      toIndex: 2,
+    });
     expect(result[0].cells).toEqual(['a', 'c', 'b']);
   });
 
@@ -201,7 +218,13 @@ describe('ADR 025 onDrop commit logic — pure array model', () => {
       { id: 'rail', cells: ['p1'] },
     ];
     // Move 'w2' to rail at end (index 1)
-    const result = simulateDrop({ rows, itemId: 'w2', fromZone: 'main', toZone: 'rail', toIndex: 1 });
+    const result = simulateDrop({
+      rows,
+      itemId: 'w2',
+      fromZone: 'main',
+      toZone: 'rail',
+      toIndex: 1,
+    });
     expect(result[0].cells).toEqual(['w1']);
     expect(result[1].cells).toEqual(['p1', 'w2']);
   });
@@ -211,7 +234,13 @@ describe('ADR 025 onDrop commit logic — pure array model', () => {
       { id: 'main', cells: ['w1', 'w2'] },
       { id: 'rail', cells: ['p1', 'p2'] },
     ];
-    const result = simulateDrop({ rows, itemId: 'w1', fromZone: 'main', toZone: 'rail', toIndex: 0 });
+    const result = simulateDrop({
+      rows,
+      itemId: 'w1',
+      fromZone: 'main',
+      toZone: 'rail',
+      toIndex: 0,
+    });
     expect(result[0].cells).toEqual(['w2']);
     expect(result[1].cells).toEqual(['w1', 'p1', 'p2']);
   });

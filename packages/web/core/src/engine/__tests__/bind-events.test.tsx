@@ -215,7 +215,6 @@ describe('bindEvents — event bubble dedup (eventMarker)', () => {
 
     // Inner: the actual DataTableRow wrapper
     const InnerComp = (props: any) => (
-      // biome-ignore lint/a11y/useKeyWithClickEvents: test fixture, not real UI
       <tr data-testid="inner-row" onClick={props.onClick}>
         <td>{props.children}</td>
       </tr>
@@ -370,7 +369,6 @@ describe('bindEvents — onDblClick dispatch', () => {
     const ctx = mkCtx() as any;
 
     const InnerComp = (props: any) => (
-      // biome-ignore lint/a11y/useKeyWithClickEvents: test fixture, not real UI
       <tr data-testid="inner-row" onDblClick={props.onDblClick}>
         <td>{props.children}</td>
       </tr>
@@ -378,7 +376,6 @@ describe('bindEvents — onDblClick dispatch', () => {
     const WrappedInner = bindEvents(ctx, InnerComp as any, 'DataTableRow') as any;
 
     const OuterComp = (props: any) => (
-      // biome-ignore lint/a11y/useKeyWithClickEvents: test fixture, not real UI
       <tbody data-testid="outer-tbody" onDblClick={props.onDblClick}>
         {props.children}
       </tbody>
