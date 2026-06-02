@@ -527,6 +527,7 @@ const renderPackingRow = (
 interface IGridOpts {
   registerGridContainer: IInsertEngine['registerGridContainer'];
   commitGridMove: IInsertEngine['commitGridMove'];
+  commitGridResize: IInsertEngine['commitGridResize'];
 }
 
 // Default grid config constants (mirrors defaults in insert.tsx)
@@ -551,20 +552,22 @@ const renderGridRow = (
   /** Zone provided by createInsertEngine (always defined in grid mode). */
   zone: ISortableZone,
   isDragging: Accessor<boolean>,
+  layoutMode: Accessor<'view' | 'edit'>,
   settingsMode: Accessor<boolean>,
   gridOpts: IGridOpts,
 ): JSX.Element => {
   const cols = row.grid?.cols ?? GRID_DEFAULT_COLS;
   const rowHeight = row.grid?.rowHeight ?? GRID_DEFAULT_ROW_HEIGHT;
+  const rowId = row.id!;
 
   // Wire container ref to BOTH zone.containerRef (for droppable) AND
   // gridOpts.registerGridContainer (for pointToCell measurement at drop time).
   const gridContainerRef = (el: HTMLElement | null): void => {
     if (el) {
       zone.containerRef(el);
-      gridOpts.registerGridContainer(row.id!, el);
+      gridOpts.registerGridContainer(rowId, el);
     } else {
-      gridOpts.registerGridContainer(row.id!, null);
+      gridOpts.registerGridContainer(rowId, null);
     }
   };
 
@@ -617,6 +620,141 @@ const renderGridRow = (
               </div>
             ) : null;
 
+          // -----------------------------------------------------------------------
+          // ADR 026 Phase 2c: Grid resize handles.
+          //
+          // Visible only in edit mode. Three handles are provided:
+          //   SE corner (bottom-right) — resizes both W and H simultaneously.
+          //   E  edge  (right)         — resizes W only (H stays fixed).
+          //   S  edge  (bottom)        — resizes H only (W stays fixed).
+          //
+          // All handles carry `data-dnd-cancel=""` so that grabbing a handle does
+          // NOT start the cell's drag (createDraggable bails out on
+          // closest('[data-dnd-cancel]')). e.stopPropagation() is also called so
+          // that other delegated listener layers (e.g. DnDProvider's pointerdown)
+          // do not fire.
+          //
+          // Unit computation on pointermove:
+          //   - The grid container's bounding rect is read once at pointerdown
+          //     (snapshotted as containerRect).
+          //   - colWidthPx  = containerRect.width  / cols
+          //   - rowHeightPx = rowHeight (a constant from row.grid.rowHeight)
+          //   - deltaX_px   = currentPointer.clientX - startPointer.clientX
+          //   - deltaY_px   = currentPointer.clientY - startPointer.clientY
+          //   - newW = max(1, round( (startW * colWidthPx + deltaX_px) / colWidthPx ))
+          //   - newH = max(1, round( (startH * rowHeight  + deltaY_px) / rowHeight  ))
+          //   Clamped to [1, cols - x] for w; [1, ∞) for h.
+          //
+          // commitGridResize is called on every pointermove (live update). Neighbors
+          // are displaced immediately by resizeItem so the grid reflects the new
+          // layout in real time.
+          //
+          // NOTE: getBoundingClientRect returns all-zeros in jsdom — pixel-accurate
+          // drag geometry is deferred to Phase 3 browser verification. The structural
+          // presence of handles and `data-dnd-cancel` is tested in jsdom (G12/G13).
+          // -----------------------------------------------------------------------
+
+          const gridResizeHandles = (): JSX.Element => {
+            if (layoutMode() !== 'edit') return null;
+
+            // Read the container element at event time (it may not exist at closure creation).
+            const getContainerEl = (): HTMLElement | null =>
+              document.querySelector(`[data-grid-zone="${rowId}"]`) as HTMLElement | null;
+
+            // Shared pointer-down factory — `mode` controls which axes are resized.
+            const makePointerDown =
+              (mode: 'se' | 'e' | 's') =>
+              (e: PointerEvent): void => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const handle = e.currentTarget as HTMLElement;
+                handle.setPointerCapture?.(e.pointerId);
+
+                // Snapshot the cell's current grid coordinates at drag-start.
+                const startW = cell.grid?.w ?? w;
+                const startH = cell.grid?.h ?? h;
+                const startClientX = e.clientX;
+                const startClientY = e.clientY;
+
+                // Snapshot container rect once (avoids layout thrash on every move).
+                const containerEl = getContainerEl();
+                const containerRect = containerEl?.getBoundingClientRect() ?? {
+                  width: 0,
+                  height: 0,
+                };
+                // colWidthPx: width of one grid column in px.
+                const colWidthPx = containerRect.width > 0 ? containerRect.width / cols : 0;
+                // rowHeightPx: height of one grid row unit in px (static from config).
+                const rowHeightPx = rowHeight;
+
+                const onMove = (ev: PointerEvent): void => {
+                  const deltaX = ev.clientX - startClientX;
+                  const deltaY = ev.clientY - startClientY;
+
+                  // Compute new w/h in grid units, snapping to nearest unit.
+                  const newW =
+                    mode !== 's' && colWidthPx > 0
+                      ? Math.max(1, Math.round((startW * colWidthPx + deltaX) / colWidthPx))
+                      : startW;
+                  const newH =
+                    mode !== 'e' && rowHeightPx > 0
+                      ? Math.max(1, Math.round((startH * rowHeightPx + deltaY) / rowHeightPx))
+                      : startH;
+
+                  gridOpts.commitGridResize(rowId, cell.id, { w: newW, h: newH });
+                };
+
+                const onUp = (): void => {
+                  handle.removeEventListener('pointermove', onMove);
+                  handle.removeEventListener('pointerup', onUp);
+                };
+
+                handle.addEventListener('pointermove', onMove);
+                handle.addEventListener('pointerup', onUp);
+              };
+
+            // SE corner handle — bottom-right, 12×12 px touch target, cursor nwse-resize.
+            const seHandle = (
+              <div
+                data-grid-resize="se"
+                data-dnd-cancel=""
+                class="absolute bottom-0 right-0 z-20 h-3 w-3 cursor-nwse-resize rounded-tl-sm bg-border/0 hover:bg-primary/50 active:bg-primary/70 transition-colors"
+                onPointerDown={makePointerDown('se')}
+              />
+            );
+
+            // E edge handle — right side, 4px wide, full height minus corner.
+            const eHandle = (
+              <div
+                data-grid-resize="e"
+                data-dnd-cancel=""
+                class="absolute inset-y-0 right-0 z-20 w-1 cursor-ew-resize bg-border/0 hover:bg-primary/40 active:bg-primary/60 transition-colors"
+                style={{ bottom: '12px' }}
+                onPointerDown={makePointerDown('e')}
+              />
+            );
+
+            // S edge handle — bottom side, 4px tall, full width minus corner.
+            const sHandle = (
+              <div
+                data-grid-resize="s"
+                data-dnd-cancel=""
+                class="absolute inset-x-0 bottom-0 z-20 h-1 cursor-ns-resize bg-border/0 hover:bg-primary/40 active:bg-primary/60 transition-colors"
+                style={{ right: '12px' }}
+                onPointerDown={makePointerDown('s')}
+              />
+            );
+
+            return (
+              <>
+                {seHandle}
+                {eHandle}
+                {sHandle}
+              </>
+            );
+          };
+
           return (
             <div
               ref={zoneItem.ref}
@@ -634,6 +772,7 @@ const renderGridRow = (
               >
                 <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
               </div>
+              {gridResizeHandles()}
             </div>
           );
         }}
@@ -741,6 +880,7 @@ const renderRow = (
       getSwappedChildren,
       zone,
       isDragging,
+      layoutMode,
       settingsMode,
       gridOpts,
     );
@@ -1080,6 +1220,7 @@ const MatrixContent = (props: IMatrixContentProps) => {
       ? {
           registerGridContainer: insert.registerGridContainer,
           commitGridMove: insert.commitGridMove,
+          commitGridResize: insert.commitGridResize,
         }
       : undefined;
 

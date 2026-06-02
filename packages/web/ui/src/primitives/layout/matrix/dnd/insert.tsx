@@ -24,6 +24,7 @@ import {
   moveItem,
   placeItem,
   pointToCell,
+  resizeItem,
   createSortableGroup,
   type ISortableZone,
   useDnD,
@@ -83,6 +84,21 @@ export interface IInsertEngine {
     rowId: string,
     cellId: string,
     pointer: { x: number; y: number },
+  ) => void;
+  /**
+   * ADR 026 Phase 2c: Called by the grid resize handle during pointermove to
+   * grow/shrink a cell's {w,h} in grid units. Neighbor cells are displaced by
+   * resizeItem (the resized cell's x/y NEVER change — invariant). Committed live
+   * on each pointermove so the grid updates in real time as the user drags.
+   *
+   * @param rowId  - id of the grid zone row
+   * @param cellId - id of the cell being resized
+   * @param size   - new {w, h} in grid units (floor 1 each)
+   */
+  commitGridResize: (
+    rowId: string,
+    cellId: string,
+    size: { w: number; h: number },
   ) => void;
 }
 
@@ -491,10 +507,51 @@ export const createInsertEngine = (opts: IInsertEngineOptions): IInsertEngine =>
   };
 
   // -------------------------------------------------------------------------
+  // commitGridResize — ADR 026 Phase 2c.
+  // Called by the grid resize handle (SE/E/S) on each pointermove.
+  // resizeItem NEVER changes x/y of the resized cell — only w/h grow.
+  // Displaced neighbors are pushed downward (compact:'none' default).
+  // -------------------------------------------------------------------------
+
+  const commitGridResize = (
+    rowId: string,
+    cellId: string,
+    size: { w: number; h: number },
+  ): void => {
+    const prev = localRows();
+    const rowIdx = prev.findIndex((r) => r.id === rowId);
+    if (rowIdx === -1) return;
+    const row = prev[rowIdx];
+    if (!row.grid) return;
+
+    const cols = row.grid.cols ?? DEFAULT_COLS;
+    const compact = row.grid.compact ?? DEFAULT_COMPACT;
+
+    const currentLayout = rowToGridLayout(row);
+    const newLayout = resizeItem(currentLayout, cellId, size, cols, compact);
+    const updatedRow = applyGridLayout(row, newLayout);
+
+    setLocalRows((rs) => rs.map((r, i) => (i === rowIdx ? updatedRow : r)));
+
+    const newItem = newLayout.find((l) => l.id === cellId);
+    if (newItem) {
+      opts.onLayoutChange?.({
+        kind: 'grid',
+        id: cellId,
+        zone: rowId,
+        x: newItem.x,
+        y: newItem.y,
+        w: newItem.w,
+        h: newItem.h,
+      });
+    }
+  };
+
+  // -------------------------------------------------------------------------
   // Public API
   // -------------------------------------------------------------------------
 
   const getZone = (rowId: string): ISortableZone | undefined => zoneMap.get(rowId);
 
-  return { rows: localRows, getZone, registerGridContainer, commitGridMove };
+  return { rows: localRows, getZone, registerGridContainer, commitGridMove, commitGridResize };
 };
