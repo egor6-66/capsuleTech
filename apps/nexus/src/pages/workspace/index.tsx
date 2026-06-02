@@ -14,7 +14,7 @@ const Workspace = Page((Ui) => (
       header: {
         children: <Widgets.Header />,
         resizable: false,
-        initialSize: 0.06,
+        initialSize: 0.03,
       },
       main: {
         children: <Ui.Outlet />,
