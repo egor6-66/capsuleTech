@@ -38,7 +38,7 @@ const draggedId = (d: DragData | null): NodeId | null =>
   d && d.source === 'tree' && typeof d.nodeId === 'string' ? d.nodeId : null;
 
 const Tree = Widget(() => {
-  const { tree, setTree } = useEditor();
+  const { tree, setTree, dropTargetId } = useEditor();
   const dnd = useDnD();
 
   const [collapsed, setCollapsed] = createSignal<ReadonlySet<NodeId>>(new Set());
@@ -212,6 +212,8 @@ const Tree = Widget(() => {
           'bg-primary/10 ring-1 ring-primary ring-inset': boxZone() === 'inside',
           'outline outline-1 outline-dashed outline-primary/30':
             insideCandidate() && boxZone() !== 'inside',
+          // Кросс-подсветка: цель drop'а из канваса (перетаскивание из палитры).
+          'ring-2 ring-primary ring-inset bg-primary/10': dropTargetId() === p.id,
         }}
       >
         <Show when={boxZone() === 'before'}>

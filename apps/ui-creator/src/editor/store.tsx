@@ -18,7 +18,10 @@ const createEditorStore = () => {
   // ./seeds/incidentCard (вернём позже).
   const [tree, setTree] = createSignal<IEditorTree>(createEmptyTree('ui.Layout.Grid'));
   const [selectedId, setSelectedId] = createSignal<NodeId | null>(null);
-  return { tree, setTree, selectedId, setSelectedId };
+  // Текущая цель drop'а (узел, куда упадёт элемент) — для кросс-подсветки
+  // Canvas ↔ Tree во время перетаскивания из палитры.
+  const [dropTargetId, setDropTargetId] = createSignal<NodeId | null>(null);
+  return { tree, setTree, selectedId, setSelectedId, dropTargetId, setDropTargetId };
 };
 
 export type IEditorStore = ReturnType<typeof createEditorStore>;

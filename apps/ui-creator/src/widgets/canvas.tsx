@@ -3,48 +3,39 @@
  *
  * Держит редактируемое дерево (`IEditorTree`) и рендерит его через
  * `@capsuletech/web-renderer`. Drop из палитры (`web-dnd`) добавляет ноду
- * pure-операцией `addNode` в тот контейнер, над которым отпустили.
+ * операцией `addNode` в вычисленный контейнер НА вычисленную позицию.
  *
- * Render-схема = дерево + редакторские инъекции (исходное дерево не трогаем):
- *  - `data-node-id` на каждую ноду → по нему находим target-контейнер при drop;
- *  - `min-height` (`ROOM`) и dashed-рамка — только у ПУСТЫХ контейнеров (всегда
- *    есть куда целиться) либо у валидных целей ВО ВРЕМЯ drag; непустым при drag
- *    добавляется `pb-6` («добавить ещё»). В покое вёрстка чистая — иначе room/pb
- *    раздувают вложенные Field/Content/Card;
- *  - пока тащим: валидные цели получают маркер `data-drop-ok`, а CSS
- *    (`DROP_HL_CSS`) рисует слабый ring на всех и ЯРЧЕ — только на самой
- *    внутренней под курсором (`:hover:not(:has(...))` отсекает предков). `:hover`
- *    во время pointer-драга работает — web-dnd не делает pointer-capture.
+ * DnD-наводка считается реактивно из позиции курсора (`target()`):
+ *  - идём `elementFromPoint` вверх до самого ВНУТРЕННЕГО валидного контейнера
+ *    (innermost wins — родители под ним не считаются целью);
+ *  - индекс вставки — по вертикали среди детей контейнера (не только «в конец»).
  *
- * Правило drop (`canDropInto`): составную часть (`composite`) пускаем только в
- * контейнер, который её ЯВНО принимает (`Field` → `Field Label`); root-`Grid`
- * её отвергнет. Остальное — по `canAcceptChild`.
+ * Подсветка — инжектируемые Tailwind-классы (НЕ сырой `<style>`):
+ *  - все валидные контейнеры-кандидаты — слабый inset-ring;
+ *  - цель (innermost) — яркий ring + заливка;
+ *  - позиция вставки — `border-t`/`border-b` на соседнем ребёнке.
+ * Цель кладётся в `store.dropTargetId` → Tree подсвечивает тот же узел.
  *
- * Состояние дерева — общий `useEditor()` стор (тот же, что у Tree): Canvas рисует
- * и мутирует через `setTree`, Tree читает. Provider живёт в Constructor.
+ * Editor-инъекции (`ROOM`/`pb`/dashed) — только у пустых контейнеров или во
+ * время drag; в покое вёрстка чистая.
  */
 import { createDroppable, useDnD } from '@capsuletech/web-dnd';
 import { type ISchema, type Registry, Renderer } from '@capsuletech/web-renderer';
 import { addNode } from '@capsuletech/web-ui-creator/state';
-import { Show } from 'solid-js';
+import { createEffect, createMemo, onCleanup, Show } from 'solid-js';
 import { acceptsChildren, canDropInto } from '../editor/rules';
 import { useEditor } from '../editor/store';
 
 const ROOM = 'min-h-12';
 const EMPTY_CUE = 'rounded-md outline-dashed outline-1 outline-border/60';
-/**
- * Подсветка drop-целей через CSS по маркеру `data-drop-ok`:
- *  - все валидные цели — слабый inset-ring;
- *  - самая ВНУТРЕННЯЯ под курсором — ярче; `:not(:has([data-drop-ok]:hover))`
- *    отсекает предков (у них есть hovered-потомок-цель → они не подсвечиваются).
- */
-const DROP_HL_CSS =
-  '[data-drop-ok]{box-shadow:inset 0 0 0 1px color-mix(in oklch,var(--primary) 35%,transparent)}' +
-  '[data-drop-ok]:hover:not(:has([data-drop-ok]:hover))' +
-  '{box-shadow:inset 0 0 0 2px var(--primary);background-color:color-mix(in oklch,var(--primary) 12%,transparent)}';
+
+interface IDropTarget {
+  id: string;
+  index: number;
+}
 
 const Canvas = Widget((Ui) => {
-  const { tree, setTree } = useEditor();
+  const { tree, setTree, setDropTargetId } = useEditor();
   const registry = { ui: Ui } as unknown as Registry;
   const dnd = useDnD();
 
@@ -54,67 +45,101 @@ const Canvas = Widget((Ui) => {
     return a && a.source === 'palette' && typeof a.type === 'string' ? a.type : null;
   };
 
+  /** Индекс вставки среди детей контейнера по вертикали курсора. */
+  const indexAt = (containerEl: Element, containerId: string, y: number): number => {
+    const kids = tree().nodes[containerId].children;
+    for (let i = 0; i < kids.length; i++) {
+      const cel = containerEl.querySelector(`[data-node-id="${kids[i]}"]`);
+      if (!cel) continue;
+      const r = cel.getBoundingClientRect();
+      if (y < r.top + r.height / 2) return i;
+    }
+    return kids.length;
+  };
+
+  /**
+   * Самый внутренний валидный контейнер под точкой + индекс вставки.
+   * Без fallback на root: если под курсором нет валидного контейнера (курсор
+   * вне любого блока) — цели нет, drop не происходит. Root растянут на всю
+   * высоту канваса (`min-h-full`), поэтому «пустая» область — это его зона.
+   */
+  const resolveTarget = (x: number, y: number, type: string): IDropTarget | null => {
+    let el = document.elementFromPoint(x, y) as HTMLElement | null;
+    while (el) {
+      const id = el.dataset.nodeId;
+      if (id && tree().nodes[id] && canDropInto(tree().nodes[id].type, type)) {
+        return { id, index: indexAt(el, id, y) };
+      }
+      el = el.parentElement;
+    }
+    return null;
+  };
+
+  const target = createMemo<IDropTarget | null>(() => {
+    const t = draggedType();
+    const pt = dnd.state.pointer();
+    return t && pt ? resolveTarget(pt.x, pt.y, t) : null;
+  });
+
+  // Кросс-подсветка узла в дереве: пишем цель в общий стор.
+  createEffect(() => setDropTargetId(target()?.id ?? null));
+  onCleanup(() => setDropTargetId(null));
+
   const renderSchema = (): ISchema => {
     const src = tree();
     const dragType = draggedType();
+    const tg = target();
     const nodes: ISchema['components']['nodes'] = {};
     for (const [id, n] of Object.entries(src.nodes)) {
       const accepts = acceptsChildren(n);
       const empty = accepts && n.children.length === 0;
-      const valid = dragType != null && id !== src.root && canDropInto(n.type, dragType);
-      // Editor-affordance (room/padding/dashed) — только у ПУСТЫХ контейнеров
-      // (всегда есть куда целиться) или валидных целей ВО ВРЕМЯ drag. В покое
-      // вёрстка чистая — иначе min-h/pb раздувает вложенные Field/Content/Card.
+      const valid = dragType != null && canDropInto(n.type, dragType);
+      const isTarget = tg?.id === id;
+      const isRoot = id === src.root;
       const cls = [
         n.props.class,
+        isRoot ? 'min-h-full' : '',
         empty || valid ? ROOM : '',
-        empty ? EMPTY_CUE : '',
+        empty && !valid ? EMPTY_CUE : '',
         valid && !empty ? 'pb-6' : '',
+        // Стиль как в дереве: кандидат — штриховой бордер, цель — яркий + заливка.
+        valid && !isTarget
+          ? 'outline outline-1 outline-dashed outline-primary/40 [outline-offset:-1px]'
+          : '',
+        isTarget ? 'outline outline-2 outline-primary bg-primary/10 [outline-offset:-2px]' : '',
       ]
         .filter(Boolean)
         .join(' ');
       nodes[id] = {
         ...n,
-        props: {
-          ...n.props,
-          'data-node-id': id,
-          ...(valid ? { 'data-drop-ok': '' } : {}),
-          ...(cls ? { class: cls } : {}),
-        },
+        props: { ...n.props, 'data-node-id': id, ...(cls ? { class: cls } : {}) },
       };
+    }
+    // Линия-вставка: border на соседнем ребёнке (или у конца контейнера).
+    if (tg) {
+      const kids = src.nodes[tg.id].children;
+      const markId =
+        kids.length === 0 ? null : tg.index < kids.length ? kids[tg.index] : kids[kids.length - 1];
+      const edge = tg.index < kids.length ? 'border-t-2 border-primary' : 'border-b-2 border-primary';
+      if (markId) {
+        const m = nodes[markId];
+        nodes[markId] = { ...m, props: { ...m.props, class: `${m.props.class ?? ''} ${edge}` } };
+      }
     }
     return { components: { root: src.root, nodes } };
   };
 
   const isEmpty = () => tree().nodes[tree().root].children.length === 0;
 
-  /** Тащим то, что принимает root → канва (root) — валидная цель (фон-подсветка). */
-  const rootValid = (): boolean => {
-    const dt = draggedType();
-    return dt ? canDropInto(tree().nodes[tree().root].type, dt) : false;
-  };
-
-  /** Ближайшая нода с `data-node-id` под точкой (или root). */
-  const resolveTargetId = (x: number, y: number): string => {
-    let el = document.elementFromPoint(x, y) as HTMLElement | null;
-    while (el) {
-      const id = el.dataset.nodeId;
-      if (id && tree().nodes[id]) return id;
-      el = el.parentElement;
-    }
-    return tree().root;
-  };
-
   const drop = createDroppable({
     id: 'canvas-root',
     accepts: (d) => d.source === 'palette' && typeof d.type === 'string',
     onDrop: (d, info) => {
       const type = d.type as string;
-      const targetId = resolveTargetId(info.pointer.x, info.pointer.y);
-      const target = tree().nodes[targetId];
-      if (!target || !canDropInto(target.type, type)) return;
+      const tg = resolveTarget(info.pointer.x, info.pointer.y, type);
+      if (!tg) return;
       try {
-        const { tree: next } = addNode(tree(), { type, parentId: targetId });
+        const { tree: next } = addNode(tree(), { type, parentId: tg.id, index: tg.index });
         setTree(next);
       } catch {
         /* EditorOpError — тихо игнорим */
@@ -127,7 +152,7 @@ const Canvas = Widget((Ui) => {
       <div
         ref={drop.ref}
         class="relative min-h-0 flex-1 overflow-auto transition-colors"
-        classList={{ 'bg-primary/5': rootValid() }}
+        classList={{ 'bg-primary/5': draggedType() != null }}
       >
         <Show
           when={!isEmpty()}
