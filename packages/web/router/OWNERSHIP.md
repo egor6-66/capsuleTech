@@ -13,7 +13,8 @@ Context-based обёртка над `@tanstack/solid-router`. Предостав
 createRouter<TRouteTree>({
   routeTree,
   context?,
-  basepath?,       // v0.1.1+: URL-префикс под-пути раздачи (e.g. '/ewc')
+  basepath?,          // v0.1.1+: URL-префикс под-пути раздачи (e.g. '/ewc')
+  notFoundRedirect?,  // путь редиректа при 404; undefined → дефолтный экран TanStack
 }): { raw: TanStackRouter<TRouteTree>; capsuleRouter: ICapsuleRouter<TRouteTree> }
 
 // Hook
@@ -41,11 +42,11 @@ AnyRoute                      // re-export @tanstack/router-core
 
 | Файл | Что |
 |---|---|
-| `src/types.ts` | `wrap()`, `normalizeBase()`, все типы. Type-only импорт TanStack — секрет node-env тестов. |
-| `src/service.ts` | `createRouter()` — value-импорт `@tanstack/solid-router`, вызывает `normalizeBase` |
+| `src/types.ts` | `wrap()`, `normalizeBase()`, все типы (включая `ICreateRouterOpts.notFoundRedirect`). Type-only импорт TanStack — секрет node-env тестов. |
+| `src/service.ts` | `createRouter()` — value-импорт `@tanstack/solid-router`, проводит `notFoundRedirect` через `defaultNotFoundComponent` |
 | `src/context.ts` | `RouterContext` + `useRouter()` hook |
 | `src/index.ts` | barrel |
-| `src/__tests__/` | 22 теста: wrap (14), normalizeBase (8), context (2) — node-env без jsdom |
+| `src/__tests__/` | 27 тестов: wrap (14), normalizeBase (8), context (2), notFoundRedirect (5) — node-env без jsdom |
 
 ## Ключевые инварианты
 
