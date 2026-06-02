@@ -17,6 +17,7 @@ export interface IListRenderProps<T> extends Omit<JSX.HTMLAttributes<HTMLDivElem
   /** Batch mode props must be absent in render-prop mode. */
   data?: never;
   as?: never;
+  itemAs?: never;
   itemProps?: never;
   variant?: VariantProps<typeof listVariants>['variant'];
   orientation?: VariantProps<typeof listVariants>['orientation'];
@@ -24,12 +25,30 @@ export interface IListRenderProps<T> extends Omit<JSX.HTMLAttributes<HTMLDivElem
   style?: JSX.CSSProperties | string;
 }
 
-/** Batch mode: pass `data` array + `as` template component. */
+/**
+ * Batch mode: pass `data` array + item template component.
+ *
+ * **Canonical (Shape-compatible):** use `itemAs` for the per-item template,
+ * mirroring `Group`'s contract so `Shape({ as: ui.List, itemAs: Tpl })` works.
+ *
+ * **Deprecated alias:** `as` is accepted for backwards-compat with pre-existing
+ * batch stories/tests. Prefer `itemAs` in new code.
+ *
+ * At least one of `itemAs` / `as` is required.
+ */
 export interface IListBatchProps<T> extends Omit<JSX.HTMLAttributes<HTMLDivElement>, 'children'> {
   /** Data array — rendered via <For> internally. */
   data: T[];
-  /** Template component rendered for each item. Receives spread of itemProps(item). */
-  as: Component<any>;
+  /**
+   * Per-item template component (canonical, Shape-compatible).
+   * Receives spread of `itemProps(item)`.
+   */
+  itemAs?: Component<any>;
+  /**
+   * @deprecated Use `itemAs` instead. Kept for back-compat.
+   * Per-item template component. `itemAs` takes precedence when both are set.
+   */
+  as?: Component<any>;
   /** Maps each item to props for the template. Defaults to identity (item as-is). */
   itemProps?: (item: T) => Record<string, unknown>;
   /** items/children must be absent in batch mode. */
@@ -45,6 +64,7 @@ export interface IListBatchProps<T> extends Omit<JSX.HTMLAttributes<HTMLDivEleme
 export interface IListSemanticProps extends JSX.HTMLAttributes<HTMLUListElement> {
   data?: never;
   as?: never;
+  itemAs?: never;
   itemProps?: never;
   items?: never;
   variant?: VariantProps<typeof listVariants>['variant'];

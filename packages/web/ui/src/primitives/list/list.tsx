@@ -5,9 +5,10 @@ import type { JSX } from 'solid-js';
 import type { IListBatchProps, IListProps, IListRenderProps, IVirtualListProps } from './interfaces';
 import { listVariants } from './variants';
 
-/** Type guard: batch mode — data + as present. */
+/** Type guard: batch mode — data + (itemAs or as) present. */
 function isBatchMode<T>(props: IListProps<T>): props is IListBatchProps<T> {
-  return (props as IListBatchProps<T>).data !== undefined && (props as IListBatchProps<T>).as !== undefined;
+  const p = props as IListBatchProps<T>;
+  return p.data !== undefined && (p.itemAs !== undefined || p.as !== undefined);
 }
 
 /** Type guard: render-prop mode — items + children (function) present. */
@@ -20,7 +21,7 @@ export function List<T = unknown>(props: IListProps<T>) {
   if (isBatchMode(props)) {
     const [local, variants, others] = splitProps(
       props,
-      ['class', 'style', 'data', 'as', 'itemProps'],
+      ['class', 'style', 'data', 'itemAs', 'as', 'itemProps'],
       ['variant', 'orientation'],
     );
 
@@ -32,7 +33,8 @@ export function List<T = unknown>(props: IListProps<T>) {
     });
 
     const getItemProps = local.itemProps ?? ((item: T) => item as Record<string, unknown>);
-    const ItemTpl = local.as;
+    // `itemAs` is canonical (Shape-compatible); `as` is the deprecated alias.
+    const ItemTpl = (local.itemAs ?? local.as) as NonNullable<typeof local.itemAs>;
 
     return (
       <ul class={className()} style={style() as JSX.CSSProperties} {...(others as object)}>

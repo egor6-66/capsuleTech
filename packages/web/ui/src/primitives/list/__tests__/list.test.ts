@@ -68,9 +68,19 @@ describe('IListRenderProps structural contracts', () => {
 // ---------------------------------------------------------------------------
 
 describe('IListBatchProps structural contracts', () => {
-  it('requires data array and as component', () => {
+  it('accepts data + itemAs (canonical Shape-compatible API)', () => {
     type Item = { id: number; label: string };
-    // Using a plain function as Component stand-in (type-compatible)
+    const Tpl = (_props: { label: string }) => null as unknown as import('solid-js').JSX.Element;
+    const props: IListBatchProps<Item> = {
+      data: [{ id: 1, label: 'Home' }],
+      itemAs: Tpl,
+    };
+    expect(props.data).toHaveLength(1);
+    expect(typeof props.itemAs).toBe('function');
+  });
+
+  it('accepts data + as (deprecated alias, back-compat)', () => {
+    type Item = { id: number; label: string };
     const Tpl = (_props: { label: string }) => null as unknown as import('solid-js').JSX.Element;
     const props: IListBatchProps<Item> = {
       data: [{ id: 1, label: 'Home' }],
@@ -80,7 +90,19 @@ describe('IListBatchProps structural contracts', () => {
     expect(typeof props.as).toBe('function');
   });
 
-  it('accepts optional itemProps mapper', () => {
+  it('accepts optional itemProps mapper with itemAs', () => {
+    type Item = { id: number; label: string };
+    const Tpl = (_props: { label: string }) => null as unknown as import('solid-js').JSX.Element;
+    const props: IListBatchProps<Item> = {
+      data: [{ id: 1, label: 'Home' }],
+      itemAs: Tpl,
+      itemProps: (item) => ({ label: item.label }),
+    };
+    expect(typeof props.itemProps).toBe('function');
+    expect(props.itemProps?.({ id: 1, label: 'Home' })).toEqual({ label: 'Home' });
+  });
+
+  it('accepts optional itemProps mapper with as (deprecated alias)', () => {
     type Item = { id: number; label: string };
     const Tpl = (_props: { label: string }) => null as unknown as import('solid-js').JSX.Element;
     const props: IListBatchProps<Item> = {
@@ -96,7 +118,7 @@ describe('IListBatchProps structural contracts', () => {
     const Tpl = () => null as unknown as import('solid-js').JSX.Element;
     const props: IListBatchProps<{ id: number }> = {
       data: [],
-      as: Tpl,
+      itemAs: Tpl,
     };
     expect((props as any).items).toBeUndefined();
     expect((props as any).children).toBeUndefined();
@@ -106,7 +128,7 @@ describe('IListBatchProps structural contracts', () => {
     const Tpl = () => null as unknown as import('solid-js').JSX.Element;
     const props: IListBatchProps<{ id: number }> = {
       data: [],
-      as: Tpl,
+      itemAs: Tpl,
       variant: 'default',
       orientation: 'vertical',
     };
@@ -141,7 +163,14 @@ describe('IListSemanticProps structural contracts', () => {
 // ---------------------------------------------------------------------------
 
 describe('IListProps union type', () => {
-  it('IListBatchProps is assignable to IListProps', () => {
+  it('IListBatchProps is assignable to IListProps (itemAs canonical)', () => {
+    const Tpl = () => null as unknown as import('solid-js').JSX.Element;
+    const batch: IListBatchProps<{ id: number }> = { data: [{ id: 1 }], itemAs: Tpl };
+    const asUnion: IListProps<{ id: number }> = batch;
+    expect(asUnion).toBe(batch);
+  });
+
+  it('IListBatchProps is assignable to IListProps (as deprecated alias)', () => {
     const Tpl = () => null as unknown as import('solid-js').JSX.Element;
     const batch: IListBatchProps<{ id: number }> = { data: [{ id: 1 }], as: Tpl };
     const asUnion: IListProps<{ id: number }> = batch;

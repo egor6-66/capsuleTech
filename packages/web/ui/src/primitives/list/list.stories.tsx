@@ -117,12 +117,24 @@ export const Virtual: Story = {
 };
 
 export const BatchMode: Story = {
-  name: 'batch mode · data + as template',
+  name: 'batch mode · data + as template (deprecated alias)',
   render: (args) => (
     <List
       {...args}
       data={NAV}
       as={NavItem}
+      itemProps={(item) => ({ label: item.label, active: item.active })}
+    />
+  ),
+};
+
+export const BatchModeItemAs: Story = {
+  name: 'batch mode · data + itemAs template (canonical / Shape-compatible)',
+  render: (args) => (
+    <List
+      {...args}
+      data={NAV}
+      itemAs={NavItem}
       itemProps={(item) => ({ label: item.label, active: item.active })}
     />
   ),
