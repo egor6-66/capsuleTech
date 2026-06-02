@@ -239,6 +239,7 @@ Single-platform binary на Phase 1 (multi-platform — Phase 2 отдельны
 `tsconfig.base.json` — **единственная точка** регистрации `@capsuletech/*` путей. Vite-builder резолвит через `tsconfigPaths()` + `AliasesPlugin` (см. `packages/builders/vite/src/defines/capsuleConfig.ts`), читая ту же `tsconfig.base.json`. При добавлении нового пакета:
 1. Добавь путь в `tsconfig.base.json → compilerOptions.paths`.
 2. Добавь имя пакета в `optimizeDeps.exclude` в `capsuleConfig.ts` (иначе esbuild попытается пре-бандлить workspace-пакет и сломает JSX-транспиляцию).
+3. **Пересобери vite-builder** (`pnpm --filter @capsuletech/vite-builder build`) и **перезапусти dev-сервер.** `capsule dev` запускает vite-builder из его **`dist`**, а не из src — без пересборки dist не знает про новый `exclude` → dev-сервер пре-бандлит (замораживает) пакет: src-правки не применяются, а на старте бывает stale-резолв `Failed to resolve "@capsuletech/<pkg>"`. Грабля session 2026-06-02 (web-charts). Аналогично: новые subpath-export'ы пакета и новые deps требуют рестарта dev (Vite читает резолв/optimizeDeps на старте).
 
 ## Compliance (Golden Rules)
 

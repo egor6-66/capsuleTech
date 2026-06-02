@@ -73,7 +73,9 @@ const readTheme = (): IChartTheme => {
 export const useChartTheme = (): Accessor<IChartTheme> => {
   const [tokens, setTokens] = createSignal<IChartTheme>(readTheme());
   onMount(() => {
-    const refresh = (): void => setTokens(readTheme());
+    const refresh = (): void => {
+      setTokens(readTheme());
+    };
     refresh(); // tokens may not have been ready at component-body eval time
     if (typeof MutationObserver === 'undefined') return;
     const obs = new MutationObserver(refresh);
