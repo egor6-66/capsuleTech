@@ -3,12 +3,12 @@ name: "@capsuletech/web-ui"
 owner-agent: owner-web-ui
 group: web_base
 status: pre-1.0
-last-updated: 2026-05-22
+last-updated: 2026-06-03
 ---
 
 # @capsuletech/web-ui
 
-Stateless UI-kit для capsule: ~15 primitives (Button, Input, Card, Field, Toggle, Typography, ...) + layout-namespace (`Layout.Grid`, `Layout.Flex`, `Layout.Matrix`). Polymorphic через Slot (Kobalte), CVA + createStyle (из web-style), themed tokens only.
+Stateless UI-kit для capsule: 16 primitives (Button, Input, Card, Field, Toggle, Tooltip, Typography, ...) + layout-namespace (`Layout.Grid`, `Layout.Flex`, `Layout.Matrix`). Polymorphic через Slot (Kobalte), CVA + createStyle (из web-style), themed tokens only.
 
 ## Зона ответственности
 
@@ -54,7 +54,7 @@ import { Grid } from '@capsuletech/web-ui/grid';
 
 ### Subpath exports (через `package.json.exports`)
 
-`./button`, `./card`, `./field`, `./flex`, `./grid`, `./input`, `./label`, `./layout` (deprecated alias на matrix), `./list`, `./matrix`, `./separator`, `./slot`, `./table`, `./toggle`, `./typography`, `./wrappers`, `./dataTable`, `./previewCard`.
+`./button`, `./card`, `./field`, `./flex`, `./grid`, `./input`, `./label`, `./layout` (deprecated alias на matrix), `./list`, `./matrix`, `./separator`, `./slot`, `./table`, `./toggle`, `./tooltip`, `./typography`, `./wrappers`, `./dataTable`, `./previewCard`.
 
 ### Layout namespace
 
@@ -111,6 +111,30 @@ import { Grid } from '@capsuletech/web-ui/grid';
 Migration from v0.3.0: `slots={{ header, main, rightBar, footer }}` → `preset="app-shell" slots={{ header, main, rightBar, footer }}`
 
 **Это контракт.** Изменение API Matrix — breaking change для всех consumer'ов (currently только sandbox).
+
+### Dropdown — HTML-passthrough для data-* / title / style (2026-06-03)
+
+`IDropdownTriggerProps`, `IDropdownItemProps`, `IDropdownSubTriggerProps`, `IDropdownContentProps`, `IDropdownSubContentProps` теперь включают `IHtmlDataAttrs` (template-literal `[K in \`data-${string}\`]?: boolean | string | undefined`). `IDropdownTriggerProps` дополнительно получил явные `title?: string` и `style?: JSX.CSSProperties | string`. Причина: `DropdownMenuTriggerProps` Kobalte (`MenuTriggerOptions & Partial<MenuTriggerCommonProps>`) не пробрасывает `ComponentProps<'button'>`, поэтому произвольные `data-*` (включая boolean-маркеры DnD вроде `data-dnd-cancel`) и `title` отклонялись TS. Решение: явный index-type `IHtmlDataAttrs` (файл-локальный helper) вместо generic PolymorphicProps — не меняет runtime, только типы. Тесты: 494 passed, typecheck clean.
+
+### Tooltip — cursor-anchored positioning (2026-06-03)
+
+Compound: `Tooltip` + `Tooltip.Trigger` + `Tooltip.Content` + `Tooltip.Arrow` (optional).
+Built on `@kobalte/core/tooltip`. Named re-exports: `TooltipTrigger`, `TooltipContent`, `TooltipArrow`.
+
+**Key feature:** `cursorTracking` (default: `true`) — panel anchors to the cursor position frozen
+at open time, not to the trigger element's bounding box. Uses Kobalte's `getAnchorRect` on Root.
+
+**API:**
+- `cursorTracking?: boolean` (default `true`) — cursor-anchored vs element-anchored.
+- `openDelay?`, `closeDelay?`, `disabled?`, `open?`, `defaultOpen?`, `onOpenChange?` — forwarded to Kobalte Root.
+- `gutter` defaults to 8px.
+- `Tooltip.Trigger` — `as` polymorphic; pointer-move tracking wired via internal Context.
+- `Tooltip.Content` — `portalProps?` for custom Portal mount target.
+- `Tooltip.Arrow` — optional; must be inside `Tooltip.Content`.
+
+**Implementation note:** cursor position is tracked via `createSignal` in Root + internal
+`TooltipCursorContext` shared with Trigger. Position freezes on open (`onOpenChange(true)`)
+so floating-ui doesn't recompute while cursor moves inside an open tooltip.
 
 ### List — три режима (2026-05-21)
 

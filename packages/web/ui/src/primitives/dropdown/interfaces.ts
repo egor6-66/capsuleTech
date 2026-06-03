@@ -14,6 +14,15 @@ import type {
 import type { JSX, ValidComponent } from 'solid-js';
 
 /**
+ * HTML passthrough: позволяет передавать произвольные `data-*` атрибуты
+ * (включая boolean-маркеры вроде `data-dnd-cancel`) на полиморфные Kobalte-элементы,
+ * у которых нет index-signature в своих Props.
+ */
+type IHtmlDataAttrs = {
+  [K in `data-${string}`]?: boolean | string | undefined;
+};
+
+/**
  * Root dropdown container. Controls open/close state and positioning behaviour.
  * Wraps `DropdownMenu.Root` from Kobalte — forwards all Kobalte root options.
  */
@@ -32,7 +41,7 @@ export interface IDropdownProps extends DropdownMenuRootProps {
  * <Dropdown.Trigger as="a" href="#open">Open</Dropdown.Trigger>
  * ```
  */
-export interface IDropdownTriggerProps extends DropdownMenuTriggerProps {
+export interface IDropdownTriggerProps extends DropdownMenuTriggerProps, IHtmlDataAttrs {
   /**
    * Polymorphic render element. Default `'button'`. Pass a component (e.g. `Button`)
    * to render the trigger as that component while keeping all dropdown behaviour
@@ -41,6 +50,10 @@ export interface IDropdownTriggerProps extends DropdownMenuTriggerProps {
   as?: ValidComponent;
   /** Extra CSS classes forwarded to the trigger element. */
   class?: string;
+  /** Accessible tooltip shown on hover. Forwarded to the underlying element. */
+  title?: string;
+  /** Inline styles forwarded to the trigger element. */
+  style?: JSX.CSSProperties | string;
   /** Trigger label or child element. */
   children?: JSX.Element;
 }
@@ -49,7 +62,7 @@ export interface IDropdownTriggerProps extends DropdownMenuTriggerProps {
  * The dropdown panel rendered inside a Portal (teleported to `document.body`).
  * Kobalte handles collision detection and automatic flipping via Floating UI.
  */
-export interface IDropdownContentProps extends DropdownMenuContentProps {
+export interface IDropdownContentProps extends DropdownMenuContentProps, IHtmlDataAttrs {
   /** Extra CSS classes merged with default panel styles. */
   class?: string;
   style?: JSX.CSSProperties | string;
@@ -63,9 +76,11 @@ export interface IDropdownContentProps extends DropdownMenuContentProps {
  * An interactive menu item. Calls `onSelect` when activated (click or Enter/Space).
  * Set `disabled` to prevent interaction while keeping the item visible.
  */
-export interface IDropdownItemProps extends DropdownMenuItemProps {
+export interface IDropdownItemProps extends DropdownMenuItemProps, IHtmlDataAttrs {
   /** Extra CSS classes merged with default item styles. */
   class?: string;
+  /** Inline styles forwarded to the item element. */
+  style?: JSX.CSSProperties | string;
   /** Item label or inner content. */
   children?: JSX.Element;
 }
@@ -113,9 +128,11 @@ export interface IDropdownSubProps extends DropdownMenuSubProps {
  * The item inside a parent menu that opens a nested submenu on hover / arrow-right.
  * Behaves like a regular item but has an implicit `aria-haspopup="menu"`.
  */
-export interface IDropdownSubTriggerProps extends DropdownMenuSubTriggerProps {
+export interface IDropdownSubTriggerProps extends DropdownMenuSubTriggerProps, IHtmlDataAttrs {
   /** Extra CSS classes merged with default sub-trigger item styles. */
   class?: string;
+  /** Inline styles forwarded to the sub-trigger element. */
+  style?: JSX.CSSProperties | string;
   /** Sub-trigger label. */
   children?: JSX.Element;
 }
@@ -124,7 +141,7 @@ export interface IDropdownSubTriggerProps extends DropdownMenuSubTriggerProps {
  * The panel for a nested submenu, rendered inside a Portal just like `Dropdown.Content`.
  * Kobalte handles positioning relative to the parent `SubTrigger`.
  */
-export interface IDropdownSubContentProps extends DropdownMenuSubContentProps {
+export interface IDropdownSubContentProps extends DropdownMenuSubContentProps, IHtmlDataAttrs {
   /** Extra CSS classes merged with default panel styles. */
   class?: string;
   style?: JSX.CSSProperties | string;
