@@ -601,6 +601,88 @@ describe('WidgetUi — MapView compound: sub-components preserved with meta', ()
 });
 
 // ---------------------------------------------------------------------------
+// Compile-time: Tooltip compound — root + Trigger/Content/Arrow sub-components
+// Tooltip is lazy (kobalte-heavy). Mirrors Dropdown pattern.
+// Guards: root + 3 sub-components accept IUiMetaProps in both ViewUi and WidgetUi.
+// ---------------------------------------------------------------------------
+
+describe('ViewUi — Tooltip compound: root and sub-components preserved with meta', () => {
+  it('Ui.Tooltip is a function', () => {
+    expectTypeOf<ViewUi['Tooltip']>().toBeFunction();
+  });
+
+  it('Ui.Tooltip accepts IUiMetaProps (meta prop)', () => {
+    type Props = Parameters<ViewUi['Tooltip']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
+  });
+
+  it('Ui.Tooltip.Trigger is a function', () => {
+    expectTypeOf<ViewUi['Tooltip']['Trigger']>().toBeFunction();
+  });
+
+  it('Ui.Tooltip.Trigger accepts meta prop', () => {
+    type Props = Parameters<ViewUi['Tooltip']['Trigger']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<{ meta?: ITagMeta }>();
+  });
+
+  it('Ui.Tooltip.Content is a function', () => {
+    expectTypeOf<ViewUi['Tooltip']['Content']>().toBeFunction();
+  });
+
+  it('Ui.Tooltip.Content accepts meta prop', () => {
+    type Props = Parameters<ViewUi['Tooltip']['Content']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<{ meta?: ITagMeta }>();
+  });
+
+  it('Ui.Tooltip.Arrow is a function', () => {
+    expectTypeOf<ViewUi['Tooltip']['Arrow']>().toBeFunction();
+  });
+
+  it('Ui.Tooltip.Arrow accepts meta prop', () => {
+    type Props = Parameters<ViewUi['Tooltip']['Arrow']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<{ meta?: ITagMeta }>();
+  });
+});
+
+describe('WidgetUi — Tooltip compound: root and sub-components preserved with meta', () => {
+  it('Ui.Tooltip is a function', () => {
+    expectTypeOf<WidgetUi['Tooltip']>().toBeFunction();
+  });
+
+  it('Ui.Tooltip accepts IUiMetaProps (meta prop)', () => {
+    type Props = Parameters<WidgetUi['Tooltip']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
+  });
+
+  it('Ui.Tooltip.Trigger is a function (not lost after WithMetaProps)', () => {
+    expectTypeOf<WidgetUi['Tooltip']['Trigger']>().toBeFunction();
+  });
+
+  it('Ui.Tooltip.Trigger accepts meta prop', () => {
+    type Props = Parameters<WidgetUi['Tooltip']['Trigger']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<{ meta?: ITagMeta }>();
+  });
+
+  it('Ui.Tooltip.Content is a function', () => {
+    expectTypeOf<WidgetUi['Tooltip']['Content']>().toBeFunction();
+  });
+
+  it('Ui.Tooltip.Content accepts meta prop', () => {
+    type Props = Parameters<WidgetUi['Tooltip']['Content']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<{ meta?: ITagMeta }>();
+  });
+
+  it('Ui.Tooltip.Arrow is a function', () => {
+    expectTypeOf<WidgetUi['Tooltip']['Arrow']>().toBeFunction();
+  });
+
+  it('Ui.Tooltip.Arrow accepts meta prop', () => {
+    type Props = Parameters<WidgetUi['Tooltip']['Arrow']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<{ meta?: ITagMeta }>();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Runtime: ViewWrapper + UiProxy does not crash when meta is passed
 // (the actual prop stripping is in UiProxy; here we verify no runtime error)
 // ---------------------------------------------------------------------------

@@ -40,6 +40,7 @@ import type {
 } from '@capsuletech/web-ui';
 import type { DarkModeToggle } from '@capsuletech/web-ui/darkModeToggle';
 import type { Dropdown } from '@capsuletech/web-ui/dropdown';
+import type { Tooltip } from '@capsuletech/web-ui/tooltip';
 import type { DropdownMenu } from '@capsuletech/web-ui/dropdownMenu';
 import type { LayoutModeToggle } from '@capsuletech/web-ui/layoutModeToggle';
 import type { WidgetSettingsToggle } from '@capsuletech/web-ui/widgetSettingsToggle';
@@ -196,6 +197,7 @@ type ViewUiRaw = {
   Spinner: typeof Spinner;
   Dropdown: typeof Dropdown;
   DropdownMenu: typeof DropdownMenu;
+  Tooltip: typeof Tooltip;
   DarkModeToggle: typeof DarkModeToggle;
   LayoutModeToggle: typeof LayoutModeToggle;
   ThemePicker: typeof ThemePicker;
@@ -243,6 +245,7 @@ type WidgetUiRaw = {
   Spinner: typeof Spinner;
   Dropdown: typeof Dropdown;
   DropdownMenu: typeof DropdownMenu;
+  Tooltip: typeof Tooltip;
   DarkModeToggle: typeof DarkModeToggle;
   LayoutModeToggle: typeof LayoutModeToggle;
   ThemePicker: typeof ThemePicker;

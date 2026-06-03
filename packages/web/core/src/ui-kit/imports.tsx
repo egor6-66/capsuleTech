@@ -92,6 +92,14 @@ export const Dropdown = Object.assign(DropdownBase, {
   SubContent: createLazy(() => import('@capsuletech/web-ui/dropdown'), 'DropdownSubContent'),
 });
 
+// Tooltip — kobalte-heavy, only used where tooltips appear
+const TooltipBase = createLazy(() => import('@capsuletech/web-ui/tooltip'), 'Tooltip');
+export const Tooltip = Object.assign(TooltipBase, {
+  Trigger: createLazy(() => import('@capsuletech/web-ui/tooltip'), 'TooltipTrigger'),
+  Content: createLazy(() => import('@capsuletech/web-ui/tooltip'), 'TooltipContent'),
+  Arrow: createLazy(() => import('@capsuletech/web-ui/tooltip'), 'TooltipArrow'),
+});
+
 // Switcher widgets — tiny but pull web-style hooks; header-only, not critical path
 export const DarkModeToggle = createLazy(
   () => import('@capsuletech/web-ui/darkModeToggle'),
