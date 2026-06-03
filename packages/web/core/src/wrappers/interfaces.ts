@@ -7,23 +7,6 @@
  * engine-типы (`ICtx`, `IControllerHandle`) живут в `engine/ctx.ts`.
  */
 
-import type {
-  BuildingsPreset,
-  Layer,
-  MapView,
-  Marker,
-  Sky,
-  Source,
-  Terrain,
-  TerrainPreset,
-} from '@capsuletech/web-map';
-import type {
-  AreaChart,
-  BarChart,
-  Doughnut,
-  Gauge,
-  LineChart,
-} from '@capsuletech/web-charts';
 import type { ICapsuleRouter } from '@capsuletech/web-router';
 import type { IBaseStateHandlers, IBaseStateSchema, IBridge } from '@capsuletech/web-state';
 import type {
@@ -202,22 +185,6 @@ type ViewUiRaw = {
   LayoutModeToggle: typeof LayoutModeToggle;
   ThemePicker: typeof ThemePicker;
   WidgetSettingsToggle: typeof WidgetSettingsToggle;
-  MapView: typeof MapView & {
-    Source: typeof Source;
-    Layer: typeof Layer;
-    Terrain: typeof Terrain;
-    Sky: typeof Sky;
-    Marker: typeof Marker;
-    TerrainPreset: typeof TerrainPreset;
-    BuildingsPreset: typeof BuildingsPreset;
-  };
-  Chart: {
-    Line: typeof LineChart;
-    Area: typeof AreaChart;
-    Bar: typeof BarChart;
-    Doughnut: typeof Doughnut;
-    Gauge: typeof Gauge;
-  };
   Card: typeof Card;
   Typography: typeof Typography;
   Link: typeof Link;
@@ -250,22 +217,6 @@ type WidgetUiRaw = {
   LayoutModeToggle: typeof LayoutModeToggle;
   ThemePicker: typeof ThemePicker;
   WidgetSettingsToggle: typeof WidgetSettingsToggle;
-  MapView: typeof MapView & {
-    Source: typeof Source;
-    Layer: typeof Layer;
-    Terrain: typeof Terrain;
-    Sky: typeof Sky;
-    Marker: typeof Marker;
-    TerrainPreset: typeof TerrainPreset;
-    BuildingsPreset: typeof BuildingsPreset;
-  };
-  Chart: {
-    Line: typeof LineChart;
-    Area: typeof AreaChart;
-    Bar: typeof BarChart;
-    Doughnut: typeof Doughnut;
-    Gauge: typeof Gauge;
-  };
   /**
    * Solid control-flow primitives. Raw — NOT UiProxy-wrapped.
    * `<Ui.Flow.For each={...}>{(x) => ...}</Ui.Flow.For>`

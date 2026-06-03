@@ -177,7 +177,7 @@ describe('useEmit — dispatch через ctx.controller[name]', () => {
     });
 
     expect(onClickMock).toHaveBeenCalledOnce();
-    const [target, context] = onClickMock.mock.calls[0] as [ITarget, unknown];
+    const [target, context] = (onClickMock.mock.calls[0] as unknown) as [ITarget, unknown];
     expect(target.name).toBe('submit');
     expect(target.meta?.tags).toContain('submit');
     expect(target.payload).toEqual({ id: 42 });
@@ -199,7 +199,7 @@ describe('useEmit — dispatch через ctx.controller[name]', () => {
     });
 
     expect(onDropMock).toHaveBeenCalledOnce();
-    const [target] = onDropMock.mock.calls[0] as [ITarget, unknown];
+    const [target] = (onDropMock.mock.calls[0] as unknown) as [ITarget, unknown];
     expect(target.payload).toEqual({ x: 10, y: 20 });
     await expect(result).resolves.toBe('drop-result');
   });
@@ -215,7 +215,7 @@ describe('useEmit — dispatch через ctx.controller[name]', () => {
     });
 
     expect(onSelectMock).toHaveBeenCalledOnce();
-    const [target] = onSelectMock.mock.calls[0] as [ITarget, unknown];
+    const [target] = (onSelectMock.mock.calls[0] as unknown) as [ITarget, unknown];
     expect(target.name).toBeUndefined();
     expect(target.payload).toBeUndefined();
   });
@@ -269,7 +269,7 @@ describe('useEmit — dispatch через ctx.controller[name]', () => {
     expect(idleHandler).toHaveBeenCalledOnce();
     expect(busyHandler).not.toHaveBeenCalled();
 
-    const [api] = idleHandler.mock.calls[0] as [{ target: ITarget; context: any }];
+    const [api] = (idleHandler.mock.calls[0] as unknown) as [{ target: ITarget; context: any }];
     expect(api.target.name).toBe('canvas');
     expect(api.target.payload).toEqual({ nodeId: 'x' });
   });

@@ -29,6 +29,9 @@
       "@capsuletech/web-core/app-config": [
         "packages/web/core/src/app-config.ts"
       ],
+      "@capsuletech/web-core/module": [
+        "packages/web/core/src/module.ts"
+      ],
       "@capsuletech/web-core": [
         "packages/web/core/src/index.ts"
       ],
@@ -49,6 +52,9 @@
       ],
       "@capsuletech/web-map": [
         "packages/web/map/src/index.ts"
+      ],
+      "@capsuletech/web-map/capsule": [
+        "packages/web/map/src/capsule.ts"
       ],
       "@capsuletech/web-ui-creator": [
         "packages/web/ui-creator/src/index.ts"

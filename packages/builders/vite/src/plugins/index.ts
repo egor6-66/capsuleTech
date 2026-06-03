@@ -18,4 +18,8 @@ export {
   generateEndpointsTypes,
   generateAppConfigRuntime,
   generateBootstrap,
+  generatePackagesRuntime,
+  generatePackagesTypes,
+  resolvePackageEntries,
 } from './capsuleRegistry';
+export type { PackageEntry, ResolvedPackageEntry } from './capsuleRegistry';

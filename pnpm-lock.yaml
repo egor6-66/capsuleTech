@@ -629,12 +629,6 @@ importers:
       '@capsuletech/vite-builder':
         specifier: workspace:*
         version: link:../../builders/vite
-      '@capsuletech/web-charts':
-        specifier: workspace:*
-        version: link:../charts
-      '@capsuletech/web-map':
-        specifier: workspace:*
-        version: link:../map
       '@capsuletech/web-profiler':
         specifier: workspace:*
         version: link:../profiler
@@ -741,6 +735,9 @@ importers:
       '@capsuletech/vite-builder':
         specifier: workspace:*
         version: link:../../builders/vite
+      '@capsuletech/web-core':
+        specifier: workspace:*
+        version: link:../core
       '@testing-library/jest-dom':
         specifier: ^6.9.1
         version: 6.9.1

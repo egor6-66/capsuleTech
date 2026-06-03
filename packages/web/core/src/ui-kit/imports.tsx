@@ -118,28 +118,6 @@ export const WidgetSettingsToggle = createLazy(
   'WidgetSettingsToggle',
 );
 
-// MapView — ~1.5MB maplibre-gl; always lazy
-const MapViewBase = createLazy(() => import('@capsuletech/web-map'), 'MapView');
-export const MapView = Object.assign(MapViewBase, {
-  Source: createLazy(() => import('@capsuletech/web-map'), 'Source'),
-  Layer: createLazy(() => import('@capsuletech/web-map'), 'Layer'),
-  Terrain: createLazy(() => import('@capsuletech/web-map'), 'Terrain'),
-  Sky: createLazy(() => import('@capsuletech/web-map'), 'Sky'),
-  Marker: createLazy(() => import('@capsuletech/web-map'), 'Marker'),
-  TerrainPreset: createLazy(() => import('@capsuletech/web-map'), 'TerrainPreset'),
-  BuildingsPreset: createLazy(() => import('@capsuletech/web-map'), 'BuildingsPreset'),
-});
-
-// Chart — ~250KB chart.js bundled in @capsuletech/web-charts; always lazy
-const ChartLine = createLazy(() => import('@capsuletech/web-charts'), 'LineChart');
-export const Chart = Object.assign(ChartLine, {
-  Line: ChartLine,
-  Area: createLazy(() => import('@capsuletech/web-charts'), 'AreaChart'),
-  Bar: createLazy(() => import('@capsuletech/web-charts'), 'BarChart'),
-  Doughnut: createLazy(() => import('@capsuletech/web-charts'), 'Doughnut'),
-  Gauge: createLazy(() => import('@capsuletech/web-charts'), 'Gauge'),
-});
-
 // Реэкспорт сторонних утилит
 export { Link } from '@tanstack/solid-router';
 

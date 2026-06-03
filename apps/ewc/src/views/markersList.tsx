@@ -1,13 +1,17 @@
 /**
- * MarkersList — рендер маркеров на карте из переданного списка инцидентов.
+ * MarkersList — ВРЕМЕННО ОТКЛЮЧЁН.
  *
- * Stateless: список приходит через `props.items` (родительский Widget читает
- * его из Feature.Incidents store и подаёт сюда). View не знает про useCtx/store.
- *
- * Клик по маркеру несёт `meta.tags=['incident']` + `payload.id`; web-core
- * UiProxy навешивает событие, универсальный `Feature.onClick` роутит по тегам.
+ * Рендерил маркеры через `Ui.MapView.Marker`, который убран из UI-kit по ADR 033
+ * (карта переезжает в глобал `Maps.*` через `capsule.app.ts: packages`).
+ * Восстановить после ADR 032 фаза 4: `Ui.MapView.Marker` → `Maps.Marker`,
+ * клик — через package-контроллер web-map (meta-aware emit), а не UiProxy.
  */
 
+const MarkersList = View(() => null);
+
+export default MarkersList;
+
+/* === ОРИГИНАЛ — восстановить после ADR 032 фаза 4 ===
 import { For } from 'solid-js';
 import type { IIncident } from '../features/incidents';
 
@@ -26,3 +30,4 @@ const MarkersList = View((Ui, props: { items?: IIncident[]; activeId?: string })
 ));
 
 export default MarkersList;
+*/

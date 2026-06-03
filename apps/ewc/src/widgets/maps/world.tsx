@@ -1,27 +1,30 @@
 /**
- * World map Widget — карта для footer'а workspace.
+ * World map Widget — ВРЕМЕННО ОТКЛЮЧЁН.
  *
- * Центр — Санкт-Петербург, slight pitch для горизонта (Sky atmosphere visible).
- * Из 3D-набора активен только Sky (offline-safe). BuildingsPreset/TerrainPreset
- * требуют user-supplied source/DEM (см. JSDoc этих компонентов).
+ * Карта (`Ui.MapView`) убрана из UI-kit по ADR 033: опциональные пакеты
+ * (`@capsuletech/web-map`) больше не сидят в `Ui`, а регистрируются декларацией
+ * `packages: [...]` в `capsule.app.ts` и приходят глобалом `Maps.*`.
  *
- * Маркеры: items читаются из Feature.Incidents store (2-й арг фабрики) и
- * подаются в stateless Views.MarkersList через props. Реактивный list-rendering
- * через Solid <For> живёт внутри Views.MarkersList.
- *
- * Loader (2-й колбэк): пока `store.loading === true` Widget рисует map-скелетон
- * вместо MapView. <Show> в WidgetWrapper не монтирует контент-ветку под лоадером,
- * поэтому тяжёлый MapLibre-инстанс НЕ создаётся раньше времени (без мигания tiles).
+ * Полноценный возврат карты + интеракция маркеров — после ADR 032 фаза 4
+ * (meta-aware emit в `@capsuletech/web-map/controllers`). Тогда восстановить
+ * тело из блока ниже, заменив `Ui.MapView` → `Maps.View`, `Ui.MapView.Sky` →
+ * `Maps.Sky`, `Ui.MapView.Marker` → `Maps.Marker` (+ emit через package-controller).
  */
+
+const World = Widget((Ui) => (
+  <Ui.Layout.Flex class="h-full items-center justify-center text-sm opacity-60">
+    Карта временно отключена (ADR 033 — ждёт package-контроллеров, ADR 032 ф.4)
+  </Ui.Layout.Flex>
+));
+
+export default World;
+
+/* === ОРИГИНАЛ — восстановить после ADR 032 фаза 4 ===
 import type { IIncidentsContext } from '../../features/incidents';
 
 const World = Widget(
   (Ui, store) => {
     const data = () => store?.ctx.data as IIncidentsContext | undefined;
-    // Камера подлетает к маркеру выбранного incident'а (flyTo — анимация, в
-    // отличие от center=jump) при одном из opt-in условий:
-    //   • flyToSelected + выбор из ТАБЛИЦЫ → «Синк с таблицей» (cross-widget)
-    //   • flyOnClick    + выбор из КАРТЫ   → «Подлететь к выбранному» (self)
     const flyTo = (): [number, number] | undefined => {
       const sel = data()?.selected;
       if (!sel) return undefined;
@@ -31,15 +34,7 @@ const World = Widget(
       return shouldFly ? [sel.location.lng, sel.location.lat] : undefined;
     };
     return (
-      <Ui.MapView
-        center={[30.3158, 59.9311]}
-        zoom={13}
-        flyTo={flyTo()}
-        // pitch={45}
-        // bearing={-20}
-        // class="h-full w-full"
-      >
-        {/*<Ui.MapView.Sky />*/}
+      <Ui.MapView center={[30.3158, 59.9311]} zoom={13} flyTo={flyTo()}>
         <Views.MarkersList items={data()?.items ?? []} activeId={data()?.selected?.id} />
       </Ui.MapView>
     );
@@ -48,3 +43,4 @@ const World = Widget(
 );
 
 export default World;
+*/

@@ -58,8 +58,12 @@ export const normalizeTarget = (partial: Partial<ITarget> = {}): ITarget => {
 
   // `from` не входит в `getTargetData` (это контракт ControllerProxy-level,
   // не UiProxy-level), поэтому мержим вручную.
+  // `base.meta` typed as `unknown` in getTargetData (generic `finalProps.meta?: unknown`)
+  // but we passed Partial<ITarget>.meta which is `ITagMeta | undefined` — cast is safe.
   return {
     ...base,
+    meta: base.meta as ITarget['meta'],
+    dynamicMeta: base.dynamicMeta as ITarget['dynamicMeta'],
     ...(partial.key !== undefined ? { key: partial.key } : {}),
     ...(partial.modifiers !== undefined ? { modifiers: partial.modifiers } : {}),
     ...(partial.from !== undefined ? { from: partial.from } : {}),
