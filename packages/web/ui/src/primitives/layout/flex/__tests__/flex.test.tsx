@@ -299,3 +299,74 @@ describe('Flex — plain object array (no children/resizable) falls back to chil
     expect(warnSpy).not.toHaveBeenCalled();
   });
 });
+
+// ---------------------------------------------------------------------------
+// 6. empty container min-height via inline style
+// ---------------------------------------------------------------------------
+
+describe('Flex — empty container gets inline min-height, non-empty does not', () => {
+  it('sets style.min-height to var(--size-slot) when no children are provided', () => {
+    cleanup = render(() => <Flex />, container);
+
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.style.minHeight).toBe('var(--size-slot)');
+  });
+
+  it('sets style.min-height to var(--size-slot) when children is explicitly null', () => {
+    cleanup = render(() => <Flex>{null}</Flex>, container);
+
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.style.minHeight).toBe('var(--size-slot)');
+  });
+
+  it('does NOT set style.min-height when children are present', () => {
+    cleanup = render(
+      () => (
+        <Flex>
+          <span>content</span>
+        </Flex>
+      ),
+      container,
+    );
+
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.style.minHeight).toBe('');
+  });
+
+  it('does NOT set min-height inline style in items-mode (items-mode is never "empty" in the slot sense)', () => {
+    const items: IFlexItem[] = [
+      { children: <div>A</div> },
+      { children: <div>B</div> },
+    ];
+
+    cleanup = render(() => <Flex items={items} />, container);
+
+    // items-mode renders either StaticItemsFlex or ResizableFlex — neither should
+    // carry the empty-state min-height (the slot-visibility concern is children-mode only).
+    const allEls = container.querySelectorAll('*');
+    for (const el of allEls) {
+      expect((el as HTMLElement).style.minHeight).not.toBe('var(--size-slot)');
+    }
+  });
+
+  it('does NOT set min-height inline style in resizable items-mode', () => {
+    const items: IFlexItem[] = [
+      { children: <div data-testid="a">A</div>, resizable: true, initialSize: 0.5 },
+      { children: <div data-testid="b">B</div>, resizable: true, initialSize: 0.5 },
+    ];
+
+    cleanup = render(() => <Flex items={items} />, container);
+
+    const allEls = container.querySelectorAll('*');
+    for (const el of allEls) {
+      expect((el as HTMLElement).style.minHeight).not.toBe('var(--size-slot)');
+    }
+  });
+
+  it('does NOT carry min-h-slot class (class replaced by inline style)', () => {
+    cleanup = render(() => <Flex />, container);
+
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.classList.contains('min-h-slot')).toBe(false);
+  });
+});

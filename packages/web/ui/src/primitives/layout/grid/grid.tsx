@@ -1,5 +1,5 @@
 import { cn } from '@capsuletech/web-style';
-import { type JSX, splitProps, type ValidComponent } from 'solid-js';
+import { children, type JSX, splitProps, type ValidComponent } from 'solid-js';
 import { Slot } from '../../slot';
 import type { IGridProps } from './interfaces';
 import { Item } from './item';
@@ -59,13 +59,29 @@ const GridImpl = <T extends ValidComponent = 'div'>(props: IGridProps<T>) => {
     return s;
   };
 
+  // Detect empty state: no children → apply inline min-height via CSS variable
+  // so the container stays visible/droppable in the UI editor even when empty.
+  // Inline style is used instead of a Tailwind utility class to avoid dependency
+  // on content-scan generating `min-h-slot` in the consumer's build.
+  const resolved = children(() => (props as { children?: JSX.Element }).children);
+  const isEmpty = () => {
+    const r = resolved();
+    return r == null || (Array.isArray(r) && r.length === 0);
+  };
+
+  const computedWithEmpty = (): JSX.CSSProperties => {
+    const s = computed();
+    if (isEmpty()) s['min-height'] = 'var(--size-slot)';
+    return s;
+  };
+
   // See note in flex.tsx — generic Slot props get coerced via `any`.
   return (
     <Slot
       {...({
         as: (poly.as as T) ?? ('div' as T),
         class: cn(own.inline ? 'inline-grid' : 'grid', own.class),
-        style: mergeStyle(computed(), own.style) as never,
+        style: mergeStyle(computedWithEmpty(), own.style) as never,
         ...(others as object),
       } as any)}
     />

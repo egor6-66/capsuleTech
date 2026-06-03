@@ -1,5 +1,5 @@
 import { cn } from '@capsuletech/web-style';
-import { createMemo, For, type JSX, Show, splitProps, type ValidComponent } from 'solid-js';
+import { children, createMemo, For, type JSX, Show, splitProps, type ValidComponent } from 'solid-js';
 import { Slot } from '../../slot';
 import { mergeStyle, toGap } from '../grid/utils';
 import { ResizableHandle, ResizablePanel, ResizableRoot } from './_resize/primitives';
@@ -278,6 +278,15 @@ export const Flex = <T extends ValidComponent = 'div'>(props: IFlexProps<T>) => 
     return undefined;
   };
 
+  // Resolve children reactively to detect empty state.
+  // Empty = null / undefined / empty array → container gets min-h-slot so it
+  // stays visible and droppable in the UI editor even when no children are present.
+  const resolved = children(() => (props as { children?: JSX.Element }).children);
+  const isEmpty = () => {
+    const r = resolved();
+    return r == null || (Array.isArray(r) && r.length === 0);
+  };
+
   const classes = () =>
     cn(
       own.inline ? 'inline-flex' : 'flex',
@@ -293,6 +302,9 @@ export const Flex = <T extends ValidComponent = 'div'>(props: IFlexProps<T>) => 
     if (own.gap !== undefined) s.gap = toGap(own.gap);
     if (own.gapX !== undefined) s['column-gap'] = toGap(own.gapX);
     if (own.gapY !== undefined) s['row-gap'] = toGap(own.gapY);
+    // Empty container → inline min-height via CSS variable so the slot stays
+    // visible/droppable in the editor without depending on Tailwind content-scan.
+    if (isEmpty()) s['min-height'] = 'var(--size-slot)';
     return s;
   };
 
