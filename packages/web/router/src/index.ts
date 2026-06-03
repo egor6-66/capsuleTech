@@ -4,9 +4,27 @@
  * Держим тут чтобы не плодить прямой импорт из `@tanstack/router-core` в web-core.
  */
 export type { AnyRoute } from '@tanstack/router-core';
+
+/**
+ * Утилиты для использования внутри `beforeLoad`-хука (и `loader`'ов).
+ * Ре-экспортируем из `@tanstack/solid-router`, чтобы приложение не импортировало
+ * движок напрямую — абстракция web-router остаётся непрозрачной.
+ *
+ * Пример:
+ * ```ts
+ * import { redirect, notFound } from '@capsuletech/web-router';
+ *
+ * beforeLoad: ({ location }) => {
+ *   if (!authed) throw redirect({ to: '/login' });
+ * }
+ * ```
+ */
+export { notFound, redirect } from '@tanstack/solid-router';
+
 export { RouterProvider } from '@tanstack/solid-router';
 export { RouterContext, useRouter } from './context';
 export type {
+  IBeforeLoadContext,
   ICapsuleRouter,
   ICapsuleRouterContext,
   ICreateRouterOpts,

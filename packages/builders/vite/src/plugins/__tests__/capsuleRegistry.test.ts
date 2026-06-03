@@ -441,6 +441,11 @@ describe('generateBootstrap — structure', () => {
     expect(out).toContain('notFoundRedirect={appConfig.router?.notFoundRedirect}');
   });
 
+  it('passes beforeLoad from appConfig.router to BaseProviders', () => {
+    const out = generateBootstrap();
+    expect(out).toContain('beforeLoad={appConfig.router?.beforeLoad}');
+  });
+
   it('appConfig import appears before layer side-effect imports', () => {
     const out = generateBootstrap();
     const appConfigImportIdx = out.indexOf("import appConfigRaw from '../capsule.app'");

@@ -7,6 +7,7 @@
 // его не вытягивали в context augmentation. Вернули inline-объявление здесь —
 // type-inversion приемлема, runtime-cycle она не создаёт.
 import type { ApiConfig, MwToolbox } from '@capsuletech/web-query';
+import type { ICreateRouterOpts } from '@capsuletech/web-router';
 
 /**
  * Конфиг приложения — то, что разработчик пишет в `apps/<app>/capsule.app.ts`.
@@ -34,6 +35,13 @@ export interface IAppConfig {
      * Дефолт — '/' (задаётся в BaseProviders).
      */
     notFoundRedirect?: string;
+    /**
+     * Глобальный guard на root-route. Получает TanStack beforeLoad-контекст
+     * (location/params/search/context/cause). Может быть async, бросать
+     * redirect()/notFound() из @capsuletech/web-router.
+     * Роутер не знает про auth — вся политика тут.
+     */
+    beforeLoad?: ICreateRouterOpts['beforeLoad'];
   };
 }
 
