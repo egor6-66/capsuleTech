@@ -50,6 +50,7 @@ import {
   Providers,                                        // namespace: { BaseProviders }
   useCtx,                                           // hook для доступа к ControllerContext
   useShapeUi,                                       // hook для Shape consumer'ов
+  useEmit,                                          // программный HCA-event dispatch (ADR 032)
   type ITarget, type IHandlerApi,                   // user-facing типы
   type IDefineStateSchema, type IStateHandlers,     // schema-типы
   type IServices, type IWrapperProps,               // injected types
@@ -109,6 +110,8 @@ import { BaseProviders } from '@capsuletech/web-core/providers';
 - **`next(payload)` — прямой вызов**, не XState event. `parent.controller[name]` вызывается напрямую с `await`. Не переписывать на event-bus без ADR (ADR 008 — гибридная FSM-схема).
 
 - **`useCtx()` — публичный hook из engine.** Исключение из правила выше: `useCtx` экспортируется в главный barrel и auto-импортируется через vite-builder HOOK_IMPORTS. Нужен для Views/Widgets чтобы читать reactive state из `ControllerContext` (`const ctx = useCtx(); ctx.store.ctx.items`). Источник: `src/engine/ctx.ts`, экспортируется из `wrappers/index.ts`.
+
+- **`useEmit()` — программный HCA-event dispatch (ADR 032, фаза 1).** Второе намеренное исключение из правила «engine/* не public». Возвращает функцию `emit(eventName, partial?)`, которая диспатчит событие в ближайший Controller по тому же пути что UiProxy: `ctx.controller[name](normalizedTarget, ctx.store.ctx)` → ControllerProxy резолвит `states[cur][name]` → top-level → `next()`. Предназначен для package entry-points (`web-dnd/controllers`, `web-renderer/controllers`) и low-level escape. Вне Controller-scope бросает явную ошибку. Источник: `src/engine/use-emit.ts`, экспортируется из `wrappers/index.ts`.
 
 - **8 workspace deps.** `web-core` зависит от `web-profiler`, `web-router`, `web-state`, `web-ui`, `web-query`, `shared-zod`, `vite-builder`, `web-style`. При изменении контрактов в любом из них — согласовывать с соответствующим owner'ом.
 

@@ -170,6 +170,38 @@ ctx.store.updateComponent({ [id]: { value: data.value, type: data.type } });
 
 Полный `target` (8 полей: name/value/type/meta/dynamicMeta/payload/key/modifiers) **по-прежнему** идёт в `ctx.controller[name]` как аргумент. В store-payload — только runtime-mutable поля (value/type). Семантика разделения: `registerComponent` — единоразово на mount; `updateComponent` — runtime patches, мержится в существующий `components[id]`; `update`/SET_DATA — user API для `schema.context`, UiProxy её больше не использует. Подробнее — [[web-state]] + [[020-component-data-flow-split]].
 
+## useEmit (engine/use-emit.ts) — ADR 032, фаза 1
+
+Программный близнец DOM-dispatch'а UiProxy. Источник: `src/engine/use-emit.ts`, экспортируется из `wrappers/index.ts` → `src/index.ts`.
+
+```ts
+import { useEmit } from '@capsuletech/web-core';
+
+// Внутри View/Widget рендерящегося в Controller-tree:
+const emit = useEmit();
+emit('onDrop', { payload: { nodeId: 'x' }, meta: { tags: ['canvas'] } });
+// → ctx.controller['onDrop'](normalizedTarget, ctx.store.ctx)
+// → ControllerProxy: states[cur].onDrop → top-level → next() автобаблинг
+```
+
+**Сигнатура:** `useEmit(): (eventName: string, target?: Partial<ITarget>) => unknown`
+
+- `eventName: string` — любое имя (строгая типизация против schema-ключей — фазы 3-4 ADR 032, TODO в файле).
+- `target?: Partial<ITarget>` — нормализуется через `normalizeTarget()`: `name` выводится из `meta.tags` через `deriveName`, `modifiers` не выставляется (нет DOM-события), `from` пробрасывается если задан.
+- Возврат — то что вернул handler (включая Promise); async-reject не проглатывается.
+- Вне Controller/Feature-scope бросает: `"useEmit must be used inside a Controller or Feature scope"`.
+
+**Dispatch-путь идентичен UiProxy (`buildEventBindings`, строка 124 ui-proxy.tsx):**
+`ctx.controller[eventName](normalizedTarget, ctx.store.ctx)`
+
+ControllerProxy резолвит `states[currentState][name]` → top-level → `next()` автобаблинг. Новый механизм не вводится.
+
+**Два сценария использования (ADR 032):**
+- **Primary (meta-bound)** — package entry-point (`web-dnd/controllers` droppable) внутри сам зовёт `useEmit()`.emit; симметрично `<Input meta>`.
+- **Escape (low-level)** — `const emit = useEmit(); emit('onSelect', { payload })` для полностью кастомных интеракций.
+
+**Намеренное исключение из правила «engine/* не public»** (gotcha #9): единственный способ дать внешним пакетам доступ к dispatch-механизму без его дублирования. Ацикличный граф сохранён (пакеты → web-core, не наоборот). Контракт ограничен только `useEmit`; остальное engine остаётся internal.
+
 ## ControllerProxy mechanic (engine/controller-proxy.ts)
 
 - Текущий стейт **читается из XState**: `state.value`. Собственного runtime нет.
@@ -240,6 +272,8 @@ ctx.store.updateComponent({ [id]: { value: data.value, type: data.type } });
 
 29. **Widget loader-колбэк + убран авто-`disabled`** (loader mechanism). `Widget` теперь принимает опциональный **2-й колбэк** — лоадер: `Widget(content, loader?)`, где `content = (Ui, store, props) => JSX` (как было), `loader = (Ui, props) => JSX` (stateless, БЕЗ `store` — только presentation, не зависит от данных). Рантайм в `wrappers/widget.tsx`: `<Show when={!(loader && store.loading)} fallback={loader(Ui, props)}>{content(...)}</Show>` — неактивная ветка `<Show>` **не монтируется**, поэтому тяжёлый контент (MapLibre-карта, виртуал-таблица) не инстанцируется, пока показан лоадер — это и убирает flicker при навигации. Лоадер-`Ui` содержит `Ui.Skeleton` / `Ui.Spinner` (lazy-регистрация в `ui-kit/imports.tsx`, типы в `ViewUiRaw`/`WidgetUiRaw`; сам `Skeleton` в web-ui обёрнут вокруг `@kobalte/core` Skeleton). Логика (Feature/Controller) дёргает ТОЛЬКО `store.setLoading(true/false)` (bracket вокруг async, `false` в `finally`) — про вид лоадера ничего не знает; одна Feature может оборачивать и таблицу, и карту, и каждый Widget подаёт свой скелетон. **Связанный breaking:** авто-`disabled` из `store.loading` **убран** из UiProxy (был «магией» — дизейблил инпуты по глобальному флагу). Теперь `store.loading` это чистый loader-сигнал без скрытых side-effect'ов; блокировка инпутов — explicit и адресно через `store.patch([tags], { disabled: true })`. См. [[widget-loader]], [[ui-proxy]], [[lifecycle]]. Эталон: `apps/ewc` (`features/incidents.ts` + `widgets/tables/incidents.tsx` + `widgets/maps/world.tsx`).
 
+31. **`useEmit` — намеренное исключение из «engine/* не public»** (ADR 032). `src/engine/use-emit.ts` экспортируется в публичный barrel — единственный способ дать внешним пакетам (`web-dnd/controllers`, `web-renderer/controllers`) доступ к dispatch-механизму без дублирования engine-логики. Контракт: только `useEmit` + `normalizeTarget` (последняя нужна для тестов и package entry-points). Если появляется соблазн добавить туда другие engine-exports — остановись и задай вопрос: это симптом, что нужен другой механизм или ADR. `normalizeTarget` не экспортируется из barrel (только из файла), она internal-helper для пакетов, работающих через subpath.
+
 ## Что менять когда
 
 | Хочу… | Куда лезть |
@@ -251,6 +285,7 @@ ctx.store.updateComponent({ [id]: { value: data.value, type: data.type } });
 | Добавить новый wrapper-слой (например `Adapter`) | `WRAPPER_NAMES` в `packages/builders/vite/src/plugins/constants.ts` (SSOT для AutoImport, делает owner-builders) + новый wrapper в `packages/web/core/src/wrappers/` + публичный API в `index.ts` + AI-anchor entry |
 | Добавить новое поле в `ITarget` (например `meta.section`) | `packages/web/core/src/wrappers/interfaces.ts > ITarget` + сборщик `target` в `engine/ui-proxy.tsx` + опционально `engine/derivation.ts` если выводится из tags. Tests! |
 | Добавить новый handler-event (`onScroll`) | `engine/ui-proxy.tsx > EVENT_HANDLERS` + (опц) `engine/derivation.ts > TAG_TO_INPUT_TYPE`. ADR 009. Tests! |
+| Расширить `useEmit` (строгая типизация имён событий) | `engine/use-emit.ts` — generic-параметр `<TSchema extends IDefineStateSchema>` на `emit`. Фазы 3-4 ADR 032: когда пакеты экспортируют Controller'ы из `/controllers`, тип `eventName` можно сузить до `keyof TSchema['states'][string]`. TODO в файле. |
 | Добавить новый primitive в KIND_TAGS auto-inject (например `Switch`) | `engine/ui-proxy.tsx > KIND_TAGS` + характеризационный тест в `engine/__tests__/ui-proxy.test.tsx`. Сам primitive должен быть добавлен в `@capsuletech/web-ui` ДО этого. Sub-components не трогать — они обходятся через recursive proxy без `componentName`. |
 | Изменить wrapper-сигнатуру | `packages/web/core/src/wrappers/<wrapper>.tsx` + `interfaces.ts` (типы) + CLI templates (`packages/cli/src/templates/`) + `.claude/agents/{view,widget,page,shape}.md` + `CLAUDE.md` table + characterization tests. BREAKING → bump major. |
 | Расширить ShapeUiContext | `packages/web/core/src/wrappers/shape/context.tsx`. **Не плющить registries в Ui** — это уже было (PR #114, реверт). Если нужен новый namespace — отдельный Context. |
