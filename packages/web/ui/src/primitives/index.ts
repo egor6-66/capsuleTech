@@ -14,6 +14,7 @@ export * from './slot';
 export * from './spinner';
 export * from './table';
 export * from './toggle';
+export * from './tooltip';
 export * from './typography';
 export * from './widget-frame';
 export * from './wrappers';

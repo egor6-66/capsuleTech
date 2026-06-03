@@ -300,6 +300,16 @@
       "types": "./dist/components/spinner/*.d.ts",
       "import": "./dist/components/spinner/*.mjs",
       "default": "./dist/components/spinner/*.mjs"
+    },
+    "./tooltip": {
+      "types": "./dist/components/tooltip/index.d.ts",
+      "import": "./dist/components/tooltip/index.mjs",
+      "default": "./dist/components/tooltip/index.mjs"
+    },
+    "./tooltip/*": {
+      "types": "./dist/components/tooltip/*.d.ts",
+      "import": "./dist/components/tooltip/*.mjs",
+      "default": "./dist/components/tooltip/*.mjs"
     }
   },
   "files": [
