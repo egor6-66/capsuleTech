@@ -14,15 +14,17 @@ import type { IPreset, IPropsRefiner } from '../types';
 const refineGrid: IPropsRefiner = (props) => ({
   ...props,
   cols: 2,
-  gap: 4,
-  class: 'w-full',
+  // Семантический токен из дизайн-сетки (density-aware).
+  gap: 'var(--space-component)',
+  class: 'w-full p-[var(--space-card)]',
 });
 
 const refineFlex: IPropsRefiner = (props) => ({
   ...props,
   direction: 'col',
-  gap: 4,
-  class: 'w-full',
+  // Семантический токен из дизайн-сетки (density-aware).
+  gap: 'var(--space-component)',
+  class: 'w-full p-[var(--space-card)]',
 });
 
 export const LAYOUT_2COL_PRESET: IPreset = {

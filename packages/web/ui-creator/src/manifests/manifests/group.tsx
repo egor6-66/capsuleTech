@@ -12,13 +12,20 @@ export const GroupManifest: IComponentManifest = {
   defaultProps: {
     orientation: 'horizontal',
     variant: 'separate',
-    gap: 2,
+    // gap: --space-tight — плотный шаг для inline-групп кнопок/тегов
+    // (меньше, чем --space-component, который для крупных блоков).
+    // В режиме attached gap игнорируется — only for separate mode.
+    gap: 'var(--space-tight)',
+    // padding через инлайн-стиль с CSS-токеном — всегда применяется, не требует
+    // content-scan Tailwind в приложении-консьюмере. --space-component = краевой отступ группы.
+    style: { padding: 'var(--space-component)' },
   },
   styleSlots: ['root'],
   propsSchema: z.object({
     orientation: z.enum(['horizontal', 'vertical']).optional().default('horizontal'),
     variant: z.enum(['separate', 'attached']).optional().default('separate'),
-    gap: z.number().optional().default(2),
-    class: z.string().optional(),
+    // gap: string (CSS value) или number (× 0.25rem). Предпочтителен токен-строкой.
+    gap: z.union([z.number(), z.string()]).optional().default('var(--space-tight)'),
+    style: z.record(z.string()).optional().default({ padding: 'var(--space-component)' }),
   }),
 };
