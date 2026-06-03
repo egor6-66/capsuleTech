@@ -4,6 +4,7 @@ import {
   createRouter,
   type ICapsuleRouter,
   type ICapsuleRouterContext,
+  type ICreateRouterOpts,
   RouterContext,
   RouterProvider,
 } from '@capsuletech/web-router';
@@ -35,6 +36,19 @@ interface IBaseProviderProps<TRouteTree extends AnyRoute = AnyRoute> {
    * Default — `true` (вместе с `vitals`).
    */
   showDashboard?: boolean;
+  /**
+   * Путь редиректа при notFound. По умолчанию '/' — несовпавшие маршруты ведут
+   * на корень basepath, откуда app-роутинг/auth решает дальше. Прокидывается
+   * генерируемым bootstrap'ом из capsule.app.ts → router.notFoundRedirect.
+   */
+  notFoundRedirect?: string;
+  /**
+   * Глобальный guard на root-route. Получает TanStack beforeLoad-контекст
+   * (location/params/search/context/cause). Может быть async, бросать
+   * redirect()/notFound() из @capsuletech/web-router.
+   * Роутер не знает про auth — вся политика тут.
+   */
+  beforeLoad?: ICreateRouterOpts['beforeLoad'];
   children?: any;
 }
 
@@ -55,6 +69,8 @@ export function BaseProviders<TRouteTree extends AnyRoute = AnyRoute>(
           routeTree: routeTree() as TRouteTree,
           context: props.routerContext,
           basepath: props.basepath,
+          notFoundRedirect: props.notFoundRedirect ?? '/',
+          beforeLoad: props.beforeLoad,
         });
         return (
           // RouterContext is parameterised on the default AnyRoute branch;

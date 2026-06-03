@@ -13,7 +13,9 @@ Context-based обёртка над `@tanstack/solid-router`. Предостав
 createRouter<TRouteTree>({
   routeTree,
   context?,
-  basepath?,       // v0.1.1+: URL-префикс под-пути раздачи (e.g. '/ewc')
+  basepath?,          // URL-префикс под-пути раздачи (e.g. '/ewc')
+  notFoundRedirect?,  // путь редиректа при 404; undefined → дефолтный экран TanStack
+  beforeLoad?,        // глобальный guard (auth, roles, maintenance) — ADR 030
 }): { raw: TanStackRouter<TRouteTree>; capsuleRouter: ICapsuleRouter<TRouteTree> }
 
 // Hook
@@ -23,9 +25,12 @@ useRouter(): ICapsuleRouter   // бросает вне Provider'а
 ICapsuleRouter<TRouteTree>    // { goTo, back, current, raw }
 ICapsuleRouterContext<TUser>  // TUser & { [k]: unknown }
 IGoToOpts                     // { params?, search?, hash?, replace? }
-ICreateRouterOpts<TRouteTree> // { routeTree, context?, basepath? }
+IBeforeLoadContext            // { location, cause, params, search, context, preload, abortController }
+ICreateRouterOpts<TRouteTree> // { routeTree, context?, basepath?, notFoundRedirect?, beforeLoad? }
 TanStackRouter                // re-export @tanstack/solid-router
 AnyRoute                      // re-export @tanstack/router-core
+redirect                      // re-export @tanstack/solid-router (для throw redirect(...))
+notFound                      // re-export @tanstack/solid-router (для throw notFound())
 ```
 
 ### Методы ICapsuleRouter
@@ -41,11 +46,11 @@ AnyRoute                      // re-export @tanstack/router-core
 
 | Файл | Что |
 |---|---|
-| `src/types.ts` | `wrap()`, `normalizeBase()`, все типы. Type-only импорт TanStack — секрет node-env тестов. |
-| `src/service.ts` | `createRouter()` — value-импорт `@tanstack/solid-router`, вызывает `normalizeBase` |
+| `src/types.ts` | `wrap()`, `normalizeBase()`, все типы (включая `IBeforeLoadContext`, `ICreateRouterOpts`). Type-only импорт TanStack — секрет node-env тестов. |
+| `src/service.ts` | `createRouter()` — value-импорт `@tanstack/solid-router`, проводит `notFoundRedirect` и `beforeLoad` |
 | `src/context.ts` | `RouterContext` + `useRouter()` hook |
-| `src/index.ts` | barrel |
-| `src/__tests__/` | 22 теста: wrap (14), normalizeBase (8), context (2) — node-env без jsdom |
+| `src/index.ts` | barrel + ре-экспорт `redirect`/`notFound` из `@tanstack/solid-router` |
+| `src/__tests__/` | 35 тестов: wrap (14), normalizeBase (8), context (2), notFoundRedirect (5), beforeLoad (6) — node-env без jsdom |
 
 ## Ключевые инварианты
 
@@ -67,6 +72,7 @@ AnyRoute                      // re-export @tanstack/router-core
 
 - ADR 003 — Context-based роутер
 - ADR 014 — `goTo` opts-object + generic `ICapsuleRouterContext`
+- ADR 030 — `notFoundRedirect` + generic `beforeLoad`-хук
 
 ## Release group
 

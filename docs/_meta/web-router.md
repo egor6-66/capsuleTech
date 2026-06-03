@@ -18,17 +18,17 @@ Context-based (ADR 003) обёртка над `@tanstack/solid-router`. Factory 
 
 | Файл | Что |
 |---|---|
-| `packages/web/router/src/index.ts` | barrel: переэкспорт `createRouter`, `useRouter`, `RouterContext`, `RouterProvider`, `AnyRoute` + типы |
-| `packages/web/router/src/service.ts` | `createRouter<TRouteTree>({ routeTree, context? })` — фабрика, value-импорт TanStack |
-| `packages/web/router/src/types.ts` | `wrap()` + типы (`ICapsuleRouter`, `ICreateRouterOpts`, `ICapsuleRouterContext`) |
+| `packages/web/router/src/index.ts` | barrel: переэкспорт `createRouter`, `useRouter`, `RouterContext`, `RouterProvider`, `AnyRoute`, `redirect`, `notFound` + типы |
+| `packages/web/router/src/service.ts` | `createRouter<TRouteTree>({ routeTree, context?, notFoundRedirect?, beforeLoad? })` — фабрика, value-импорт TanStack |
+| `packages/web/router/src/types.ts` | `wrap()` + типы (`ICapsuleRouter`, `ICreateRouterOpts`, `ICapsuleRouterContext`, `IBeforeLoadContext`) |
 | `packages/web/router/src/context.ts` | `RouterContext` (Solid Context) + `useRouter()` hook с throw'ом вне Provider'а |
-| `packages/web/router/src/__tests__/` | node-env: `wrap` + `normalizeBase` (20), `useRouter` (2) — без jsdom |
+| `packages/web/router/src/__tests__/` | node-env: `wrap` + `normalizeBase` (22), `useRouter` (2), `notFoundRedirect` (5), `beforeLoad` (6) — без jsdom |
 
 ## Public API
 
 ```ts
 // Фабрика
-createRouter<TRouteTree>({ routeTree, context?, basepath? }): {
+createRouter<TRouteTree>({ routeTree, context?, basepath?, notFoundRedirect?, beforeLoad? }): {
   raw: TanStackRouter<TRouteTree>;
   capsuleRouter: ICapsuleRouter<TRouteTree>;
 }
@@ -40,9 +40,12 @@ useRouter(): ICapsuleRouter   // generic TRouteTree теряется (см. го
 ICapsuleRouter<TRouteTree>             // { goTo, back, current, raw }
 ICapsuleRouterContext<TUser = {}>      // TUser & { [k: string]: unknown }
 IGoToOpts                              // { params?, search?, hash?, replace? }
-ICreateRouterOpts<TRouteTree>          // { routeTree, context?, basepath? }
+IBeforeLoadContext                     // { location, cause, params, search, context, preload, abortController }
+ICreateRouterOpts<TRouteTree>          // { routeTree, context?, basepath?, notFoundRedirect?, beforeLoad? }
 TanStackRouter                         // re-export @tanstack/solid-router Router
 AnyRoute                               // re-export @tanstack/router-core
+redirect                               // re-export @tanstack/solid-router (throw redirect(...))
+notFound                               // re-export @tanstack/solid-router (throw notFound())
 normalizeBase                          // pure helper: нормализует basepath для TanStack
 ```
 
@@ -96,6 +99,12 @@ apps/<app>/bootstrap.tsx
 
 12. **`current()` всегда app-relative, даже с basepath** — TanStack внутри запускает `rewriteBasepath` input-rewrite, который стрипает базовый путь из `location.pathname` до сохранения в store. Браузерный `/ewc/dashboard` при `basepath: '/ewc'` → `raw.state.location.pathname === '/dashboard'`. Вручную резать в `wrap()` не нужно.
 
+13. **`beforeLoad` перезаписывает существующий хук на `routeTree`** — если `__root.tsx` уже объявляет `beforeLoad`, а `createRouter({ beforeLoad: appGuard })` задан — `appGuard` **заменит** route-хук. Если нужна составная логика (route-guard + app-guard) — объедини в одной функции в `capsule.app.ts`. Параллельная цепочка (`compose`) не поддерживается из коробки.
+
+14. **`beforeLoad` применяется через `routeTree.options.beforeLoad`**, не через `.update()** — метод `.update()` принимает `UpdatableRouteOptions`, который не содержит `beforeLoad`. Прямая запись в `.options` корректна рантаймово и типово (`RouteOptions` включает `beforeLoad`). Cast `as any` на присвоении — обход несовместимости generic-параметра `TBeforeLoadFn` из `AnyRoute` с конкретным `IBeforeLoadContext`-колбэком.
+
+15. **`redirect` и `notFound` — из `@capsuletech/web-router`**, не из `@tanstack/solid-router` напрямую. Ре-экспортируем, чтобы apps не пробивали абстракцию движка.
+
 ## Pattern: derived signals from location
 
 `useLocation()` **without** `select` returns `() => router.stores.location.get()` — accessor but **without createMemo**. Solid sometimes inlines such as pure value → derived signals don't track.
@@ -117,6 +126,9 @@ Precedent: page-transition attempt in ewc 2026-05-28; `<Animate keyed={location(
 | Интегрировать в SSR | `wrap().back()` уже на `raw.history`; в `createRouter` добавить history-injection |
 | Использовать TanStack hooks напрямую (`useNavigate`, `useRouterState`) | НЕ надо — иди через `useRouter()` → `router.raw.*` (ADR 003 раздел B) |
 | Пробросить `basepath` из `BaseProviders` в web-core | Задача `owner-web-core` — добавить `basepath?` проп в `BaseProviders` и передать в `createRouter`. `normalizeBase` уже в `web-router/types.ts`. |
+| Пробросить `notFoundRedirect` из `BaseProviders` в web-core | Задача `owner-web-core` — добавить `notFoundRedirect?` проп в `BaseProviders` и передать в `createRouter`. Механизм уже реализован в `web-router/service.ts`. |
+| Пробросить `beforeLoad` из `BaseProviders` в web-core | Задача `owner-web-core` — добавить `beforeLoad?` проп в `BaseProviders` и передать в `createRouter`. Та же цепочка что `notFoundRedirect`. |
+| Добавить глобальный guard (auth, roles, maintenance) | `ICreateRouterOpts.beforeLoad` — колбэк `(ctx: IBeforeLoadContext) => void`. Бросает `redirect(...)` / `notFound()` из `@capsuletech/web-router`. Применяется на root-route через `routeTree.options.beforeLoad`. |
 
 ## Cross-links
 
