@@ -1,4 +1,39 @@
-import type { AnyRoute, AnyRouter, RouterCore } from '@tanstack/router-core';
+import type { AnyRoute, AnyRouter, ParsedLocation, RouterCore } from '@tanstack/router-core';
+
+/**
+ * Контекст, передаваемый в глобальный `beforeLoad`-хук (поле `ICreateRouterOpts.beforeLoad`).
+ *
+ * Является подмножеством `BeforeLoadContextOptions` TanStack для root-route
+ * (без специфичных для конкретного маршрута полей `search` / `params` с жёсткой
+ * типизацией — на root-level они всегда `{}`). Поля `navigate` и `buildLocation`
+ * намеренно исключены: в `beforeLoad` правильный паттерн — `throw redirect(...)`,
+ * а не `navigate(...)` (метод помечен deprecated в TanStack).
+ *
+ * Почему не переиспользуем `BeforeLoadContextOptions<...>` напрямую: он имеет
+ * 9 generic-параметров, связанных с конкретным route-деревом. Для root-guard'а
+ * большинство из них тривиальны (`{}` / `any`). Inline-тип + `ParsedLocation` из
+ * `@tanstack/router-core` (уже type-only импорт) даёт разработчику
+ * автокомплит по `ctx.location.pathname`, `ctx.cause`, `ctx.params`, `ctx.context`
+ * без раскрытия глубокой generic-стека TanStack.
+ *
+ * При смене движка этот интерфейс — единственная точка адаптации.
+ */
+export interface IBeforeLoadContext {
+  /** Разобранный URL текущей навигации (pathname, search, hash, href и т.д.). */
+  location: ParsedLocation;
+  /** Причина навигации: первый вход, переход, preload. */
+  cause: 'preload' | 'enter' | 'stay';
+  /** Path-параметры root-маршрута (всегда `{}` для root-route). */
+  params: Record<string, unknown>;
+  /** Поисковые параметры root-маршрута (всегда `{}` для root-route). */
+  search: Record<string, unknown>;
+  /** Роутерный context (пробрасывается из `createRouter({ context })`). */
+  context: Record<string, unknown>;
+  /** `true` если вызов — preload (не реальная навигация). */
+  preload: boolean;
+  /** AbortController текущей навигации. */
+  abortController: AbortController;
+}
 
 /**
  * Initial-context роутера — пробрасывается в каждый TanStack-route как
@@ -84,6 +119,38 @@ export interface ICreateRouterOpts<TRouteTree extends AnyRoute = AnyRoute> {
    * на `/dashboard`, без записи в history.
    */
   notFoundRedirect?: string;
+  /**
+   * Глобальный guard, вызываемый TanStack **перед** рендером любого маршрута.
+   * Исполняется на root-route — охватывает **все** навигации в приложении.
+   *
+   * Используй для: auth-редиректов, проверки ролей, maintenance-режима,
+   * feature-flags — всего, что должно отработать до загрузки страницы.
+   *
+   * Рекомендуемый паттерн:
+   * ```ts
+   * import { redirect } from '@capsuletech/web-router';
+   *
+   * beforeLoad: ({ location }) => {
+   *   const authed = !!localStorage.getItem('capsule-auth-token');
+   *   if (location.pathname.startsWith('/workspace') && !authed) {
+   *     throw redirect({ to: '/login', search: { redirect: location.href } });
+   *   }
+   * }
+   * ```
+   *
+   * - Может быть sync или async.
+   * - Должен бросать `redirect(...)` или `notFound()` (из `@capsuletech/web-router`)
+   *   для прерывания навигации. Возврат `void` — навигация продолжается.
+   * - Вызывается при КАЖДОЙ навигации (включая preload) — колбэк должен быть дешёвым.
+   * - Если `routeTree` уже содержит `beforeLoad` — этот колбэк **перезапишет** его.
+   *   Для составной логики объедини в одной функции.
+   *
+   * Тип контекста — `IBeforeLoadContext`. Поле `context` содержит значение,
+   * переданное в `createRouter({ context })`.
+   *
+   * См. [[030-router-notfound-and-beforeload|ADR 030]].
+   */
+  beforeLoad?: (ctx: IBeforeLoadContext) => void | Promise<void>;
 }
 
 /**
