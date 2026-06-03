@@ -40,7 +40,7 @@ const label = (type: string): string => getManifest(type)?.label ?? type.split('
 const icon = (type: string) => getManifest(type)?.icon;
 
 const Tree = Widget(() => {
-  const { tree, setTree, dropTargetId, setDropTargetId } = useEditor();
+  const { tree, setTree, dropTargetId, setDropTargetId, selectedId, setSelectedId } = useEditor();
   const dnd = useDnD();
 
   const spec = (): DragSpec | null => dragSpec(dnd.state.activeData());
@@ -146,21 +146,26 @@ const Tree = Widget(() => {
       return s != null && canInto(tree(), s, p.id);
     };
 
-    // Двусторонний синк: пока курсор над этой строкой — пишем цель в общий стор,
-    // канвас подсветит тот же контейнер. Очистку по концу drag делает Canvas.
+    // Двусторонний синк: пока курсор над ЭТОЙ строкой — пишем цель в общий стор
+    // (канвас подсветит тот же контейнер). Если над строкой, но валидной зоны нет
+    // — чистим, чтобы подсветка не залипала. Сброс по концу drag делает Canvas.
     createEffect(() => {
       const s = spec();
       if (!s) return;
+      if (!boxDrop.isOver() && !leafDrop.isOver()) return;
       const zone = boxZone() ?? leafLine();
-      if (!zone) return;
-      setDropTargetId(treeIntent(tree(), s, p.id, zone)?.parentId ?? null);
+      setDropTargetId(zone ? (treeIntent(tree(), s, p.id, zone)?.parentId ?? null) : null);
     });
 
     const Header = (props: { ref: (el: HTMLElement) => void }) => (
       <div
         ref={props.ref}
+        onClick={() => setSelectedId(p.id)}
         class="relative flex w-full min-w-0 cursor-grab items-center gap-1 rounded py-1 pr-1.5 text-sm hover:bg-accent/50"
-        classList={{ 'opacity-40': drag.isDragging() }}
+        classList={{
+          'opacity-40': drag.isDragging(),
+          'bg-primary/15 ring-1 ring-inset ring-primary': selectedId() === p.id,
+        }}
         style={{ 'padding-left': `${p.depth * 12 + 4}px` }}
       >
         <Show when={leafLine() === 'before'}>

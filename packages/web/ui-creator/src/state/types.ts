@@ -67,3 +67,9 @@ export interface IReorderChildrenPayload {
   parentId: NodeId;
   newOrder: NodeId[];
 }
+
+export interface IInsertSubtreePayload {
+  parentId: NodeId;
+  /** Куда вставить root фрагмента среди детей родителя. По умолчанию — в конец. */
+  index?: number;
+}

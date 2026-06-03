@@ -10,11 +10,25 @@
  * единые `canInto` / `canBeside`. Так add/move/reorder/palette→tree живут в
  * одном месте, а виджеты только определяют «куда показывает курсор».
  */
-import { addNode, type IEditorTree, moveNode, type NodeId } from '@capsuletech/web-ui-creator/state';
+import {
+  addNode,
+  type IEditorTree,
+  insertSubtree,
+  moveNode,
+  type NodeId,
+} from '@capsuletech/web-ui-creator/state';
 import { canDropInto, canMoveInto } from './rules';
 
-/** Что тащим: новый компонент из палитры или существующая нода дерева/канваса. */
-export type DragSpec = { kind: 'add'; type: string } | { kind: 'move'; nodeId: NodeId };
+/**
+ * Что тащим:
+ *  - `add` — новый одиночный компонент из палитры (по типу);
+ *  - `addTree` — готовый темплейт-фрагмент (материализованный preset);
+ *  - `move` — существующая нода дерева/канваса.
+ */
+export type DragSpec =
+  | { kind: 'add'; type: string }
+  | { kind: 'addTree'; fragment: IEditorTree }
+  | { kind: 'move'; nodeId: NodeId };
 
 /** Куда вставить: в `parentId` ПЕРЕД `beforeId` (или в конец, если null). */
 export interface DropIntent {
@@ -25,13 +39,22 @@ export interface DropIntent {
 /** Зона drop'а на строке дерева. */
 export type TreeZone = 'before' | 'after' | 'inside';
 
-type RawData = { source?: unknown; type?: unknown; nodeId?: unknown } | null;
+type RawData = {
+  source?: unknown;
+  type?: unknown;
+  nodeId?: unknown;
+  template?: unknown;
+} | null;
 
-/** Распознать DragSpec из payload web-dnd. palette → add, tree/canvas → move. */
+/** Распознать DragSpec из payload web-dnd. palette → add/addTree, tree/canvas → move. */
 export const dragSpec = (data: RawData): DragSpec | null => {
   if (!data) return null;
-  if (data.source === 'palette' && typeof data.type === 'string') {
-    return { kind: 'add', type: data.type };
+  if (data.source === 'palette') {
+    if (data.template && typeof data.template === 'object') {
+      return { kind: 'addTree', fragment: data.template as IEditorTree };
+    }
+    if (typeof data.type === 'string') return { kind: 'add', type: data.type };
+    return null;
   }
   if ((data.source === 'tree' || data.source === 'canvas') && typeof data.nodeId === 'string') {
     return { kind: 'move', nodeId: data.nodeId };
@@ -39,11 +62,19 @@ export const dragSpec = (data: RawData): DragSpec | null => {
   return null;
 };
 
+/** Тип root-ноды для add/addTree (для проверки accepts). */
+const intoType = (spec: DragSpec): string =>
+  spec.kind === 'add'
+    ? spec.type
+    : spec.kind === 'addTree'
+      ? (spec.fragment.nodes[spec.fragment.root]?.type ?? '')
+      : '';
+
 /** Можно ли поместить spec ВНУТРЬ `parentId`. */
 export const canInto = (tree: IEditorTree, spec: DragSpec, parentId: NodeId): boolean =>
-  spec.kind === 'add'
-    ? canDropInto(tree.nodes[parentId]?.type ?? '', spec.type)
-    : canMoveInto(tree, spec.nodeId, parentId);
+  spec.kind === 'move'
+    ? canMoveInto(tree, spec.nodeId, parentId)
+    : canDropInto(tree.nodes[parentId]?.type ?? '', intoType(spec));
 
 /** Можно ли поместить spec СОСЕДОМ узла `siblingId` (в его родителя). */
 export const canBeside = (tree: IEditorTree, spec: DragSpec, siblingId: NodeId): boolean => {
@@ -58,6 +89,11 @@ export const applyDrop = (tree: IEditorTree, spec: DragSpec, intent: DropIntent)
       const kids = tree.nodes[intent.parentId].children;
       const index = intent.beforeId ? kids.indexOf(intent.beforeId) : kids.length;
       return addNode(tree, { type: spec.type, parentId: intent.parentId, index }).tree;
+    }
+    if (spec.kind === 'addTree') {
+      const kids = tree.nodes[intent.parentId].children;
+      const index = intent.beforeId ? kids.indexOf(intent.beforeId) : kids.length;
+      return insertSubtree(tree, spec.fragment, { parentId: intent.parentId, index });
     }
     // move: индекс считаем в детях БЕЗ перемещаемой ноды (как ждёт moveNode).
     const kids = tree.nodes[intent.parentId].children.filter((c) => c !== spec.nodeId);

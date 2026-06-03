@@ -23,7 +23,6 @@ const Constructor = Page((Ui) => (
     <DnDProvider showDefaultOverlay>
       <Ui.Layout.Matrix
         preset="app-shell"
-        layoutMode="edit"
         slots={{
           sidebar: {
             children: (
@@ -44,11 +43,7 @@ const Constructor = Page((Ui) => (
             children: <Widgets.Canvas />,
           },
           rightBar: {
-            children: (
-              <div class="flex h-full items-center justify-center text-foreground/50">
-                Inspector
-              </div>
-            ),
+            children: <Widgets.Inspector />,
             initialSize: 0.14,
             draggable: true,
           },

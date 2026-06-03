@@ -14,7 +14,7 @@ const isFieldPart = (type: string) => type.startsWith('ui.Field.');
 export const FieldManifest: IComponentManifest = {
   type: 'ui.Field',
   label: 'Field',
-  category: 'container',
+  category: 'composition',
   icon: () => <FormInput size={16} />,
   description: 'Form-field: метка + ввод + описание/ошибка',
   accepts: (childType) => FIELD_DIRECT_CHILDREN.has(childType),

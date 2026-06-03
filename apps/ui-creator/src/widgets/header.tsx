@@ -5,9 +5,12 @@
  * «composition only in widgets»). Дальше тут появятся действия редактора.
  */
 const Header = Widget((Ui) => (
-  <Ui.Layout.Flex class="h-full items-center gap-4 px-4 border-b">
-    <span class="font-semibold">UI Creator</span>
-    <Shapes.Navigation />
+  <Ui.Layout.Flex align="center" justify="between" class="h-full border-b bg-background px-cell">
+    <Ui.Layout.Flex align="center" class="gap-cell">
+      <Ui.Typography variant="h4">UI Creator</Ui.Typography>
+      <Shapes.Navigation />
+    </Ui.Layout.Flex>
+    <Views.WorkspaceMenu />
   </Ui.Layout.Flex>
 ));
 

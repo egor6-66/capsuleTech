@@ -6,12 +6,13 @@ import type { JSX } from 'solid-js';
  * новые категории сознательно, чтобы палитра не разрослась.
  */
 export type ComponentCategory =
-  | 'control' //     Button, Input, Checkbox, …
-  | 'typography' // Title, Text, Label
-  | 'container' //  Card, Field, Wrapper (структурные обёртки)
-  | 'composite' //  Card.Header, Field.Label (parts составных компонентов)
-  | 'feedback' //   Separator, Alert, Toast
-  | 'wrapper'; //   Animate, Show, Suspense — non-visual обёртки
+  | 'control' //      Button, Input, Checkbox, …
+  | 'typography' //   Title, Text, Label
+  | 'container' //    Grid, Flex, Group, List — структурные layout-контейнеры
+  | 'composition' //  Card, Field — составные компонент-семейства с вложенными parts
+  | 'composite' //    Card.Header, Field.Label — parts составных компонентов
+  | 'feedback' //     Separator, Alert, Toast
+  | 'wrapper'; //     Animate, Show, Suspense — non-visual обёртки
 
 /**
  * Спецификация одного компонента для редактора. Описывает всё, что нужно

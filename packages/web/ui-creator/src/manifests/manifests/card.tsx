@@ -15,7 +15,7 @@ const isCardPart = (type: string) => type.startsWith('ui.Card.');
 export const CardManifest: IComponentManifest = {
   type: 'ui.Card',
   label: 'Card',
-  category: 'container',
+  category: 'composition',
   icon: () => <CreditCard size={16} />,
   description: 'Контейнер-карточка с шапкой/контентом/футером',
   accepts: (childType) => CARD_DIRECT_CHILDREN.has(childType),

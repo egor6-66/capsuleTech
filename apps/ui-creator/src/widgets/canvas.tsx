@@ -24,15 +24,22 @@ import { useEditor } from '../editor/store';
 const ROOM = 'min-h-12';
 const CAND = 'outline outline-1 outline-dashed outline-primary/40 [outline-offset:-1px]';
 const TARGET = 'outline outline-2 outline-primary bg-primary/10 [outline-offset:-2px]';
+const SELECTED = 'outline outline-2 outline-primary [outline-offset:-2px]';
 const LINE_BEFORE = 'border-t-2 border-primary';
 const LINE_END = 'border-b-2 border-primary';
 
 const Canvas = Widget((Ui) => {
-  const { tree, setTree, dropTargetId, setDropTargetId } = useEditor();
+  const { tree, setTree, dropTargetId, setDropTargetId, selectedId, setSelectedId } = useEditor();
   const registry = { ui: Ui } as unknown as Registry;
   const dnd = useDnD();
 
   const spec = (): DragSpec | null => dragSpec(dnd.state.activeData());
+
+  /** Клик по ноде в канвасе → выделить (клик по пустому фону — снять выделение). */
+  const onCanvasClick = (e: MouseEvent) => {
+    const el = (e.target as HTMLElement).closest('[data-node-id]') as HTMLElement | null;
+    setSelectedId(el?.dataset.nodeId ?? null);
+  };
 
   const drop = createDroppable({
     id: 'canvas-root',
@@ -54,9 +61,12 @@ const Canvas = Widget((Ui) => {
     return canvasIntent(tree(), s, pt.x, pt.y);
   });
 
-  // Двусторонний синк: пишем цель пока курсор над канвасом; чистим по концу drag.
+  // Двусторонний синк: пишем цель пока курсор над канвасом; чистим, когда drag
+  // кончился ИЛИ курсор не над каким-либо droppable (ушёл с цели/в палитру),
+  // иначе подсветка «залипает». Над деревом (overId != null, но не канвас) цель
+  // пишет дерево.
   createEffect(() => {
-    if (!dnd.state.activeData()) {
+    if (!dnd.state.activeData() || dnd.state.overId() == null) {
       setDropTargetId(null);
       return;
     }
@@ -69,6 +79,7 @@ const Canvas = Widget((Ui) => {
     const s = spec();
     const it = intent();
     const tgt = dropTargetId();
+    const sel = selectedId();
     const nodes: ISchema['components']['nodes'] = {};
     for (const [id, n] of Object.entries(src.nodes)) {
       const accepts = acceptsChildren(n);
@@ -82,17 +93,27 @@ const Canvas = Widget((Ui) => {
         isTarget ? TARGET : '',
         // линия в конец контейнера (нет beforeId) — только когда курсор над канвасом
         isTarget && it?.parentId === id && it.beforeId == null && !empty ? LINE_END : '',
+        // выделение — только в покое (во время drag приоритет у drop-подсветки)
+        !s && sel === id ? SELECTED : '',
+        // выбранному пустому контейнеру — высота, иначе outline на 0px не виден
+        !s && sel === id && empty ? ROOM : '',
       ]
         .filter(Boolean)
         .join(' ');
       nodes[id] = { ...n, props: { ...n.props, 'data-node-id': id, ...(cls ? { class: cls } : {}) } };
     }
-    if (it?.beforeId && nodes[it.beforeId]) {
-      const m = nodes[it.beforeId];
-      nodes[it.beforeId] = {
-        ...m,
-        props: { ...m.props, class: `${m.props.class ?? ''} ${LINE_BEFORE}` },
-      };
+    const beforeId = it?.beforeId;
+    if (beforeId) {
+      const before = nodes[beforeId];
+      if (before) {
+        nodes[beforeId] = {
+          ...before,
+          props: {
+            ...(before.props ?? {}),
+            class: `${(before.props?.class as string) ?? ''} ${LINE_BEFORE}`.trim(),
+          },
+        };
+      }
     }
     return { components: { root: src.root, nodes } };
   };
@@ -105,6 +126,7 @@ const Canvas = Widget((Ui) => {
         ref={drop.ref}
         class="relative min-h-0 flex-1 overflow-auto"
         classList={{ 'bg-primary/5': spec() != null }}
+        onClick={onCanvasClick}
       >
         <Renderer schema={renderSchema()} registry={registry} mode="static" />
         <Show when={isEmpty()}>
