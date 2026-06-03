@@ -78,6 +78,9 @@
      Tailwind p-1 = 1 × --spacing, p-2 = 2 × --spacing, etc. */
   --spacing: var(--spacing);
 
+  /* Semantic size utilities (density-aware) */
+  --spacing-slot: var(--size-slot);
+
   /* Semantic spacing utilities (density-aware) */
   --spacing-cell-tight: var(--space-cell-tight);
   --spacing-cell: var(--space-cell);
@@ -184,6 +187,15 @@
   --space-layout: calc(var(--space-4) * var(--density));
   --space-component: calc(var(--space-3) * var(--density));
   --space-tight: calc(var(--space-2) * var(--density));
+
+  /* Semantic size axis — minimum height tokens */
+  /* --size-slot: минимальная высота пустого Flex/Grid/Group контейнера.
+     Anchored на --space-7 (3rem / 48px) × density.
+     Выбор --space-7: 48px — комфортный минимум для прицеливания/дропа в UI-редакторе
+     и визуально заметный «слот на сетке» без детей. --space-6 (32px) слишком мало
+     для drop-target'а; --space-7 × density правильно сжимается в .compact-режиме.
+     Кандидат на вынос в ThemeEditor (editor/) как настраиваемый параметр сетки. */
+  --size-slot: calc(var(--space-7) * var(--density));
 
   /* Backward compat: old names used by matrix variants (until Phase 2 migration) */
   --spacing-base: var(--space-4);
