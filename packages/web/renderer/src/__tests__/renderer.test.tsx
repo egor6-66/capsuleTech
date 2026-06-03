@@ -3,7 +3,7 @@ import { type Component, createContext, createSignal, useContext } from 'solid-j
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Renderer } from '../renderer';
-import type { ISchema, RenderMode } from '../types';
+import type { IEditOverlayProps, ISchema, RenderMode } from '../types';
 
 // Renderer = «обобщённый Widget». Здесь cover'аем:
 //  1. чистый рендер дерева (resolve / props / meta / fallback)
@@ -929,5 +929,293 @@ describe('Renderer — runtime props reactivity (Slot 6)', () => {
     expect(container.querySelector('[data-testid="fb"]')?.textContent).toBe('v1:Missing');
     setFb(() => Fb2);
     expect(container.querySelector('[data-testid="fb"]')?.textContent).toBe('v2:Missing');
+  });
+});
+
+// ADR 031 — editOverlay: per-node design-поверхность без замеров.
+// Overlay монтируется внутрь каждой ноды как position:absolute; inset:0,
+// корень ноды форсится position:relative. Ноль getBoundingClientRect/ResizeObserver.
+describe('Renderer — editOverlay (ADR 031)', () => {
+  // Тестовый overlay: рендерит span с data-overlay={nodeId} для проверки
+  // в DOM. Хост в prod сделает box-shadow + pointer-events.
+  const TestOverlay: Component<IEditOverlayProps> = (p) => (
+    <div data-overlay={p.nodeId} data-testid={`overlay-${p.nodeId}`} />
+  );
+
+  it('без editOverlay — оверлеев нет, DOM не меняется (регрессия)', () => {
+    const Btn: Component<any> = (p) => (
+      <button data-testid="btn" type="button">
+        {p.children}
+      </button>
+    );
+    const schema: ISchema = {
+      components: {
+        root: 'r',
+        nodes: {
+          r: { id: 'r', type: 'Btn', parentId: null, children: [], props: { children: 'OK' } },
+        },
+      },
+    };
+    dispose = render(() => <Renderer schema={schema} registry={{ Btn }} />, container);
+    expect(container.querySelector('[data-overlay]')).toBeNull();
+    expect(container.querySelector('[data-testid="btn"]')?.textContent).toBe('OK');
+  });
+
+  it('с editOverlay — для каждой ноды монтируется overlay (число оверлеев = число нод)', () => {
+    const Card: Component<any> = (p) => <div data-testid="card">{p.children}</div>;
+    const Leaf: Component<any> = (p) => (
+      <span data-testid="leaf">{p.children}</span>
+    );
+    const schema: ISchema = {
+      components: {
+        root: 'card',
+        nodes: {
+          card: { id: 'card', type: 'Card', parentId: null, children: ['a', 'b'] },
+          a: { id: 'a', type: 'Leaf', parentId: 'card', children: [], props: { children: 'A' } },
+          b: { id: 'b', type: 'Leaf', parentId: 'card', children: [], props: { children: 'B' } },
+        },
+      },
+    };
+    dispose = render(
+      () => <Renderer schema={schema} registry={{ Card, Leaf }} editOverlay={TestOverlay} />,
+      container,
+    );
+    // 3 ноды → 3 overlay
+    const overlays = container.querySelectorAll('[data-overlay]');
+    expect(overlays.length).toBe(3);
+    // Каждому nodeId соответствует свой overlay
+    const ids = Array.from(overlays).map((el) => el.getAttribute('data-overlay'));
+    expect(ids).toContain('card');
+    expect(ids).toContain('a');
+    expect(ids).toContain('b');
+  });
+
+  it('реальный контент ноды (children/text) остаётся при наличии editOverlay', () => {
+    const Card: Component<any> = (p) => <div data-testid="card">{p.children}</div>;
+    const Btn: Component<any> = (p) => (
+      <button data-testid="btn" type="button">
+        {p.children}
+      </button>
+    );
+    const schema: ISchema = {
+      components: {
+        root: 'card',
+        nodes: {
+          card: { id: 'card', type: 'Card', parentId: null, children: ['btn'] },
+          btn: { id: 'btn', type: 'Btn', parentId: 'card', children: [], props: { children: 'Click' } },
+        },
+      },
+    };
+    dispose = render(
+      () => <Renderer schema={schema} registry={{ Card, Btn }} editOverlay={TestOverlay} />,
+      container,
+    );
+    // Реальный контент на месте
+    expect(container.querySelector('[data-testid="btn"]')?.textContent).toBe('Click');
+    // Оверлеи присутствуют для обеих нод
+    expect(container.querySelector('[data-testid="overlay-card"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="overlay-btn"]')).not.toBeNull();
+  });
+
+  it('leaf-нода (children=[], text из props.children) + overlay оба в DOM', () => {
+    const Btn: Component<any> = (p) => (
+      <button data-testid="btn" type="button">
+        {p.children}
+      </button>
+    );
+    const schema: ISchema = {
+      components: {
+        root: 'r',
+        nodes: {
+          r: { id: 'r', type: 'Btn', parentId: null, children: [], props: { children: 'Hi' } },
+        },
+      },
+    };
+    dispose = render(
+      () => <Renderer schema={schema} registry={{ Btn }} editOverlay={TestOverlay} />,
+      container,
+    );
+    expect(container.querySelector('[data-testid="btn"]')?.textContent).toBe('Hi');
+    expect(container.querySelector('[data-testid="overlay-r"]')).not.toBeNull();
+  });
+
+  it('void-нода (ui.Input) — overlay присутствует и рендер не ломается', () => {
+    // Фейковый Input-компонент, рендерящий настоящий <input>. Не принимает children.
+    const FakeInput: Component<any> = (p) => (
+      <input data-testid="input" type="text" placeholder={p.placeholder} />
+    );
+    const schema: ISchema = {
+      components: {
+        root: 'inp',
+        nodes: {
+          inp: {
+            id: 'inp',
+            type: 'ui.Input',
+            parentId: null,
+            children: [],
+            props: { placeholder: 'Type...' },
+          },
+        },
+      },
+    };
+    dispose = render(
+      () => (
+        <Renderer
+          schema={schema}
+          registry={{ ui: { Input: FakeInput } }}
+          editOverlay={TestOverlay}
+        />
+      ),
+      container,
+    );
+    // Input отрендерился
+    const input = container.querySelector('[data-testid="input"]');
+    expect(input).not.toBeNull();
+    expect((input as HTMLInputElement).placeholder).toBe('Type...');
+    // Overlay тоже есть
+    expect(container.querySelector('[data-testid="overlay-inp"]')).not.toBeNull();
+  });
+
+  it('void-обёртка НЕ использует display:contents (CSS-баг: не создаёт containing block)', () => {
+    // Регрессионный тест на конкретную структуру DOM:
+    // void-нода должна быть обёрнута в span с position:relative и display:block,
+    // а НЕ display:contents (который по CSS-спеке не создаёт own box и потому
+    // игнорирует position:relative — absolute overlay позиционировался бы
+    // относительно ближайшего настоящего containing block, т.е. родителя).
+    const FakeInput: Component<any> = () => (
+      <input data-testid="void-input" type="text" />
+    );
+    const schema: ISchema = {
+      components: {
+        root: 'inp',
+        nodes: {
+          inp: {
+            id: 'inp',
+            type: 'ui.Input',
+            parentId: null,
+            children: [],
+          },
+        },
+      },
+    };
+    dispose = render(
+      () => (
+        <Renderer
+          schema={schema}
+          registry={{ ui: { Input: FakeInput } }}
+          editOverlay={TestOverlay}
+        />
+      ),
+      container,
+    );
+    // Overlay и Input в DOM
+    const overlay = container.querySelector('[data-testid="overlay-inp"]');
+    expect(overlay).not.toBeNull();
+    const voidInput = container.querySelector('[data-testid="void-input"]');
+    expect(voidInput).not.toBeNull();
+
+    // Обёртка (общий родитель overlay и input) должна иметь position:relative
+    // и НЕ иметь display:contents.
+    const wrapper = overlay?.parentElement?.parentElement as HTMLElement | null;
+    expect(wrapper).not.toBeNull();
+    // Атрибут style содержит position:relative
+    expect(wrapper?.getAttribute('style')).toContain('position:relative');
+    // И НЕ содержит display:contents — это был неверный паттерн
+    expect(wrapper?.getAttribute('style')).not.toContain('display:contents');
+    // display:block — корректный containing block
+    expect(wrapper?.getAttribute('style')).toContain('display:block');
+  });
+
+  it('editOverlay ортогонален mode: static + editOverlay — overlay есть, interactions нет', () => {
+    const Wrap: Component<any> = (p) => <div data-testid="wrap">{p.children}</div>;
+    const Btn: Component<any> = (p) => (
+      <button data-testid="btn" type="button">
+        {p.children}
+      </button>
+    );
+    const schema: ISchema = {
+      components: {
+        root: 'r',
+        nodes: {
+          r: { id: 'r', type: 'Btn', parentId: null, children: [], props: { children: 'X' } },
+        },
+      },
+      interactions: [{ id: 'i', nodeId: 'r', kind: 'controller', ref: 'W' }],
+    };
+    dispose = render(
+      () => (
+        <Renderer
+          schema={schema}
+          registry={{ Btn, W: Wrap }}
+          mode="static"
+          editOverlay={TestOverlay}
+        />
+      ),
+      container,
+    );
+    // static — interaction-wrapper не применён
+    expect(container.querySelector('[data-testid="wrap"]')).toBeNull();
+    // editOverlay работает независимо от mode
+    expect(container.querySelector('[data-testid="overlay-r"]')).not.toBeNull();
+    // Контент на месте
+    expect(container.querySelector('[data-testid="btn"]')?.textContent).toBe('X');
+  });
+
+  it('editOverlay ортогонален mode: controlled + editOverlay — overlay есть, interaction тоже', () => {
+    const Wrap: Component<any> = (p) => <div data-testid="wrap">{p.children}</div>;
+    const Btn: Component<any> = (p) => (
+      <button data-testid="btn" type="button">
+        {p.children}
+      </button>
+    );
+    const schema: ISchema = {
+      components: {
+        root: 'r',
+        nodes: {
+          r: { id: 'r', type: 'Btn', parentId: null, children: [], props: { children: 'X' } },
+        },
+      },
+      interactions: [{ id: 'i', nodeId: 'r', kind: 'controller', ref: 'W' }],
+    };
+    dispose = render(
+      () => (
+        <Renderer
+          schema={schema}
+          registry={{ Btn, W: Wrap }}
+          mode="controlled"
+          editOverlay={TestOverlay}
+        />
+      ),
+      container,
+    );
+    // controlled — interaction-wrapper присутствует
+    expect(container.querySelector('[data-testid="wrap"]')).not.toBeNull();
+    // editOverlay тоже есть
+    expect(container.querySelector('[data-testid="overlay-r"]')).not.toBeNull();
+    // Контент на месте
+    expect(container.querySelector('[data-testid="btn"]')?.textContent).toBe('X');
+  });
+
+  it('overlay корректно передаёт nodeId: data-overlay совпадает с id ноды', () => {
+    // TestOverlay (объявлен в describe) рендерит data-testid="overlay-{nodeId}".
+    // Тест проверяет что nodeId в overlay совпадает с id конкретной ноды.
+    // Компонент должен форвардить children, иначе overlay (инжектируемый через
+    // children-prop) не попадёт в DOM-поддерево компонента.
+    const Box: Component<any> = (p) => <div data-testid="box">{p.children}</div>;
+    const schema: ISchema = {
+      components: {
+        root: 'mynode',
+        nodes: {
+          mynode: { id: 'mynode', type: 'Box', parentId: null, children: [] },
+        },
+      },
+    };
+    dispose = render(
+      () => <Renderer schema={schema} registry={{ Box }} editOverlay={TestOverlay} />,
+      container,
+    );
+    // TestOverlay рендерит data-overlay={p.nodeId} и data-testid="overlay-{p.nodeId}"
+    expect(container.querySelector('[data-overlay="mynode"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="overlay-mynode"]')).not.toBeNull();
   });
 });

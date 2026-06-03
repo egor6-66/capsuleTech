@@ -93,6 +93,16 @@ export interface IErrorFallbackProps {
   reset: () => void;
 }
 
+/**
+ * Пропсы, которые рендерер передаёт в компонент `editOverlay` для каждой ноды.
+ * Хост читает `nodeId` и `node` из editor-store, рисует chrome (обводка, подсветка,
+ * drag-handle и т.п.) средствами CSS без единого замера геометрии.
+ */
+export interface IEditOverlayProps {
+  nodeId: NodeId;
+  node: IEditorNode;
+}
+
 export interface IRendererProps {
   schema: ISchema;
   registry: Registry;
@@ -107,4 +117,16 @@ export interface IRendererProps {
   errorFallback?: Component<IErrorFallbackProps>;
   /** Fallback для верхнеуровневого `<Suspense>` (lazy-children и т.п.). */
   loadingFallback?: JSX.Element;
+  /**
+   * Если задан — рендерер в «edit-decoration» режиме: для каждой ноды подвешивает
+   * overlay-слот (`position:absolute; inset:0` внутри бокса ноды), в который хост
+   * рисует editor-chrome (обводка/заливка/ловля событий).
+   *
+   * Ортогонален `mode` — НЕ вводит новый RenderMode. `mode` управляет шкалой
+   * interaction-возможностей (static|controlled|full); `editOverlay` управляет
+   * только decoration-слоем. Оба параметра независимы и комбинируемы.
+   *
+   * Отсутствует → обычный рендер; путь выполнения не меняется.
+   */
+  editOverlay?: Component<IEditOverlayProps>;
 }
