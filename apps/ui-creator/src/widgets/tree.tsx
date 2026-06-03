@@ -35,12 +35,17 @@ import { useEditor } from '../editor/store';
 
 /** Толщина краевых полос «before»/«after» у контейнера (px). */
 const EDGE = 6;
+/** Палитра цветных меток узлов (юзер помечает блоки для наглядности). */
+const MARK_COLORS = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6', '#a855f7', '#ec4899'];
+/** Полупрозрачная заливка из цвета (работает и с hex, и с var(--primary)). */
+const fill = (c: string, pct: number) => `color-mix(in srgb, ${c} ${pct}%, transparent)`;
 
 const label = (type: string): string => getManifest(type)?.label ?? type.split('.').pop() ?? type;
 const icon = (type: string) => getManifest(type)?.icon;
 
-const Tree = Widget(() => {
-  const { tree, setTree, dropTargetId, setDropTargetId, selectedId, setSelectedId } = useEditor();
+const Tree = Widget((Ui) => {
+  const { tree, setTree, dropTargetId, setDropTargetId, selectedId, setSelectedId, marks, setMark } =
+    useEditor();
   const dnd = useDnD();
 
   const spec = (): DragSpec | null => dragSpec(dnd.state.activeData());
@@ -62,6 +67,35 @@ const Tree = Widget(() => {
     const node = () => tree().nodes[p.id];
     const hasChildren = () => node().children.length > 0;
     const isContainer = () => acceptsChildren(node());
+    const mark = () => marks()[p.id];
+    /** Цвет обводки узла: цветная метка доминирует, иначе — primary. */
+    const colorOf = () => mark() ?? 'var(--primary)';
+
+    /**
+     * Единая подсветка бокса-контейнера через box-shadow (не border/outline —
+     * не влияет на лайаут). Цвет всегда colorOf(): помеченный узел подсвечивается
+     * своим цветом во ВСЕХ состояниях (выделение / drop-цель / кандидат / метка).
+     *
+     * Метка не выходит за строку: overflow:hidden на боксе + inset box-shadow
+     * (не border) — лишней раскладочной коробки нет, бокового overflow тоже.
+     */
+    const boxStyle = (): JSX.CSSProperties | undefined => {
+      const c = colorOf();
+      if (spec() != null) {
+        if (boxZone() === 'inside' || dropTargetId() === p.id)
+          return { 'box-shadow': `inset 0 0 0 2px ${c}`, 'background-color': fill(c, 12) };
+        if (insideCandidate())
+          return { 'box-shadow': `inset 0 0 0 1px ${c}`, 'background-color': fill(c, 6) };
+        if (mark())
+          return { 'box-shadow': `inset 0 0 0 1px ${mark()}`, 'background-color': fill(mark()!, 8) };
+        return undefined;
+      }
+      if (selectedId() === p.id)
+        return { 'box-shadow': `inset 0 0 0 2px ${c}`, 'background-color': fill(c, 16) };
+      if (mark())
+        return { 'box-shadow': `inset 0 0 0 1px ${mark()}`, 'background-color': fill(mark()!, 8) };
+      return undefined;
+    };
 
     /** Зона контейнера по позиции курсора: кромки → before/after, иначе inside. */
     const containerZone = (s: DragSpec, clientY: number): TreeZone | null => {
@@ -160,13 +194,27 @@ const Tree = Widget(() => {
     const Header = (props: { ref: (el: HTMLElement) => void }) => (
       <div
         ref={props.ref}
-        onClick={() => setSelectedId(p.id)}
+        onClick={() => setSelectedId((cur) => (cur === p.id ? null : p.id))}
         class="relative flex w-full min-w-0 cursor-grab items-center gap-1 rounded py-1 pr-1.5 text-sm hover:bg-accent/50"
         classList={{
           'opacity-40': drag.isDragging(),
-          'bg-primary/15 ring-1 ring-inset ring-primary': selectedId() === p.id,
         }}
-        style={{ 'padding-left': `${p.depth * 12 + 4}px` }}
+        style={{
+          'padding-left': `${p.depth * 12 + 4}px`,
+          // Выделение листа в ЦВЕТЕ МЕТКИ (метка доминирует над primary).
+          // Используем inline-style чтобы не хардкодить primary: цвет динамический.
+          ...(selectedId() === p.id && !isContainer()
+            ? {
+                'box-shadow': `inset 0 0 0 2px ${colorOf()}`,
+                'background-color': fill(colorOf(), 20),
+              }
+            : mark()
+              ? {
+                  'box-shadow': `inset 0 0 0 1px ${mark()}`,
+                  'background-color': fill(mark()!, 8),
+                }
+              : {}),
+        }}
       >
         <Show when={leafLine() === 'before'}>
           <div class="pointer-events-none absolute inset-x-0 -top-px z-10 h-0.5 rounded bg-primary" />
@@ -191,6 +239,41 @@ const Tree = Widget(() => {
         </Show>
         <span class="shrink-0 text-foreground/50">{icon(node().type)?.()}</span>
         <span class="truncate">{label(node().type)}</span>
+        <Show when={isContainer()}>
+          {/* Цветная метка — через наш Ui.Dropdown (портал + позиционирование),
+              не кастомный поповер. Клик не должен выделять ноду/стартовать drag. */}
+          <span class="ml-auto shrink-0" onClick={(e) => e.stopPropagation()}>
+            <Ui.Dropdown>
+              <Ui.Dropdown.Trigger
+                data-dnd-cancel
+                title="Цветная метка"
+                class="block size-3.5 rounded-full border border-foreground/30"
+                style={mark() ? { 'background-color': mark() } : undefined}
+              />
+              <Ui.Dropdown.Content class="flex items-center gap-1 p-1">
+                <For each={MARK_COLORS}>
+                  {(c) => (
+                    <Ui.Dropdown.Item
+                      class="size-4 cursor-pointer rounded-full p-0"
+                      style={{ 'background-color': c }}
+                      onSelect={() => {
+                        setMark(p.id, c);
+                      }}
+                    />
+                  )}
+                </For>
+                <Ui.Dropdown.Item
+                  class="flex size-4 cursor-pointer items-center justify-center rounded-full border border-border p-0 text-foreground/60"
+                  onSelect={() => {
+                    setMark(p.id, null);
+                  }}
+                >
+                  ×
+                </Ui.Dropdown.Item>
+              </Ui.Dropdown.Content>
+            </Ui.Dropdown>
+          </span>
+        </Show>
       </div>
     );
 
@@ -199,22 +282,18 @@ const Tree = Widget(() => {
 
     // Контейнер — бокс (заголовок + блок детей), droppable на всём боксе.
     return (
-      <div
-        ref={setBoxRef}
-        class="relative rounded pb-1"
-        classList={{
-          'bg-primary/10 ring-1 ring-primary ring-inset': boxZone() === 'inside',
-          'outline outline-1 outline-dashed outline-primary/40 [outline-offset:-1px]':
-            insideCandidate() && boxZone() !== 'inside',
-          // Кросс-подсветка: цель drop'а из канваса.
-          'ring-2 ring-primary ring-inset bg-primary/10': dropTargetId() === p.id,
-        }}
-      >
+      <div ref={setBoxRef} class="relative overflow-hidden rounded pb-1" style={boxStyle()}>
         <Show when={boxZone() === 'before'}>
-          <div class="pointer-events-none absolute inset-x-0 -top-px z-10 h-0.5 rounded bg-primary" />
+          <div
+            class="pointer-events-none absolute inset-x-0 -top-px z-10 h-0.5 rounded"
+            style={{ 'background-color': colorOf() }}
+          />
         </Show>
         <Show when={boxZone() === 'after'}>
-          <div class="pointer-events-none absolute inset-x-0 -bottom-px z-10 h-0.5 rounded bg-primary" />
+          <div
+            class="pointer-events-none absolute inset-x-0 -bottom-px z-10 h-0.5 rounded"
+            style={{ 'background-color': colorOf() }}
+          />
         </Show>
         <Header ref={setHeaderRef} />
         <Show when={hasChildren() && !isCollapsed(p.id)}>

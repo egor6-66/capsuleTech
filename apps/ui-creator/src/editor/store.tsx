@@ -21,7 +21,26 @@ const createEditorStore = () => {
   // Текущая цель drop'а (узел, куда упадёт элемент) — для кросс-подсветки
   // Canvas ↔ Tree во время перетаскивания из палитры.
   const [dropTargetId, setDropTargetId] = createSignal<NodeId | null>(null);
-  return { tree, setTree, selectedId, setSelectedId, dropTargetId, setDropTargetId };
+  // Цветные метки узлов (декорация редактора, не часть дерева): nodeId → CSS-цвет.
+  // Юзер вручную помечает блоки разными цветами для наглядности (Tree + Canvas).
+  const [marks, setMarks] = createSignal<Record<NodeId, string>>({});
+  const setMark = (id: NodeId, color: string | null) =>
+    setMarks((prev) => {
+      const next = { ...prev };
+      if (color) next[id] = color;
+      else delete next[id];
+      return next;
+    });
+  return {
+    tree,
+    setTree,
+    selectedId,
+    setSelectedId,
+    dropTargetId,
+    setDropTargetId,
+    marks,
+    setMark,
+  };
 };
 
 export type IEditorStore = ReturnType<typeof createEditorStore>;
