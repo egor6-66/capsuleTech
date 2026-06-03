@@ -25,6 +25,18 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@capsuletech/nexus", "dev"],
       "port": 3100
+    },
+    {
+      "name": "ewc-preview",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["exec", "vite", "preview", "apps/ewc", "--base", "/ewc/", "--outDir", "dist", "--port", "4180", "--strictPort"],
+      "port": 4180
+    },
+    {
+      "name": "testhub-dev",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@capsuletech/testhub", "dev"],
+      "port": 3100
     }
   ]
 }
