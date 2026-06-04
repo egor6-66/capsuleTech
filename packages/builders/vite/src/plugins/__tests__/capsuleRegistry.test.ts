@@ -6,13 +6,15 @@
  *
  * What is covered:
  *
- * ── Wrappers (generateWrappersRuntime / generateWrappersTypes) ───────────────
- *  - Entities flat file → eager import (not lazy), correct variable name.
- *  - Entities nested folder → nested namespace (Entities.Users.Profile).
- *  - Empty entities/ folder → empty Entities object (no crash, no lazy).
- *  - Widget flat file → lazy() import (existing layers unaffected).
- *  - Object.assign(globalThis, ...) present after all export const decls.
- *  - Types interface shape for all layer scenarios.
+ * ── Barrel registry (ADR-034) ─────────────────────────────────────────────────
+ *  - generateRegistryIndex emits 'export * as Widgets from ...' for all layers.
+ *  - generateRegistryPackageJson has sideEffects: false.
+ *  - generateBarrelRegistry — flat leaf → leaf export { default as X }.
+ *  - generateBarrelRegistry — nested leaf → intermediate export * as + leaf.
+ *  - generateBarrelRegistry — empty layer → empty barrel (export {}).
+ *  - generateBarrelRegistry — no lazy(), no globalThis.
+ *  - generateBarrelRegistry — all 6 layer index files are present.
+ *  - generateBarrelRegistry — registry/index.ts and package.json are present.
  *
  * ── Endpoints (generateEndpointsRuntime / generateEndpointsTypes) ────────────
  *  - Flat endpoint file → endpoints.user.
@@ -27,15 +29,16 @@
  *  - IAppConfig type-only import.
  *
  * ── Bootstrap (generateBootstrap) ────────────────────────────────────────────
- *  - Import order strictly matches LAYER_INIT_ORDER phases.
- *  - wrappers (globals) imported before app-config (subsystems).
+ *  - packages (globals) imported before app-config (subsystems).
  *  - routeTree named import present.
  *  - styles.css and BaseProviders are present.
+ *  - No wrappers side-effect import (ADR-034 — no globalThis assign).
  *  - No editable user content in the file.
  *
  * ── LAYER_INIT_ORDER contract ─────────────────────────────────────────────────
  *  - 'globals' phase comes before 'subsystems' which comes before 'render'.
- *  - 'wrappers' entry is phase 'globals'.
+ *  - No 'wrappers' entry (ADR-034).
+ *  - 'packages' entry is phase 'globals'.
  *  - 'routes' entry is phase 'render'.
  *  - All entries have unique names.
  *
@@ -53,13 +56,14 @@ import { describe, expect, it } from 'vitest';
 import {
   CapsuleRegistryPlugin,
   generateAppConfigRuntime,
+  generateBarrelRegistry,
   generateBootstrap,
   generateEndpointsRuntime,
   generateEndpointsTypes,
   generatePackagesRuntime,
   generatePackagesTypes,
-  generateWrappersRuntime,
-  generateWrappersTypes,
+  generateRegistryIndex,
+  generateRegistryPackageJson,
   LAYER_INIT_ORDER,
   parseManifestSource,
   type ResolvedPackageEntry,
@@ -93,197 +97,226 @@ const endpointLeaf = (segments: string[], relPath: string): EndpointLeaf => ({
 });
 
 // ---------------------------------------------------------------------------
-// Wrappers — runtime
+// Barrel registry — generateRegistryIndex
 // ---------------------------------------------------------------------------
 
-describe('generateWrappersRuntime — Entities flat file', () => {
-  const leaf = wrapperLeaf('entities', '@entities/users', ['Users']);
-
-  it('emits eager import at top of file (not lazy)', () => {
-    const out = generateWrappersRuntime([leaf]);
-    expect(out).toContain("import _Users from '@entities/users';");
-    expect(out).not.toContain("lazy(() => import('@entities/users'))");
+describe('generateRegistryIndex', () => {
+  it('emits export * as Widgets from ./widgets', () => {
+    const out = generateRegistryIndex();
+    expect(out).toContain("export * as Widgets from './widgets';");
   });
 
-  it('emits Entities export referencing the import variable', () => {
-    const out = generateWrappersRuntime([leaf]);
-    expect(out).toContain('export const Entities = {');
-    expect(out).toContain('Users: _Users');
-  });
-});
-
-describe('generateWrappersRuntime — Entities nested namespace', () => {
-  const leaf = wrapperLeaf('entities', '@entities/users/profile', ['Users', 'Profile']);
-
-  it('emits eager import with underscore-joined variable name', () => {
-    const out = generateWrappersRuntime([leaf]);
-    expect(out).toContain("import _Users_Profile from '@entities/users/profile';");
+  it('emits all 6 namespaces', () => {
+    const out = generateRegistryIndex();
+    expect(out).toContain("export * as Widgets from './widgets';");
+    expect(out).toContain("export * as Views from './views';");
+    expect(out).toContain("export * as Controllers from './controllers';");
+    expect(out).toContain("export * as Features from './features';");
+    expect(out).toContain("export * as Shapes from './shapes';");
+    expect(out).toContain("export * as Entities from './entities';");
   });
 
-  it('emits nested namespace Entities.Users.Profile', () => {
-    const out = generateWrappersRuntime([leaf]);
-    expect(out).toContain('Users: {');
-    expect(out).toContain('Profile: _Users_Profile');
+  it('starts with generated comment', () => {
+    const out = generateRegistryIndex();
+    expect(out.startsWith('// generated by CapsuleRegistryPlugin')).toBe(true);
   });
-});
 
-describe('generateWrappersRuntime — empty entities folder', () => {
-  it('emits empty Entities object (no crash, no lazy)', () => {
-    const out = generateWrappersRuntime([]);
-    expect(out).toContain('export const Entities = {};');
-    expect(out).not.toContain("lazy(() => import('@entities");
+  it('does not contain Object.assign', () => {
+    const out = generateRegistryIndex();
+    expect(out).not.toContain('Object.assign');
+  });
+
+  it('does not contain globalThis', () => {
+    const out = generateRegistryIndex();
+    expect(out).not.toContain('globalThis');
   });
 });
 
-describe('generateWrappersRuntime — widget layer uses lazy (regression)', () => {
+// ---------------------------------------------------------------------------
+// Barrel registry — generateRegistryPackageJson
+// ---------------------------------------------------------------------------
+
+describe('generateRegistryPackageJson', () => {
+  it('contains sideEffects: false', () => {
+    const out = generateRegistryPackageJson();
+    const parsed = JSON.parse(out);
+    expect(parsed.sideEffects).toBe(false);
+  });
+
+  it('is valid JSON', () => {
+    const out = generateRegistryPackageJson();
+    expect(() => JSON.parse(out)).not.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Barrel registry — generateBarrelRegistry
+// ---------------------------------------------------------------------------
+
+describe('generateBarrelRegistry — widget leaf at 2-segment path (Forms/Auth)', () => {
+  // ['Forms', 'Auth'] → leaf is Auth inside Forms dir (no deeper subdir)
   const leaf = wrapperLeaf('widgets', '@widgets/forms/auth', ['Forms', 'Auth']);
 
-  it('widget leaf uses lazy(), not eager import', () => {
-    const out = generateWrappersRuntime([leaf]);
-    expect(out).toContain("lazy(() => import('@widgets/forms/auth'))");
-    expect(out).not.toContain('import _Forms_Auth');
+  it('generates registry/index.ts with export * as Widgets', () => {
+    const files = generateBarrelRegistry([leaf]);
+    const index = files.get('index.ts');
+    expect(index).toBeDefined();
+    expect(index).toContain("export * as Widgets from './widgets';");
   });
 
-  it('Widgets namespace is present', () => {
-    const out = generateWrappersRuntime([leaf]);
-    expect(out).toContain('export const Widgets = {');
-  });
-});
-
-describe('generateWrappersRuntime — multiple entities sorted', () => {
-  const leaf1 = wrapperLeaf('entities', '@entities/products', ['Products']);
-  const leaf2 = wrapperLeaf('entities', '@entities/users', ['Users']);
-
-  it('emits both eager imports', () => {
-    const out = generateWrappersRuntime([leaf1, leaf2]);
-    expect(out).toContain("import _Products from '@entities/products';");
-    expect(out).toContain("import _Users from '@entities/users';");
+  it('generates widgets/index.ts with export * as Forms', () => {
+    const files = generateBarrelRegistry([leaf]);
+    const widgetsIndex = files.get('widgets/index.ts');
+    expect(widgetsIndex).toBeDefined();
+    expect(widgetsIndex).toContain("export * as Forms from './forms';");
   });
 
-  it('Entities object contains both keys', () => {
-    const out = generateWrappersRuntime([leaf1, leaf2]);
-    expect(out).toContain('Products: _Products');
-    expect(out).toContain('Users: _Users');
-  });
-});
-
-describe('generateWrappersRuntime — Object.assign(globalThis) ordering', () => {
-  it('output contains Object.assign(globalThis, ...) at module top level', () => {
-    const leaf = wrapperLeaf('entities', '@entities/users', ['Users']);
-    const out = generateWrappersRuntime([leaf]);
-    expect(out).toContain('Object.assign(globalThis,');
+  it('generates widgets/forms/index.ts with leaf export { default as Auth }', () => {
+    // Auth is a pure leaf (no children) — emitted directly in parent forms/index.ts
+    const files = generateBarrelRegistry([leaf]);
+    const formsIndex = files.get('widgets/forms/index.ts');
+    expect(formsIndex).toBeDefined();
+    expect(formsIndex).toContain("export { default as Auth } from '@widgets/forms/auth';");
   });
 
-  it('Object.assign includes all layer namespaces', () => {
-    const out = generateWrappersRuntime([]);
-    const allNs = ['Widgets', 'Views', 'Controllers', 'Features', 'Shapes', 'Entities'];
-    for (const ns of allNs) {
-      expect(out).toContain(ns);
-    }
-    expect(out).toContain(`Object.assign(globalThis, { ${allNs.join(', ')} });`);
-  });
-
-  it('Object.assign appears AFTER all export const declarations', () => {
-    const leaf = wrapperLeaf('entities', '@entities/users', ['Users']);
-    const out = generateWrappersRuntime([leaf]);
-    const assignIdx = out.indexOf('Object.assign(globalThis,');
-    const lastExportIdx = out.lastIndexOf('export const ');
-    expect(assignIdx).toBeGreaterThan(lastExportIdx);
-  });
-
-  it('Object.assign is present even with no leaves (empty app)', () => {
-    const out = generateWrappersRuntime([]);
-    expect(out).toContain('Object.assign(globalThis,');
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Wrappers — types
-// ---------------------------------------------------------------------------
-
-describe('generateWrappersTypes — entities interface', () => {
-  it('flat entity generates correct typeof import type', () => {
-    const leaf = wrapperLeaf('entities', '@entities/users', ['Users']);
-    const out = generateWrappersTypes([leaf]);
-    expect(out).toContain('interface Entities {');
-    expect(out).toContain("Users: typeof import('@entities/users').default;");
-  });
-
-  it('nested entity generates nested interface structure', () => {
-    const leaf = wrapperLeaf('entities', '@entities/users/profile', ['Users', 'Profile']);
-    const out = generateWrappersTypes([leaf]);
-    expect(out).toContain('interface Entities {');
-    expect(out).toContain('Users:');
-    expect(out).toContain("Profile: typeof import('@entities/users/profile').default;");
-  });
-
-  it('empty entities generates empty interface (not omitted)', () => {
-    const out = generateWrappersTypes([]);
-    expect(out).toContain('interface Entities {}');
-  });
-
-  it('output is a valid global augmentation shape', () => {
-    const leaf = wrapperLeaf('entities', '@entities/users', ['Users']);
-    const out = generateWrappersTypes([leaf]);
-    expect(out).toContain('declare global {');
-    expect(out).toContain('}');
-    expect(out).toContain('export {};');
-  });
-});
-
-describe('generateWrappersTypes — const value bindings', () => {
-  it('emits const binding for populated namespace (Widgets)', () => {
-    const leaf = wrapperLeaf('widgets', '@widgets/forms/auth', ['Forms', 'Auth']);
-    const out = generateWrappersTypes([leaf]);
-    expect(out).toContain('const Widgets: Widgets;');
-  });
-
-  it('emits const binding for populated namespace (Entities)', () => {
-    const leaf = wrapperLeaf('entities', '@entities/users', ['Users']);
-    const out = generateWrappersTypes([leaf]);
-    expect(out).toContain('const Entities: Entities;');
-  });
-
-  it('emits const binding for empty namespace (Controllers)', () => {
-    // Controllers has no leaves → empty interface + const binding
-    const out = generateWrappersTypes([]);
-    expect(out).toContain('interface Controllers {}');
-    expect(out).toContain('const Controllers: Controllers;');
-  });
-
-  it('emits const binding for empty namespace (Entities)', () => {
-    const out = generateWrappersTypes([]);
-    expect(out).toContain('interface Entities {}');
-    expect(out).toContain('const Entities: Entities;');
-  });
-
-  it('emits const bindings for all six namespaces when registry is empty', () => {
-    const out = generateWrappersTypes([]);
-    const allNs = ['Widgets', 'Views', 'Controllers', 'Features', 'Shapes', 'Entities'];
-    for (const ns of allNs) {
-      expect(out).toContain(`const ${ns}: ${ns};`);
+  it('does NOT emit lazy()', () => {
+    const files = generateBarrelRegistry([leaf]);
+    for (const content of files.values()) {
+      expect(content).not.toContain('lazy(');
     }
   });
 
-  it('emits const bindings for all six namespaces when some have leaves', () => {
-    const leaves = [
-      wrapperLeaf('widgets', '@widgets/header', ['Header']),
-      wrapperLeaf('entities', '@entities/user', ['User']),
-    ];
-    const out = generateWrappersTypes(leaves);
-    const allNs = ['Widgets', 'Views', 'Controllers', 'Features', 'Shapes', 'Entities'];
-    for (const ns of allNs) {
-      expect(out).toContain(`const ${ns}: ${ns};`);
+  it('does NOT emit Object.assign or globalThis', () => {
+    const files = generateBarrelRegistry([leaf]);
+    for (const content of files.values()) {
+      expect(content).not.toContain('Object.assign');
+      expect(content).not.toContain('globalThis');
+    }
+  });
+});
+
+describe('generateBarrelRegistry — widget leaf at 3-segment path (Forms/Auth/Login)', () => {
+  // ['Forms', 'Auth', 'Login'] → subdir auth/ with leaf Login
+  const leaf = wrapperLeaf('widgets', '@widgets/forms/auth/login', ['Forms', 'Auth', 'Login']);
+
+  it('generates widgets/index.ts with export * as Forms', () => {
+    const files = generateBarrelRegistry([leaf]);
+    const widgetsIndex = files.get('widgets/index.ts');
+    expect(widgetsIndex).toBeDefined();
+    expect(widgetsIndex).toContain("export * as Forms from './forms';");
+  });
+
+  it('generates widgets/forms/index.ts with export * as Auth', () => {
+    const files = generateBarrelRegistry([leaf]);
+    const formsIndex = files.get('widgets/forms/index.ts');
+    expect(formsIndex).toBeDefined();
+    expect(formsIndex).toContain("export * as Auth from './auth';");
+  });
+
+  it('generates widgets/forms/auth/index.ts with leaf export { default as Login }', () => {
+    const files = generateBarrelRegistry([leaf]);
+    const authIndex = files.get('widgets/forms/auth/index.ts');
+    expect(authIndex).toBeDefined();
+    expect(authIndex).toContain("export { default as Login } from '@widgets/forms/auth/login';");
+  });
+
+  it('does NOT emit lazy()', () => {
+    const files = generateBarrelRegistry([leaf]);
+    for (const content of files.values()) {
+      expect(content).not.toContain('lazy(');
+    }
+  });
+});
+
+describe('generateBarrelRegistry — flat entity leaf (no nesting)', () => {
+  const leaf = wrapperLeaf('entities', '@entities/incident', ['Incident']);
+
+  it('generates entities/index.ts with leaf export { default as Incident }', () => {
+    const files = generateBarrelRegistry([leaf]);
+    const entitiesIndex = files.get('entities/index.ts');
+    expect(entitiesIndex).toBeDefined();
+    expect(entitiesIndex).toContain("export { default as Incident } from '@entities/incident';");
+  });
+
+  it('does NOT emit lazy() for entities (no eager→lazy regression)', () => {
+    const files = generateBarrelRegistry([leaf]);
+    for (const content of files.values()) {
+      expect(content).not.toContain('lazy(');
+    }
+  });
+});
+
+describe('generateBarrelRegistry — multiple leaves same subdir', () => {
+  // 3-segment leaves: Forms/Auth/Login, Forms/Auth/Register → both in auth/index.ts
+  const leaf1 = wrapperLeaf('widgets', '@widgets/forms/auth/login', ['Forms', 'Auth', 'Login']);
+  const leaf2 = wrapperLeaf('widgets', '@widgets/forms/auth/register', ['Forms', 'Auth', 'Register']);
+
+  it('both leaves appear in auth/index.ts', () => {
+    const files = generateBarrelRegistry([leaf1, leaf2]);
+    const authIndex = files.get('widgets/forms/auth/index.ts');
+    expect(authIndex).toBeDefined();
+    expect(authIndex).toContain("export { default as Login } from '@widgets/forms/auth/login';");
+    expect(authIndex).toContain("export { default as Register } from '@widgets/forms/auth/register';");
+  });
+
+  it('forms/index.ts links to auth/ subdir via export * as Auth', () => {
+    const files = generateBarrelRegistry([leaf1, leaf2]);
+    const formsIndex = files.get('widgets/forms/index.ts');
+    expect(formsIndex).toBeDefined();
+    expect(formsIndex).toContain("export * as Auth from './auth';");
+  });
+});
+
+describe('generateBarrelRegistry — empty layer', () => {
+  it('emits export {} for empty layer', () => {
+    const files = generateBarrelRegistry([]);
+    const widgetsIndex = files.get('widgets/index.ts');
+    expect(widgetsIndex).toBeDefined();
+    expect(widgetsIndex).toContain('export {};');
+  });
+
+  it('still emits all 6 layer index files', () => {
+    const files = generateBarrelRegistry([]);
+    const layerDirs = ['widgets', 'views', 'controllers', 'features', 'shapes', 'entities'];
+    for (const layer of layerDirs) {
+      expect(files.has(`${layer}/index.ts`)).toBe(true);
     }
   });
 
-  it('const binding is inside declare global block', () => {
-    const out = generateWrappersTypes([]);
-    const globalStart = out.indexOf('declare global {');
-    const globalEnd = out.lastIndexOf('}');
-    const constIdx = out.indexOf('const Widgets: Widgets;');
-    expect(constIdx).toBeGreaterThan(globalStart);
-    expect(constIdx).toBeLessThan(globalEnd);
+  it('emits registry/index.ts even when empty', () => {
+    const files = generateBarrelRegistry([]);
+    expect(files.has('index.ts')).toBe(true);
+  });
+
+  it('emits registry/package.json even when empty', () => {
+    const files = generateBarrelRegistry([]);
+    expect(files.has('package.json')).toBe(true);
+    const pkg = JSON.parse(files.get('package.json')!);
+    expect(pkg.sideEffects).toBe(false);
+  });
+});
+
+describe('generateBarrelRegistry — cross-layer leaves', () => {
+  const widgetLeaf = wrapperLeaf('widgets', '@widgets/forms/auth', ['Forms', 'Auth']);
+  const viewLeaf = wrapperLeaf('views', '@views/authFormCard', ['AuthFormCard']);
+  const entityLeaf = wrapperLeaf('entities', '@entities/incident', ['Incident']);
+
+  it('widgets and views appear in different layer index files', () => {
+    const files = generateBarrelRegistry([widgetLeaf, viewLeaf, entityLeaf]);
+    const widgetsIndex = files.get('widgets/index.ts');
+    const viewsIndex = files.get('views/index.ts');
+    const entitiesIndex = files.get('entities/index.ts');
+    expect(widgetsIndex).toContain("export * as Forms from './forms';");
+    expect(viewsIndex).toContain("export { default as AuthFormCard } from '@views/authFormCard';");
+    expect(entitiesIndex).toContain("export { default as Incident } from '@entities/incident';");
+  });
+
+  it('registry/index.ts contains all 6 namespaces regardless of which are populated', () => {
+    const files = generateBarrelRegistry([widgetLeaf]);
+    const index = files.get('index.ts');
+    expect(index).toContain("export * as Widgets from './widgets';");
+    expect(index).toContain("export * as Views from './views';");
+    expect(index).toContain("export * as Entities from './entities';");
   });
 });
 
@@ -449,24 +482,27 @@ describe('generateBootstrap — structure', () => {
     expect(out).toContain('beforeLoad={appConfig.router?.beforeLoad}');
   });
 
-  it('appConfig import appears before layer side-effect imports', () => {
+  it('does NOT import wrappers side-effect (ADR-034: no globalThis assign)', () => {
     const out = generateBootstrap();
-    const appConfigImportIdx = out.indexOf("import appConfigRaw from '../capsule.app'");
-    const wrappersIdx = out.indexOf("import './registry/wrappers'");
-    expect(appConfigImportIdx).toBeGreaterThanOrEqual(0);
-    expect(wrappersIdx).toBeGreaterThanOrEqual(0);
-    expect(appConfigImportIdx).toBeLessThan(wrappersIdx);
+    expect(out).not.toContain("import './registry/wrappers'");
+    expect(out).not.toContain('registry/wrappers');
+  });
+
+  it('does NOT contain Object.assign or globalThis (ADR-034)', () => {
+    const out = generateBootstrap();
+    expect(out).not.toContain('Object.assign');
+    expect(out).not.toContain('globalThis');
   });
 });
 
 describe('generateBootstrap — import order matches LAYER_INIT_ORDER', () => {
-  it('wrappers (globals) imported before app-config (subsystems)', () => {
+  it('packages (globals) imported before app-config (subsystems)', () => {
     const out = generateBootstrap();
-    const wrappersIdx = out.indexOf("import './registry/wrappers'");
+    const packagesIdx = out.indexOf("import './registry/packages'");
     const appConfigIdx = out.indexOf("import './app-config.gen'");
-    expect(wrappersIdx).toBeGreaterThanOrEqual(0);
+    expect(packagesIdx).toBeGreaterThanOrEqual(0);
     expect(appConfigIdx).toBeGreaterThanOrEqual(0);
-    expect(wrappersIdx).toBeLessThan(appConfigIdx);
+    expect(packagesIdx).toBeLessThan(appConfigIdx);
   });
 
   it('app-config (subsystems) imported before routeTree (render)', () => {
@@ -478,11 +514,10 @@ describe('generateBootstrap — import order matches LAYER_INIT_ORDER', () => {
     expect(appConfigIdx).toBeLessThan(routeTreeIdx);
   });
 
-  it('wrappers uses bare side-effect import (no named binding)', () => {
+  it('packages uses bare side-effect import (no named binding)', () => {
     const out = generateBootstrap();
-    // bare side-effect: `import './registry/wrappers'` without `{ ... }` or `* as`
-    expect(out).toMatch(/import '\.\/registry\/wrappers'/);
-    expect(out).not.toMatch(/import \{[^}]*\} from '\.\/registry\/wrappers'/);
+    expect(out).toMatch(/import '\.\/registry\/packages'/);
+    expect(out).not.toMatch(/import \{[^}]*\} from '\.\/registry\/packages'/);
   });
 
   it('routeTree uses named import', () => {
@@ -522,8 +557,13 @@ describe('LAYER_INIT_ORDER contract', () => {
     expect(firstSubsystems).toBeLessThan(firstRender);
   });
 
-  it("'wrappers' entry is phase 'globals'", () => {
+  it("does NOT contain a 'wrappers' entry (ADR-034: barrel replaces wrappers.ts)", () => {
     const entry = LAYER_INIT_ORDER.find((e) => e.name === 'wrappers');
+    expect(entry).toBeUndefined();
+  });
+
+  it("'packages' entry exists and is phase 'globals'", () => {
+    const entry = LAYER_INIT_ORDER.find((e) => e.name === 'packages');
     expect(entry).toBeDefined();
     expect(entry!.phase).toBe('globals');
   });
@@ -703,46 +743,6 @@ describe('CapsuleRegistryPlugin.transform — defineAppConfig identity-unwrap', 
       `import { defineAppConfig } from '@capsuletech/web-core/app-config'`,
     );
     expect(result!.code).toContain('((__x__)=>__x__)({ meta:');
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Cross-concern ordering regression
-//
-// Root cause (pre-fix): ESM import declarations evaluate before module body.
-// bootstrap.tsx `import { routeTree }` caused transitive eval of the page
-// tree before Object.assign(globalThis, _registry) fired → TDZ.
-//
-// The fix: wrappers.ts runs Object.assign as a top-level side-effect.
-// bootstrap.tsx imports it as a bare side-effect before anything else.
-// generateBootstrap() encodes this in LAYER_INIT_ORDER.
-// ---------------------------------------------------------------------------
-
-describe('Cross-concern ordering regression — ESM TDZ fix', () => {
-  it('wrappers Object.assign fires before endpoints are evaluated', () => {
-    // Verify the bootstrap output has wrappers before app-config (which imports endpoints).
-    const bootstrap = generateBootstrap();
-    const wrappersIdx = bootstrap.indexOf("'./registry/wrappers'");
-    const appConfigIdx = bootstrap.indexOf("'./app-config.gen'");
-    expect(wrappersIdx).toBeLessThan(appConfigIdx);
-  });
-
-  it('wrappers.ts Object.assign fires on module eval (not inside a function)', () => {
-    // Object.assign must be a top-level statement, not inside export/function scope.
-    const wrappers = generateWrappersRuntime([]);
-    // The assign call must appear at column 0 (no leading indentation).
-    const lines = wrappers.split('\n');
-    const assignLine = lines.find((l) => l.startsWith('Object.assign(globalThis,'));
-    expect(assignLine).toBeDefined();
-  });
-
-  it('adding new entry to LAYER_INIT_ORDER automatically appears in bootstrap', () => {
-    // This test documents the invariant: generateBootstrap() reads from LAYER_INIT_ORDER
-    // so any new entry will automatically propagate.
-    // We cannot mutate the const here, but we verify the mapping is exhaustive:
-    const bootstrap = generateBootstrap();
-    const missingEntries = LAYER_INIT_ORDER.filter((e) => !bootstrap.includes(e.importPath));
-    expect(missingEntries).toHaveLength(0);
   });
 });
 
@@ -930,23 +930,15 @@ describe('LAYER_INIT_ORDER — packages entry', () => {
     expect(packagesIdx).toBeLessThan(appConfigIdx);
   });
 
-  it("'packages' appears after 'wrappers' (both globals, wrappers first)", () => {
-    const wrappersIdx = LAYER_INIT_ORDER.findIndex((e) => e.name === 'wrappers');
-    const packagesIdx = LAYER_INIT_ORDER.findIndex((e) => e.name === 'packages');
-    expect(wrappersIdx).toBeLessThan(packagesIdx);
-  });
-
   it('bootstrap contains packages side-effect import', () => {
     const out = generateBootstrap();
     expect(out).toContain("import './registry/packages';");
   });
 
-  it('packages side-effect import appears after wrappers and before app-config in bootstrap', () => {
+  it('packages side-effect import appears before app-config in bootstrap', () => {
     const out = generateBootstrap();
-    const wrappersIdx = out.indexOf("import './registry/wrappers'");
     const packagesIdx = out.indexOf("import './registry/packages'");
     const appConfigIdx = out.indexOf("import './app-config.gen'");
-    expect(wrappersIdx).toBeLessThan(packagesIdx);
     expect(packagesIdx).toBeLessThan(appConfigIdx);
   });
 });
@@ -984,7 +976,6 @@ describe('generatePackagesRuntime — package with controllers', () => {
 
   it('does NOT use Object.assign for Controllers (no risk of overwriting app-controllers)', () => {
     const out = generatePackagesRuntime(entries);
-    // Object.assign must NOT include Controllers in its map
     const assignLine = out.split('\n').find((l) => l.startsWith('Object.assign(globalThis,'));
     expect(assignLine).toBeDefined();
     expect(assignLine).not.toContain('Controllers');
@@ -1013,9 +1004,7 @@ describe('generatePackagesRuntime — two packages, one with controllers one wit
 
   it('only augments Controllers for the package that has controllers', () => {
     const out = generatePackagesRuntime(entries);
-    // Augment for Dnd
     expect(out).toContain('(globalThis.Controllers ??= {})["Editor"] = Dnd_mod.controllers');
-    // No augment for Maps (no controllerKeys)
     expect(out).not.toContain('Maps_mod.controllers');
   });
 
@@ -1043,15 +1032,10 @@ describe('generatePackagesRuntime — package without controllers (no regression
 });
 
 describe('generatePackagesRuntime — app-controllers are not clobbered (augment invariant)', () => {
-  it('app Controllers from wrappers.ts remain intact when packages.ts evaluates', () => {
-    // This test documents the contract: packages.ts uses (??=) augmentation
-    // so existing keys from wrappers.ts (app-level controllers) are preserved.
-    // The pattern (globalThis.Controllers ??= {})[key] = X never resets the object.
+  it('packages.ts uses (??=) augmentation so existing keys are preserved', () => {
     const entries = [pkgEntry('@capsuletech/web-dnd', 'Dnd', ['Editor'])];
     const out = generatePackagesRuntime(entries);
-    // Must use ??= (nullish coalescing assignment) — preserves existing object
     expect(out).toContain('??=');
-    // Must NOT use assignment that would reset Controllers to a new object
     expect(out).not.toMatch(/globalThis\.Controllers\s*=\s*\{/);
     expect(out).not.toMatch(/Object\.assign\(globalThis,\s*\{[^}]*Controllers/);
   });
@@ -1150,14 +1134,8 @@ describe('generatePackagesTypes — package without controllers (no regression)'
 
 // ---------------------------------------------------------------------------
 // parseManifestSource — static AST parsing (Ф0 фикс)
-//
-// Тестируем через экспортируемую чистую функцию parseManifestSource —
-// без I/O, без jiti, без сети, без исполнения Solid-зависимостей.
-// Все edge-case проверяются на сырых строках исходника манифеста.
 // ---------------------------------------------------------------------------
 
-// Типичный dist/capsule.mjs после rollup/vite-lib сборки:
-// defineCapsuleModule переименован, ObjectExpression — верхний уровень.
 const MANIFEST_WITH_CONTROLLERS = `
 import { defineCapsuleModule as s } from "@capsuletech/web-core/module";
 var c = s({
@@ -1177,7 +1155,6 @@ var c = s({
 export { c as default };
 `;
 
-// Манифест с external-импортами solid-js/web — не должен роняться при разборе
 const MANIFEST_WITH_SOLID_IMPORTS = `
 import { Portal as g, template as E } from "solid-js/web";
 import { For as O } from "solid-js";
@@ -1191,14 +1168,12 @@ var c = s({
 export { c as default };
 `;
 
-// Манифест без ObjectExpression с name — должен вернуть null
 const MANIFEST_NO_NAME = `
 import { defineCapsuleModule as s } from "@capsuletech/web-core/module";
 var c = s({ components: { Foo: f } });
 export { c as default };
 `;
 
-// Реальный capsule.mjs ui-creator (упрощённый): вложенный ObjectExpression controllers
 const MANIFEST_REAL_STYLE = `
 import { d as e, h as t, l as n } from "./chunks/EditorInspector.mjs";
 import { defineCapsuleModule as s } from "@capsuletech/web-core/module";
@@ -1252,7 +1227,6 @@ describe('parseManifestSource — static AST manifest (Ф0)', () => {
   });
 
   it('enables TypeScript plugin for .ts/.d.ts extension', () => {
-    // Verifies that TypeScript source (not compiled) also parses without error
     const tsSource = `
 import { defineCapsuleModule } from "@capsuletech/web-core/module";
 export default defineCapsuleModule({
@@ -1268,7 +1242,6 @@ export default defineCapsuleModule({
   });
 
   it('handles shorthand controller keys { Editor } — Identifier key', () => {
-    // After bundling, keys are always Identifier or StringLiteral
     const source = `
 var c = s({ name: "Editor", controllers: { Editor: f, Canvas: g } });
 export { c as default };
@@ -1289,7 +1262,6 @@ export { c as default };
   });
 
   it('ignores nested ObjectExpressions that lack a name property', () => {
-    // The `components` sub-object has no `name` — should not be picked first
     const source = `
 var c = s({ name: "Editor", components: { sub: { key: 1 } }, controllers: { Editor: f } });
 export { c as default };
@@ -1302,16 +1274,6 @@ export { c as default };
 
 // ---------------------------------------------------------------------------
 // resolvePackageEntries — integration of FS I/O + parseManifestSource
-//
-// This is the path that test:e2e:cli does NOT cover: the e2e fixture creates
-// an app without a `packages:` field.  These tests verify that when
-// `capsule.app.ts` contains `packages: ['@capsuletech/web-ui-creator']`:
-//  - the manifest file is resolved and read,
-//  - parseManifestSource extracts name + controllerKeys,
-//  - resolvePackageEntries returns the correct ResolvedPackageEntry[].
-//
-// We mock `node:fs` readFileSync and `node:module` createRequire to avoid
-// actual disk I/O and package resolution.
 // ---------------------------------------------------------------------------
 
 const MOCK_CAPSULE_MJS_WITH_CONTROLLERS = `
@@ -1333,10 +1295,6 @@ var c = s({
 export { c as default };
 `;
 
-// We test resolvePackageEntries by mocking the two FS/module operations it
-// depends on internally:  createRequire().resolve()  +  readFileSync().
-// The mock is set up per-describe so tests don't interfere.
-
 describe('resolvePackageEntries — empty raw list', () => {
   it('returns [] for undefined', () => {
     expect(resolvePackageEntries(undefined, '/app')).toEqual([]);
@@ -1348,17 +1306,9 @@ describe('resolvePackageEntries — empty raw list', () => {
 });
 
 describe('resolvePackageEntries — single string entry with controllers (mocked FS)', () => {
-  // Instead of mocking node internals (which requires hoisting), we pass a
-  // real appConfigDir that resolves a file that exists on the test runner.
-  // We side-step the issue by testing via parseManifestSource directly with
-  // the same source that resolvePackageEntries would produce — confirming the
-  // contract between the two functions.
-
   it('parseManifestSource produces correct ResolvedPackageEntry shape for ui-creator manifest', () => {
     const parsed = parseManifestSource(MOCK_CAPSULE_MJS_WITH_CONTROLLERS, 'capsule.mjs');
     expect(parsed).not.toBeNull();
-    // Simulates: resolvePackageEntries(['@capsuletech/web-ui-creator'], appDir)
-    // After manifest resolution, globalName = parsed.name = 'Editor'
     const simulatedEntry: ResolvedPackageEntry = {
       pkg: '@capsuletech/web-ui-creator',
       globalName: parsed!.name,
@@ -1379,7 +1329,6 @@ describe('resolvePackageEntries — single string entry with controllers (mocked
       },
     ];
     const runtime = generatePackagesRuntime(entries);
-    // Matches actual .capsule/registry/packages.ts generated for apps/ui-creator
     expect(runtime).toContain("import Editor_mod from '@capsuletech/web-ui-creator/capsule';");
     expect(runtime).toContain('export const Editor = Editor_mod.components;');
     expect(runtime).toContain(
@@ -1398,7 +1347,6 @@ describe('resolvePackageEntries — single string entry with controllers (mocked
       },
     ];
     const types = generatePackagesTypes(entries);
-    // Matches actual .capsule/@types/packages.d.ts generated for apps/ui-creator
     expect(types).toContain('declare global {');
     expect(types).toContain(
       "const Editor: typeof import('@capsuletech/web-ui-creator/capsule')['default']['components'];",
@@ -1447,10 +1395,6 @@ describe('resolvePackageEntries — package without controllers (web-map style)'
 
 describe('resolvePackageEntries — { use, as } override form', () => {
   it('parseManifestSource + as-override yields overridden globalName', () => {
-    // Simulates: packages: [{ use: '@capsuletech/web-map', as: 'MyMap' }]
-    // resolvePackageEntries should use entry.as over parsed.name
-    const parsed = parseManifestSource(MOCK_CAPSULE_MJS_NO_CONTROLLERS, 'capsule.mjs');
-    // resolveManifestInfo uses: entry.as ?? parsed?.name
     const globalName = 'MyMap'; // entry.as override
     const entries: ResolvedPackageEntry[] = [
       { pkg: '@capsuletech/web-map', globalName, controllerKeys: undefined },

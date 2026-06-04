@@ -12,18 +12,24 @@
  *  - Single watcher on apps/<app>/src/** dispatches to sub-generators by path.
  *  - bootstrap.tsx is generated deterministically by the plugin on every change
  *    (no longer a static scaffold template that is copied once).
+ *
+ * ADR-034: module-backed barrel registry.
+ *  - Generates .capsule/registry/** barrel-tree (mirror of src/ folder structure).
+ *  - Namespaces (Widgets/Views/…) come via auto-import `import { Widgets } from '@capsule/registry'`.
+ *  - No Object.assign(globalThis) — bunder sees static import graph → tree-shake by route.
+ *  - Alias '@capsule/registry' → .capsule/registry/index.ts registered in configResolved hook.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, relative, resolve } from 'node:path';
 import { parse } from '@babel/parser';
 import _traverse from '@babel/traverse';
 import { names } from '@nx/devkit';
 import { createJiti } from 'jiti';
-import type { Plugin, ViteDevServer } from 'vite';
+import type { Plugin, ResolvedConfig, ViteDevServer } from 'vite';
 import { walkFiles, watcherManager } from '../utils';
-import { DEFINE_FACTORIES, EAGER_IMPORT_LAYERS, LAYER_TO_NAMESPACE } from './constants';
+import { DEFINE_FACTORIES, LAYER_TO_NAMESPACE } from './constants';
 
 // CJS/ESM interop for @babel/traverse (same pattern as hmrWrapping.ts)
 const traverse = (
@@ -115,10 +121,13 @@ const buildTree = <L extends { segments: string[] }>(leaves: L[]): TreeNode<L> =
 // ---------------------------------------------------------------------------
 // LAYER_INIT_ORDER — single source of truth for bootstrap import ordering
 //
-// Phase 'globals':   populdate globalThis synchronously (wrappers.ts).
-//                    MUST come before anything that uses Widgets/Entities etc.
+// Phase 'globals':   populate globalThis synchronously.
+//                    MUST come before anything that uses package namespace globals.
 // Phase 'subsystems': depend on globals (endpoints, app-config).
 // Phase 'render':     TanStack Router routeTree — evaluated last.
+//
+// ADR-034: 'wrappers' entry removed — barrel-registry is tree-shaken per-route
+// via auto-import `import { Widgets } from '@capsule/registry'`, no side-effect needed.
 // ---------------------------------------------------------------------------
 
 type LayerPhase = 'globals' | 'subsystems' | 'render';
@@ -131,13 +140,7 @@ interface LayerEntry {
 }
 
 export const LAYER_INIT_ORDER: readonly LayerEntry[] = [
-  // Phase 1 — populate globals (Object.assign(globalThis, ...)) on module eval
-  {
-    name: 'wrappers',
-    phase: 'globals',
-    importPath: './registry/wrappers',
-  },
-  // Phase 1b — optional package globals (Maps, Render, etc.) — same phase, after wrappers
+  // Phase 1 — optional package globals (Maps, Render, etc.) — same phase
   {
     name: 'packages',
     phase: 'globals',
@@ -158,7 +161,7 @@ export const LAYER_INIT_ORDER: readonly LayerEntry[] = [
 ] as const;
 
 // ---------------------------------------------------------------------------
-// Sub-generator: wrappers.ts (Phase: globals)
+// Leaf parsing helpers (shared)
 // ---------------------------------------------------------------------------
 
 const segmentToPascal = (seg: string, isLast: boolean): string => {
@@ -181,156 +184,133 @@ const wrapperFileToLeaf = (
   return { layer: layerDir, importPath, segments };
 };
 
-const renderWrapperRuntimeNode = (
-  node: TreeNode<WrapperLeaf>,
-  indent: string,
-  eager: boolean,
-): string => {
-  if (node.leaf && node.children.size === 0) {
-    const { importPath, segments } = node.leaf;
-    if (eager) return `_${segments.join('_')}`;
-    return `lazy(() => import('${importPath}')) as unknown as typeof import('${importPath}').default`;
-  }
-  const childIndent = `${indent}  `;
-  const keys = [...node.children.keys()].sort();
-  const entries = keys
-    .map(
-      (key) =>
-        `${childIndent}${key}: ${renderWrapperRuntimeNode(node.children.get(key)!, childIndent, eager)}`,
-    )
-    .join(',\n');
-  return `{\n${entries}\n${indent}}`;
-};
-
-const renderWrapperTypeNode = (node: TreeNode<WrapperLeaf>, indent: string): string => {
-  if (node.leaf && node.children.size === 0) {
-    return `typeof import('${node.leaf.importPath}').default`;
-  }
-  const childIndent = `${indent}  `;
-  const keys = [...node.children.keys()].sort();
-  const props = keys
-    .map(
-      (key) =>
-        `${childIndent}${key}: ${renderWrapperTypeNode(node.children.get(key)!, childIndent)};`,
-    )
-    .join('\n');
-  return `{\n${props}\n${indent}}`;
-};
+// ---------------------------------------------------------------------------
+// Sub-generator: barrel registry (ADR-034)
+//
+// Generates .capsule/registry/**:
+//   - registry/index.ts          → export * as Widgets from './widgets'; …
+//   - registry/<layer>/index.ts  → export * as Folder from './folder'; (mid-nodes)
+//                                   export { default as Leaf } from '@<layer>/...'; (leaves)
+//   - registry/package.json      → { "sideEffects": false }
+//
+// No Object.assign(globalThis), no lazy() — bunder sees static import graph.
+// ---------------------------------------------------------------------------
 
 /**
- * Generates .capsule/registry/wrappers.ts.
- * Stateless: (wrapperLeaves) => string.
+ * Barrel content map keyed by output file path relative to registry/ dir.
+ * Each value is the file content string.
  */
-export const generateWrappersRuntime = (leaves: WrapperLeaf[]): string => {
-  const header: string[] = [
-    '// generated by CapsuleRegistryPlugin — не редактировать руками',
-    "import { lazy } from 'solid-js';",
-    '',
-  ];
+export type BarrelFiles = Map<string, string>;
 
-  const eagerImports: string[] = [];
-  const body: string[] = [];
-
-  const byLayer: Record<string, WrapperLeaf[]> = {};
-  for (const leaf of leaves) {
-    if (!byLayer[leaf.layer]) byLayer[leaf.layer] = [];
-    byLayer[leaf.layer].push(leaf);
+/**
+ * Generates all barrel files for a single layer.
+ * Returns a map of relative path → file content.
+ *
+ * Algorithm:
+ *  1. Build a tree of WrapperLeaf nodes keyed by PascalCase segments.
+ *  2. Walk the tree recursively, emitting:
+ *     - leaf node (no children): `export { default as Leaf } from '@layer/...';`
+ *     - intermediate dir node: `export * as Child from './child';` for each child
+ *       (may also have a leaf at same level — emit leaf export too)
+ *  3. Each directory-level gets its own index.ts.
+ */
+const generateLayerBarrel = (
+  layer: string,
+  leaves: WrapperLeaf[],
+): BarrelFiles => {
+  const files: BarrelFiles = new Map();
+  if (leaves.length === 0) {
+    // Empty layer: emit minimal valid barrel
+    files.set(`${layer}/index.ts`, `// generated by CapsuleRegistryPlugin — не редактировать руками\nexport {};\n`);
+    return files;
   }
 
-  const layerOrder = Object.keys(LAYER_TO_NAMESPACE);
-  const namespaces: string[] = [];
+  const tree = buildTree(leaves);
+  const HEADER = '// generated by CapsuleRegistryPlugin — не редактировать руками\n';
 
-  for (const layer of layerOrder) {
-    const namespace =
-      LAYER_TO_NAMESPACE[layer as keyof typeof LAYER_TO_NAMESPACE] ?? names(layer).className;
-    namespaces.push(namespace);
-    const layerLeaves = byLayer[layer] ?? [];
-    const isEager = EAGER_IMPORT_LAYERS.has(layer);
+  const walk = (
+    node: TreeNode<WrapperLeaf>,
+    pathParts: string[],
+  ) => {
+    const lines: string[] = [HEADER];
+    const keys = [...node.children.keys()].sort();
 
-    if (layerLeaves.length === 0) {
-      body.push(`export const ${namespace} = {};`);
-      body.push('');
-      continue;
-    }
-
-    if (isEager) {
-      for (const leaf of layerLeaves) {
-        const varName = `_${leaf.segments.join('_')}`;
-        eagerImports.push(`import ${varName} from '${leaf.importPath}';`);
+    for (const key of keys) {
+      const child = node.children.get(key)!;
+      if (child.children.size === 0 && child.leaf) {
+        // Pure leaf: export { default as Key } from '@layer/...';
+        lines.push(`export { default as ${key} } from '${child.leaf.importPath}';`);
+      } else {
+        // Intermediate dir (may also have a leaf at same key-level — but our tree
+        // structure puts leaf only at terminal nodes, so this means subdir)
+        const subPath = [...pathParts, key.toLowerCase()];
+        lines.push(`export * as ${key} from './${key.toLowerCase()}';`);
+        walk(child, subPath);
       }
     }
 
-    const tree = buildTree(layerLeaves);
-    const childIndent = '  ';
-    const keys = [...tree.children.keys()].sort();
-    const entries = keys
-      .map(
-        (key) =>
-          `${childIndent}${key}: ${renderWrapperRuntimeNode(tree.children.get(key)!, childIndent, isEager)}`,
-      )
-      .join(',\n');
-    body.push(`export const ${namespace} = {\n${entries}\n};`);
-    body.push('');
-  }
+    lines.push('');
+    const relPath = pathParts.length > 0 ? `${pathParts.join('/')}/index.ts` : 'index.ts';
+    files.set(relPath, lines.join('\n'));
+  };
 
-  // Top-level side-effect: populate globalThis synchronously on module eval.
-  // bootstrap.tsx imports this as a bare side-effect import so the assignment
-  // fires before routeTree (→ pages → widgets → features → endpoints) evaluates.
-  const namespaceList = namespaces.join(', ');
-  body.push(`Object.assign(globalThis, { ${namespaceList} });`);
-  body.push('');
-
-  const parts = [...header];
-  if (eagerImports.length > 0) parts.push(...eagerImports, '');
-  parts.push(...body);
-  return parts.join('\n');
+  walk(tree, [layer]);
+  return files;
 };
 
 /**
- * Generates .capsule/@types/slots.d.ts.
- * Stateless: (wrapperLeaves) => string.
+ * Generates .capsule/registry/index.ts.
+ * Exports all layer namespaces.
  */
-export const generateWrappersTypes = (leaves: WrapperLeaf[]): string => {
-  const lines: string[] = [
-    '// generated by CapsuleRegistryPlugin — не редактировать руками',
-    'declare global {',
-  ];
+export const generateRegistryIndex = (): string => {
+  const lines = ['// generated by CapsuleRegistryPlugin — не редактировать руками'];
+  const layerOrder = Object.keys(LAYER_TO_NAMESPACE) as Array<keyof typeof LAYER_TO_NAMESPACE>;
+  for (const layer of layerOrder) {
+    const ns = LAYER_TO_NAMESPACE[layer];
+    lines.push(`export * as ${ns} from './${layer}';`);
+  }
+  lines.push('');
+  return lines.join('\n');
+};
 
+/**
+ * Generates .capsule/registry/package.json with sideEffects: false.
+ * Required for bundler tree-shaking of barrel re-exports.
+ */
+export const generateRegistryPackageJson = (): string =>
+  JSON.stringify({ sideEffects: false }, null, 2) + '\n';
+
+/**
+ * Main barrel-registry generator.
+ * Returns a BarrelFiles map of all paths relative to registry/ that should be written.
+ *
+ * Stateless: (wrapperLeaves) => BarrelFiles.
+ */
+export const generateBarrelRegistry = (leaves: WrapperLeaf[]): BarrelFiles => {
+  const all: BarrelFiles = new Map();
+
+  // Per-layer barrels
   const byLayer: Record<string, WrapperLeaf[]> = {};
   for (const leaf of leaves) {
     if (!byLayer[leaf.layer]) byLayer[leaf.layer] = [];
     byLayer[leaf.layer].push(leaf);
   }
 
-  const layerOrder = Object.keys(LAYER_TO_NAMESPACE);
-  for (const layer of layerOrder) {
-    const namespace =
-      LAYER_TO_NAMESPACE[layer as keyof typeof LAYER_TO_NAMESPACE] ?? names(layer).className;
+  for (const layer of Object.keys(LAYER_TO_NAMESPACE)) {
     const layerLeaves = byLayer[layer] ?? [];
-    if (layerLeaves.length === 0) {
-      lines.push(`  interface ${namespace} {}`);
-      lines.push(`  const ${namespace}: ${namespace};`);
-      continue;
+    const layerFiles = generateLayerBarrel(layer, layerLeaves);
+    for (const [path, content] of layerFiles) {
+      all.set(path, content);
     }
-    const tree = buildTree(layerLeaves);
-    const childIndent = '    ';
-    const keys = [...tree.children.keys()].sort();
-    const props = keys
-      .map(
-        (key) =>
-          `${childIndent}${key}: ${renderWrapperTypeNode(tree.children.get(key)!, childIndent)};`,
-      )
-      .join('\n');
-    lines.push(`  interface ${namespace} {`);
-    lines.push(props);
-    lines.push('  }');
-    lines.push(`  const ${namespace}: ${namespace};`);
   }
 
-  lines.push('}');
-  lines.push('export {};');
-  lines.push('');
-  return lines.join('\n');
+  // Root index.ts
+  all.set('index.ts', generateRegistryIndex());
+
+  // package.json with sideEffects: false
+  all.set('package.json', generateRegistryPackageJson());
+
+  return all;
 };
 
 // ---------------------------------------------------------------------------
@@ -521,15 +501,13 @@ export const resolvePackageEntries = (
  * Empty list → valid empty module with bare Object.assign.
  *
  * For packages with `controllerKeys` the generated code augments the global
- * `Controllers` namespace (populated earlier by wrappers.ts) rather than
- * overwriting it.  Each key is assigned individually so that app-level
- * controllers are never shadowed:
+ * `Controllers` namespace rather than overwriting it. Each key is assigned
+ * individually so that app-level controllers are never shadowed:
  *
  *   (globalThis.Controllers ??= {}).Editor = Maps_mod.controllers.Editor;
  *
- * The packages entry in LAYER_INIT_ORDER has phase 'globals' and is ordered
- * AFTER 'wrappers', so by the time this module evaluates, globalThis.Controllers
- * already holds the app-codegen exports from wrappers.ts.
+ * The packages entry in LAYER_INIT_ORDER has phase 'globals' and is the first
+ * entry, evaluated before app-config.
  */
 export const generatePackagesRuntime = (entries: ResolvedPackageEntry[]): string => {
   const lines: string[] = ['// generated by CapsuleRegistryPlugin — не редактировать руками'];
@@ -576,15 +554,11 @@ export const generatePackagesRuntime = (entries: ResolvedPackageEntry[]): string
  * Empty list → minimal module augmentation file.
  *
  * For packages with `controllerKeys` the generated types augment the global
- * `Controllers` interface (declared by slots.d.ts from wrappers codegen) using
- * the same module-augmentation pattern as app-level controllers:
+ * `Controllers` interface using the same module-augmentation pattern:
  *
  *   interface Controllers {
  *     Editor: typeof import('@capsuletech/web-dnd/capsule')['default']['controllers']['Editor'];
  *   }
- *
- * This must appear in the SAME `declare global` block (global augmentation)
- * so TS merges it with the existing `interface Controllers` from slots.d.ts.
  */
 export const generatePackagesTypes = (entries: ResolvedPackageEntry[]): string => {
   if (entries.length === 0) {
@@ -796,8 +770,9 @@ export const generateAppConfigRuntime = (
 //   Phase subsystems → bare side-effect imports
 //   Phase render    → named import `{ routeTree }`
 //
-// This makes it impossible to accidentally reorder the layers: the only place
-// to change ordering is LAYER_INIT_ORDER above.
+// ADR-034: 'wrappers' removed from LAYER_INIT_ORDER.
+// Namespaces (Widgets/Views/…) are injected by auto-import at each call-site.
+// Bootstrap no longer needs Object.assign(globalThis) side-effect.
 // ---------------------------------------------------------------------------
 
 /**
@@ -822,7 +797,7 @@ export const generateBootstrap = (): string => {
       lines.push(`import { routeTree } from '${layer.importPath}';`);
     } else {
       // All other layers: bare side-effect import.
-      // wrappers: runs Object.assign(globalThis, ...) on module eval.
+      // packages: runs Object.assign(globalThis, ...) for external pkg globals.
       // app-config: runs registerAliases + setApiClient on module eval.
       lines.push(`import '${layer.importPath}';`);
     }
@@ -889,13 +864,19 @@ const ENDPOINT_FACTORY = (() => {
 /**
  * CapsuleRegistryPlugin — owns ALL codegen in .capsule/:
  *
- *  - .capsule/registry/wrappers.ts      (ExportGeneratorPlugin replacement)
- *  - .capsule/@types/slots.d.ts         (ExportGeneratorPlugin replacement)
- *  - .capsule/registry/endpoints.ts     (EndpointsRegistryPlugin replacement)
- *  - .capsule/@types/api.d.ts           (EndpointsRegistryPlugin replacement)
- *  - .capsule/app-config.gen.ts         (AppConfigPlugin codegen replacement)
- *  - .capsule/@types/app-tags.d.ts      (AppConfigPlugin codegen replacement)
- *  - .capsule/bootstrap.tsx             (NEW: generated, not static scaffold)
+ *  ADR-034: barrel-backed registry
+ *  - .capsule/registry/index.ts             (export * as Widgets/Views/… from './layer')
+ *  - .capsule/registry/<layer>/index.ts     (barrel trees, export { default as X } at leaves)
+ *  - .capsule/registry/package.json         ({ sideEffects: false })
+ *  - .capsule/registry/packages.ts          (external package globals, Object.assign(globalThis))
+ *  - .capsule/@types/packages.d.ts
+ *  - .capsule/registry/endpoints.ts         (EndpointsRegistryPlugin replacement)
+ *  - .capsule/@types/api.d.ts
+ *  - .capsule/app-config.gen.ts             (AppConfigPlugin codegen replacement)
+ *  - .capsule/@types/app-tags.d.ts
+ *  - .capsule/bootstrap.tsx                 (NEW: generated, not static scaffold)
+ *
+ * Alias '@capsule/registry' → .capsule/registry/index.ts registered via configResolved hook.
  *
  * Also provides enforce:'pre' transform for defineEndpoint injection (replaces
  * EndpointsRegistryPlugin's transform).
@@ -930,8 +911,7 @@ export const CapsuleRegistryPlugin = ({
   let scanned = false;
 
   // --- Output paths ---
-  const wrappersOut = resolve(capsuleRoot, 'registry', 'wrappers.ts');
-  const slotsTypesOut = resolve(capsuleRoot, '@types', 'slots.d.ts');
+  const registryDir = resolve(capsuleRoot, 'registry');
   const endpointsOut = resolve(capsuleRoot, 'registry', 'endpoints.ts');
   const apiTypesOut = resolve(capsuleRoot, '@types', 'api.d.ts');
   const appConfigRuntimeOut = resolve(capsuleRoot, 'app-config.gen.ts');
@@ -944,15 +924,23 @@ export const CapsuleRegistryPlugin = ({
   const appConfigDir = dirname(appConfigPath);
 
   // --- Flush helpers ---
-  const flushWrappers = () => {
+  const flushBarrelRegistry = () => {
     if (!wrappersNeedsFlush) return;
     wrappersNeedsFlush = false;
     const leaves = [...knownWrappers.values()].sort((a, b) => {
       if (a.layer !== b.layer) return a.layer.localeCompare(b.layer);
       return a.segments.join('/').localeCompare(b.segments.join('/'));
     });
-    writeOut(wrappersOut, generateWrappersRuntime(leaves));
-    writeOut(slotsTypesOut, generateWrappersTypes(leaves));
+    const barrelFiles = generateBarrelRegistry(leaves);
+    for (const [relPath, content] of barrelFiles) {
+      writeOut(resolve(registryDir, relPath), content);
+    }
+    // Remove legacy wrappers.ts and slots.d.ts if they still exist from
+    // a previous run before ADR-034 migration.
+    const legacyWrappers = resolve(registryDir, 'wrappers.ts');
+    const legacySlots = resolve(capsuleRoot, '@types', 'slots.d.ts');
+    if (existsSync(legacyWrappers)) rmSync(legacyWrappers);
+    if (existsSync(legacySlots)) rmSync(legacySlots);
   };
 
   const flushEndpoints = () => {
@@ -1040,7 +1028,7 @@ export const CapsuleRegistryPlugin = ({
     wrappersNeedsFlush = true;
     endpointsNeedsFlush = true;
 
-    flushWrappers();
+    flushBarrelRegistry();
     flushEndpoints();
     loadAndFlushAppConfig();
     // bootstrap.tsx is (re)generated after all other files are in place.
@@ -1055,6 +1043,20 @@ export const CapsuleRegistryPlugin = ({
     name: 'capsule-registry',
     // enforce:'pre' so the defineEndpoint injection runs before solid-plugin and AutoImport.
     enforce: 'pre',
+
+    // --- ADR-034: register '@capsule/registry' alias in configResolved hook ---
+    // This is app-specific (capsuleRoot is per-app), so it must NOT be hardcoded
+    // in capsuleConfig.ts or tsconfig.base.json. The plugin owns this alias.
+    configResolved(config: ResolvedConfig) {
+      const registryIndexPath = resolve(capsuleRoot, 'registry', 'index.ts');
+      // Vite's resolve.alias is an array at this point (normalized by Vite internals).
+      // We mutate it in-place — same pattern used by other framework plugins.
+      const aliasArray = config.resolve.alias as Array<{ find: string | RegExp; replacement: string }>;
+      // Avoid duplicating if already registered (e.g. double-init in tests).
+      if (!aliasArray.some((a) => a.find === '@capsule/registry')) {
+        aliasArray.push({ find: '@capsule/registry', replacement: registryIndexPath });
+      }
+    },
 
     // --- defineAppConfig identity-unwrap transform ---
     // Prevents `defineAppConfig` bare identifier from reaching the browser.
@@ -1109,7 +1111,7 @@ export const CapsuleRegistryPlugin = ({
         onStructureChange: (event, paths) => {
           handleWrapperEvent(event, paths.file);
           handleEndpointEvent(event, paths.file);
-          flushWrappers();
+          flushBarrelRegistry();
           flushEndpoints();
         },
       });
