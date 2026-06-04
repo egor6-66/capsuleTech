@@ -1,5 +1,8 @@
+import type { IInspectorKit } from './kit';
+
 export type ValuesMap = Record<string, unknown>;
 export type OnChangeFn = (key: string, value: unknown) => void;
+export type { IInspectorKit };
 
 interface IBaseField {
   /** Ключ в `values` map'е. Уникальный в пределах Inspector'а. */
@@ -80,6 +83,11 @@ export interface IInspectorProps {
   values: ValuesMap;
   /** Колбэк на одно изменение поля — потребитель сам мерджит в values. */
   onChange: OnChangeFn;
+  /**
+   * UI-кит для рендера полей. По умолчанию `DEFAULT_KIT` (@capsuletech/web-ui).
+   * Передай собственный объект если используешь другой UI-кит или нужен мок в тестах.
+   */
+  kit?: IInspectorKit;
   /** Доп. класс на корневой div. */
   class?: string;
 }

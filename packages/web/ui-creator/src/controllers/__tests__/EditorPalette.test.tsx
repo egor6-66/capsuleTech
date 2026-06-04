@@ -12,7 +12,9 @@
  *  8. Dropdown закрывается при старте drag (activeId() truthy).
  *
  * Внешние зависимости мокируются.
- * TemplatesTrigger использует kit.Dropdown (не Portal) — мок отражает это.
+ * TemplatesTrigger использует Dropdown из @capsuletech/web-ui/dropdown (chrome-кит) —
+ * мок `@capsuletech/web-ui/dropdown` отражает это.
+ * useEditorKit используется ТОЛЬКО для контент-registry (Renderer preview).
  */
 
 /* @vitest-environment jsdom */
@@ -30,9 +32,9 @@ let _draggables: DraggableOpts[] = [];
 // Renderer — просто записываем вызовы, ничего не рендерим
 let _rendererCalls: Array<{ schema: unknown; registry: unknown }> = [];
 
-// ── Mock Dropdown ──────────────────────────────────────────────────────────────
+// ── Mock Dropdown (chrome-кит, @capsuletech/web-ui/dropdown) ──────────────────
 //
-// kit.Dropdown — составной компонент (Root + Trigger + Content + Item).
+// TemplatesTrigger использует Dropdown из @capsuletech/web-ui/dropdown напрямую.
 // Мок воспроизводит поведение: Root управляет open-state, Content рендерится
 // только когда open=true, Trigger вызывает onOpenChange(true) при клике.
 
@@ -47,14 +49,10 @@ const makeMockDropdown = () => {
   const [_open, _setOpen] = createSignal(false);
 
   // Shared-ссылка на onOpenChange, которую Root получает через props.
-  // Trigger и Content замыкаются на неё, получая актуальный callback.
   let _onOpenChange: ((v: boolean) => void) | undefined;
 
   const DropdownRoot = (props: DropdownRootProps) => {
-    // Синхронизируем ссылку на callback при каждом рендере Root.
     _onOpenChange = props.onOpenChange;
-    // Если controlled (props.open задан) — синхронизируем внутренний сигнал.
-    // createEffect здесь избыточен — Root вызывается реактивно при изменении props.open.
     return (
       <div data-dropdown-root>
         {props.children}
@@ -67,9 +65,7 @@ const makeMockDropdown = () => {
       {...(triggerProps as object)}
       type="button"
       onClick={(e: MouseEvent) => {
-        // Вызываем onClick из props (для e.stopPropagation в TemplatesTrigger)
         if (typeof triggerProps.onClick === 'function') triggerProps.onClick(e);
-        // Уведомляем родительский TemplatesTrigger через onOpenChange (controlled mode)
         const next = !_open();
         _setOpen(next);
         _onOpenChange?.(next);
@@ -78,7 +74,6 @@ const makeMockDropdown = () => {
   );
 
   const Content = (contentProps: Record<string, unknown>) => (
-    // Реактивно читаем сигнал из замыкания той же фабрики
     <Show when={_open()}>
       <div {...(contentProps as object)} />
     </Show>
@@ -92,6 +87,8 @@ const makeMockDropdown = () => {
 };
 
 let _mockDropdown = makeMockDropdown();
+// Контент-кит: компоненты, которыми рендерится Canvas/превью.
+// НЕ содержит Dropdown — chrome-Dropdown теперь мокируется через @capsuletech/web-ui/dropdown.
 let _mockKit: Record<string, unknown> = {};
 
 // ── Mocks (до импорта компонента) ──────────────────────────────────────────────
@@ -119,6 +116,11 @@ vi.mock('@capsuletech/web-renderer', () => ({
   },
 }));
 
+// Chrome-кит: Dropdown редактора — прямой импорт из @capsuletech/web-ui/dropdown.
+vi.mock('@capsuletech/web-ui/dropdown', () => ({
+  get Dropdown() { return _mockDropdown; },
+}));
+
 vi.mock('../EditorProvider', () => ({
   useEditorKit: () => _mockKit,
 }));
@@ -138,7 +140,9 @@ const mount = () => {
 
 beforeEach(() => {
   _mockDropdown = makeMockDropdown();
-  _mockKit = { Dropdown: _mockDropdown };
+  // Контент-кит: пустой (превью палитры не добавляют Dropdown в kit).
+  // Chrome-Dropdown теперь мокируется через @capsuletech/web-ui/dropdown напрямую.
+  _mockKit = {};
   _mockActiveId = vi.fn(() => null);
   _draggables = [];
   _rendererCalls = [];
@@ -366,10 +370,12 @@ describe('EditorPalette — ContainerItem (composite-части)', () => {
 
 // ── Tests: kit → registry ──────────────────────────────────────────────────────
 
-describe('EditorPalette — kit передаётся в registry для Renderer', () => {
-  it('kit из useEditorKit попадает в registry.ui Renderer', () => {
+describe('EditorPalette — контент-kit передаётся в registry для Renderer', () => {
+  it('контент-kit из useEditorKit попадает в registry.ui Renderer', () => {
+    // Контент-кит: компоненты, которыми пользователь строит свой UI.
+    // Chrome-Dropdown (из @capsuletech/web-ui/dropdown) — НЕ часть этого кита.
     const kitBase = { Button: () => null };
-    _mockKit = { ...kitBase, Dropdown: _mockDropdown };
+    _mockKit = { ...kitBase };
 
     mount();
     const trigger = document.querySelector('[data-testid^="templates-trigger-"]') as HTMLElement | null;
@@ -377,7 +383,7 @@ describe('EditorPalette — kit передаётся в registry для Renderer
 
     if (_rendererCalls.length > 0) {
       const registry = _rendererCalls[0].registry as { ui: unknown };
-      // registry.ui должен быть kit (тот же объект, что передали useEditorKit)
+      // registry.ui должен быть контент-kit (тот же объект, что вернул useEditorKit)
       expect(registry.ui).toBe(_mockKit);
     } else {
       // Renderer не вызывался (нет открытых dropdown с темплейтами) — ок

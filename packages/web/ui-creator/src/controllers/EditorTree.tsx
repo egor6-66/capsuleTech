@@ -9,8 +9,9 @@
  *  - `MARK_COLORS`, `EDGE`, `fill()`, `label()`, `icon()` вынесены в модуль
  *    (`editorTreeUtils`) прямо здесь (нет других потребителей вне этого файла).
  *
- * Chrome (Ui.Dropdown для меток) — аффорданс редактора, не пользовательский
- * контент, поэтому использование `Ui` здесь корректно.
+ * Chrome (Dropdown для меток) — аффорданс редактора, не пользовательский контент.
+ * Использует `Dropdown` из `@capsuletech/web-ui` напрямую (chrome-кит = web-ui).
+ * НЕ читает `useEditorKit()` — контент-кит здесь не нужен.
  *
  * События (через useEmit):
  *  - `onTreeDragOver` → { spec, targetId, zone } — EditorController.onTreeDragOver
@@ -21,13 +22,13 @@
 
 import { createDraggable, createDroppable, useDnD } from '@capsuletech/web-dnd';
 import { useEmit } from '@capsuletech/web-core';
+import { Dropdown } from '@capsuletech/web-ui/dropdown';
 import { getManifest } from '../manifests/registry';
 import { acceptsChildren } from '../manifests/rules';
 import { canBeside, canInto, dragSpec, type DragSpec, type TreeZone } from '../state/dnd';
 import type { NodeId } from '../state/types';
 import { createEffect, createSignal, createUniqueId, For, type JSX, Show } from 'solid-js';
 import { useEditor } from './useEditor';
-import { useEditorKit } from './EditorProvider';
 
 // ── Утилиты (editor-chrome specific) ─────────────────────────────────────────
 
@@ -52,11 +53,11 @@ const icon = (type: string): (() => JSX.Element) | undefined => getManifest(type
  * Editor.Tree — монтируется внутри `<Editor.Provider>`.
  *
  * Читает дерево и editor-state через `useEditor()`.
- * Chrome (метки, чевроны) использует `useEditorKit()` (Ui от Editor.Provider).
+ * Chrome (метки, чевроны) использует `Dropdown` из `@capsuletech/web-ui` напрямую.
+ * Контент-кит (`useEditorKit()`) здесь не нужен — дерево не рендерит пользовательские компоненты.
  */
 export const EditorTree = () => {
   const ed = useEditor();
-  const Ui = useEditorKit() as unknown as Record<string, unknown>;
   const emit = useEmit();
   const dnd = useDnD();
 
@@ -211,15 +212,6 @@ export const EditorTree = () => {
       }
     });
 
-    // Получаем Dropdown из kit (chrome-компонент редактора).
-    // kit — это Ui-kit Registry, у которого есть Dropdown.
-    const UiDropdown = Ui.Dropdown as {
-      (props: { children: JSX.Element }): JSX.Element;
-      Trigger: (props: Record<string, unknown>) => JSX.Element;
-      Content: (props: Record<string, unknown>) => JSX.Element;
-      Item: (props: Record<string, unknown>) => JSX.Element;
-    };
-
     const Header = (props: { ref: (el: HTMLElement) => void }): JSX.Element => (
       <div
         ref={props.ref}
@@ -267,19 +259,20 @@ export const EditorTree = () => {
         <span class="shrink-0 text-foreground/50">{icon(node().type)?.()}</span>
         <span class="truncate">{label(node().type)}</span>
         <Show when={isContainer()}>
-          {/* Цветная метка через Ui.Dropdown из kit (портал + позиционирование). */}
+          {/* Цветная метка — chrome-аффорданс редактора.
+              Dropdown из @capsuletech/web-ui (chrome-кит), НЕ из контент-кита. */}
           <span class="ml-auto shrink-0" onClick={(e) => e.stopPropagation()}>
-            <UiDropdown>
-              <UiDropdown.Trigger
+            <Dropdown>
+              <Dropdown.Trigger
                 data-dnd-cancel
                 title="Цветная метка"
                 class="block size-3.5 rounded-full border border-foreground/30"
                 style={mark() ? { 'background-color': mark() } : undefined}
               />
-              <UiDropdown.Content class="flex items-center gap-1 p-1">
+              <Dropdown.Content class="flex items-center gap-1 p-1">
                 <For each={MARK_COLORS}>
                   {(c) => (
-                    <UiDropdown.Item
+                    <Dropdown.Item
                       class="size-4 cursor-pointer rounded-full p-0"
                       style={{ 'background-color': c }}
                       onSelect={() => {
@@ -288,16 +281,16 @@ export const EditorTree = () => {
                     />
                   )}
                 </For>
-                <UiDropdown.Item
+                <Dropdown.Item
                   class="flex size-4 cursor-pointer items-center justify-center rounded-full border border-border p-0 text-foreground/60"
                   onSelect={() => {
                     emit('onMark', { payload: { nodeId: p.id, color: null } });
                   }}
                 >
                   ×
-                </UiDropdown.Item>
-              </UiDropdown.Content>
-            </UiDropdown>
+                </Dropdown.Item>
+              </Dropdown.Content>
+            </Dropdown>
           </span>
         </Show>
       </div>

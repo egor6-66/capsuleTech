@@ -15,6 +15,27 @@ Design-time toolkit для построения JSON-деревьев UI:
 
 **ADR 032 фаза 5 (часть 2):** `/controllers` + `/capsule` добавлены. `/controllers` единственный subpath с `web-core`-зависимостью (EditorController + EditorOverlay). Остальное — framework-agnostic.
 
+## Два кита редактора (архитектурное правило)
+
+Редактор работает с двумя независимыми наборами UI-компонентов:
+
+### КОНТЕНТ-кит (`kit` prop → `useEditorKit()`)
+Передаётся пропом в `<Editor.Provider kit={...}>`. Это компоненты, ИЗ которых пользователь строит свой UI. Используется:
+- `EditorCanvas` — registry для `<Renderer>` (рендер Canvas-контента)
+- `EditorPalette` — только для `<TemplateCard>` preview через `<Renderer>` (превью шаблонов)
+
+Доступен через `useEditorKit()`. НЕ используется для chrome-элементов самого редактора.
+
+### Chrome-кит (`@capsuletech/web-ui`, прямая зависимость пакета)
+Фиксированный набор компонентов, КОТОРЫМИ нарисован сам редактор. Импортируются напрямую:
+- `EditorTree` → `import { Dropdown } from '@capsuletech/web-ui/dropdown'` (метки узлов)
+- `EditorPalette` → `import { Dropdown } from '@capsuletech/web-ui/dropdown'` (Dropdown шаблонов)
+- `inspector/` → `import { Input } from '@capsuletech/web-ui/input'`, `Toggle` (поля формы)
+
+**Правило для owner-agent:** chrome → `@capsuletech/web-ui` напрямую. `useEditorKit()` — только контент (Canvas render, Palette preview).
+
+**GAP:** Inspector Select/Textarea — нативный fallback. Свапнуть на `web-ui` Select/Textarea отдельной задачей когда owner-web-ui добавит их.
+
 ## Публичный API (subpaths)
 
 ### `@capsuletech/web-ui-creator/manifests`

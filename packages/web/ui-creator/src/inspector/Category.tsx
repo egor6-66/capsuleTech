@@ -1,4 +1,5 @@
 import { createSignal, For, Show } from 'solid-js';
+import type { IInspectorKit } from './kit';
 import { renderField } from './fields';
 import type { ICategory, OnChangeFn, ValuesMap } from './types';
 
@@ -6,6 +7,7 @@ interface ICategoryProps {
   category: ICategory;
   values: ValuesMap;
   onChange: OnChangeFn;
+  kit: IInspectorKit;
 }
 
 /**
@@ -31,7 +33,7 @@ export const Category = (props: ICategoryProps) => {
             <p class="text-xs opacity-60">{props.category.description}</p>
           </Show>
           <For each={props.category.fields}>
-            {(field) => renderField(field, props.values, props.onChange)}
+            {(field) => renderField(field, props.values, props.onChange, props.kit)}
           </For>
         </div>
       </Show>

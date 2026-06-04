@@ -27,8 +27,8 @@ let _mockEditorState: IEditorCtx | null = null;
 
 // ── Mocks ──────────────────────────────────────────────────────────────────────
 
-// @capsuletech/web-ui/toggle тянет @capsuletech/web-style → window.matchMedia.
-// В jsdom matchMedia нет — мокируем компонент чтобы сломать цепочку.
+// @capsuletech/web-ui/* тянет @capsuletech/web-style → window.matchMedia.
+// В jsdom matchMedia нет — мокируем компоненты и kit целиком.
 vi.mock('@capsuletech/web-ui/toggle', () => ({
   Toggle: (props: { checked?: boolean; onChange?: (v: boolean) => void; disabled?: boolean }) => (
     <button
@@ -41,6 +41,30 @@ vi.mock('@capsuletech/web-ui/toggle', () => ({
     />
   ),
 }));
+
+vi.mock('@capsuletech/web-ui/input', () => ({
+  Input: (props: { value?: string | number; disabled?: boolean; type?: string; placeholder?: string; onInput?: (e: Event) => void; class?: string; classList?: Record<string, boolean> }) => (
+    <input
+      type={props.type ?? 'text'}
+      value={String(props.value ?? '')}
+      disabled={props.disabled}
+      placeholder={props.placeholder}
+      onInput={props.onInput}
+      data-testid="mock-input"
+    />
+  ),
+}));
+
+// Мокируем DEFAULT_KIT чтобы fields использовали те же мок-компоненты.
+vi.mock('../../inspector/kit', async (importOriginal) => {
+  const { Toggle } = await import('@capsuletech/web-ui/toggle');
+  const { Input } = await import('@capsuletech/web-ui/input');
+  const orig = await importOriginal<typeof import('../../inspector/kit')>();
+  return {
+    ...orig,
+    DEFAULT_KIT: { Input, Toggle },
+  };
+});
 
 vi.mock('@capsuletech/web-core', () => ({
   useEmit: () => _mockEmit,

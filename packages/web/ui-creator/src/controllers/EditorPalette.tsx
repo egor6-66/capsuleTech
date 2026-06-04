@@ -8,8 +8,12 @@
  *    — реестр компонентов, категории, разрешение вложенности.
  *  - `/generators` (`listTemplatesFor`, `buildTemplate`)
  *    — темплейты для дропдаун-превью.
- *  - `useEditorKit()` — кит (UI-компоненты) для рендера превью в `<Renderer>`.
- *    Не хардкодим @capsuletech/web-ui.
+ *  - `useEditorKit()` — КОНТЕНТ-кит. Используется ТОЛЬКО для рендера превью
+ *    в `<Renderer>` (Canvas-контент пользователя). Не используется для chrome-UI
+ *    самого редактора.
+ *
+ * Chrome-UI редактора (Dropdown темплейтов, кнопки, чевроны) — прямые импорты
+ * из `@capsuletech/web-ui`. Контент — `useEditorKit()`.
  *
  * DnD — только СТАРТ drag'а (палитра не drop-target):
  *  - обычный компонент → `{ source:'palette', type }` (добавить одну ноду)
@@ -26,6 +30,7 @@
 import { createDraggable, useDnD } from '@capsuletech/web-dnd';
 import { Renderer } from '@capsuletech/web-renderer';
 import type { Registry } from '@capsuletech/web-renderer';
+import { Dropdown } from '@capsuletech/web-ui/dropdown';
 import {
   type ComponentCategory,
   canAcceptChild,
@@ -39,7 +44,7 @@ import {
   type ITemplate,
   listTemplatesFor,
 } from '../generators';
-import { createEffect, createSignal, For, type JSX, Show } from 'solid-js';
+import { createEffect, createSignal, For, Show } from 'solid-js';
 import { useEditorKit } from './EditorProvider';
 
 // ── Editor-metadata: категории ─────────────────────────────────────────────────
@@ -83,19 +88,7 @@ export const orderRank = (type: string): number => {
 // ── Kit helpers ────────────────────────────────────────────────────────────────
 
 /**
- * Приводит kit к типу составного Dropdown-компонента (аналог EditorTree).
- * Выделено из JSX-тела чтобы разметка оставалась чистой.
- */
-const asDropdown = (kit: ReturnType<typeof useEditorKit>) =>
-  (kit as unknown as Record<string, unknown>).Dropdown as {
-    (props: { children: JSX.Element; open?: boolean; onOpenChange?: (v: boolean) => void }): JSX.Element;
-    Trigger: (props: Record<string, unknown>) => JSX.Element;
-    Content: (props: Record<string, unknown>) => JSX.Element;
-    Item: (props: Record<string, unknown>) => JSX.Element;
-  };
-
-/**
- * Строит Registry для `<Renderer>` из kit-объекта.
+ * Строит Registry для `<Renderer>` из kit-объекта (КОНТЕНТ-кит).
  * Выделено из JSX-тела — вычисление не должно мешать читать разметку.
  */
 const registryFromKit = (kit: ReturnType<typeof useEditorKit>): Registry =>
@@ -171,16 +164,14 @@ const TemplateCard = (props: { t: ITemplate; registry: Registry }) => {
  * Кнопка «Шаблоны» + Dropdown со списком TemplateCard.
  * Null если темплейтов нет.
  *
- * Использует `kit.Dropdown` (Kobalte — портал + Floating UI позиционирование)
- * вместо ручного Portal + getBoundingClientRect.
+ * Chrome-компонент редактора — использует `Dropdown` из `@capsuletech/web-ui` напрямую
+ * (не из контент-кита). Kobalte под капотом — портал + Floating UI позиционирование.
  * Закрытие при старте drag — через controlled `open` + createEffect.
  */
 const TemplatesTrigger = (props: { forType: string; registry: Registry }) => {
   const templates = listTemplatesFor(props.forType);
   if (templates.length === 0) return null;
 
-  const kit = useEditorKit();
-  const UiDropdown = asDropdown(kit);
   const dnd = useDnD();
 
   const [open, setOpen] = createSignal(false);
@@ -191,24 +182,24 @@ const TemplatesTrigger = (props: { forType: string; registry: Registry }) => {
   });
 
   return (
-    <UiDropdown open={open()} onOpenChange={setOpen}>
-      <UiDropdown.Trigger
+    <Dropdown open={open()} onOpenChange={setOpen}>
+      <Dropdown.Trigger
         title="Шаблоны"
         onClick={(e: MouseEvent) => e.stopPropagation()}
         class="flex size-5 shrink-0 items-center justify-center rounded text-foreground/40 hover:bg-accent/50 hover:text-foreground"
         data-testid={`templates-trigger-${props.forType}`}
       >
         <TemplatesIcon />
-      </UiDropdown.Trigger>
-      <UiDropdown.Content
+      </Dropdown.Trigger>
+      <Dropdown.Content
         class="flex w-64 flex-col gap-2 overflow-y-auto p-2"
         style={{ 'max-height': '70vh' }}
         data-testid="templates-popover"
       >
         <div class="px-1 text-[11px] uppercase tracking-wide text-foreground/40">Шаблоны</div>
         <For each={templates}>{(t) => <TemplateCard t={t} registry={props.registry} />}</For>
-      </UiDropdown.Content>
-    </UiDropdown>
+      </Dropdown.Content>
+    </Dropdown>
   );
 };
 

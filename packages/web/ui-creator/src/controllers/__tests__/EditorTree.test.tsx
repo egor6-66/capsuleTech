@@ -10,6 +10,8 @@
  *  6. Zone-резолв canBeside/canInto через mock state — boxDrop.accepts.
  *
  * Все внешние зависимости мокируются.
+ * EditorTree использует Dropdown из @capsuletech/web-ui/dropdown (chrome-кит).
+ * Контент-кит (useEditorKit) в EditorTree не используется.
  */
 
 /* @vitest-environment jsdom */
@@ -24,7 +26,6 @@ let _mockEmit = vi.fn();
 let _mockEditorState: IEditorCtx | null = null;
 let _mockActiveData = vi.fn(() => null as unknown);
 let _mockPointer = vi.fn(() => null as { x: number; y: number } | null);
-let _mockKit: Record<string, unknown> = {};
 
 // Отслеживаем: какие droppable были созданы и их accepts-колбеки
 type DroppableOpts = {
@@ -94,20 +95,9 @@ vi.mock('../useEditor', () => ({
   },
 }));
 
-vi.mock('../EditorProvider', () => ({
-  useEditorKit: () => _mockKit,
-}));
-
-// Импорт ПОСЛЕ mock'а
-const { EditorTree } = await import('../EditorTree');
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-/**
- * Минимальный Dropdown-заглушка для тестов.
- * Реализует Dropdown.Trigger, Dropdown.Content, Dropdown.Item.
- */
-const makeDropdownKit = () => {
+// Chrome-кит: Dropdown из @capsuletech/web-ui/dropdown (прямой импорт в EditorTree).
+// EditorTree НЕ использует useEditorKit — контент-кит здесь не нужен.
+vi.mock('@capsuletech/web-ui/dropdown', () => {
   const DropdownItem = (props: { children?: unknown; onSelect?: () => void; class?: string; style?: unknown }) => (
     <button
       type="button"
@@ -138,7 +128,10 @@ const makeDropdownKit = () => {
     },
   );
   return { Dropdown };
-};
+});
+
+// Импорт ПОСЛЕ mock'а
+const { EditorTree } = await import('../EditorTree');
 
 const makeEditorCtx = (overrides: Partial<IEditorCtx> = {}): IEditorCtx => ({
   tree: createEmptyTree('ui.Layout.Grid'),
@@ -165,7 +158,8 @@ beforeEach(() => {
   _mockPointer = vi.fn(() => null);
   _droppables = [];
   _draggables = [];
-  _mockKit = makeDropdownKit();
+  // _mockKit удалён: EditorTree не использует useEditorKit (chrome-Dropdown мокируется
+  // через @capsuletech/web-ui/dropdown напрямую).
 });
 
 afterEach(() => {

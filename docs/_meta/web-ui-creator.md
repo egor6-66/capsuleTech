@@ -13,6 +13,22 @@ audience: claude
 
 Design-time toolkit: всё нужное чтобы СОЗДАТЬ JSON-дерево UI. Runtime-рендер — в `@capsuletech/web-renderer` (отдельный пакет, без deps на zod/manifests). Пакет framework-agnostic (ноль зависимости на web-core) — кроме `/controllers` (HCA-integration, ADR 032) и `/inspector` (Solid-UI, design-time only).
 
+## Два кита редактора
+
+Редактор работает с двумя независимыми наборами UI-компонентов:
+
+### КОНТЕНТ-кит (`kit` prop → `useEditorKit()`)
+Передаётся в `<Editor.Provider kit={...}>`. Это компоненты, ИЗ которых пользователь строит свой UI: они наполняют палитру (превью TemplateCard через `<Renderer>`) и рендерят Canvas. Результат работы редактора — JSON-дерево под этот кит. Доступен через `useEditorKit()`.
+
+**Где используется:** `EditorCanvas` (registry для Renderer), `EditorPalette` (TemplateCard preview — только это!).
+
+### Chrome-кит (`@capsuletech/web-ui`, прямая dep пакета)
+Фиксированный набор компонентов, КОТОРЫМИ нарисован сам редактор: `Dropdown` для меток узлов (Tree) и шаблонов (Palette), `Input`/`Toggle` в инспекторе. Импортируются напрямую из `@capsuletech/web-ui/*`.
+
+**Где используется:** `EditorTree` (Dropdown меток), `EditorPalette` (Dropdown шаблонов, кнопки чеврона), `inspector/` (Input, Toggle).
+
+**Правило:** `useEditorKit()` — только для рендера пользовательского контента. Chrome → `@capsuletech/web-ui` напрямую.
+
 ## Где что лежит
 
 | Путь | Что |
@@ -126,6 +142,7 @@ marks: Record<NodeId, string>
 4. **Детерминизм генераторов** — mulberry32 RNG. `Math.random` внутри engine/fuzzer запрещён.
 5. **`canvasIntent` / `treeIntent` — DOM-зависимые** — framework-agnostic (DOM, не web-core). В тестах jsdom+mock.
 6. **Tree shape ≠ Solid VNode** — `IEditorTree` это JSON-сериализуемая схема. `web-renderer` парсит в JSX.
+7. **Inspector Select/Textarea — нативный fallback** — `@capsuletech/web-ui` пока не экспортирует Select/Textarea. Свапнем на web-ui компоненты отдельной задачей когда owner-web-ui добавит их. Fallback не трогать до этого момента.
 
 ## Gotchas
 
