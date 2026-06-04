@@ -110,6 +110,9 @@
       "@capsuletech/web-ui": [
         "packages/web/ui/src/index.ts"
       ],
+      "@capsuletech/web-ui/icons": [
+        "packages/web/ui/src/icons/index.ts"
+      ],
       "@capsuletech/web-ui/*": [
         "packages/web/ui/src/primitives/*",
         "packages/web/ui/src/primitives/layout/*",

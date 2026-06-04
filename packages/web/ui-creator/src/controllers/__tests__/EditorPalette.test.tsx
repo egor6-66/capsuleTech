@@ -121,6 +121,31 @@ vi.mock('@capsuletech/web-ui/dropdown', () => ({
   get Dropdown() { return _mockDropdown; },
 }));
 
+// Button из @capsuletech/web-ui/button — рендерит нативный <button>, форвардит пропы.
+// ref не извлекаем вручную — в Solid ref не является обычным prop (обрабатывается компилятором).
+// Просто спредим всё: компилятор Solid сам правильно обработает ref при render.
+vi.mock('@capsuletech/web-ui/button', () => ({
+  Button: (props: Record<string, unknown>) => (
+    // biome-ignore lint/suspicious/noExplicitAny
+    <button type="button" {...(props as any)} />
+  ),
+}));
+
+// Flex из @capsuletech/web-ui/flex — простой div-обёртка для children.
+vi.mock('@capsuletech/web-ui/flex', () => ({
+  Flex: (props: Record<string, unknown>) => (
+    <div class={(props as any).class} style={(props as any).style}>
+      {(props as any).children}
+    </div>
+  ),
+}));
+
+// Icons из @capsuletech/web-ui/icons — null-заглушки (размер не влияет на тесты).
+vi.mock('@capsuletech/web-ui/icons', () => ({
+  LayoutGrid: () => null,
+  ChevronRight: () => null,
+}));
+
 vi.mock('../EditorProvider', () => ({
   useEditorKit: () => _mockKit,
 }));
