@@ -44,6 +44,9 @@
       "@capsuletech/web-dnd": [
         "packages/web/dnd/src/index.ts"
       ],
+      "@capsuletech/web-dnd/controllers": [
+        "packages/web/dnd/src/controllers/index.ts"
+      ],
       "@capsuletech/web-flow": [
         "packages/web/flow/src/index.ts"
       ],
@@ -70,6 +73,12 @@
       ],
       "@capsuletech/web-ui-creator/generators": [
         "packages/web/ui-creator/src/generators/index.ts"
+      ],
+      "@capsuletech/web-ui-creator/controllers": [
+        "packages/web/ui-creator/src/controllers/index.ts"
+      ],
+      "@capsuletech/web-ui-creator/capsule": [
+        "packages/web/ui-creator/src/capsule.ts"
       ],
       "@capsuletech/web-profiler": [
         "packages/web/profiler/src/index.ts"
