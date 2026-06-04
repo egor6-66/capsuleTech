@@ -27,7 +27,7 @@ import {
   type TreeZone,
 } from '../state/dnd';
 import type { IEditorTree, NodeId } from '../state/types';
-import { createEmptyTree } from '../state/operations';
+import { createEmptyTree, updateNode } from '../state/operations';
 
 // ── Типы контекста ────────────────────────────────────────────────────────────
 
@@ -61,6 +61,12 @@ export interface IOnDropPayload {
 export interface IOnMarkPayload {
   nodeId: NodeId;
   color: string | null;
+}
+
+export interface IOnUpdateNodePropsPayload {
+  nodeId: NodeId;
+  /** Патч пропсов — мерджится поверх текущих (shallow merge). */
+  props: Record<string, unknown>;
 }
 
 // ── Controller ────────────────────────────────────────────────────────────────
@@ -168,6 +174,17 @@ const EditorController = Controller((services) => {
          */
         onSetTree({ target, store }) {
           store.update({ tree: target.payload as IEditorTree });
+        },
+
+        /**
+         * onUpdateNodeProps — обновить пропсы одной ноды (shallow merge).
+         * Используется Editor.Inspector для редактирования пропсов выбранного узла.
+         * payload: IOnUpdateNodePropsPayload
+         */
+        onUpdateNodeProps({ target, store, context }) {
+          const { nodeId, props } = target.payload as IOnUpdateNodePropsPayload;
+          const newTree = updateNode(context.tree, { nodeId, patch: { props } });
+          store.update({ tree: newTree });
         },
 
         /**

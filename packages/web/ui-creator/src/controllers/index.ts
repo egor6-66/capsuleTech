@@ -24,6 +24,7 @@ export type {
   IOnDragOverTreePayload,
   IOnDropPayload,
   IOnMarkPayload,
+  IOnUpdateNodePropsPayload,
 } from './EditorController';
 
 export { EditorOverlay } from './EditorOverlay';
@@ -43,6 +44,8 @@ export {
   catRank,
   orderRank,
 } from './EditorPalette';
+
+export { EditorInspector, schemaToInspectorCategories } from './EditorInspector';
 
 export { useEditor } from './useEditor';
 export type { IUseEditorResult } from './useEditor';
