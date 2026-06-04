@@ -1,5 +1,5 @@
 import { z } from '@capsuletech/shared-zod';
-import { AlertCircle, FormInput, Inbox, Info, Tag } from 'lucide-solid';
+import { AlertCircle, FormInput, Inbox, Info, Tag } from '@capsuletech/web-ui/icons';
 import type { IComponentManifest } from '../types';
 
 const FIELD_DIRECT_CHILDREN = new Set([

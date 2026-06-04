@@ -1,5 +1,5 @@
 import { z } from '@capsuletech/shared-zod';
-import { RectangleHorizontal } from 'lucide-solid';
+import { RectangleHorizontal } from '@capsuletech/web-ui/icons';
 import type { IComponentManifest } from '../types';
 
 export const SkeletonManifest: IComponentManifest = {

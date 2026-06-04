@@ -17,5 +17,13 @@ export default defineConfig({
     // Сами тесты pure-logic, jsdom-globals им не мешают.
     environment: 'jsdom',
     globals: false,
+    // lucide-solid поставляется как .jsx — Node нативно не умеет его читать.
+    // inline заставляет vite-plugin-solid трансформировать пакет в тестах.
+    // Аналогично web-ui vitest.config.ts (паттерн из packages/web/ui/).
+    server: {
+      deps: {
+        inline: [/lucide-solid/],
+      },
+    },
   },
 });

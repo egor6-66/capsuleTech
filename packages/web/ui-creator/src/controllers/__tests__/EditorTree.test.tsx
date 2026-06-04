@@ -165,10 +165,16 @@ vi.mock('@capsuletech/web-ui/flex', () => ({
 }));
 
 // Иконки из @capsuletech/web-ui/icons (lucide).
-vi.mock('@capsuletech/web-ui/icons', () => ({
-  ChevronRight: () => <svg data-testid="icon-chevron" />,
-  X: () => <svg data-testid="icon-x" />,
-}));
+// importOriginal: подтягиваем все иконки (в т.ч. из манифестов), оверрайдим
+// тестируемые с data-testid чтобы проверить их присутствие в DOM.
+vi.mock('@capsuletech/web-ui/icons', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@capsuletech/web-ui/icons')>();
+  return {
+    ...actual,
+    ChevronRight: () => <svg data-testid="icon-chevron" />,
+    X: () => <svg data-testid="icon-x" />,
+  };
+});
 
 // Импорт ПОСЛЕ mock'ов
 const { EditorTree } = await import('../EditorTree');

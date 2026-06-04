@@ -54,8 +54,7 @@
     "@capsuletech/shared-zod": "workspace:*",
     "@capsuletech/web-core": "workspace:*",
     "@capsuletech/web-dnd": "workspace:*",
-    "@capsuletech/web-ui": "workspace:*",
-    "lucide-solid": "^1.16.0"
+    "@capsuletech/web-ui": "workspace:*"
   },
   "peerDependencies": {
     "@capsuletech/web-renderer": "workspace:*",

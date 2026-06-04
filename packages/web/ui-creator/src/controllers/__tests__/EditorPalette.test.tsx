@@ -140,11 +140,17 @@ vi.mock('@capsuletech/web-ui/flex', () => ({
   ),
 }));
 
-// Icons из @capsuletech/web-ui/icons — null-заглушки (размер не влияет на тесты).
-vi.mock('@capsuletech/web-ui/icons', () => ({
-  LayoutGrid: () => null,
-  ChevronRight: () => null,
-}));
+// Icons из @capsuletech/web-ui/icons — реальный импорт + null-заглушки для конкретных.
+// importOriginal нужен чтобы все иконки из манифестов (Sparkles, MousePointerClick и др.)
+// были доступны — vitest иначе выбросит "No export is defined on the mock".
+vi.mock('@capsuletech/web-ui/icons', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@capsuletech/web-ui/icons')>();
+  return {
+    ...actual,
+    LayoutGrid: () => null,
+    ChevronRight: () => null,
+  };
+});
 
 vi.mock('../EditorProvider', () => ({
   useEditorKit: () => _mockKit,

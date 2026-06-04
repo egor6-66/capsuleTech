@@ -1,5 +1,5 @@
 import { z } from '@capsuletech/shared-zod';
-import { Group } from 'lucide-solid';
+import { Group } from '@capsuletech/web-ui/icons';
 import type { IComponentManifest } from '../types';
 
 export const GroupManifest: IComponentManifest = {

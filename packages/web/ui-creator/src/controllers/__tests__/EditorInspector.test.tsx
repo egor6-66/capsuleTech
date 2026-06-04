@@ -95,11 +95,16 @@ vi.mock('@capsuletech/web-ui/button', () => ({
   Button: (props: any) => <button type="button" {...props} />,
 }));
 
-// Icons из @capsuletech/web-ui/icons — null-заглушки.
-vi.mock('@capsuletech/web-ui/icons', () => ({
-  ChevronDown: () => null,
-  ChevronRight: () => null,
-}));
+// Icons из @capsuletech/web-ui/icons — реальный импорт + null-заглушки для конкретных.
+// importOriginal нужен чтобы все иконки из манифестов были доступны.
+vi.mock('@capsuletech/web-ui/icons', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@capsuletech/web-ui/icons')>();
+  return {
+    ...actual,
+    ChevronDown: () => null,
+    ChevronRight: () => null,
+  };
+});
 
 // Мокируем DEFAULT_KIT чтобы fields использовали те же мок-компоненты.
 vi.mock('../../inspector/kit', async (importOriginal) => {
