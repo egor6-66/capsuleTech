@@ -1,6 +1,9 @@
 import { libConfig } from '@capsuletech/lib-builder';
 
 export default libConfig({
-  entry: 'src/index.ts',
+  entry: {
+    index: 'src/index.ts',
+    controllers: 'src/controllers/index.ts',
+  },
   name: 'CapsuleDnd',
 });
