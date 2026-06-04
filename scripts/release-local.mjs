@@ -105,9 +105,7 @@ const setupNpmrcScope = () => {
     const u = new URL(REGISTRY);
     registryHost = `//${u.host}/`;
   } catch {}
-  const authLine = registryHost
-    ? `${registryHost}:_authToken=secretVerdaccioToken`
-    : '';
+  const authLine = registryHost ? `${registryHost}:_authToken=secretVerdaccioToken` : '';
 
   writeFileSync(
     npmrcPath,
@@ -163,8 +161,15 @@ const findCapsulePackages = (root) => {
   // Without these Verdaccio metadata files (which have `name` but no top-level `version`)
   // get scanned and overwrite the real package entries (e.g. `cli@undefined`).
   const SKIP = new Set([
-    'node_modules', 'dist', '.git', '.nx', 'tmp',
-    'e2e', 'fixture', 'verdaccio-tmp', 'storage',
+    'node_modules',
+    'dist',
+    '.git',
+    '.nx',
+    'tmp',
+    'e2e',
+    'fixture',
+    'verdaccio-tmp',
+    'storage',
   ]);
   const walk = (dir) => {
     const pkgPath = join(dir, 'package.json');
@@ -278,7 +283,10 @@ if (SHOULD_BUILD) {
         '@capsuletech/desktop',
       ],
     },
-    { name: 'web-style (Tailwind scan dist сиблингов)', filters: ['--filter', '@capsuletech/web-style'] },
+    {
+      name: 'web-style (Tailwind scan dist сиблингов)',
+      filters: ['--filter', '@capsuletech/web-style'],
+    },
   ];
   for (const phase of phases) {
     log(`build phase: ${phase.name}`);

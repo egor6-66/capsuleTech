@@ -62,7 +62,14 @@ async function runTauri(
   // ─── Spawn tauri CLI (grably #3 shell:true, #4 cwd nativeDir, #5 env vars) ──
   const child = spawn(
     'pnpm',
-    ['exec', 'tauri', kind === 'dev' ? 'dev' : 'build', '--config', overridePath, ...explicitBundles],
+    [
+      'exec',
+      'tauri',
+      kind === 'dev' ? 'dev' : 'build',
+      '--config',
+      overridePath,
+      ...explicitBundles,
+    ],
     {
       cwd: nativeDir, // grabla #4 — tauri looks for tauri.conf.json relative to cwd
       stdio: 'inherit',

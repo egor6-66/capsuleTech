@@ -19,10 +19,14 @@ export const WidgetFrameHandle = (props: IWidgetFrameHandleProps) => {
     const none = '0px solid transparent';
     const solid = `${thickness}px solid ${acc}`;
     switch (props.corner) {
-      case 'top-left':    return { borderTop: solid, borderLeft: solid, borderBottom: none, borderRight: none };
-      case 'top-right':   return { borderTop: solid, borderRight: solid, borderBottom: none, borderLeft: none };
-      case 'bottom-left': return { borderBottom: solid, borderLeft: solid, borderTop: none, borderRight: none };
-      case 'bottom-right':return { borderBottom: solid, borderRight: solid, borderTop: none, borderLeft: none };
+      case 'top-left':
+        return { borderTop: solid, borderLeft: solid, borderBottom: none, borderRight: none };
+      case 'top-right':
+        return { borderTop: solid, borderRight: solid, borderBottom: none, borderLeft: none };
+      case 'bottom-left':
+        return { borderBottom: solid, borderLeft: solid, borderTop: none, borderRight: none };
+      case 'bottom-right':
+        return { borderBottom: solid, borderRight: solid, borderTop: none, borderLeft: none };
     }
   };
 
@@ -72,13 +76,11 @@ export const WidgetFrame = (props: IWidgetFrameProps) => {
   };
 
   // Grip sits in its corner, inside the chamfer triangle.
-  const gripClass = () => `absolute z-10 cursor-move ${gripCornerClasses[resolvedCorner()]} ${resolvedGripClass()}`;
+  const gripClass = () =>
+    `absolute z-10 cursor-move ${gripCornerClasses[resolvedCorner()]} ${resolvedGripClass()}`;
 
   // Active state tokens (CSS custom properties from theme)
-  const rimColor = () =>
-    local.active
-      ? 'var(--color-ring)'
-      : 'var(--color-border)';
+  const rimColor = () => (local.active ? 'var(--color-ring)' : 'var(--color-border)');
 
   // Glow filter — only when active
   const glowFilter = () =>
@@ -116,9 +118,7 @@ export const WidgetFrame = (props: IWidgetFrameProps) => {
       <div style={rimLayerStyle()} />
 
       {/* Surface layer — inset by rim width, card background, content clips here */}
-      <div style={surfaceLayerStyle()}>
-        {local.children}
-      </div>
+      <div style={surfaceLayerStyle()}>{local.children}</div>
 
       {/* Grip — cursor-move, sits in the chamfered corner above surface */}
       <div class={gripClass()}>
@@ -131,9 +131,7 @@ export const WidgetFrame = (props: IWidgetFrameProps) => {
       </div>
 
       {/* Resize handles — only when active */}
-      <Show when={local.active}>
-        {local.handles}
-      </Show>
+      <Show when={local.active}>{local.handles}</Show>
     </div>
   );
 };

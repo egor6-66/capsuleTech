@@ -4,6 +4,7 @@ import type {
   IAddNodePayload,
   IEditorNode,
   IEditorTree,
+  IInsertSubtreePayload,
   IMoveNodePayload,
   IRemoveNodePayload,
   IReorderChildrenPayload,
@@ -225,4 +226,75 @@ export const reorderChildren = (
   const nextParent = cloneNode(parent);
   nextParent.children = [...payload.newOrder];
   return { ...tree, nodes: { ...tree.nodes, [parent.id]: nextParent } };
+};
+
+/**
+ * Вставить целый фрагмент дерева (`fragment`) как поддерево внутрь `parentId`.
+ *
+ * Алгоритм:
+ *  1. Валидирует `canAcceptChild(parentType, fragment.root.type)`.
+ *  2. **Ремапит все id фрагмента в свежие уникальные** (`generateId`) —
+ *     сохраняя структуру (parentId / children) внутри фрагмента.
+ *     Это исключает коллизии между несколькими вставками одного темплейта.
+ *  3. Вставляет ремапленный root фрагмента ребёнком в `parentId` на `index`.
+ *
+ * `fragment` — обычно результат `buildTemplate(t)` из `/generators`.
+ */
+export const insertSubtree = (
+  tree: IEditorTree,
+  fragment: IEditorTree,
+  payload: IInsertSubtreePayload,
+): IEditorTree => {
+  const parent = requireNode(tree, payload.parentId);
+  const fragmentRoot = fragment.nodes[fragment.root];
+  if (!fragmentRoot) {
+    throw new EditorOpError('insertSubtree: fragment.root не найден в fragment.nodes');
+  }
+
+  if (!canAcceptChild(parent.type, fragmentRoot.type)) {
+    throw new EditorOpError(
+      `insertSubtree: node type "${parent.type}" не принимает "${fragmentRoot.type}" как ребёнка`,
+    );
+  }
+
+  // Строим карту старый id → новый id для всех нод фрагмента.
+  const idMap = new Map<NodeId, NodeId>();
+  for (const oldId of Object.keys(fragment.nodes)) {
+    idMap.set(oldId, generateId());
+  }
+
+  // Создаём ремапленные ноды с обновлёнными id / parentId / children.
+  const remappedNodes: Record<NodeId, IEditorNode> = {};
+  for (const [oldId, node] of Object.entries(fragment.nodes)) {
+    const newId = idMap.get(oldId)!;
+    const newParentId =
+      node.parentId === null
+        ? // root фрагмента: parentId становится payload.parentId
+          payload.parentId
+        : // остальные: ремапим через карту
+          (idMap.get(node.parentId) ?? node.parentId);
+    const remapped: IEditorNode = {
+      ...cloneNode(node),
+      id: newId,
+      parentId: newParentId,
+      children: node.children.map((childId) => idMap.get(childId) ?? childId),
+    };
+    remappedNodes[newId] = remapped;
+  }
+
+  // Новый id корня фрагмента.
+  const newFragmentRootId = idMap.get(fragment.root)!;
+
+  // Обновляем родительскую ноду: вставляем новый root фрагмента.
+  const nextParent = cloneNode(parent);
+  nextParent.children = insertAt(nextParent.children, newFragmentRootId, payload.index);
+
+  return {
+    ...tree,
+    nodes: {
+      ...tree.nodes,
+      ...remappedNodes,
+      [parent.id]: nextParent,
+    },
+  };
 };

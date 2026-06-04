@@ -45,7 +45,7 @@ Vite-конфиг и 9 плагинов для dev-сервера HCA-apps. Дё
 |---|---|---|
 | `AutoImport` | `capsuleConfig.ts` (inline) | Инжектит WRAPPER_NAMES + DEFINE_FACTORIES как глобальные имена |
 | `HMRWrappingPlugin` | `plugins/HMRWrapping.ts` | babel-AST: `const X = Page(...)` → `(props) => Page(...)(props)` + `export default` |
-| `tsconfigPaths` | `capsuleConfig.ts` (inline) | Резолв `@capsuletech/*` из `tsconfig.base.json` |
+| `resolve.tsconfigPaths: true` | `capsuleConfig.ts` (resolve section, Vite 8 native) | Резолв `@capsuletech/*` из `tsconfig.base.json` через extends-цепочку. Плагин `vite-tsconfig-paths` удалён. |
 | `EnsureScaffoldPlugin` | `plugins/scaffold/index.ts` | Копирует статические entry-файлы в `.capsule/` при первом запуске |
 | `CapsuleRegistryPlugin` | `plugins/capsuleRegistry.ts` | Unified codegen: scan src/** → wrappers.ts + slots.d.ts + endpoints.ts + api.d.ts + app-config.gen.ts + bootstrap.tsx |
 | `tailwindcss()` | `capsuleConfig.ts` (inline) | Tailwind v4 через `@tailwindcss/vite` |
@@ -84,7 +84,7 @@ Vite-конфиг и 9 плагинов для dev-сервера HCA-apps. Дё
 
 - **`desktop?: IDesktopConfig` — type-only без peerDep.** Vite-builder секцию НЕ читает в runtime — только тип. CLI читает её через `importModule('capsule.config.ts')` и передаёт в `runDev`/`runBuild` пакета `@capsuletech/desktop` (PR 5). **Никакого peerDep на `@capsuletech/desktop`** — пробовали, ловили Nx circular dependency (`vite-builder → desktop → vite-builder`, т.к. desktop сам использует vite-builder для сборки). Type-only `import type` работает через `tsconfigPaths` в workspace; Verdaccio consumers защищены `skipLibCheck: true` в `tsconfig.base.json` (apps без install'а `@capsuletech/desktop` не получают TS error на transitive reference).
 
-- **Мёртвый код к удалению:** `vite/src/utils/generateFromTemplates.ts`, `vite/src/plugins/html.ts` (HtmlPlugin), `vite/src/defines/appConfig.ts:1` (`import { builtinModules }`).
+- **Мёртвый код вычищен (Ф3, 2026-06-04):** удалены artефакты `'building.ts-plugin-solid'`, `'building.ts-plugin-dts'`, `'building.ts-tsconfig-paths'`, `'@tailwindcss/building.ts'` из NODE_EXTERNAL (lib-builder) и `'@tailwindcss/building.ts'` из appConfig optimizeDeps.exclude; `solid-js` убран из stale bundleDependencies vite.config.mts.
 
 ## План рефакторинга / оптимизаций
 
@@ -102,7 +102,7 @@ Vite-конфиг и 9 плагинов для dev-сервера HCA-apps. Дё
 
 | Тип | Где | Что покрывает |
 |---|---|---|
-| Unit | `src/plugins/__tests__/capsuleRegistry.test.ts` | CapsuleRegistryPlugin — generateWrappersRuntime/Types (включая `interface + const` для всех 6 NS), generateEndpointsRuntime/Types, generateAppConfigRuntime, generateBootstrap, LAYER_INIT_ORDER контракт, transform hooks |
+| Unit | `src/plugins/__tests__/capsuleRegistry.test.ts` | CapsuleRegistryPlugin — generateWrappersRuntime/Types (включая `interface + const` для всех 6 NS), generateEndpointsRuntime/Types, generateAppConfigRuntime, generateBootstrap, LAYER_INIT_ORDER контракт, transform hooks; **resolvePackageEntries** (packages[]-кодген сквозной тест через parseManifestSource mock-source — закрывает дыру e2e smoke); generatePackagesRuntime/Types с controllerKeys |
 | Unit | `src/plugins/__tests__/hmrWrapping.test.ts` | HMRWrappingPlugin — babel-AST transforms для всех wrapper-типов, export default injection, Entity skip |
 
 Перед изменением любого плагина: `pnpm --filter @capsuletech/vite-builder test`.

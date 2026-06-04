@@ -17,8 +17,7 @@
  * 10. `defaults` типизированы под схему (type-level, проверяем через expectTypeOf)
  */
 
-import { describe, expect, it } from 'vitest';
-import { expectTypeOf } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import { z as zodDirect } from 'zod';
 import { Entity } from '../wrapper';
 
@@ -137,11 +136,14 @@ describe('Entity — transparent wrapper', () => {
   });
 
   it('extra fields from factory are preserved', () => {
-    const MyEntity = Entity((z) => ({
-      schema: z.array(z.string()),
-      // extra field beyond IEntityDefinition contract — still preserved
-      label: 'My Entity',
-    } as any));
+    const MyEntity = Entity(
+      (z) =>
+        ({
+          schema: z.array(z.string()),
+          // extra field beyond IEntityDefinition contract — still preserved
+          label: 'My Entity',
+        }) as any,
+    );
 
     expect((MyEntity as any).label).toBe('My Entity');
   });

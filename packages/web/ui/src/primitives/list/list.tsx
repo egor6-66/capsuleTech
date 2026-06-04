@@ -1,8 +1,13 @@
 import { createStyle } from '@capsuletech/web-style';
 import { createVirtualizer } from '@tanstack/solid-virtual';
-import { For, splitProps } from 'solid-js';
 import type { JSX } from 'solid-js';
-import type { IListBatchProps, IListProps, IListRenderProps, IVirtualListProps } from './interfaces';
+import { For, splitProps } from 'solid-js';
+import type {
+  IListBatchProps,
+  IListProps,
+  IListRenderProps,
+  IVirtualListProps,
+} from './interfaces';
 import { listVariants } from './variants';
 
 /** Type guard: batch mode — data + (itemAs or as) present. */
@@ -13,7 +18,10 @@ function isBatchMode<T>(props: IListProps<T>): props is IListBatchProps<T> {
 
 /** Type guard: render-prop mode — items + children (function) present. */
 function isRenderMode<T>(props: IListProps<T>): props is IListRenderProps<T> {
-  return (props as IListRenderProps<T>).items !== undefined && typeof (props as IListRenderProps<T>).children === 'function';
+  return (
+    (props as IListRenderProps<T>).items !== undefined &&
+    typeof (props as IListRenderProps<T>).children === 'function'
+  );
 }
 
 export function List<T = unknown>(props: IListProps<T>) {
@@ -53,9 +61,7 @@ export function List<T = unknown>(props: IListProps<T>) {
         style={(local.min ? gridStyle() : style()) as JSX.CSSProperties}
         {...(others as object)}
       >
-        <For each={local.data}>
-          {(item) => <ItemTpl {...getItemProps(item)} />}
-        </For>
+        <For each={local.data}>{(item) => <ItemTpl {...getItemProps(item)} />}</For>
       </ul>
     );
   }

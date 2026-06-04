@@ -97,4 +97,3 @@ export const IconOnlyOutline: Story = {
 export const IconOnlyGhost: Story = {
   args: { size: 'icon', variant: 'ghost', children: <Plus /> },
 };
-

@@ -18,10 +18,18 @@ const TableSync = View((Ui) => {
   const center = () => !!data()?.centerOnClick;
   return (
     <>
-      <Ui.Button size="sm" variant={sync() ? 'default' : 'outline'} meta={{ tags: ['toggle-scroll'] }}>
+      <Ui.Button
+        size="sm"
+        variant={sync() ? 'default' : 'outline'}
+        meta={{ tags: ['toggle-scroll'] }}
+      >
         {sync() ? '✓ Синк с картой' : 'Синк с картой'}
       </Ui.Button>
-      <Ui.Button size="sm" variant={center() ? 'default' : 'outline'} meta={{ tags: ['toggle-center'] }}>
+      <Ui.Button
+        size="sm"
+        variant={center() ? 'default' : 'outline'}
+        meta={{ tags: ['toggle-center'] }}
+      >
         {center() ? '✓ Скроллить к выбранному' : 'Скроллить к выбранному'}
       </Ui.Button>
     </>

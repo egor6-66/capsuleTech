@@ -144,7 +144,6 @@ describe('DataTable scrollToId — standard mode', () => {
     const scrollIntoViewMock = vi.fn();
     HTMLElement.prototype.scrollIntoView = scrollIntoViewMock;
 
-
     const [scrollId, setScrollId] = createSignal<number | undefined>(undefined);
 
     cleanup = render(
@@ -160,7 +159,6 @@ describe('DataTable scrollToId — standard mode', () => {
   it('uses getRowId to match scrollToId', () => {
     const scrollIntoViewMock = vi.fn();
     HTMLElement.prototype.scrollIntoView = scrollIntoViewMock;
-
 
     const [scrollId, setScrollId] = createSignal<string | undefined>(undefined);
 
@@ -211,7 +209,7 @@ describe('DataTable scrollToId — index resolution (unit)', () => {
       rows.findIndex((r) => {
         const id = getRowId
           ? getRowId(r)
-          : (r as unknown as Record<string, unknown>).id as string | number | undefined;
+          : ((r as unknown as Record<string, unknown>).id as string | number | undefined);
         return id === scrollToId;
       });
 
@@ -230,7 +228,7 @@ describe('DataTable scrollToId — index resolution (unit)', () => {
       rows.findIndex((r) => {
         const id = getRowId
           ? getRowId(r)
-          : (r as unknown as Record<string, unknown>).id as string | number | undefined;
+          : ((r as unknown as Record<string, unknown>).id as string | number | undefined);
         return id === scrollToId;
       });
 

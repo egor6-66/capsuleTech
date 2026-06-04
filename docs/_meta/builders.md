@@ -107,9 +107,66 @@ biome-config → ничего (zero-deps, чисто config-файл)
 
 **LAYER_INIT_ORDER** — единственная точка контроля порядка загрузки. Добавляешь новый слой → добавляешь запись в `LAYER_INIT_ORDER` в `capsuleRegistry.ts` + пишешь sub-generator. Порядок в `bootstrap.tsx` обновится автоматически.
 
-## Известные грабли
+## Rolldown — статус Ф1 (2026-06-04)
 
-### 🔴 Стабильные
+### Механизм включения
+
+В **Vite 8** Rolldown является **бандлером по умолчанию для `build`** — Rollup полностью заменён без каких-либо флагов. Подтверждение: `rolldown` прямая dep Vite 8 (`"rolldown": "1.0.1"` в package.json vite), в выводе build присутствует `dist/assets/rolldown-runtime-*.js` и `[PLUGIN_TIMINGS]` из Rolldown CLI.
+
+Для dev-сервера в Vite 8 также доступен экспериментальный **Rolldown-bundled dev server**: `experimental.bundledDev: true` в Vite config (`configDefaults.experimental.bundledDev = false`). Создаёт `FullBundleDevEnvironment` вместо transform-on-demand. Текущий статус: **не включён** (оставлен в default=false).
+
+Никакого внешнего пакета `rolldown-vite` устанавливать **не нужно** — Rolldown встроен в Vite 8.
+
+### Ф1 прогон — результаты (2026-06-04)
+
+**Build:**
+
+| App | Модулей | Время | Rolldown runtime chunk | Статус |
+|---|---|---|---|---|
+| ewc (production) | 3034 | 5.71s | rolldown-runtime-D7Y0JD-f.js 0.67kB | ✅ OK |
+| ui-creator (production) | 3067 | 6.11s | rolldown-runtime-D7Y0JD-f.js 0.67kB | ✅ OK |
+| vite-builder self-build | 408 | 2.06s | — (SSR/lib mode) | ✅ OK |
+
+**Dev server (experimental.bundledDev: true):**
+
+Тест через programmatic createServer с capsuleConfig plugins + `experimental.bundledDev: true`:
+- `FullBundleDevEnvironment` создаётся корректно
+- Все 14 плагинов проходят config-хук без ошибок
+- RouterPlugin, EnsureScaffoldPlugin, CapsuleRegistryPlugin работают
+- `@babel/traverse` CJS-interop не затронут (babel runs в transform hooks, не в rolldown pipeline)
+- Статус: **виабелен**, но НЕ включён пока (не production-ready в Vite 8.0.x)
+
+**E2E smoke:** `pnpm test:e2e:cli` — все шаги прошли (verdaccio → release-local → create-app → dev + curl).
+
+### Rolldown-специфичные наблюдения
+
+| Компонент | Статус | Детали |
+|---|---|---|
+| `TanStackRouterVite` | ✅ OK | Работает как Rollup-compatible plugin |
+| `vite-plugin-solid` + `solid-refresh` | ✅ OK | transform-hooks совместимы |
+| `unplugin-auto-import` | ✅ OK | No issues |
+| `@tailwindcss/vite` | ✅ OK с warning | `[lightningcss minify] Unknown at rule: @theme` — известный косметический warning Tailwind v4 |
+| `HMRWrappingPlugin` | ✅ OK | babel-AST transform в Vite plugin hook — совместим |
+| `CapsuleRegistryPlugin` | ✅ OK | enforce:'pre' transform hook совместим |
+| `CompliancePlugin` | ✅ OK | Показывает 12-14% plugin time в PLUGIN_TIMINGS |
+| `AliasesPlugin` | ✅ OK | resolve.alias hook совместим |
+| `RouterPlugin` | ✅ OK | TanStackRouterVite wrapper работает |
+| `@babel/traverse` CJS-interop | ✅ OK | `_traverse.default ?? _traverse` pattern продолжает работать |
+| `vite-tsconfig-paths` | ⚠️ Deprecated | Vite 8 выдаёт warn: use `resolve.tsconfigPaths: true` вместо плагина. Занимает 40-42% plugin-time. |
+| `optimizeDeps.exclude` | ✅ Актуален | Для `@capsuletech/web-*` пакетов по-прежнему нужен в стандартном dev-режиме |
+| `resolve.conditions` | ✅ OK | `['solid', 'browser', 'import']` работает |
+| `manualChunks` (rollupOptions) | ✅ OK | Rolldown принимает `rolldownOptions` (alias к `rollupOptions`), предупреждает о deprecated rollupOptions |
+
+### Что схлопывается в Ф2
+
+**`vite-tsconfig-paths` → `resolve.tsconfigPaths: true`** (нативный Vite 8):
+- Экономия 40-42% plugin-time по данным `[PLUGIN_TIMINGS]`
+- App tsconfig.json уже `extends tsconfig.base.json` → нативный find-up подхватит полную цепочку
+- Риск: root точка — `.capsule/` (нет своего tsconfig), find-up пойдёт в `apps/<app>/tsconfig.json` — OK
+- Риск 2: `.capsule/tsconfig.paths.json` генерируется `AliasesPlugin` — нативный tsconfigPaths читает extends-chain, включая `tsconfig.paths.json`. Нужно проверить timing.
+- **Не откатываем пока** — требует отдельного тестирования в Ф2
+
+### 🔴 Стабильные грабли
 
 1. **biome-config — config-only пакет.** Нет `src/`/`dist/`. `package.json`: `files: ["biome.json"]` + `exports: { "./biome.json": "./biome.json" }`. Тарбол содержит `biome.json`, внешний consumer пишет `"extends": ["@capsuletech/biome-config/biome.json"]`. `dev:builders` в root исключает пакет (`--filter "!@capsuletech/biome-config"`), потому что у него нет `build`/`dev` — это нормально, не баг.
 
@@ -158,11 +215,103 @@ biome-config → ничего (zero-deps, чисто config-файл)
 | Поменять формат `endpoints.ts` или `api.d.ts` | `vite/src/plugins/capsuleRegistry.ts > generateEndpointsRuntime / generateEndpointsTypes` |
 | Поменять формат `app-config.gen.ts` | `vite/src/plugins/capsuleRegistry.ts > generateAppConfigRuntime` |
 | Поменять порядок import'ов в `bootstrap.tsx` | `vite/src/plugins/capsuleRegistry.ts > LAYER_INIT_ORDER` |
+| **Добавить controllers из integration-пакета в глобал `Controllers`** | Прописать `controllers` в `/capsule`-манифесте пакета (`manifest.controllers = { Editor: ... }`). `CapsuleRegistryPlugin` через jiti прочитает ключи в `resolveManifestInfo` → `controllerKeys`. `generatePackagesRuntime` смержит каждый ключ через `(globalThis.Controllers ??= {})[key] = ...` (augment, не overwrite). `generatePackagesTypes` добавит `interface Controllers { Key: typeof import('...')[...] }` в `declare global` блок `packages.d.ts`. |
 | Поменять путь под которым раздаётся app (sub-path deploy) | `capsule.config.ts > base: '/path/'` → уходит в Vite `base`; `bootstrap.tsx` подхватывает через `import.meta.env.BASE_URL` |
 | Включить моки в prod-сборке (preview-deploy) | `CAPSULE_MOCKS=true capsule build` — env-флаг прокидывается в `__CAPSULE_MOCKS__`. Без флага: dev=true/build=false. App: `if (__CAPSULE_MOCKS__) { ... }`. TS-тип: `declare const __CAPSULE_MOCKS__: boolean;` в env.d.ts. |
 | Поменять biome-правила | `biome/biome.json` (root репо подхватит через extends) |
+| **Добавить `/controllers` subpath в integration-пакет** | см. «Конвенция `/controllers` subpath» ниже — libConfig multi-entry, package.json exports, tsconfig.base.json path, dep web-core |
 
-## Связь с другими подсистемами
+## Конвенция `/controllers` subpath (ADR 032, Фаза 2)
+
+Integration-пакеты (`web-dnd`, `web-renderer`, `web-ui-creator`, …) экспонируют opt-in HCA-прослойку через subpath `@capsuletech/<pkg>/controllers`. Ниже — полная пошаговая инструкция для owner'а пакета.
+
+### Механизм (уже работает — новая машинерия не нужна)
+
+`lib-builder` поддерживает multi-entry через `entry: Record<string, string>` в `libConfig()`. web-ui-creator использует это сейчас для `/manifests`, `/state`, `/inspector`, `/generators` — ровно тот же механизм нужен для `/controllers`. Авто-дискавери нет: каждый entry регистрируется **явно** в `vite.config.mts` пакета.
+
+Rollup вывод: `entryFileNames: '[name].mjs'` — значит entry `controllers` → `dist/controllers.mjs`. DTS-плагин эмитит `dist/controllers/index.d.ts` (`entryRoot: 'src'`, mirror-структура).
+
+### Пошагово: что прописать owner'у пакета
+
+**1. Структура src**
+
+```
+packages/web/<pkg>/src/controllers/index.ts   ← публичный API subpath'а
+packages/web/<pkg>/src/controllers/           ← всё остальное внутри
+```
+
+`src/controllers/index.ts` импортирует `@capsuletech/web-core` и экспортирует готовые Controller'ы / meta-aware entry-points.
+
+**2. `vite.config.mts` — добавить entry**
+
+```ts
+export default libConfig({
+  entry: {
+    index: 'src/index.ts',
+    // ...существующие entries...
+    controllers: 'src/controllers/index.ts',   // ← добавить
+  },
+  name: 'Capsule<Pkg>',
+});
+```
+
+**3. `package.json` — добавить exports-запись**
+
+```json
+"./controllers": {
+  "types": "./dist/controllers/index.d.ts",
+  "import": "./dist/controllers.mjs",
+  "default": "./dist/controllers.mjs"
+}
+```
+
+Паттерн: `types` → зеркальная DTS-папка (`dist/<entry>/index.d.ts`), `import`/`default` → плоский `.mjs` (`dist/<entry>.mjs`). Точно такой же паттерн, как у `/manifests`, `/state` и т.д. в web-ui-creator.
+
+**4. `tsconfig.base.json` — добавить path-alias**
+
+```json
+"@capsuletech/web-<pkg>/controllers": [
+  "packages/web/<pkg>/src/controllers/index.ts"
+]
+```
+
+Это позволяет app-коду и тестам резолвить subpath через workspace-src без сборки. Редактирует **главный assistant** (root-level файл — не зона owner'а пакета).
+
+**5. Зависимость на `@capsuletech/web-core`**
+
+`/controllers`-код живёт в том же пакете, что и generic-ядро, поэтому `web-core` добавляется как **package-level dep** (не subpath-level — npm не поддерживает per-entry deps):
+
+```json
+"dependencies": {
+  "@capsuletech/web-core": "workspace:*"
+}
+```
+
+Generic-ядро пакета (`src/index.ts`) при этом web-core **не импортирует** — только `src/controllers/**`. Tree-shaking на уровне бандлера обеспечивает ацикличность: `dist/index.mjs` не тянет `dist/controllers.mjs`. Ацикличность архитектурная: subpath → web-core, web-core → ничего из этих пакетов.
+
+**6. Пересборка и рестарт**
+
+После добавления нового entry — пересобери пакет (`pnpm --filter @capsuletech/<pkg> build`) и перезапусти dev-сервер. Vite читает `optimizeDeps`/резолвы на старте. Новый subpath в tsconfig.base.json требует рестарта TS language server.
+
+### Что owner НЕ делает сам
+
+- Правку `tsconfig.base.json` (root-level — главный assistant).
+- Правку compliance allowlist (`rules.ts`) — не нужна: `/controllers` не в слоях `widgets/entities/…`, compliance-линтер файлы вне `src/` слоёв не проверяет.
+- Новых plugin'ов в `vite-builder` — build через существующий `libConfig()` multi-entry.
+
+### Итог: checklist для owner'а
+
+```
+[ ] src/controllers/index.ts создан
+[ ] vite.config.mts: добавлен entry controllers → 'src/controllers/index.ts'
+[ ] package.json exports: добавлена запись "./controllers"
+[ ] package.json dependencies: добавлен @capsuletech/web-core (если не было)
+[ ] tsconfig.base.json: запрос к главному добавить path-alias
+[ ] пакет пересобран, dev-сервер перезапущен
+[ ] тест на основной экспорт /controllers написан
+```
+
+
 
 - [[api-middleware]] — `CapsuleRegistryPlugin` (generateEndpointsRuntime + generateAppConfigRuntime) собирают рантайм для `services.api`
 - [[004-compliance-linter|ADR 004]] — обоснование линтера (warn → error)
@@ -171,6 +320,7 @@ biome-config → ничего (zero-deps, чисто config-файл)
 - [[vite-plugins]] — user-facing description 5 плагинов (compliance/HMR/router/export/scaffold/etc)
 - [[compliance|@capsuletech/compliance]] — user-facing
 - [[cli|@capsuletech/cli]] — actions из `actions.ts` дёргаются именно оттуда
+- [[032-package-controllers-and-useemit|ADR 032]] — `/controllers` subpath конвенция + `useEmit` канонический канал
 
 ## Cross-links
 

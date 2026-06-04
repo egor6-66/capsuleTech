@@ -102,6 +102,24 @@ export const WithLabels: Story = {
   ),
 };
 
+/**
+ * Trigger rendered as our `Button` primitive — passes `variant` and `size`
+ * directly, no raw `class` duplication needed.
+ */
+export const TriggerAsButton: Story = {
+  render: () => (
+    <Dropdown>
+      <Dropdown.Trigger as={Button} variant="ghost" size="icon">
+        •••
+      </Dropdown.Trigger>
+      <Dropdown.Content>
+        <Dropdown.Item onSelect={() => console.log('Edit')}>Edit</Dropdown.Item>
+        <Dropdown.Item onSelect={() => console.log('Delete')}>Delete</Dropdown.Item>
+      </Dropdown.Content>
+    </Dropdown>
+  ),
+};
+
 /** Disabled item does not fire onSelect and is visually dimmed. */
 export const Disabled: Story = {
   render: () => (

@@ -8,7 +8,7 @@ import { cva } from '@capsuletech/web-style';
 export const groupSeparatorVariants = cva('shrink-0 bg-border', {
   variants: {
     orientation: {
-      horizontal: 'h-px w-auto',            // горизонтальная линия (∞×1px)
+      horizontal: 'h-px w-auto', // горизонтальная линия (∞×1px)
       vertical: 'h-auto w-px self-stretch', // вертикальная линия  (1px×∞)
     },
   },

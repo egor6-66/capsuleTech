@@ -68,12 +68,7 @@ export const BUTTON_PRIMARY_TEXTS: readonly string[] = [
   'Subscribe',
 ];
 
-export const BUTTON_SECONDARY_TEXTS: readonly string[] = [
-  'Cancel',
-  'Back',
-  'Reset',
-  'Clear',
-];
+export const BUTTON_SECONDARY_TEXTS: readonly string[] = ['Cancel', 'Back', 'Reset', 'Clear'];
 
 /** Сопоставление label → подходящий type у `<Input>` (для согласованности UX). */
 export const labelToInputType = (

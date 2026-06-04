@@ -1,5 +1,5 @@
 import { cn } from '@capsuletech/web-style';
-import { createMemo, For, splitProps, type Component } from 'solid-js';
+import { type Component, createMemo, For, splitProps } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 
 import { Flex } from '../layout/flex';
@@ -56,8 +56,7 @@ export function Group<T = unknown>(props: IGroupProps<T>) {
     const all = (local.data ?? []) as T[];
     if (!local.tags || local.tags.length === 0) return all;
     return all.filter(
-      (it: any) =>
-        Array.isArray(it?.tags) && it.tags.some((t: string) => local.tags!.includes(t)),
+      (it: any) => Array.isArray(it?.tags) && it.tags.some((t: string) => local.tags!.includes(t)),
     );
   });
 
@@ -107,21 +106,14 @@ export function Group<T = unknown>(props: IGroupProps<T>) {
       const sepOrientation = (): FlexOrientation => (isVertical() ? 'horizontal' : 'vertical');
       return (
         <div
-          class={cn(
-            'flex',
-            isVertical() ? 'flex-col' : 'flex-row',
-            variantClass(),
-            local.class,
-          )}
+          class={cn('flex', isVertical() ? 'flex-col' : 'flex-row', variantClass(), local.class)}
           style={local.style as any}
         >
           <For each={items()}>
             {(item, idx) => (
               <>
                 <Dynamic component={local.itemAs as Component<any>} {...getItemProps(item)} />
-                {idx() < items().length - 1 && (
-                  <GroupSeparator orientation={sepOrientation()} />
-                )}
+                {idx() < items().length - 1 && <GroupSeparator orientation={sepOrientation()} />}
               </>
             )}
           </For>

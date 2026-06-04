@@ -1,13 +1,13 @@
 export {
   Dropdown,
-  DropdownTrigger,
   DropdownContent,
-  DropdownItem,
-  DropdownSeparator,
   DropdownGroup,
+  DropdownItem,
   DropdownLabel,
+  DropdownSeparator,
   DropdownSub,
-  DropdownSubTrigger,
   DropdownSubContent,
+  DropdownSubTrigger,
+  DropdownTrigger,
 } from './dropdown';
 export type * from './interfaces';

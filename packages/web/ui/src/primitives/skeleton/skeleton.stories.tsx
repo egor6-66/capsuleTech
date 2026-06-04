@@ -48,24 +48,12 @@ export const TextManyLines: Story = {
 
 export const Table: Story = {
   args: { variant: 'table', rows: 8 },
-  decorators: [
-    (Story) => (
-      <div style={{ height: '320px', width: '100%' }}>
-        {Story()}
-      </div>
-    ),
-  ],
+  decorators: [(Story) => <div style={{ height: '320px', width: '100%' }}>{Story()}</div>],
 };
 
 export const TableFewRows: Story = {
   args: { variant: 'table', rows: 3 },
-  decorators: [
-    (Story) => (
-      <div style={{ height: '200px', width: '100%' }}>
-        {Story()}
-      </div>
-    ),
-  ],
+  decorators: [(Story) => <div style={{ height: '200px', width: '100%' }}>{Story()}</div>],
 };
 
 export const List: Story = {
@@ -78,23 +66,11 @@ export const ListShort: Story = {
 
 export const Card: Story = {
   args: { variant: 'card' },
-  decorators: [
-    (Story) => (
-      <div style={{ 'max-width': '360px' }}>
-        {Story()}
-      </div>
-    ),
-  ],
+  decorators: [(Story) => <div style={{ 'max-width': '360px' }}>{Story()}</div>],
 };
 
 export const MapVariant: Story = {
   name: 'Map',
   args: { variant: 'map' },
-  decorators: [
-    (Story) => (
-      <div style={{ height: '400px', width: '100%' }}>
-        {Story()}
-      </div>
-    ),
-  ],
+  decorators: [(Story) => <div style={{ height: '400px', width: '100%' }}>{Story()}</div>],
 };

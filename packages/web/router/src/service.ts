@@ -1,7 +1,7 @@
 import type { AnyRoute } from '@tanstack/router-core';
 import {
-  Navigate,
   createRouter as createTanStackRouter,
+  Navigate,
   type Router as TanStackRouter,
 } from '@tanstack/solid-router';
 import {
@@ -63,4 +63,11 @@ export const createRouter = <TRouteTree extends AnyRoute>(opts: ICreateRouterOpt
   };
 };
 
-export type { IBeforeLoadContext, ICapsuleRouter, ICapsuleRouterContext, ICreateRouterOpts, IGoToOpts, TanStackRouter };
+export type {
+  IBeforeLoadContext,
+  ICapsuleRouter,
+  ICapsuleRouterContext,
+  ICreateRouterOpts,
+  IGoToOpts,
+  TanStackRouter,
+};

@@ -65,8 +65,8 @@ vi.mock('@capsuletech/web-style', async () => {
   };
 });
 
-import { normalizeSlotValue } from '../utils';
 import { Matrix } from '../matrix';
+import { normalizeSlotValue } from '../utils';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -168,7 +168,9 @@ describe('Matrix per-slot Suspense — cell isolation (DOM)', () => {
     );
 
     expect(container.querySelector('[data-testid="resolved-a"]')).not.toBeNull();
-    expect(container.querySelector('[data-testid="resolved-a"]')?.textContent).toBe('Alpha is loaded');
+    expect(container.querySelector('[data-testid="resolved-a"]')?.textContent).toBe(
+      'Alpha is loaded',
+    );
   });
 
   it('three cells: first and third resolve, second is null — first and third visible', () => {
@@ -328,9 +330,7 @@ describe('Matrix per-slot Suspense — default fallback structure', () => {
           <Matrix
             rows={[
               {
-                cells: [
-                  { id: 'x', children: <div>Content</div> },
-                ],
+                cells: [{ id: 'x', children: <div>Content</div> }],
               },
             ]}
           />

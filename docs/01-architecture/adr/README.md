@@ -26,6 +26,8 @@ status: index
 | [[013-explicit-define-app-config\|013]] | `defineAppConfig` через explicit import (закрывает S-8) | 🛠️ implemented | 2026-05-18 |
 | [[014-router-api-extension\|014]] | Router: `goTo` options-объект + generic `ICapsuleRouterContext` | 🛠️ implemented | 2026-05-18 |
 | [[015-remote-modules\|015]] | Remote modules: своё runtime, pluggable transport, manifest-driven | 📝 proposed | 2026-05-19 |
+| [[032-package-controllers-and-useemit\|032]] | Package-integration слой (`/controllers`) + `useEmit` | ✅ accepted | 2026-06-04 |
+| [[033-package-registration\|033]] | Механизм регистрации пакетов (`capsule.app.ts: packages`) | ✅ accepted | 2026-06-04 |
 
 > [!info]
 > Status:

@@ -19,9 +19,7 @@
     "@capsuletech/web-query": "workspace:*",
     "@capsuletech/shared-zod": "workspace:*",
     "@capsuletech/vite-builder": "workspace:*",
-    "@capsuletech/web-style": "workspace:*",
-    "@capsuletech/web-map": "workspace:*",
-    "@capsuletech/web-charts": "workspace:*"
+    "@capsuletech/web-style": "workspace:*"
   },
   "peerDependencies": {
     "solid-js": "^1.9.5",
@@ -51,6 +49,11 @@
       "types": "./dist/app-config.d.ts",
       "import": "./dist/app-config.mjs",
       "default": "./dist/app-config.mjs"
+    },
+    "./module": {
+      "types": "./dist/module.d.ts",
+      "import": "./dist/module.mjs",
+      "default": "./dist/module.mjs"
     }
   },
   "publishConfig": {

@@ -42,7 +42,7 @@ beforeEach(async () => {
   createRouter = mod.createRouter;
 });
 
-const makeRouteTree = () => ({} as any);
+const makeRouteTree = () => ({}) as any;
 
 describe('createRouter — notFoundRedirect не задан', () => {
   it('не передаёт defaultNotFoundComponent в TanStack', async () => {

@@ -1,5 +1,5 @@
 import { z } from '@capsuletech/shared-zod';
-import { AlertCircle, FormInput, Inbox, Info, Tag } from 'lucide-solid';
+import { AlertCircle, FormInput, Inbox, Info, Tag } from '@capsuletech/web-ui/icons';
 import type { IComponentManifest } from '../types';
 
 const FIELD_DIRECT_CHILDREN = new Set([
@@ -14,7 +14,7 @@ const isFieldPart = (type: string) => type.startsWith('ui.Field.');
 export const FieldManifest: IComponentManifest = {
   type: 'ui.Field',
   label: 'Field',
-  category: 'container',
+  category: 'composition',
   icon: () => <FormInput size={16} />,
   description: 'Form-field: метка + ввод + описание/ошибка',
   accepts: (childType) => FIELD_DIRECT_CHILDREN.has(childType),

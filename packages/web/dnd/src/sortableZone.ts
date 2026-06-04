@@ -6,16 +6,10 @@
  * geometrically from rects snapshotted at drag-start (resting positions).
  */
 
-import {
-  type Accessor,
-  createEffect,
-  createMemo,
-  createSignal,
-  onCleanup,
-} from 'solid-js';
+import { type Accessor, createEffect, createMemo, createSignal, onCleanup } from 'solid-js';
+import { useDnD } from './context';
 import { createDraggable } from './draggable';
 import { createDroppable } from './droppable';
-import { useDnD } from './context';
 import type { DragData } from './types';
 
 // ---------------------------------------------------------------------------
@@ -305,7 +299,14 @@ export function createSortableGroup(opts: ISortableGroupOptions): ISortableGroup
         const r = itemEntry.el.getBoundingClientRect();
         itemRects.push({
           id: itemId,
-          rect: { left: r.left, top: r.top, right: r.right, bottom: r.bottom, width: r.width, height: r.height },
+          rect: {
+            left: r.left,
+            top: r.top,
+            right: r.right,
+            bottom: r.bottom,
+            width: r.width,
+            height: r.height,
+          },
         });
       }
       snap.set(zoneId, { rect: containerRect, itemRects });
@@ -369,8 +370,7 @@ export function createSortableGroup(opts: ISortableGroupOptions): ISortableGroup
       const zoneEntry = zones.get(containingZoneId);
       const activeData = dnd.state.activeData();
       const zoneAccepts =
-        !zoneEntry?.opts.accepts ||
-        (activeData && zoneEntry.opts.accepts(aidRaw, activeData));
+        !zoneEntry?.opts.accepts || (activeData && zoneEntry.opts.accepts(aidRaw, activeData));
 
       if (zoneAccepts) {
         targetZoneId = containingZoneId;
@@ -385,8 +385,7 @@ export function createSortableGroup(opts: ISortableGroupOptions): ISortableGroup
         const zoneEntry = zones.get(id);
         const activeData = dnd.state.activeData();
         return (
-          !zoneEntry?.opts.accepts ||
-          (activeData && zoneEntry.opts.accepts(aidRaw, activeData))
+          !zoneEntry?.opts.accepts || (activeData && zoneEntry.opts.accepts(aidRaw, activeData))
         );
       });
       targetZoneId = findNearestZone(pt, acceptingZones);
@@ -406,9 +405,7 @@ export function createSortableGroup(opts: ISortableGroupOptions): ISortableGroup
 
     // Compute insertion index geometrically
     // Filter out the dragged item's rect (it's being moved, don't count it)
-    const filteredRects = zoneSnap.itemRects
-      .filter((ir) => ir.id !== aidRaw)
-      .map((ir) => ir.rect);
+    const filteredRects = zoneSnap.itemRects.filter((ir) => ir.id !== aidRaw).map((ir) => ir.rect);
 
     const index = computeInsertIndex(pt, zoneEntry.opts.axis, filteredRects);
     setActiveTarget({ zoneId: targetZoneId, index });
@@ -466,9 +463,7 @@ export function createSortableGroup(opts: ISortableGroupOptions): ISortableGroup
     };
 
     // Derived signals for this zone
-    const isTarget: Accessor<boolean> = createMemo(
-      () => activeTarget()?.zoneId === zoneOpts.id,
-    );
+    const isTarget: Accessor<boolean> = createMemo(() => activeTarget()?.zoneId === zoneOpts.id);
 
     const activeIndex: Accessor<number | null> = createMemo(() => {
       const t = activeTarget();
@@ -499,7 +494,7 @@ export function createSortableGroup(opts: ISortableGroupOptions): ISortableGroup
     const canAccept: Accessor<boolean> = createMemo(() => {
       const aidRaw = activeItemId();
       if (!aidRaw) return false;
-      if (!zoneOpts.accepts) return true;           // no predicate → accepts all
+      if (!zoneOpts.accepts) return true; // no predicate → accepts all
       const activeData = dnd.state.activeData();
       if (!activeData) return false;
       return zoneOpts.accepts(aidRaw, activeData);

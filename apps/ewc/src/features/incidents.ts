@@ -107,7 +107,10 @@ const Incidents = Feature(({ api, router }) => ({
       // Store a plain deep clone, NOT the live `items[k]` store-proxy node:
       // putting a store node into another store field aliases them in
       // @xstate/solid's reconcile, which corrupts items[k] on the next select.
-      store.update({ selected: item ? structuredClone(unwrap(item)) : null, selectionSource: source });
+      store.update({
+        selected: item ? structuredClone(unwrap(item)) : null,
+        selectionSource: source,
+      });
     }
 
     if (tags.includes('open-card')) {

@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 import { createSignal } from 'solid-js';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { WidgetSettingsToggle } from './widgetSettingsToggle';
 
@@ -9,9 +9,7 @@ const meta = {
   tags: ['autodocs'],
   decorators: [
     (Story: () => import('solid-js').JSX.Element) => (
-      <div class="flex flex-col gap-4 p-6">
-        {Story()}
-      </div>
+      <div class="flex flex-col gap-4 p-6">{Story()}</div>
     ),
   ],
 } satisfies Meta<typeof WidgetSettingsToggle>;
@@ -38,9 +36,7 @@ export const WithCallback: Story = {
     const [log, setLog] = createSignal<string[]>([]);
     return (
       <div class="flex flex-col gap-2">
-        <WidgetSettingsToggle
-          onChange={(on) => setLog((prev) => [...prev, `settings: ${on}`])}
-        />
+        <WidgetSettingsToggle onChange={(on) => setLog((prev) => [...prev, `settings: ${on}`])} />
         <ul class="text-xs text-muted-foreground">
           {log().map((entry, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: stable static list

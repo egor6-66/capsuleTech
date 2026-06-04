@@ -48,13 +48,9 @@
 /* @vitest-environment jsdom */
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { Matrix } from '../matrix';
-import {
-  rowToGridLayout,
-  applyGridLayout,
-  rowToAxis,
-} from '../dnd/insert';
+import { applyGridLayout, rowToAxis, rowToGridLayout } from '../dnd/insert';
 import type { ICell, IRow, LayoutChangeEvent } from '../interfaces';
+import { Matrix } from '../matrix';
 
 // ---------------------------------------------------------------------------
 // Minimal resizeItem replica for model tests.
@@ -1011,7 +1007,9 @@ describe('Guard: grid zone + flow zone coexist', () => {
     // Flow zone rendered via corvu (resizable cell)
     expect(container.querySelector('[data-testid="f-cell"]')).not.toBeNull();
     // Corvu panels exist for the bottom row's resizable cell
-    expect(container.querySelectorAll('[data-corvu-resizable-panel]').length).toBeGreaterThanOrEqual(1);
+    expect(
+      container.querySelectorAll('[data-corvu-resizable-panel]').length,
+    ).toBeGreaterThanOrEqual(1);
   });
 });
 
@@ -1402,7 +1400,9 @@ describe('G18: grid default granularity is finer (cols=24, rowHeight=20)', () =>
       container,
     );
 
-    const gridZone = container.querySelector('[data-grid-zone="default-grid"]') as HTMLElement | null;
+    const gridZone = container.querySelector(
+      '[data-grid-zone="default-grid"]',
+    ) as HTMLElement | null;
     expect(gridZone).not.toBeNull();
     // Default cols=24
     expect(gridZone?.style.gridTemplateColumns).toBe('repeat(24, 1fr)');

@@ -34,3 +34,31 @@ export interface ICtx<T = any> {
 export const Context = createContext<ICtx>();
 
 export const useCtx = <T = any>() => useContext(Context) as ICtx<T>;
+
+/**
+ * Фабрика типизированного хука для пакетных потребителей.
+ *
+ * Использование (в пакете, например `@capsuletech/web-ui-creator`):
+ * ```ts
+ * import { createUseCtx } from '@capsuletech/web-core';
+ * import type { IEditorCtx } from './types';
+ *
+ * // Создаём типизированный хук один раз — экспортируем из пакета:
+ * export const useEditor = createUseCtx<IEditorCtx>();
+ *
+ * // В компонентах (рендерящихся внутри EditorController):
+ * const ctx = useEditor();
+ * ctx.store.ctx; // → IEditorCtx, без каста
+ * ```
+ *
+ * Это сознательное решение: `IBridge.ctx` типизируется как `TCtx` через
+ * runtime-доступ `store.ctx` (который Bridge читает из `state.context`).
+ * `createUseCtx` — единственная «точка правды» для типизации контекста в пакете.
+ *
+ * Не требует изменений в web-core при появлении нового пакета — каждый пакет
+ * создаёт свой хук самостоятельно поверх этой фабрики.
+ */
+export const createUseCtx =
+  <TCtx = any>() =>
+  () =>
+    useContext(Context) as ICtx<TCtx>;

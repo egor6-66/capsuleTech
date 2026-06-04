@@ -50,6 +50,7 @@ import {
   Providers,                                        // namespace: { BaseProviders }
   useCtx,                                           // hook для доступа к ControllerContext
   useShapeUi,                                       // hook для Shape consumer'ов
+  useEmit,                                          // программный HCA-event dispatch (ADR 032)
   type ITarget, type IHandlerApi,                   // user-facing типы
   type IDefineStateSchema, type IStateHandlers,     // schema-типы
   type IServices, type IWrapperProps,               // injected types
@@ -110,6 +111,8 @@ import { BaseProviders } from '@capsuletech/web-core/providers';
 
 - **`useCtx()` — публичный hook из engine.** Исключение из правила выше: `useCtx` экспортируется в главный barrel и auto-импортируется через vite-builder HOOK_IMPORTS. Нужен для Views/Widgets чтобы читать reactive state из `ControllerContext` (`const ctx = useCtx(); ctx.store.ctx.items`). Источник: `src/engine/ctx.ts`, экспортируется из `wrappers/index.ts`.
 
+- **`useEmit()` — программный HCA-event dispatch (ADR 032, фаза 1).** Второе намеренное исключение из правила «engine/* не public». Возвращает функцию `emit(eventName, partial?)`, которая диспатчит событие в ближайший Controller по тому же пути что UiProxy: `ctx.controller[name](normalizedTarget, ctx.store.ctx)` → ControllerProxy резолвит `states[cur][name]` → top-level → `next()`. Предназначен для package entry-points (`web-dnd/controllers`, `web-renderer/controllers`) и low-level escape. Вне Controller-scope бросает явную ошибку. Источник: `src/engine/use-emit.ts`, экспортируется из `wrappers/index.ts`.
+
 - **8 workspace deps.** `web-core` зависит от `web-profiler`, `web-router`, `web-state`, `web-ui`, `web-query`, `shared-zod`, `vite-builder`, `web-style`. При изменении контрактов в любом из них — согласовывать с соответствующим owner'ом.
 
 - **IBaseStateSchema в web-state.** `IDefineStateSchema` в `wrappers/interfaces.ts` расширяет `IBaseStateSchema` из `web-state` (Phase F unification). Не инвертировать направление зависимости.
@@ -131,6 +134,7 @@ import { BaseProviders } from '@capsuletech/web-core/providers';
 - [x] **Layout добавлен в WidgetUi** — `Ui.Layout.Matrix` доступен в Widget (2026-05-21).
 - [x] **Wrapper signatures упрощены до `(Ui, props?)`** — registry-args убраны, `Views`/`Widgets`/`Shapes`/`Controllers`/`Features` — глобалы. `ShapeUiContext` revert (несёт только Ui, без Views-merge). Generic `<P>` для типизации props в Shape `as`-pattern (2026-05-21).
 - [x] **`beforeLoad?` добавлен в `IAppConfig.router` и `IBaseProviderProps`** — generic глобальный guard на root-route (ADR 030, 2026-06-03). Тип переиспользован из `ICreateRouterOpts['beforeLoad']` web-router — не дублируется. `undefined` = нет guard'а. 320 тестов green.
+- [x] **`Tooltip` добавлен в `Ui` namespace** — lazy compound (`Tooltip` + `Tooltip.Trigger/Content/Arrow`) зарегистрирован в `ui-kit/imports.tsx`; тип `typeof Tooltip` (из `@capsuletech/web-ui/tooltip`) добавлен в `ViewUiRaw` и `WidgetUiRaw` → `WithMetaProps` автоматически покрывает все 3 sub-components. Named re-exports в web-ui: `TooltipTrigger`, `TooltipContent`, `TooltipArrow` для `createLazy`. 16 новых характеризационных тестов в `src/wrappers/__tests__/ui-meta-props.test.tsx`. 336 тестов green (2026-06-03).
 - [x] **`IUiMetaProps` + `WithMetaProps<T>` добавлены** — `meta`/`payload`/`dynamicMeta`/`modifiers` теперь типизированы на уровне `ViewUi`/`WidgetUi`/`PageUi`. TS2322 на `<Ui.Input meta={...} />` устранён. Источник: `src/wrappers/interfaces.ts`. Тест: `src/wrappers/__tests__/ui-meta-props.test.tsx` (2026-05-21).
 - [x] **Compound sub-components restored in `WithMetaProps`** — `Card.Header`, `Card.Title`, `Card.Content`, `Card.Description`, `Card.Footer`, `Field.Label`, `Field.Content`, `Field.Group`, `Navigation.List`, `Navigation.Item` и т.д. больше не теряются после augmentation. Введён helper `StaticProps<T>` (`K extends keyof Function ? never : K`). Callable-ветка теперь возвращает intersection callable + `WithMetaProps<StaticProps<T[K]>>`. Layout (`{ Grid, Flex, Matrix }`) не регрессирует — идёт через `extends object` ветку. 136 тестов green (2026-05-21).
 - [x] **`Table` добавлен в `Ui` namespace** — lazy compound (`Table` + `Table.Header/Body/Row/Head/Cell`) зарегистрирован в `ui-kit/imports.tsx`; тип `typeof Table` добавлен в `ViewUiRaw` и `WidgetUiRaw` → `WithMetaProps` автоматически покрывает все 5 sub-components. 24 новых характеризационных теста в `src/wrappers/__tests__/ui-meta-props.test.tsx`. 160 тестов green (2026-05-21).

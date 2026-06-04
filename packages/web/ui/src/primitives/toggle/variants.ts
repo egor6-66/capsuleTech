@@ -37,13 +37,16 @@ export const toggleThumbCva = cva(
   },
 );
 
-export const toggleLabelCva = cva('select-none cursor-pointer text-foreground transition-colors duration-fast', {
-  variants: {
-    size: {
-      sm: 'text-xs',
-      md: 'text-sm',
-      lg: 'text-base',
+export const toggleLabelCva = cva(
+  'select-none cursor-pointer text-foreground transition-colors duration-fast',
+  {
+    variants: {
+      size: {
+        sm: 'text-xs',
+        md: 'text-sm',
+        lg: 'text-base',
+      },
     },
+    defaultVariants: { size: 'md' },
   },
-  defaultVariants: { size: 'md' },
-});
+);

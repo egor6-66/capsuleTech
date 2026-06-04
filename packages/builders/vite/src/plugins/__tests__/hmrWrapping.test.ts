@@ -1,6 +1,6 @@
+import type { Plugin } from 'vite';
 import { describe, expect, it } from 'vitest';
 import { HMRWrappingPlugin } from '../HMRWrapping';
-import type { Plugin } from 'vite';
 
 /**
  * Tests for HMRWrappingPlugin AST transform.
@@ -50,10 +50,7 @@ describe('RENDER wrapper transforms', () => {
   });
 
   it('does NOT add export default when already present', () => {
-    const code = [
-      `const Hello = View((Ui) => <div />);`,
-      `export default Hello;`,
-    ].join('\n');
+    const code = [`const Hello = View((Ui) => <div />);`, `export default Hello;`].join('\n');
     const result = transform(code);
 
     // Should still transform

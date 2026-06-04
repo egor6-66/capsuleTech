@@ -68,11 +68,7 @@ afterEach(() => {
 
 function withCtx(store: any, children: () => any) {
   const ctx = mkCtx(store);
-  return () => (
-    <Context.Provider value={ctx as any}>
-      {children()}
-    </Context.Provider>
-  );
+  return () => <Context.Provider value={ctx as any}>{children()}</Context.Provider>;
 }
 
 // ---------------------------------------------------------------------------
@@ -244,7 +240,9 @@ describe('WidgetWrapper loader swap — reactive transitions', () => {
       updateComponent: vi.fn(),
       ctx: { tag: 'trans' },
       styles: {} as Record<string, string>,
-      get loading() { return loading(); },
+      get loading() {
+        return loading();
+      },
       props: {} as Record<string, any>,
       components: {} as Record<string, any>,
     } as any;
@@ -283,7 +281,9 @@ describe('WidgetWrapper loader swap — reactive transitions', () => {
       updateComponent: vi.fn(),
       ctx: { tag: 'trans2' },
       styles: {} as Record<string, string>,
-      get loading() { return loading(); },
+      get loading() {
+        return loading();
+      },
       props: {} as Record<string, any>,
       components: {} as Record<string, any>,
     } as any;

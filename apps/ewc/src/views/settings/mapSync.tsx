@@ -21,7 +21,11 @@ const MapSync = View((Ui) => {
       <Ui.Button size="sm" variant={sync() ? 'default' : 'outline'} meta={{ tags: ['toggle-fly'] }}>
         {sync() ? '✓ Синк с таблицей' : 'Синк с таблицей'}
       </Ui.Button>
-      <Ui.Button size="sm" variant={fly() ? 'default' : 'outline'} meta={{ tags: ['toggle-fly-self'] }}>
+      <Ui.Button
+        size="sm"
+        variant={fly() ? 'default' : 'outline'}
+        meta={{ tags: ['toggle-fly-self'] }}
+      >
         {fly() ? '✓ Подлететь к выбранному' : 'Подлететь к выбранному'}
       </Ui.Button>
     </>

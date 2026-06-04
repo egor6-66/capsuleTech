@@ -1,5 +1,5 @@
 import type { ZodTypeAny } from '@capsuletech/shared-zod';
-import { coin, pick, randomInt, type Rng } from './rng';
+import { coin, pick, type Rng, randomInt } from './rng';
 
 /**
  * Заполняет props на основе zod-схемы манифеста и его defaults. Для каждого

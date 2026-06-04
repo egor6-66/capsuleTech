@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 import { Mail, Moon, Palette, Settings, Sun, Trash2, User } from 'lucide-solid';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Button } from '../../primitives/button';
 import { DropdownMenu } from './dropdownMenu';
@@ -15,9 +15,7 @@ const meta = {
   tags: ['autodocs'],
   decorators: [
     (Story: () => import('solid-js').JSX.Element) => (
-      <div class="flex min-h-64 items-start justify-center p-8">
-        {Story()}
-      </div>
+      <div class="flex min-h-64 items-start justify-center p-8">{Story()}</div>
     ),
   ],
 } satisfies Meta<typeof DropdownMenu>;
@@ -36,7 +34,12 @@ export const Basic: Story = {
       trigger={<Button variant="outline">Open menu</Button>}
       data={[
         { type: 'item', id: 'profile', label: 'Profile', onSelect: () => console.log('Profile') },
-        { type: 'item', id: 'settings', label: 'Settings', onSelect: () => console.log('Settings') },
+        {
+          type: 'item',
+          id: 'settings',
+          label: 'Settings',
+          onSelect: () => console.log('Settings'),
+        },
         { type: 'item', id: 'logout', label: 'Logout', onSelect: () => console.log('Logout') },
       ]}
     />
@@ -54,7 +57,12 @@ export const WithSeparators: Story = {
       trigger={<Button variant="outline">Account</Button>}
       data={[
         { type: 'item', id: 'profile', label: 'Profile', onSelect: () => console.log('Profile') },
-        { type: 'item', id: 'settings', label: 'Settings', onSelect: () => console.log('Settings') },
+        {
+          type: 'item',
+          id: 'settings',
+          label: 'Settings',
+          onSelect: () => console.log('Settings'),
+        },
         { type: 'separator', id: 'sep-1' },
         { type: 'item', id: 'help', label: 'Help', onSelect: () => console.log('Help') },
         { type: 'separator', id: 'sep-2' },
@@ -79,8 +87,18 @@ export const WithGroups: Story = {
           id: 'account-group',
           label: 'Account',
           items: [
-            { type: 'item', id: 'profile', label: 'Profile', onSelect: () => console.log('Profile') },
-            { type: 'item', id: 'billing', label: 'Billing', onSelect: () => console.log('Billing') },
+            {
+              type: 'item',
+              id: 'profile',
+              label: 'Profile',
+              onSelect: () => console.log('Profile'),
+            },
+            {
+              type: 'item',
+              id: 'billing',
+              label: 'Billing',
+              onSelect: () => console.log('Billing'),
+            },
           ],
         },
         { type: 'separator', id: 'sep-1' },
@@ -89,8 +107,18 @@ export const WithGroups: Story = {
           id: 'prefs-group',
           label: 'Preferences',
           items: [
-            { type: 'item', id: 'appearance', label: 'Appearance', onSelect: () => console.log('Appearance') },
-            { type: 'item', id: 'notifications', label: 'Notifications', onSelect: () => console.log('Notifications') },
+            {
+              type: 'item',
+              id: 'appearance',
+              label: 'Appearance',
+              onSelect: () => console.log('Appearance'),
+            },
+            {
+              type: 'item',
+              id: 'notifications',
+              label: 'Notifications',
+              onSelect: () => console.log('Notifications'),
+            },
           ],
         },
       ]}
@@ -116,10 +144,30 @@ export const WithSubmenu: Story = {
           id: 'theme-sub',
           label: 'Color scheme',
           items: [
-            { type: 'item', id: 'theme-black', label: 'Black', onSelect: () => console.log('theme: black') },
-            { type: 'item', id: 'theme-ocean', label: 'Ocean', onSelect: () => console.log('theme: ocean') },
-            { type: 'item', id: 'theme-forest', label: 'Forest', onSelect: () => console.log('theme: forest') },
-            { type: 'item', id: 'theme-rose', label: 'Rose', onSelect: () => console.log('theme: rose') },
+            {
+              type: 'item',
+              id: 'theme-black',
+              label: 'Black',
+              onSelect: () => console.log('theme: black'),
+            },
+            {
+              type: 'item',
+              id: 'theme-ocean',
+              label: 'Ocean',
+              onSelect: () => console.log('theme: ocean'),
+            },
+            {
+              type: 'item',
+              id: 'theme-forest',
+              label: 'Forest',
+              onSelect: () => console.log('theme: forest'),
+            },
+            {
+              type: 'item',
+              id: 'theme-rose',
+              label: 'Rose',
+              onSelect: () => console.log('theme: rose'),
+            },
           ],
         },
       ]}
@@ -166,10 +214,7 @@ const ITEMS_WITH_ICONS: IDropdownMenuItem[] = [
 export const WithIcons: Story = {
   name: 'with icons · lucide-solid',
   render: () => (
-    <DropdownMenu
-      trigger={<Button variant="outline">Options</Button>}
-      data={ITEMS_WITH_ICONS}
-    />
+    <DropdownMenu trigger={<Button variant="outline">Options</Button>} data={ITEMS_WITH_ICONS} />
   ),
 };
 

@@ -1,4 +1,4 @@
-import { createSignal, type Accessor } from 'solid-js';
+import { type Accessor, createSignal } from 'solid-js';
 
 const STORAGE_KEY = 'capsule-theme';
 const MODE_STORAGE_KEY = 'capsule-theme-mode';

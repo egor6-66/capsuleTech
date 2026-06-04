@@ -37,6 +37,41 @@ export const createDraggable = <T extends DragData = DragData>(
 
   const isDragging = createMemo(() => dnd.state.activeId() === options.id);
 
+  // ------------------------------------------------------------------
+  // Pending-drag state: populated on pointerdown, cleared on move/up.
+  // We must NOT call startDrag immediately on pointerdown — a plain click
+  // (pointerdown + pointerup without movement) must never trigger a drag.
+  // ------------------------------------------------------------------
+  let pendingOrigin: { x: number; y: number; e: PointerEvent } | null = null;
+
+  const cancelPending = () => {
+    if (!pendingOrigin) return;
+    pendingOrigin = null;
+    window.removeEventListener('pointermove', onPendingMove);
+    window.removeEventListener('pointerup', onPendingUp);
+    window.removeEventListener('pointercancel', onPendingUp);
+  };
+
+  const onPendingMove = (e: PointerEvent) => {
+    if (!pendingOrigin) return;
+    const dx = e.clientX - pendingOrigin.x;
+    const dy = e.clientY - pendingOrigin.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const threshold = options.activationDistance ?? dnd.activationDistance;
+    if (dist >= threshold) {
+      // Threshold crossed → commit drag with the original pointerdown event
+      // so that DnDProvider gets the correct capture-origin coordinates.
+      const origin = pendingOrigin;
+      cancelPending();
+      dnd.startDrag(options.id, origin.e);
+    }
+  };
+
+  const onPendingUp = () => {
+    // Released before threshold — pure click, no drag.
+    cancelPending();
+  };
+
   const onPointerDown = (e: PointerEvent) => {
     if (disabled()) return;
     // Opt-out: a descendant marked [data-dnd-cancel] (e.g. a resize handle) must
@@ -51,7 +86,15 @@ export const createDraggable = <T extends DragData = DragData>(
     // Только основная кнопка (или touch — у touch button === 0)
     if (e.button !== 0) return;
     e.preventDefault();
-    dnd.startDrag(options.id, e);
+
+    // Park state until movement crosses activationDistance.
+    // We intentionally do NOT call startDrag here — that happens in onPendingMove
+    // once the threshold is crossed. A plain click (pointerup before threshold)
+    // calls cancelPending and produces no drag at all.
+    pendingOrigin = { x: e.clientX, y: e.clientY, e };
+    window.addEventListener('pointermove', onPendingMove);
+    window.addEventListener('pointerup', onPendingUp);
+    window.addEventListener('pointercancel', onPendingUp);
   };
 
   const ref = (el: HTMLElement) => {
@@ -72,6 +115,9 @@ export const createDraggable = <T extends DragData = DragData>(
 
     onCleanup(() => {
       el.removeEventListener('pointerdown', onPointerDown);
+      // If element unmounts while pointer is in the pending-activation window,
+      // remove the temporary window-level listeners to prevent orphan handlers.
+      cancelPending();
       unregister();
     });
   };

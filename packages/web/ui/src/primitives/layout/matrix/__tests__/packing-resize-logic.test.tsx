@@ -567,8 +567,18 @@ describe('packing resize handle — data-dnd-cancel marker (R4)', () => {
               id: 'dnd-cancel-zone',
               wrap: true,
               cells: [
-                { id: 'dc-1', children: <div data-testid="dc1">DC1</div>, minW: 100, draggable: true },
-                { id: 'dc-2', children: <div data-testid="dc2">DC2</div>, minW: 100, draggable: true },
+                {
+                  id: 'dc-1',
+                  children: <div data-testid="dc1">DC1</div>,
+                  minW: 100,
+                  draggable: true,
+                },
+                {
+                  id: 'dc-2',
+                  children: <div data-testid="dc2">DC2</div>,
+                  minW: 100,
+                  draggable: true,
+                },
               ],
             },
           ]}

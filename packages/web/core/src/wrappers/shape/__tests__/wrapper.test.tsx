@@ -19,10 +19,10 @@
  * 10. consumer `data` = пустой массив → переопределяет defaults (не fallback к defaults)
  */
 
-import { z } from 'zod';
 import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { z } from 'zod';
 import { ShapeUiContext } from '../context';
 import { createUiTracker } from '../ui-tracker';
 import { Shape } from '../wrapper';

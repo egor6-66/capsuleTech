@@ -1,12 +1,14 @@
 /**
- * Editor rules — общие правила drop/move для Canvas и Tree (чтобы не дублировать).
+ * Editor rules — общие правила drop/move для Canvas и Tree.
  *
  * Поверх манифестов (`canAcceptChild`) добавляем редакторскую строгость:
  * составную часть (`composite`) пускаем только в контейнер, который её ЯВНО
  * принимает (root-`Grid` без манифеста её отвергнет).
+ *
+ * Перенесено из `apps/ui-creator/src/editor/rules.ts` (ADR 032, фаза 5, часть 1).
  */
-import { canAcceptChild, getManifest } from '@capsuletech/web-ui-creator/manifests';
-import type { IEditorNode, IEditorTree, NodeId } from '@capsuletech/web-ui-creator/state';
+import type { IEditorNode, IEditorTree, NodeId } from '../state/types';
+import { canAcceptChild, getManifest } from './registry';
 
 /** Может ли нода держать детей (не leaf и не текстовый узел). */
 export const acceptsChildren = (n: IEditorNode): boolean =>

@@ -17,7 +17,7 @@ services:
       PUBLIC_HOST: ${PUBLIC_HOST:-}
     ports:
       # Один порт — приложения раздаются под своими base-путями (/ewc/, …).
-      - "8080:8080"
+      - "8090:8080"
     volumes:
       - preview-data:/data
 

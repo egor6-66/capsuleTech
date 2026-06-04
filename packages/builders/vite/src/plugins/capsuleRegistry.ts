@@ -14,13 +14,47 @@
  *    (no longer a static scaffold template that is copied once).
  */
 
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, relative, resolve } from 'node:path';
+import { parse } from '@babel/parser';
+import _traverse from '@babel/traverse';
 import { names } from '@nx/devkit';
 import { createJiti } from 'jiti';
 import type { Plugin, ViteDevServer } from 'vite';
 import { walkFiles, watcherManager } from '../utils';
 import { DEFINE_FACTORIES, EAGER_IMPORT_LAYERS, LAYER_TO_NAMESPACE } from './constants';
+
+// CJS/ESM interop for @babel/traverse (same pattern as hmrWrapping.ts)
+const traverse = (
+  typeof _traverse === 'function'
+    ? _traverse
+    : (_traverse as { default?: typeof _traverse }).default
+) as typeof _traverse;
+
+// ---------------------------------------------------------------------------
+// Package entry types
+// ---------------------------------------------------------------------------
+
+/** Normalized form of a packages[] entry after parsing AppConfigShape. */
+export interface PackageEntry {
+  /** npm package name, e.g. '@capsuletech/web-map' */
+  pkg: string;
+  /** Global name override from { use, as }, if provided */
+  as?: string;
+}
+
+/** Resolved package entry: globalName is confirmed at build-time. */
+export interface ResolvedPackageEntry {
+  pkg: string;
+  globalName: string;
+  /**
+   * Controller keys from manifest.controllers, if present.
+   * e.g. `{ Editor: EditorController }` → `['Editor']`
+   * These are merged into the global `Controllers` namespace (not under globalName).
+   */
+  controllerKeys?: string[];
+}
 
 // ---------------------------------------------------------------------------
 // Shared utilities
@@ -102,6 +136,12 @@ export const LAYER_INIT_ORDER: readonly LayerEntry[] = [
     name: 'wrappers',
     phase: 'globals',
     importPath: './registry/wrappers',
+  },
+  // Phase 1b — optional package globals (Maps, Render, etc.) — same phase, after wrappers
+  {
+    name: 'packages',
+    phase: 'globals',
+    importPath: './registry/packages',
   },
   // Phase 2 — subsystems that depend on globals
   {
@@ -294,6 +334,297 @@ export const generateWrappersTypes = (leaves: WrapperLeaf[]): string => {
 };
 
 // ---------------------------------------------------------------------------
+// Sub-generator: packages.ts + packages.d.ts (Phase: globals)
+// ---------------------------------------------------------------------------
+
+/**
+ * Normalizes a raw packages[] entry to PackageEntry.
+ * Accepts `string` or `{ use: string; as?: string }`.
+ */
+const normalizePackageEntry = (raw: string | { use: string; as?: string }): PackageEntry => {
+  if (typeof raw === 'string') return { pkg: raw };
+  return { pkg: raw.use, as: raw.as };
+};
+
+/** Internal result of resolving a package manifest. */
+interface ResolvedManifestInfo {
+  name: string;
+  /** Keys from manifest.controllers (empty array if absent). */
+  controllerKeys: string[];
+}
+
+/**
+ * Pure AST parse of a manifest source string.
+ *
+ * Exported for testing — no I/O, no module execution.
+ *
+ * Finds the first ObjectExpression that contains a `name: "<string>"` property
+ * and optionally a `controllers: { ... }` ObjectExpression.
+ * Structural matching — works even if `defineCapsuleModule` was renamed by the bundler.
+ *
+ * Returns { name, controllerKeys } or null if no matching ObjectExpression found.
+ */
+export const parseManifestSource = (
+  source: string,
+  fileName: string,
+): { name: string; controllerKeys: string[] } | null => {
+  const isTs = /\.[mc]?ts$/.test(fileName);
+  const ast = parse(source, {
+    sourceType: 'module',
+    plugins: isTs ? ['typescript'] : [],
+  });
+
+  let foundName: string | null = null;
+  let foundControllerKeys: string[] = [];
+
+  traverse(ast, {
+    ObjectExpression(path) {
+      // Already found — skip nested objects
+      if (foundName !== null) return;
+
+      let localName: string | null = null;
+      let localControllerKeys: string[] | null = null;
+
+      for (const prop of path.node.properties) {
+        // Only ObjectProperty (not SpreadElement / RestElement)
+        if (prop.type !== 'ObjectProperty') continue;
+
+        // Key can be Identifier or StringLiteral
+        const keyName =
+          prop.key.type === 'Identifier'
+            ? prop.key.name
+            : prop.key.type === 'StringLiteral'
+              ? prop.key.value
+              : null;
+
+        if (keyName === 'name') {
+          if (prop.value.type === 'StringLiteral') {
+            localName = prop.value.value;
+          }
+        } else if (keyName === 'controllers') {
+          if (prop.value.type === 'ObjectExpression') {
+            localControllerKeys = [];
+            for (const ctrlProp of prop.value.properties) {
+              if (ctrlProp.type !== 'ObjectProperty') continue;
+              const ctrlKey =
+                ctrlProp.key.type === 'Identifier'
+                  ? ctrlProp.key.name
+                  : ctrlProp.key.type === 'StringLiteral'
+                    ? ctrlProp.key.value
+                    : null;
+              if (ctrlKey !== null) localControllerKeys.push(ctrlKey);
+            }
+          }
+        }
+      }
+
+      // Accept this ObjectExpression only if it has a `name` StringLiteral
+      if (localName !== null) {
+        foundName = localName;
+        foundControllerKeys = localControllerKeys ?? [];
+        path.stop();
+      }
+    },
+  });
+
+  if (foundName === null) return null;
+  return { name: foundName, controllerKeys: foundControllerKeys };
+};
+
+/**
+ * Resolves the manifest info for a package entry via static AST analysis of
+ * its compiled /capsule subpath — no module execution required.
+ *
+ * I/O part: resolves the file path via require.resolve(), reads source with readFileSync,
+ * then delegates pure parsing to parseManifestSource().
+ *
+ * Returns null on any error (warn+skip, never fatal).
+ */
+const resolveManifestInfo = (
+  entry: PackageEntry,
+  appConfigDir: string,
+): ResolvedManifestInfo | null => {
+  const subpath = `${entry.pkg}/capsule`;
+
+  // Step 1: resolve physical file path (no execution)
+  let manifestFile: string;
+  try {
+    const req = createRequire(resolve(appConfigDir, 'capsule.app.ts'));
+    manifestFile = req.resolve(subpath);
+  } catch {
+    console.warn(
+      `[capsule-registry] could not resolve '${subpath}' — package not installed or missing /capsule subpath. Skipping.`,
+    );
+    return null;
+  }
+
+  // Step 2: read source
+  let source: string;
+  try {
+    source = readFileSync(manifestFile, 'utf-8');
+  } catch {
+    console.warn(`[capsule-registry] could not read manifest file '${manifestFile}'. Skipping.`);
+    return null;
+  }
+
+  // Step 3: parse via pure AST function
+  let parsed: { name: string; controllerKeys: string[] } | null;
+  try {
+    parsed = parseManifestSource(source, manifestFile);
+  } catch (e) {
+    console.warn(
+      `[capsule-registry] failed to parse manifest '${manifestFile}': ${String(e)}. Skipping.`,
+    );
+    return null;
+  }
+
+  // Step 4: validate result
+  const resolvedName = entry.as ?? parsed?.name ?? null;
+  if (!resolvedName) {
+    console.warn(
+      `[capsule-registry] manifest '${manifestFile}' parsed but no 'name' StringLiteral found — skipping`,
+    );
+    return null;
+  }
+
+  return { name: resolvedName, controllerKeys: parsed?.controllerKeys ?? [] };
+};
+
+/**
+ * Resolves all package entries to ResolvedPackageEntry[].
+ * Entries that fail manifest resolution are dropped (warn + skip).
+ */
+export const resolvePackageEntries = (
+  raw: ReadonlyArray<string | { use: string; as?: string }> | undefined,
+  appConfigDir: string,
+): ResolvedPackageEntry[] => {
+  if (!raw || raw.length === 0) return [];
+  const result: ResolvedPackageEntry[] = [];
+  for (const item of raw) {
+    const entry = normalizePackageEntry(item);
+    const info = resolveManifestInfo(entry, appConfigDir);
+    if (info) {
+      result.push({
+        pkg: entry.pkg,
+        globalName: info.name,
+        controllerKeys: info.controllerKeys.length > 0 ? info.controllerKeys : undefined,
+      });
+    }
+  }
+  return result;
+};
+
+/**
+ * Generates .capsule/registry/packages.ts.
+ * Stateless: (entries) => string.
+ *
+ * Empty list → valid empty module with bare Object.assign.
+ *
+ * For packages with `controllerKeys` the generated code augments the global
+ * `Controllers` namespace (populated earlier by wrappers.ts) rather than
+ * overwriting it.  Each key is assigned individually so that app-level
+ * controllers are never shadowed:
+ *
+ *   (globalThis.Controllers ??= {}).Editor = Maps_mod.controllers.Editor;
+ *
+ * The packages entry in LAYER_INIT_ORDER has phase 'globals' and is ordered
+ * AFTER 'wrappers', so by the time this module evaluates, globalThis.Controllers
+ * already holds the app-codegen exports from wrappers.ts.
+ */
+export const generatePackagesRuntime = (entries: ResolvedPackageEntry[]): string => {
+  const lines: string[] = ['// generated by CapsuleRegistryPlugin — не редактировать руками'];
+  if (entries.length === 0) {
+    lines.push('Object.assign(globalThis, {});');
+    lines.push('');
+    return lines.join('\n');
+  }
+  lines.push('');
+  for (const { pkg, globalName } of entries) {
+    lines.push(`import ${globalName}_mod from '${pkg}/capsule';`);
+  }
+  lines.push('');
+  for (const { globalName } of entries) {
+    lines.push(`export const ${globalName} = ${globalName}_mod.components;`);
+  }
+  lines.push('');
+
+  // Merge controller keys into the global Controllers namespace.
+  // Must be done BEFORE Object.assign so that the augmentation is visible
+  // synchronously on module eval.
+  const controllersEntries = entries.filter((e) => e.controllerKeys && e.controllerKeys.length > 0);
+  if (controllersEntries.length > 0) {
+    for (const { globalName, controllerKeys } of controllersEntries) {
+      for (const key of controllerKeys!) {
+        lines.push(
+          `(globalThis.Controllers ??= {})[${JSON.stringify(key)}] = ${globalName}_mod.controllers[${JSON.stringify(key)}];`,
+        );
+      }
+    }
+    lines.push('');
+  }
+
+  const names = entries.map((e) => e.globalName).join(', ');
+  lines.push(`Object.assign(globalThis, { ${names} });`);
+  lines.push('');
+  return lines.join('\n');
+};
+
+/**
+ * Generates .capsule/@types/packages.d.ts.
+ * Stateless: (entries) => string.
+ *
+ * Empty list → minimal module augmentation file.
+ *
+ * For packages with `controllerKeys` the generated types augment the global
+ * `Controllers` interface (declared by slots.d.ts from wrappers codegen) using
+ * the same module-augmentation pattern as app-level controllers:
+ *
+ *   interface Controllers {
+ *     Editor: typeof import('@capsuletech/web-dnd/capsule')['default']['controllers']['Editor'];
+ *   }
+ *
+ * This must appear in the SAME `declare global` block (global augmentation)
+ * so TS merges it with the existing `interface Controllers` from slots.d.ts.
+ */
+export const generatePackagesTypes = (entries: ResolvedPackageEntry[]): string => {
+  if (entries.length === 0) {
+    return [
+      '// generated by CapsuleRegistryPlugin — не редактировать руками',
+      'export {};',
+      '',
+    ].join('\n');
+  }
+  const lines: string[] = [
+    '// generated by CapsuleRegistryPlugin — не редактировать руками',
+    'declare global {',
+  ];
+
+  // Component namespace const declarations.
+  for (const { pkg, globalName } of entries) {
+    lines.push(`  const ${globalName}: typeof import('${pkg}/capsule')['default']['components'];`);
+  }
+
+  // Controllers interface augmentation for packages that expose controllers.
+  const controllersEntries = entries.filter((e) => e.controllerKeys && e.controllerKeys.length > 0);
+  if (controllersEntries.length > 0) {
+    lines.push('  interface Controllers {');
+    for (const { pkg, controllerKeys } of controllersEntries) {
+      for (const key of controllerKeys!) {
+        lines.push(
+          `    ${key}: typeof import('${pkg}/capsule')['default']['controllers'][${JSON.stringify(key)}];`,
+        );
+      }
+    }
+    lines.push('  }');
+  }
+
+  lines.push('}');
+  lines.push('export {};');
+  lines.push('');
+  return lines.join('\n');
+};
+
+// ---------------------------------------------------------------------------
 // Sub-generator: endpoints.ts (Phase: subsystems)
 // ---------------------------------------------------------------------------
 
@@ -401,6 +732,7 @@ const loadConfigFresh = (configPath: string): unknown => {
 interface AppConfigShape {
   meta?: { tags?: readonly string[] };
   aliases?: Record<string, readonly string[]>;
+  packages?: ReadonlyArray<string | { use: string; as?: string }>;
 }
 
 const renderAppTagsTypes = (tags: readonly string[], aliasKeys: readonly string[]): string => {
@@ -604,7 +936,12 @@ export const CapsuleRegistryPlugin = ({
   const apiTypesOut = resolve(capsuleRoot, '@types', 'api.d.ts');
   const appConfigRuntimeOut = resolve(capsuleRoot, 'app-config.gen.ts');
   const appTagsTypesOut = resolve(capsuleRoot, '@types', 'app-tags.d.ts');
+  const packagesOut = resolve(capsuleRoot, 'registry', 'packages.ts');
+  const packagesTypesOut = resolve(capsuleRoot, '@types', 'packages.d.ts');
   const bootstrapOut = resolve(capsuleRoot, 'bootstrap.tsx');
+
+  // Directory of capsule.app.ts — used as jiti root for manifest resolution.
+  const appConfigDir = dirname(appConfigPath);
 
   // --- Flush helpers ---
   const flushWrappers = () => {
@@ -632,6 +969,8 @@ export const CapsuleRegistryPlugin = ({
     if (!existsSync(appConfigPath)) {
       writeOut(appTagsTypesOut, renderAppTagsTypes([], []));
       writeOut(appConfigRuntimeOut, generateAppConfigRuntime(undefined));
+      writeOut(packagesOut, generatePackagesRuntime([]));
+      writeOut(packagesTypesOut, generatePackagesTypes([]));
       onAppConfigLoad?.({});
       return;
     }
@@ -647,6 +986,13 @@ export const CapsuleRegistryPlugin = ({
     const aliasKeys = Object.keys(aliases);
     writeOut(appTagsTypesOut, renderAppTagsTypes(tags, aliasKeys));
     writeOut(appConfigRuntimeOut, generateAppConfigRuntime(aliases));
+
+    // Resolve package manifests at build-time (jiti, rooted at appConfigDir).
+    // Entries that fail manifest resolution are dropped with a warn — dev-server is not crashed.
+    const resolvedPackages = resolvePackageEntries(config?.packages, appConfigDir);
+    writeOut(packagesOut, generatePackagesRuntime(resolvedPackages));
+    writeOut(packagesTypesOut, generatePackagesTypes(resolvedPackages));
+
     onAppConfigLoad?.(config);
   };
 

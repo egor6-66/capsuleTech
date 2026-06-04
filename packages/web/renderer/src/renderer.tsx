@@ -11,6 +11,8 @@ import {
 import { createComponent } from 'solid-js/web';
 import { resolvePath } from './resolve';
 import type {
+  IEditOverlayProps,
+  IEditorNode,
   IErrorFallbackProps,
   IInteraction,
   IRendererProps,
@@ -19,6 +21,40 @@ import type {
   Registry,
   RenderMode,
 } from './types';
+
+/**
+ * Множество dot-path'ов нод, чьи root-элементы — void HTML-элементы
+ * (`input`, `hr`, `img` и т.п.), не принимающие дочерних узлов.
+ *
+ * Для таких нод overlay нельзя аппендить как ребёнка компонента —
+ * рендерер вместо этого оборачивает нод в тонкий `<span
+ * style="display:block; position:relative">`. `position:relative`
+ * устанавливает containing block для absolute overlay; `display:block`
+ * гарантирует создание бокса (а значит — реального containing block
+ * для absolute-потомка). В отличие от `display:contents`, block-бокс
+ * создаёт containing block без каких-либо оговорок (display:contents по
+ * CSS-спеке не создаёт собственный бокс и position:relative на нём
+ * игнорируется браузером, что приводит к позиционированию overlay
+ * относительно ближайшего real-containing block, т.е. родительского
+ * контейнера).
+ *
+ * `display:block` занимает ту же ширину (100% родителя), что и большинство
+ * UI-инпут-компонентов в формах (full-width block). Высота обёртки
+ * определяется содержимым void-элемента — layout-нейтрально для блочного
+ * стека.
+ *
+ * Список расширяем: хост может передать свой `voidTypes` (не реализовано
+ * в v1 — достаточно hard-coded реестра базовых примитивов).
+ */
+const VOID_NODE_TYPES = new Set([
+  'ui.Input',
+  'ui.Separator',
+  'ui.Divider',
+  'ui.Hr',
+  'ui.Image',
+  'ui.Img',
+  'ui.Embed',
+]);
 
 /** Default-fallback для нерезолвящегося `type`: dev-warning + ничего. */
 const DefaultFallback: Component<{ type: string; nodeId: NodeId }> = (p) => {
@@ -165,6 +201,12 @@ interface IRenderNodeProps {
   interactionsByNode: Record<NodeId, IInteraction[]>;
   /** Per-Renderer dedup для warn'ов о kind-mismatch (см. getKindMarker). */
   warnedKindMismatch: Set<string>;
+  /**
+   * Если задан — edit-decoration режим. Для каждой ноды рендерер монтирует
+   * overlay `position:absolute; inset:0` внутри бокса ноды, без замеров.
+   * Отсутствует → обычный путь рендера (prod-путь не задевается).
+   */
+  editOverlay?: Component<IEditOverlayProps>;
 }
 
 /**
@@ -197,6 +239,23 @@ const RenderNode: Component<IRenderNodeProps> = (props) => {
    * `children` собирается реактивным getter'ом: если у ноды есть дети-узлы,
    * рендерим `<For>`; если нет — отдаём `props.children` из node.props
    * (текстовый контент для leaf'ов вроде `<Card.Title>CAPSULE</Card.Title>`).
+   *
+   * ### edit-decoration режим (`editOverlay` задан)
+   *
+   * Overlay монтируется без единого замера геометрии — только средствами CSS:
+   * - корню ноды форсится `style: "position:relative"` через инжект в props
+   *   (компоненты форвардят произвольные props в DOM — доказано `data-node-id`);
+   * - overlay-элемент `position:absolute; inset:0` аппендится ПОСЛЕ реальных
+   *   детей/текста (не сдвигает раскладку, не создаёт доп. flex/grid child);
+   * - layout-identical: relative + absolute-ребёнок раскладку не двигают.
+   *
+   * **Void-ноды** (`ui.Input`, `ui.Separator`, `ui.Image` и т.п.) не принимают
+   * детей — overlay нельзя аппендить внутрь. Для них нода оборачивается в
+   * `<span style="display:contents; position:relative">`: `display:contents`
+   * убирает span из box-model, `position:relative` создаёт containing block.
+   * Overlay монтируется внутрь span'а как absolute-sibling void-элемента.
+   * (Поддержка: Chrome 122+, Firefox 115+, Safari 17.4+ — приемлемо для
+   * design-time редактора, см. VOID_NODE_TYPES.)
    */
   const renderedTree = () => {
     const n = node();
@@ -206,43 +265,140 @@ const RenderNode: Component<IRenderNodeProps> = (props) => {
       const Fb = props.fallback;
       return createComponent(Fb as any, { type: n.type, nodeId: n.id });
     }
-    const mergedProps = mergeProps(() => node()?.props ?? {}, {
+
+    const EditOverlay = props.editOverlay;
+
+    // Строим реальный children-getter — shared для обоих путей (edit / non-edit).
+    const realChildrenGetter = () => {
+      const cur = node();
+      if (!cur) return null;
+      if (cur.children.length === 0) {
+        // Нет схема-детей → пропускаем `props.children` (текст) из самой ноды.
+        return cur.props?.children as any;
+      }
+      return (
+        <For each={node()?.children ?? []}>
+          {(childId) => (
+            <RenderNode
+              nodeId={childId}
+              schema={props.schema}
+              registry={props.registry}
+              mode={props.mode}
+              fallback={props.fallback}
+              errorFallback={props.errorFallback}
+              interactionsByNode={props.interactionsByNode}
+              warnedKindMismatch={props.warnedKindMismatch}
+              editOverlay={props.editOverlay}
+            />
+          )}
+        </For>
+      );
+    };
+
+    if (!EditOverlay) {
+      // Обычный путь — prod-код не задевается.
+      const mergedNodeProps = mergeProps(() => node()?.props ?? {}, {
+        get meta() {
+          return node()?.meta;
+        },
+        get styles() {
+          // Renderer не интерпретирует styles — просто прокидывает host'у. Host
+          // (Component или Controller-wrapper через UiProxy) решает, как
+          // применить: смержить в class через `createStyle`, отдать в `style`-attr,
+          // или проигнорировать. Стабильно реактивно через getter.
+          return node()?.styles;
+        },
+        get children() {
+          return realChildrenGetter();
+        },
+      });
+      return createComponent(Comp as any, mergedNodeProps);
+    }
+
+    // --- edit-decoration путь ---
+    //
+    // Захватываем nodeId/node для overlay реактивно через getter'ы.
+    // Overlay перемонтируется дёшево (просто компонент), поддерево ноды
+    // стабильно (renderSig-механизм выше этого не трогает).
+    const isVoid = VOID_NODE_TYPES.has(n.type);
+
+    // Overlay-mount: position:absolute; inset:0 — покрывает весь бокс ноды.
+    // pointer-events управляется хостом внутри EditOverlay-компонента.
+    const overlayMount = () =>
+      createComponent(EditOverlay, {
+        get nodeId() {
+          return node()?.id ?? props.nodeId;
+        },
+        get node() {
+          return node() as IEditorNode;
+        },
+      });
+
+    if (isVoid) {
+      // Void-нода: компонент не принимает children → overlay нельзя вставить
+      // внутрь. Оборачиваем в display:block span, который создаёт реальный
+      // containing block (position:relative + display:block). display:contents
+      // НЕ используется: по CSS-спеке elements with display:contents не
+      // создают own box, поэтому position:relative на них игнорируется —
+      // absolute-потомок позиционируется по ближайшему real containing block
+      // (родительскому контейнеру), что накрывало бы весь родитель, а не
+      // сам инпут.
+      const voidComp = createComponent(
+        Comp as any,
+        mergeProps(() => node()?.props ?? {}, {
+          get meta() {
+            return node()?.meta;
+          },
+          get styles() {
+            return node()?.styles;
+          },
+        }),
+      );
+      return (
+        <span style="display:block; position:relative">
+          {voidComp}
+          <span style="position:absolute; inset:0; pointer-events:none" aria-hidden="true">
+            {overlayMount()}
+          </span>
+        </span>
+      );
+    }
+
+    // Не-void нода: форсим position:relative на корне компонента через инжект
+    // в props. Компоненты форвардят произвольные style-атрибуты в DOM-корень
+    // (доказано тем, что data-node-id долетает). Overlay аппендится ПОСЛЕ
+    // реальных детей — не сдвигает раскладку (absolute-позиционирован).
+    const mergedEditProps = mergeProps(() => node()?.props ?? {}, {
+      get style() {
+        // Форсируем position:relative; хост может дополнять через node.props.style,
+        // но position:relative обязателен для containing block overlay.
+        const nodeStyle = (node()?.props as any)?.style;
+        if (typeof nodeStyle === 'string') return `position:relative; ${nodeStyle}`;
+        if (nodeStyle && typeof nodeStyle === 'object')
+          return { position: 'relative' as const, ...nodeStyle };
+        return 'position:relative';
+      },
       get meta() {
         return node()?.meta;
       },
       get styles() {
-        // Renderer не интерпретирует styles — просто прокидывает host'у. Host
-        // (Component или Controller-wrapper через UiProxy) решает, как
-        // применить: смержить в class через `createStyle`, отдать в `style`-attr,
-        // или проигнорировать. Стабильно реактивно через getter.
         return node()?.styles;
       },
       get children() {
-        const cur = node();
-        if (!cur) return null;
-        if (cur.children.length === 0) {
-          // Нет схема-детей → пропускаем `props.children` (текст) из самой ноды.
-          return cur.props?.children as any;
-        }
+        const realChildren = realChildrenGetter();
+        // Overlay идёт после реальных детей — absolute-позиционирован, не
+        // создаёт нового flex/grid-child и не двигает раскладку.
         return (
-          <For each={node()?.children ?? []}>
-            {(childId) => (
-              <RenderNode
-                nodeId={childId}
-                schema={props.schema}
-                registry={props.registry}
-                mode={props.mode}
-                fallback={props.fallback}
-                errorFallback={props.errorFallback}
-                interactionsByNode={props.interactionsByNode}
-                warnedKindMismatch={props.warnedKindMismatch}
-              />
-            )}
-          </For>
+          <>
+            {realChildren}
+            <span style="position:absolute; inset:0; pointer-events:none" aria-hidden="true">
+              {overlayMount()}
+            </span>
+          </>
         );
       },
     });
-    return createComponent(Comp as any, mergedProps);
+    return createComponent(Comp as any, mergedEditProps);
   };
 
   // Оборачиваем поддерево wrapper'ами из interactions. Первый interaction в
@@ -426,6 +582,7 @@ export const Renderer: Component<IRendererProps> = (props) => {
         errorFallback={errorFallback()}
         interactionsByNode={interactionsByNode()}
         warnedKindMismatch={warnedKindMismatch}
+        editOverlay={props.editOverlay}
       />
     </Suspense>
   );

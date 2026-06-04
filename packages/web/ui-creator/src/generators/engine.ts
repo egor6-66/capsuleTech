@@ -1,7 +1,7 @@
 import { getManifest } from '../manifests/registry';
 import type { IEditorNode, IEditorTree, NodeId } from '../state/types';
 import { fuzzProps } from './fuzzer';
-import { coin, createRng, pickWeighted, randomInt, seededId, type Rng } from './rng';
+import { coin, createRng, pickWeighted, type Rng, randomInt, seededId } from './rng';
 import type { IGenerateOptions, IPreset, ISlotPick, ISlotRule } from './types';
 
 /**

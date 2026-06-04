@@ -1,61 +1,50 @@
 /**
  * Конструктор (`/workspace/constructor`) — рабочий стол редактора UI.
  *
- * Каркас Matrix (preset app-shell): sidebar | main (canvas) | rightBar (inspector).
- * `layoutMode="edit"` даёт ресайз-хэндлы + swap-DnD asides (sidebar ↔ rightBar).
+ * Тонкая композиция (ADR 032): вся механика редактора (state/dnd/подсветка/
+ * оверлеи/рендер) живёт в `@capsuletech/web-ui-creator`. App держит ТОЛЬКО layout.
  *
- * Обёртки (снаружи внутрь):
- *  - `<EditorProvider>` — общий стор дерева (Canvas мутирует, Tree читает);
- *  - `<DnDProvider>` (web-dnd) — palette → canvas DnD. Слот-контент создаётся в
- *    scope Constructor'а, поэтому и `useEditor`, и `useDnD` видят провайдеры
- *    именно отсюда (внутренний DnDProvider Matrix'а слотам не виден; его swap
- *    панелей живёт отдельно и не пересекается).
+ *  - `<Editor.Provider kit={Ui}>` — параметризует редактор китом (что передали,
+ *    тем и рисуем; редактор не привязан к реализациям). Внутри сам монтит
+ *    `DnDProvider` + `Controllers.Editor` и провайдит dnd/ctx/kit детям-surface'ам.
+ *    App про web-dnd/рендерер под капотом не знает.
+ *  - Surface'ы (`Editor.Palette/Tree/Canvas/Inspector`) — глобалы из пакета
+ *    (зарегистрированы через `/capsule`), читают kit/ctx/dnd сами.
  *
- * Sidebar — вертикальный resizable Flex: Palette (верх) + Tree (низ).
- * main — `Widgets.Canvas`.
+ * Каркас Matrix (preset app-shell): sidebar (Palette+Tree) | main (Canvas) | rightBar (Inspector).
  */
-import { DnDProvider } from '@capsuletech/web-dnd';
-
-import { EditorProvider } from '../../../editor/store';
 
 const Constructor = Page((Ui) => (
-  <EditorProvider>
-    <DnDProvider showDefaultOverlay>
-      <Ui.Layout.Matrix
-        preset="app-shell"
-        layoutMode="edit"
-        slots={{
-          sidebar: {
-            children: (
-              <Ui.Layout.Flex
-                orientation="vertical"
-                withHandle
-                class="h-full"
-                items={[
-                  { children: <Widgets.Palette />, resizable: true, initialSize: 0.5 },
-                  { children: <Widgets.Tree />, resizable: true, initialSize: 0.5 },
-                ]}
-              />
-            ),
-            initialSize: 0.2,
-            draggable: true,
-          },
-          main: {
-            children: <Widgets.Canvas />,
-          },
-          rightBar: {
-            children: (
-              <div class="flex h-full items-center justify-center text-foreground/50">
-                Inspector
-              </div>
-            ),
-            initialSize: 0.2,
-            draggable: true,
-          },
-        }}
-      />
-    </DnDProvider>
-  </EditorProvider>
+  <Editor.Provider kit={Ui}>
+    <Ui.Layout.Matrix
+      preset="app-shell"
+      slots={{
+        sidebar: {
+          children: (
+            <Ui.Layout.Flex
+              orientation="vertical"
+              withHandle
+              class="h-full"
+              items={[
+                { children: <Editor.Palette />, resizable: true, initialSize: 0.5 },
+                { children: <Editor.Tree />, resizable: true, initialSize: 0.5 },
+              ]}
+            />
+          ),
+          initialSize: 0.14,
+          draggable: true,
+        },
+        main: {
+          children: <Editor.Canvas />,
+        },
+        rightBar: {
+          children: <Editor.Inspector />,
+          initialSize: 0.14,
+          draggable: true,
+        },
+      }}
+    />
+  </Editor.Provider>
 ));
 
 export default Constructor;

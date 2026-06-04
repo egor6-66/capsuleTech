@@ -92,6 +92,25 @@ export const Dropdown = Object.assign(DropdownBase, {
   SubContent: createLazy(() => import('@capsuletech/web-ui/dropdown'), 'DropdownSubContent'),
 });
 
+// Tooltip — kobalte-heavy, only used where tooltips appear
+const TooltipBase = createLazy(() => import('@capsuletech/web-ui/tooltip'), 'Tooltip');
+export const Tooltip = Object.assign(TooltipBase, {
+  Trigger: createLazy(() => import('@capsuletech/web-ui/tooltip'), 'TooltipTrigger'),
+  Content: createLazy(() => import('@capsuletech/web-ui/tooltip'), 'TooltipContent'),
+  Arrow: createLazy(() => import('@capsuletech/web-ui/tooltip'), 'TooltipArrow'),
+});
+
+// Select — kobalte-heavy, compound (Trigger/Content/Value); data-driven via options[]
+const SelectBase = createLazy(() => import('@capsuletech/web-ui/select'), 'Select');
+export const Select = Object.assign(SelectBase, {
+  Trigger: createLazy(() => import('@capsuletech/web-ui/select'), 'SelectTrigger'),
+  Content: createLazy(() => import('@capsuletech/web-ui/select'), 'SelectContent'),
+  Value: createLazy(() => import('@capsuletech/web-ui/select'), 'SelectValue'),
+});
+
+// Textarea — multiline text input, mirrors Input in styling conventions
+export const Textarea = createLazy(() => import('@capsuletech/web-ui/textarea'), 'Textarea');
+
 // Switcher widgets — tiny but pull web-style hooks; header-only, not critical path
 export const DarkModeToggle = createLazy(
   () => import('@capsuletech/web-ui/darkModeToggle'),
@@ -109,28 +128,6 @@ export const WidgetSettingsToggle = createLazy(
   () => import('@capsuletech/web-ui/widgetSettingsToggle'),
   'WidgetSettingsToggle',
 );
-
-// MapView — ~1.5MB maplibre-gl; always lazy
-const MapViewBase = createLazy(() => import('@capsuletech/web-map'), 'MapView');
-export const MapView = Object.assign(MapViewBase, {
-  Source: createLazy(() => import('@capsuletech/web-map'), 'Source'),
-  Layer: createLazy(() => import('@capsuletech/web-map'), 'Layer'),
-  Terrain: createLazy(() => import('@capsuletech/web-map'), 'Terrain'),
-  Sky: createLazy(() => import('@capsuletech/web-map'), 'Sky'),
-  Marker: createLazy(() => import('@capsuletech/web-map'), 'Marker'),
-  TerrainPreset: createLazy(() => import('@capsuletech/web-map'), 'TerrainPreset'),
-  BuildingsPreset: createLazy(() => import('@capsuletech/web-map'), 'BuildingsPreset'),
-});
-
-// Chart — ~250KB chart.js bundled in @capsuletech/web-charts; always lazy
-const ChartLine = createLazy(() => import('@capsuletech/web-charts'), 'LineChart');
-export const Chart = Object.assign(ChartLine, {
-  Line: ChartLine,
-  Area: createLazy(() => import('@capsuletech/web-charts'), 'AreaChart'),
-  Bar: createLazy(() => import('@capsuletech/web-charts'), 'BarChart'),
-  Doughnut: createLazy(() => import('@capsuletech/web-charts'), 'Doughnut'),
-  Gauge: createLazy(() => import('@capsuletech/web-charts'), 'Gauge'),
-});
 
 // Реэкспорт сторонних утилит
 export { Link } from '@tanstack/solid-router';

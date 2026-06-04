@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import { runDev, runBuild } from '@capsuletech/desktop';
+import { runBuild, runDev } from '@capsuletech/desktop';
 import type { ICapsuleConfig } from '@capsuletech/vite-builder';
 import type { CommandAction } from '../commands/types';
 import { kit } from '../kit';
@@ -33,9 +33,7 @@ const loadDesktopConfig = async (
     return null;
   }
   const config = (
-    mod != null && typeof mod === 'object' && 'default' in mod && mod.default
-      ? mod.default
-      : mod
+    mod != null && typeof mod === 'object' && 'default' in mod && mod.default ? mod.default : mod
   ) as ICapsuleConfig;
   if (!config.desktop) {
     kit.log.error(

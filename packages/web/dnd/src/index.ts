@@ -1,30 +1,35 @@
 export { DnDProvider, useDnD } from './context';
-export type { IGridItem, IGridLayout } from './grid';
-export {
-  collides,
-  getCollisions,
-  clampToCols,
-  compactVertical,
-  pointToCell,
-  moveItem,
-  resizeItem,
-  placeItem,
-} from './grid';
 export { createDraggable } from './draggable';
 export { createDroppable } from './droppable';
+export type { IGridItem, IGridLayout } from './grid';
+export {
+  clampToCols,
+  collides,
+  compactVertical,
+  getCollisions,
+  moveItem,
+  placeItem,
+  pointToCell,
+  resizeItem,
+} from './grid';
 export { DragOverlay } from './overlay';
 export type { ISortableItem, ISortableOptions, ISortablePayload } from './sortable';
 export { createSortable, isFromSortable } from './sortable';
 export type {
-  ISortableGroupOptions,
-  ISortableGroup,
-  ISortableZoneOptions,
+  IRect,
   ISortableDropEvent,
+  ISortableGroup,
+  ISortableGroupOptions,
   ISortableZone,
   ISortableZoneItem,
-  IRect,
+  ISortableZoneOptions,
 } from './sortableZone';
-export { createSortableGroup, computeInsertIndex, findZoneAtPoint, findNearestZone } from './sortableZone';
+export {
+  computeInsertIndex,
+  createSortableGroup,
+  findNearestZone,
+  findZoneAtPoint,
+} from './sortableZone';
 export type {
   DragData,
   DraggableId,

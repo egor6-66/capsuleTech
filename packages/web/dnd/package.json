@@ -9,6 +9,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "default": "./dist/index.mjs"
+    },
+    "./controllers": {
+      "types": "./dist/controllers/index.d.ts",
+      "import": "./dist/controllers.mjs",
+      "default": "./dist/controllers.mjs"
     }
   },
   "files": [
@@ -31,6 +36,7 @@
     "jsdom": "~29.1.1",
     "vite": "^8.0.13",
     "vite-plugin-solid": "^2.11.12",
+    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "~4.1.0"
   },
   "publishConfig": {

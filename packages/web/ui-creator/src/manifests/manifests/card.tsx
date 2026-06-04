@@ -1,5 +1,12 @@
 import { z } from '@capsuletech/shared-zod';
-import { AlignJustify, AlignLeft, CreditCard, Heading1, PanelBottom, Type } from 'lucide-solid';
+import {
+  AlignJustify,
+  AlignLeft,
+  CreditCard,
+  Heading1,
+  PanelBottom,
+  Type,
+} from '@capsuletech/web-ui/icons';
 import type { IComponentManifest } from '../types';
 
 const CARD_DIRECT_CHILDREN = new Set([
@@ -15,7 +22,7 @@ const isCardPart = (type: string) => type.startsWith('ui.Card.');
 export const CardManifest: IComponentManifest = {
   type: 'ui.Card',
   label: 'Card',
-  category: 'container',
+  category: 'composition',
   icon: () => <CreditCard size={16} />,
   description: 'Контейнер-карточка с шапкой/контентом/футером',
   accepts: (childType) => CARD_DIRECT_CHILDREN.has(childType),

@@ -9,6 +9,9 @@
       "!**/node_modules",
       "!**/.nx",
       "!**/coverage",
+      "!**/.claude",
+      "!**/.obsidian",
+      "!packages/cli/e2e/fixture",
       "!docs/_archive"
     ]
   }

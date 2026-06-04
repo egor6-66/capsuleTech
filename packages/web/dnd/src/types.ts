@@ -48,6 +48,11 @@ export interface IDraggableOptions<T extends DragData = DragData> {
   data: Accessor<T> | T;
   /** Отключить draggable (e.g. disabled state). */
   disabled?: Accessor<boolean>;
+  /**
+   * Минимальное расстояние (px) от точки pointerdown до начала drag'а.
+   * Переопределяет значение DnDProvider. По умолчанию берётся из провайдера (4 px).
+   */
+  activationDistance?: number;
 }
 
 export interface IDraggable {
@@ -90,6 +95,12 @@ export interface IDnDProviderProps {
   autoScroll?: boolean;
   onDragStart?: (data: DragData, draggableId: DraggableId) => void;
   onDragEnd?: (result: IDragEndResult) => void;
+  /**
+   * Минимальное расстояние (px) от точки pointerdown, после которого drag
+   * считается начавшимся. Чистый клик (pointer up до порога) не вызывает
+   * startDrag/onDrop. По умолчанию 4 px.
+   */
+  activationDistance?: number;
   /**
    * Автоматически рендерить drag-ghost при отсутствии явного <DragOverlay>.
    * По умолчанию off.

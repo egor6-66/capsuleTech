@@ -17,14 +17,14 @@ export const appConfig = (config: UserConfig, idDev: boolean) => {
         devSourcemap: idDev,
       },
       optimizeDeps: {
-        exclude: [
-          '@tailwindcss/oxide',
-          '@tailwindcss/oxide-win32-x64-msvc',
-          '@tailwindcss/building.ts',
-        ],
+        exclude: ['@tailwindcss/oxide', '@tailwindcss/oxide-win32-x64-msvc'],
       },
       server: {
         host: true,
+        // Vite 8: forward browser console messages (console.log, warn, error)
+        // to the terminal. Useful for dev — no more switching to browser DevTools
+        // just to read a log line.
+        forwardConsole: true,
       },
     },
     config,

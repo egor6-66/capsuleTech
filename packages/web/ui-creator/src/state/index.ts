@@ -1,8 +1,18 @@
+export type { DragSpec, DropIntent, TreeZone } from './dnd';
+export {
+  applyDrop,
+  canBeside,
+  canInto,
+  canvasIntent,
+  dragSpec,
+  treeIntent,
+} from './dnd';
 export { generateId, ROOT_ID } from './ids';
 export {
   addNode,
   createEmptyTree,
   EditorOpError,
+  insertSubtree,
   moveNode,
   removeNode,
   reorderChildren,
@@ -15,6 +25,7 @@ export type {
   IEditorContext,
   IEditorNode,
   IEditorTree,
+  IInsertSubtreePayload,
   IMoveNodePayload,
   IRemoveNodePayload,
   IReorderChildrenPayload,

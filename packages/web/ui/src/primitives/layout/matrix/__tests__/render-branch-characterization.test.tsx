@@ -273,13 +273,17 @@ describe('renderContent — Branch 3a: vertical Flex (corvu, hasVerticalResizabl
               id: 'top',
               height: 0.5,
               resizable: true,
-              cells: [{ id: 'tc', children: <div data-testid="v3a-top">Top</div>, resizable: true }],
+              cells: [
+                { id: 'tc', children: <div data-testid="v3a-top">Top</div>, resizable: true },
+              ],
             },
             {
               id: 'bot',
               height: 0.5,
               resizable: true,
-              cells: [{ id: 'bc', children: <div data-testid="v3a-bot">Bot</div>, resizable: true }],
+              cells: [
+                { id: 'bc', children: <div data-testid="v3a-bot">Bot</div>, resizable: true },
+              ],
             },
           ]}
         />
@@ -403,7 +407,9 @@ describe('renderRow — Branch 4a: isPackingZone via wrap=true', () => {
     expect(container.querySelector('[data-testid="plain-a"]')).not.toBeNull();
     // No flex-wrap → corvu (resizable) path used
     expect(container.querySelector('.flex-wrap')).toBeNull();
-    expect(container.querySelectorAll('[data-corvu-resizable-panel]').length).toBeGreaterThanOrEqual(1);
+    expect(
+      container.querySelectorAll('[data-corvu-resizable-panel]').length,
+    ).toBeGreaterThanOrEqual(1);
   });
 });
 

@@ -7,23 +7,6 @@
  * engine-типы (`ICtx`, `IControllerHandle`) живут в `engine/ctx.ts`.
  */
 
-import type {
-  BuildingsPreset,
-  Layer,
-  MapView,
-  Marker,
-  Sky,
-  Source,
-  Terrain,
-  TerrainPreset,
-} from '@capsuletech/web-map';
-import type {
-  AreaChart,
-  BarChart,
-  Doughnut,
-  Gauge,
-  LineChart,
-} from '@capsuletech/web-charts';
 import type { ICapsuleRouter } from '@capsuletech/web-router';
 import type { IBaseStateHandlers, IBaseStateSchema, IBridge } from '@capsuletech/web-state';
 import type {
@@ -42,12 +25,15 @@ import type { DarkModeToggle } from '@capsuletech/web-ui/darkModeToggle';
 import type { Dropdown } from '@capsuletech/web-ui/dropdown';
 import type { DropdownMenu } from '@capsuletech/web-ui/dropdownMenu';
 import type { LayoutModeToggle } from '@capsuletech/web-ui/layoutModeToggle';
-import type { WidgetSettingsToggle } from '@capsuletech/web-ui/widgetSettingsToggle';
 import type { PreviewCard } from '@capsuletech/web-ui/previewCard';
+import type { Select } from '@capsuletech/web-ui/select';
 import type { Skeleton } from '@capsuletech/web-ui/skeleton';
 import type { Spinner } from '@capsuletech/web-ui/spinner';
+import type { Textarea } from '@capsuletech/web-ui/textarea';
 import type { ThemePicker } from '@capsuletech/web-ui/themePicker';
+import type { Tooltip } from '@capsuletech/web-ui/tooltip';
 import type { Typography } from '@capsuletech/web-ui/typography';
+import type { WidgetSettingsToggle } from '@capsuletech/web-ui/widgetSettingsToggle';
 import type { Link } from '@tanstack/solid-router';
 import type {
   Component,
@@ -196,26 +182,13 @@ type ViewUiRaw = {
   Spinner: typeof Spinner;
   Dropdown: typeof Dropdown;
   DropdownMenu: typeof DropdownMenu;
+  Tooltip: typeof Tooltip;
+  Select: typeof Select;
+  Textarea: typeof Textarea;
   DarkModeToggle: typeof DarkModeToggle;
   LayoutModeToggle: typeof LayoutModeToggle;
   ThemePicker: typeof ThemePicker;
   WidgetSettingsToggle: typeof WidgetSettingsToggle;
-  MapView: typeof MapView & {
-    Source: typeof Source;
-    Layer: typeof Layer;
-    Terrain: typeof Terrain;
-    Sky: typeof Sky;
-    Marker: typeof Marker;
-    TerrainPreset: typeof TerrainPreset;
-    BuildingsPreset: typeof BuildingsPreset;
-  };
-  Chart: {
-    Line: typeof LineChart;
-    Area: typeof AreaChart;
-    Bar: typeof BarChart;
-    Doughnut: typeof Doughnut;
-    Gauge: typeof Gauge;
-  };
   Card: typeof Card;
   Typography: typeof Typography;
   Link: typeof Link;
@@ -243,26 +216,13 @@ type WidgetUiRaw = {
   Spinner: typeof Spinner;
   Dropdown: typeof Dropdown;
   DropdownMenu: typeof DropdownMenu;
+  Tooltip: typeof Tooltip;
+  Select: typeof Select;
+  Textarea: typeof Textarea;
   DarkModeToggle: typeof DarkModeToggle;
   LayoutModeToggle: typeof LayoutModeToggle;
   ThemePicker: typeof ThemePicker;
   WidgetSettingsToggle: typeof WidgetSettingsToggle;
-  MapView: typeof MapView & {
-    Source: typeof Source;
-    Layer: typeof Layer;
-    Terrain: typeof Terrain;
-    Sky: typeof Sky;
-    Marker: typeof Marker;
-    TerrainPreset: typeof TerrainPreset;
-    BuildingsPreset: typeof BuildingsPreset;
-  };
-  Chart: {
-    Line: typeof LineChart;
-    Area: typeof AreaChart;
-    Bar: typeof BarChart;
-    Doughnut: typeof Doughnut;
-    Gauge: typeof Gauge;
-  };
   /**
    * Solid control-flow primitives. Raw — NOT UiProxy-wrapped.
    * `<Ui.Flow.For each={...}>{(x) => ...}</Ui.Flow.For>`
@@ -487,19 +447,23 @@ export interface IErrorHandlerApi<TCtx = any> extends IHandlerApi<TCtx> {
  * Per-state user-handlers. Расширяет engine-shape `IBaseStateHandlers` из
  * `@capsuletech/web-state` (shared-base паттерн, см. Phase F unification),
  * добавляя `IHandlerApi`-типизацию для UI-событий и custom-методов.
+ *
+ * Generic `TCtx` — тип `context` из `schema.context` (выводится через инференс
+ * в `IDefineStateSchema<TCtx>`). Default `any` — backward-compat для app-кода
+ * без явной аннотации.
  */
-export interface IStateHandlers extends IBaseStateHandlers {
-  onInit?: (api: IHandlerApi) => void | Promise<void>;
-  onExit?: (api: IHandlerApi) => void | Promise<void>;
-  onClick?: (api: IHandlerApi) => any;
-  onDblClick?: (api: IHandlerApi) => any;
-  onInput?: (api: IHandlerApi) => any;
-  onChange?: (api: IHandlerApi) => any;
-  onBlur?: (api: IHandlerApi) => any;
-  onFocus?: (api: IHandlerApi) => any;
-  onKeyDown?: (api: IHandlerApi) => any;
+export interface IStateHandlers<TCtx = any> extends IBaseStateHandlers {
+  onInit?: (api: IHandlerApi<TCtx>) => void | Promise<void>;
+  onExit?: (api: IHandlerApi<TCtx>) => void | Promise<void>;
+  onClick?: (api: IHandlerApi<TCtx>) => any;
+  onDblClick?: (api: IHandlerApi<TCtx>) => any;
+  onInput?: (api: IHandlerApi<TCtx>) => any;
+  onChange?: (api: IHandlerApi<TCtx>) => any;
+  onBlur?: (api: IHandlerApi<TCtx>) => any;
+  onFocus?: (api: IHandlerApi<TCtx>) => any;
+  onKeyDown?: (api: IHandlerApi<TCtx>) => any;
   /** пользовательские методы (для приёма от next()) */
-  [methodName: string]: ((api: IHandlerApi) => any) | undefined;
+  [methodName: string]: ((api: IHandlerApi<TCtx>) => any) | undefined;
 }
 
 /**
@@ -507,9 +471,17 @@ export interface IStateHandlers extends IBaseStateHandlers {
  * `@capsuletech/web-state` (engine-minimum: `initial`, `context`, `states`),
  * добавляя HCA-specific lifecycle (`onMount`) и top-level fallback handlers
  * (`onClick`/`onInput`/...).
+ *
+ * Generic `TCtx` — тип `context` из `schema.context`. TS инферирует `TCtx`
+ * автоматически когда factory возвращает `{ context: someValue, ... }`:
+ * `TCtx = typeof someValue`. Благодаря этому handler-параметры
+ * `{ target, context, store, state, next }` типизируются без явных аннотаций
+ * — работает как в аппе (через codegen), так и в пакете (без codegen).
+ *
+ * Default `any` — backward-compat для существующего app-кода.
  */
 export interface IDefineStateSchema<TCtx = any> extends IBaseStateSchema<TCtx> {
-  states: Record<string, IStateHandlers>;
+  states: Record<string, IStateHandlers<TCtx>>;
   /**
    * Lifecycle: фаерит **реактивно** при каждой регистрации/анрегистрации
    * компонента в `store.components`. То есть первый вызов — на mount'е (часто
@@ -526,7 +498,7 @@ export interface IDefineStateSchema<TCtx = any> extends IBaseStateSchema<TCtx> {
    * Если нужен одноразовый hook на mount Controller'а — используй `states[initial].onInit`.
    * Если нужен teardown — используй [[onDispose]].
    */
-  onRegister?: (api: IHandlerApi) => any;
+  onRegister?: (api: IHandlerApi<TCtx>) => any;
   /**
    * Lifecycle: один раз на unmount Controller/Feature (Solid `onCleanup`).
    * Зеркало `states[initial].onInit` на конце жизни — используй для:
@@ -538,7 +510,7 @@ export interface IDefineStateSchema<TCtx = any> extends IBaseStateSchema<TCtx> {
    * (которые сами отрабатывают `unregisterComponent`), так что `store.components`
    * на этот момент уже пуст. Не пытайся читать состав UI-дерева отсюда.
    */
-  onDispose?: (api: IHandlerApi) => any;
+  onDispose?: (api: IHandlerApi<TCtx>) => any;
   /**
    * Централизованный error-hook: фаерит, когда handler (per-state или top-level)
    * бросил/reject'нул. Получает обычный `IHandlerApi` + сам `error` + `method`
@@ -553,14 +525,14 @@ export interface IDefineStateSchema<TCtx = any> extends IBaseStateSchema<TCtx> {
    *
    * Полезно для: централизованный setErrors → store, sentry-репорт, fallback-логика.
    */
-  onError?: (api: IErrorHandlerApi) => any;
-  onClick?: (api: IHandlerApi) => any;
-  onDblClick?: (api: IHandlerApi) => any;
-  onInput?: (api: IHandlerApi) => any;
-  onChange?: (api: IHandlerApi) => any;
-  onBlur?: (api: IHandlerApi) => any;
-  onFocus?: (api: IHandlerApi) => any;
-  onKeyDown?: (api: IHandlerApi) => any;
+  onError?: (api: IErrorHandlerApi<TCtx>) => any;
+  onClick?: (api: IHandlerApi<TCtx>) => any;
+  onDblClick?: (api: IHandlerApi<TCtx>) => any;
+  onInput?: (api: IHandlerApi<TCtx>) => any;
+  onChange?: (api: IHandlerApi<TCtx>) => any;
+  onBlur?: (api: IHandlerApi<TCtx>) => any;
+  onFocus?: (api: IHandlerApi<TCtx>) => any;
+  onKeyDown?: (api: IHandlerApi<TCtx>) => any;
   [methodName: string]: any;
 }
 
@@ -591,8 +563,31 @@ export type IWrapperProps = {
   fallback?: JSXElement;
 };
 
-export type IControllerWrapper = (
-  defineStateSchema: (services: IServices) => IDefineStateSchema,
+/**
+ * Тип wrapper-функции `Controller(factory) => Component`.
+ *
+ * Generic `TCtx` — выводится из возвращаемого типа factory через `context`-поле.
+ * Благодаря этому handler-параметры типизируются автоматически:
+ *
+ * ```ts
+ * // Пакетный Controller — context типизирован без кастов:
+ * const EditorController = Controller((services) => ({
+ *   context: { selectedId: null } as IEditorCtx,
+ *   initial: 'idle',
+ *   states: {
+ *     idle: {
+ *       onSelect({ target, context }) {
+ *         // context: IEditorCtx  ← выводится из поля `context` выше
+ *       },
+ *     },
+ *   },
+ * }));
+ * ```
+ *
+ * Backward-compat: старый app-код без явного `context` поля получает `TCtx = any`.
+ */
+export type IControllerWrapper = <TCtx = any>(
+  defineStateSchema: (services: IServices) => IDefineStateSchema<TCtx>,
 ) => (props: IWrapperProps) => any;
 
 export type IFeatureWrapper = IControllerWrapper;

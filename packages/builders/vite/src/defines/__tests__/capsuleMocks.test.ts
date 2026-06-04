@@ -15,7 +15,7 @@
  * surface the drift immediately.
  */
 
-import { describe, expect, it, afterEach } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 // Inline replica of the logic in capsuleConfig.ts so the test stays fast and
 // dependency-free. If you move/rename the logic there, update here.

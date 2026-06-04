@@ -29,12 +29,7 @@ const DEFAULT_ROWS: Record<string, number> = {
  */
 const Block = (props: { class?: string }) => (
   <div class={cn(skeletonBlockCva(), props.class)}>
-    <SkeletonRoot
-      animate
-      visible
-      style={{ width: '100%', height: '100%' }}
-      class="block"
-    />
+    <SkeletonRoot animate visible style={{ width: '100%', height: '100%' }} class="block" />
   </div>
 );
 
@@ -112,12 +107,7 @@ const CardSkeleton = () => (
 /** Full-bleed map placeholder — single kobalte Skeleton fills the container. */
 const MapSkeleton = () => (
   <div class={cn(skeletonBlockCva({ variant: 'map' }), 'h-full w-full')}>
-    <SkeletonRoot
-      animate
-      visible
-      style={{ width: '100%', height: '100%' }}
-      class="block"
-    />
+    <SkeletonRoot animate visible style={{ width: '100%', height: '100%' }} class="block" />
   </div>
 );
 

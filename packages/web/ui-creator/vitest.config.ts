@@ -11,11 +11,19 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   test: {
-    include: ['src/**/__tests__/**/*.test.ts'],
+    include: ['src/**/__tests__/**/*.test.ts', 'src/**/__tests__/**/*.test.tsx'],
     // jsdom нужен потому что vite-plugin-solid в test-mode подгружает
     // @testing-library/jest-dom setup, которое требует DOM-окружение.
     // Сами тесты pure-logic, jsdom-globals им не мешают.
     environment: 'jsdom',
     globals: false,
+    // lucide-solid поставляется как .jsx — Node нативно не умеет его читать.
+    // inline заставляет vite-plugin-solid трансформировать пакет в тестах.
+    // Аналогично web-ui vitest.config.ts (паттерн из packages/web/ui/).
+    server: {
+      deps: {
+        inline: [/lucide-solid/],
+      },
+    },
   },
 });

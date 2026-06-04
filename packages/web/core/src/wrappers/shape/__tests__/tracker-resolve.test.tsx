@@ -12,9 +12,9 @@
  *  6. `itemAs` resolver не ломает существующий `defaultAs` (as: ui.X) механизм
  */
 
-import { z } from 'zod';
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { z } from 'zod';
 import { ShapeUiContext } from '../context';
 import { createUiTracker } from '../ui-tracker';
 import { Shape } from '../wrapper';
@@ -79,7 +79,11 @@ describe('tracker-resolve — itemAs in extras resolves via ShapeUiContext', () 
   });
 
   it('nested path tracker (ui.Navigation.Item) resolves correctly as itemAs', () => {
-    const NavItemComponent = (_props: any) => <a href="https://example.com" data-testid="nav-item">nav</a>;
+    const NavItemComponent = (_props: any) => (
+      <a href="https://example.com" data-testid="nav-item">
+        nav
+      </a>
+    );
 
     const fakeUi = { Navigation: { Item: NavItemComponent } };
     const tracker = createUiTracker();
@@ -112,7 +116,11 @@ describe('tracker-resolve — itemAs in extras resolves via ShapeUiContext', () 
 
 describe('tracker-resolve — itemProps callable wraps result with tracker resolution', () => {
   it('calling itemProps(item) returns object with resolved as-tracker', () => {
-    const LinkComponent = (_props: any) => <a href="https://example.com" data-testid="link">link</a>;
+    const LinkComponent = (_props: any) => (
+      <a href="https://example.com" data-testid="link">
+        link
+      </a>
+    );
     const fakeUi = { Link: LinkComponent };
     const tracker = createUiTracker();
 
@@ -138,7 +146,9 @@ describe('tracker-resolve — itemProps callable wraps result with tracker resol
       container,
     );
 
-    const capturedItemProps = getCapture().itemProps as ((item: unknown) => Record<string, unknown>) | undefined;
+    const capturedItemProps = getCapture().itemProps as
+      | ((item: unknown) => Record<string, unknown>)
+      | undefined;
     expect(typeof capturedItemProps).toBe('function');
 
     const result = capturedItemProps!({ to: '/home', label: 'Home' });
@@ -171,7 +181,9 @@ describe('tracker-resolve — itemProps callable wraps result with tracker resol
       container,
     );
 
-    const capturedItemProps = getCapture().itemProps as ((item: unknown) => Record<string, unknown>) | undefined;
+    const capturedItemProps = getCapture().itemProps as
+      | ((item: unknown) => Record<string, unknown>)
+      | undefined;
     const result = capturedItemProps!('hello');
     expect(result.label).toBe('hello');
     expect(result.count).toBe(42);

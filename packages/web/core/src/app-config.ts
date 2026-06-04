@@ -26,6 +26,26 @@ export interface IAppConfig {
    */
   api?: (ctx: { mw: MwToolbox }) => ApiConfig;
   /**
+   * Опциональные пакеты, которые будут зарегистрированы как глобалы.
+   *
+   * Каждый элемент — либо строка (имя npm-пакета), либо объект `{ use, as }`.
+   *
+   * Строка: пакет самоназывается через свой `/capsule` манифест (`defaultName`).
+   * Например, `'@capsuletech/web-map'` → манифест объявляет `name: 'Maps'` →
+   * глобал `Maps.*` с `Maps.View`, `Maps.Layer` и т.д.
+   *
+   * Объект `{ use, as }`: явный override имени глобала. Нужен для разрешения
+   * коллизий с JS-built-in именами (Map/Set/Date/Promise) или для вкусовщины.
+   * Например, `{ use: '@capsuletech/web-renderer', as: 'Render' }` → глобал `Render.*`.
+   *
+   * Обрабатывается `CapsuleRegistryPlugin` (owner-builders, фаза 3 ADR 033):
+   * резолвит манифест через jiti, генерит `.capsule/registry/packages.ts`
+   * и `.capsule/@types/packages.d.ts`.
+   *
+   * @see ADR 033 — Механизм регистрации опциональных пакетов
+   */
+  packages?: ReadonlyArray<string | { use: string; as?: string }>;
+  /**
    * Настройки роутера приложения.
    */
   router?: {

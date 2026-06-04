@@ -58,9 +58,15 @@ export const WrapperHorizontal: Story = {
 export const WrapperVertical: Story = {
   render: () => (
     <Group orientation="vertical" gap={2}>
-      <Button variant="outline" class="w-32">Top</Button>
-      <Button variant="outline" class="w-32">Middle</Button>
-      <Button variant="outline" class="w-32">Bottom</Button>
+      <Button variant="outline" class="w-32">
+        Top
+      </Button>
+      <Button variant="outline" class="w-32">
+        Middle
+      </Button>
+      <Button variant="outline" class="w-32">
+        Bottom
+      </Button>
     </Group>
   ),
 };
@@ -103,14 +109,24 @@ export const AttachedVertical: Story = {
     <div class="flex flex-row gap-6 items-start">
       {/* 2 items */}
       <Group variant="attached" orientation="vertical">
-        <Button variant="outline" class="w-28">Top</Button>
-        <Button variant="outline" class="w-28">Bottom</Button>
+        <Button variant="outline" class="w-28">
+          Top
+        </Button>
+        <Button variant="outline" class="w-28">
+          Bottom
+        </Button>
       </Group>
       {/* 3 items */}
       <Group variant="attached" orientation="vertical">
-        <Button variant="outline" class="w-28">Top</Button>
-        <Button variant="outline" class="w-28">Middle</Button>
-        <Button variant="outline" class="w-28">Bottom</Button>
+        <Button variant="outline" class="w-28">
+          Top
+        </Button>
+        <Button variant="outline" class="w-28">
+          Middle
+        </Button>
+        <Button variant="outline" class="w-28">
+          Bottom
+        </Button>
       </Group>
     </div>
   ),
@@ -231,11 +247,7 @@ export const ResizableItems: Story = {
         orientation="horizontal"
         resizable
         withHandle
-        data={[
-          { label: 'Panel A' },
-          { label: 'Panel B' },
-          { label: 'Panel C' },
-        ]}
+        data={[{ label: 'Panel A' }, { label: 'Panel B' }, { label: 'Panel C' }]}
         as={(p: { label: string }) => (
           <div class="flex h-full items-center justify-center bg-muted/40 text-sm font-medium">
             {p.label}

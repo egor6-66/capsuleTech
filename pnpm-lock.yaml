@@ -400,9 +400,6 @@ importers:
       vite-plugin-solid:
         specifier: ^2.11.12
         version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
-      vite-tsconfig-paths:
-        specifier: ^6.1.1
-        version: 6.1.1(typescript@5.9.3)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
     devDependencies:
       '@vue/language-core':
         specifier: ~3.1.5
@@ -452,9 +449,6 @@ importers:
       vite-plugin-solid:
         specifier: ^2.11.12
         version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
-      vite-tsconfig-paths:
-        specifier: ^6.1.1
-        version: 6.1.1(typescript@5.9.3)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
     devDependencies:
       '@types/babel__generator':
         specifier: ^7.27.0
@@ -629,12 +623,6 @@ importers:
       '@capsuletech/vite-builder':
         specifier: workspace:*
         version: link:../../builders/vite
-      '@capsuletech/web-charts':
-        specifier: workspace:*
-        version: link:../charts
-      '@capsuletech/web-map':
-        specifier: workspace:*
-        version: link:../map
       '@capsuletech/web-profiler':
         specifier: workspace:*
         version: link:../profiler
@@ -700,6 +688,9 @@ importers:
       vite-plugin-solid:
         specifier: ^2.11.12
         version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
+      vite-tsconfig-paths:
+        specifier: ^6.1.1
+        version: 6.1.1(typescript@5.9.3)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
       vitest:
         specifier: ~4.1.0
         version: 4.1.6(@types/node@25.9.0)(@vitest/ui@4.1.6)(jsdom@29.1.1)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
@@ -729,6 +720,25 @@ importers:
         specifier: ^2.11.12
         version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
 
+  packages/web/intl:
+    dependencies:
+      solid-js:
+        specifier: 1.9.12
+        version: 1.9.12
+    devDependencies:
+      '@capsuletech/lib-builder':
+        specifier: workspace:*
+        version: link:../../builders/lib
+      '@capsuletech/vite-builder':
+        specifier: workspace:*
+        version: link:../../builders/vite
+      '@testing-library/jest-dom':
+        specifier: ^6.9.1
+        version: 6.9.1
+      vite-plugin-solid:
+        specifier: ^2.11.12
+        version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
+
   packages/web/map:
     dependencies:
       maplibre-gl:
@@ -741,6 +751,9 @@ importers:
       '@capsuletech/vite-builder':
         specifier: workspace:*
         version: link:../../builders/vite
+      '@capsuletech/web-core':
+        specifier: workspace:*
+        version: link:../core
       '@testing-library/jest-dom':
         specifier: ^6.9.1
         version: 6.9.1
@@ -928,6 +941,9 @@ importers:
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
+      lucide-solid:
+        specifier: ^1.16.0
+        version: 1.16.0(solid-js@1.9.12)
       solid-js:
         specifier: 1.9.12
         version: 1.9.12
@@ -956,9 +972,6 @@ importers:
       jsdom:
         specifier: ~29.1.1
         version: 29.1.1
-      lucide-solid:
-        specifier: ^1.16.0
-        version: 1.16.0(solid-js@1.9.12)
       storybook:
         specifier: ^10
         version: 10.4.0(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@testing-library/dom@10.4.1)(@types/react@19.2.15)(prettier@3.6.2)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -980,9 +993,18 @@ importers:
       '@capsuletech/shared-zod':
         specifier: workspace:*
         version: link:../../shared/zod
-      lucide-solid:
-        specifier: ^1.16.0
-        version: 1.16.0(solid-js@1.9.12)
+      '@capsuletech/web-core':
+        specifier: workspace:*
+        version: link:../core
+      '@capsuletech/web-dnd':
+        specifier: workspace:*
+        version: link:../dnd
+      '@capsuletech/web-renderer':
+        specifier: workspace:*
+        version: link:../renderer
+      '@capsuletech/web-ui':
+        specifier: workspace:*
+        version: link:../ui
       solid-js:
         specifier: 1.9.12
         version: 1.9.12

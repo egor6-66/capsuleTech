@@ -20,13 +20,13 @@
  * MUST be called inside DnDProvider tree (createSortableGroup calls useDnD).
  */
 import {
+  createSortableGroup,
   type IGridLayout,
+  type ISortableZone,
   moveItem,
   placeItem,
   pointToCell,
   resizeItem,
-  createSortableGroup,
-  type ISortableZone,
   useDnD,
 } from '@capsuletech/web-dnd';
 import { type Accessor, createEffect, createSignal } from 'solid-js';
@@ -86,11 +86,7 @@ export interface IInsertEngine {
    * drag to commit an in-grid move immediately (on pointerup within the grid).
    * This updates localRows via moveItem so the preview cell materializes on drop.
    */
-  commitGridMove: (
-    rowId: string,
-    cellId: string,
-    pointer: { x: number; y: number },
-  ) => void;
+  commitGridMove: (rowId: string, cellId: string, pointer: { x: number; y: number }) => void;
   /**
    * ADR 026 Phase 2c: Called by the grid resize handle (SE/E/S) on each pointermove to
    * grow/shrink a cell's {w,h} in grid units. Neighbor cells are displaced by
@@ -102,11 +98,7 @@ export interface IInsertEngine {
    * @param cellId - id of the cell being resized
    * @param size   - new {w, h} in grid units (floor 1 each)
    */
-  commitGridResize: (
-    rowId: string,
-    cellId: string,
-    size: { w: number; h: number },
-  ) => void;
+  commitGridResize: (rowId: string, cellId: string, size: { w: number; h: number }) => void;
   /**
    * ADR 026 Phase 2c: Called on pointerup after a resize drag completes.
    * Persists the live coord signal values back to localRows so cross-zone
@@ -255,8 +247,7 @@ export const createInsertEngine = (opts: IInsertEngineOptions): IInsertEngine =>
     equals: false,
   });
 
-  const getLiveGridCoords = (cellId: string): GridCoord | undefined =>
-    liveGridCoords().get(cellId);
+  const getLiveGridCoords = (cellId: string): GridCoord | undefined => liveGridCoords().get(cellId);
 
   // -------------------------------------------------------------------------
   // useDnD — accessed here (inside DnDProvider) to read live pointer at drop time.
@@ -363,9 +354,7 @@ export const createInsertEngine = (opts: IInsertEngineOptions): IInsertEngine =>
             const newLayout = moveItem(currentLayout, itemId, targetCell, cols, compact);
             const updatedTgtRow = applyGridLayout(tgtRow, newLayout);
 
-            setLocalRows((rs) =>
-              rs.map((r, i) => (i === tgtRowIdx ? updatedTgtRow : r)),
-            );
+            setLocalRows((rs) => rs.map((r, i) => (i === tgtRowIdx ? updatedTgtRow : r)));
 
             // Find the moved item's new coords for the event
             const newItem = newLayout.find((l) => l.id === itemId);
@@ -632,7 +621,13 @@ export const createInsertEngine = (opts: IInsertEngineOptions): IInsertEngine =>
     if (!liveCoord) return;
 
     const currentLayout = rowToGridLayout(row);
-    const newLayout = resizeItem(currentLayout, cellId, { w: liveCoord.w, h: liveCoord.h }, cols, compact);
+    const newLayout = resizeItem(
+      currentLayout,
+      cellId,
+      { w: liveCoord.w, h: liveCoord.h },
+      cols,
+      compact,
+    );
     const updatedRow = applyGridLayout(row, newLayout);
 
     setLocalRows((rs) => rs.map((r, i) => (i === rowIdx ? updatedRow : r)));

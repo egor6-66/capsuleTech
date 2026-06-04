@@ -8,22 +8,23 @@
  *  - Setters / togglers + DOM-apply helpers.
  *  - `DISCOVERED_THEMES` (eager-glob по themes/).
  */
+
 export {
-  useTheme,
-  useDarkMode,
-  setTheme,
-  setDarkMode,
-  toggleDarkMode,
-  DISCOVERED_THEMES,
-} from './theme';
-export {
-  useLayoutMode,
+  type LayoutMode,
   setLayoutMode,
   toggleLayoutMode,
-  type LayoutMode,
+  useLayoutMode,
 } from './layoutMode';
 export {
-  useSettingsMode,
   setSettingsMode,
   toggleSettingsMode,
+  useSettingsMode,
 } from './settingsMode';
+export {
+  DISCOVERED_THEMES,
+  setDarkMode,
+  setTheme,
+  toggleDarkMode,
+  useDarkMode,
+  useTheme,
+} from './theme';

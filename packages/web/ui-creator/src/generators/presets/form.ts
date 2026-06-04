@@ -1,3 +1,4 @@
+import type { IPreset, IPropsRefiner } from '../types';
 import {
   BUTTON_PRIMARY_TEXTS,
   BUTTON_SECONDARY_TEXTS,
@@ -8,7 +9,6 @@ import {
   labelToInputType,
   labelToPlaceholder,
 } from '../wordbank';
-import type { IPreset, IPropsRefiner } from '../types';
 
 /**
  * Стабильный «случайный» index из строки — позволяет refineProps выбирать
@@ -64,7 +64,8 @@ const refineFieldDescription: IPropsRefiner = (props) => ({
  */
 const refineInput: IPropsRefiner = (props) => {
   const placeholder = String(props.placeholder ?? '');
-  const sourceLabel = placeholder || FIELD_LABELS[stableIndex(placeholder, FIELD_LABELS.length)] || 'Text';
+  const sourceLabel =
+    placeholder || FIELD_LABELS[stableIndex(placeholder, FIELD_LABELS.length)] || 'Text';
   return {
     ...props,
     type: labelToInputType(sourceLabel),
@@ -75,9 +76,7 @@ const refineInput: IPropsRefiner = (props) => {
 const refineButtonPrimary: IPropsRefiner = (props) => ({
   ...props,
   children:
-    BUTTON_PRIMARY_TEXTS[
-      stableIndex(String(props.children ?? 'btn'), BUTTON_PRIMARY_TEXTS.length)
-    ],
+    BUTTON_PRIMARY_TEXTS[stableIndex(String(props.children ?? 'btn'), BUTTON_PRIMARY_TEXTS.length)],
   variant: 'default',
 });
 

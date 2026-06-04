@@ -13,12 +13,10 @@ const Workspace = Page((Ui) => (
     slots={{
       header: {
         children: <Widgets.Header />,
-        resizable: false,
         initialSize: 0.04,
       },
       main: {
         children: <Ui.Outlet />,
-        resizable: false,
       },
     }}
   />

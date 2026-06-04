@@ -37,6 +37,4 @@ export type IEntityFactory<T extends IEntityDefinition> = (z: CapsuleZ) => T;
  *
  * В будущем (Phase 2): сюда попадут validators, transforms, relations.
  */
-export type IEntityWrapper = <T extends IEntityDefinition>(
-  factory: IEntityFactory<T>,
-) => T;
+export type IEntityWrapper = <T extends IEntityDefinition>(factory: IEntityFactory<T>) => T;

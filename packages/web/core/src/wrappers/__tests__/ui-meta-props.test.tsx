@@ -378,31 +378,11 @@ describe('WidgetUi — DarkModeToggle: is callable and accepts IUiMetaProps', ()
 });
 
 // ---------------------------------------------------------------------------
-// Compile-time: MapView — plain callable (no sub-components)
-// Added to ViewUi + WidgetUi from @capsuletech/web-map (2026-05-22).
+// NOTE (ADR 033 фаза 1): MapView и Chart удалены из ViewUi/WidgetUi.
+// Они больше не являются частью Ui-namespace — регистрируются через
+// capsule.app.ts: packages → глобал Maps.* (кодген, фаза 3).
+// Тесты для Ui.MapView / Ui.Chart удалены вместе с типами из interfaces.ts.
 // ---------------------------------------------------------------------------
-
-describe('ViewUi — MapView: is callable and accepts IUiMetaProps', () => {
-  it('Ui.MapView is a function', () => {
-    expectTypeOf<ViewUi['MapView']>().toBeFunction();
-  });
-
-  it('Ui.MapView accepts IUiMetaProps (meta prop)', () => {
-    type Props = Parameters<ViewUi['MapView']>[0];
-    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
-  });
-});
-
-describe('WidgetUi — MapView: is callable and accepts IUiMetaProps', () => {
-  it('Ui.MapView is a function', () => {
-    expectTypeOf<WidgetUi['MapView']>().toBeFunction();
-  });
-
-  it('Ui.MapView accepts IUiMetaProps (meta prop)', () => {
-    type Props = Parameters<WidgetUi['MapView']>[0];
-    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
-  });
-});
 
 // ---------------------------------------------------------------------------
 // Compile-time: ViewUi.Layout subset — Grid + Flex present, Matrix absent
@@ -464,139 +444,84 @@ describe('WidgetUi — Layout remains full (Grid + Flex + Matrix)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Compile-time: MapView compound — Source/Layer/Terrain/Sky/Marker/TerrainPreset/BuildingsPreset
-// are sub-components of MapView (they live inside <Ui.MapView> via MapContext).
-// Reorg from flat exports to Object.assign compound (PR #184, 2026-05-28).
-// Mirrors Dropdown / Card pattern. All 7 children accessible as Ui.MapView.X.
+// Compile-time: Tooltip compound — root + Trigger/Content/Arrow sub-components
+// Tooltip is lazy (kobalte-heavy). Mirrors Dropdown pattern.
+// Guards: root + 3 sub-components accept IUiMetaProps in both ViewUi and WidgetUi.
 // ---------------------------------------------------------------------------
 
-describe('ViewUi — MapView compound: sub-components preserved with meta', () => {
-  it('Ui.MapView.Source is a function', () => {
-    expectTypeOf<ViewUi['MapView']['Source']>().toBeFunction();
+describe('ViewUi — Tooltip compound: root and sub-components preserved with meta', () => {
+  it('Ui.Tooltip is a function', () => {
+    expectTypeOf<ViewUi['Tooltip']>().toBeFunction();
   });
 
-  it('Ui.MapView.Source accepts IUiMetaProps (meta prop)', () => {
-    type Props = Parameters<ViewUi['MapView']['Source']>[0];
+  it('Ui.Tooltip accepts IUiMetaProps (meta prop)', () => {
+    type Props = Parameters<ViewUi['Tooltip']>[0];
     expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
   });
 
-  it('Ui.MapView.Layer is a function', () => {
-    expectTypeOf<ViewUi['MapView']['Layer']>().toBeFunction();
+  it('Ui.Tooltip.Trigger is a function', () => {
+    expectTypeOf<ViewUi['Tooltip']['Trigger']>().toBeFunction();
   });
 
-  it('Ui.MapView.Layer accepts IUiMetaProps (meta prop)', () => {
-    type Props = Parameters<ViewUi['MapView']['Layer']>[0];
-    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
+  it('Ui.Tooltip.Trigger accepts meta prop', () => {
+    type Props = Parameters<ViewUi['Tooltip']['Trigger']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<{ meta?: ITagMeta }>();
   });
 
-  it('Ui.MapView.Terrain is a function', () => {
-    expectTypeOf<ViewUi['MapView']['Terrain']>().toBeFunction();
+  it('Ui.Tooltip.Content is a function', () => {
+    expectTypeOf<ViewUi['Tooltip']['Content']>().toBeFunction();
   });
 
-  it('Ui.MapView.Terrain accepts IUiMetaProps (meta prop)', () => {
-    type Props = Parameters<ViewUi['MapView']['Terrain']>[0];
-    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
+  it('Ui.Tooltip.Content accepts meta prop', () => {
+    type Props = Parameters<ViewUi['Tooltip']['Content']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<{ meta?: ITagMeta }>();
   });
 
-  it('Ui.MapView.Sky is a function', () => {
-    expectTypeOf<ViewUi['MapView']['Sky']>().toBeFunction();
+  it('Ui.Tooltip.Arrow is a function', () => {
+    expectTypeOf<ViewUi['Tooltip']['Arrow']>().toBeFunction();
   });
 
-  it('Ui.MapView.Sky accepts IUiMetaProps (meta prop)', () => {
-    type Props = Parameters<ViewUi['MapView']['Sky']>[0];
-    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
-  });
-
-  it('Ui.MapView.Marker is a function', () => {
-    expectTypeOf<ViewUi['MapView']['Marker']>().toBeFunction();
-  });
-
-  it('Ui.MapView.Marker accepts IUiMetaProps (meta prop)', () => {
-    type Props = Parameters<ViewUi['MapView']['Marker']>[0];
-    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
-  });
-
-  it('Ui.MapView.TerrainPreset is a function', () => {
-    expectTypeOf<ViewUi['MapView']['TerrainPreset']>().toBeFunction();
-  });
-
-  it('Ui.MapView.TerrainPreset accepts IUiMetaProps (meta prop)', () => {
-    type Props = Parameters<ViewUi['MapView']['TerrainPreset']>[0];
-    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
-  });
-
-  it('Ui.MapView.BuildingsPreset is a function', () => {
-    expectTypeOf<ViewUi['MapView']['BuildingsPreset']>().toBeFunction();
-  });
-
-  it('Ui.MapView.BuildingsPreset accepts IUiMetaProps (meta prop)', () => {
-    type Props = Parameters<ViewUi['MapView']['BuildingsPreset']>[0];
-    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
+  it('Ui.Tooltip.Arrow accepts meta prop', () => {
+    type Props = Parameters<ViewUi['Tooltip']['Arrow']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<{ meta?: ITagMeta }>();
   });
 });
 
-describe('WidgetUi — MapView compound: sub-components preserved with meta', () => {
-  it('Ui.MapView.Source is a function', () => {
-    expectTypeOf<WidgetUi['MapView']['Source']>().toBeFunction();
+describe('WidgetUi — Tooltip compound: root and sub-components preserved with meta', () => {
+  it('Ui.Tooltip is a function', () => {
+    expectTypeOf<WidgetUi['Tooltip']>().toBeFunction();
   });
 
-  it('Ui.MapView.Source accepts IUiMetaProps (meta prop)', () => {
-    type Props = Parameters<WidgetUi['MapView']['Source']>[0];
+  it('Ui.Tooltip accepts IUiMetaProps (meta prop)', () => {
+    type Props = Parameters<WidgetUi['Tooltip']>[0];
     expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
   });
 
-  it('Ui.MapView.Layer is a function', () => {
-    expectTypeOf<WidgetUi['MapView']['Layer']>().toBeFunction();
+  it('Ui.Tooltip.Trigger is a function (not lost after WithMetaProps)', () => {
+    expectTypeOf<WidgetUi['Tooltip']['Trigger']>().toBeFunction();
   });
 
-  it('Ui.MapView.Layer accepts IUiMetaProps (meta prop)', () => {
-    type Props = Parameters<WidgetUi['MapView']['Layer']>[0];
-    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
+  it('Ui.Tooltip.Trigger accepts meta prop', () => {
+    type Props = Parameters<WidgetUi['Tooltip']['Trigger']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<{ meta?: ITagMeta }>();
   });
 
-  it('Ui.MapView.Terrain is a function', () => {
-    expectTypeOf<WidgetUi['MapView']['Terrain']>().toBeFunction();
+  it('Ui.Tooltip.Content is a function', () => {
+    expectTypeOf<WidgetUi['Tooltip']['Content']>().toBeFunction();
   });
 
-  it('Ui.MapView.Terrain accepts IUiMetaProps (meta prop)', () => {
-    type Props = Parameters<WidgetUi['MapView']['Terrain']>[0];
-    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
+  it('Ui.Tooltip.Content accepts meta prop', () => {
+    type Props = Parameters<WidgetUi['Tooltip']['Content']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<{ meta?: ITagMeta }>();
   });
 
-  it('Ui.MapView.Sky is a function', () => {
-    expectTypeOf<WidgetUi['MapView']['Sky']>().toBeFunction();
+  it('Ui.Tooltip.Arrow is a function', () => {
+    expectTypeOf<WidgetUi['Tooltip']['Arrow']>().toBeFunction();
   });
 
-  it('Ui.MapView.Sky accepts IUiMetaProps (meta prop)', () => {
-    type Props = Parameters<WidgetUi['MapView']['Sky']>[0];
-    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
-  });
-
-  it('Ui.MapView.Marker is a function', () => {
-    expectTypeOf<WidgetUi['MapView']['Marker']>().toBeFunction();
-  });
-
-  it('Ui.MapView.Marker accepts IUiMetaProps (meta prop)', () => {
-    type Props = Parameters<WidgetUi['MapView']['Marker']>[0];
-    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
-  });
-
-  it('Ui.MapView.TerrainPreset is a function', () => {
-    expectTypeOf<WidgetUi['MapView']['TerrainPreset']>().toBeFunction();
-  });
-
-  it('Ui.MapView.TerrainPreset accepts IUiMetaProps (meta prop)', () => {
-    type Props = Parameters<WidgetUi['MapView']['TerrainPreset']>[0];
-    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
-  });
-
-  it('Ui.MapView.BuildingsPreset is a function', () => {
-    expectTypeOf<WidgetUi['MapView']['BuildingsPreset']>().toBeFunction();
-  });
-
-  it('Ui.MapView.BuildingsPreset accepts IUiMetaProps (meta prop)', () => {
-    type Props = Parameters<WidgetUi['MapView']['BuildingsPreset']>[0];
-    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
+  it('Ui.Tooltip.Arrow accepts meta prop', () => {
+    type Props = Parameters<WidgetUi['Tooltip']['Arrow']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<{ meta?: ITagMeta }>();
   });
 });
 
@@ -626,9 +551,7 @@ describe('ViewWrapper — meta prop forwarded to UiProxy without error', () => {
   it('View factory can render stub component with meta prop via Ui arg', () => {
     // We use a stub that accepts meta (UiProxy-aware) rather than lazy web-ui,
     // to avoid Suspense/lazy loading complexity in jsdom environment.
-    const StubInput = (props: any) => (
-      <input data-testid="inp" type={props.type ?? 'text'} />
-    );
+    const StubInput = (props: any) => <input data-testid="inp" type={props.type ?? 'text'} />;
 
     let capturedUi: any;
     const TestView = ViewWrapper((ui) => {

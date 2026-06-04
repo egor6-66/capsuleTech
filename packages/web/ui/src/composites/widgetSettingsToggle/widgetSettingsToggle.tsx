@@ -1,5 +1,5 @@
-import { Show } from 'solid-js';
 import { toggleSettingsMode, useSettingsMode } from '@capsuletech/web-style';
+import { Show } from 'solid-js';
 
 import type { IWidgetSettingsToggleProps } from './interfaces';
 

@@ -22,8 +22,7 @@
     "@tanstack/router-vite-plugin": "^1.166.45",
     "jiti": "2.4.2",
     "unplugin-auto-import": "^21.0.0",
-    "vite-plugin-solid": "^2.11.12",
-    "vite-tsconfig-paths": "^6.1.1"
+    "vite-plugin-solid": "^2.11.12"
   },
   "devDependencies": {
     "@types/babel__generator": "^7.27.0",

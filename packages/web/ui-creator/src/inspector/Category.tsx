@@ -1,11 +1,16 @@
+import { Button } from '@capsuletech/web-ui/button';
+import { Flex } from '@capsuletech/web-ui/flex';
+import { ChevronDown, ChevronRight } from '@capsuletech/web-ui/icons';
 import { createSignal, For, Show } from 'solid-js';
 import { renderField } from './fields';
+import type { IInspectorKit } from './kit';
 import type { ICategory, OnChangeFn, ValuesMap } from './types';
 
 interface ICategoryProps {
   category: ICategory;
   values: ValuesMap;
   onChange: OnChangeFn;
+  kit: IInspectorKit;
 }
 
 /**
@@ -17,23 +22,28 @@ export const Category = (props: ICategoryProps) => {
 
   return (
     <div class="border border-white/15 rounded overflow-hidden">
-      <button
-        type="button"
-        class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium hover:bg-white/5 transition-colors text-left"
+      <Button
+        variant="ghost"
+        class="w-full justify-between px-3 py-2 text-sm font-medium text-left h-auto rounded-none hover:bg-white/5"
         onClick={() => setCollapsed(!collapsed())}
       >
         <span>{props.category.label}</span>
-        <span class="opacity-50 text-xs">{collapsed() ? '▸' : '▾'}</span>
-      </button>
+        <Show
+          when={collapsed()}
+          fallback={<ChevronDown size={14} class="opacity-50" aria-hidden="true" />}
+        >
+          <ChevronRight size={14} class="opacity-50" aria-hidden="true" />
+        </Show>
+      </Button>
       <Show when={!collapsed()}>
-        <div class="px-3 py-3 flex flex-col gap-3 border-t border-white/10">
+        <Flex orientation="vertical" gap={3} class="px-3 py-3 border-t border-white/10">
           <Show when={props.category.description}>
             <p class="text-xs opacity-60">{props.category.description}</p>
           </Show>
           <For each={props.category.fields}>
-            {(field) => renderField(field, props.values, props.onChange)}
+            {(field) => renderField(field, props.values, props.onChange, props.kit)}
           </For>
-        </div>
+        </Flex>
       </Show>
     </div>
   );

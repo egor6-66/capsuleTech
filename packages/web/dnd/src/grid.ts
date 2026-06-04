@@ -44,12 +44,7 @@ export function collides(a: IGridItem, b: IGridItem): boolean {
   if (a.id === b.id) return false;
   // Overlap on x axis: a.x < b.x+b.w && a.x+a.w > b.x
   // Overlap on y axis: a.y < b.y+b.h && a.y+a.h > b.y
-  return (
-    a.x < b.x + b.w &&
-    a.x + a.w > b.x &&
-    a.y < b.y + b.h &&
-    a.y + a.h > b.y
-  );
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
 
 /**
@@ -181,9 +176,7 @@ function resolveCollisions(
   compact: 'none' | 'vertical',
 ): IGridLayout {
   // Build mutable working copy. Replace anchor's entry in place.
-  const working: IGridItem[] = layout.map((item) =>
-    item.id === anchor.id ? anchor : { ...item },
-  );
+  const working: IGridItem[] = layout.map((item) => (item.id === anchor.id ? anchor : { ...item }));
 
   // BFS/queue-based cascade: whenever we push an item, recheck its new position.
   // Process in y-order so we push downward consistently.

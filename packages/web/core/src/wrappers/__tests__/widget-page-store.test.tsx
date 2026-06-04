@@ -71,11 +71,7 @@ afterEach(() => {
 // inside a Controller/Feature tree without spinning up XState).
 function withCtx(store: any, children: () => any) {
   const ctx = mkCtx(store);
-  return () => (
-    <Context.Provider value={ctx as any}>
-      {children()}
-    </Context.Provider>
-  );
+  return () => <Context.Provider value={ctx as any}>{children()}</Context.Provider>;
 }
 
 // ---------------------------------------------------------------------------
@@ -163,10 +159,7 @@ describe('WidgetWrapper — props forwarding (3rd arg)', () => {
       return <div data-testid="title2">{props.title}</div>;
     });
 
-    cleanup = render(
-      () => <MyWidget title="Standalone">{null}</MyWidget>,
-      container,
-    );
+    cleanup = render(() => <MyWidget title="Standalone">{null}</MyWidget>, container);
 
     expect(capturedTitle).toBe('Standalone');
   });
@@ -248,10 +241,7 @@ describe('PageWrapper — props forwarding (3rd arg)', () => {
       return <div data-testid="section">{props.section}</div>;
     });
 
-    cleanup = render(
-      () => <MyPage section="Dashboard">{null}</MyPage>,
-      container,
-    );
+    cleanup = render(() => <MyPage section="Dashboard">{null}</MyPage>, container);
 
     expect(capturedSection).toBe('Dashboard');
     expect(container.querySelector('[data-testid="section"]')?.textContent).toBe('Dashboard');

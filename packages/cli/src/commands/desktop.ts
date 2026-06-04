@@ -36,8 +36,7 @@ export const desktopCommands: Command[] = [
       },
       {
         name: 'dist',
-        description:
-          'Путь к dist относительно workspace root (дефолт: apps/<name>/dist)',
+        description: 'Путь к dist относительно workspace root (дефолт: apps/<name>/dist)',
         required: false,
       },
     ],

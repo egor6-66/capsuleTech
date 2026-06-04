@@ -169,9 +169,7 @@ describe('IListBatchProps structural contracts', () => {
       gap,
       width: '100%',
     };
-    expect(expectedStyle['grid-template-columns']).toBe(
-      'repeat(auto-fit, minmax(116px, 1fr))',
-    );
+    expect(expectedStyle['grid-template-columns']).toBe('repeat(auto-fit, minmax(116px, 1fr))');
     expect(expectedStyle.display).toBe('grid');
     expect(expectedStyle.gap).toBe('0.5rem');
   });
