@@ -55,14 +55,44 @@ vi.mock('@capsuletech/web-ui/input', () => ({
   ),
 }));
 
+vi.mock('@capsuletech/web-ui/select', () => ({
+  Select: (props: { options?: { value: string; label: string }[]; value?: string; disabled?: boolean; onChange?: (v: string) => void; class?: string }) => (
+    <select
+      value={props.value ?? ''}
+      disabled={props.disabled}
+      onChange={(e) => props.onChange?.((e.target as HTMLSelectElement).value)}
+      data-testid="mock-select"
+    >
+      {(props.options ?? []).map((o) => (
+        <option value={o.value}>{o.label}</option>
+      ))}
+    </select>
+  ),
+}));
+
+vi.mock('@capsuletech/web-ui/textarea', () => ({
+  Textarea: (props: { value?: string; rows?: number; placeholder?: string; disabled?: boolean; class?: string; onInput?: (e: InputEvent & { currentTarget: HTMLTextAreaElement }) => void }) => (
+    <textarea
+      rows={props.rows ?? 3}
+      value={props.value ?? ''}
+      placeholder={props.placeholder}
+      disabled={props.disabled}
+      onInput={props.onInput as (e: InputEvent) => void}
+      data-testid="mock-textarea"
+    />
+  ),
+}));
+
 // Мокируем DEFAULT_KIT чтобы fields использовали те же мок-компоненты.
 vi.mock('../../inspector/kit', async (importOriginal) => {
   const { Toggle } = await import('@capsuletech/web-ui/toggle');
   const { Input } = await import('@capsuletech/web-ui/input');
+  const { Select } = await import('@capsuletech/web-ui/select');
+  const { Textarea } = await import('@capsuletech/web-ui/textarea');
   const orig = await importOriginal<typeof import('../../inspector/kit')>();
   return {
     ...orig,
-    DEFAULT_KIT: { Input, Toggle },
+    DEFAULT_KIT: { Input, Toggle, Select, Textarea },
   };
 });
 

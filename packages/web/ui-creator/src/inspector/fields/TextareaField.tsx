@@ -9,39 +9,20 @@ interface IProps {
   kit: IInspectorKit;
 }
 
-/**
- * Многострочный ввод.
- *
- * Если кит содержит `Textarea` — используем его. Иначе нативный <textarea>.
- *
- * GAP: @capsuletech/web-ui не экспортирует Textarea-компонент.
- * Эскалировать owner-web-ui: нужен `Textarea` с теми же CVA-вариантами что у Input.
- */
+/** Многострочный ввод — использует kit.Textarea (Textarea из @capsuletech/web-ui). */
 export const TextareaField = (props: IProps) => {
   const monoClass = () => (props.field.mono ? ' font-mono' : '');
 
   return (
     <FieldShell label={props.field.label} hint={props.field.hint}>
-      {props.kit.Textarea ? (
-        <props.kit.Textarea
-          rows={props.field.rows ?? 3}
-          class={`w-full resize-y${monoClass()}`}
-          value={props.value ?? ''}
-          placeholder={props.field.placeholder}
-          disabled={props.field.disabled}
-          onInput={(e) => props.onChange(e.currentTarget.value)}
-        />
-      ) : (
-        // Нативный fallback до появления kit.Textarea
-        <textarea
-          rows={props.field.rows ?? 3}
-          class={`w-full px-2 py-1 bg-white/5 border border-white/15 rounded text-sm outline-none focus:border-blue-400/60 transition-colors disabled:opacity-40 resize-y${monoClass()}`}
-          value={props.value ?? ''}
-          placeholder={props.field.placeholder}
-          disabled={props.field.disabled}
-          onInput={(e) => props.onChange(e.currentTarget.value)}
-        />
-      )}
+      <props.kit.Textarea
+        rows={props.field.rows ?? 3}
+        class={`w-full resize-y${monoClass()}`}
+        value={props.value ?? ''}
+        placeholder={props.field.placeholder}
+        disabled={props.field.disabled}
+        onInput={(e: InputEvent & { currentTarget: HTMLTextAreaElement }) => props.onChange(e.currentTarget.value)}
+      />
     </FieldShell>
   );
 };

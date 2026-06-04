@@ -1,4 +1,4 @@
-import { createMemo, For } from 'solid-js';
+import { createMemo } from 'solid-js';
 import type { IInspectorKit } from '../kit';
 import type { INumberUnitField } from '../types';
 import { FieldShell } from './FieldShell';
@@ -38,29 +38,14 @@ export const NumberUnitField = (props: IProps) => {
           disabled={props.field.disabled || parsed().unit === 'auto'}
           onInput={onNumberInput}
         />
-        {/*
-          Единица — нативный <select> (fallback).
-          GAP: kit.Select отсутствует в @capsuletech/web-ui — эскалировать owner-web-ui.
-          После появления kit.Select заменить нативный элемент на него.
-        */}
-        {props.kit.Select ? (
-          <props.kit.Select
-            value={parsed().unit}
-            disabled={props.field.disabled}
-            onChange={onUnitChange}
-          >
-            <For each={props.field.units}>{(u) => <option value={u}>{u}</option>}</For>
-          </props.kit.Select>
-        ) : (
-          <select
-            class="px-2 py-1 bg-white/5 border border-white/15 rounded text-sm outline-none focus:border-blue-400/60 transition-colors disabled:opacity-40"
-            value={parsed().unit}
-            disabled={props.field.disabled}
-            onChange={(e) => onUnitChange(e.currentTarget.value)}
-          >
-            <For each={props.field.units}>{(u) => <option value={u}>{u}</option>}</For>
-          </select>
-        )}
+        {/* Единица — kit.Select */}
+        <props.kit.Select
+          options={props.field.units.map((u) => ({ value: u, label: u }))}
+          value={parsed().unit}
+          disabled={props.field.disabled}
+          onChange={onUnitChange}
+          class="w-20 shrink-0"
+        />
       </div>
     </FieldShell>
   );
