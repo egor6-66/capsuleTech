@@ -11,6 +11,11 @@
       "default": "./dist/index.mjs"
     },
     "./package.json": "./package.json",
+    "./icons": {
+      "types": "./dist/components/icons/index.d.ts",
+      "import": "./dist/components/icons/index.mjs",
+      "default": "./dist/components/icons/index.mjs"
+    },
     "./button": {
       "types": "./dist/components/button/index.d.ts",
       "import": "./dist/components/button/index.mjs",
@@ -346,6 +351,7 @@
   "dependencies": {
     "@corvu/resizable": "^0.2.5",
     "class-variance-authority": "^0.7.1",
+    "lucide-solid": "^1.16.0",
     "solid-motionone": "^1.0.4"
   },
   "peerDependencies": {
@@ -364,7 +370,6 @@
     "@tanstack/solid-table": "^8.21.3",
     "@testing-library/jest-dom": "^6.9.1",
     "jsdom": "~29.1.1",
-    "lucide-solid": "^1.16.0",
     "storybook": "^10",
     "storybook-solidjs-vite": "^10",
     "vite": "^8.0.13",

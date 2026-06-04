@@ -1,6 +1,7 @@
 import {
   cpSync,
   existsSync,
+  mkdirSync,
   readdirSync,
   readFileSync,
   rmSync,
@@ -69,6 +70,31 @@ const remapPrimitivesDtsPlugin = (outDir: string): Plugin => ({
         // overwriting the primitives index.d.ts already moved above.
       }
       rmSync(compositesDir, { recursive: true, force: true });
+    }
+
+    // То же самое для icons/ — мерджим dist/icons/ в dist/components/icons/.
+    const iconsDir = resolve(distDir, 'icons');
+    if (existsSync(iconsDir)) {
+      for (const entry of readdirSync(iconsDir)) {
+        const from = resolve(iconsDir, entry);
+        let isDir = false;
+        try {
+          isDir = statSync(from).isDirectory();
+        } catch {
+          continue;
+        }
+        const dest = resolve(componentsDir, 'icons', entry);
+        if (isDir) {
+          // Skip test folders — dts plugin may emit __tests__/*.d.ts which
+          // should not end up in the published dist.
+          if (entry === '__tests__') continue;
+          cpSync(from, dest, { recursive: true });
+        } else if (entry.endsWith('.d.ts')) {
+          mkdirSync(resolve(componentsDir, 'icons'), { recursive: true });
+          cpSync(from, dest);
+        }
+      }
+      rmSync(iconsDir, { recursive: true, force: true });
     }
 
     // dist/index.d.ts ссылается на ./primitives и ./composites — перенацеливаем на ./components.
@@ -168,6 +194,10 @@ for (const srcName of SRC_DIRS) {
 export default libConfig({
   entry: {
     index: 'src/index.ts',
+    // icons subpath: src/icons/index.ts → dist/components/icons/index.mjs
+    // (remapPrimitivesDtsPlugin does not touch 'icons/' because it only merges
+    // primitives/ and composites/; we emit directly under 'components/icons/').
+    'components/icons/index': 'src/icons/index.ts',
     ...componentEntries,
   },
   name: 'CapsuleUi',

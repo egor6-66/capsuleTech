@@ -114,7 +114,8 @@
         "packages/web/ui/src/primitives/*",
         "packages/web/ui/src/primitives/layout/*",
         "packages/web/ui/src/components/*",
-        "packages/web/ui/src/composites/*"
+        "packages/web/ui/src/composites/*",
+        "packages/web/ui/src/icons/*"
       ],
       "@capsuletech/cli": [
         "packages/cli/src/index.ts"
