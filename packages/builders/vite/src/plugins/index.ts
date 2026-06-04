@@ -1,5 +1,4 @@
 export { default as solidPlugin } from 'vite-plugin-solid';
-export { default as tsconfigPaths } from 'vite-tsconfig-paths';
 export { AliasesPlugin } from './aliases';
 export { CompliancePlugin } from './compliance';
 export { HMRWrappingPlugin } from './HMRWrapping';

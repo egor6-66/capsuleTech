@@ -4,7 +4,6 @@ import { resolve } from 'node:path';
 import { defineConfig, mergeConfig, type Plugin, type UserConfig } from 'vite';
 import dts from 'vite-plugin-dts';
 import solidPlugin from 'vite-plugin-solid';
-import tsconfigPaths from 'vite-tsconfig-paths';
 
 export type LibRuntime = 'browser' | 'node' | 'isomorphic';
 
@@ -74,9 +73,6 @@ const NODE_EXTERNAL: (string | RegExp)[] = [
   ...builtinModules.map((m) => `node:${m}`),
   'vite',
   /^vite\//,
-  'building.ts-plugin-solid',
-  'building.ts-plugin-dts',
-  'building.ts-tsconfig-paths',
   /^@nx\//,
   'nx',
   /^nx\//,
@@ -84,7 +80,6 @@ const NODE_EXTERNAL: (string | RegExp)[] = [
   /^@swc\//,
   /^@babel\//,
   'ts-morph',
-  '@tailwindcss/building.ts',
   'tailwindcss',
   '@tailwindcss/vite',
   /^@tailwindcss\/oxide/,
@@ -210,7 +205,6 @@ export const libConfig = (opts: IDefineLibConfigOptions): UserConfig => {
   const base: UserConfig = defineConfig({
     plugins: [
       ...(runtime !== 'node' ? [solidPlugin()] : []),
-      tsconfigPaths(),
       ...(opts.dts === false
         ? []
         : [
@@ -231,6 +225,9 @@ export const libConfig = (opts: IDefineLibConfigOptions): UserConfig => {
     resolve: {
       alias: opts.alias ?? {},
       dedupe: ['solid-js', 'solid-js/web'],
+      // Vite 8 native tsconfig paths resolution (replaces vite-tsconfig-paths plugin).
+      // Reads tsconfig.json from the package root, follows extends chain.
+      tsconfigPaths: true,
       conditions:
         runtime === 'browser'
           ? ['solid', 'browser', 'import', 'development']
@@ -252,7 +249,7 @@ export const libConfig = (opts: IDefineLibConfigOptions): UserConfig => {
         name: opts.name,
         formats: ['es'],
       },
-      rollupOptions: {
+      rolldownOptions: {
         // Заменяем массив на умную функцию-селектор
         external: rollupExternalSelector,
         output: {

@@ -21,7 +21,7 @@ type ExternalFn = (id: string, importer: string | undefined, isResolved: boolean
 
 const getExternalFn = (opts: Parameters<typeof libConfig>[0]): ExternalFn => {
   const cfg = libConfig(opts);
-  const fn = cfg.build!.rollupOptions!.external as ExternalFn;
+  const fn = cfg.build!.rolldownOptions!.external as ExternalFn;
   expect(typeof fn).toBe('function');
   return fn;
 };
@@ -140,7 +140,7 @@ describe('libConfig — build output shape', () => {
   it('emits .mjs files (es format only)', () => {
     const cfg = libConfig(baseOpts);
     expect(cfg.build?.lib).toMatchObject({ formats: ['es'] });
-    expect((cfg.build?.rollupOptions?.output as { entryFileNames?: string })?.entryFileNames).toBe(
+    expect((cfg.build?.rolldownOptions?.output as { entryFileNames?: string })?.entryFileNames).toBe(
       '[name].mjs',
     );
   });

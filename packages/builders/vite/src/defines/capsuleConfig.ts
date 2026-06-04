@@ -11,7 +11,6 @@ import {
   HMRWrappingPlugin,
   RouterPlugin,
   solidPlugin,
-  tsconfigPaths,
 } from '../plugins';
 import { DEFINE_FACTORIES, HOOK_IMPORTS, WRAPPER_NAMES } from '../plugins/constants';
 import { appConfig } from './appConfig';
@@ -87,7 +86,7 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
       // (иначе CI-step `capsule build` зависает после первого цикла и не
       // освобождает workflow).
       ...(isDev ? { watch: {} } : {}),
-      rollupOptions: {
+      rolldownOptions: {
         input: join(capsuleRoot, 'index.html'),
         // Generic vendor-split for ALL capsule apps (no app-specific paths).
         // Goals:
@@ -209,9 +208,6 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
         dts: './@types/capsule-imports.d.ts',
       }),
       HMRWrappingPlugin(),
-      tsconfigPaths({
-        projects: [join(root, 'tsconfig.json'), join(workspaceRoot, 'tsconfig.base.json')],
-      }),
       EnsureScaffoldPlugin(capsuleRoot),
       CapsuleRegistryPlugin({
         capsuleRoot,
@@ -248,6 +244,12 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
       // Для внешних воркспейсов это ломает резолв `@capsuletech/web-core/providers`
       // и т.п. App-сервер всегда читает собранный `dist/*.mjs` через `import`.
       conditions: ['solid', 'browser', 'import'],
+      // Нативная поддержка Vite 8: читает tsconfig.json, следует extends-цепочке
+      // (app tsconfig.json → tsconfig.base.json), резолвит @capsuletech/* пути.
+      // Заменяет vite-tsconfig-paths плагин (убран из plugins[] выше).
+      // Layer-алиасы (@widgets/*, @entities/*, ...) по-прежнему через AliasesPlugin
+      // → resolve.alias (они в paths.config.json, не в tsconfig.base.json).
+      tsconfigPaths: true,
     },
     server: {
       port: config.devServerPort || 3000,

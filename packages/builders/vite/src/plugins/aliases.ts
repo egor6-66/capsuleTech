@@ -18,7 +18,7 @@ interface IProps {
  * Что делает на старте Vite:
  *   1. Регистрирует Vite `resolve.alias` для всех ключей из `paths.config.json`
  *      (с поддержкой `/*` шаблонов через regex). `@capsuletech/*` уже резолвится
- *      внешним `vite-tsconfig-paths`, дублировать не нужно.
+ *      нативным `resolve.tsconfigPaths: true` (Vite 8), дублировать не нужно.
  *   2. Пишет `<app>/.capsule/tsconfig.paths.json` со слитыми paths
  *      (base'овые + локальные, последние пере-проецированы относительно
  *      workspace-root). Apps'овый `tsconfig.json` делает
@@ -56,7 +56,7 @@ export const AliasesPlugin = ({ appRoot, workspaceRoot }: IProps): Plugin => ({
     await writeFile(outPath, `${JSON.stringify(tsPathsOutput, null, 2)}\n`, 'utf-8');
 
     // (2) Vite: build resolve.alias entries from local-only paths
-    //     (@capsuletech/* are handled by vite-tsconfig-paths plugin)
+    //     (@capsuletech/* are handled by native resolve.tsconfigPaths: true)
     const viteAliases = buildViteAliases(localRaw, appRoot);
     return {
       resolve: {

@@ -27,7 +27,6 @@ export default libConfig({
     /^@babel\//,
     /^babel-/,
     /babel-plugin/,
-    /^solid-js/,
     /unplugin-auto-import/,
     /^@nx\/vite/,
     '@babel/helper-module-imports',
