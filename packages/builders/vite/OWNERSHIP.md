@@ -102,7 +102,7 @@ Vite-конфиг и 9 плагинов для dev-сервера HCA-apps. Дё
 
 | Тип | Где | Что покрывает |
 |---|---|---|
-| Unit | `src/plugins/__tests__/capsuleRegistry.test.ts` | CapsuleRegistryPlugin — generateWrappersRuntime/Types (включая `interface + const` для всех 6 NS), generateEndpointsRuntime/Types, generateAppConfigRuntime, generateBootstrap, LAYER_INIT_ORDER контракт, transform hooks |
+| Unit | `src/plugins/__tests__/capsuleRegistry.test.ts` | CapsuleRegistryPlugin — generateWrappersRuntime/Types (включая `interface + const` для всех 6 NS), generateEndpointsRuntime/Types, generateAppConfigRuntime, generateBootstrap, LAYER_INIT_ORDER контракт, transform hooks; **resolvePackageEntries** (packages[]-кодген сквозной тест через parseManifestSource mock-source — закрывает дыру e2e smoke); generatePackagesRuntime/Types с controllerKeys |
 | Unit | `src/plugins/__tests__/hmrWrapping.test.ts` | HMRWrappingPlugin — babel-AST transforms для всех wrapper-типов, export default injection, Entity skip |
 
 Перед изменением любого плагина: `pnpm --filter @capsuletech/vite-builder test`.

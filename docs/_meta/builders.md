@@ -107,9 +107,66 @@ biome-config → ничего (zero-deps, чисто config-файл)
 
 **LAYER_INIT_ORDER** — единственная точка контроля порядка загрузки. Добавляешь новый слой → добавляешь запись в `LAYER_INIT_ORDER` в `capsuleRegistry.ts` + пишешь sub-generator. Порядок в `bootstrap.tsx` обновится автоматически.
 
-## Известные грабли
+## Rolldown — статус Ф1 (2026-06-04)
 
-### 🔴 Стабильные
+### Механизм включения
+
+В **Vite 8** Rolldown является **бандлером по умолчанию для `build`** — Rollup полностью заменён без каких-либо флагов. Подтверждение: `rolldown` прямая dep Vite 8 (`"rolldown": "1.0.1"` в package.json vite), в выводе build присутствует `dist/assets/rolldown-runtime-*.js` и `[PLUGIN_TIMINGS]` из Rolldown CLI.
+
+Для dev-сервера в Vite 8 также доступен экспериментальный **Rolldown-bundled dev server**: `experimental.bundledDev: true` в Vite config (`configDefaults.experimental.bundledDev = false`). Создаёт `FullBundleDevEnvironment` вместо transform-on-demand. Текущий статус: **не включён** (оставлен в default=false).
+
+Никакого внешнего пакета `rolldown-vite` устанавливать **не нужно** — Rolldown встроен в Vite 8.
+
+### Ф1 прогон — результаты (2026-06-04)
+
+**Build:**
+
+| App | Модулей | Время | Rolldown runtime chunk | Статус |
+|---|---|---|---|---|
+| ewc (production) | 3034 | 5.71s | rolldown-runtime-D7Y0JD-f.js 0.67kB | ✅ OK |
+| ui-creator (production) | 3067 | 6.11s | rolldown-runtime-D7Y0JD-f.js 0.67kB | ✅ OK |
+| vite-builder self-build | 408 | 2.06s | — (SSR/lib mode) | ✅ OK |
+
+**Dev server (experimental.bundledDev: true):**
+
+Тест через programmatic createServer с capsuleConfig plugins + `experimental.bundledDev: true`:
+- `FullBundleDevEnvironment` создаётся корректно
+- Все 14 плагинов проходят config-хук без ошибок
+- RouterPlugin, EnsureScaffoldPlugin, CapsuleRegistryPlugin работают
+- `@babel/traverse` CJS-interop не затронут (babel runs в transform hooks, не в rolldown pipeline)
+- Статус: **виабелен**, но НЕ включён пока (не production-ready в Vite 8.0.x)
+
+**E2E smoke:** `pnpm test:e2e:cli` — все шаги прошли (verdaccio → release-local → create-app → dev + curl).
+
+### Rolldown-специфичные наблюдения
+
+| Компонент | Статус | Детали |
+|---|---|---|
+| `TanStackRouterVite` | ✅ OK | Работает как Rollup-compatible plugin |
+| `vite-plugin-solid` + `solid-refresh` | ✅ OK | transform-hooks совместимы |
+| `unplugin-auto-import` | ✅ OK | No issues |
+| `@tailwindcss/vite` | ✅ OK с warning | `[lightningcss minify] Unknown at rule: @theme` — известный косметический warning Tailwind v4 |
+| `HMRWrappingPlugin` | ✅ OK | babel-AST transform в Vite plugin hook — совместим |
+| `CapsuleRegistryPlugin` | ✅ OK | enforce:'pre' transform hook совместим |
+| `CompliancePlugin` | ✅ OK | Показывает 12-14% plugin time в PLUGIN_TIMINGS |
+| `AliasesPlugin` | ✅ OK | resolve.alias hook совместим |
+| `RouterPlugin` | ✅ OK | TanStackRouterVite wrapper работает |
+| `@babel/traverse` CJS-interop | ✅ OK | `_traverse.default ?? _traverse` pattern продолжает работать |
+| `vite-tsconfig-paths` | ⚠️ Deprecated | Vite 8 выдаёт warn: use `resolve.tsconfigPaths: true` вместо плагина. Занимает 40-42% plugin-time. |
+| `optimizeDeps.exclude` | ✅ Актуален | Для `@capsuletech/web-*` пакетов по-прежнему нужен в стандартном dev-режиме |
+| `resolve.conditions` | ✅ OK | `['solid', 'browser', 'import']` работает |
+| `manualChunks` (rollupOptions) | ✅ OK | Rolldown принимает `rolldownOptions` (alias к `rollupOptions`), предупреждает о deprecated rollupOptions |
+
+### Что схлопывается в Ф2
+
+**`vite-tsconfig-paths` → `resolve.tsconfigPaths: true`** (нативный Vite 8):
+- Экономия 40-42% plugin-time по данным `[PLUGIN_TIMINGS]`
+- App tsconfig.json уже `extends tsconfig.base.json` → нативный find-up подхватит полную цепочку
+- Риск: root точка — `.capsule/` (нет своего tsconfig), find-up пойдёт в `apps/<app>/tsconfig.json` — OK
+- Риск 2: `.capsule/tsconfig.paths.json` генерируется `AliasesPlugin` — нативный tsconfigPaths читает extends-chain, включая `tsconfig.paths.json`. Нужно проверить timing.
+- **Не откатываем пока** — требует отдельного тестирования в Ф2
+
+### 🔴 Стабильные грабли
 
 1. **biome-config — config-only пакет.** Нет `src/`/`dist/`. `package.json`: `files: ["biome.json"]` + `exports: { "./biome.json": "./biome.json" }`. Тарбол содержит `biome.json`, внешний consumer пишет `"extends": ["@capsuletech/biome-config/biome.json"]`. `dev:builders` в root исключает пакет (`--filter "!@capsuletech/biome-config"`), потому что у него нет `build`/`dev` — это нормально, не баг.
 
