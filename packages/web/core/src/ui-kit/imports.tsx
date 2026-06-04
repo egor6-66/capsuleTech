@@ -100,6 +100,17 @@ export const Tooltip = Object.assign(TooltipBase, {
   Arrow: createLazy(() => import('@capsuletech/web-ui/tooltip'), 'TooltipArrow'),
 });
 
+// Select — kobalte-heavy, compound (Trigger/Content/Value); data-driven via options[]
+const SelectBase = createLazy(() => import('@capsuletech/web-ui/select'), 'Select');
+export const Select = Object.assign(SelectBase, {
+  Trigger: createLazy(() => import('@capsuletech/web-ui/select'), 'SelectTrigger'),
+  Content: createLazy(() => import('@capsuletech/web-ui/select'), 'SelectContent'),
+  Value: createLazy(() => import('@capsuletech/web-ui/select'), 'SelectValue'),
+});
+
+// Textarea — multiline text input, mirrors Input in styling conventions
+export const Textarea = createLazy(() => import('@capsuletech/web-ui/textarea'), 'Textarea');
+
 // Switcher widgets — tiny but pull web-style hooks; header-only, not critical path
 export const DarkModeToggle = createLazy(
   () => import('@capsuletech/web-ui/darkModeToggle'),
