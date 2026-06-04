@@ -1405,3 +1405,50 @@ describe('resolvePackageEntries — { use, as } override form', () => {
     expect(runtime).toContain('Object.assign(globalThis, { MyMap });');
   });
 });
+
+// ---------------------------------------------------------------------------
+// CapsuleRegistryPlugin.config — alias registration (ADR-034 dev-server fix)
+// ---------------------------------------------------------------------------
+
+describe("CapsuleRegistryPlugin.config — '@capsule/registry' alias", () => {
+  it('config() hook returns resolve.alias with @capsule/registry pointing to registry/index.ts', () => {
+    const plugin = makePlugin() as Plugin & { config: () => { resolve: { alias: Record<string, string> } } };
+    const result = plugin.config();
+    expect(result).toBeDefined();
+    expect(result.resolve).toBeDefined();
+    expect(result.resolve.alias).toBeDefined();
+    const alias = result.resolve.alias;
+    expect(alias['@capsule/registry']).toBe(resolve(CAPSULE_ROOT, 'registry', 'index.ts'));
+  });
+
+  it('alias path ends with .capsule/registry/index.ts', () => {
+    const plugin = makePlugin() as Plugin & { config: () => { resolve: { alias: Record<string, string> } } };
+    const result = plugin.config();
+    const aliasPath = result.resolve.alias['@capsule/registry'];
+    expect(aliasPath.replace(/\\/g, '/')).toContain('.capsule/registry/index.ts');
+  });
+
+  it('different capsuleRoot produces different alias path', () => {
+    const plugin1 = CapsuleRegistryPlugin({
+      capsuleRoot: resolve('/project/apps/app1/.capsule'),
+      watchDir: WATCH_DIR,
+      appConfigPath: APP_CONFIG_PATH,
+    }) as Plugin & { config: () => { resolve: { alias: Record<string, string> } } };
+    const plugin2 = CapsuleRegistryPlugin({
+      capsuleRoot: resolve('/project/apps/app2/.capsule'),
+      watchDir: WATCH_DIR,
+      appConfigPath: APP_CONFIG_PATH,
+    }) as Plugin & { config: () => { resolve: { alias: Record<string, string> } } };
+
+    const path1 = plugin1.config().resolve.alias['@capsule/registry'];
+    const path2 = plugin2.config().resolve.alias['@capsule/registry'];
+    expect(path1).not.toBe(path2);
+    expect(path1.replace(/\\/g, '/')).toContain('app1');
+    expect(path2.replace(/\\/g, '/')).toContain('app2');
+  });
+
+  it('plugin does NOT have a configResolved hook (alias must not be double-registered)', () => {
+    const plugin = makePlugin() as Plugin;
+    expect(plugin).not.toHaveProperty('configResolved');
+  });
+});

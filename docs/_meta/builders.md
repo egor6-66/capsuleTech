@@ -48,7 +48,7 @@ biome-config → ничего (zero-deps, чисто config-файл)
 | `packages/builders/vite/src/actions.ts` | `createDevCapsuleServer / buildCapsuleApp` — обёртки над Vite, дёргаются из CLI |
 | `packages/builders/vite/src/plugins/constants.ts` | **SSOT** для `WRAPPER_NAMES`, `DEFINE_FACTORIES`, `LAYER_TO_NAMESPACE` |
 | `packages/builders/vite/src/plugins/HMRWrapping.ts` | babel-AST pre-transform: `const X = Page(...)` → `(props) => Page(...)(props)` + `export default` |
-| `packages/builders/vite/src/plugins/capsuleRegistry.ts` | **Unified codegen orchestrator.** Владеет ВСЕМ что генерируется в `.capsule/`. `LAYER_INIT_ORDER` — единственная точка контроля порядка инициализации. Stateless sub-generators: `generateWrappersRuntime`, `generateEndpointsRuntime`, `generateAppConfigRuntime`, `generateBootstrap`. Единый watcher на `src/**`. Заменяет ExportGeneratorPlugin + EndpointsRegistryPlugin + AppConfigPlugin (codegen). Генерирует `.capsule/bootstrap.tsx` детерминированно (не статический template). |
+| `packages/builders/vite/src/plugins/capsuleRegistry.ts` | **Unified codegen orchestrator.** Владеет ВСЕМ что генерируется в `.capsule/`. `LAYER_INIT_ORDER` — единственная точка контроля порядка инициализации. Stateless sub-generators: `generateWrappersRuntime`, `generateEndpointsRuntime`, `generateAppConfigRuntime`, `generateBootstrap`. Единый watcher на `src/**`. Заменяет ExportGeneratorPlugin + EndpointsRegistryPlugin + AppConfigPlugin (codegen). Генерирует `.capsule/bootstrap.tsx` детерминированно (не статический template). Alias `@capsule/registry` регистрируется через **`config()`-хук** (не `configResolved`!) — только так alias попадает и в dev-resolver, и в build (см. ADR-034 dev fix). |
 | `packages/builders/vite/src/plugins/__tests__/capsuleRegistry.test.ts` | Тесты sub-generators + LAYER_INIT_ORDER контракт + transform hooks + ordering regression |
 | `packages/builders/vite/src/plugins/router/index.ts` | RouterPlugin: ensureRoot + page-mirror generator + TanStackRouterVite |
 | `packages/builders/vite/src/plugins/router/template/__root.tsx.template` | шаблон корневого route |
@@ -167,6 +167,8 @@ biome-config → ничего (zero-deps, чисто config-файл)
 - **Не откатываем пока** — требует отдельного тестирования в Ф2
 
 ### 🔴 Стабильные грабли
+
+0. **[CLOSED 2026-06-05] `@capsule/registry` alias — `configResolved` не виден dev-resolver'у.** ADR-034 phase 2 регистрировал alias мутацией `config.resolve.alias.push(...)` в `configResolved`. Rolldown подхватывает post-resolution мутацию на build — отсюда `vite build` работал. Dev-server строит свой resolver из конфига ДО configResolved → alias отсутствует → `Failed to resolve import "@capsule/registry"`. Фикс: alias регистрируется через **`config()` hook** (return `{ resolve: { alias: { '@capsule/registry': path } } }`). Тест: `CapsuleRegistryPlugin.config hook` в `capsuleRegistry.test.ts`. Проверено через `resolveConfig` (11 alias entries включая наш).
 
 1. **biome-config — config-only пакет.** Нет `src/`/`dist/`. `package.json`: `files: ["biome.json"]` + `exports: { "./biome.json": "./biome.json" }`. Тарбол содержит `biome.json`, внешний consumer пишет `"extends": ["@capsuletech/biome-config/biome.json"]`. `dev:builders` в root исключает пакет (`--filter "!@capsuletech/biome-config"`), потому что у него нет `build`/`dev` — это нормально, не баг.
 

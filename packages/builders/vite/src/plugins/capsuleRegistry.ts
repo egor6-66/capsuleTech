@@ -27,7 +27,7 @@ import { parse } from '@babel/parser';
 import _traverse from '@babel/traverse';
 import { names } from '@nx/devkit';
 import { createJiti } from 'jiti';
-import type { Plugin, ResolvedConfig, ViteDevServer } from 'vite';
+import type { Plugin, UserConfig, ViteDevServer } from 'vite';
 import { walkFiles, watcherManager } from '../utils';
 import { DEFINE_FACTORIES, LAYER_TO_NAMESPACE } from './constants';
 
@@ -1044,18 +1044,23 @@ export const CapsuleRegistryPlugin = ({
     // enforce:'pre' so the defineEndpoint injection runs before solid-plugin and AutoImport.
     enforce: 'pre',
 
-    // --- ADR-034: register '@capsule/registry' alias in configResolved hook ---
-    // This is app-specific (capsuleRoot is per-app), so it must NOT be hardcoded
-    // in capsuleConfig.ts or tsconfig.base.json. The plugin owns this alias.
-    configResolved(config: ResolvedConfig) {
+    // --- ADR-034: register '@capsule/registry' alias via config() hook ---
+    // Using config() (not configResolved) so the alias is applied before Vite
+    // builds its dev-resolver. configResolved post-mutation is picked up by
+    // Rolldown on build but is NOT seen by the dev-server resolver, causing
+    // "Failed to resolve import '@capsule/registry'" in dev.
+    //
+    // capsuleRoot is known at plugin-factory time (closure), so no late binding
+    // is needed — the path can be computed eagerly here.
+    config(): UserConfig {
       const registryIndexPath = resolve(capsuleRoot, 'registry', 'index.ts');
-      // Vite's resolve.alias is an array at this point (normalized by Vite internals).
-      // We mutate it in-place — same pattern used by other framework plugins.
-      const aliasArray = config.resolve.alias as Array<{ find: string | RegExp; replacement: string }>;
-      // Avoid duplicating if already registered (e.g. double-init in tests).
-      if (!aliasArray.some((a) => a.find === '@capsule/registry')) {
-        aliasArray.push({ find: '@capsule/registry', replacement: registryIndexPath });
-      }
+      return {
+        resolve: {
+          alias: {
+            '@capsule/registry': registryIndexPath,
+          },
+        },
+      };
     },
 
     // --- defineAppConfig identity-unwrap transform ---
