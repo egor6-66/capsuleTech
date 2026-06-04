@@ -5,8 +5,8 @@
  * бокса каждой ноды (`position:absolute; inset:0`). Размер = размер ноды из CSS,
  * без замеров и ResizeObserver.
  *
- * Читает состояние из `useCtx().store.ctx` (typed как IEditorCtx). На клик
- * эмитит `onSelect` через `useEmit` — никакого прямого вызова store'а.
+ * Читает состояние через `useEditor()` (без кастов).
+ * На клик эмитит `onSelect` через `useEmit` — никакого прямого вызова store'а.
  *
  * Портировано из `apps/ui-creator/src/widgets/canvas.tsx:CanvasOverlay`.
  * Исходник имел прямые вызовы `editor.setSelectedId()` через `useEditor()` —
@@ -23,7 +23,6 @@ import { useEmit } from '@capsuletech/web-core';
 import type { IEditOverlayProps } from '@capsuletech/web-renderer';
 import { Show } from 'solid-js';
 import { canInto } from '../state/dnd';
-import type { IEditorCtx } from './EditorController';
 import { useEditor } from './useEditor';
 
 /** Полупрозрачная заливка из цвета (hex, CSS-переменная, etc.). */
@@ -59,7 +58,7 @@ const isRowLayout = (node: IEditOverlayProps['node']): boolean => {
  * `<Renderer editOverlay={EditorOverlay} />`.
  *
  * Принимает `{ nodeId, node }` по контракту `IEditOverlayProps` (ADR 031).
- * Читает `useCtx().store.ctx` (typed IEditorCtx).
+ * Читает editor-state через `useEditor()` (без кастов).
  * Эмитит `onSelect` через `useEmit`.
  */
 export const EditorOverlay = (p: IEditOverlayProps) => {
@@ -67,18 +66,13 @@ export const EditorOverlay = (p: IEditOverlayProps) => {
 
   // ControllerContext доступен, т.к. EditorOverlay монтируется рендерером
   // в том же owner-tree, где уже живёт <Controllers.Editor> (app-Widget).
-  const ctx = useEditor();
+  const ed = useEditor();
   const emit = useEmit();
 
-  // store.ctx.data содержит IEditorCtx (XState кладёт schema.context в context.data).
-  // useEditor() типизирован через createUseCtx<IEditorCtx>() — ctx.store.ctx.data: any,
-  // каст to IEditorCtx безопасен (any → конкретный тип, без TS2352).
-  const editorCtx = () => ctx.store.ctx.data as IEditorCtx;
-
   /** Цвет ноды: метка доминирует над primary. */
-  const color = (): string => editorCtx().marks[nodeId] ?? 'var(--primary)';
-  const marked = (): boolean => editorCtx().marks[nodeId] != null;
-  const hasDrag = (): boolean => editorCtx().dragSpec != null;
+  const color = (): string => ed.marks[nodeId] ?? 'var(--primary)';
+  const marked = (): boolean => ed.marks[nodeId] != null;
+  const hasDrag = (): boolean => ed.dragSpec != null;
 
   /**
    * Глубина узла в дереве → z-index оверлея.
@@ -86,7 +80,7 @@ export const EditorOverlay = (p: IEditOverlayProps) => {
    * → корректный innermost-select + компоненты под ним инертны.
    */
   const depth = (): number => {
-    const t = editorCtx().tree;
+    const t = ed.tree;
     let d = 0;
     let cur: string | null = node.parentId;
     while (cur != null) {
@@ -102,28 +96,28 @@ export const EditorOverlay = (p: IEditOverlayProps) => {
    */
   const ringStyle = (): string | undefined => {
     const c = color();
-    const s = editorCtx().dragSpec;
-    const t = editorCtx().tree;
+    const s = ed.dragSpec;
+    const t = ed.tree;
     if (s) {
-      if (editorCtx().dropTargetId === nodeId) return `inset 0 0 0 2px ${c}`;
+      if (ed.dropTargetId === nodeId) return `inset 0 0 0 2px ${c}`;
       if (canInto(t, s, nodeId)) return `inset 0 0 0 1px ${c}`;
       if (marked()) return `inset 0 0 0 1px ${c}`;
       return undefined;
     }
-    if (editorCtx().selectedId === nodeId) return `inset 0 0 0 2px ${c}`;
+    if (ed.selectedId === nodeId) return `inset 0 0 0 2px ${c}`;
     if (marked()) return `inset 0 0 0 1px ${c}`;
     return undefined;
   };
 
   const bgStyle = (): string | undefined => {
     const c = color();
-    const s = editorCtx().dragSpec;
+    const s = ed.dragSpec;
     if (s) {
-      if (editorCtx().dropTargetId === nodeId) return fill(c, 12);
+      if (ed.dropTargetId === nodeId) return fill(c, 12);
       if (marked()) return fill(c, 6);
       return undefined;
     }
-    if (editorCtx().selectedId === nodeId) return fill(c, 14);
+    if (ed.selectedId === nodeId) return fill(c, 14);
     if (marked()) return fill(c, 6);
     return undefined;
   };
@@ -134,7 +128,7 @@ export const EditorOverlay = (p: IEditOverlayProps) => {
    *  - intent.parentId === nodeId && beforeId === null → полоса на хвостовой кромке
    */
   const insertionSide = (): 'leading' | 'trailing' | null => {
-    const it = editorCtx().intent;
+    const it = ed.intent;
     if (!it) return null;
     if (it.beforeId === nodeId) return 'leading';
     if (it.parentId === nodeId && it.beforeId === null) return 'trailing';
@@ -142,9 +136,9 @@ export const EditorOverlay = (p: IEditOverlayProps) => {
   };
 
   const insertionIsRow = (): boolean => {
-    const it = editorCtx().intent;
+    const it = ed.intent;
     if (!it) return false;
-    const parentNode = editorCtx().tree.nodes[it.parentId];
+    const parentNode = ed.tree.nodes[it.parentId];
     return parentNode ? isRowLayout(parentNode) : false;
   };
 

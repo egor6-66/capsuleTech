@@ -8,7 +8,9 @@
  *
  * Вите-плагин (CapsuleRegistryPlugin) читает этот файл через jiti и генерирует
  * глобалы:
- *   - `Editor.*`          → components (EditorOverlay)
+ *   - `Editor.Overlay`   → components (EditorOverlay)
+ *   - `Editor.Provider`  → components (EditorProvider)
+ *   - `Editor.Canvas`    → components (EditorCanvas)
  *   - `Controllers.Editor` → controllers (EditorController)
  *
  * Имя 'Editor' (не 'UICreator') — отражает семантику use-case: визуальный
@@ -18,11 +20,15 @@
 import { defineCapsuleModule } from '@capsuletech/web-core/module';
 import EditorController from './controllers/EditorController';
 import { EditorOverlay } from './controllers/EditorOverlay';
+import { EditorProvider } from './controllers/EditorProvider';
+import { EditorCanvas } from './controllers/EditorCanvas';
 
 export default defineCapsuleModule({
   name: 'Editor',
   components: {
     Overlay: EditorOverlay,
+    Provider: EditorProvider,
+    Canvas: EditorCanvas,
   },
   controllers: {
     Editor: EditorController,
