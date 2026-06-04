@@ -10,7 +10,10 @@
  *  6. Zone-резолв canBeside/canInto через mock state — boxDrop.accepts.
  *
  * Все внешние зависимости мокируются.
- * EditorTree использует Dropdown из @capsuletech/web-ui/dropdown (chrome-кит).
+ * EditorTree использует:
+ *  - Dropdown из @capsuletech/web-ui/dropdown (chrome-кит, MarkPicker)
+ *  - Button + Flex из @capsuletech/web-ui (kit-layout)
+ *  - ChevronRight + X из @capsuletech/web-ui/icons (lucide)
  * Контент-кит (useEditorKit) в EditorTree не используется.
  */
 
@@ -95,8 +98,7 @@ vi.mock('../useEditor', () => ({
   },
 }));
 
-// Chrome-кит: Dropdown из @capsuletech/web-ui/dropdown (прямой импорт в EditorTree).
-// EditorTree НЕ использует useEditorKit — контент-кит здесь не нужен.
+// Kit: Dropdown из @capsuletech/web-ui/dropdown (MarkPicker).
 vi.mock('@capsuletech/web-ui/dropdown', () => {
   const DropdownItem = (props: { children?: unknown; onSelect?: () => void; class?: string; style?: unknown }) => (
     <button
@@ -130,7 +132,45 @@ vi.mock('@capsuletech/web-ui/dropdown', () => {
   return { Dropdown };
 });
 
-// Импорт ПОСЛЕ mock'а
+// Kit-layout: Button из @capsuletech/web-ui/button.
+vi.mock('@capsuletech/web-ui/button', () => ({
+  Button: (props: {
+    children?: unknown;
+    onClick?: (e: MouseEvent) => void;
+    'data-dnd-cancel'?: string;
+    'aria-label'?: string;
+    class?: string;
+    classList?: Record<string, boolean>;
+    variant?: string;
+    size?: string;
+    ref?: unknown;
+  }) => (
+    <button
+      type="button"
+      data-dnd-cancel={props['data-dnd-cancel'] !== undefined ? '' : undefined}
+      aria-label={props['aria-label']}
+      class={props.class}
+      onClick={props.onClick}
+    >
+      {props.children as never}
+    </button>
+  ),
+}));
+
+// Kit-layout: Flex из @capsuletech/web-ui/flex.
+vi.mock('@capsuletech/web-ui/flex', () => ({
+  Flex: (props: { children?: unknown; class?: string; orientation?: string; style?: unknown }) => (
+    <div class={props.class} style={props.style as never}>{props.children as never}</div>
+  ),
+}));
+
+// Иконки из @capsuletech/web-ui/icons (lucide).
+vi.mock('@capsuletech/web-ui/icons', () => ({
+  ChevronRight: () => <svg data-testid="icon-chevron" />,
+  X: () => <svg data-testid="icon-x" />,
+}));
+
+// Импорт ПОСЛЕ mock'ов
 const { EditorTree } = await import('../EditorTree');
 
 const makeEditorCtx = (overrides: Partial<IEditorCtx> = {}): IEditorCtx => ({
@@ -158,8 +198,6 @@ beforeEach(() => {
   _mockPointer = vi.fn(() => null);
   _droppables = [];
   _draggables = [];
-  // _mockKit удалён: EditorTree не использует useEditorKit (chrome-Dropdown мокируется
-  // через @capsuletech/web-ui/dropdown напрямую).
 });
 
 afterEach(() => {
@@ -172,16 +210,13 @@ describe('EditorTree — render корневого узла', () => {
   it('рендерит root-строку', () => {
     const ctx = makeEditorCtx();
     const container = mount(ctx);
-    // Должен быть хотя бы один div с контентом (root-строка)
     expect(container.querySelectorAll('div').length).toBeGreaterThan(0);
   });
 
   it('показывает label из fallback когда manifest неизвестен', () => {
     const ctx = makeEditorCtx();
-    // Дерево с root типа 'ui.Layout.Grid' — manifest может отсутствовать в тесте
-    // fallback: type.split('.').pop() = 'Grid'
     const container = mount(ctx);
-    // Root — контейнер, текст его label видим
+    // fallback: type.split('.').pop() = 'Grid'
     expect(container.textContent).toMatch(/Grid|Layout/);
   });
 
@@ -206,7 +241,6 @@ describe('EditorTree — рендер иерархии', () => {
     const { tree } = addNode(base, { type: 'ui.Button', parentId: 'root' });
     const ctx = makeEditorCtx({ tree });
     const container = mount(ctx);
-    // 'Button' или 'ui.Button' должен быть в тексте (label fallback)
     expect(container.textContent).toMatch(/Button|ui\.Button/);
   });
 
@@ -216,7 +250,6 @@ describe('EditorTree — рендер иерархии', () => {
     const { tree } = addNode(r1.tree, { type: 'ui.Button', parentId: 'root' });
     const ctx = makeEditorCtx({ tree });
     const container = mount(ctx);
-    // Оба узла Button в тексте
     const textContent = container.textContent ?? '';
     const count = (textContent.match(/Button/g) ?? []).length;
     expect(count).toBeGreaterThanOrEqual(2);
@@ -227,8 +260,7 @@ describe('EditorTree — emit onSelect', () => {
   it('клик на строку эмитит onSelect с nodeId', () => {
     const ctx = makeEditorCtx();
     const container = mount(ctx);
-    // Header div содержит onClick → emit onSelect
-    // Ищем div с cursor-grab классом (row header)
+    // Header div содержит onClick → emit onSelect (cursor-grab)
     const header = container.querySelector('[class*="cursor-grab"]') as HTMLElement | null;
     expect(header).not.toBeNull();
     header?.click();
@@ -251,9 +283,7 @@ describe('EditorTree — emit onMark', () => {
   it('клик на dropdown-item эмитит onMark с цветом', () => {
     const ctx = makeEditorCtx();
     const container = mount(ctx);
-    // Dropdown.Item для первого MARK_COLOR
     const items = container.querySelectorAll('[data-testid="dropdown-item"]');
-    // Первый item — первый MARK_COLOR (#ef4444)
     if (items.length > 0) {
       (items[0] as HTMLElement).click();
       expect(_mockEmit).toHaveBeenCalledWith('onMark', {
@@ -261,13 +291,11 @@ describe('EditorTree — emit onMark', () => {
       });
     } else {
       // Dropdown рендерится только для isContainer() узлов.
-      // root = ui.Layout.Grid — isContainer = acceptsChildren.
-      // Если Dropdown не рендерится — тест пропускаем с пояснением.
-      expect(true).toBe(true); // контейнер может не иметь Dropdown без manifest
+      expect(true).toBe(true);
     }
   });
 
-  it('клик на «×» (последний item) эмитит onMark с color=null', () => {
+  it('клик на последний dropdown-item (X-сброс) эмитит onMark с color=null', () => {
     const ctx = makeEditorCtx();
     const container = mount(ctx);
     const items = container.querySelectorAll('[data-testid="dropdown-item"]');
@@ -288,15 +316,13 @@ describe('EditorTree — toggle collapse', () => {
     const ctx = makeEditorCtx({ tree });
     const container = mount(ctx);
 
-    // До toggle — Button виден
     expect(container.textContent).toMatch(/Button/);
 
-    // Чеврон — button[data-dnd-cancel]
+    // Чеврон — Button[data-dnd-cancel] (kit Button рендерится как <button data-dnd-cancel>)
     const chevron = container.querySelector('button[data-dnd-cancel]') as HTMLElement | null;
     expect(chevron).not.toBeNull();
     chevron?.click();
 
-    // После toggle — Button скрыт (Show блок)
     expect(container.textContent).not.toMatch(/Button/);
   });
 
@@ -313,13 +339,30 @@ describe('EditorTree — toggle collapse', () => {
   });
 });
 
+describe('EditorTree — icons kit', () => {
+  it('ChevronRight иконка рендерится для контейнера с детьми', () => {
+    const base = createEmptyTree('ui.Layout.Grid');
+    const { tree } = addNode(base, { type: 'ui.Button', parentId: 'root' });
+    const ctx = makeEditorCtx({ tree });
+    const container = mount(ctx);
+    // ChevronRight мок рендерит <svg data-testid="icon-chevron">
+    expect(container.querySelector('[data-testid="icon-chevron"]')).not.toBeNull();
+  });
+
+  it('X иконка рендерится в MarkPicker', () => {
+    const ctx = makeEditorCtx();
+    const container = mount(ctx);
+    // X мок рендерит <svg data-testid="icon-x"> (внутри последнего Dropdown.Item)
+    expect(container.querySelector('[data-testid="icon-x"]')).not.toBeNull();
+  });
+});
+
 describe('EditorTree — DnD zone резолв', () => {
   it('createDraggable вызывается для каждой строки (per-row uid)', () => {
     const base = createEmptyTree('ui.Layout.Grid');
     const { tree } = addNode(base, { type: 'ui.Button', parentId: 'root' });
     const ctx = makeEditorCtx({ tree });
     mount(ctx);
-    // Минимум 2 ноды → 2 draggable
     expect(_draggables.length).toBeGreaterThanOrEqual(2);
   });
 
@@ -328,7 +371,6 @@ describe('EditorTree — DnD zone резолв', () => {
     const { tree } = addNode(base, { type: 'ui.Button', parentId: 'root' });
     const ctx = makeEditorCtx({ tree });
     mount(ctx);
-    // Root — boxDrop + leafDrop (если не container: только leaf); Button — leafDrop
     expect(_droppables.length).toBeGreaterThanOrEqual(2);
   });
 
@@ -347,10 +389,7 @@ describe('EditorTree — DnD zone резолв', () => {
     mount(ctx);
     const boxDrop = _droppables.find((d) => d.id.startsWith('tree-box:'));
     if (boxDrop?.accepts) {
-      // source='palette', type='ui.Button' → DragSpec { kind: 'add', type: 'ui.Button' }
-      // canInto root для ui.Button — зависит от манифестов; dragSpec должен распознаться
       const data = { source: 'palette', type: 'ui.Button' };
-      // Тест только проверяет что accepts не бросает ошибку и возвращает boolean
       const result = boxDrop.accepts(data);
       expect(typeof result).toBe('boolean');
     }
