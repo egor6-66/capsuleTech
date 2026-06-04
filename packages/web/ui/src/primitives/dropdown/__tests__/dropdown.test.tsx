@@ -21,6 +21,7 @@
 /* @vitest-environment jsdom */
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Button } from '../../button';
 import { Dropdown } from '../dropdown';
 
 // --------------------------------------------------------------------------
@@ -310,6 +311,50 @@ describe('Dropdown', () => {
       await waitFor(() => document.body.querySelector('[data-testid="sub-item"]') !== null);
 
       expect(document.body.querySelector('[data-testid="sub-item"]')).not.toBeNull();
+    });
+  });
+
+  describe('Trigger as Button', () => {
+    it('renders a <button> when Trigger uses as={Button}', () => {
+      cleanup = render(
+        () => (
+          <Dropdown>
+            <Dropdown.Trigger as={Button} variant="ghost" size="icon" data-testid="btn-trigger">
+              •••
+            </Dropdown.Trigger>
+            <Dropdown.Content>
+              <Dropdown.Item>Item</Dropdown.Item>
+            </Dropdown.Content>
+          </Dropdown>
+        ),
+        container,
+      );
+
+      const trigger = container.querySelector('[data-testid="btn-trigger"]');
+      expect(trigger).not.toBeNull();
+      // Button renders a <button> element
+      expect(trigger!.tagName.toLowerCase()).toBe('button');
+    });
+
+    it('Trigger as={Button} opens Content on click', async () => {
+      cleanup = render(
+        () => (
+          <Dropdown>
+            <Dropdown.Trigger as={Button} variant="ghost" size="icon" data-testid="btn-trigger">
+              •••
+            </Dropdown.Trigger>
+            <Dropdown.Content>
+              <Dropdown.Item data-testid="btn-item">Item</Dropdown.Item>
+            </Dropdown.Content>
+          </Dropdown>
+        ),
+        container,
+      );
+
+      click(container.querySelector('[data-testid="btn-trigger"]')!);
+      await waitFor(() => document.body.querySelector('[data-testid="btn-item"]') !== null);
+
+      expect(document.body.querySelector('[data-testid="btn-item"]')).not.toBeNull();
     });
   });
 

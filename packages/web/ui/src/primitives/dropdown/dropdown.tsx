@@ -1,5 +1,6 @@
 import { cn } from '@capsuletech/web-style';
 import { DropdownMenu as KobalteDropdown } from '@kobalte/core/dropdown-menu';
+import type { ValidComponent } from 'solid-js';
 import { splitProps } from 'solid-js';
 
 import type {
@@ -30,8 +31,17 @@ const DropdownImpl = (props: IDropdownProps) => <KobalteDropdown {...props} />;
 
 /**
  * Button (or any element via `as`) that opens the dropdown on click.
+ *
+ * Polymorphic via `as` prop — pass any component (e.g. `Button`) and all of
+ * its props become available on `Dropdown.Trigger`. Kobalte injects the
+ * required ARIA + event attributes on top of the component's own props.
+ *
+ * @example
+ * ```tsx
+ * <Dropdown.Trigger as={Button} variant="ghost" size="icon"><Icon /></Dropdown.Trigger>
+ * ```
  */
-const Trigger = (props: IDropdownTriggerProps) => {
+const Trigger = <T extends ValidComponent = 'button'>(props: IDropdownTriggerProps<T>) => {
   const [local, others] = splitProps(props, ['class']);
   return <KobalteDropdown.Trigger class={cn(local.class)} {...(others as object)} />;
 };

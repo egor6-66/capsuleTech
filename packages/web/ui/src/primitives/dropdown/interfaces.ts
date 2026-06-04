@@ -9,8 +9,8 @@ import type {
   DropdownMenuSubContentProps,
   DropdownMenuSubProps,
   DropdownMenuSubTriggerProps,
-  DropdownMenuTriggerProps,
 } from '@kobalte/core/dropdown-menu';
+import type { PolymorphicProps } from '@kobalte/core/polymorphic';
 import type { JSX, ValidComponent } from 'solid-js';
 
 /**
@@ -32,22 +32,11 @@ export interface IDropdownProps extends DropdownMenuRootProps {
 }
 
 /**
- * The element that opens / closes the dropdown when interacted with.
- * Rendered as a `<button>` by default; polymorphic via `as` prop.
- *
- * @example
- * ```tsx
- * <Dropdown.Trigger as={Button} variant="outline">Open</Dropdown.Trigger>
- * <Dropdown.Trigger as="a" href="#open">Open</Dropdown.Trigger>
- * ```
+ * Own (non-polymorphic) props for the Trigger wrapper.
+ * Kept separate so the generic `IDropdownTriggerProps<T>` can overlay them
+ * on top of `ComponentProps<T>` via `PolymorphicProps`.
  */
-export interface IDropdownTriggerProps extends DropdownMenuTriggerProps, IHtmlDataAttrs {
-  /**
-   * Polymorphic render element. Default `'button'`. Pass a component (e.g. `Button`)
-   * to render the trigger as that component while keeping all dropdown behaviour
-   * (ARIA attributes, keyboard navigation, open/close state).
-   */
-  as?: ValidComponent;
+export interface IDropdownTriggerOwnProps extends IHtmlDataAttrs {
   /** Extra CSS classes forwarded to the trigger element. */
   class?: string;
   /** Accessible tooltip shown on hover. Forwarded to the underlying element. */
@@ -57,6 +46,27 @@ export interface IDropdownTriggerProps extends DropdownMenuTriggerProps, IHtmlDa
   /** Trigger label or child element. */
   children?: JSX.Element;
 }
+
+/**
+ * The element that opens / closes the dropdown when interacted with.
+ * Rendered as a `<button>` by default; polymorphic via `as` prop.
+ *
+ * When `as` is set to a component (e.g. `Button`), all props of that component
+ * are accepted and forwarded — including `variant`, `size`, etc.
+ *
+ * @example
+ * ```tsx
+ * // Renders a ghost icon-button that opens the dropdown:
+ * <Dropdown.Trigger as={Button} variant="ghost" size="icon"><Icon /></Dropdown.Trigger>
+ *
+ * // Plain anchor trigger:
+ * <Dropdown.Trigger as="a" href="#open">Open</Dropdown.Trigger>
+ * ```
+ */
+export type IDropdownTriggerProps<T extends ValidComponent = 'button'> = PolymorphicProps<
+  T,
+  IDropdownTriggerOwnProps
+>;
 
 /**
  * The dropdown panel rendered inside a Portal (teleported to `document.body`).
