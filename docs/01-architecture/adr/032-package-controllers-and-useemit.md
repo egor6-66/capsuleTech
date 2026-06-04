@@ -95,4 +95,40 @@ export default defineAppConfig({
 5. **web-ui-creator** (owner-web-ui-creator): впитать `dnd.ts`/`rules.ts` из аппа в `/state`+`/manifests`; `/controllers` → `EditorController`.
 6. **app** (apps/ui-creator): удалить `editor/`, переписать виджеты на `Controllers.Editor` + `useCtx`.
 
-Связанные: ADR 008 (hybrid FSM + direct next), ADR 009 (hardcoded EVENT_HANDLERS), ADR 031 (renderer editOverlay).
+## EditorController-контракт (детализация фаз 4–6)
+
+Первый реальный package-shipped Controller. Растворяет `apps/ui-creator/src/editor/`.
+
+**`Controllers.Editor` (из `@capsuletech/web-ui-creator/controllers`) — `store.ctx`:**
+```
+tree: IEditorTree          // единственный источник правды
+selectedId: NodeId | null
+dragSpec: DragSpec | null  // что тащим (drag-фаза)
+dropTargetId: NodeId | null
+intent: DropIntent | null  // резолвнутая точка вставки
+marks: Record<NodeId, string>
+```
+
+**Handlers (HCA-события через meta-bound emit / `useEmit`):**
+```
+onSelect   payload: nodeId|null           → toggle selectedId
+onDragOver payload: { spec, pointer }      → canvasIntent/treeIntent → set dragSpec/dropTargetId/intent
+onDrop     payload: { spec, intent }       → applyDrop → set tree; clear drag
+onDragEnd                                  → clear dragSpec/dropTargetId/intent
+onMark     payload: { nodeId, color|null } → setMark
+```
+
+**Раскладка слоёв (что куда из `editor/`):**
+
+| Из app `editor/` | Куда |
+|---|---|
+| `store.tsx` (state+mutations) | `web-ui-creator/controllers` → `EditorController` |
+| `dnd.ts` (dragSpec/canInto/applyDrop/canvasIntent/treeIntent) | `web-ui-creator/state` (рядом с addNode/moveNode) |
+| `rules.ts` (canDropInto/canMoveInto/acceptsChildren) | `web-ui-creator/manifests` |
+| `seeds/` | app **Entity** (tree-фикстура) |
+| overlay-chrome (box-shadow/z-index/marks из `canvas.tsx`) | `web-ui-creator/controllers` → `EditorOverlay` (читает `useCtx().store.ctx`, рисует chrome + эмитит `onSelect`) |
+| meta-aware droppable/draggable | `web-dnd/controllers` (эмитят `onDragOver`/`onDrop`/`onDragEnd`) |
+
+**Регистрация:** `web-ui-creator/capsule` манифест (ADR 033) — `defineCapsuleModule({ name: 'Editor', components: { Overlay: EditorOverlay }, controllers: { Editor: EditorController } })`. App: `packages: ['@capsuletech/web-ui-creator']` → `Editor.Overlay` + `Controllers.Editor` глобалятся. App-виджеты (canvas/tree/palette/inspector) — тонкая композиция, читают `useCtx().store.ctx`, ноль resolver/getBoundingClientRect. `Renderer` app пока импортит напрямую (его регистрация как `Renderer.*` — опционально, позже).
+
+Связанные: ADR 008 (hybrid FSM + direct next), ADR 009 (hardcoded EVENT_HANDLERS), ADR 031 (renderer editOverlay), ADR 033 (регистрация пакетов).
