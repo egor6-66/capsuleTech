@@ -53,6 +53,7 @@
   "dependencies": {
     "@capsuletech/shared-zod": "workspace:*",
     "@capsuletech/web-core": "workspace:*",
+    "@capsuletech/web-dnd": "workspace:*",
     "lucide-solid": "^1.16.0"
   },
   "peerDependencies": {

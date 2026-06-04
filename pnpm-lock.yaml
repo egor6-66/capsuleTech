@@ -999,6 +999,9 @@ importers:
       '@capsuletech/web-core':
         specifier: workspace:*
         version: link:../core
+      '@capsuletech/web-dnd':
+        specifier: workspace:*
+        version: link:../dnd
       '@capsuletech/web-renderer':
         specifier: workspace:*
         version: link:../renderer

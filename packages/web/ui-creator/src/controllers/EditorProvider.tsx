@@ -9,6 +9,9 @@
  * (Canvas, Overlay, Inspector) видят и editor-kit через `useEditorKit()`,
  * и editor-state через `useEditor()`.
  *
+ * Также монтирует `<DnDProvider>` — редактор владеет своим drag-and-drop,
+ * app-консумер про web-dnd знать не должен.
+ *
  * Использование в app:
  * ```tsx
  * const WorkspacePage = Page((Ui) => (
@@ -26,6 +29,7 @@
 
 import { createContext, useContext, type JSX } from 'solid-js';
 import type { Registry } from '@capsuletech/web-renderer';
+import { DnDProvider } from '@capsuletech/web-dnd';
 
 // ── Kit context ────────────────────────────────────────────────────────────────
 
@@ -64,14 +68,27 @@ export interface IEditorProviderProps {
    */
   kit: EditorKit;
   children: JSX.Element;
+  /**
+   * Показывать ли встроенный drag-оверлей (ghost под курсором во время drag).
+   * По умолчанию `true` — editor-internal affordance.
+   */
+  showDefaultOverlay?: boolean;
 }
 
 /**
- * Editor.Provider — монтирует EditorController + прокидывает kit в context.
+ * Editor.Provider — монтирует DnDProvider + EditorController + прокидывает kit в context.
+ *
+ * Порядок вложенности (снаружи → внутри):
+ *   DnDProvider  →  EditorKitContext  →  Controllers.Editor  →  children
+ *
+ * Такой порядок гарантирует что surfaces-потомки видят всех трёх:
+ * - DnD-context (useDnD)
+ * - kit (useEditorKit)
+ * - editor-state (useEditor через ControllerContext Controllers.Editor)
  *
  * `Controllers.Editor` читается из globalThis (capsule-registry inject).
  * Если registry ещё не инициализирован (unit-тест без bootstrap) —
- * рендерит только kit-context без Controller-обёртки.
+ * рендерит только DnD + kit-context без Controller-обёртки.
  */
 export const EditorProvider = (props: IEditorProviderProps) => {
   // Controllers — глобальный реестр, инжектируемый capsule-bootstrap'ом.
@@ -81,13 +98,17 @@ export const EditorProvider = (props: IEditorProviderProps) => {
     | ((p: { children: JSX.Element }) => JSX.Element)
     | undefined;
 
+  const showOverlay = () => props.showDefaultOverlay ?? true;
+
   return (
-    <EditorKitContext.Provider value={props.kit}>
-      {EditorCtrl ? (
-        <EditorCtrl>{props.children}</EditorCtrl>
-      ) : (
-        props.children
-      )}
-    </EditorKitContext.Provider>
+    <DnDProvider showDefaultOverlay={showOverlay()}>
+      <EditorKitContext.Provider value={props.kit}>
+        {EditorCtrl ? (
+          <EditorCtrl>{props.children}</EditorCtrl>
+        ) : (
+          props.children
+        )}
+      </EditorKitContext.Provider>
+    </DnDProvider>
   );
 };
