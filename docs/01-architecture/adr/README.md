@@ -28,6 +28,7 @@ status: index
 | [[015-remote-modules\|015]] | Remote modules: своё runtime, pluggable transport, manifest-driven | 📝 proposed | 2026-05-19 |
 | [[032-package-controllers-and-useemit\|032]] | Package-integration слой (`/controllers`) + `useEmit` | ✅ accepted | 2026-06-04 |
 | [[033-package-registration\|033]] | Механизм регистрации пакетов (`capsule.app.ts: packages`) | ✅ accepted | 2026-06-04 |
+| [[034-code-splitting-granularity\|034]] | Гранулярность code-splitting: route + heavy-leaf lazy, остальное eager | ✅ accepted | 2026-06-05 |
 
 > [!info]
 > Status:
