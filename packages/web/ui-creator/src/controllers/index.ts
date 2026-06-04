@@ -33,5 +33,7 @@ export type { EditorKit, IEditorProviderProps } from './EditorProvider';
 
 export { EditorCanvas } from './EditorCanvas';
 
+export { EditorTree } from './EditorTree';
+
 export { useEditor } from './useEditor';
 export type { IUseEditorResult } from './useEditor';

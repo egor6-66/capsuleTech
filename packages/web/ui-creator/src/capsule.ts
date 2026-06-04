@@ -22,6 +22,7 @@ import EditorController from './controllers/EditorController';
 import { EditorOverlay } from './controllers/EditorOverlay';
 import { EditorProvider } from './controllers/EditorProvider';
 import { EditorCanvas } from './controllers/EditorCanvas';
+import { EditorTree } from './controllers/EditorTree';
 
 export default defineCapsuleModule({
   name: 'Editor',
@@ -29,6 +30,7 @@ export default defineCapsuleModule({
     Overlay: EditorOverlay,
     Provider: EditorProvider,
     Canvas: EditorCanvas,
+    Tree: EditorTree,
   },
   controllers: {
     Editor: EditorController,
