@@ -5,29 +5,22 @@
  *  1. `createEmittingDroppable` — emit вызывается с правильным payload на onDrop.
  *  2. `createEmittingDroppable` — emit onDragOver вызывается реактивно когда isOver + pointer.
  *  3. `createEmittingDraggable` — emit onDragStart/onDragEnd вызываются при переходах activeId.
- *  4. Без Controller-scope (нет ControllerContext) — useEmit бросает ошибку.
+ *  4. Без emit-функции — события не кидаются (no-op).
  *  5. Если emits-ключ не задан — emit НЕ вызывается.
  *
  * Стратегия mock'а:
- *  - `@capsuletech/web-core` — mock'аем `useEmit`, возвращая spy-функцию.
- *    Это изолирует тесты от реального ControllerProxy/Context.
- *  - DnDProvider монтируется через `render()` (jsdom) — реальный pointer-state
- *    через programmatic `dnd.startDrag()` вызовы (тот же паттерн что в provider-cleanup.test.tsx).
+ *  - EmitFn инжектируется через options.emit — простой vi.fn() spy.
+ *    Нет зависимости на @capsuletech/web-core вообще.
+ *  - DnDProvider монтируется через render() (jsdom) — реальный pointer-state
+ *    через programmatic dnd.startDrag() вызовы (тот же паттерн что в provider-cleanup.test.tsx).
  */
 /* @vitest-environment jsdom */
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock @capsuletech/web-core useEmit перед импортами контроллеров.
-// vi.mock поднимается в начало файла (hoisting).
-vi.mock('@capsuletech/web-core', () => ({
-  useEmit: vi.fn(),
-}));
-
-import { useEmit } from '@capsuletech/web-core';
 import { DnDProvider, useDnD } from '../context';
-import { createEmittingDroppable } from '../controllers/emitting-droppable';
 import { createEmittingDraggable } from '../controllers/emitting-draggable';
+import { createEmittingDroppable } from '../controllers/emitting-droppable';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -38,8 +31,6 @@ let container: HTMLDivElement;
 beforeEach(() => {
   container = document.createElement('div');
   document.body.appendChild(container);
-  // Сбросить mock перед каждым тестом.
-  vi.mocked(useEmit).mockReset();
 });
 
 afterEach(() => {
@@ -47,11 +38,9 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-/** Создаёт стандартный emit spy и регистрирует его как возврат useEmit. */
-function setupEmitSpy() {
-  const emitSpy = vi.fn();
-  vi.mocked(useEmit).mockReturnValue(emitSpy);
-  return emitSpy;
+/** Создаёт emit spy — передаётся в options.emit. */
+function makeEmitSpy() {
+  return vi.fn();
 }
 
 // ---------------------------------------------------------------------------
@@ -60,7 +49,7 @@ function setupEmitSpy() {
 
 describe('createEmittingDroppable — onDrop emit', () => {
   it('вызывает emit(onDrop) с { data, pointer, dropInfo } при дропе', () => {
-    const emitSpy = setupEmitSpy();
+    const emitSpy = makeEmitSpy();
 
     // Stub document.elementFromPoint для droppable hit-testing
     const origEFP = document.elementFromPoint;
@@ -80,11 +69,12 @@ describe('createEmittingDroppable — onDrop emit', () => {
         data: () => ({ kind: 'card', id: '42' }),
       });
 
-      // createEmittingDroppable — использует useEmit внутри.
+      // createEmittingDroppable — emit инжектируется через options.
       const drop = createEmittingDroppable({
         id: 'zone-1',
         accepts: () => true,
         emits: { onDrop: 'onDrop' },
+        emit: emitSpy,
       });
 
       return (
@@ -132,7 +122,7 @@ describe('createEmittingDroppable — onDrop emit', () => {
   });
 
   it('НЕ вызывает emit если onDrop не задан в emits', () => {
-    const emitSpy = setupEmitSpy();
+    const emitSpy = makeEmitSpy();
 
     const origEFP = document.elementFromPoint;
     let droppableEl!: HTMLElement;
@@ -155,6 +145,7 @@ describe('createEmittingDroppable — onDrop emit', () => {
         id: 'zone-noemit',
         accepts: () => true,
         emits: {}, // нет onDrop
+        emit: emitSpy,
       });
 
       return (
@@ -179,7 +170,9 @@ describe('createEmittingDroppable — onDrop emit', () => {
     const pe = new PointerEvent('pointerdown', { clientX: 5, clientY: 5 });
     capturedDnD!.startDrag('src-noemit', pe);
 
-    window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 50, clientY: 50 }));
+    window.dispatchEvent(
+      new PointerEvent('pointerup', { bubbles: true, clientX: 50, clientY: 50 }),
+    );
 
     // emit не должен вызываться.
     expect(emitSpy).not.toHaveBeenCalled();
@@ -189,7 +182,7 @@ describe('createEmittingDroppable — onDrop emit', () => {
   });
 
   it('также вызывает оригинальный onDrop callback вместе с emit', () => {
-    const emitSpy = setupEmitSpy();
+    const emitSpy = makeEmitSpy();
     const originalOnDrop = vi.fn();
 
     const origEFP = document.elementFromPoint;
@@ -213,6 +206,7 @@ describe('createEmittingDroppable — onDrop emit', () => {
         accepts: () => true,
         onDrop: originalOnDrop,
         emits: { onDrop: 'onDrop' },
+        emit: emitSpy,
       });
 
       return (
@@ -237,11 +231,70 @@ describe('createEmittingDroppable — onDrop emit', () => {
     const pe = new PointerEvent('pointerdown', { clientX: 0, clientY: 0 });
     capturedDnD!.startDrag('src-both', pe);
 
-    window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 30, clientY: 30 }));
+    window.dispatchEvent(
+      new PointerEvent('pointerup', { bubbles: true, clientX: 30, clientY: 30 }),
+    );
 
     // Оба должны вызваться.
     expect(emitSpy).toHaveBeenCalledOnce();
     expect(originalOnDrop).toHaveBeenCalledOnce();
+
+    dispose();
+    document.elementFromPoint = origEFP;
+  });
+
+  it('НЕ вызывает emit если emit-функция не передана (no-op)', () => {
+    const origEFP = document.elementFromPoint;
+    let droppableEl!: HTMLElement;
+    document.elementFromPoint = () => droppableEl ?? null;
+
+    let capturedDnD: ReturnType<typeof useDnD> | null = null;
+
+    const Harness = () => {
+      capturedDnD = useDnD();
+
+      const draggableEl = document.createElement('div');
+      capturedDnD.registerDraggable({
+        id: 'src-nofn',
+        el: draggableEl,
+        data: () => ({ kind: 'card' }),
+      });
+
+      // emit НЕ передан — auto-emit должен быть no-op.
+      const drop = createEmittingDroppable({
+        id: 'zone-nofn',
+        accepts: () => true,
+        emits: { onDrop: 'onDrop' },
+        // emit: undefined — намеренно
+      });
+
+      return (
+        <div
+          ref={(el) => {
+            droppableEl = el;
+            drop.ref(el);
+          }}
+        />
+      );
+    };
+
+    const dispose = render(
+      () => (
+        <DnDProvider>
+          <Harness />
+        </DnDProvider>
+      ),
+      container,
+    );
+
+    const pe = new PointerEvent('pointerdown', { clientX: 5, clientY: 5 });
+    capturedDnD!.startDrag('src-nofn', pe);
+    // Не должен бросить и не должен вызвать emit (которого нет).
+    expect(() => {
+      window.dispatchEvent(
+        new PointerEvent('pointerup', { bubbles: true, clientX: 50, clientY: 50 }),
+      );
+    }).not.toThrow();
 
     dispose();
     document.elementFromPoint = origEFP;
@@ -254,11 +307,8 @@ describe('createEmittingDroppable — onDrop emit', () => {
 
 describe('createEmittingDroppable — onDragOver emit', () => {
   it('вызывает emit(onDragOver) с { data, pointer } когда isOver + pointer реактивно', async () => {
-    const emitSpy = setupEmitSpy();
+    const emitSpy = makeEmitSpy();
 
-    // Для onDragOver нам нужно реактивное изменение isOver + pointer.
-    // Мокаем useDnD чтобы контролировать state напрямую.
-    // Вместо этого — монтируем с реальным DnDProvider и вызываем startDrag.
     const origEFP = document.elementFromPoint;
     let droppableEl!: HTMLElement;
     document.elementFromPoint = () => droppableEl ?? null;
@@ -279,6 +329,7 @@ describe('createEmittingDroppable — onDragOver emit', () => {
         id: 'zone-over',
         accepts: () => true,
         emits: { onDragOver: 'onDragOver' },
+        emit: emitSpy,
       });
 
       return (
@@ -318,7 +369,9 @@ describe('createEmittingDroppable — onDragOver emit', () => {
     expect(call![1]?.payload?.data).toMatchObject({ kind: 'widget' });
     expect(call![1]?.payload?.pointer).toBeDefined();
 
-    window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 100, clientY: 100 }));
+    window.dispatchEvent(
+      new PointerEvent('pointerup', { bubbles: true, clientX: 100, clientY: 100 }),
+    );
     dispose();
     document.elementFromPoint = origEFP;
   });
@@ -330,7 +383,7 @@ describe('createEmittingDroppable — onDragOver emit', () => {
 
 describe('createEmittingDraggable — onDragStart / onDragEnd', () => {
   it('вызывает emit(onDragStart) с { data, pointer } когда drag начат', async () => {
-    const emitSpy = setupEmitSpy();
+    const emitSpy = makeEmitSpy();
 
     const origEFP = document.elementFromPoint;
     document.elementFromPoint = () => null;
@@ -345,6 +398,7 @@ describe('createEmittingDraggable — onDragStart / onDragEnd', () => {
         id: 'emitting-drag',
         data: () => ({ kind: 'node', nodeId: '99' }),
         emits: { onDragStart: 'onDragStart' },
+        emit: emitSpy,
       });
 
       return <div ref={drag.ref} />;
@@ -375,13 +429,15 @@ describe('createEmittingDraggable — onDragStart / onDragEnd', () => {
     expect(startCall![1]?.payload?.data).toMatchObject({ kind: 'node', nodeId: '99' });
     expect(startCall![1]?.payload?.pointer).toMatchObject({ x: 15, y: 25 });
 
-    window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 15, clientY: 25 }));
+    window.dispatchEvent(
+      new PointerEvent('pointerup', { bubbles: true, clientX: 15, clientY: 25 }),
+    );
     dispose();
     document.elementFromPoint = origEFP;
   });
 
   it('вызывает emit(onDragEnd) когда drag завершён (pointerup)', async () => {
-    const emitSpy = setupEmitSpy();
+    const emitSpy = makeEmitSpy();
 
     const origEFP = document.elementFromPoint;
     document.elementFromPoint = () => null;
@@ -395,6 +451,7 @@ describe('createEmittingDraggable — onDragStart / onDragEnd', () => {
         id: 'emitting-drag-end',
         data: () => ({ kind: 'node', nodeId: '77' }),
         emits: { onDragEnd: 'onDragEnd' },
+        emit: emitSpy,
       });
 
       return <div ref={drag.ref} />;
@@ -432,7 +489,7 @@ describe('createEmittingDraggable — onDragStart / onDragEnd', () => {
   });
 
   it('НЕ вызывает emit(onDragStart) для другого draggable-id', async () => {
-    const emitSpy = setupEmitSpy();
+    const emitSpy = makeEmitSpy();
 
     const origEFP = document.elementFromPoint;
     document.elementFromPoint = () => null;
@@ -455,6 +512,7 @@ describe('createEmittingDraggable — onDragStart / onDragEnd', () => {
         id: 'my-drag',
         data: () => ({ kind: 'node' }),
         emits: { onDragStart: 'onDragStart' },
+        emit: emitSpy,
       });
 
       return <div ref={drag.ref} />;
@@ -487,19 +545,50 @@ describe('createEmittingDraggable — onDragStart / onDragEnd', () => {
 });
 
 // ---------------------------------------------------------------------------
-// useEmit — вне Controller-scope
+// emit-функция не передана — вне Controller-scope (no-op, не бросает)
 // ---------------------------------------------------------------------------
 
-describe('useEmit — вне Controller-scope', () => {
-  it('бросает ошибку если useEmit вызывается вне Controller-scope (mock не установлен)', () => {
-    // Сбрасываем mock — useEmit должен бросить как реальный.
-    vi.mocked(useEmit).mockImplementation(() => {
-      throw new Error('[useEmit] useEmit must be used inside a Controller or Feature scope.');
-    });
+describe('emit не передан — no-op, не бросает', () => {
+  it('createEmittingDraggable работает без emit (no-op)', async () => {
+    const origEFP = document.elementFromPoint;
+    document.elementFromPoint = () => null;
+
+    let capturedDnD: ReturnType<typeof useDnD> | null = null;
+
+    const Harness = () => {
+      capturedDnD = useDnD();
+
+      const drag = createEmittingDraggable({
+        id: 'nofn-drag',
+        data: () => ({ kind: 'node' }),
+        emits: { onDragStart: 'onDragStart', onDragEnd: 'onDragEnd' },
+        // emit: undefined — намеренно
+      });
+
+      return <div ref={drag.ref} />;
+    };
+
+    const dispose = render(
+      () => (
+        <DnDProvider>
+          <Harness />
+        </DnDProvider>
+      ),
+      container,
+    );
 
     expect(() => {
-      useEmit(); // нет ControllerContext
-    }).toThrow('useEmit must be used inside a Controller or Feature scope');
+      capturedDnD!.startDrag(
+        'nofn-drag',
+        new PointerEvent('pointerdown', { clientX: 0, clientY: 0 }),
+      );
+      window.dispatchEvent(
+        new PointerEvent('pointerup', { bubbles: true, clientX: 0, clientY: 0 }),
+      );
+    }).not.toThrow();
+
+    dispose();
+    document.elementFromPoint = origEFP;
   });
 });
 
@@ -509,7 +598,7 @@ describe('useEmit — вне Controller-scope', () => {
 
 describe('payload shape — runtime assertions', () => {
   it('onDrop payload содержит data, pointer, dropInfo', () => {
-    const emitSpy = setupEmitSpy();
+    const emitSpy = makeEmitSpy();
 
     const origEFP = document.elementFromPoint;
     let droppableEl!: HTMLElement;
@@ -531,9 +620,17 @@ describe('payload shape — runtime assertions', () => {
         id: 'shape-zone',
         accepts: () => true,
         emits: { onDrop: 'onDrop' },
+        emit: emitSpy,
       });
 
-      return <div ref={(el) => { droppableEl = el; drop.ref(el); }} />;
+      return (
+        <div
+          ref={(el) => {
+            droppableEl = el;
+            drop.ref(el);
+          }}
+        />
+      );
     };
 
     const dispose = render(
@@ -545,8 +642,13 @@ describe('payload shape — runtime assertions', () => {
       container,
     );
 
-    capturedDnD!.startDrag('shape-src', new PointerEvent('pointerdown', { clientX: 1, clientY: 2 }));
-    window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: 77, clientY: 88 }));
+    capturedDnD!.startDrag(
+      'shape-src',
+      new PointerEvent('pointerdown', { clientX: 1, clientY: 2 }),
+    );
+    window.dispatchEvent(
+      new PointerEvent('pointerup', { bubbles: true, clientX: 77, clientY: 88 }),
+    );
 
     expect(emitSpy).toHaveBeenCalledOnce();
     const payload = emitSpy.mock.calls[0][1]?.payload;

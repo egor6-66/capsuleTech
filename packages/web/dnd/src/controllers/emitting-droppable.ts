@@ -1,35 +1,43 @@
 /**
  * `createEmittingDroppable` — meta-aware droppable, эмитящий HCA-события (ADR 032, фаза 4).
  *
- * Оборачивает generic `createDroppable` из generic-ядра и добавляет emit-проводку
- * через `useEmit` из `@capsuletech/web-core`. При каждом lifecycle-событии
- * формирует стандартный `IDragPayload` / `IDropPayload` и зовёт:
+ * Оборачивает generic `createDroppable` из generic-ядра и добавляет emit-проводку.
+ * При каждом lifecycle-событии формирует стандартный `IDragPayload` / `IDropPayload` и зовёт:
  *
- *   emit(emits.onDrop, { payload: { data, pointer, dropInfo } })
+ *   options.emit(emits.onDrop, { payload: { data, pointer, dropInfo } })
  *
- * Generic-ядро (`src/index.ts`) web-core не импортирует — зависимость изолирована
- * в `/controllers` subpath. Ацикличный граф: controllers → web-core, web-core ничего
- * не знает про web-dnd.
+ * `EmitFn` инжектируется консьюмером — web-dnd НЕ зависит на web-core напрямую.
+ * Типичное использование в Controller/Feature scope:
  *
- * Использование (внутри Controller/Feature scope):
  * ```ts
  * import { createEmittingDroppable } from '@capsuletech/web-dnd/controllers';
+ * import { useEmit } from '@capsuletech/web-core'; // в zone owner's package
  *
  * const drop = createEmittingDroppable({
  *   id: 'canvas-zone',
  *   accepts: (data) => data.kind === 'component',
  *   emits: { onDrop: 'onDrop', onDragOver: 'onDragOver' },
+ *   emit: useEmit(),
  * });
  * // <div ref={drop.ref} />
  * ```
+ *
+ * Если `emit` не передан — auto-emit отключён (no-op); `onDrop`-callback работает как обычно.
+ * Backward-compatible: `createEmittingDroppable({ emits:{} })` без emit — продолжает работать.
  */
 
-import { useEmit } from '@capsuletech/web-core';
-import { createDroppable } from '../droppable';
-import { useDnD } from '../context';
-import type { DragData, IDropInfo, IDroppable, IDroppableOptions } from '../types';
-import type { IDraggableEmitMap as _unused, IDropPayload, IDragPayload, IDroppableEmitMap } from './types';
 import { createEffect } from 'solid-js';
+import { useDnD } from '../context';
+import { createDroppable } from '../droppable';
+import type { DragData, IDropInfo, IDroppable, IDroppableOptions } from '../types';
+import type { IDragPayload, IDropPayload, IDroppableEmitMap } from './types';
+
+/**
+ * Минимальный контракт emit-функции, инжектируемой консьюмером.
+ * Намеренно изоморфен сигнатуре `useEmit()` из web-core — без прямого импорта.
+ * Если emit не нужен — не передавай поле (auto-emit будет no-op).
+ */
+export type EmitFn = (eventName: string, target?: { payload?: unknown; meta?: unknown }) => unknown;
 
 export interface IEmittingDroppableOptions<T extends DragData = DragData>
   extends IDroppableOptions<T> {
@@ -38,6 +46,12 @@ export interface IEmittingDroppableOptions<T extends DragData = DragData>
    * Если ключ не задан — соответствующий emit не происходит.
    */
   emits: IDroppableEmitMap;
+  /**
+   * Функция emit, инжектируемая консьюмером (обычно `useEmit()` из web-core).
+   * Если не передана — auto-emit для всех lifecycle disabled (no-op).
+   * onDrop-callback продолжает работать независимо от этого поля.
+   */
+  emit?: EmitFn;
 }
 
 /**
@@ -57,15 +71,15 @@ export interface IEmittingDroppableOptions<T extends DragData = DragData>
 export const createEmittingDroppable = <T extends DragData = DragData>(
   options: IEmittingDroppableOptions<T>,
 ): IDroppable => {
-  const emit = useEmit();
+  const emit = options.emit;
   const dnd = useDnD();
   const { emits } = options;
 
-  // Оборачиваем onDrop: сначала emit, потом оригинальный callback (если есть).
+  // Оборачиваем onDrop: сначала emit (если передан), потом оригинальный callback.
   const wrappedOnDrop =
     emits.onDrop || options.onDrop
       ? (data: T, info: IDropInfo) => {
-          if (emits.onDrop) {
+          if (emits.onDrop && emit) {
             const payload: IDropPayload<T> = {
               data,
               pointer: info.pointer,
@@ -84,10 +98,10 @@ export const createEmittingDroppable = <T extends DragData = DragData>(
   });
 
   // onDragOver: отслеживаем через реактивный `isOver` сигнал.
-  // Каждый раз, когда isOver становится true И меняется pointer — эмитим.
-  // Используем createEffect из Solid для реактивного отслеживания.
-  if (emits.onDragOver) {
+  // Срабатывает только если emit передан И onDragOver-ключ задан.
+  if (emits.onDragOver && emit) {
     const eventName = emits.onDragOver;
+    const emitFn = emit;
     createEffect(() => {
       if (!droppable.isOver()) return;
       const activeData = dnd.state.activeData() as T | null;
@@ -95,7 +109,7 @@ export const createEmittingDroppable = <T extends DragData = DragData>(
       if (!activeData || !pointer) return;
 
       const payload: IDragPayload<T> = { data: activeData, pointer };
-      emit(eventName, { payload });
+      emitFn(eventName, { payload });
     });
   }
 

@@ -10,25 +10,30 @@
  * Это намеренный design choice: один DnDProvider, несколько draggable'ов.
  * Каждый createEmittingDraggable слушает СВОЙ id — нет конфликтов.
  *
+ * `EmitFn` инжектируется консьюмером — web-dnd НЕ зависит на web-core напрямую.
+ * Если `emit` не передан — auto-emit disabled (no-op).
+ *
  * Использование (внутри Controller/Feature scope):
  * ```ts
  * import { createEmittingDraggable } from '@capsuletech/web-dnd/controllers';
+ * import { useEmit } from '@capsuletech/web-core'; // в zone owner's package
  *
  * const drag = createEmittingDraggable({
  *   id: 'node-42',
  *   data: () => ({ kind: 'component', nodeId: '42' }),
  *   emits: { onDragStart: 'onDragStart', onDragEnd: 'onDragEnd' },
+ *   emit: useEmit(),
  * });
  * // <div ref={drag.ref} />
  * ```
  */
 
-import { useEmit } from '@capsuletech/web-core';
-import { createDraggable } from '../draggable';
-import { useDnD } from '../context';
-import type { DragData, IDraggable, IDraggableOptions } from '../types';
-import type { IDraggableEmitMap, IDragPayload } from './types';
 import { createEffect, on, untrack } from 'solid-js';
+import { useDnD } from '../context';
+import { createDraggable } from '../draggable';
+import type { DragData, IDraggable, IDraggableOptions } from '../types';
+import type { EmitFn } from './emitting-droppable';
+import type { IDraggableEmitMap, IDragPayload } from './types';
 
 export interface IEmittingDraggableOptions<T extends DragData = DragData>
   extends IDraggableOptions<T> {
@@ -37,6 +42,11 @@ export interface IEmittingDraggableOptions<T extends DragData = DragData>
    * Если ключ не задан — соответствующий emit не происходит.
    */
   emits: IDraggableEmitMap;
+  /**
+   * Функция emit, инжектируемая консьюмером (обычно `useEmit()` из web-core).
+   * Если не передана — auto-emit для всех lifecycle disabled (no-op).
+   */
+  emit?: EmitFn;
 }
 
 /**
@@ -58,7 +68,7 @@ export interface IEmittingDraggableOptions<T extends DragData = DragData>
 export const createEmittingDraggable = <T extends DragData = DragData>(
   options: IEmittingDraggableOptions<T>,
 ): IDraggable => {
-  const emit = useEmit();
+  const emit = options.emit;
   const dnd = useDnD();
   const { emits } = options;
 
@@ -72,8 +82,9 @@ export const createEmittingDraggable = <T extends DragData = DragData>(
   // effect triggered by isDragging — они ещё null. Решение: читать все три реактивно
   // в одном createEffect и ждать когда все три станут доступны.
 
-  if (emits.onDragStart) {
+  if (emits.onDragStart && emit) {
     const eventName = emits.onDragStart;
+    const emitFn = emit;
     // Реактивно читаем isDragging + activeData + pointer. Effect сработает несколько раз
     // (при каждом изменении любого из них), но didEmitStart гарантирует один emit за drag.
     let didEmitStart = false; // один emit за drag (не при каждом pointermove)
@@ -86,7 +97,7 @@ export const createEmittingDraggable = <T extends DragData = DragData>(
         // Все три готовы: drag начат и данные доступны.
         didEmitStart = true;
         const payload: IDragPayload<T> = { data, pointer };
-        emit(eventName, { payload });
+        emitFn(eventName, { payload });
       } else if (!isDragging) {
         // Drag завершён — сбрасываем флаг для следующего drag.
         didEmitStart = false;
@@ -94,8 +105,9 @@ export const createEmittingDraggable = <T extends DragData = DragData>(
     });
   }
 
-  if (emits.onDragEnd) {
+  if (emits.onDragEnd && emit) {
     const eventName = emits.onDragEnd;
+    const emitFn = emit;
     // Snapshot данных на момент последнего активного state.
     let lastData: T | null = null;
     let lastPointer = untrack(() => dnd.state.pointer());
@@ -117,7 +129,7 @@ export const createEmittingDraggable = <T extends DragData = DragData>(
             const pointer = lastPointer ?? { x: 0, y: 0 };
             const data = lastData ?? ({} as T);
             const payload: IDragPayload<T> = { data, pointer };
-            emit(eventName, { payload });
+            emitFn(eventName, { payload });
           }
         },
         { defer: true },

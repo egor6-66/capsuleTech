@@ -6,6 +6,7 @@
  * containerRect values cover the full invariant set.
  */
 import { describe, expect, it } from 'vitest';
+import type { IGridItem, IGridLayout } from '../grid';
 import {
   clampToCols,
   collides,
@@ -16,7 +17,6 @@ import {
   pointToCell,
   resizeItem,
 } from '../grid';
-import type { IGridItem, IGridLayout } from '../grid';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -170,10 +170,7 @@ describe('compactVertical', () => {
 
   it('overlapping-x items stack vertically without gaps', () => {
     // a: x[0,2) y=0 h=2; b: x[0,2) y=10 h=2 — same x span, gap of 8 rows
-    const layout: IGridLayout = [
-      item('a', 0, 0, 2, 2),
-      item('b', 0, 10, 2, 2),
-    ];
+    const layout: IGridLayout = [item('a', 0, 0, 2, 2), item('b', 0, 10, 2, 2)];
     const result = compactVertical(layout, 12);
     const a = result.find((i) => i.id === 'a')!;
     const b = result.find((i) => i.id === 'b')!;
@@ -246,7 +243,10 @@ describe('pointToCell', () => {
   });
 
   it('clamps point right of container to x=cols-1', () => {
-    expect(pointToCell({ x: 1500, y: 32 }, containerRect, cols, rowHeight)).toEqual({ x: 11, y: 0 });
+    expect(pointToCell({ x: 1500, y: 32 }, containerRect, cols, rowHeight)).toEqual({
+      x: 11,
+      y: 0,
+    });
   });
 
   it('clamps point above container to y=0', () => {
@@ -438,10 +438,7 @@ describe('resizeItem — compact:none', () => {
 
 describe('resizeItem — compact:vertical', () => {
   it('compacts after resize', () => {
-    const layout: IGridLayout = [
-      item('a', 0, 0, 2, 2),
-      item('b', 0, 10, 2, 2),
-    ];
+    const layout: IGridLayout = [item('a', 0, 0, 2, 2), item('b', 0, 10, 2, 2)];
     const result = resizeItem(layout, 'a', { w: 2, h: 3 }, 12, 'vertical');
     const sorted = [...result].sort((x, y) => x.y - y.y);
     expect(sorted[0].y).toBe(0);

@@ -666,9 +666,6 @@ importers:
 
   packages/web/dnd:
     dependencies:
-      '@capsuletech/web-core':
-        specifier: workspace:*
-        version: link:../core
       solid-js:
         specifier: 1.9.12
         version: 1.9.12

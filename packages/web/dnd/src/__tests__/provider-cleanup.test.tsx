@@ -11,9 +11,9 @@
 /* @vitest-environment jsdom */
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DnDProvider, useDnD } from '../context';
 import { createDraggable } from '../draggable';
 import { createDroppable } from '../droppable';
-import { DnDProvider, useDnD } from '../context';
 
 let container: HTMLDivElement;
 
@@ -294,8 +294,24 @@ describe('activation threshold (createDraggable)', () => {
 
       return (
         <div>
-          <div ref={(el) => { draggableEl = el; drag.ref(el); }} id="drag-el">drag</div>
-          <div ref={(el) => { droppableEl = el; drop.ref(el); }} id="drop-el">drop</div>
+          <div
+            ref={(el) => {
+              draggableEl = el;
+              drag.ref(el);
+            }}
+            id="drag-el"
+          >
+            drag
+          </div>
+          <div
+            ref={(el) => {
+              droppableEl = el;
+              drop.ref(el);
+            }}
+            id="drop-el"
+          >
+            drop
+          </div>
         </div>
       );
     };
@@ -346,7 +362,15 @@ describe('activation threshold (createDraggable)', () => {
     const Harness = () => {
       const drag = createDraggable({ id: 'threshold-drag', data: { kind: 'test' } });
       return (
-        <div ref={(el) => { draggableEl = el; drag.ref(el); }} id="drag-threshold">drag</div>
+        <div
+          ref={(el) => {
+            draggableEl = el;
+            drag.ref(el);
+          }}
+          id="drag-threshold"
+        >
+          drag
+        </div>
       );
     };
 
@@ -408,7 +432,15 @@ describe('activation threshold (createDraggable)', () => {
     const Harness = () => {
       const drag = createDraggable({ id: 'below-threshold', data: { kind: 'test' } });
       return (
-        <div ref={(el) => { draggableEl = el; drag.ref(el); }} id="drag-below">drag</div>
+        <div
+          ref={(el) => {
+            draggableEl = el;
+            drag.ref(el);
+          }}
+          id="drag-below"
+        >
+          drag
+        </div>
       );
     };
 
@@ -472,7 +504,15 @@ describe('activation threshold (createDraggable)', () => {
         activationDistance: 2,
       });
       return (
-        <div ref={(el) => { draggableEl = el; drag.ref(el); }} id="drag-per">drag</div>
+        <div
+          ref={(el) => {
+            draggableEl = el;
+            drag.ref(el);
+          }}
+          id="drag-per"
+        >
+          drag
+        </div>
       );
     };
 

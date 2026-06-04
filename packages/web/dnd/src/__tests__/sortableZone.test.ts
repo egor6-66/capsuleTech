@@ -7,8 +7,8 @@
  * pure index-computation and zone-lookup functions.
  */
 import { describe, expect, it } from 'vitest';
-import { computeInsertIndex, findNearestZone, findZoneAtPoint } from '../sortableZone';
 import type { IRect } from '../sortableZone';
+import { computeInsertIndex, findNearestZone, findZoneAtPoint } from '../sortableZone';
 
 // ---------------------------------------------------------------------------
 // Helpers to build mock rects
@@ -24,11 +24,7 @@ function rect(left: number, top: number, width: number, height: number): IRect {
 
 describe('computeInsertIndex — axis y', () => {
   // 3 items stacked vertically: y=[0,20], y=[30,50], y=[60,80]
-  const rects: IRect[] = [
-    rect(0, 0, 100, 20),
-    rect(0, 30, 100, 20),
-    rect(0, 60, 100, 20),
-  ];
+  const rects: IRect[] = [rect(0, 0, 100, 20), rect(0, 30, 100, 20), rect(0, 60, 100, 20)];
   // centers: y=10, y=40, y=70
 
   it('empty array always returns 0', () => {
@@ -70,11 +66,7 @@ describe('computeInsertIndex — axis y', () => {
 
 describe('computeInsertIndex — axis x', () => {
   // 3 items in a row: x=[0,40], x=[50,90], x=[100,140]
-  const rects: IRect[] = [
-    rect(0, 0, 40, 30),
-    rect(50, 0, 40, 30),
-    rect(100, 0, 40, 30),
-  ];
+  const rects: IRect[] = [rect(0, 0, 40, 30), rect(50, 0, 40, 30), rect(100, 0, 40, 30)];
   // centers: x=20, x=70, x=120
 
   it('pointer before first center → 0', () => {
@@ -191,7 +183,7 @@ describe('findZoneAtPoint', () => {
 
 describe('findNearestZone', () => {
   const zones = [
-    { id: 'left', rect: rect(0, 0, 100, 100) },   // center (50, 50)
+    { id: 'left', rect: rect(0, 0, 100, 100) }, // center (50, 50)
     { id: 'right', rect: rect(200, 0, 100, 100) }, // center (250, 50)
   ];
 
@@ -207,6 +199,8 @@ describe('findNearestZone', () => {
   });
 
   it('returns the only zone when list has one entry', () => {
-    expect(findNearestZone({ x: 999, y: 999 }, [{ id: 'only', rect: rect(0, 0, 10, 10) }])).toBe('only');
+    expect(findNearestZone({ x: 999, y: 999 }, [{ id: 'only', rect: rect(0, 0, 10, 10) }])).toBe(
+      'only',
+    );
   });
 });
