@@ -39,14 +39,12 @@ export const boxStyle = (opts: {
       return { 'box-shadow': `inset 0 0 0 2px ${c}`, 'background-color': fill(c, 12) };
     if (isInsideCandidate)
       return { 'box-shadow': `inset 0 0 0 1px ${c}`, 'background-color': fill(c, 6) };
-    if (mark)
-      return { 'box-shadow': `inset 0 0 0 1px ${mark}`, 'background-color': fill(mark, 8) };
+    if (mark) return { 'box-shadow': `inset 0 0 0 1px ${mark}`, 'background-color': fill(mark, 8) };
     return undefined;
   }
   if (selectedId === nodeId)
     return { 'box-shadow': `inset 0 0 0 2px ${c}`, 'background-color': fill(c, 16) };
-  if (mark)
-    return { 'box-shadow': `inset 0 0 0 1px ${mark}`, 'background-color': fill(mark, 8) };
+  if (mark) return { 'box-shadow': `inset 0 0 0 1px ${mark}`, 'background-color': fill(mark, 8) };
   return undefined;
 };
 
@@ -62,7 +60,6 @@ export const headerStyle = (opts: {
   const { isSelected, isContainer, mark, color } = opts;
   if (isSelected && !isContainer)
     return { 'box-shadow': `inset 0 0 0 2px ${color}`, 'background-color': fill(color, 20) };
-  if (mark)
-    return { 'box-shadow': `inset 0 0 0 1px ${mark}`, 'background-color': fill(mark, 8) };
+  if (mark) return { 'box-shadow': `inset 0 0 0 1px ${mark}`, 'background-color': fill(mark, 8) };
   return {};
 };

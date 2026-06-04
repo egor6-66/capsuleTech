@@ -1,2 +1,2 @@
-export type * from './interfaces';
 export { Button } from './button';
+export type * from './interfaces';

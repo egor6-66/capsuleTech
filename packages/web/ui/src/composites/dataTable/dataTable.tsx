@@ -20,11 +20,10 @@ import {
   splitProps,
   useContext,
 } from 'solid-js';
-
+import { createInfiniteScroll } from '../../lib/infiniteScroll';
 import { Button } from '../../primitives/button';
 import { Table } from '../../primitives/table';
 import { CompositeProxyContext } from '../compositeProxy';
-import { createInfiniteScroll } from '../../lib/infiniteScroll';
 import type { IDataTableInfiniteOptions, IDataTableProps } from './interfaces';
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -198,7 +197,7 @@ function StandardTableBody<TData>(props: {
           const active = props.isRowActive ? () => props.isRowActive!(row.original) : undefined;
           const rowId = props.getRowId
             ? props.getRowId(row.original)
-            : (row.original as Record<string, unknown>).id as string | number | undefined;
+            : ((row.original as Record<string, unknown>).id as string | number | undefined);
           return (
             <props.WrappedDataRow
               row={row}
@@ -274,7 +273,7 @@ function InfiniteTable<TData>(props: {
     const idx = allRows.findIndex((r) => {
       const id = props.getRowId
         ? props.getRowId(r.original)
-        : (r.original as Record<string, unknown>).id as string | number | undefined;
+        : ((r.original as Record<string, unknown>).id as string | number | undefined);
       return id === target;
     });
     if (idx === -1) return;
@@ -323,7 +322,7 @@ function InfiniteTable<TData>(props: {
                 : undefined;
               const rowId = props.getRowId
                 ? props.getRowId(row().original)
-                : (row().original as Record<string, unknown>).id as string | number | undefined;
+                : ((row().original as Record<string, unknown>).id as string | number | undefined);
               return (
                 <props.WrappedDataRow
                   row={row()}

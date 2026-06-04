@@ -209,9 +209,13 @@ await step('cleanup fixture/ + verdaccio-tmp/', async () => {
 let verdaccioProc;
 await step('spawn Verdaccio', async () => {
   // npx разрешает workspace, видит package conflicts (root vs dist/package.json
-   // для каждого @capsuletech/*). Запускаем Verdaccio binary напрямую.
-  const verdaccioBin = join(REPO_ROOT, 'node_modules', '.bin',
-    process.platform === 'win32' ? 'verdaccio.cmd' : 'verdaccio');
+  // для каждого @capsuletech/*). Запускаем Verdaccio binary напрямую.
+  const verdaccioBin = join(
+    REPO_ROOT,
+    'node_modules',
+    '.bin',
+    process.platform === 'win32' ? 'verdaccio.cmd' : 'verdaccio',
+  );
   verdaccioProc = trackChild(
     spawn(verdaccioBin, ['--config', VERDACCIO_CONFIG, '--listen', '4874'], {
       cwd: __dirname,
@@ -254,7 +258,8 @@ await step('capsule create workspace', async () => {
     env: { CAPSULE_CI: '1' },
   });
   if (code !== 0) throw new Error(`exit ${code}`);
-  if (!existsSync(join(FIXTURE_DIR, 'package.json'))) throw new Error('workspace package.json missing');
+  if (!existsSync(join(FIXTURE_DIR, 'package.json')))
+    throw new Error('workspace package.json missing');
 });
 
 // ---------------------------------------------------------------------------
@@ -327,7 +332,8 @@ await step('pnpm dev + curl /', async () => {
   while (!port && Date.now() - start < DEV_WAIT_MS) {
     await new Promise((r) => setTimeout(r, 500));
   }
-  if (!port) throw new Error(`dev server didn't log "Local: http://localhost:" within ${DEV_WAIT_MS}ms`);
+  if (!port)
+    throw new Error(`dev server didn't log "Local: http://localhost:" within ${DEV_WAIT_MS}ms`);
 
   await new Promise((r) => setTimeout(r, 2000));
   const res = await fetch(`http://localhost:${port}/`, {

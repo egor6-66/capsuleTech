@@ -32,11 +32,7 @@ export const pick = <T>(rng: Rng, arr: readonly T[]): T => {
  * Взвешенный выбор. `weights[i]` соответствует `items[i]`. Default-вес 1.
  * Возвращает один из items.
  */
-export const pickWeighted = <T>(
-  rng: Rng,
-  items: readonly T[],
-  weights: readonly number[],
-): T => {
+export const pickWeighted = <T>(rng: Rng, items: readonly T[], weights: readonly number[]): T => {
   if (items.length === 0) throw new Error('pickWeighted: empty items');
   if (items.length !== weights.length) {
     throw new Error('pickWeighted: items and weights length mismatch');

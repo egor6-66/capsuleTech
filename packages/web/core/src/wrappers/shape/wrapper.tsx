@@ -3,7 +3,12 @@ import { mergeProps, splitProps } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import { useShapeUi } from './context';
 import type { IShapeComponentProps, IShapeWrapper } from './types';
-import { createUiTracker, getTrackerPath, resolveByPath, resolveValuesInObject } from './ui-tracker';
+import {
+  createUiTracker,
+  getTrackerPath,
+  resolveByPath,
+  resolveValuesInObject,
+} from './ui-tracker';
 
 /**
  * Shape wrapper — single batch flow (v0.4.0+).

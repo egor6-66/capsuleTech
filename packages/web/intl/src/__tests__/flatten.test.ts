@@ -3,9 +3,7 @@ import { flatten } from '../flatten';
 
 describe('flatten', () => {
   it('flattens a nested tree into dotted keys', () => {
-    expect(
-      flatten({ login: { title: 'Sign in', email: { label: 'Email' } } }),
-    ).toEqual({
+    expect(flatten({ login: { title: 'Sign in', email: { label: 'Email' } } })).toEqual({
       'login.title': 'Sign in',
       'login.email.label': 'Email',
     });

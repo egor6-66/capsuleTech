@@ -357,10 +357,7 @@ const RenderNode: Component<IRenderNodeProps> = (props) => {
       return (
         <span style="display:block; position:relative">
           {voidComp}
-          <span
-            style="position:absolute; inset:0; pointer-events:none"
-            aria-hidden="true"
-          >
+          <span style="position:absolute; inset:0; pointer-events:none" aria-hidden="true">
             {overlayMount()}
           </span>
         </span>
@@ -394,10 +391,7 @@ const RenderNode: Component<IRenderNodeProps> = (props) => {
         return (
           <>
             {realChildren}
-            <span
-              style="position:absolute; inset:0; pointer-events:none"
-              aria-hidden="true"
-            >
+            <span style="position:absolute; inset:0; pointer-events:none" aria-hidden="true">
               {overlayMount()}
             </span>
           </>

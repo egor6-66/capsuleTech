@@ -18,13 +18,13 @@
  */
 
 import { defineCapsuleModule } from '@capsuletech/web-core/module';
-import EditorController from './controllers/EditorController';
-import { EditorOverlay } from './controllers/EditorOverlay';
-import { EditorProvider } from './controllers/EditorProvider';
 import { EditorCanvas } from './controllers/EditorCanvas';
-import { EditorTree } from './controllers/EditorTree';
-import { EditorPalette } from './controllers/EditorPalette';
+import EditorController from './controllers/EditorController';
 import { EditorInspector } from './controllers/EditorInspector';
+import { EditorOverlay } from './controllers/EditorOverlay';
+import { EditorPalette } from './controllers/EditorPalette';
+import { EditorProvider } from './controllers/EditorProvider';
+import { EditorTree } from './controllers/EditorTree';
 
 export default defineCapsuleModule({
   name: 'Editor',

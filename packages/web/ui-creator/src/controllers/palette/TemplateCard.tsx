@@ -10,8 +10,8 @@
  */
 
 import { createDraggable } from '@capsuletech/web-dnd';
-import { Renderer } from '@capsuletech/web-renderer';
 import type { Registry } from '@capsuletech/web-renderer';
+import { Renderer } from '@capsuletech/web-renderer';
 import { Flex } from '@capsuletech/web-ui/flex';
 import { buildTemplate, type ITemplate } from '../../generators';
 

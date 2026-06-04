@@ -71,7 +71,9 @@ export const updateMeta = defineEndpoint((z) => ({
     displayName: z.string().optional(),
     category: z.string().optional(),
     isSchemaBranch: z.boolean().optional(),
-    meta: z.object({ positionX: z.number().optional(), positionY: z.number().optional() }).optional(),
+    meta: z
+      .object({ positionX: z.number().optional(), positionY: z.number().optional() })
+      .optional(),
     template: z.boolean().optional(),
   }),
   response: Entities.Branch.schema,

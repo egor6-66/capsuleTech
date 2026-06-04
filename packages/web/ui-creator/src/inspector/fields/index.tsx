@@ -25,17 +25,34 @@ export const renderField = (
   const raw = values[field.key];
   switch (field.type) {
     case 'text':
-      return <TextField field={field} value={raw as string | undefined} onChange={emit} kit={kit} />;
+      return (
+        <TextField field={field} value={raw as string | undefined} onChange={emit} kit={kit} />
+      );
     case 'textarea':
-      return <TextareaField field={field} value={raw as string | undefined} onChange={emit} kit={kit} />;
+      return (
+        <TextareaField field={field} value={raw as string | undefined} onChange={emit} kit={kit} />
+      );
     case 'number':
-      return <NumberField field={field} value={raw as number | undefined} onChange={emit} kit={kit} />;
+      return (
+        <NumberField field={field} value={raw as number | undefined} onChange={emit} kit={kit} />
+      );
     case 'number-unit':
-      return <NumberUnitField field={field} value={raw as string | undefined} onChange={emit} kit={kit} />;
+      return (
+        <NumberUnitField
+          field={field}
+          value={raw as string | undefined}
+          onChange={emit}
+          kit={kit}
+        />
+      );
     case 'boolean':
-      return <BooleanField field={field} value={raw as boolean | undefined} onChange={emit} kit={kit} />;
+      return (
+        <BooleanField field={field} value={raw as boolean | undefined} onChange={emit} kit={kit} />
+      );
     case 'select':
-      return <SelectField field={field} value={raw as string | undefined} onChange={emit} kit={kit} />;
+      return (
+        <SelectField field={field} value={raw as string | undefined} onChange={emit} kit={kit} />
+      );
     default:
       // exhaustive — TS подсветит если добавили новый тип и забыли тут
       return null;

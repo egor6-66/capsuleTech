@@ -1,2 +1,2 @@
-export { WidgetSettingsToggle } from './widgetSettingsToggle';
 export type { IWidgetSettingsToggleProps } from './interfaces';
+export { WidgetSettingsToggle } from './widgetSettingsToggle';

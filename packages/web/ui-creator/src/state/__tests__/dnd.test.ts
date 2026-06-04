@@ -2,15 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { generate } from '../../generators/engine';
 import { FORM_PRESET } from '../../generators/presets/form';
 import { LAYOUT_2COL_PRESET } from '../../generators/presets/layout-2col';
-import {
-  applyDrop,
-  canBeside,
-  canInto,
-  canvasIntent,
-  dragSpec,
-  treeIntent,
-} from '../dnd';
 import type { DragSpec, DropIntent } from '../dnd';
+import { applyDrop, canBeside, canInto, canvasIntent, dragSpec, treeIntent } from '../dnd';
 import { addNode, createEmptyTree } from '../operations';
 import type { IEditorTree } from '../types';
 
@@ -145,8 +138,8 @@ describe('applyDrop', () => {
       const spec: DragSpec = { kind: 'add', type: 'ui.Button' };
       const intent: DropIntent = { parentId: 'root', beforeId: null };
       const result = applyDrop(tree, spec, intent);
-      expect(result.nodes['root']!.children.length).toBe(1);
-      const addedId = result.nodes['root']!.children[0]!;
+      expect(result.nodes.root!.children.length).toBe(1);
+      const addedId = result.nodes.root!.children[0]!;
       expect(result.nodes[addedId]!.type).toBe('ui.Button');
     });
 
@@ -159,7 +152,7 @@ describe('applyDrop', () => {
       const spec: DragSpec = { kind: 'add', type: 'ui.Typography' };
       const intent: DropIntent = { parentId: 'root', beforeId: existing };
       const result = applyDrop(t1, spec, intent);
-      const children = result.nodes['root']!.children;
+      const children = result.nodes.root!.children;
       expect(children.length).toBe(2);
       // Новый Typography — на index 0 (перед existing)
       expect(result.nodes[children[0]!]!.type).toBe('ui.Typography');
@@ -184,8 +177,8 @@ describe('applyDrop', () => {
       const spec: DragSpec = { kind: 'addTree', fragment };
       const intent: DropIntent = { parentId: 'root', beforeId: null };
       const result = applyDrop(tree, spec, intent);
-      expect(result.nodes['root']!.children.length).toBe(1);
-      const inserted = result.nodes[result.nodes['root']!.children[0]!]!;
+      expect(result.nodes.root!.children.length).toBe(1);
+      const inserted = result.nodes[result.nodes.root!.children[0]!]!;
       // FORM_PRESET root = ui.Card
       expect(inserted.type).toBe('ui.Card');
     });
@@ -200,7 +193,7 @@ describe('applyDrop', () => {
       const spec: DragSpec = { kind: 'addTree', fragment };
       const intent: DropIntent = { parentId: 'root', beforeId: existing };
       const result = applyDrop(t1, spec, intent);
-      const children = result.nodes['root']!.children;
+      const children = result.nodes.root!.children;
       expect(children.length).toBe(2);
       // Новый фрагмент на index 0
       expect(result.nodes[children[0]!]!.type).toBe('ui.Card');
@@ -261,7 +254,7 @@ describe('applyDrop', () => {
       const intent: DropIntent = { parentId: 'root', beforeId: a };
       const result = applyDrop(t2, spec, intent);
 
-      const children = result.nodes['root']!.children;
+      const children = result.nodes.root!.children;
       expect(children[0]).toBe(b);
       expect(children[1]).toBe(a);
     });
@@ -421,8 +414,15 @@ describe('canvasIntent (jsdom)', () => {
     const parent = document.createElement('div');
     parent.dataset.nodeId = content;
     parent.getBoundingClientRect = () => ({
-      top: 0, left: 0, width: 100, height: 100,
-      bottom: 100, right: 100, x: 0, y: 0, toJSON: () => ({}),
+      top: 0,
+      left: 0,
+      width: 100,
+      height: 100,
+      bottom: 100,
+      right: 100,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
     });
     const inner = document.createElement('span');
     parent.appendChild(inner);

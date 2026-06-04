@@ -39,9 +39,7 @@ export const resolveCopy: CopyResolver = (key, fallback) => {
   const hit =
     fromTenant(locale) ??
     fromBase(locale) ??
-    (defaultLocale !== locale
-      ? (fromTenant(defaultLocale) ?? fromBase(defaultLocale))
-      : undefined);
+    (defaultLocale !== locale ? (fromTenant(defaultLocale) ?? fromBase(defaultLocale)) : undefined);
 
   return hit ?? fallback ?? key;
 };

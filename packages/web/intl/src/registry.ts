@@ -22,14 +22,9 @@ const [registryVersion, bumpRegistryVersion] = createSignal(0);
 /** Reactive registration counter - read by the resolver to track late merges. */
 export { registryVersion };
 
-const tenantKey = (tenant: Tenant, locale: Locale): string =>
-  `${tenant}::${locale}`;
+const tenantKey = (tenant: Tenant, locale: Locale): string => `${tenant}::${locale}`;
 
-const mergeInto = (
-  store: Map<string, Dictionary>,
-  key: string,
-  dict: Dictionary,
-): void => {
+const mergeInto = (store: Map<string, Dictionary>, key: string, dict: Dictionary): void => {
   const existing = store.get(key);
   store.set(key, existing ? { ...existing, ...dict } : { ...dict });
 };
@@ -38,10 +33,7 @@ const mergeInto = (
 export function registerCopy(locale: Locale, dict: Dictionary): void;
 /** Register (merge) a tagged copy bundle. */
 export function registerCopy(bundle: ICopyBundle): void;
-export function registerCopy(
-  arg: Locale | ICopyBundle,
-  dict?: Dictionary,
-): void {
+export function registerCopy(arg: Locale | ICopyBundle, dict?: Dictionary): void {
   if (typeof arg === 'string') {
     mergeInto(baseRegistry, arg, dict ?? {});
   } else if (arg.tenant) {
@@ -53,28 +45,20 @@ export function registerCopy(
 }
 
 /** Register (merge) a tenant override dictionary for a locale. */
-export function registerTenantCopy(
-  tenant: Tenant,
-  locale: Locale,
-  dict: Dictionary,
-): void {
+export function registerTenantCopy(tenant: Tenant, locale: Locale, dict: Dictionary): void {
   mergeInto(tenantRegistry, tenantKey(tenant, locale), dict);
   bumpRegistryVersion((v) => v + 1);
 }
 
 /** Look up a base dictionary (non-reactive). */
-export const getBaseDict = (locale: Locale): Dictionary | undefined =>
-  baseRegistry.get(locale);
+export const getBaseDict = (locale: Locale): Dictionary | undefined => baseRegistry.get(locale);
 
 /** Look up a tenant-override dictionary (non-reactive). */
-export const getTenantDict = (
-  tenant: Tenant,
-  locale: Locale,
-): Dictionary | undefined => tenantRegistry.get(tenantKey(tenant, locale));
+export const getTenantDict = (tenant: Tenant, locale: Locale): Dictionary | undefined =>
+  tenantRegistry.get(tenantKey(tenant, locale));
 
 /** All locales that have at least one registered base dictionary (non-reactive). */
-export const getRegisteredLocales = (): Locale[] =>
-  [...baseRegistry.keys()].sort();
+export const getRegisteredLocales = (): Locale[] => [...baseRegistry.keys()].sort();
 
 /** Test-only: wipe both registries and reset the version signal. */
 export const __resetRegistry = (): void => {

@@ -334,10 +334,7 @@ describe('Flex — empty container gets inline min-height, non-empty does not', 
   });
 
   it('does NOT set min-height inline style in items-mode (items-mode is never "empty" in the slot sense)', () => {
-    const items: IFlexItem[] = [
-      { children: <div>A</div> },
-      { children: <div>B</div> },
-    ];
+    const items: IFlexItem[] = [{ children: <div>A</div> }, { children: <div>B</div> }];
 
     cleanup = render(() => <Flex items={items} />, container);
 

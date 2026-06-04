@@ -13,12 +13,12 @@
  * Все внешние зависимости мокируются.
  */
 
+import { z } from '@capsuletech/shared-zod';
+import { render } from 'solid-js/web';
 /* @vitest-environment jsdom */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render } from 'solid-js/web';
-import { z } from '@capsuletech/shared-zod';
+import { addNode, createEmptyTree } from '../../state/operations';
 import type { IEditorCtx } from '../EditorController';
-import { createEmptyTree, addNode } from '../../state/operations';
 
 // ── Mock state ─────────────────────────────────────────────────────────────────
 
@@ -43,7 +43,15 @@ vi.mock('@capsuletech/web-ui/toggle', () => ({
 }));
 
 vi.mock('@capsuletech/web-ui/input', () => ({
-  Input: (props: { value?: string | number; disabled?: boolean; type?: string; placeholder?: string; onInput?: (e: Event) => void; class?: string; classList?: Record<string, boolean> }) => (
+  Input: (props: {
+    value?: string | number;
+    disabled?: boolean;
+    type?: string;
+    placeholder?: string;
+    onInput?: (e: Event) => void;
+    class?: string;
+    classList?: Record<string, boolean>;
+  }) => (
     <input
       type={props.type ?? 'text'}
       value={String(props.value ?? '')}
@@ -56,7 +64,13 @@ vi.mock('@capsuletech/web-ui/input', () => ({
 }));
 
 vi.mock('@capsuletech/web-ui/select', () => ({
-  Select: (props: { options?: { value: string; label: string }[]; value?: string; disabled?: boolean; onChange?: (v: string) => void; class?: string }) => (
+  Select: (props: {
+    options?: { value: string; label: string }[];
+    value?: string;
+    disabled?: boolean;
+    onChange?: (v: string) => void;
+    class?: string;
+  }) => (
     <select
       value={props.value ?? ''}
       disabled={props.disabled}
@@ -71,7 +85,14 @@ vi.mock('@capsuletech/web-ui/select', () => ({
 }));
 
 vi.mock('@capsuletech/web-ui/textarea', () => ({
-  Textarea: (props: { value?: string; rows?: number; placeholder?: string; disabled?: boolean; class?: string; onInput?: (e: InputEvent & { currentTarget: HTMLTextAreaElement }) => void }) => (
+  Textarea: (props: {
+    value?: string;
+    rows?: number;
+    placeholder?: string;
+    disabled?: boolean;
+    class?: string;
+    onInput?: (e: InputEvent & { currentTarget: HTMLTextAreaElement }) => void;
+  }) => (
     <textarea
       rows={props.rows ?? 3}
       value={props.value ?? ''}
@@ -85,13 +106,17 @@ vi.mock('@capsuletech/web-ui/textarea', () => ({
 
 // Flex из @capsuletech/web-ui/flex — div-обёртка.
 vi.mock('@capsuletech/web-ui/flex', () => ({
-  // biome-ignore lint/suspicious/noExplicitAny
-  Flex: (props: any) => <div class={props.class} style={props.style}>{props.children}</div>,
+  // biome-ignore lint/suspicious/noExplicitAny: тест-мок — props принимаются как any
+  Flex: (props: any) => (
+    <div class={props.class} style={props.style}>
+      {props.children}
+    </div>
+  ),
 }));
 
 // Button из @capsuletech/web-ui/button — нативный button.
 vi.mock('@capsuletech/web-ui/button', () => ({
-  // biome-ignore lint/suspicious/noExplicitAny
+  // biome-ignore lint/suspicious/noExplicitAny: тест-мок — props принимаются как any
   Button: (props: any) => <button type="button" {...props} />,
 }));
 
@@ -137,12 +162,24 @@ vi.mock('../useEditor', () => ({
   useEditor: () => {
     const data = () => _mockEditorState!;
     return {
-      get tree() { return data().tree; },
-      get selectedId() { return data().selectedId; },
-      get dragSpec() { return data().dragSpec; },
-      get dropTargetId() { return data().dropTargetId; },
-      get intent() { return data().intent; },
-      get marks() { return data().marks; },
+      get tree() {
+        return data().tree;
+      },
+      get selectedId() {
+        return data().selectedId;
+      },
+      get dragSpec() {
+        return data().dragSpec;
+      },
+      get dropTargetId() {
+        return data().dropTargetId;
+      },
+      get intent() {
+        return data().intent;
+      },
+      get marks() {
+        return data().marks;
+      },
     };
   },
 }));

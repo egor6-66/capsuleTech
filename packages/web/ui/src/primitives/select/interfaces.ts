@@ -1,4 +1,9 @@
-import type { SelectContentProps, SelectPortalProps, SelectRootProps, SelectTriggerProps } from '@kobalte/core/select';
+import type {
+  SelectContentProps,
+  SelectPortalProps,
+  SelectRootProps,
+  SelectTriggerProps,
+} from '@kobalte/core/select';
 import type { JSX } from 'solid-js';
 
 /**

@@ -13,13 +13,12 @@
  * Все внешние зависимости мокируются.
  */
 
+import { render } from 'solid-js/web';
 /* @vitest-environment jsdom */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render } from 'solid-js/web';
-import { createSignal } from 'solid-js';
-import type { IEditorCtx } from '../EditorController';
-import { createEmptyTree, addNode } from '../../state/operations';
 import type { DragSpec, DropIntent } from '../../state/dnd';
+import { addNode, createEmptyTree } from '../../state/operations';
+import type { IEditorCtx } from '../EditorController';
 
 // ── mock state ─────────────────────────────────────────────────────────────
 
@@ -70,15 +69,23 @@ vi.mock('@capsuletech/web-dnd/controllers', () => ({
 
 vi.mock('@capsuletech/web-renderer', () => ({
   Renderer: (props: { schema: unknown; registry: unknown; editOverlay: unknown }) => {
-    _rendererCalls.push({ schema: props.schema, registry: props.registry, editOverlay: props.editOverlay });
+    _rendererCalls.push({
+      schema: props.schema,
+      registry: props.registry,
+      editOverlay: props.editOverlay,
+    });
     return null;
   },
 }));
 
 // Flex из @capsuletech/web-ui/flex — div-обёртка, форвардит class и children.
 vi.mock('@capsuletech/web-ui/flex', () => ({
-  // biome-ignore lint/suspicious/noExplicitAny
-  Flex: (props: any) => <div class={props.class} style={props.style}>{props.children}</div>,
+  // biome-ignore lint/suspicious/noExplicitAny: тест-мок — props принимаются как any
+  Flex: (props: any) => (
+    <div class={props.class} style={props.style}>
+      {props.children}
+    </div>
+  ),
 }));
 
 vi.mock('../EditorProvider', () => ({

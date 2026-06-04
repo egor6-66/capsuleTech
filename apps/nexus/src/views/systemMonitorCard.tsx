@@ -82,7 +82,9 @@ const SystemMonitorCard = View((Ui, props: { icon?: Component<{ class?: string }
               <Ui.Typography variant="muted" class="text-xs">
                 CPU
               </Ui.Typography>
-              <span class="text-xs font-semibold tabular-nums">{d()?.gauges?.cpu?.value ?? 0}%</span>
+              <span class="text-xs font-semibold tabular-nums">
+                {d()?.gauges?.cpu?.value ?? 0}%
+              </span>
             </Ui.Layout.Flex>
             <Ui.Chart.Area
               labels={d()?.series?.labels ?? []}
@@ -99,7 +101,9 @@ const SystemMonitorCard = View((Ui, props: { icon?: Component<{ class?: string }
               <Ui.Typography variant="muted" class="text-xs">
                 RAM
               </Ui.Typography>
-              <span class="text-xs font-semibold tabular-nums">{d()?.gauges?.mem?.value ?? 0}%</span>
+              <span class="text-xs font-semibold tabular-nums">
+                {d()?.gauges?.mem?.value ?? 0}%
+              </span>
             </Ui.Layout.Flex>
             <Ui.Chart.Area
               labels={d()?.series?.labels ?? []}

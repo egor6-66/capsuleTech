@@ -1,12 +1,11 @@
+import type { ComponentCategory } from '../manifests/types';
 import { generate } from './engine';
+import { BUTTON_OUTLINE_PRESET, BUTTON_PRIMARY_PRESET } from './presets/button-primary';
 import { CARD_PRODUCT_PRESET } from './presets/card-product';
 import { FORM_PRESET } from './presets/form';
 import { LAYOUT_2COL_PRESET } from './presets/layout-2col';
-import { BUTTON_OUTLINE_PRESET, BUTTON_PRIMARY_PRESET } from './presets/button-primary';
 import { TYPOGRAPHY_H1_PRESET, TYPOGRAPHY_PARAGRAPH_PRESET } from './presets/typography';
-import type { IEditorTree } from './types';
-import type { ComponentCategory } from '../manifests/types';
-import type { IPreset } from './types';
+import type { IEditorTree, IPreset } from './types';
 
 /**
  * Описание одного темплейта. Темплейт = именованный preset + метаданные для

@@ -1,9 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import {
-  setDefaultLocale,
-  setLocale,
-  setTenant,
-} from '../locale';
+import { setDefaultLocale, setLocale, setTenant } from '../locale';
 import { __resetRegistry, registerCopy, registerTenantCopy } from '../registry';
 import { resolveCopy } from '../resolve';
 

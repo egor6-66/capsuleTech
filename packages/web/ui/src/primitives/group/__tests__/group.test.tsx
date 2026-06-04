@@ -38,8 +38,12 @@ describe('Group — base rendering', () => {
     cleanup = render(
       () => (
         <Group>
-          <button data-testid="btn-a">A</button>
-          <button data-testid="btn-b">B</button>
+          <button type="button" data-testid="btn-a">
+            A
+          </button>
+          <button type="button" data-testid="btn-b">
+            B
+          </button>
         </Group>
       ),
       container,
@@ -74,7 +78,7 @@ describe('Group — empty wrapper-mode gets inline min-height via Flex delegatio
     cleanup = render(
       () => (
         <Group>
-          <button>click me</button>
+          <button type="button">click me</button>
         </Group>
       ),
       container,
@@ -99,7 +103,7 @@ describe('Group — empty wrapper-mode gets inline min-height via Flex delegatio
 describe('Group — batch mode does NOT get empty-state min-height', () => {
   it('does not apply min-height inline style in spaced batch mode', () => {
     const data = [{ label: 'A' }, { label: 'B' }];
-    const ItemBtn = (p: { label: string }) => <button>{p.label}</button>;
+    const ItemBtn = (p: { label: string }) => <button type="button">{p.label}</button>;
 
     cleanup = render(
       () => (
@@ -122,7 +126,7 @@ describe('Group — batch mode does NOT get empty-state min-height', () => {
 
   it('does not apply min-height inline style in attached batch mode', () => {
     const data = [{ label: 'X' }, { label: 'Y' }];
-    const ItemBtn = (p: { label: string }) => <button>{p.label}</button>;
+    const ItemBtn = (p: { label: string }) => <button type="button">{p.label}</button>;
 
     cleanup = render(
       () => (

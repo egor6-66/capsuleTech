@@ -17,7 +17,11 @@ export const BooleanField = (props: IProps) => (
   <div class="flex flex-col gap-1">
     <div class="flex items-center justify-between gap-2">
       <span class="text-xs opacity-70">{props.field.label}</span>
-      <props.kit.Toggle checked={!!props.value} onChange={props.onChange} disabled={props.field.disabled} />
+      <props.kit.Toggle
+        checked={!!props.value}
+        onChange={props.onChange}
+        disabled={props.field.disabled}
+      />
     </div>
     <Show when={props.field.hint}>
       <span class="text-xs opacity-50">{props.field.hint}</span>

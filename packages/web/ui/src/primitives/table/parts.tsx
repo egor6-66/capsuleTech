@@ -4,8 +4,8 @@ import { splitProps } from 'solid-js';
 import type {
   ITableBodyProps,
   ITableCellProps,
-  ITableHeadProps,
   ITableHeaderProps,
+  ITableHeadProps,
   ITableRowProps,
 } from './interfaces';
 

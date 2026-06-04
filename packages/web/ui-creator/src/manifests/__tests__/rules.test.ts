@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createEmptyTree } from '../../state/operations';
-import { addNode } from '../../state/operations';
+import { addNode, createEmptyTree } from '../../state/operations';
 import { acceptsChildren, canDropInto, canMoveInto, isInside } from '../rules';
 
 // ── Вспомогательные деревья ────────────────────────────────────────────────

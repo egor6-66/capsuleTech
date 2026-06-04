@@ -49,7 +49,7 @@
 
 import { join, resolve } from 'node:path';
 import type { Plugin } from 'vite';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   CapsuleRegistryPlugin,
   generateAppConfigRuntime,
@@ -62,8 +62,8 @@ import {
   generateWrappersTypes,
   LAYER_INIT_ORDER,
   parseManifestSource,
-  resolvePackageEntries,
   type ResolvedPackageEntry,
+  resolvePackageEntries,
 } from '../capsuleRegistry';
 
 // ---------------------------------------------------------------------------
@@ -430,9 +430,7 @@ describe('generateBootstrap — structure', () => {
 
   it('imports IAppConfig type and appConfigRaw from capsule.app', () => {
     const out = generateBootstrap();
-    expect(out).toContain(
-      "import { type IAppConfig } from '@capsuletech/web-core/app-config';",
-    );
+    expect(out).toContain("import { type IAppConfig } from '@capsuletech/web-core/app-config';");
     expect(out).toContain("import appConfigRaw from '../capsule.app';");
   });
 
@@ -1384,7 +1382,9 @@ describe('resolvePackageEntries — single string entry with controllers (mocked
     // Matches actual .capsule/registry/packages.ts generated for apps/ui-creator
     expect(runtime).toContain("import Editor_mod from '@capsuletech/web-ui-creator/capsule';");
     expect(runtime).toContain('export const Editor = Editor_mod.components;');
-    expect(runtime).toContain('(globalThis.Controllers ??= {})["Editor"] = Editor_mod.controllers["Editor"];');
+    expect(runtime).toContain(
+      '(globalThis.Controllers ??= {})["Editor"] = Editor_mod.controllers["Editor"];',
+    );
     expect(runtime).toContain('Object.assign(globalThis, { Editor });');
   });
 

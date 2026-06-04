@@ -43,12 +43,10 @@ export const IntlProvider = (props: IIntlProviderProps): JSX.Element => {
 
   if (props.defaultLocale) setDefaultLocale(props.defaultLocale);
 
-  const persistedLocale =
-    typeof window !== 'undefined' && localStorage.getItem('capsule-locale');
+  const persistedLocale = typeof window !== 'undefined' && localStorage.getItem('capsule-locale');
   if (props.locale && !persistedLocale) setLocale(props.locale);
 
-  const persistedTenant =
-    typeof window !== 'undefined' && localStorage.getItem('capsule-tenant');
+  const persistedTenant = typeof window !== 'undefined' && localStorage.getItem('capsule-tenant');
   if (props.tenant && !persistedTenant) setTenant(props.tenant);
 
   return props.children;

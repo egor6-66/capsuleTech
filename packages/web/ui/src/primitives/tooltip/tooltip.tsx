@@ -157,10 +157,7 @@ const Content = (props: ITooltipContentProps) => {
 const Arrow = (props: ITooltipArrowProps) => {
   const [local, others] = splitProps(props, ['class']);
   return (
-    <KobalteTooltip.Arrow
-      class={cn(tooltipArrowCva(), local.class)}
-      {...(others as object)}
-    />
+    <KobalteTooltip.Arrow class={cn(tooltipArrowCva(), local.class)} {...(others as object)} />
   );
 };
 
@@ -218,8 +215,4 @@ export const Tooltip = Object.assign(TooltipImpl, {
 });
 
 // Named re-exports for `createLazy` in web-core/ui-kit/imports.tsx.
-export {
-  Trigger as TooltipTrigger,
-  Content as TooltipContent,
-  Arrow as TooltipArrow,
-};
+export { Arrow as TooltipArrow, Content as TooltipContent, Trigger as TooltipTrigger };

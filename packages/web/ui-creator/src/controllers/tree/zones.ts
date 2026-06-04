@@ -51,8 +51,5 @@ export const leafZone = (
 /**
  * Является ли нода кандидатом для drop «внутрь» (слабая подсветка пока тащим).
  */
-export const insideCandidate = (
-  tree: IEditorTree,
-  spec: DragSpec,
-  nodeId: NodeId,
-): boolean => canInto(tree, spec, nodeId);
+export const insideCandidate = (tree: IEditorTree, spec: DragSpec, nodeId: NodeId): boolean =>
+  canInto(tree, spec, nodeId);

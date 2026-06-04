@@ -963,9 +963,7 @@ describe('Renderer — editOverlay (ADR 031)', () => {
 
   it('с editOverlay — для каждой ноды монтируется overlay (число оверлеев = число нод)', () => {
     const Card: Component<any> = (p) => <div data-testid="card">{p.children}</div>;
-    const Leaf: Component<any> = (p) => (
-      <span data-testid="leaf">{p.children}</span>
-    );
+    const Leaf: Component<any> = (p) => <span data-testid="leaf">{p.children}</span>;
     const schema: ISchema = {
       components: {
         root: 'card',
@@ -1002,7 +1000,13 @@ describe('Renderer — editOverlay (ADR 031)', () => {
         root: 'card',
         nodes: {
           card: { id: 'card', type: 'Card', parentId: null, children: ['btn'] },
-          btn: { id: 'btn', type: 'Btn', parentId: 'card', children: [], props: { children: 'Click' } },
+          btn: {
+            id: 'btn',
+            type: 'Btn',
+            parentId: 'card',
+            children: [],
+            props: { children: 'Click' },
+          },
         },
       },
     };
@@ -1082,9 +1086,7 @@ describe('Renderer — editOverlay (ADR 031)', () => {
     // а НЕ display:contents (который по CSS-спеке не создаёт own box и потому
     // игнорирует position:relative — absolute overlay позиционировался бы
     // относительно ближайшего настоящего containing block, т.е. родителя).
-    const FakeInput: Component<any> = () => (
-      <input data-testid="void-input" type="text" />
-    );
+    const FakeInput: Component<any> = () => <input data-testid="void-input" type="text" />;
     const schema: ISchema = {
       components: {
         root: 'inp',

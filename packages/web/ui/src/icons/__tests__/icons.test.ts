@@ -17,10 +17,9 @@ describe('icons subpath', () => {
   it('exports are functions (Solid components)', () => {
     const sampleNames = ['Plus', 'Minus', 'Check', 'AlertCircle'] as const;
     for (const name of sampleNames) {
-      expect(
-        typeof (Icons as Record<string, unknown>)[name],
-        `${name} should be a function`,
-      ).toBe('function');
+      expect(typeof (Icons as Record<string, unknown>)[name], `${name} should be a function`).toBe(
+        'function',
+      );
     }
   });
 });

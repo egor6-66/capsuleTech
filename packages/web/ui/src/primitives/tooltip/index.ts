@@ -1,7 +1,7 @@
+export type * from './interfaces';
 export {
   Tooltip,
-  TooltipTrigger,
-  TooltipContent,
   TooltipArrow,
+  TooltipContent,
+  TooltipTrigger,
 } from './tooltip';
-export type * from './interfaces';

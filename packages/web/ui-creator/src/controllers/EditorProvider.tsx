@@ -47,9 +47,9 @@
  * как и любой Widget в приложении.
  */
 
-import { createContext, useContext, type JSX } from 'solid-js';
-import type { Registry } from '@capsuletech/web-renderer';
 import { DnDProvider } from '@capsuletech/web-dnd';
+import type { Registry } from '@capsuletech/web-renderer';
+import { createContext, type JSX, useContext } from 'solid-js';
 
 // ── Kit context ────────────────────────────────────────────────────────────────
 
@@ -131,11 +131,7 @@ export const EditorProvider = (props: IEditorProviderProps) => {
   return (
     <DnDProvider showDefaultOverlay={showOverlay()}>
       <EditorKitContext.Provider value={props.kit}>
-        {EditorCtrl ? (
-          <EditorCtrl>{props.children}</EditorCtrl>
-        ) : (
-          props.children
-        )}
+        {EditorCtrl ? <EditorCtrl>{props.children}</EditorCtrl> : props.children}
       </EditorKitContext.Provider>
     </DnDProvider>
   );

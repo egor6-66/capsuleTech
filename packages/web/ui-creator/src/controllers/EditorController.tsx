@@ -20,14 +20,13 @@ import {
   applyDrop,
   canInto,
   canvasIntent,
-  dragSpec,
-  treeIntent,
   type DragSpec,
   type DropIntent,
   type TreeZone,
+  treeIntent,
 } from '../state/dnd';
-import type { IEditorTree, NodeId } from '../state/types';
 import { createEmptyTree, updateNode } from '../state/operations';
+import type { IEditorTree, NodeId } from '../state/types';
 
 // ── Типы контекста ────────────────────────────────────────────────────────────
 
@@ -71,7 +70,7 @@ export interface IOnUpdateNodePropsPayload {
 
 // ── Controller ────────────────────────────────────────────────────────────────
 
-const EditorController = Controller((services) => {
+const EditorController = Controller((_services) => {
   const initialCtx: IEditorCtx = {
     tree: createEmptyTree('ui.Layout.Grid'),
     selectedId: null,

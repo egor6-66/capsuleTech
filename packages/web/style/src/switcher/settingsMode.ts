@@ -1,12 +1,10 @@
-import { createSignal, type Accessor } from 'solid-js';
+import { type Accessor, createSignal } from 'solid-js';
 
 const STORAGE_KEY = 'capsule-settings-mode';
 
 // Module-level singleton signal. SSR-safe: localStorage read guarded.
 const [enabled, setEnabled] = createSignal<boolean>(
-  typeof window !== 'undefined'
-    ? localStorage.getItem(STORAGE_KEY) === 'true'
-    : false,
+  typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) === 'true' : false,
 );
 
 /**

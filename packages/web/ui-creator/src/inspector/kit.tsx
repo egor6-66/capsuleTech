@@ -10,11 +10,11 @@
  */
 
 import { Input } from '@capsuletech/web-ui/input';
+import type { ISelectOption } from '@capsuletech/web-ui/select';
 import { Select } from '@capsuletech/web-ui/select';
 import { Textarea } from '@capsuletech/web-ui/textarea';
-import { Toggle } from '@capsuletech/web-ui/toggle';
-import type { ISelectOption } from '@capsuletech/web-ui/select';
 import type { IToggleProps } from '@capsuletech/web-ui/toggle';
+import { Toggle } from '@capsuletech/web-ui/toggle';
 import type { Component, JSX } from 'solid-js';
 
 export type { ISelectOption };
@@ -40,7 +40,8 @@ export interface SelectKitProps {
  * Props для kit.Textarea.
  * Повторяем ключевые атрибуты textarea (без CVA size чтобы не тянуть тип из web-ui).
  */
-export interface TextareaKitProps extends Omit<JSX.TextareaHTMLAttributes<HTMLTextAreaElement>, 'size'> {
+export interface TextareaKitProps
+  extends Omit<JSX.TextareaHTMLAttributes<HTMLTextAreaElement>, 'size'> {
   resize?: 'none' | 'vertical' | 'horizontal' | 'both';
 }
 

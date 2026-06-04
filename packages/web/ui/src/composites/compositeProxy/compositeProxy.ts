@@ -1,5 +1,5 @@
-import { createContext } from 'solid-js';
 import type { JSX } from 'solid-js';
+import { createContext } from 'solid-js';
 
 /**
  * Events-only proxy context for composite row/item components.

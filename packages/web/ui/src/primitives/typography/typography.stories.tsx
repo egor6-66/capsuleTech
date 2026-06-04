@@ -68,7 +68,11 @@ export const Code: Story = {
 
 export const Muted: Story = {
   args: { variant: 'muted' },
-  render: (args) => <Typography {...args}>Hint text — use for helper messages and secondary annotations.</Typography>,
+  render: (args) => (
+    <Typography {...args}>
+      Hint text — use for helper messages and secondary annotations.
+    </Typography>
+  ),
 };
 
 export const Showcase: Story = {
@@ -94,7 +98,9 @@ export const Showcase: Story = {
         Destructive-coloured warning.
       </Typography>
       <Typography variant="blockquote">A wise quote in italic with a left border.</Typography>
-      <Typography variant="muted">Muted hint — helper text, secondary annotations, timestamps.</Typography>
+      <Typography variant="muted">
+        Muted hint — helper text, secondary annotations, timestamps.
+      </Typography>
     </div>
   ),
 };

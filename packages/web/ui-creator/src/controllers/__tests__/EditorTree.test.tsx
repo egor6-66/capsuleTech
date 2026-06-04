@@ -17,11 +17,11 @@
  * Контент-кит (useEditorKit) в EditorTree не используется.
  */
 
+import { render } from 'solid-js/web';
 /* @vitest-environment jsdom */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render } from 'solid-js/web';
+import { addNode, createEmptyTree } from '../../state/operations';
 import type { IEditorCtx } from '../EditorController';
-import { createEmptyTree, addNode } from '../../state/operations';
 
 // ── Mock state ────────────────────────────────────────────────────────────────
 
@@ -88,19 +88,36 @@ vi.mock('../useEditor', () => ({
   useEditor: () => {
     const data = () => _mockEditorState!;
     return {
-      get tree() { return data().tree; },
-      get selectedId() { return data().selectedId; },
-      get dragSpec() { return data().dragSpec; },
-      get dropTargetId() { return data().dropTargetId; },
-      get intent() { return data().intent; },
-      get marks() { return data().marks; },
+      get tree() {
+        return data().tree;
+      },
+      get selectedId() {
+        return data().selectedId;
+      },
+      get dragSpec() {
+        return data().dragSpec;
+      },
+      get dropTargetId() {
+        return data().dropTargetId;
+      },
+      get intent() {
+        return data().intent;
+      },
+      get marks() {
+        return data().marks;
+      },
     };
   },
 }));
 
 // Kit: Dropdown из @capsuletech/web-ui/dropdown (MarkPicker).
 vi.mock('@capsuletech/web-ui/dropdown', () => {
-  const DropdownItem = (props: { children?: unknown; onSelect?: () => void; class?: string; style?: unknown }) => (
+  const DropdownItem = (props: {
+    children?: unknown;
+    onSelect?: () => void;
+    class?: string;
+    style?: unknown;
+  }) => (
     <button
       type="button"
       class={typeof props.class === 'string' ? props.class : ''}
@@ -160,7 +177,9 @@ vi.mock('@capsuletech/web-ui/button', () => ({
 // Kit-layout: Flex из @capsuletech/web-ui/flex.
 vi.mock('@capsuletech/web-ui/flex', () => ({
   Flex: (props: { children?: unknown; class?: string; orientation?: string; style?: unknown }) => (
-    <div class={props.class} style={props.style as never}>{props.children as never}</div>
+    <div class={props.class} style={props.style as never}>
+      {props.children as never}
+    </div>
   ),
 }));
 

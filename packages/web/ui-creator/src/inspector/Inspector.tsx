@@ -1,7 +1,7 @@
-import { For } from 'solid-js';
 import { Flex } from '@capsuletech/web-ui/flex';
-import { DEFAULT_KIT } from './kit';
+import { For } from 'solid-js';
 import { Category } from './Category';
+import { DEFAULT_KIT } from './kit';
 import type { IInspectorProps } from './types';
 
 /**
@@ -22,12 +22,7 @@ export const Inspector = (props: IInspectorProps) => {
     <Flex orientation="vertical" gap={3} class={`w-full ${props.class ?? ''}`}>
       <For each={props.categories}>
         {(cat) => (
-          <Category
-            category={cat}
-            values={props.values}
-            onChange={props.onChange}
-            kit={kit()}
-          />
+          <Category category={cat} values={props.values} onChange={props.onChange} kit={kit()} />
         )}
       </For>
     </Flex>

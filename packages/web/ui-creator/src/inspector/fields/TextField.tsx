@@ -17,7 +17,9 @@ export const TextField = (props: IProps) => (
       value={props.value ?? ''}
       placeholder={props.field.placeholder}
       disabled={props.field.disabled}
-      onInput={(e: InputEvent & { currentTarget: HTMLInputElement }) => props.onChange(e.currentTarget.value)}
+      onInput={(e: InputEvent & { currentTarget: HTMLInputElement }) =>
+        props.onChange(e.currentTarget.value)
+      }
     />
   </FieldShell>
 );

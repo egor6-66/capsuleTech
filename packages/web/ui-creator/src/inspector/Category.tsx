@@ -1,9 +1,9 @@
-import { createSignal, For, Show } from 'solid-js';
 import { Button } from '@capsuletech/web-ui/button';
 import { Flex } from '@capsuletech/web-ui/flex';
 import { ChevronDown, ChevronRight } from '@capsuletech/web-ui/icons';
-import type { IInspectorKit } from './kit';
+import { createSignal, For, Show } from 'solid-js';
 import { renderField } from './fields';
+import type { IInspectorKit } from './kit';
 import type { ICategory, OnChangeFn, ValuesMap } from './types';
 
 interface ICategoryProps {
@@ -28,7 +28,10 @@ export const Category = (props: ICategoryProps) => {
         onClick={() => setCollapsed(!collapsed())}
       >
         <span>{props.category.label}</span>
-        <Show when={collapsed()} fallback={<ChevronDown size={14} class="opacity-50" aria-hidden="true" />}>
+        <Show
+          when={collapsed()}
+          fallback={<ChevronDown size={14} class="opacity-50" aria-hidden="true" />}
+        >
           <ChevronRight size={14} class="opacity-50" aria-hidden="true" />
         </Show>
       </Button>

@@ -26,8 +26,7 @@ import { canInto } from '../state/dnd';
 import { useEditor } from './useEditor';
 
 /** Полупрозрачная заливка из цвета (hex, CSS-переменная, etc.). */
-const fill = (c: string, pct: number): string =>
-  `color-mix(in srgb, ${c} ${pct}%, transparent)`;
+const fill = (c: string, pct: number): string => `color-mix(in srgb, ${c} ${pct}%, transparent)`;
 
 /**
  * Определяет, является ли нода горизонтальным контейнером — по модели, без DOM.
@@ -157,6 +156,8 @@ export const EditorOverlay = (p: IEditOverlayProps) => {
     <>
       {/* База: клик-перехватывающий слой. z-index=depth → глубокая нода первой ловит клик.
           Во время drag — pointer-events:none, не мешаем DnD-drop. */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: editor affordance — оверлей перехватывает клик для выделения ноды (pointer-driven редактор) */}
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: editor affordance — клавиатурное взаимодействие на уровне canvas TBD */}
       <div
         class="absolute inset-0 cursor-pointer rounded-sm"
         style={{

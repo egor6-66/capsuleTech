@@ -1,5 +1,5 @@
-import { DnDProvider, useDnD } from '@capsuletech/web-dnd';
 import type { ISortableZone } from '@capsuletech/web-dnd';
+import { DnDProvider, useDnD } from '@capsuletech/web-dnd';
 import { type ICapsuleRouter, RouterContext } from '@capsuletech/web-router';
 import { createStyle, useLayoutMode, useSettingsMode } from '@capsuletech/web-style';
 import {
@@ -9,8 +9,8 @@ import {
   For,
   type JSX,
   Show,
-  splitProps,
   Suspense,
+  splitProps,
   useContext,
 } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
@@ -350,8 +350,7 @@ const renderPackingRow = (
         'ring-2 ring-inset ring-primary/40 bg-primary/5':
           rowCanAccept() && !rowIsTarget() && !rowRejectsDrag(),
         // Strong: pointer is over this zone (it's the drop target)
-        'ring-2 ring-inset ring-primary bg-primary/10':
-          rowIsTarget() && !rowRejectsDrag(),
+        'ring-2 ring-inset ring-primary bg-primary/10': rowIsTarget() && !rowRejectsDrag(),
       }}
     >
       <For each={row.cells}>
@@ -591,8 +590,7 @@ const renderGridRow = (
         'ring-2 ring-inset ring-destructive/50': rowRejectsDrag(),
         'ring-2 ring-inset ring-primary/40 bg-primary/5':
           rowCanAccept() && !rowIsTarget() && !rowRejectsDrag(),
-        'ring-2 ring-inset ring-primary bg-primary/10':
-          rowIsTarget() && !rowRejectsDrag(),
+        'ring-2 ring-inset ring-primary bg-primary/10': rowIsTarget() && !rowRejectsDrag(),
       }}
     >
       <For each={row.cells}>
@@ -960,8 +958,7 @@ const renderRow = (
           'ring-2 ring-inset ring-destructive/50': rowRejectsDrag(),
           'ring-2 ring-inset ring-primary/40 bg-primary/5':
             rowCanAccept() && !rowIsTarget() && !rowRejectsDrag(),
-          'ring-2 ring-inset ring-primary bg-primary/10':
-            rowIsTarget() && !rowRejectsDrag(),
+          'ring-2 ring-inset ring-primary bg-primary/10': rowIsTarget() && !rowRejectsDrag(),
         }}
       >
         <div class="absolute inset-0">
@@ -987,8 +984,7 @@ const renderRow = (
         'ring-2 ring-inset ring-destructive/50': rowRejectsDrag(),
         'ring-2 ring-inset ring-primary/40 bg-primary/5':
           rowCanAccept() && !rowIsTarget() && !rowRejectsDrag(),
-        'ring-2 ring-inset ring-primary bg-primary/10':
-          rowIsTarget() && !rowRejectsDrag(),
+        'ring-2 ring-inset ring-primary bg-primary/10': rowIsTarget() && !rowRejectsDrag(),
       }}
     >
       <For each={row.cells}>

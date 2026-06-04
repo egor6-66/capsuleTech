@@ -1,8 +1,8 @@
 export { Renderer } from './renderer';
 export { resolvePath } from './resolve';
 export type {
-  IEditorNode,
   IEditOverlayProps,
+  IEditorNode,
   IErrorFallbackProps,
   IInteraction,
   IRendererProps,

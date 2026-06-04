@@ -23,17 +23,17 @@ import type {
 } from '@capsuletech/web-ui';
 import type { DarkModeToggle } from '@capsuletech/web-ui/darkModeToggle';
 import type { Dropdown } from '@capsuletech/web-ui/dropdown';
-import type { Select } from '@capsuletech/web-ui/select';
-import type { Textarea } from '@capsuletech/web-ui/textarea';
-import type { Tooltip } from '@capsuletech/web-ui/tooltip';
 import type { DropdownMenu } from '@capsuletech/web-ui/dropdownMenu';
 import type { LayoutModeToggle } from '@capsuletech/web-ui/layoutModeToggle';
-import type { WidgetSettingsToggle } from '@capsuletech/web-ui/widgetSettingsToggle';
 import type { PreviewCard } from '@capsuletech/web-ui/previewCard';
+import type { Select } from '@capsuletech/web-ui/select';
 import type { Skeleton } from '@capsuletech/web-ui/skeleton';
 import type { Spinner } from '@capsuletech/web-ui/spinner';
+import type { Textarea } from '@capsuletech/web-ui/textarea';
 import type { ThemePicker } from '@capsuletech/web-ui/themePicker';
+import type { Tooltip } from '@capsuletech/web-ui/tooltip';
 import type { Typography } from '@capsuletech/web-ui/typography';
+import type { WidgetSettingsToggle } from '@capsuletech/web-ui/widgetSettingsToggle';
 import type { Link } from '@tanstack/solid-router';
 import type {
   Component,

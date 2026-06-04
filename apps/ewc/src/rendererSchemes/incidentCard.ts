@@ -55,11 +55,7 @@ const buildSchema = (sections: ISectionSpec[]): ISchema => {
   const nid = (prefix: string): NodeId => `${prefix}-${seq++}`;
 
   /** Создаёт ноду и линкует её к родителю (порядок = порядок вызова). */
-  const add = (
-    type: string,
-    parentId: NodeId | null,
-    props?: Record<string, unknown>,
-  ): NodeId => {
+  const add = (type: string, parentId: NodeId | null, props?: Record<string, unknown>): NodeId => {
     const id = nid(type.split('.').pop() ?? 'n');
     nodes[id] = { id, type, parentId, children: [], props };
     if (parentId) nodes[parentId].children.push(id);
@@ -211,7 +207,12 @@ const SECTIONS: ISectionSpec[] = [
       { label: 'Угроза ЧС', ctrl: 'checkbox' },
       { label: 'ЧС', ctrl: 'checkbox' },
       { label: 'Тип ЧС', ctrl: 'select' },
-      { label: 'Содержание', ctrl: 'textarea', value: 'ДТП на перекрёстке, есть пострадавшие', full: true },
+      {
+        label: 'Содержание',
+        ctrl: 'textarea',
+        value: 'ДТП на перекрёстке, есть пострадавшие',
+        full: true,
+      },
     ],
   },
   {

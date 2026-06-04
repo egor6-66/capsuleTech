@@ -10,11 +10,11 @@
  * Рендеринг через solid-js/web (render). useCtx и useEmit мокируются.
  */
 
+import { render } from 'solid-js/web';
 /* @vitest-environment jsdom */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render } from 'solid-js/web';
-import type { IEditorCtx } from '../EditorController';
 import { createEmptyTree } from '../../state/operations';
+import type { IEditorCtx } from '../EditorController';
 
 // ── Mock-фабрики (до импорта компонента) ──────────────────────────────────
 

@@ -16,8 +16,8 @@ import { describe, expect, it } from 'vitest';
 import type {
   ITableBodyProps,
   ITableCellProps,
-  ITableHeadProps,
   ITableHeaderProps,
+  ITableHeadProps,
   ITableProps,
   ITableRowProps,
 } from '../interfaces';

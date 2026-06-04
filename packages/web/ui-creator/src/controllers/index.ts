@@ -17,7 +17,7 @@
  * Прямой импорт: для кастомных сценариев или unit-тестов.
  */
 
-export { default as EditorController } from './EditorController';
+export { EditorCanvas } from './EditorCanvas';
 export type {
   IEditorCtx,
   IOnDragOverCanvasPayload,
@@ -26,26 +26,19 @@ export type {
   IOnMarkPayload,
   IOnUpdateNodePropsPayload,
 } from './EditorController';
-
+export { default as EditorController } from './EditorController';
+export { EditorInspector, schemaToInspectorCategories } from './EditorInspector';
 export { EditorOverlay } from './EditorOverlay';
-
-export { EditorProvider, useEditorKit } from './EditorProvider';
-export type { EditorKit, IEditorProviderProps } from './EditorProvider';
-
-export { EditorCanvas } from './EditorCanvas';
-
-export { EditorTree } from './EditorTree';
-
-export { EditorPalette } from './EditorPalette';
 export {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   CONTAINER_ORDER,
   catRank,
+  EditorPalette,
   orderRank,
 } from './EditorPalette';
-
-export { EditorInspector, schemaToInspectorCategories } from './EditorInspector';
-
-export { useEditor } from './useEditor';
+export type { EditorKit, IEditorProviderProps } from './EditorProvider';
+export { EditorProvider, useEditorKit } from './EditorProvider';
+export { EditorTree } from './EditorTree';
 export type { IUseEditorResult } from './useEditor';
+export { useEditor } from './useEditor';

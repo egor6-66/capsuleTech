@@ -1,5 +1,5 @@
-import { Show } from 'solid-js';
 import { Outlet } from '@tanstack/solid-router';
+import { Show } from 'solid-js';
 import { useCtx } from '../engine/ctx';
 import { UiProxy } from '../engine/ui-proxy';
 import { Ui as BaseUi } from '../ui-kit';
@@ -25,10 +25,7 @@ export const WidgetWrapper: IWidgetWrapper = (Component, Loader?) => {
 
     return (
       <ShapeUiContext.Provider value={proxiedUi}>
-        <Show
-          when={!isLoading()}
-          fallback={Loader && (Loader(proxiedUi, wrapperProps) as any)}
-        >
+        <Show when={!isLoading()} fallback={Loader && (Loader(proxiedUi, wrapperProps) as any)}>
           {Component(proxiedUi, store, wrapperProps)}
         </Show>
       </ShapeUiContext.Provider>

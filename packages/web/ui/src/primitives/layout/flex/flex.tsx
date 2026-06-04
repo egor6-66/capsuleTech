@@ -1,5 +1,13 @@
 import { cn } from '@capsuletech/web-style';
-import { children, createMemo, For, type JSX, Show, splitProps, type ValidComponent } from 'solid-js';
+import {
+  children,
+  createMemo,
+  For,
+  type JSX,
+  Show,
+  splitProps,
+  type ValidComponent,
+} from 'solid-js';
 import { Slot } from '../../slot';
 import { mergeStyle, toGap } from '../grid/utils';
 import { ResizableHandle, ResizablePanel, ResizableRoot } from './_resize/primitives';

@@ -7,8 +7,7 @@ import { kit } from '../kit';
  * Checks both `CAPSULE_CI=1` (explicit capsule flag) and `CI=true`
  * (set automatically by most CI systems — GitHub Actions, GitLab CI, etc.).
  */
-export const isCi = (): boolean =>
-  process.env.CAPSULE_CI === '1' || process.env.CI === 'true';
+export const isCi = (): boolean => process.env.CAPSULE_CI === '1' || process.env.CI === 'true';
 
 const askParam = async (param: CommandParam): Promise<unknown> => {
   if (!param.prompt) return undefined;

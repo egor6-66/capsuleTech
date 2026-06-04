@@ -17,9 +17,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, relative, resolve } from 'node:path';
-import { names } from '@nx/devkit';
 import { parse } from '@babel/parser';
 import _traverse from '@babel/traverse';
+import { names } from '@nx/devkit';
 import { createJiti } from 'jiti';
 import type { Plugin, ViteDevServer } from 'vite';
 import { walkFiles, watcherManager } from '../utils';
@@ -27,7 +27,9 @@ import { DEFINE_FACTORIES, EAGER_IMPORT_LAYERS, LAYER_TO_NAMESPACE } from './con
 
 // CJS/ESM interop for @babel/traverse (same pattern as hmrWrapping.ts)
 const traverse = (
-  typeof _traverse === 'function' ? _traverse : (_traverse as { default?: typeof _traverse }).default
+  typeof _traverse === 'function'
+    ? _traverse
+    : (_traverse as { default?: typeof _traverse }).default
 ) as typeof _traverse;
 
 // ---------------------------------------------------------------------------
@@ -461,9 +463,7 @@ const resolveManifestInfo = (
   try {
     source = readFileSync(manifestFile, 'utf-8');
   } catch {
-    console.warn(
-      `[capsule-registry] could not read manifest file '${manifestFile}'. Skipping.`,
-    );
+    console.warn(`[capsule-registry] could not read manifest file '${manifestFile}'. Skipping.`);
     return null;
   }
 
@@ -601,9 +601,7 @@ export const generatePackagesTypes = (entries: ResolvedPackageEntry[]): string =
 
   // Component namespace const declarations.
   for (const { pkg, globalName } of entries) {
-    lines.push(
-      `  const ${globalName}: typeof import('${pkg}/capsule')['default']['components'];`,
-    );
+    lines.push(`  const ${globalName}: typeof import('${pkg}/capsule')['default']['components'];`);
   }
 
   // Controllers interface augmentation for packages that expose controllers.

@@ -14,10 +14,7 @@ export const SkeletonManifest: IComponentManifest = {
     rows: 3,
   },
   propsSchema: z.object({
-    variant: z
-      .enum(['text', 'table', 'list', 'card', 'map'])
-      .optional()
-      .default('text'),
+    variant: z.enum(['text', 'table', 'list', 'card', 'map']).optional().default('text'),
     rows: z.number().optional().default(3),
     class: z.string().optional(),
   }),

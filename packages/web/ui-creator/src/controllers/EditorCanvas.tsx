@@ -30,18 +30,18 @@
  * которые производят `IDropPayload`-shape несовместимый с EditorController.
  */
 
-import { createEmittingDroppable } from '@capsuletech/web-dnd/controllers';
 import { useEmit } from '@capsuletech/web-core';
+import { useDnD } from '@capsuletech/web-dnd';
+import { createEmittingDroppable } from '@capsuletech/web-dnd/controllers';
+import type { Registry } from '@capsuletech/web-renderer';
 import { Renderer } from '@capsuletech/web-renderer';
 import { Flex } from '@capsuletech/web-ui/flex';
 import { createEffect, createMemo, Show } from 'solid-js';
-import { useDnD } from '@capsuletech/web-dnd';
 import { dragSpec } from '../state/dnd';
 import type { IOnDragOverCanvasPayload, IOnDropPayload } from './EditorController';
 import { EditorOverlay } from './EditorOverlay';
-import { useEditor } from './useEditor';
 import { useEditorKit } from './EditorProvider';
-import type { Registry } from '@capsuletech/web-renderer';
+import { useEditor } from './useEditor';
 
 /**
  * Editor.Canvas — монтируется внутри `<Editor.Provider>`.
@@ -57,7 +57,7 @@ export const EditorCanvas = () => {
   // registry для Renderer: { ui: kit }.
   // Каст `as unknown as Registry` необходим: kit — это Registry (тот же тип),
   // но TypeScript не может вывести вложенный shape из EditorKit (alias Registry).
-  const registry = (): Registry => ({ ui: kit } as unknown as Registry);
+  const registry = (): Registry => ({ ui: kit }) as unknown as Registry;
 
   const spec = () => dragSpec(dnd.state.activeData());
 
@@ -118,6 +118,8 @@ export const EditorCanvas = () => {
 
   return (
     <Flex orientation="vertical" class="h-full">
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: editor affordance — клик по пустому канвасу снимает выделение (pointer-driven редактор) */}
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: editor affordance — клавиатурное взаимодействие на уровне canvas TBD */}
       <div
         ref={drop.ref}
         class="relative min-h-0 flex-1 overflow-auto"

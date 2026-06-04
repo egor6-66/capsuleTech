@@ -1,3 +1,4 @@
+export type { DragSpec, DropIntent, TreeZone } from './dnd';
 export {
   applyDrop,
   canBeside,
@@ -6,7 +7,6 @@ export {
   dragSpec,
   treeIntent,
 } from './dnd';
-export type { DragSpec, DropIntent, TreeZone } from './dnd';
 export { generateId, ROOT_ID } from './ids';
 export {
   addNode,

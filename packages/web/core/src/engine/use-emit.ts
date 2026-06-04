@@ -23,8 +23,8 @@
  * принимает любое имя, несовпадение просто уйдёт в `next()` автобаблинг.
  */
 
-import type { ITarget } from '../wrappers/interfaces';
 import { useContext } from 'solid-js';
+import type { ITarget } from '../wrappers/interfaces';
 import { Context } from './ctx';
 import { deriveName, getTargetData } from './derivation';
 

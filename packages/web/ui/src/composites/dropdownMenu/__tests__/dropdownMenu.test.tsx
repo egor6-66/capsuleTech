@@ -225,9 +225,7 @@ describe('DropdownMenu composite', () => {
         () => (
           <DropdownMenu
             trigger={<Button data-testid="trigger">Open</Button>}
-            data={[
-              { type: 'item', id: 'action', label: 'Do action', onSelect },
-            ]}
+            data={[{ type: 'item', id: 'action', label: 'Do action', onSelect }]}
           />
         ),
         container,

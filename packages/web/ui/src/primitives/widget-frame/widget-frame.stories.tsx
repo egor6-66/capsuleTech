@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 import { Move, Settings2 } from 'lucide-solid';
 import { createSignal } from 'solid-js';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { WidgetFrame, WidgetFrameHandle } from '.';
 
@@ -17,7 +17,12 @@ type Story = StoryObj<typeof meta>;
 // Helpers
 // ---------------------------------------------------------------------------
 
-const Frame = (p: { active?: boolean; gripCorner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'; label?: string; children?: unknown }) => (
+const Frame = (p: {
+  active?: boolean;
+  gripCorner?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  label?: string;
+  children?: unknown;
+}) => (
   <div style={{ width: '240px', height: '160px' }}>
     <WidgetFrame active={p.active} gripCorner={p.gripCorner}>
       <div class="flex h-full items-center justify-center text-sm text-muted-foreground">
@@ -52,10 +57,18 @@ export const Active: Story = {
           handles={
             <div class="absolute inset-0 pointer-events-none">
               {/* Corner bracket handles via WidgetFrameHandle */}
-              <div class="absolute top-1 left-1"><WidgetFrameHandle corner="top-left" /></div>
-              <div class="absolute top-1 right-1"><WidgetFrameHandle corner="top-right" /></div>
-              <div class="absolute bottom-1 left-1"><WidgetFrameHandle corner="bottom-left" /></div>
-              <div class="absolute bottom-1 right-1"><WidgetFrameHandle corner="bottom-right" /></div>
+              <div class="absolute top-1 left-1">
+                <WidgetFrameHandle corner="top-left" />
+              </div>
+              <div class="absolute top-1 right-1">
+                <WidgetFrameHandle corner="top-right" />
+              </div>
+              <div class="absolute bottom-1 left-1">
+                <WidgetFrameHandle corner="bottom-left" />
+              </div>
+              <div class="absolute bottom-1 right-1">
+                <WidgetFrameHandle corner="bottom-right" />
+              </div>
             </div>
           }
         >

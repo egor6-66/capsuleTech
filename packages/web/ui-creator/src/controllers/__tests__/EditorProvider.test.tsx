@@ -9,9 +9,9 @@
  *  5. showDefaultOverlay = false через проп
  */
 
+import { render } from 'solid-js/web';
 /* @vitest-environment jsdom */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render } from 'solid-js/web';
 import { useEditorKit } from '../EditorProvider';
 
 // ── Трекинг вызовов DnDProvider ───────────────────────────────────────────
@@ -33,18 +33,19 @@ const { EditorProvider } = await import('../EditorProvider');
 
 const mount = (props: { kit?: object; showDefaultOverlay?: boolean } = {}) => {
   const kit = props.kit ?? { Button: () => null };
-  let capturedKit: unknown = undefined;
+  let capturedKit: unknown;
 
   const container = document.createElement('div');
   document.body.appendChild(container);
 
   render(
     () => (
-      <EditorProvider
-        kit={kit as any}
-        showDefaultOverlay={props.showDefaultOverlay}
-      >
-        <KitReader onKit={(k) => { capturedKit = k; }} />
+      <EditorProvider kit={kit as any} showDefaultOverlay={props.showDefaultOverlay}>
+        <KitReader
+          onKit={(k) => {
+            capturedKit = k;
+          }}
+        />
       </EditorProvider>
     ),
     container,
@@ -101,13 +102,14 @@ describe('EditorProvider — useEditorKit вне провайдера броса
   it('бросает Error вне <EditorProvider>', () => {
     expect(() => {
       let err: unknown;
-      render(
-        () => {
-          try { useEditorKit(); } catch (e) { err = e; }
-          return <span />;
-        },
-        document.createElement('div'),
-      );
+      render(() => {
+        try {
+          useEditorKit();
+        } catch (e) {
+          err = e;
+        }
+        return <span />;
+      }, document.createElement('div'));
       if (err) throw err;
     }).toThrow('[web-ui-creator] useEditorKit()');
   });

@@ -15,8 +15,8 @@
  */
 
 import { describe, expect, expectTypeOf, it } from 'vitest';
-import { defineCapsuleModule, type ICapsuleModule } from '../module';
 import { defineAppConfig, type IAppConfig } from '../app-config';
+import { defineCapsuleModule, type ICapsuleModule } from '../module';
 
 // ---------------------------------------------------------------------------
 // 1–4: defineCapsuleModule — runtime
@@ -145,10 +145,7 @@ describe('IAppConfig.packages — type-level', () => {
 
   it('packages accepts mixed array (strings + objects)', () => {
     const config: IAppConfig = {
-      packages: [
-        '@capsuletech/web-map',
-        { use: '@capsuletech/web-renderer', as: 'Render' },
-      ],
+      packages: ['@capsuletech/web-map', { use: '@capsuletech/web-renderer', as: 'Render' }],
     };
     expectTypeOf(config).toMatchTypeOf<IAppConfig>();
   });
@@ -174,10 +171,7 @@ describe('defineAppConfig — packages field', () => {
 
   it('defineAppConfig with mixed packages preserves structure', () => {
     const config = defineAppConfig({
-      packages: [
-        '@capsuletech/web-map',
-        { use: '@capsuletech/web-renderer', as: 'Render' },
-      ],
+      packages: ['@capsuletech/web-map', { use: '@capsuletech/web-renderer', as: 'Render' }],
     });
 
     expect(config.packages).toHaveLength(2);

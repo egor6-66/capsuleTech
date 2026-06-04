@@ -177,7 +177,9 @@ const fileGenerator = async (event: string, paths: Paths & { filePath: string })
       if (info.indexRoutePath) {
         const indexFile = join(targetDir, 'index.tsx');
         await writeFile(indexFile, INDEX_ROUTE_TEMPLATE(info.indexRoutePath), 'utf-8');
-        console.log(`📄 Роут (index): ${info.indexRoutePath} → ${relative(paths.outDir, indexFile)}`);
+        console.log(
+          `📄 Роут (index): ${info.indexRoutePath} → ${relative(paths.outDir, indexFile)}`,
+        );
       }
     } else if (event === 'unlink') {
       const normalized = normalize(targetFile);

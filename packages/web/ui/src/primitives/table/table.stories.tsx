@@ -7,8 +7,8 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
 } from '@tanstack/solid-table';
-import { type Meta, type StoryObj } from 'storybook-solidjs-vite';
 import { createSignal } from 'solid-js';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Button } from '../button';
 import { Table } from '.';
@@ -31,7 +31,13 @@ const USERS: IUser[] = [
   { id: 3, name: 'Carol Davis', email: 'carol@example.com', role: 'Designer', status: 'inactive' },
   { id: 4, name: 'Dan Lee', email: 'dan@example.com', role: 'Developer', status: 'active' },
   { id: 5, name: 'Eva Torres', email: 'eva@example.com', role: 'PM', status: 'active' },
-  { id: 6, name: 'Frank Müller', email: 'frank@example.com', role: 'Developer', status: 'inactive' },
+  {
+    id: 6,
+    name: 'Frank Müller',
+    email: 'frank@example.com',
+    role: 'Developer',
+    status: 'inactive',
+  },
   { id: 7, name: 'Grace Kim', email: 'grace@example.com', role: 'Designer', status: 'active' },
   { id: 8, name: 'Hiro Tanaka', email: 'hiro@example.com', role: 'Admin', status: 'active' },
 ];
@@ -98,9 +104,7 @@ export const Basic: Story = {
           {table.getRowModel().rows.map((row) => (
             <Table.Row>
               {row.getVisibleCells().map((cell) => (
-                <Table.Cell>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </Table.Cell>
+                <Table.Cell>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Table.Cell>
               ))}
             </Table.Row>
           ))}
@@ -117,9 +121,7 @@ export const Basic: Story = {
 export const WithSorting: Story = {
   name: 'with sorting · getSortedRowModel',
   render: () => {
-    const [sorting, setSorting] = createSignal<
-      import('@tanstack/solid-table').SortingState
-    >([]);
+    const [sorting, setSorting] = createSignal<import('@tanstack/solid-table').SortingState>([]);
 
     const sortableColumns: ColumnDef<IUser>[] = baseColumns.map((col) => ({
       ...col,
@@ -321,8 +323,7 @@ export const WithRowSelection: Story = {
       enableRowSelection: true,
     });
 
-    const selectedCount = () =>
-      Object.keys(rowSelection()).length;
+    const selectedCount = () => Object.keys(rowSelection()).length;
 
     return (
       <div class="flex flex-col gap-3">

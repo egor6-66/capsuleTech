@@ -1,5 +1,12 @@
 import { z } from '@capsuletech/shared-zod';
-import { AlignJustify, AlignLeft, CreditCard, Heading1, PanelBottom, Type } from '@capsuletech/web-ui/icons';
+import {
+  AlignJustify,
+  AlignLeft,
+  CreditCard,
+  Heading1,
+  PanelBottom,
+  Type,
+} from '@capsuletech/web-ui/icons';
 import type { IComponentManifest } from '../types';
 
 const CARD_DIRECT_CHILDREN = new Set([

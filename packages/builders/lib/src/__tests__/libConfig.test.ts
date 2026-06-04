@@ -140,9 +140,9 @@ describe('libConfig — build output shape', () => {
   it('emits .mjs files (es format only)', () => {
     const cfg = libConfig(baseOpts);
     expect(cfg.build?.lib).toMatchObject({ formats: ['es'] });
-    expect((cfg.build?.rolldownOptions?.output as { entryFileNames?: string })?.entryFileNames).toBe(
-      '[name].mjs',
-    );
+    expect(
+      (cfg.build?.rolldownOptions?.output as { entryFileNames?: string })?.entryFileNames,
+    ).toBe('[name].mjs');
   });
 
   it('keeps sourcemaps enabled', () => {

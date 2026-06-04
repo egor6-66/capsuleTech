@@ -17,10 +17,10 @@
  * useEditorKit используется ТОЛЬКО для контент-registry (Renderer preview).
  */
 
+import { createSignal, type JSX, Show } from 'solid-js';
+import { render } from 'solid-js/web';
 /* @vitest-environment jsdom */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render } from 'solid-js/web';
-import { createSignal, Show, type JSX } from 'solid-js';
 
 // ── mock state ─────────────────────────────────────────────────────────────────
 
@@ -53,11 +53,7 @@ const makeMockDropdown = () => {
 
   const DropdownRoot = (props: DropdownRootProps) => {
     _onOpenChange = props.onOpenChange;
-    return (
-      <div data-dropdown-root>
-        {props.children}
-      </div>
-    );
+    return <div data-dropdown-root>{props.children}</div>;
   };
 
   const Trigger = (triggerProps: Record<string, unknown>) => (
@@ -79,9 +75,7 @@ const makeMockDropdown = () => {
     </Show>
   );
 
-  const Item = (itemProps: Record<string, unknown>) => (
-    <div {...(itemProps as object)} />
-  );
+  const Item = (itemProps: Record<string, unknown>) => <div {...(itemProps as object)} />;
 
   return Object.assign(DropdownRoot, { Trigger, Content, Item, _open, _setOpen });
 };
@@ -118,7 +112,9 @@ vi.mock('@capsuletech/web-renderer', () => ({
 
 // Chrome-кит: Dropdown редактора — прямой импорт из @capsuletech/web-ui/dropdown.
 vi.mock('@capsuletech/web-ui/dropdown', () => ({
-  get Dropdown() { return _mockDropdown; },
+  get Dropdown() {
+    return _mockDropdown;
+  },
 }));
 
 // Button из @capsuletech/web-ui/button — рендерит нативный <button>, форвардит пропы.
@@ -126,7 +122,7 @@ vi.mock('@capsuletech/web-ui/dropdown', () => ({
 // Просто спредим всё: компилятор Solid сам правильно обработает ref при render.
 vi.mock('@capsuletech/web-ui/button', () => ({
   Button: (props: Record<string, unknown>) => (
-    // biome-ignore lint/suspicious/noExplicitAny
+    // biome-ignore lint/suspicious/noExplicitAny: тест-мок — props принимаются как any
     <button type="button" {...(props as any)} />
   ),
 }));
@@ -192,7 +188,7 @@ describe('catRank / orderRank — утилиты сортировки', () => {
   });
 
   it('catRank возвращает CATEGORY_ORDER.length для неизвестной категории', () => {
-    // biome-ignore lint/suspicious/noExplicitAny
+    // biome-ignore lint/suspicious/noExplicitAny: тест-мок — props принимаются как any
     expect(catRank('unknown_cat' as any)).toBe(CATEGORY_ORDER.length);
   });
 
@@ -300,6 +296,7 @@ describe('EditorPalette — draggable payload', () => {
     }
   });
 
+  // biome-ignore lint/suspicious/noTemplateCurlyInString: имя теста намеренно документирует литеральный паттерн id `palette:${type}`
   it('draggable id совпадает с `palette:${type}` из data', () => {
     mount();
     const paletteItems = _draggables.filter((d) => d.id.startsWith('palette:'));
@@ -330,7 +327,9 @@ describe('EditorPalette — темплейт-превью', () => {
 
   it('клик на trigger открывает dropdown-контент', () => {
     mount();
-    const trigger = document.querySelector('[data-testid^="templates-trigger-"]') as HTMLElement | null;
+    const trigger = document.querySelector(
+      '[data-testid^="templates-trigger-"]',
+    ) as HTMLElement | null;
     if (!trigger) {
       // Если триггеров нет — компоненты без темплейтов, тест неприменим
       expect(true).toBe(true);
@@ -343,7 +342,9 @@ describe('EditorPalette — темплейт-превью', () => {
 
   it('повторный клик на trigger закрывает dropdown', () => {
     mount();
-    const trigger = document.querySelector('[data-testid^="templates-trigger-"]') as HTMLElement | null;
+    const trigger = document.querySelector(
+      '[data-testid^="templates-trigger-"]',
+    ) as HTMLElement | null;
     if (!trigger) return;
 
     trigger.click();
@@ -355,7 +356,9 @@ describe('EditorPalette — темплейт-превью', () => {
 
   it('templatdDraggable имеет source:"palette" и template (IEditorTree)', () => {
     mount();
-    const trigger = document.querySelector('[data-testid^="templates-trigger-"]') as HTMLElement | null;
+    const trigger = document.querySelector(
+      '[data-testid^="templates-trigger-"]',
+    ) as HTMLElement | null;
     if (!trigger) return;
 
     const beforeCount = _draggables.length;
@@ -409,7 +412,9 @@ describe('EditorPalette — контент-kit передаётся в registry 
     _mockKit = { ...kitBase };
 
     mount();
-    const trigger = document.querySelector('[data-testid^="templates-trigger-"]') as HTMLElement | null;
+    const trigger = document.querySelector(
+      '[data-testid^="templates-trigger-"]',
+    ) as HTMLElement | null;
     trigger?.click();
 
     if (_rendererCalls.length > 0) {

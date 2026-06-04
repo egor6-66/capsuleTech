@@ -212,7 +212,8 @@ describe('ThemePicker composite', () => {
       expect(subTriggerLabel).not.toBeNull();
 
       // Click the SubTrigger element (its closest ancestor with role=menuitem).
-      const subTriggerEl = subTriggerLabel!.closest('[role="menuitem"]') ?? subTriggerLabel!.parentElement!;
+      const subTriggerEl =
+        subTriggerLabel!.closest('[role="menuitem"]') ?? subTriggerLabel!.parentElement!;
       click(subTriggerEl);
 
       // Wait for sub-menu items to appear (two role=menu panels: parent + sub).

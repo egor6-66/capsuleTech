@@ -78,36 +78,24 @@ describe('Select', () => {
 
   describe('closed state', () => {
     it('trigger is rendered in DOM', () => {
-      cleanup = render(
-        () => <Select options={OPTS} placeholder="Choose…" />,
-        container,
-      );
+      cleanup = render(() => <Select options={OPTS} placeholder="Choose…" />, container);
       expect(container.querySelector('button')).not.toBeNull();
     });
 
     it('listbox is absent from DOM before opening', () => {
-      cleanup = render(
-        () => <Select options={OPTS} placeholder="Choose…" />,
-        container,
-      );
+      cleanup = render(() => <Select options={OPTS} placeholder="Choose…" />, container);
       expect(document.body.querySelector('[role="listbox"]')).toBeNull();
     });
 
     it('placeholder text is visible in trigger', () => {
-      cleanup = render(
-        () => <Select options={OPTS} placeholder="Pick one…" />,
-        container,
-      );
+      cleanup = render(() => <Select options={OPTS} placeholder="Pick one…" />, container);
       expect(container.textContent).toContain('Pick one…');
     });
   });
 
   describe('opening', () => {
     it('clicking trigger shows listbox', async () => {
-      cleanup = render(
-        () => <Select options={OPTS} placeholder="Choose…" />,
-        container,
-      );
+      cleanup = render(() => <Select options={OPTS} placeholder="Choose…" />, container);
 
       click(container.querySelector('button')!);
 
@@ -116,10 +104,7 @@ describe('Select', () => {
     });
 
     it('options from `options` prop are rendered as list items', async () => {
-      cleanup = render(
-        () => <Select options={OPTS} placeholder="Choose…" />,
-        container,
-      );
+      cleanup = render(() => <Select options={OPTS} placeholder="Choose…" />, container);
 
       click(container.querySelector('button')!);
       await waitFor(() => document.body.querySelector('[role="listbox"]') !== null);
@@ -129,10 +114,7 @@ describe('Select', () => {
     });
 
     it('option labels are visible inside the listbox', async () => {
-      cleanup = render(
-        () => <Select options={OPTS} placeholder="Choose…" />,
-        container,
-      );
+      cleanup = render(() => <Select options={OPTS} placeholder="Choose…" />, container);
 
       click(container.querySelector('button')!);
       await waitFor(() => document.body.querySelector('[role="listbox"]') !== null);
@@ -145,10 +127,7 @@ describe('Select', () => {
 
   describe('disabled', () => {
     it('disabled select renders trigger with disabled attribute', () => {
-      cleanup = render(
-        () => <Select options={OPTS} disabled placeholder="Disabled" />,
-        container,
-      );
+      cleanup = render(() => <Select options={OPTS} disabled placeholder="Disabled" />, container);
       const btn = container.querySelector('button')!;
       expect(btn.disabled).toBe(true);
     });
@@ -156,10 +135,7 @@ describe('Select', () => {
 
   describe('portal mounting', () => {
     it('listbox is in document.body, NOT inside render container', async () => {
-      cleanup = render(
-        () => <Select options={OPTS} placeholder="Choose…" />,
-        container,
-      );
+      cleanup = render(() => <Select options={OPTS} placeholder="Choose…" />, container);
 
       click(container.querySelector('button')!);
       await waitFor(() => document.body.querySelector('[role="listbox"]') !== null);

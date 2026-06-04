@@ -1,5 +1,5 @@
-import { For, Show, splitProps } from 'solid-js';
 import { DISCOVERED_THEMES, setTheme, useTheme } from '@capsuletech/web-style';
+import { For, Show, splitProps } from 'solid-js';
 
 import { Dropdown } from '../../primitives/dropdown';
 import type { IThemePickerProps } from './interfaces';
@@ -30,7 +30,14 @@ import type { IThemePickerProps } from './interfaces';
  * ```
  */
 export const ThemePicker = (props: IThemePickerProps) => {
-  const [local] = splitProps(props, ['themes', 'target', 'onChange', 'triggerLabel', 'class', 'mode']);
+  const [local] = splitProps(props, [
+    'themes',
+    'target',
+    'onChange',
+    'triggerLabel',
+    'class',
+    'mode',
+  ]);
   const current = useTheme();
   const themes = () => local.themes ?? DISCOVERED_THEMES;
   const mode = () => local.mode ?? 'standalone';

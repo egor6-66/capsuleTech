@@ -1,5 +1,5 @@
-import { For, Show, splitProps } from 'solid-js';
 import type { JSX } from 'solid-js';
+import { For, Show, splitProps } from 'solid-js';
 
 import { Dropdown } from '../../primitives/dropdown';
 import type { IDropdownMenuItem, IDropdownMenuProps } from './interfaces';

@@ -23,10 +23,10 @@
 import { useDnD } from '@capsuletech/web-dnd';
 import { Flex } from '@capsuletech/web-ui/flex';
 import { createSignal } from 'solid-js';
-import { dragSpec, type DragSpec } from '../state/dnd';
+import { type DragSpec, dragSpec } from '../state/dnd';
 import type { NodeId } from '../state/types';
-import { useEditor } from './useEditor';
 import { Row } from './tree';
+import { useEditor } from './useEditor';
 
 /**
  * Editor.Tree — монтируется внутри `<Editor.Provider>`.

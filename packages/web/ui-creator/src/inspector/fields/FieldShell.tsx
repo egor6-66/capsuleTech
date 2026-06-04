@@ -1,6 +1,6 @@
+import { Flex } from '@capsuletech/web-ui/flex';
 import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
-import { Flex } from '@capsuletech/web-ui/flex';
 
 interface IFieldShellProps {
   label: string;

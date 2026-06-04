@@ -7,7 +7,7 @@
  */
 import type { ICatalogContext } from '../features/catalog';
 
-const Sidebar = Widget((Ui, store) => {
+const Sidebar = Widget((_Ui, store) => {
   const data = () => store?.ctx.data as ICatalogContext | undefined;
 
   return (

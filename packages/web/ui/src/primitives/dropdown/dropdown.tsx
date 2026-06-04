@@ -71,10 +71,7 @@ const Content = (props: IDropdownContentProps) => {
 const Item = (props: IDropdownItemProps) => {
   const [local, others] = splitProps(props, ['class']);
   return (
-    <KobalteDropdown.Item
-      class={cn(dropdownItemCva(), local.class)}
-      {...(others as object)}
-    />
+    <KobalteDropdown.Item class={cn(dropdownItemCva(), local.class)} {...(others as object)} />
   );
 };
 
@@ -198,13 +195,13 @@ export const Dropdown = Object.assign(DropdownImpl, {
 // `Dropdown.Trigger`-style стабильный compound — выше, эти aliases — для
 // `createLazy(..., 'DropdownTrigger')` в web-core/ui-kit/imports.tsx.
 export {
-  Trigger as DropdownTrigger,
   Content as DropdownContent,
-  Item as DropdownItem,
-  Separator as DropdownSeparator,
   Group as DropdownGroup,
+  Item as DropdownItem,
   Label as DropdownLabel,
+  Separator as DropdownSeparator,
   Sub as DropdownSub,
-  SubTrigger as DropdownSubTrigger,
   SubContent as DropdownSubContent,
+  SubTrigger as DropdownSubTrigger,
+  Trigger as DropdownTrigger,
 };

@@ -109,10 +109,7 @@ describe('ViewWrapper — props forwarding (factory с props)', () => {
       return <div data-testid="dyn">{props.label}</div>;
     });
 
-    cleanup = render(
-      () => <Dynamic component={FieldTpl} label="Username" />,
-      container,
-    );
+    cleanup = render(() => <Dynamic component={FieldTpl} label="Username" />, container);
     expect(capturedLabel).toBe('Username');
     expect(container.querySelector('[data-testid="dyn"]')?.textContent).toBe('Username');
   });

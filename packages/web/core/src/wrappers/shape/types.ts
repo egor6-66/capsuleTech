@@ -72,11 +72,7 @@ export type IShapeFactory<S extends ZodType = ZodType> = (
  *  - Любой другой `ZodType` → `zod.infer<S>` (single value / object).
  */
 export type ShapeData<S extends ZodType> =
-  S extends ZodArray<infer E>
-    ? E extends ZodTypeAny
-      ? zod.infer<E>[]
-      : never
-    : zod.infer<S>;
+  S extends ZodArray<infer E> ? (E extends ZodTypeAny ? zod.infer<E>[] : never) : zod.infer<S>;
 
 /** @deprecated Use `ShapeData<S>` for generic schema support. Kept for backward-compat with array-only callers. */
 export type ShapeItem<S extends ZodArray<ZodTypeAny>> =

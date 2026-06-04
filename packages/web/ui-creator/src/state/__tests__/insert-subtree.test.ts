@@ -2,15 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { generate } from '../../generators/engine';
 import { FORM_PRESET } from '../../generators/presets/form';
 import { LAYOUT_2COL_PRESET } from '../../generators/presets/layout-2col';
-import { EditorOpError, createEmptyTree, insertSubtree } from '../operations';
+import { createEmptyTree, EditorOpError, insertSubtree } from '../operations';
 
 // Вспомогательная функция: дерево с одним Grid-root (принимает любых детей кроме Card-parts)
-const makeGridTree = () =>
-  createEmptyTree('ui.Layout.Grid');
+const makeGridTree = () => createEmptyTree('ui.Layout.Grid');
 
 // Вспомогательная функция: дерево с одним Flex-root
-const makeFlexTree = () =>
-  createEmptyTree('ui.Layout.Flex');
+const makeFlexTree = () => createEmptyTree('ui.Layout.Flex');
 
 describe('insertSubtree', () => {
   it('вставляет фрагмент как ребёнка root (в конец, без index)', () => {
@@ -29,7 +27,7 @@ describe('insertSubtree', () => {
     expect(result.root).toBe('root');
 
     // Ребёнок добавлен в root.children
-    const rootNode = result.nodes['root'];
+    const rootNode = result.nodes.root;
     expect(rootNode?.children.length).toBe(1);
 
     const insertedRootId = rootNode?.children[0] as string;
@@ -55,7 +53,7 @@ describe('insertSubtree', () => {
     const frag3 = generate(LAYOUT_2COL_PRESET, { seed: 3 });
     const result = insertSubtree(after2, frag3, { parentId: 'root', index: 1 });
 
-    const children = result.nodes['root']?.children ?? [];
+    const children = result.nodes.root?.children ?? [];
     expect(children.length).toBe(3);
 
     // На index 1 — новый фрагмент (Grid)
@@ -78,7 +76,7 @@ describe('insertSubtree', () => {
     expect(uniqueIds.size).toBe(allIds.length);
 
     // В дереве должны быть оба вставленных root-фрагмента (оба ui.Card)
-    const rootChildren = after2.nodes['root']?.children ?? [];
+    const rootChildren = after2.nodes.root?.children ?? [];
     expect(rootChildren.length).toBe(2);
 
     const cardNodes = Object.values(after2.nodes).filter((n) => n.type === 'ui.Card');
@@ -124,18 +122,16 @@ describe('insertSubtree', () => {
     // Фрагмент с root = ui.Layout.Grid — не принимается ui.Card
     const fragment = generate(LAYOUT_2COL_PRESET, { seed: 1 });
 
-    expect(() =>
-      insertSubtree(cardTree, fragment, { parentId: 'root' }),
-    ).toThrow(EditorOpError);
+    expect(() => insertSubtree(cardTree, fragment, { parentId: 'root' })).toThrow(EditorOpError);
   });
 
   it('бросает EditorOpError если parentId не найден', () => {
     const tree = makeFlexTree();
     const fragment = generate(LAYOUT_2COL_PRESET, { seed: 1 });
 
-    expect(() =>
-      insertSubtree(tree, fragment, { parentId: 'nonexistent-id' }),
-    ).toThrow(EditorOpError);
+    expect(() => insertSubtree(tree, fragment, { parentId: 'nonexistent-id' })).toThrow(
+      EditorOpError,
+    );
   });
 
   it('ремапленные id не совпадают с исходными id фрагмента', () => {

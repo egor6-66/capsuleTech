@@ -1,5 +1,5 @@
-export { ShapeUiContext, useShapeUi } from './context';
 export type { IShapeUiNamespace } from './context';
+export { ShapeUiContext, useShapeUi } from './context';
 export type {
   IShapeComponent,
   IShapeComponentProps,

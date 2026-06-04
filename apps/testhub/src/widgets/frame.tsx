@@ -6,7 +6,7 @@
  */
 import type { ICatalogContext } from '../features/catalog';
 
-const Frame = Widget((Ui, store) => {
+const Frame = Widget((_Ui, store) => {
   const data = () => store?.ctx.data as ICatalogContext | undefined;
 
   return <Views.AppFrame url={data()?.selected?.url} />;

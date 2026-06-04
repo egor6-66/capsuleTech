@@ -10,7 +10,9 @@ export const CHAMFER_SIZE = 22;
  * Coordinate system: (0 0) = top-left, (100% 100%) = bottom-right.
  * `c` = CHAMFER_SIZE expressed as `calc(... - c px)` or `c px`.
  */
-export function getClipPath(corner: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'): string {
+export function getClipPath(
+  corner: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right',
+): string {
   const c = `${CHAMFER_SIZE}px`;
   switch (corner) {
     case 'top-left':

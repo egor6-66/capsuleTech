@@ -551,9 +551,7 @@ describe('ViewWrapper — meta prop forwarded to UiProxy without error', () => {
   it('View factory can render stub component with meta prop via Ui arg', () => {
     // We use a stub that accepts meta (UiProxy-aware) rather than lazy web-ui,
     // to avoid Suspense/lazy loading complexity in jsdom environment.
-    const StubInput = (props: any) => (
-      <input data-testid="inp" type={props.type ?? 'text'} />
-    );
+    const StubInput = (props: any) => <input data-testid="inp" type={props.type ?? 'text'} />;
 
     let capturedUi: any;
     const TestView = ViewWrapper((ui) => {

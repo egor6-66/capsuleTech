@@ -97,9 +97,9 @@ describe('extractGroup', () => {
   });
 
   it('works on Windows backslash paths', () => {
-    expect(
-      extractGroup('D:\\repo\\apps\\sandbox\\src\\views\\_auth\\loginForm.tsx', 'view'),
-    ).toBe('_auth');
+    expect(extractGroup('D:\\repo\\apps\\sandbox\\src\\views\\_auth\\loginForm.tsx', 'view')).toBe(
+      '_auth',
+    );
   });
 
   it('extracts page group correctly (plural "pages")', () => {

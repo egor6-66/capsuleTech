@@ -58,10 +58,7 @@ const CheckIcon = () => (
 const Trigger = (props: ISelectTriggerProps) => {
   const [local, others] = splitProps(props, ['class', 'children']);
   return (
-    <KobalteSelect.Trigger
-      class={cn(selectTriggerCva(), local.class)}
-      {...(others as object)}
-    >
+    <KobalteSelect.Trigger class={cn(selectTriggerCva(), local.class)} {...(others as object)}>
       {local.children}
       <KobalteSelect.Icon>
         <ChevronDownIcon />
@@ -94,10 +91,7 @@ const Content = (props: ISelectContentProps) => {
   const [local, others] = splitProps(props, ['class', 'portalProps']);
   return (
     <KobalteSelect.Portal {...(local.portalProps as object)}>
-      <KobalteSelect.Content
-        class={cn(selectContentCva(), local.class)}
-        {...(others as object)}
-      >
+      <KobalteSelect.Content class={cn(selectContentCva(), local.class)} {...(others as object)}>
         <KobalteSelect.Listbox />
       </KobalteSelect.Content>
     </KobalteSelect.Portal>
@@ -144,7 +138,8 @@ const SelectImpl = (props: ISelectProps) => {
     for (const o of local.options ?? []) m[o.value] = o.label;
     return m;
   };
-  const disabledSet = () => new Set((local.options ?? []).filter((o) => o.disabled).map((o) => o.value));
+  const disabledSet = () =>
+    new Set((local.options ?? []).filter((o) => o.disabled).map((o) => o.value));
 
   return (
     <KobalteSelect<string>
@@ -153,10 +148,7 @@ const SelectImpl = (props: ISelectProps) => {
       placeholder={local.placeholder}
       optionDisabled={(v) => disabledSet().has(v)}
       itemComponent={(itemProps) => (
-        <KobalteSelect.Item
-          item={itemProps.item}
-          class={selectItemCva()}
-        >
+        <KobalteSelect.Item item={itemProps.item} class={selectItemCva()}>
           <KobalteSelect.ItemIndicator class={selectItemIndicatorCva()}>
             <CheckIcon />
           </KobalteSelect.ItemIndicator>
@@ -186,8 +178,4 @@ export const Select = Object.assign(SelectImpl, {
 });
 
 // Named re-exports for web-core createLazy pattern.
-export {
-  Trigger as SelectTrigger,
-  Content as SelectContent,
-  Value as SelectValue,
-};
+export { Content as SelectContent, Trigger as SelectTrigger, Value as SelectValue };

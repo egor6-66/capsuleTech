@@ -14,15 +14,14 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
+import { applyDrop, type DragSpec, type DropIntent, treeIntent } from '../../state/dnd';
 import { addNode, createEmptyTree } from '../../state/operations';
-import type { IEditorCtx } from '../EditorController';
 import type {
-  IOnDragOverCanvasPayload,
+  IEditorCtx,
   IOnDragOverTreePayload,
   IOnDropPayload,
   IOnMarkPayload,
 } from '../EditorController';
-import { applyDrop, treeIntent, type DragSpec, type DropIntent } from '../../state/dnd';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 

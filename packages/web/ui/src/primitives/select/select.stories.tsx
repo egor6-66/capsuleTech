@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 import { createSignal } from 'solid-js';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Select } from './select';
 
@@ -29,12 +29,7 @@ type Story = StoryObj<typeof meta>;
 
 /** Convenience mode — pass `options` array and the component handles the rest. */
 export const Basic: Story = {
-  render: () => (
-    <Select
-      options={FRAMEWORK_OPTIONS}
-      placeholder="Select framework…"
-    />
-  ),
+  render: () => <Select options={FRAMEWORK_OPTIONS} placeholder="Select framework…" />,
 };
 
 /** Controlled value — demonstrates reading and writing external signal. */
@@ -49,9 +44,7 @@ export const Controlled: Story = {
           onChange={setValue}
           placeholder="Select framework…"
         />
-        <p class="text-sm text-muted-foreground">
-          Selected: {value() ?? '(none)'}
-        </p>
+        <p class="text-sm text-muted-foreground">Selected: {value() ?? '(none)'}</p>
       </div>
     );
   },
@@ -59,12 +52,7 @@ export const Controlled: Story = {
 
 /** One option is disabled — Angular cannot be selected. */
 export const WithDisabledOption: Story = {
-  render: () => (
-    <Select
-      options={FRAMEWORK_OPTIONS}
-      placeholder="Angular is disabled…"
-    />
-  ),
+  render: () => <Select options={FRAMEWORK_OPTIONS} placeholder="Angular is disabled…" />,
 };
 
 /** Compound mode — custom trigger layout via Select.Trigger + Select.Content. */
@@ -89,22 +77,12 @@ export const Compound: Story = {
 
 /** Disabled select — trigger is non-interactive. */
 export const Disabled: Story = {
-  render: () => (
-    <Select
-      options={FRAMEWORK_OPTIONS}
-      disabled
-      placeholder="Cannot be opened"
-    />
-  ),
+  render: () => <Select options={FRAMEWORK_OPTIONS} disabled placeholder="Cannot be opened" />,
 };
 
 /** Preset value — opens with a pre-selected item. */
 export const WithDefaultValue: Story = {
   render: () => (
-    <Select
-      options={FRAMEWORK_OPTIONS}
-      defaultValue="solid"
-      placeholder="Select framework…"
-    />
+    <Select options={FRAMEWORK_OPTIONS} defaultValue="solid" placeholder="Select framework…" />
   ),
 };

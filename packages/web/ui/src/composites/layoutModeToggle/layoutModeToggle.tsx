@@ -1,5 +1,5 @@
-import { Show } from 'solid-js';
 import { toggleLayoutMode, useLayoutMode } from '@capsuletech/web-style';
+import { Show } from 'solid-js';
 
 import type { ILayoutModeToggleProps } from './interfaces';
 

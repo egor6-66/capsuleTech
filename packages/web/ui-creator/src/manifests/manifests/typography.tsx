@@ -15,13 +15,8 @@ export const TypographyManifest: IComponentManifest = {
     children: 'Text',
   },
   propsSchema: z.object({
-    variant: z
-      .enum(['h1', 'h2', 'p', 'blockquote', 'code', 'lead', 'muted'])
-      .default('p'),
-    color: z
-      .enum(['default', 'muted', 'primary', 'destructive'])
-      .optional()
-      .default('default'),
+    variant: z.enum(['h1', 'h2', 'p', 'blockquote', 'code', 'lead', 'muted']).default('p'),
+    color: z.enum(['default', 'muted', 'primary', 'destructive']).optional().default('default'),
     children: z.string().default('Text'),
     class: z.string().optional(),
   }),

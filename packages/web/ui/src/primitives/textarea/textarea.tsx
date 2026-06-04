@@ -41,11 +41,5 @@ export const Textarea = (props: ITextareaProps) => {
     return { ...base, ...resizeCss } as typeof base;
   };
 
-  return (
-    <textarea
-      class={className()}
-      style={resizeStyle()}
-      {...others}
-    />
-  );
+  return <textarea class={className()} style={resizeStyle()} {...others} />;
 };

@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 import { createSignal } from 'solid-js';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Dropdown } from '../../primitives/dropdown';
 import { ThemePicker } from './themePicker';
@@ -10,9 +10,7 @@ const meta = {
   tags: ['autodocs'],
   decorators: [
     (Story: () => import('solid-js').JSX.Element) => (
-      <div class="flex flex-col gap-4 p-6">
-        {Story()}
-      </div>
+      <div class="flex flex-col gap-4 p-6">{Story()}</div>
     ),
   ],
 } satisfies Meta<typeof ThemePicker>;

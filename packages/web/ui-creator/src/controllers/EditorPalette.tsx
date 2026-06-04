@@ -24,8 +24,8 @@ import type { Registry } from '@capsuletech/web-renderer';
 import { Flex } from '@capsuletech/web-ui/flex';
 import { For } from 'solid-js';
 import {
-  canAcceptChild,
   type ComponentCategory,
+  canAcceptChild,
   getCategories,
   getManifest,
   type IComponentManifest,
@@ -36,8 +36,8 @@ import {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   CONTAINER_ORDER,
-  catRank,
   ContainerItem,
+  catRank,
   Leaf,
   orderRank,
 } from './palette';
@@ -52,7 +52,7 @@ export { CATEGORY_LABELS, CATEGORY_ORDER, CONTAINER_ORDER, catRank, orderRank };
  * Выделено из JSX-тела — вычисление не должно мешать читать разметку.
  */
 const registryFromKit = (kit: ReturnType<typeof useEditorKit>): Registry =>
-  ({ ui: kit } as unknown as Registry);
+  ({ ui: kit }) as unknown as Registry;
 
 // ── Editor.Palette ─────────────────────────────────────────────────────────────
 

@@ -20,6 +20,8 @@ export interface IMarkPickerProps {
 }
 
 export const MarkPicker = (props: IMarkPickerProps) => (
+  // biome-ignore lint/a11y/noStaticElementInteractions: non-interactive wrapper — onClick лишь гасит propagation к строке; контрол — Dropdown внутри
+  // biome-ignore lint/a11y/useKeyWithClickEvents: см. выше — клавиатурное взаимодействие на самом Dropdown.Trigger
   <span class="ml-auto shrink-0" onClick={(e) => e.stopPropagation()}>
     <Dropdown>
       <Dropdown.Trigger

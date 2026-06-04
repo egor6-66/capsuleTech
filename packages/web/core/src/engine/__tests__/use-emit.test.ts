@@ -34,16 +34,13 @@ const makeStore = (ctxData: any = { foo: 'bar' }) => ({
 });
 
 const makeController = (handlers: Record<string, ReturnType<typeof vi.fn>> = {}) =>
-  new Proxy(
-    {} as any,
-    {
-      get(_target, prop: string) {
-        if (handlers[prop]) return handlers[prop];
-        // fallback: возвращаем vi.fn() для любого неопределённого метода
-        return vi.fn(async () => null);
-      },
+  new Proxy({} as any, {
+    get(_target, prop: string) {
+      if (handlers[prop]) return handlers[prop];
+      // fallback: возвращаем vi.fn() для любого неопределённого метода
+      return vi.fn(async () => null);
     },
-  );
+  });
 
 /** Запускает callback внутри реактивного Solid-scope, обёрнутого Context.Provider. */
 const runInCtx = <T>(ctxValue: any, fn: () => T): T =>
@@ -68,7 +65,13 @@ const runInCtx = <T>(ctxValue: any, fn: () => T): T =>
     // ФИНАЛЬНЫЙ подход: вызываем Context.Provider как функцию напрямую с children-геттером.
     // Это работает потому что Solid-рантайм пушит контекст через owner-stack,
     // не через React-подобный DOM.
-    (ContextProvider as any)({ value: ctxValue, get children() { return (result = fn()); } });
+    (ContextProvider as any)({
+      value: ctxValue,
+      get children() {
+        result = fn();
+        return result;
+      },
+    });
     dispose();
     return result!;
   });
@@ -177,7 +180,7 @@ describe('useEmit — dispatch через ctx.controller[name]', () => {
     });
 
     expect(onClickMock).toHaveBeenCalledOnce();
-    const [target, context] = (onClickMock.mock.calls[0] as unknown) as [ITarget, unknown];
+    const [target, context] = onClickMock.mock.calls[0] as unknown as [ITarget, unknown];
     expect(target.name).toBe('submit');
     expect(target.meta?.tags).toContain('submit');
     expect(target.payload).toEqual({ id: 42 });
@@ -199,7 +202,7 @@ describe('useEmit — dispatch через ctx.controller[name]', () => {
     });
 
     expect(onDropMock).toHaveBeenCalledOnce();
-    const [target] = (onDropMock.mock.calls[0] as unknown) as [ITarget, unknown];
+    const [target] = onDropMock.mock.calls[0] as unknown as [ITarget, unknown];
     expect(target.payload).toEqual({ x: 10, y: 20 });
     await expect(result).resolves.toBe('drop-result');
   });
@@ -215,7 +218,7 @@ describe('useEmit — dispatch через ctx.controller[name]', () => {
     });
 
     expect(onSelectMock).toHaveBeenCalledOnce();
-    const [target] = (onSelectMock.mock.calls[0] as unknown) as [ITarget, unknown];
+    const [target] = onSelectMock.mock.calls[0] as unknown as [ITarget, unknown];
     expect(target.name).toBeUndefined();
     expect(target.payload).toBeUndefined();
   });
@@ -269,7 +272,7 @@ describe('useEmit — dispatch через ctx.controller[name]', () => {
     expect(idleHandler).toHaveBeenCalledOnce();
     expect(busyHandler).not.toHaveBeenCalled();
 
-    const [api] = (idleHandler.mock.calls[0] as unknown) as [{ target: ITarget; context: any }];
+    const [api] = idleHandler.mock.calls[0] as unknown as [{ target: ITarget; context: any }];
     expect(api.target.name).toBe('canvas');
     expect(api.target.payload).toEqual({ nodeId: 'x' });
   });

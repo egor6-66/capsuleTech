@@ -11,5 +11,4 @@ export const label = (type: string): string =>
   getManifest(type)?.label ?? type.split('.').pop() ?? type;
 
 /** Иконка из манифеста (JSX-функция или undefined). */
-export const icon = (type: string): (() => JSX.Element) | undefined =>
-  getManifest(type)?.icon;
+export const icon = (type: string): (() => JSX.Element) | undefined => getManifest(type)?.icon;

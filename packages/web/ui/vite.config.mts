@@ -160,12 +160,7 @@ for (const srcName of SRC_DIRS) {
     if (GROUP_DIRS.has(compName)) {
       // Группировщик: публикуем и его собственный barrel (layout/index.ts)
       // и каждый вложенный примитив как отдельный flat-entry.
-      addComponentEntries(
-        componentEntries,
-        compDir,
-        compName,
-        `src/${srcName}/${compName}`,
-      );
+      addComponentEntries(componentEntries, compDir, compName, `src/${srcName}/${compName}`);
       for (const subName of readdirSync(compDir)) {
         const subDir = resolve(compDir, subName);
         try {
@@ -181,12 +176,7 @@ for (const srcName of SRC_DIRS) {
         );
       }
     } else {
-      addComponentEntries(
-        componentEntries,
-        compDir,
-        compName,
-        `src/${srcName}/${compName}`,
-      );
+      addComponentEntries(componentEntries, compDir, compName, `src/${srcName}/${compName}`);
     }
   }
 }

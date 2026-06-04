@@ -1,3 +1,25 @@
+export { flatten, type NestedDictionary } from './flatten';
+export {
+  getDefaultLocale,
+  getLocale,
+  getTenant,
+  setDefaultLocale,
+  setLocale,
+  setTenant,
+  useDefaultLocale,
+  useLocale,
+  useLocales,
+  useTenant,
+} from './locale';
+export { type IIntlProviderProps, IntlProvider } from './provider';
+export {
+  getBaseDict,
+  getRegisteredLocales,
+  getTenantDict,
+  registerCopy,
+  registerTenantCopy,
+} from './registry';
+export { resolveCopy, useCopy } from './resolve';
 export type {
   CopyResolver,
   Dictionary,
@@ -5,30 +27,3 @@ export type {
   Locale,
   Tenant,
 } from './types';
-
-export {
-  registerCopy,
-  registerTenantCopy,
-  getBaseDict,
-  getTenantDict,
-  getRegisteredLocales,
-} from './registry';
-
-export {
-  useLocale,
-  useTenant,
-  useDefaultLocale,
-  useLocales,
-  setLocale,
-  setTenant,
-  setDefaultLocale,
-  getLocale,
-  getTenant,
-  getDefaultLocale,
-} from './locale';
-
-export { resolveCopy, useCopy } from './resolve';
-
-export { flatten, type NestedDictionary } from './flatten';
-
-export { IntlProvider, type IIntlProviderProps } from './provider';

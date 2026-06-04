@@ -15,15 +15,15 @@
  * Нет внешних props — всё из useEditor() + useEmit().
  */
 
+import type { ZodTypeAny } from '@capsuletech/shared-zod';
 import { useEmit } from '@capsuletech/web-core';
 import { Flex } from '@capsuletech/web-ui/flex';
 import { For, Show } from 'solid-js';
-import type { ZodTypeAny } from '@capsuletech/shared-zod';
 import { Inspector } from '../inspector/Inspector';
 import type { ICategory, IFieldDef } from '../inspector/types';
 import { getManifest } from '../manifests/registry';
-import { useEditor } from './useEditor';
 import type { IOnUpdateNodePropsPayload } from './EditorController';
+import { useEditor } from './useEditor';
 
 // ── Zod-shape → ICategory[] ────────────────────────────────────────────────────
 
@@ -46,7 +46,8 @@ export const schemaToInspectorCategories = (
   if (!def) return [];
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const shape: Record<string, ZodTypeAny> = typeof def.shape === 'function' ? def.shape() : (def.shape ?? {});
+  const shape: Record<string, ZodTypeAny> =
+    typeof def.shape === 'function' ? def.shape() : (def.shape ?? {});
 
   const fields: IFieldDef[] = [];
 
@@ -172,21 +173,13 @@ export const EditorInspector = () => {
           {/* Редактируемые пропсы через generic Inspector */}
           <Show when={categories().length > 0}>
             <div class="border-t pt-3" data-testid="inspector-props">
-              <Inspector
-                categories={categories()}
-                values={values()}
-                onChange={handleChange}
-              />
+              <Inspector categories={categories()} values={values()} onChange={handleChange} />
             </div>
           </Show>
 
           {/* Fallback: у ноды нет propsSchema или schema пустая */}
           <Show when={categories().length === 0}>
-            <For
-              each={Object.entries(node()?.props ?? {}).filter(
-                ([k]) => !k.startsWith('data-'),
-              )}
-            >
+            <For each={Object.entries(node()?.props ?? {}).filter(([k]) => !k.startsWith('data-'))}>
               {([k, v]) => (
                 <Flex class="items-center justify-between gap-2 border-t pt-1.5 first:border-t-0">
                   <dt class="shrink-0 text-foreground/50">{k}</dt>

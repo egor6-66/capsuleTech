@@ -12,21 +12,20 @@
  * Label/icon: label/icon из ./utils.
  */
 
-import { createDraggable, createDroppable, useDnD } from '@capsuletech/web-dnd';
 import { useEmit } from '@capsuletech/web-core';
+import { createDraggable, createDroppable, useDnD } from '@capsuletech/web-dnd';
 import { Button } from '@capsuletech/web-ui/button';
 import { Flex } from '@capsuletech/web-ui/flex';
 import { ChevronRight } from '@capsuletech/web-ui/icons';
-import { createEffect, createSignal, createUniqueId, For, Show } from 'solid-js';
 import type { JSX } from 'solid-js';
+import { createEffect, createUniqueId, For, Show } from 'solid-js';
 import { acceptsChildren } from '../../manifests/rules';
-import { dragSpec, type DragSpec } from '../../state/dnd';
-import { canBeside, canInto } from '../../state/dnd';
+import { canBeside, canInto, type DragSpec, dragSpec } from '../../state/dnd';
 import type { IUseEditorResult } from '../useEditor';
 import { boxStyle, colorOf, headerStyle } from './highlight';
 import { MarkPicker } from './MarkPicker';
-import { containerZone, insideCandidate, leafZone } from './zones';
 import { icon, label } from './utils';
+import { containerZone, insideCandidate, leafZone } from './zones';
 
 export interface IRowProps {
   id: string;
@@ -160,6 +159,8 @@ export const Row = (p: IRowProps): JSX.Element => {
   });
 
   const HeaderContent = (innerProps: { ref: (el: HTMLElement) => void }): JSX.Element => (
+    // biome-ignore lint/a11y/noStaticElementInteractions: editor affordance — клик по строке дерева выделяет ноду (pointer-driven визуальный редактор)
+    // biome-ignore lint/a11y/useKeyWithClickEvents: editor affordance — клавиатурная навигация по дереву TBD
     <div
       ref={innerProps.ref}
       onClick={() => emit('onSelect', { payload: p.id })}
@@ -181,10 +182,7 @@ export const Row = (p: IRowProps): JSX.Element => {
       <Show when={currentLeafLine() === 'after'}>
         <div class="pointer-events-none absolute inset-x-0 -bottom-px z-10 h-0.5 rounded bg-primary" />
       </Show>
-      <Show
-        when={hasChildren()}
-        fallback={<span class="size-4 shrink-0" />}
-      >
+      <Show when={hasChildren()} fallback={<span class="size-4 shrink-0" />}>
         <Button
           variant="ghost"
           size="icon"
