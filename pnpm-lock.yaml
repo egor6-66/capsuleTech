@@ -944,6 +944,9 @@ importers:
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
+      lucide-solid:
+        specifier: ^1.16.0
+        version: 1.16.0(solid-js@1.9.12)
       solid-js:
         specifier: 1.9.12
         version: 1.9.12
@@ -972,9 +975,6 @@ importers:
       jsdom:
         specifier: ~29.1.1
         version: 29.1.1
-      lucide-solid:
-        specifier: ^1.16.0
-        version: 1.16.0(solid-js@1.9.12)
       storybook:
         specifier: ^10
         version: 10.4.0(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@testing-library/dom@10.4.1)(@types/react@19.2.15)(prettier@3.6.2)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -1005,9 +1005,9 @@ importers:
       '@capsuletech/web-renderer':
         specifier: workspace:*
         version: link:../renderer
-      lucide-solid:
-        specifier: ^1.16.0
-        version: 1.16.0(solid-js@1.9.12)
+      '@capsuletech/web-ui':
+        specifier: workspace:*
+        version: link:../ui
       solid-js:
         specifier: 1.9.12
         version: 1.9.12
