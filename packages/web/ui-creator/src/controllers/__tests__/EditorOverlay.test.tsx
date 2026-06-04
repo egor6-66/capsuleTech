@@ -24,6 +24,8 @@ let _mockCtx: any = null;
 vi.mock('@capsuletech/web-core', () => ({
   useEmit: () => _mockEmit,
   useCtx: () => _mockCtx,
+  // createUseCtx<T>() → () => ctx  (двойная фабрика)
+  createUseCtx: () => () => _mockCtx,
 }));
 
 vi.mock('@capsuletech/web-renderer', () => ({}));
@@ -54,7 +56,8 @@ const makeNode = () => ({
 });
 
 const mount = (editorCtx: IEditorCtx, nodeId = 'node-1') => {
-  _mockCtx = { store: { ctx: editorCtx }, controller: {}, state: {} };
+  // EditorOverlay читает ctx.store.ctx.data (XState кладёт schema.context в context.data)
+  _mockCtx = { store: { ctx: { data: editorCtx } }, controller: {}, state: {} };
   const container = document.createElement('div');
   document.body.appendChild(container);
   render(() => <EditorOverlay nodeId={nodeId} node={makeNode()} />, container);

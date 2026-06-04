@@ -23,3 +23,5 @@ export type {
 } from './EditorController';
 
 export { EditorOverlay } from './EditorOverlay';
+
+export { useEditor } from './useEditor';

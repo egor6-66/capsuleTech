@@ -79,114 +79,109 @@ const EditorController = Controller((services) => {
     initial: 'idle',
     context: initialCtx,
     states: {
-      idle: {},
-    },
+      idle: {
+        /**
+         * onSelect — toggle selectedId.
+         * payload: NodeId | null
+         */
+        onSelect({ target, store, context }) {
+          const nodeId = (target.payload as NodeId | null) ?? null;
+          const current = context.selectedId;
+          store.update({
+            selectedId: current === nodeId ? null : nodeId,
+          });
+        },
 
-    /**
-     * onSelect — toggle selectedId.
-     * payload: NodeId | null
-     */
-    onSelect({ target, store, context }) {
-      const nodeId = (target.payload as NodeId | null) ?? null;
-      const current = (context as IEditorCtx).selectedId;
-      store.update({
-        selectedId: current === nodeId ? null : nodeId,
-      });
-    },
+        /**
+         * onCanvasDragOver — геометрический резолв intent'а через cursor pointer.
+         * payload: IOnDragOverCanvasPayload
+         */
+        onCanvasDragOver({ target, store, context }) {
+          const { spec, pointer } = target.payload as IOnDragOverCanvasPayload;
+          const it = canvasIntent(context.tree, spec, pointer.x, pointer.y);
+          store.update({
+            dragSpec: spec,
+            dropTargetId: it?.parentId ?? null,
+            intent: it,
+          });
+        },
 
-    /**
-     * onCanvasDragOver — геометрический резолв intent'а через cursor pointer.
-     * payload: IOnDragOverCanvasPayload
-     */
-    onCanvasDragOver({ target, store, context }) {
-      const { spec, pointer } = target.payload as IOnDragOverCanvasPayload;
-      const ctx = context as IEditorCtx;
-      const it = canvasIntent(ctx.tree, spec, pointer.x, pointer.y);
-      store.update({
-        dragSpec: spec,
-        dropTargetId: it?.parentId ?? null,
-        intent: it,
-      });
-    },
+        /**
+         * onTreeDragOver — зональный резолв intent'а через строку дерева.
+         * payload: IOnDragOverTreePayload
+         */
+        onTreeDragOver({ target, store, context }) {
+          const { spec, targetId, zone } = target.payload as IOnDragOverTreePayload;
+          const it = treeIntent(context.tree, spec, targetId, zone);
+          store.update({
+            dragSpec: spec,
+            dropTargetId: targetId,
+            intent: it,
+          });
+        },
 
-    /**
-     * onTreeDragOver — зональный резолв intent'а через строку дерева.
-     * payload: IOnDragOverTreePayload
-     */
-    onTreeDragOver({ target, store, context }) {
-      const { spec, targetId, zone } = target.payload as IOnDragOverTreePayload;
-      const ctx = context as IEditorCtx;
-      const it = treeIntent(ctx.tree, spec, targetId, zone);
-      store.update({
-        dragSpec: spec,
-        dropTargetId: targetId,
-        intent: it,
-      });
-    },
+        /**
+         * onDrop — применить drop (add/move/reorder), сбросить drag-состояние.
+         * payload: IOnDropPayload
+         */
+        onDrop({ target, store, context }) {
+          const { spec, intent } = target.payload as IOnDropPayload;
+          const newTree = applyDrop(context.tree, spec, intent);
+          store.update({
+            tree: newTree,
+            dragSpec: null,
+            dropTargetId: null,
+            intent: null,
+          });
+        },
 
-    /**
-     * onDrop — применить drop (add/move/reorder), сбросить drag-состояние.
-     * payload: IOnDropPayload
-     */
-    onDrop({ target, store, context }) {
-      const { spec, intent } = target.payload as IOnDropPayload;
-      const ctx = context as IEditorCtx;
-      const newTree = applyDrop(ctx.tree, spec, intent);
-      store.update({
-        tree: newTree,
-        dragSpec: null,
-        dropTargetId: null,
-        intent: null,
-      });
-    },
+        /**
+         * onDragEnd — отменить drag (Escape или выход за пределы drop-зон).
+         */
+        onDragEnd({ store }) {
+          store.update({
+            dragSpec: null,
+            dropTargetId: null,
+            intent: null,
+          });
+        },
 
-    /**
-     * onDragEnd — отменить drag (Escape или выход за пределы drop-зон).
-     */
-    onDragEnd({ store }) {
-      store.update({
-        dragSpec: null,
-        dropTargetId: null,
-        intent: null,
-      });
-    },
+        /**
+         * onMark — установить/снять цветную метку ноды.
+         * payload: IOnMarkPayload
+         */
+        onMark({ target, store, context }) {
+          const { nodeId, color } = target.payload as IOnMarkPayload;
+          const next = { ...context.marks };
+          if (color) {
+            next[nodeId] = color;
+          } else {
+            delete next[nodeId];
+          }
+          store.update({ marks: next });
+        },
 
-    /**
-     * onMark — установить/снять цветную метку ноды.
-     * payload: IOnMarkPayload
-     */
-    onMark({ target, store, context }) {
-      const { nodeId, color } = target.payload as IOnMarkPayload;
-      const ctx = context as IEditorCtx;
-      const next = { ...ctx.marks };
-      if (color) {
-        next[nodeId] = color;
-      } else {
-        delete next[nodeId];
-      }
-      store.update({ marks: next });
-    },
+        /**
+         * onSetTree — принудительно заменить всё дерево (например, при загрузке
+         * схемы с сервера или применении preset'а).
+         * payload: IEditorTree
+         */
+        onSetTree({ target, store }) {
+          store.update({ tree: target.payload as IEditorTree });
+        },
 
-    /**
-     * onSetTree — принудительно заменить всё дерево (например, при загрузке
-     * схемы с сервера или применении preset'а).
-     * payload: IEditorTree
-     */
-    onSetTree({ target, store }) {
-      store.update({ tree: target.payload as IEditorTree });
-    },
-
-    /**
-     * canInto — утилита для Canvas/Tree виджетов: проверить, можно ли
-     * опустить spec в parentId. Возвращает boolean.
-     *
-     * Не мутирует store — pure read, удобно для accepts-callback'а DnD.
-     * Вызывается напрямую через emit('canInto', { payload: { tree, spec, parentId } }).
-     */
-    canInto({ target, context }) {
-      const { spec: s, parentId } = target.payload as { spec: DragSpec; parentId: NodeId };
-      const ctx = context as IEditorCtx;
-      return canInto(ctx.tree, s, parentId);
+        /**
+         * canInto — утилита для Canvas/Tree виджетов: проверить, можно ли
+         * опустить spec в parentId. Возвращает boolean.
+         *
+         * Не мутирует store — pure read, удобно для accepts-callback'а DnD.
+         * Вызывается напрямую через emit('canInto', { payload: { tree, spec, parentId } }).
+         */
+        canInto({ target, context }) {
+          const { spec: s, parentId } = target.payload as { spec: DragSpec; parentId: NodeId };
+          return canInto(context.tree, s, parentId);
+        },
+      },
     },
   };
 });

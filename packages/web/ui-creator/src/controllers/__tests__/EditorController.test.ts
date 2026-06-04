@@ -124,12 +124,16 @@ describe('EditorController — onDrop мутирует tree', () => {
       intent: null,
     });
 
-    const call = api.store.update.mock.calls[0][0];
+    const call = api.store.update.mock.calls[0][0] as Partial<IEditorCtx> & {
+      dragSpec: unknown;
+      dropTargetId: unknown;
+      intent: unknown;
+    };
     expect(call.dragSpec).toBeNull();
     expect(call.dropTargetId).toBeNull();
     expect(call.intent).toBeNull();
     // tree должно содержать новую ноду
-    const nodes = Object.values(call.tree.nodes);
+    const nodes = Object.values(call.tree!.nodes);
     expect(nodes.length).toBeGreaterThan(1);
   });
 

@@ -19,11 +19,12 @@
  * во время drag — `none` (не мешаем DnD).
  */
 
-import { useCtx, useEmit } from '@capsuletech/web-core';
+import { useEmit } from '@capsuletech/web-core';
 import type { IEditOverlayProps } from '@capsuletech/web-renderer';
 import { Show } from 'solid-js';
 import { canInto } from '../state/dnd';
 import type { IEditorCtx } from './EditorController';
+import { useEditor } from './useEditor';
 
 /** Полупрозрачная заливка из цвета (hex, CSS-переменная, etc.). */
 const fill = (c: string, pct: number): string =>
@@ -66,11 +67,13 @@ export const EditorOverlay = (p: IEditOverlayProps) => {
 
   // ControllerContext доступен, т.к. EditorOverlay монтируется рендерером
   // в том же owner-tree, где уже живёт <Controllers.Editor> (app-Widget).
-  const ctx = useCtx();
+  const ctx = useEditor();
   const emit = useEmit();
 
-  // Приводим store.ctx к известному shape — Editor-конкретика.
-  const editorCtx = (): IEditorCtx => ctx.store.ctx as IEditorCtx;
+  // store.ctx.data содержит IEditorCtx (XState кладёт schema.context в context.data).
+  // useEditor() типизирован через createUseCtx<IEditorCtx>() — ctx.store.ctx.data: any,
+  // каст to IEditorCtx безопасен (any → конкретный тип, без TS2352).
+  const editorCtx = () => ctx.store.ctx.data as IEditorCtx;
 
   /** Цвет ноды: метка доминирует над primary. */
   const color = (): string => editorCtx().marks[nodeId] ?? 'var(--primary)';
