@@ -35,5 +35,14 @@ export { EditorCanvas } from './EditorCanvas';
 
 export { EditorTree } from './EditorTree';
 
+export { EditorPalette } from './EditorPalette';
+export {
+  CATEGORY_LABELS,
+  CATEGORY_ORDER,
+  CONTAINER_ORDER,
+  catRank,
+  orderRank,
+} from './EditorPalette';
+
 export { useEditor } from './useEditor';
 export type { IUseEditorResult } from './useEditor';
