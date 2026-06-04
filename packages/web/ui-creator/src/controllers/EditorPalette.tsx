@@ -7,7 +7,7 @@
  *  - `/manifests` (`getCategories`, `listByCategory`, `getManifest`, `canAcceptChild`)
  *    — реестр компонентов, категории, разрешение вложенности.
  *  - `/generators` (`listTemplatesFor`, `buildTemplate`)
- *    — темплейты для поповеров-превью.
+ *    — темплейты для дропдаун-превью.
  *  - `useEditorKit()` — кит (UI-компоненты) для рендера превью в `<Renderer>`.
  *    Не хардкодим @capsuletech/web-ui.
  *
@@ -19,7 +19,8 @@
  *  - `CATEGORY_LABELS`, `CATEGORY_ORDER`, `CONTAINER_ORDER`, `catRank`, `orderRank`
  *    — editor-метаданные для раскладки секций. Живут в этом модуле.
  *
- * Portal-поповер темплейтов — чтобы не обрезался overflow узкого сайдбара.
+ * Dropdown темплейтов — портальный, не обрезается overflow узкого сайдбара
+ * (Kobalte Dropdown.Content монтируется в Portal автоматически).
  */
 
 import { createDraggable, useDnD } from '@capsuletech/web-dnd';
@@ -38,8 +39,7 @@ import {
   type ITemplate,
   listTemplatesFor,
 } from '../generators';
-import { createEffect, createSignal, For, Show } from 'solid-js';
-import { Portal } from 'solid-js/web';
+import { createEffect, createSignal, For, type JSX, Show } from 'solid-js';
 import { useEditorKit } from './EditorProvider';
 
 // ── Editor-metadata: категории ─────────────────────────────────────────────────
@@ -79,6 +79,27 @@ export const orderRank = (type: string): number => {
   const i = CONTAINER_ORDER.indexOf(type);
   return i < 0 ? CONTAINER_ORDER.length : i;
 };
+
+// ── Kit helpers ────────────────────────────────────────────────────────────────
+
+/**
+ * Приводит kit к типу составного Dropdown-компонента (аналог EditorTree).
+ * Выделено из JSX-тела чтобы разметка оставалась чистой.
+ */
+const asDropdown = (kit: ReturnType<typeof useEditorKit>) =>
+  (kit as unknown as Record<string, unknown>).Dropdown as {
+    (props: { children: JSX.Element; open?: boolean; onOpenChange?: (v: boolean) => void }): JSX.Element;
+    Trigger: (props: Record<string, unknown>) => JSX.Element;
+    Content: (props: Record<string, unknown>) => JSX.Element;
+    Item: (props: Record<string, unknown>) => JSX.Element;
+  };
+
+/**
+ * Строит Registry для `<Renderer>` из kit-объекта.
+ * Выделено из JSX-тела — вычисление не должно мешать читать разметку.
+ */
+const registryFromKit = (kit: ReturnType<typeof useEditorKit>): Registry =>
+  ({ ui: kit } as unknown as Registry);
 
 // ── Внутренние под-компоненты ──────────────────────────────────────────────────
 
@@ -146,57 +167,48 @@ const TemplateCard = (props: { t: ITemplate; registry: Registry }) => {
   );
 };
 
-/** Кнопка «Шаблоны» + Portal-поповер со списком TemplateCard. Null если темплейтов нет. */
+/**
+ * Кнопка «Шаблоны» + Dropdown со списком TemplateCard.
+ * Null если темплейтов нет.
+ *
+ * Использует `kit.Dropdown` (Kobalte — портал + Floating UI позиционирование)
+ * вместо ручного Portal + getBoundingClientRect.
+ * Закрытие при старте drag — через controlled `open` + createEffect.
+ */
 const TemplatesTrigger = (props: { forType: string; registry: Registry }) => {
   const templates = listTemplatesFor(props.forType);
   if (templates.length === 0) return null;
 
-  const [open, setOpen] = createSignal(false);
-  const [pos, setPos] = createSignal({ x: 0, y: 0 });
-  let btn: HTMLButtonElement | undefined;
+  const kit = useEditorKit();
+  const UiDropdown = asDropdown(kit);
   const dnd = useDnD();
 
-  const toggle = (e: MouseEvent) => {
-    e.stopPropagation();
-    if (!open() && btn) {
-      const r = btn.getBoundingClientRect();
-      setPos({ x: r.right + 6, y: r.top });
-    }
-    setOpen((o) => !o);
-  };
+  const [open, setOpen] = createSignal(false);
 
-  // Закрываем поповер как только начался drag (источник может размонтироваться).
+  // Закрываем dropdown как только начался drag (источник может размонтироваться).
   createEffect(() => {
     if (dnd.state.activeId()) setOpen(false);
   });
 
   return (
-    <>
-      <button
-        ref={btn}
-        type="button"
+    <UiDropdown open={open()} onOpenChange={setOpen}>
+      <UiDropdown.Trigger
         title="Шаблоны"
-        onClick={toggle}
+        onClick={(e: MouseEvent) => e.stopPropagation()}
         class="flex size-5 shrink-0 items-center justify-center rounded text-foreground/40 hover:bg-accent/50 hover:text-foreground"
         data-testid={`templates-trigger-${props.forType}`}
       >
         <TemplatesIcon />
-      </button>
-      <Show when={open()}>
-        <Portal>
-          {/* backdrop для закрытия по клику вне */}
-          <div class="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div
-            class="fixed z-50 flex w-64 flex-col gap-2 overflow-y-auto rounded-md border bg-popover p-2 text-popover-foreground shadow-xl"
-            style={{ left: `${pos().x}px`, top: `${pos().y}px`, 'max-height': '70vh' }}
-            data-testid="templates-popover"
-          >
-            <div class="px-1 text-[11px] uppercase tracking-wide text-foreground/40">Шаблоны</div>
-            <For each={templates}>{(t) => <TemplateCard t={t} registry={props.registry} />}</For>
-          </div>
-        </Portal>
-      </Show>
-    </>
+      </UiDropdown.Trigger>
+      <UiDropdown.Content
+        class="flex w-64 flex-col gap-2 overflow-y-auto p-2"
+        style={{ 'max-height': '70vh' }}
+        data-testid="templates-popover"
+      >
+        <div class="px-1 text-[11px] uppercase tracking-wide text-foreground/40">Шаблоны</div>
+        <For each={templates}>{(t) => <TemplateCard t={t} registry={props.registry} />}</For>
+      </UiDropdown.Content>
+    </UiDropdown>
   );
 };
 
@@ -250,8 +262,7 @@ const ContainerItem = (props: { m: IComponentManifest; partsOf: (t: string) => I
  */
 export const EditorPalette = () => {
   const kit = useEditorKit();
-  // Каст аналогичен EditorCanvas: kit и Registry — один shape.
-  const registry = (): Registry => ({ ui: kit } as unknown as Registry);
+  const registry = (): Registry => registryFromKit(kit);
 
   const composites = listByCategory('composite');
 

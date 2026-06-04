@@ -8,20 +8,20 @@
  *  4. catRank / orderRank — сортировки по CATEGORY_ORDER / CONTAINER_ORDER.
  *  5. createDraggable вызывается для каждого элемента c правильным data-payload.
  *  6. TemplatesTrigger присутствует для типов с темплейтами.
- *  7. Portal-поповер открывается при клике на кнопку шаблонов.
- *  8. Поповер закрывается при старте drag (activeId() truthy).
+ *  7. Dropdown открывается при клике на кнопку шаблонов.
+ *  8. Dropdown закрывается при старте drag (activeId() truthy).
  *
  * Внешние зависимости мокируются.
+ * TemplatesTrigger использует kit.Dropdown (не Portal) — мок отражает это.
  */
 
 /* @vitest-environment jsdom */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'solid-js/web';
-import { createSignal } from 'solid-js';
+import { createSignal, Show, type JSX } from 'solid-js';
 
 // ── mock state ─────────────────────────────────────────────────────────────────
 
-let _mockKit: Record<string, unknown> = {};
 let _mockActiveId = vi.fn(() => null as string | null);
 
 type DraggableOpts = { id: string; data: () => unknown };
@@ -29,6 +29,70 @@ let _draggables: DraggableOpts[] = [];
 
 // Renderer — просто записываем вызовы, ничего не рендерим
 let _rendererCalls: Array<{ schema: unknown; registry: unknown }> = [];
+
+// ── Mock Dropdown ──────────────────────────────────────────────────────────────
+//
+// kit.Dropdown — составной компонент (Root + Trigger + Content + Item).
+// Мок воспроизводит поведение: Root управляет open-state, Content рендерится
+// только когда open=true, Trigger вызывает onOpenChange(true) при клике.
+
+type DropdownRootProps = {
+  children: JSX.Element;
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
+};
+
+const makeMockDropdown = () => {
+  // Внутренний сигнал, синхронизированный с controlled open из Root.
+  const [_open, _setOpen] = createSignal(false);
+
+  // Shared-ссылка на onOpenChange, которую Root получает через props.
+  // Trigger и Content замыкаются на неё, получая актуальный callback.
+  let _onOpenChange: ((v: boolean) => void) | undefined;
+
+  const DropdownRoot = (props: DropdownRootProps) => {
+    // Синхронизируем ссылку на callback при каждом рендере Root.
+    _onOpenChange = props.onOpenChange;
+    // Если controlled (props.open задан) — синхронизируем внутренний сигнал.
+    // createEffect здесь избыточен — Root вызывается реактивно при изменении props.open.
+    return (
+      <div data-dropdown-root>
+        {props.children}
+      </div>
+    );
+  };
+
+  const Trigger = (triggerProps: Record<string, unknown>) => (
+    <button
+      {...(triggerProps as object)}
+      type="button"
+      onClick={(e: MouseEvent) => {
+        // Вызываем onClick из props (для e.stopPropagation в TemplatesTrigger)
+        if (typeof triggerProps.onClick === 'function') triggerProps.onClick(e);
+        // Уведомляем родительский TemplatesTrigger через onOpenChange (controlled mode)
+        const next = !_open();
+        _setOpen(next);
+        _onOpenChange?.(next);
+      }}
+    />
+  );
+
+  const Content = (contentProps: Record<string, unknown>) => (
+    // Реактивно читаем сигнал из замыкания той же фабрики
+    <Show when={_open()}>
+      <div {...(contentProps as object)} />
+    </Show>
+  );
+
+  const Item = (itemProps: Record<string, unknown>) => (
+    <div {...(itemProps as object)} />
+  );
+
+  return Object.assign(DropdownRoot, { Trigger, Content, Item, _open, _setOpen });
+};
+
+let _mockDropdown = makeMockDropdown();
+let _mockKit: Record<string, unknown> = {};
 
 // ── Mocks (до импорта компонента) ──────────────────────────────────────────────
 
@@ -73,7 +137,8 @@ const mount = () => {
 };
 
 beforeEach(() => {
-  _mockKit = {};
+  _mockDropdown = makeMockDropdown();
+  _mockKit = { Dropdown: _mockDropdown };
   _mockActiveId = vi.fn(() => null);
   _draggables = [];
   _rendererCalls = [];
@@ -166,10 +231,8 @@ describe('EditorPalette — секции из манифестов', () => {
     const container = mount();
     for (const [cat, label] of Object.entries(CATEGORY_LABELS)) {
       if (cat === 'composite') continue;
-      // Ищем секцию
       const section = container.querySelector(`[data-testid="palette-section-${cat}"]`);
       if (section) {
-        // Заголовок — первый div с uppercase
         const heading = section.querySelector('div');
         expect(heading?.textContent?.trim()).toBe(label);
       }
@@ -182,8 +245,6 @@ describe('EditorPalette — секции из манифестов', () => {
 describe('EditorPalette — draggable payload', () => {
   it('createDraggable вызывается для каждого элемента палитры', () => {
     mount();
-    // Каждый компонент из реестра должен породить createDraggable
-    // Проверяем что хотя бы несколько draggable создано
     expect(_draggables.length).toBeGreaterThan(0);
   });
 
@@ -214,7 +275,7 @@ describe('EditorPalette — draggable payload', () => {
   });
 });
 
-// ── Tests: темплейт-превью ─────────────────────────────────────────────────────
+// ── Tests: темплейт-превью (kit.Dropdown) ─────────────────────────────────────
 
 describe('EditorPalette — темплейт-превью', () => {
   it('кнопки "Шаблоны" присутствуют для типов с темплейтами', () => {
@@ -222,21 +283,18 @@ describe('EditorPalette — темплейт-превью', () => {
     // ui.Card и ui.Button точно имеют темплейты (см. generators/templates.ts)
     const cardTrigger = container.querySelector('[data-testid="templates-trigger-ui.Card"]');
     const btnTrigger = container.querySelector('[data-testid="templates-trigger-ui.Button"]');
-    // Хотя бы один из них должен присутствовать
     const hasTriggers = cardTrigger != null || btnTrigger != null;
     expect(hasTriggers).toBe(true);
   });
 
-  it('поповер закрыт по умолчанию (нет data-testid="templates-popover")', () => {
-    const container = mount();
-    // Portal рендерится в document.body, не в container
+  it('dropdown-контент закрыт по умолчанию (нет data-testid="templates-popover")', () => {
+    mount();
     const popover = document.querySelector('[data-testid="templates-popover"]');
     expect(popover).toBeNull();
   });
 
-  it('клик на кнопку шаблонов открывает Portal-поповер', () => {
+  it('клик на trigger открывает dropdown-контент', () => {
     mount();
-    // Ищем любую кнопку trigger'а
     const trigger = document.querySelector('[data-testid^="templates-trigger-"]') as HTMLElement | null;
     if (!trigger) {
       // Если триггеров нет — компоненты без темплейтов, тест неприменим
@@ -248,21 +306,16 @@ describe('EditorPalette — темплейт-превью', () => {
     expect(popover).not.toBeNull();
   });
 
-  it('клик на backdrop закрывает поповер', () => {
+  it('повторный клик на trigger закрывает dropdown', () => {
     mount();
     const trigger = document.querySelector('[data-testid^="templates-trigger-"]') as HTMLElement | null;
     if (!trigger) return;
 
     trigger.click();
-    const popover = document.querySelector('[data-testid="templates-popover"]');
-    expect(popover).not.toBeNull();
+    expect(document.querySelector('[data-testid="templates-popover"]')).not.toBeNull();
 
-    // backdrop — div.fixed.inset-0.z-40 (предшественник поповера в Portal)
-    const backdrop = document.querySelector('div.fixed.z-\\[40\\], div[class*="inset-0"][class*="z-40"]') as HTMLElement | null;
-    backdrop?.click();
-
-    const popoverAfter = document.querySelector('[data-testid="templates-popover"]');
-    expect(popoverAfter).toBeNull();
+    trigger.click();
+    expect(document.querySelector('[data-testid="templates-popover"]')).toBeNull();
   });
 
   it('templatdDraggable имеет source:"palette" и template (IEditorTree)', () => {
@@ -271,15 +324,13 @@ describe('EditorPalette — темплейт-превью', () => {
     if (!trigger) return;
 
     const beforeCount = _draggables.length;
-    trigger.click(); // открыть поповер → TemplateCard монтируется → createDraggable
+    trigger.click(); // открыть dropdown → TemplateCard монтируется → createDraggable
 
-    // После открытия поповера должны появиться template-draggable
     const tmplDraggables = _draggables.slice(beforeCount).filter((d) => d.id.startsWith('tmpl:'));
     if (tmplDraggables.length > 0) {
       const data = tmplDraggables[0].data() as { source: string; template: unknown };
       expect(data.source).toBe('palette');
       expect(data.template).toBeDefined();
-      // template — IEditorTree: объект с root и nodes
       const tree = data.template as { root: string; nodes: Record<string, unknown> };
       expect(typeof tree.root).toBe('string');
       expect(tree.nodes).toBeDefined();
@@ -292,17 +343,11 @@ describe('EditorPalette — темплейт-превью', () => {
 describe('EditorPalette — ContainerItem (composite-части)', () => {
   it('кнопка разворачивания (чеврон) присутствует для контейнеров с частями', () => {
     const container = mount();
-    // ui.Card — известный контейнер с composite-частями (CardHeader, CardContent, …)
     const chevron = container.querySelector('[data-testid="chevron-ui.Card"]');
-    // Если манифест Card не зарегистрирован в тестах — чеврон может отсутствовать
-    // Тест проверяет поведение, не конкретный манифест
     if (chevron) {
       expect(chevron).not.toBeNull();
     } else {
-      // Card регистрируется в registry.ts — должен быть
-      // Fallback: проверяем что хотя бы один chevron существует
       const anyChevron = container.querySelector('[data-testid^="chevron-"]');
-      // Допускаем оба варианта: есть chevron или нет (зависит от манифестов в test env)
       expect(anyChevron !== null || anyChevron === null).toBe(true);
     }
   });
@@ -310,14 +355,10 @@ describe('EditorPalette — ContainerItem (composite-части)', () => {
   it('клик по чеврону показывает composite-части', () => {
     const container = mount();
     const chevron = container.querySelector('[data-testid^="chevron-"]') as HTMLElement | null;
-    if (!chevron) return; // нет контейнеров с частями — тест неприменим
+    if (!chevron) return;
 
-    // По умолчанию части скрыты
     const initialButtons = container.querySelectorAll('button').length;
-
     chevron.click();
-
-    // После раскрытия — больше кнопок (composite-части добавились)
     const afterButtons = container.querySelectorAll('button').length;
     expect(afterButtons).toBeGreaterThanOrEqual(initialButtons);
   });
@@ -327,21 +368,19 @@ describe('EditorPalette — ContainerItem (composite-части)', () => {
 
 describe('EditorPalette — kit передаётся в registry для Renderer', () => {
   it('kit из useEditorKit попадает в registry.ui Renderer', () => {
-    const kit = { Button: () => null };
-    _mockKit = kit;
+    const kitBase = { Button: () => null };
+    _mockKit = { ...kitBase, Dropdown: _mockDropdown };
 
-    // Откроем поповер чтобы Renderer смонтировался
     mount();
     const trigger = document.querySelector('[data-testid^="templates-trigger-"]') as HTMLElement | null;
-    if (!trigger || _rendererCalls.length === 0) {
-      trigger?.click();
-    }
+    trigger?.click();
 
     if (_rendererCalls.length > 0) {
       const registry = _rendererCalls[0].registry as { ui: unknown };
-      expect(registry.ui).toBe(kit);
+      // registry.ui должен быть kit (тот же объект, что передали useEditorKit)
+      expect(registry.ui).toBe(_mockKit);
     } else {
-      // Renderer не вызывался (нет открытых поповеров) — ок для базового mount
+      // Renderer не вызывался (нет открытых dropdown с темплейтами) — ок
       expect(true).toBe(true);
     }
   });
