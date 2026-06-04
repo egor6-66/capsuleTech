@@ -750,9 +750,14 @@ describe('Cross-concern ordering regression — ESM TDZ fix', () => {
 // Packages — runtime (generatePackagesRuntime)
 // ---------------------------------------------------------------------------
 
-const pkgEntry = (pkg: string, globalName: string): ResolvedPackageEntry => ({
+const pkgEntry = (
+  pkg: string,
+  globalName: string,
+  controllerKeys?: string[],
+): ResolvedPackageEntry => ({
   pkg,
   globalName,
+  controllerKeys: controllerKeys && controllerKeys.length > 0 ? controllerKeys : undefined,
 });
 
 describe('generatePackagesRuntime — empty list', () => {
@@ -943,5 +948,202 @@ describe('LAYER_INIT_ORDER — packages entry', () => {
     const appConfigIdx = out.indexOf("import './app-config.gen'");
     expect(wrappersIdx).toBeLessThan(packagesIdx);
     expect(packagesIdx).toBeLessThan(appConfigIdx);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Packages — runtime with controllerKeys (Controllers namespace augmentation)
+// ---------------------------------------------------------------------------
+
+describe('generatePackagesRuntime — package with controllers', () => {
+  const entries = [pkgEntry('@capsuletech/web-dnd', 'Dnd', ['Editor'])];
+
+  it('still emits import, export const, and Object.assign for components', () => {
+    const out = generatePackagesRuntime(entries);
+    expect(out).toContain("import Dnd_mod from '@capsuletech/web-dnd/capsule';");
+    expect(out).toContain('export const Dnd = Dnd_mod.components;');
+    expect(out).toContain('Object.assign(globalThis, { Dnd });');
+  });
+
+  it('augments Controllers via (globalThis.Controllers ??= {})[key] = ... (not overwrite)', () => {
+    const out = generatePackagesRuntime(entries);
+    expect(out).toContain(
+      '(globalThis.Controllers ??= {})["Editor"] = Dnd_mod.controllers["Editor"];',
+    );
+    expect(out).not.toContain('globalThis.Controllers =');
+  });
+
+  it('Controllers augmentation appears BEFORE Object.assign (synchronous on eval)', () => {
+    const out = generatePackagesRuntime(entries);
+    const augmentIdx = out.indexOf('(globalThis.Controllers ??= {})');
+    const assignIdx = out.indexOf('Object.assign(globalThis,');
+    expect(augmentIdx).toBeGreaterThanOrEqual(0);
+    expect(assignIdx).toBeGreaterThanOrEqual(0);
+    expect(augmentIdx).toBeLessThan(assignIdx);
+  });
+
+  it('does NOT use Object.assign for Controllers (no risk of overwriting app-controllers)', () => {
+    const out = generatePackagesRuntime(entries);
+    // Object.assign must NOT include Controllers in its map
+    const assignLine = out.split('\n').find((l) => l.startsWith('Object.assign(globalThis,'));
+    expect(assignLine).toBeDefined();
+    expect(assignLine).not.toContain('Controllers');
+  });
+});
+
+describe('generatePackagesRuntime — package with multiple controllerKeys', () => {
+  const entries = [pkgEntry('@capsuletech/web-dnd', 'Dnd', ['Editor', 'Canvas'])];
+
+  it('emits augmentation for each controller key', () => {
+    const out = generatePackagesRuntime(entries);
+    expect(out).toContain(
+      '(globalThis.Controllers ??= {})["Editor"] = Dnd_mod.controllers["Editor"];',
+    );
+    expect(out).toContain(
+      '(globalThis.Controllers ??= {})["Canvas"] = Dnd_mod.controllers["Canvas"];',
+    );
+  });
+});
+
+describe('generatePackagesRuntime — two packages, one with controllers one without', () => {
+  const entries = [
+    pkgEntry('@capsuletech/web-map', 'Maps'),
+    pkgEntry('@capsuletech/web-dnd', 'Dnd', ['Editor']),
+  ];
+
+  it('only augments Controllers for the package that has controllers', () => {
+    const out = generatePackagesRuntime(entries);
+    // Augment for Dnd
+    expect(out).toContain('(globalThis.Controllers ??= {})["Editor"] = Dnd_mod.controllers');
+    // No augment for Maps (no controllerKeys)
+    expect(out).not.toContain('Maps_mod.controllers');
+  });
+
+  it('Object.assign includes both global names', () => {
+    const out = generatePackagesRuntime(entries);
+    expect(out).toContain('Object.assign(globalThis, { Maps, Dnd });');
+  });
+});
+
+describe('generatePackagesRuntime — package without controllers (no regression)', () => {
+  const entries = [pkgEntry('@capsuletech/web-map', 'Maps')];
+
+  it('does NOT emit any Controllers augmentation', () => {
+    const out = generatePackagesRuntime(entries);
+    expect(out).not.toContain('Controllers');
+    expect(out).not.toContain('controllers');
+  });
+
+  it('structure is identical to pre-controllers behavior', () => {
+    const out = generatePackagesRuntime(entries);
+    expect(out).toContain("import Maps_mod from '@capsuletech/web-map/capsule';");
+    expect(out).toContain('export const Maps = Maps_mod.components;');
+    expect(out).toContain('Object.assign(globalThis, { Maps });');
+  });
+});
+
+describe('generatePackagesRuntime — app-controllers are not clobbered (augment invariant)', () => {
+  it('app Controllers from wrappers.ts remain intact when packages.ts evaluates', () => {
+    // This test documents the contract: packages.ts uses (??=) augmentation
+    // so existing keys from wrappers.ts (app-level controllers) are preserved.
+    // The pattern (globalThis.Controllers ??= {})[key] = X never resets the object.
+    const entries = [pkgEntry('@capsuletech/web-dnd', 'Dnd', ['Editor'])];
+    const out = generatePackagesRuntime(entries);
+    // Must use ??= (nullish coalescing assignment) — preserves existing object
+    expect(out).toContain('??=');
+    // Must NOT use assignment that would reset Controllers to a new object
+    expect(out).not.toMatch(/globalThis\.Controllers\s*=\s*\{/);
+    expect(out).not.toMatch(/Object\.assign\(globalThis,\s*\{[^}]*Controllers/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Packages — types with controllerKeys (Controllers interface augmentation)
+// ---------------------------------------------------------------------------
+
+describe('generatePackagesTypes — package with controllers', () => {
+  const entries = [pkgEntry('@capsuletech/web-dnd', 'Dnd', ['Editor'])];
+
+  it('emits component const declaration', () => {
+    const out = generatePackagesTypes(entries);
+    expect(out).toContain(
+      "const Dnd: typeof import('@capsuletech/web-dnd/capsule')['default']['components'];",
+    );
+  });
+
+  it('emits Controllers interface augmentation inside declare global', () => {
+    const out = generatePackagesTypes(entries);
+    expect(out).toContain('interface Controllers {');
+    expect(out).toContain(
+      "Editor: typeof import('@capsuletech/web-dnd/capsule')['default']['controllers'][\"Editor\"];",
+    );
+  });
+
+  it('Controllers interface is inside declare global block', () => {
+    const out = generatePackagesTypes(entries);
+    const globalStart = out.indexOf('declare global {');
+    const globalEnd = out.lastIndexOf('}');
+    const interfaceIdx = out.indexOf('interface Controllers {');
+    expect(interfaceIdx).toBeGreaterThan(globalStart);
+    expect(interfaceIdx).toBeLessThan(globalEnd);
+  });
+
+  it('contains export {} for module augmentation', () => {
+    const out = generatePackagesTypes(entries);
+    expect(out).toContain('export {};');
+  });
+});
+
+describe('generatePackagesTypes — package with multiple controllerKeys', () => {
+  const entries = [pkgEntry('@capsuletech/web-dnd', 'Dnd', ['Editor', 'Canvas'])];
+
+  it('emits a property for each controller key', () => {
+    const out = generatePackagesTypes(entries);
+    expect(out).toContain(
+      "Editor: typeof import('@capsuletech/web-dnd/capsule')['default']['controllers'][\"Editor\"];",
+    );
+    expect(out).toContain(
+      "Canvas: typeof import('@capsuletech/web-dnd/capsule')['default']['controllers'][\"Canvas\"];",
+    );
+  });
+});
+
+describe('generatePackagesTypes — two packages, one with controllers one without', () => {
+  const entries = [
+    pkgEntry('@capsuletech/web-map', 'Maps'),
+    pkgEntry('@capsuletech/web-dnd', 'Dnd', ['Editor']),
+  ];
+
+  it('emits const for both component namespaces', () => {
+    const out = generatePackagesTypes(entries);
+    expect(out).toContain(
+      "const Maps: typeof import('@capsuletech/web-map/capsule')['default']['components'];",
+    );
+    expect(out).toContain(
+      "const Dnd: typeof import('@capsuletech/web-dnd/capsule')['default']['components'];",
+    );
+  });
+
+  it('emits Controllers interface only for Dnd (not Maps)', () => {
+    const out = generatePackagesTypes(entries);
+    expect(out).toContain('interface Controllers {');
+    expect(out).toContain("'@capsuletech/web-dnd/capsule'");
+    expect(out).not.toContain("'@capsuletech/web-map/capsule'['default']['controllers']");
+  });
+
+  it('exactly one interface Controllers block is emitted', () => {
+    const out = generatePackagesTypes(entries);
+    const count = (out.match(/interface Controllers \{/g) ?? []).length;
+    expect(count).toBe(1);
+  });
+});
+
+describe('generatePackagesTypes — package without controllers (no regression)', () => {
+  const entries = [pkgEntry('@capsuletech/web-map', 'Maps')];
+
+  it('does NOT emit Controllers interface augmentation', () => {
+    const out = generatePackagesTypes(entries);
+    expect(out).not.toContain('interface Controllers');
+    expect(out).not.toContain('controllers');
   });
 });

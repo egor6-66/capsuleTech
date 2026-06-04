@@ -158,6 +158,7 @@ biome-config → ничего (zero-deps, чисто config-файл)
 | Поменять формат `endpoints.ts` или `api.d.ts` | `vite/src/plugins/capsuleRegistry.ts > generateEndpointsRuntime / generateEndpointsTypes` |
 | Поменять формат `app-config.gen.ts` | `vite/src/plugins/capsuleRegistry.ts > generateAppConfigRuntime` |
 | Поменять порядок import'ов в `bootstrap.tsx` | `vite/src/plugins/capsuleRegistry.ts > LAYER_INIT_ORDER` |
+| **Добавить controllers из integration-пакета в глобал `Controllers`** | Прописать `controllers` в `/capsule`-манифесте пакета (`manifest.controllers = { Editor: ... }`). `CapsuleRegistryPlugin` через jiti прочитает ключи в `resolveManifestInfo` → `controllerKeys`. `generatePackagesRuntime` смержит каждый ключ через `(globalThis.Controllers ??= {})[key] = ...` (augment, не overwrite). `generatePackagesTypes` добавит `interface Controllers { Key: typeof import('...')[...] }` в `declare global` блок `packages.d.ts`. |
 | Поменять путь под которым раздаётся app (sub-path deploy) | `capsule.config.ts > base: '/path/'` → уходит в Vite `base`; `bootstrap.tsx` подхватывает через `import.meta.env.BASE_URL` |
 | Включить моки в prod-сборке (preview-deploy) | `CAPSULE_MOCKS=true capsule build` — env-флаг прокидывается в `__CAPSULE_MOCKS__`. Без флага: dev=true/build=false. App: `if (__CAPSULE_MOCKS__) { ... }`. TS-тип: `declare const __CAPSULE_MOCKS__: boolean;` в env.d.ts. |
 | Поменять biome-правила | `biome/biome.json` (root репо подхватит через extends) |

@@ -1002,6 +1002,12 @@ importers:
       '@capsuletech/shared-zod':
         specifier: workspace:*
         version: link:../../shared/zod
+      '@capsuletech/web-core':
+        specifier: workspace:*
+        version: link:../core
+      '@capsuletech/web-renderer':
+        specifier: workspace:*
+        version: link:../renderer
       lucide-solid:
         specifier: ^1.16.0
         version: 1.16.0(solid-js@1.9.12)
