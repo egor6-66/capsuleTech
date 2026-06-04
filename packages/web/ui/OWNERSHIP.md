@@ -54,7 +54,7 @@ import { Grid } from '@capsuletech/web-ui/grid';
 
 ### Subpath exports (через `package.json.exports`)
 
-`./button`, `./card`, `./field`, `./flex`, `./grid`, `./input`, `./label`, `./layout` (deprecated alias на matrix), `./list`, `./matrix`, `./separator`, `./slot`, `./table`, `./toggle`, `./tooltip`, `./typography`, `./wrappers`, `./dataTable`, `./previewCard`.
+`./button`, `./card`, `./field`, `./flex`, `./grid`, `./input`, `./label`, `./layout` (deprecated alias на matrix), `./list`, `./matrix`, `./select`, `./separator`, `./slot`, `./table`, `./textarea`, `./toggle`, `./tooltip`, `./typography`, `./wrappers`, `./dataTable`, `./previewCard`.
 
 ### Layout namespace
 

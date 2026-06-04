@@ -3,6 +3,8 @@ export * from './card';
 export * from './dropdown';
 export * from './field';
 export * from './group';
+export * from './select';
+export * from './textarea';
 
 export * from './input';
 export * from './label';
