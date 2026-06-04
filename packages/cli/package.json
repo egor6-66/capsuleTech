@@ -17,7 +17,7 @@
     "@capsuletech/vite-builder": "workspace:*",
     "@clack/prompts": "^1.3.0",
     "chalk": "^5.6.2",
-    "commander": "^14.0.3",
+    "commander": "^15.0.0",
     "console-table-printer": "^2.15.0",
     "execa": "^9.6.1",
     "ink": "^7.0.3",
