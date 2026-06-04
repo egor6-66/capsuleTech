@@ -21,5 +21,6 @@ export {
   generatePackagesRuntime,
   generatePackagesTypes,
   resolvePackageEntries,
+  parseManifestSource,
 } from './capsuleRegistry';
 export type { PackageEntry, ResolvedPackageEntry } from './capsuleRegistry';

@@ -49,7 +49,7 @@
 
 import { join, resolve } from 'node:path';
 import type { Plugin } from 'vite';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   CapsuleRegistryPlugin,
   generateAppConfigRuntime,
@@ -61,6 +61,7 @@ import {
   generateWrappersRuntime,
   generateWrappersTypes,
   LAYER_INIT_ORDER,
+  parseManifestSource,
   type ResolvedPackageEntry,
 } from '../capsuleRegistry';
 
@@ -1145,5 +1146,157 @@ describe('generatePackagesTypes — package without controllers (no regression)'
     const out = generatePackagesTypes(entries);
     expect(out).not.toContain('interface Controllers');
     expect(out).not.toContain('controllers');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// parseManifestSource — static AST parsing (Ф0 фикс)
+//
+// Тестируем через экспортируемую чистую функцию parseManifestSource —
+// без I/O, без jiti, без сети, без исполнения Solid-зависимостей.
+// Все edge-case проверяются на сырых строках исходника манифеста.
+// ---------------------------------------------------------------------------
+
+// Типичный dist/capsule.mjs после rollup/vite-lib сборки:
+// defineCapsuleModule переименован, ObjectExpression — верхний уровень.
+const MANIFEST_WITH_CONTROLLERS = `
+import { defineCapsuleModule as s } from "@capsuletech/web-core/module";
+var c = s({
+  name: "Editor",
+  components: { Overlay: i, Provider: e },
+  controllers: { Editor: t }
+});
+export { c as default };
+`;
+
+const MANIFEST_WITHOUT_CONTROLLERS = `
+import { defineCapsuleModule as s } from "@capsuletech/web-core/module";
+var c = s({
+  name: "Maps",
+  components: { Map: m, Marker: k }
+});
+export { c as default };
+`;
+
+// Манифест с external-импортами solid-js/web — не должен роняться при разборе
+const MANIFEST_WITH_SOLID_IMPORTS = `
+import { Portal as g, template as E } from "solid-js/web";
+import { For as O } from "solid-js";
+import { Renderer as R } from "@capsuletech/web-renderer";
+import { defineCapsuleModule as s } from "@capsuletech/web-core/module";
+var c = s({
+  name: "Render",
+  components: { View: R },
+  controllers: { Editor: E }
+});
+export { c as default };
+`;
+
+// Манифест без ObjectExpression с name — должен вернуть null
+const MANIFEST_NO_NAME = `
+import { defineCapsuleModule as s } from "@capsuletech/web-core/module";
+var c = s({ components: { Foo: f } });
+export { c as default };
+`;
+
+// Реальный capsule.mjs ui-creator (упрощённый): вложенный ObjectExpression controllers
+const MANIFEST_REAL_STYLE = `
+import { d as e, h as t, l as n } from "./chunks/EditorInspector.mjs";
+import { defineCapsuleModule as s } from "@capsuletech/web-core/module";
+var c = s({
+  name: "Editor",
+  components: {
+    Overlay: e,
+    Provider: n,
+    Canvas: t
+  },
+  controllers: { Editor: t }
+});
+export { c as default };
+`;
+
+describe('parseManifestSource — static AST manifest (Ф0)', () => {
+  it('parses name and controllerKeys from compiled capsule.mjs without executing it', () => {
+    const result = parseManifestSource(MANIFEST_WITH_CONTROLLERS, 'capsule.mjs');
+    expect(result).not.toBeNull();
+    expect(result!.name).toBe('Editor');
+    expect(result!.controllerKeys).toEqual(['Editor']);
+  });
+
+  it('returns controllerKeys=[] when controllers property absent', () => {
+    const result = parseManifestSource(MANIFEST_WITHOUT_CONTROLLERS, 'capsule.mjs');
+    expect(result).not.toBeNull();
+    expect(result!.name).toBe('Maps');
+    expect(result!.controllerKeys).toEqual([]);
+  });
+
+  it('does NOT throw when manifest contains solid-js/web / web-renderer imports', () => {
+    let result: ReturnType<typeof parseManifestSource>;
+    expect(() => {
+      result = parseManifestSource(MANIFEST_WITH_SOLID_IMPORTS, 'capsule.mjs');
+    }).not.toThrow();
+    expect(result!).not.toBeNull();
+    expect(result!.name).toBe('Render');
+    expect(result!.controllerKeys).toEqual(['Editor']);
+  });
+
+  it('returns null when no name StringLiteral found', () => {
+    const result = parseManifestSource(MANIFEST_NO_NAME, 'capsule.mjs');
+    expect(result).toBeNull();
+  });
+
+  it('parses real-style manifest with nested components ObjectExpression', () => {
+    const result = parseManifestSource(MANIFEST_REAL_STYLE, 'capsule.mjs');
+    expect(result).not.toBeNull();
+    expect(result!.name).toBe('Editor');
+    expect(result!.controllerKeys).toEqual(['Editor']);
+  });
+
+  it('enables TypeScript plugin for .ts/.d.ts extension', () => {
+    // Verifies that TypeScript source (not compiled) also parses without error
+    const tsSource = `
+import { defineCapsuleModule } from "@capsuletech/web-core/module";
+export default defineCapsuleModule({
+  name: "MyPkg",
+  components: {},
+  controllers: { MyCtrl: {} as any },
+});
+`;
+    const result = parseManifestSource(tsSource, 'capsule.ts');
+    expect(result).not.toBeNull();
+    expect(result!.name).toBe('MyPkg');
+    expect(result!.controllerKeys).toEqual(['MyCtrl']);
+  });
+
+  it('handles shorthand controller keys { Editor } — Identifier key', () => {
+    // After bundling, keys are always Identifier or StringLiteral
+    const source = `
+var c = s({ name: "Editor", controllers: { Editor: f, Canvas: g } });
+export { c as default };
+`;
+    const result = parseManifestSource(source, 'capsule.mjs');
+    expect(result).not.toBeNull();
+    expect(result!.controllerKeys).toEqual(['Editor', 'Canvas']);
+  });
+
+  it('handles StringLiteral controller keys { "Editor": f }', () => {
+    const source = `
+var c = s({ name: "Editor", controllers: { "Editor": f } });
+export { c as default };
+`;
+    const result = parseManifestSource(source, 'capsule.mjs');
+    expect(result).not.toBeNull();
+    expect(result!.controllerKeys).toEqual(['Editor']);
+  });
+
+  it('ignores nested ObjectExpressions that lack a name property', () => {
+    // The `components` sub-object has no `name` — should not be picked first
+    const source = `
+var c = s({ name: "Editor", components: { sub: { key: 1 } }, controllers: { Editor: f } });
+export { c as default };
+`;
+    const result = parseManifestSource(source, 'capsule.mjs');
+    expect(result).not.toBeNull();
+    expect(result!.name).toBe('Editor');
   });
 });

@@ -14,13 +14,21 @@
  *    (no longer a static scaffold template that is copied once).
  */
 
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, relative, resolve } from 'node:path';
 import { names } from '@nx/devkit';
+import { parse } from '@babel/parser';
+import _traverse from '@babel/traverse';
 import { createJiti } from 'jiti';
 import type { Plugin, ViteDevServer } from 'vite';
 import { walkFiles, watcherManager } from '../utils';
 import { DEFINE_FACTORIES, EAGER_IMPORT_LAYERS, LAYER_TO_NAMESPACE } from './constants';
+
+// CJS/ESM interop for @babel/traverse (same pattern as hmrWrapping.ts)
+const traverse = (
+  typeof _traverse === 'function' ? _traverse : (_traverse as { default?: typeof _traverse }).default
+) as typeof _traverse;
 
 // ---------------------------------------------------------------------------
 // Package entry types
@@ -344,50 +352,142 @@ interface ResolvedManifestInfo {
 }
 
 /**
- * Resolves the manifest info for a package entry by loading its /capsule manifest
- * via jiti rooted at the directory containing capsule.app.ts.
+ * Pure AST parse of a manifest source string.
  *
- * Jiti is rooted at `appConfigDir` so Node resolution walks appConfigDir/node_modules —
- * the same node_modules the app sees — and finds workspace-linked packages correctly.
+ * Exported for testing — no I/O, no module execution.
  *
- * Returns null on any error (package not installed, no /capsule subpath, etc.).
+ * Finds the first ObjectExpression that contains a `name: "<string>"` property
+ * and optionally a `controllers: { ... }` ObjectExpression.
+ * Structural matching — works even if `defineCapsuleModule` was renamed by the bundler.
+ *
+ * Returns { name, controllerKeys } or null if no matching ObjectExpression found.
+ */
+export const parseManifestSource = (
+  source: string,
+  fileName: string,
+): { name: string; controllerKeys: string[] } | null => {
+  const isTs = /\.[mc]?ts$/.test(fileName);
+  const ast = parse(source, {
+    sourceType: 'module',
+    plugins: isTs ? ['typescript'] : [],
+  });
+
+  let foundName: string | null = null;
+  let foundControllerKeys: string[] = [];
+
+  traverse(ast, {
+    ObjectExpression(path) {
+      // Already found — skip nested objects
+      if (foundName !== null) return;
+
+      let localName: string | null = null;
+      let localControllerKeys: string[] | null = null;
+
+      for (const prop of path.node.properties) {
+        // Only ObjectProperty (not SpreadElement / RestElement)
+        if (prop.type !== 'ObjectProperty') continue;
+
+        // Key can be Identifier or StringLiteral
+        const keyName =
+          prop.key.type === 'Identifier'
+            ? prop.key.name
+            : prop.key.type === 'StringLiteral'
+              ? prop.key.value
+              : null;
+
+        if (keyName === 'name') {
+          if (prop.value.type === 'StringLiteral') {
+            localName = prop.value.value;
+          }
+        } else if (keyName === 'controllers') {
+          if (prop.value.type === 'ObjectExpression') {
+            localControllerKeys = [];
+            for (const ctrlProp of prop.value.properties) {
+              if (ctrlProp.type !== 'ObjectProperty') continue;
+              const ctrlKey =
+                ctrlProp.key.type === 'Identifier'
+                  ? ctrlProp.key.name
+                  : ctrlProp.key.type === 'StringLiteral'
+                    ? ctrlProp.key.value
+                    : null;
+              if (ctrlKey !== null) localControllerKeys.push(ctrlKey);
+            }
+          }
+        }
+      }
+
+      // Accept this ObjectExpression only if it has a `name` StringLiteral
+      if (localName !== null) {
+        foundName = localName;
+        foundControllerKeys = localControllerKeys ?? [];
+        path.stop();
+      }
+    },
+  });
+
+  if (foundName === null) return null;
+  return { name: foundName, controllerKeys: foundControllerKeys };
+};
+
+/**
+ * Resolves the manifest info for a package entry via static AST analysis of
+ * its compiled /capsule subpath — no module execution required.
+ *
+ * I/O part: resolves the file path via require.resolve(), reads source with readFileSync,
+ * then delegates pure parsing to parseManifestSource().
+ *
+ * Returns null on any error (warn+skip, never fatal).
  */
 const resolveManifestInfo = (
   entry: PackageEntry,
   appConfigDir: string,
 ): ResolvedManifestInfo | null => {
-  const manifestPath = `${entry.pkg}/capsule`;
+  const subpath = `${entry.pkg}/capsule`;
+
+  // Step 1: resolve physical file path (no execution)
+  let manifestFile: string;
   try {
-    const j = createJiti(
-      // Jiti treats the first arg as the "caller" URL for resolution.
-      // Using a synthetic file URL rooted at appConfigDir so that require()
-      // walks appConfigDir/node_modules (where the app's deps live).
-      `file://${appConfigDir.replace(/\\/g, '/')}/capsule.app.ts`,
-      { interopDefault: true, moduleCache: false },
-    );
-    type ManifestShape = {
-      name?: string;
-      controllers?: Record<string, unknown>;
-    };
-    const mod = j(manifestPath) as ManifestShape | { default?: ManifestShape } | null;
-    const manifest =
-      (mod as { default?: ManifestShape })?.default ?? (mod as ManifestShape);
-    const name = entry.as ?? manifest?.name;
-    if (!name) {
-      console.warn(
-        `[capsule-registry] package manifest '${manifestPath}' resolved but missing 'name' field — skipping`,
-      );
-      return null;
-    }
-    const controllerKeys = manifest?.controllers ? Object.keys(manifest.controllers) : [];
-    return { name, controllerKeys };
-  } catch (e) {
+    const req = createRequire(resolve(appConfigDir, 'capsule.app.ts'));
+    manifestFile = req.resolve(subpath);
+  } catch {
     console.warn(
-      `[capsule-registry] could not resolve '${manifestPath}' — package not installed or missing /capsule subpath. Skipping.`,
-      String(e),
+      `[capsule-registry] could not resolve '${subpath}' — package not installed or missing /capsule subpath. Skipping.`,
     );
     return null;
   }
+
+  // Step 2: read source
+  let source: string;
+  try {
+    source = readFileSync(manifestFile, 'utf-8');
+  } catch {
+    console.warn(
+      `[capsule-registry] could not read manifest file '${manifestFile}'. Skipping.`,
+    );
+    return null;
+  }
+
+  // Step 3: parse via pure AST function
+  let parsed: { name: string; controllerKeys: string[] } | null;
+  try {
+    parsed = parseManifestSource(source, manifestFile);
+  } catch (e) {
+    console.warn(
+      `[capsule-registry] failed to parse manifest '${manifestFile}': ${String(e)}. Skipping.`,
+    );
+    return null;
+  }
+
+  // Step 4: validate result
+  const resolvedName = entry.as ?? parsed?.name ?? null;
+  if (!resolvedName) {
+    console.warn(
+      `[capsule-registry] manifest '${manifestFile}' parsed but no 'name' StringLiteral found — skipping`,
+    );
+    return null;
+  }
+
+  return { name: resolvedName, controllerKeys: parsed?.controllerKeys ?? [] };
 };
 
 /**
