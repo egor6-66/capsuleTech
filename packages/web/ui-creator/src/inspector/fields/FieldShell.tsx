@@ -1,5 +1,6 @@
 import type { JSX } from 'solid-js';
 import { Show } from 'solid-js';
+import { Flex } from '@capsuletech/web-ui/flex';
 
 interface IFieldShellProps {
   label: string;
@@ -15,16 +16,15 @@ interface IFieldShellProps {
  * эту обёртку, чтобы вид был согласованным.
  */
 export const FieldShell = (props: IFieldShellProps) => (
-  <div
-    classList={{
-      'flex flex-col gap-1': !props.inline,
-      'flex items-center justify-between gap-2': props.inline,
-    }}
+  <Flex
+    orientation={props.inline ? 'horizontal' : 'vertical'}
+    gap={props.inline ? 2 : 1}
+    class={props.inline ? 'items-center justify-between' : undefined}
   >
     <span class="text-xs opacity-70">{props.label}</span>
     <div>{props.children}</div>
     <Show when={props.hint}>
       <span class="text-xs opacity-50">{props.hint}</span>
     </Show>
-  </div>
+  </Flex>
 );

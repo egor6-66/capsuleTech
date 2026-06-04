@@ -1,4 +1,5 @@
 import { For } from 'solid-js';
+import { Flex } from '@capsuletech/web-ui/flex';
 import { DEFAULT_KIT } from './kit';
 import { Category } from './Category';
 import type { IInspectorProps } from './types';
@@ -18,7 +19,7 @@ export const Inspector = (props: IInspectorProps) => {
   const kit = () => props.kit ?? DEFAULT_KIT;
 
   return (
-    <div class={`flex flex-col gap-3 w-full ${props.class ?? ''}`}>
+    <Flex orientation="vertical" gap={3} class={`w-full ${props.class ?? ''}`}>
       <For each={props.categories}>
         {(cat) => (
           <Category
@@ -29,6 +30,6 @@ export const Inspector = (props: IInspectorProps) => {
           />
         )}
       </For>
-    </div>
+    </Flex>
   );
 };

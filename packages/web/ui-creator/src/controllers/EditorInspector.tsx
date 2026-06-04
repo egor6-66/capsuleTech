@@ -16,6 +16,7 @@
  */
 
 import { useEmit } from '@capsuletech/web-core';
+import { Flex } from '@capsuletech/web-ui/flex';
 import { For, Show } from 'solid-js';
 import type { ZodTypeAny } from '@capsuletech/shared-zod';
 import { Inspector } from '../inspector/Inspector';
@@ -134,38 +135,38 @@ export const EditorInspector = () => {
   };
 
   return (
-    <div class="flex h-full flex-col">
+    <Flex orientation="vertical" class="h-full">
       <div class="shrink-0 border-b px-3 py-2 text-xs font-semibold uppercase tracking-wide text-foreground/70">
         Инспектор
       </div>
       <Show
         when={node()}
         fallback={
-          <div class="flex flex-1 items-center justify-center text-sm text-foreground/40">
+          <Flex class="flex-1 items-center justify-center text-sm text-foreground/40">
             Выберите компонент
-          </div>
+          </Flex>
         }
       >
         <div class="min-h-0 flex-1 overflow-y-auto p-3 text-sm">
           {/* Meta-секция: иконка, label, type, id, кол-во детей */}
-          <div class="mb-3 flex items-center gap-2">
+          <Flex class="mb-3 items-center gap-2">
             <span class="text-foreground/60">{manifest()?.icon()}</span>
             <span class="font-medium">{manifest()?.label ?? node()?.type}</span>
-          </div>
+          </Flex>
 
           <dl class="mb-3 space-y-1.5" data-testid="inspector-meta">
-            <div class="flex items-center justify-between gap-2">
+            <Flex class="items-center justify-between gap-2">
               <dt class="shrink-0 text-foreground/50">Тип</dt>
               <dd class="truncate font-mono text-xs">{node()?.type}</dd>
-            </div>
-            <div class="flex items-center justify-between gap-2">
+            </Flex>
+            <Flex class="items-center justify-between gap-2">
               <dt class="shrink-0 text-foreground/50">ID</dt>
               <dd class="truncate font-mono text-xs">{node()?.id}</dd>
-            </div>
-            <div class="flex items-center justify-between gap-2">
+            </Flex>
+            <Flex class="items-center justify-between gap-2">
               <dt class="shrink-0 text-foreground/50">Детей</dt>
               <dd data-testid="inspector-children-count">{node()?.children.length}</dd>
-            </div>
+            </Flex>
           </dl>
 
           {/* Редактируемые пропсы через generic Inspector */}
@@ -187,15 +188,15 @@ export const EditorInspector = () => {
               )}
             >
               {([k, v]) => (
-                <div class="flex items-center justify-between gap-2 border-t pt-1.5 first:border-t-0">
+                <Flex class="items-center justify-between gap-2 border-t pt-1.5 first:border-t-0">
                   <dt class="shrink-0 text-foreground/50">{k}</dt>
                   <dd class="truncate font-mono text-xs text-foreground/70">{String(v)}</dd>
-                </div>
+                </Flex>
               )}
             </For>
           </Show>
         </div>
       </Show>
-    </div>
+    </Flex>
   );
 };

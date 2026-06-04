@@ -33,6 +33,7 @@
 import { createEmittingDroppable } from '@capsuletech/web-dnd/controllers';
 import { useEmit } from '@capsuletech/web-core';
 import { Renderer } from '@capsuletech/web-renderer';
+import { Flex } from '@capsuletech/web-ui/flex';
 import { createEffect, createMemo, Show } from 'solid-js';
 import { useDnD } from '@capsuletech/web-dnd';
 import { dragSpec } from '../state/dnd';
@@ -116,7 +117,7 @@ export const EditorCanvas = () => {
   };
 
   return (
-    <div class="flex h-full flex-col">
+    <Flex orientation="vertical" class="h-full">
       <div
         ref={drop.ref}
         class="relative min-h-0 flex-1 overflow-auto"
@@ -137,12 +138,12 @@ export const EditorCanvas = () => {
           />
 
           <Show when={isEmpty()}>
-            <div class="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-foreground/40">
+            <Flex class="pointer-events-none absolute inset-0 items-center justify-center text-sm text-foreground/40">
               Перетащите компонент из палитры
-            </div>
+            </Flex>
           </Show>
         </div>
       </div>
-    </div>
+    </Flex>
   );
 };
