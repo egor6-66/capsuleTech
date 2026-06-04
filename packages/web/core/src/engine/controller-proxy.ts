@@ -62,8 +62,16 @@ export const ControllerProxy = ({
         // если метод не найден — автобабблинг к родителю
         if (typeof method !== 'function') return await next();
 
+        // Хендлеру отдаём РАСПАКОВАННЫЙ user-context (`store.ctx.data`), а не сам
+        // машинный контекст: XState хранит пользовательские поля под `.data`
+        // (web-state `createState`), поэтому `context: TCtx` в IHandlerApi честен
+        // только после unwrap'а. `callParent`/bubbling между прокси по-прежнему
+        // несёт МАШИННЫЙ `context` (распаковка локальна для каждого хендлера).
+        // `?? context` — фолбэк для не-XState/мок-контекстов без `.data`.
+        const userCtx = (context as { data?: unknown })?.data ?? context;
+
         try {
-          return await method({ target, context, next, store, state: stateApi });
+          return await method({ target, context: userCtx, next, store, state: stateApi });
         } catch (err) {
           console.error(`[Controller] метод "${methodName}" в стейте "${current}" упал:`, err);
           // Централизованный hook: вызываем `schema.onError`, если он определён.
@@ -74,7 +82,7 @@ export const ControllerProxy = ({
             try {
               const r = onError({
                 target,
-                context,
+                context: userCtx,
                 next,
                 store,
                 state: stateApi,
