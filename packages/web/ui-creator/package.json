@@ -29,6 +29,16 @@
       "types": "./dist/generators/index.d.ts",
       "import": "./dist/generators.mjs",
       "default": "./dist/generators.mjs"
+    },
+    "./controllers": {
+      "types": "./dist/controllers/index.d.ts",
+      "import": "./dist/controllers.mjs",
+      "default": "./dist/controllers.mjs"
+    },
+    "./capsule": {
+      "types": "./dist/capsule.d.ts",
+      "import": "./dist/capsule.mjs",
+      "default": "./dist/capsule.mjs"
     }
   },
   "files": [
@@ -42,9 +52,11 @@
   },
   "dependencies": {
     "@capsuletech/shared-zod": "workspace:*",
+    "@capsuletech/web-core": "workspace:*",
     "lucide-solid": "^1.16.0"
   },
   "peerDependencies": {
+    "@capsuletech/web-renderer": "workspace:*",
     "solid-js": "^1.9.0"
   },
   "devDependencies": {

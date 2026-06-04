@@ -6,6 +6,7 @@ export {
   listByCategory,
   summarize,
 } from './registry';
+export { acceptsChildren, canDropInto, canMoveInto, isInside } from './rules';
 export type {
   ComponentCategory,
   IComponentManifest,

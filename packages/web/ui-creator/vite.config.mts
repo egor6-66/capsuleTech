@@ -7,6 +7,8 @@ export default libConfig({
     state: 'src/state/index.ts',
     inspector: 'src/inspector/index.ts',
     generators: 'src/generators/index.ts',
+    controllers: 'src/controllers/index.ts',
+    capsule: 'src/capsule.ts',
   },
   name: 'CapsuleUiCreator',
 });
