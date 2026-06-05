@@ -24,7 +24,7 @@
  *  12. settingsMode=ON + settings empty → strip does NOT render.
  *  13. settingsMode=ON + no store (outside Controller tree) → strip does NOT render.
  *  14. Button in strip carries the correct tags (meta.tags).
- *  15. Button variant is 'default' when value() returns true, 'outline' when false.
+ *  15. Button shows plain label in both states; active state conveyed via pill fill (bg-primary), inactive via bg-muted/40.
  */
 
 import { createSignal } from 'solid-js';
@@ -454,7 +454,7 @@ describe('WidgetWrapper settings strip', () => {
     expect(strip).toBeNull();
   });
 
-  it('button label shows "✓ label" when value() returns true, plain label when false', () => {
+  it('button shows plain label in both active and inactive states (state via fill, not text prefix)', () => {
     const [active, setActive] = createSignal(true);
     const reactiveStore = {
       registerComponent: vi.fn(),
@@ -496,9 +496,12 @@ describe('WidgetWrapper settings strip', () => {
 
     const button = container.querySelector('button');
     expect(button).not.toBeNull();
-    expect(button?.textContent).toContain('✓ Sync');
-
-    setActive(false);
+    // Active state: label shown without prefix (state conveyed via pill fill class, not text)
     expect(button?.textContent).toBe('Sync');
+    // Active pill: primary fill + pill shape
+    expect(button?.className).toContain('bg-primary');
+    expect(button?.className).toContain('rounded-full');
+    // No ✓ prefix in text regardless of state
+    expect(button?.textContent).not.toContain('✓');
   });
 });

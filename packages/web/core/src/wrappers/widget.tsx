@@ -49,24 +49,30 @@ export const WidgetWrapper: IWidgetWrapper = ((
     // proxiedUi is stable within a Widget instance (same ctx, same wrapperProps shape).
     const ProxiedButton = (proxiedUi as any).Button as any;
 
-    // Settings strip — absolute overlay at top of widget.
+    // Settings strip — frosted floating overlay at top of widget.
     // z-10 sits above scrollable content (DataTable, MapView, etc.).
-    // Classes mirror Matrix cell settings-strip 1:1.
+    // Frosted effect: semi-transparent theme-aware bg + backdrop-blur + shadow.
     const settingsStrip = () => (
-      <div class="absolute inset-x-0 top-0 z-10 flex h-9 items-center gap-1 border-b border-border bg-popover px-2 text-sm shadow-md">
+      <div class="absolute inset-x-0 top-0 z-10 flex h-10 items-center gap-2 rounded-b-md border-b border-border/60 bg-background/85 px-3 text-sm shadow-lg backdrop-blur-md">
         <For each={settings}>
           {(setting) => {
-            // toggle: active when value(store.ctx.data) is truthy → 'default' variant,
-            // inactive → 'outline'. value() called reactively inside JSX so Solid
-            // tracks the reactive dependency on store.ctx.data automatically.
+            // toggle: active when value(store.ctx.data) is truthy.
+            // Active pill: primary-filled (accent bg + foreground text).
+            // Inactive pill: muted ghost (bg-muted/40 + muted-foreground text, hover to muted).
+            // State communicated via fill, not text prefix.
             const isActive = () => setting.value(store?.ctx?.data);
             return (
               <ProxiedButton
                 size="sm"
-                variant={isActive() ? 'default' : 'outline'}
+                variant="ghost"
+                class={
+                  isActive()
+                    ? 'h-7 rounded-full bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90'
+                    : 'h-7 rounded-full bg-muted/40 px-3 text-xs font-medium text-muted-foreground hover:bg-muted'
+                }
                 meta={{ tags: setting.tags }}
               >
-                {isActive() ? `✓ ${setting.label}` : setting.label}
+                {setting.label}
               </ProxiedButton>
             );
           }}
