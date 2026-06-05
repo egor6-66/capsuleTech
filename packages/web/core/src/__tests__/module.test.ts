@@ -1,6 +1,6 @@
 /**
  * module.test.ts — характеризационные тесты для `defineCapsuleModule` и
- * типа `IAppConfig.packages` (ADR 033, фаза 1).
+ * типов `IAppConfig.packages` / `IAppConfig.intl` (ADR 033, фаза 1).
  *
  * Покрытие:
  *  1. defineCapsuleModule — identity (runtime: возвращает тот же объект)
@@ -12,10 +12,18 @@
  *  7. IAppConfig.packages — принимает смешанный массив (строки + объекты)
  *  8. IAppConfig.packages — поле опционально (без него IAppConfig валиден)
  *  9. Несколько вызовов defineCapsuleModule независимы
+ * 10. IAppConfig.intl — поле опционально
+ * 11. IAppConfig.intl — принимает все поля (type-level)
+ * 12. applyIntlConfig — no-op при undefined
+ * 13. applyIntlConfig — вызывает registerCopy для каждой локали
+ * 14. applyIntlConfig — вызывает registerTenantCopy для tenant-словарей
+ * 15. applyIntlConfig — setDefaultLocale вызывается если задан
+ * 16. applyIntlConfig — setLocale вызывается только если нет persisted localStorage
+ * 17. applyIntlConfig — setTenant вызывается только если нет persisted localStorage
  */
 
-import { describe, expect, expectTypeOf, it } from 'vitest';
-import { defineAppConfig, type IAppConfig } from '../app-config';
+import { beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import { applyIntlConfig, defineAppConfig, type IAppConfig } from '../app-config';
 import { defineCapsuleModule, type ICapsuleModule } from '../module';
 
 // ---------------------------------------------------------------------------
@@ -177,5 +185,130 @@ describe('defineAppConfig — packages field', () => {
     expect(config.packages).toHaveLength(2);
     expect(config.packages?.[0]).toBe('@capsuletech/web-map');
     expect(config.packages?.[1]).toEqual({ use: '@capsuletech/web-renderer', as: 'Render' });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// IAppConfig.intl — type-level
+// ---------------------------------------------------------------------------
+
+describe('IAppConfig.intl — type-level', () => {
+  it('intl is optional — IAppConfig without it is valid', () => {
+    const config: IAppConfig = {};
+    expectTypeOf(config).toMatchTypeOf<IAppConfig>();
+  });
+
+  it('intl accepts all fields', () => {
+    const config: IAppConfig = {
+      intl: {
+        defaultLocale: 'en',
+        locale: 'ru',
+        dictionaries: { en: { 'login.title': 'Login' }, ru: { 'login.title': 'Вход' } },
+        tenants: { acme: { en: { 'login.title': 'Acme Login' } } },
+        tenant: 'acme',
+      },
+    };
+    expectTypeOf(config).toMatchTypeOf<IAppConfig>();
+  });
+
+  it('intl.dictionaries key is Locale (string), value is Dictionary (Record<string,string>)', () => {
+    type D = NonNullable<NonNullable<IAppConfig['intl']>['dictionaries']>;
+    expectTypeOf<D>().toMatchTypeOf<Partial<Record<string, Record<string, string>>>>();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// applyIntlConfig — runtime behaviour (web-intl mocked)
+// ---------------------------------------------------------------------------
+
+// Mock web-intl module — vi.hoisted гарантирует инициализацию до хойстинга vi.mock
+const { mockRegisterCopy, mockRegisterTenantCopy, mockSetDefaultLocale, mockSetLocale, mockSetTenant } =
+  vi.hoisted(() => ({
+    mockRegisterCopy: vi.fn(),
+    mockRegisterTenantCopy: vi.fn(),
+    mockSetDefaultLocale: vi.fn(),
+    mockSetLocale: vi.fn(),
+    mockSetTenant: vi.fn(),
+  }));
+
+vi.mock('@capsuletech/web-intl', () => ({
+  registerCopy: mockRegisterCopy,
+  registerTenantCopy: mockRegisterTenantCopy,
+  setDefaultLocale: mockSetDefaultLocale,
+  setLocale: mockSetLocale,
+  setTenant: mockSetTenant,
+}));
+
+describe('applyIntlConfig', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Очищаем localStorage-ключи между тестами
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('capsule-locale');
+      localStorage.removeItem('capsule-tenant');
+    }
+  });
+
+  it('no-op when called with undefined', () => {
+    applyIntlConfig(undefined);
+    expect(mockRegisterCopy).not.toHaveBeenCalled();
+    expect(mockSetLocale).not.toHaveBeenCalled();
+  });
+
+  it('calls registerCopy for each locale in dictionaries', () => {
+    applyIntlConfig({
+      dictionaries: {
+        en: { 'login.title': 'Login' },
+        ru: { 'login.title': 'Вход' },
+      },
+    });
+    expect(mockRegisterCopy).toHaveBeenCalledTimes(2);
+    expect(mockRegisterCopy).toHaveBeenCalledWith('en', { 'login.title': 'Login' });
+    expect(mockRegisterCopy).toHaveBeenCalledWith('ru', { 'login.title': 'Вход' });
+  });
+
+  it('calls registerTenantCopy for each tenant+locale pair', () => {
+    applyIntlConfig({
+      tenants: {
+        acme: {
+          en: { 'login.title': 'Acme Login' },
+          ru: { 'login.title': 'Вход Acme' },
+        },
+      },
+    });
+    expect(mockRegisterTenantCopy).toHaveBeenCalledTimes(2);
+    expect(mockRegisterTenantCopy).toHaveBeenCalledWith('acme', 'en', { 'login.title': 'Acme Login' });
+    expect(mockRegisterTenantCopy).toHaveBeenCalledWith('acme', 'ru', { 'login.title': 'Вход Acme' });
+  });
+
+  it('calls setDefaultLocale when defaultLocale is provided', () => {
+    applyIntlConfig({ defaultLocale: 'en' });
+    expect(mockSetDefaultLocale).toHaveBeenCalledWith('en');
+  });
+
+  it('calls setLocale when locale is provided and no persisted value', () => {
+    applyIntlConfig({ locale: 'ru' });
+    expect(mockSetLocale).toHaveBeenCalledWith('ru');
+  });
+
+  it('skips setLocale when localStorage has persisted locale', () => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('capsule-locale', 'en');
+    }
+    applyIntlConfig({ locale: 'ru' });
+    expect(mockSetLocale).not.toHaveBeenCalled();
+  });
+
+  it('calls setTenant when tenant is provided and no persisted value', () => {
+    applyIntlConfig({ tenant: 'acme' });
+    expect(mockSetTenant).toHaveBeenCalledWith('acme');
+  });
+
+  it('skips setTenant when localStorage has persisted tenant', () => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('capsule-tenant', 'other');
+    }
+    applyIntlConfig({ tenant: 'acme' });
+    expect(mockSetTenant).not.toHaveBeenCalled();
   });
 });

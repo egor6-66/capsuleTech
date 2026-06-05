@@ -8,6 +8,16 @@
 // type-inversion приемлема, runtime-cycle она не создаёт.
 import type { ApiConfig, MwToolbox } from '@capsuletech/web-query';
 import type { ICreateRouterOpts } from '@capsuletech/web-router';
+// `intl?:` — import типов + runtime-функций из web-intl (headless singleton, нет
+// runtime-cycle; пакет в dependencies, поэтому статический import безопасен).
+import type { Dictionary, Locale, Tenant } from '@capsuletech/web-intl';
+import {
+  registerCopy,
+  registerTenantCopy,
+  setDefaultLocale,
+  setLocale,
+  setTenant,
+} from '@capsuletech/web-intl';
 
 /**
  * Конфиг приложения — то, что разработчик пишет в `apps/<app>/capsule.app.ts`.
@@ -46,6 +56,30 @@ export interface IAppConfig {
    */
   packages?: ReadonlyArray<string | { use: string; as?: string }>;
   /**
+   * Настройки интернационализации (i18n). Применяются в bootstrap'е до рендера
+   * через `applyIntlConfig(config.intl)`. Синглтоны `@capsuletech/web-intl`
+   * module-level — JSX-провайдер не обязателен.
+   *
+   * Precedence locale/tenant: persisted `localStorage` значение ('capsule-locale' /
+   * 'capsule-tenant') побеждает над конфигом — явный пользовательский выбор
+   * переживает перезагрузку (тот же порядок, что в `IntlProvider`).
+   */
+  intl?: {
+    /** Fallback-локаль: используется когда активная локаль не содержит ключ. */
+    defaultLocale?: Locale;
+    /** Активная локаль при старте (если нет persisted 'capsule-locale'). */
+    locale?: Locale;
+    /** Базовые словари, индексированные по локали. */
+    dictionaries?: Partial<Record<Locale, Dictionary>>;
+    /**
+     * Per-tenant переопределения: `tenant → locale → Dictionary`.
+     * Переопределяйте только ключи, которые отличаются от базовых.
+     */
+    tenants?: Partial<Record<Tenant, Partial<Record<Locale, Dictionary>>>>;
+    /** Активный tenant при старте (если нет persisted 'capsule-tenant'). */
+    tenant?: Tenant;
+  };
+  /**
    * Настройки роутера приложения.
    */
   router?: {
@@ -70,3 +104,41 @@ export interface IAppConfig {
  * AppConfigPlugin transform replace'нет вызов в browser bundle.
  */
 export const defineAppConfig = <T extends IAppConfig>(config: T): T => config;
+
+/**
+ * Применяет `IAppConfig.intl` к синглтонам `@capsuletech/web-intl`.
+ *
+ * Вызывается в сгенерированном bootstrap'е (`app-config.gen.ts`) до рендера,
+ * аналогично тому как `createApi` применяется для `config.api`. JSX-провайдер
+ * не нужен — функции web-intl работают на module-level сигналах.
+ *
+ * Precedence (localStorage побеждает над конфигом):
+ *  - locale: `localStorage.getItem('capsule-locale')` → используем его, иначе `intl.locale`
+ *  - tenant: `localStorage.getItem('capsule-tenant')` → используем его, иначе `intl.tenant`
+ *
+ * @param intl — секция `config.intl` из `IAppConfig`. Если `undefined` — no-op.
+ */
+export const applyIntlConfig = (intl: IAppConfig['intl']): void => {
+  if (!intl) return;
+
+  for (const [loc, dict] of Object.entries(intl.dictionaries ?? {})) {
+    if (dict) registerCopy(loc, dict);
+  }
+
+  for (const [ten, byLocale] of Object.entries(intl.tenants ?? {})) {
+    for (const [loc, dict] of Object.entries(byLocale ?? {})) {
+      if (dict) registerTenantCopy(ten, loc, dict);
+    }
+  }
+
+  if (intl.defaultLocale) setDefaultLocale(intl.defaultLocale);
+
+  const persistedLocale =
+    typeof window !== 'undefined' && localStorage.getItem('capsule-locale');
+  if (intl.locale && !persistedLocale) setLocale(intl.locale);
+
+  const persistedTenant =
+    typeof window !== 'undefined' && localStorage.getItem('capsule-tenant');
+  if (intl.tenant && !persistedTenant) setTenant(intl.tenant);
+};
+

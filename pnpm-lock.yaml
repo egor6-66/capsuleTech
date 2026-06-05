@@ -660,6 +660,9 @@ importers:
       '@capsuletech/vite-builder':
         specifier: workspace:*
         version: link:../../builders/vite
+      '@capsuletech/web-intl':
+        specifier: workspace:*
+        version: link:../intl
       '@capsuletech/web-profiler':
         specifier: workspace:*
         version: link:../profiler
@@ -901,6 +904,9 @@ importers:
       '@capsuletech/web-dnd':
         specifier: workspace:*
         version: link:../dnd
+      '@capsuletech/web-intl':
+        specifier: workspace:*
+        version: link:../intl
       '@capsuletech/web-style':
         specifier: workspace:*
         version: link:../style
