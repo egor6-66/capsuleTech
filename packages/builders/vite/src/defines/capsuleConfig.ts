@@ -204,6 +204,20 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
           ...Object.entries(DEFINE_FACTORIES).map(([mod, names]) => ({
             [mod]: [...names],
           })),
+          // ADR-034: registry namespace imports.
+          // Инжектируют `import { Widgets } from '@capsule/registry'` вместо
+          // Object.assign(globalThis). Бандлер видит статический граф и
+          // tree-shake'ит неиспользуемые слои по роутам.
+          {
+            '@capsule/registry': [
+              'Widgets',
+              'Views',
+              'Features',
+              'Shapes',
+              'Controllers',
+              'Entities',
+            ],
+          },
         ],
         dts: './@types/capsule-imports.d.ts',
       }),
@@ -250,6 +264,8 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
       // Layer-алиасы (@widgets/*, @entities/*, ...) по-прежнему через AliasesPlugin
       // → resolve.alias (они в paths.config.json, не в tsconfig.base.json).
       tsconfigPaths: true,
+      // ADR-034: '@capsule/registry' alias registered by CapsuleRegistryPlugin
+      // via configResolved hook (app-specific, per-capsuleRoot).
     },
     server: {
       port: config.devServerPort || 3000,
