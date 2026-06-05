@@ -66,6 +66,13 @@
         "packages/web/ui/src/composites/*",
         "packages/web/ui/src/icons/*"
       ],
+      "@capsuletech/web-shell": ["packages/web/shell/src/index.ts"],
+      "@capsuletech/web-shell/ui": ["packages/web/shell/src/ui/index.ts"],
+      "@capsuletech/web-shell/controllers": [
+        "packages/web/shell/src/controllers/index.ts"
+      ],
+      "@capsuletech/web-shell/capsule": ["packages/web/shell/src/capsule.ts"],
+      "@capsuletech/web-shell/matrix": ["packages/web/shell/src/matrix/index.ts"],
       "@capsuletech/cli": ["packages/cli/src/index.ts"],
       "@capsuletech/cli/*": ["packages/cli/*"],
       "@capsuletech/compliance": ["packages/builders/compliance/src/index.ts"],

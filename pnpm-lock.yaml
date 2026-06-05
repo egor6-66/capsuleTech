@@ -132,6 +132,9 @@ importers:
       '@capsuletech/web-router':
         specifier: workspace:*
         version: link:../../packages/web/router
+      '@capsuletech/web-shell':
+        specifier: workspace:*
+        version: link:../../packages/web/shell
       '@capsuletech/web-state':
         specifier: workspace:*
         version: link:../../packages/web/state
@@ -890,6 +893,40 @@ importers:
         specifier: ^1.169.0
         version: 1.171.2
 
+  packages/web/shell:
+    dependencies:
+      '@capsuletech/web-core':
+        specifier: workspace:*
+        version: link:../core
+      '@capsuletech/web-dnd':
+        specifier: workspace:*
+        version: link:../dnd
+      '@capsuletech/web-style':
+        specifier: workspace:*
+        version: link:../style
+      '@capsuletech/web-ui':
+        specifier: workspace:*
+        version: link:../ui
+      solid-js:
+        specifier: 1.9.12
+        version: 1.9.12
+    devDependencies:
+      '@capsuletech/lib-builder':
+        specifier: workspace:*
+        version: link:../../builders/lib
+      '@capsuletech/vite-builder':
+        specifier: workspace:*
+        version: link:../../builders/vite
+      '@testing-library/jest-dom':
+        specifier: ^6.9.1
+        version: 6.9.1
+      jsdom:
+        specifier: ~29.1.1
+        version: 29.1.1
+      vite-plugin-solid:
+        specifier: ^2.11.12
+        version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
+
   packages/web/state:
     dependencies:
       es-toolkit:
@@ -957,9 +994,6 @@ importers:
 
   packages/web/ui:
     dependencies:
-      '@capsuletech/web-dnd':
-        specifier: workspace:*
-        version: link:../dnd
       '@capsuletech/web-style':
         specifier: workspace:*
         version: link:../style
