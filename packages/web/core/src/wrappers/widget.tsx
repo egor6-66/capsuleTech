@@ -53,7 +53,7 @@ export const WidgetWrapper: IWidgetWrapper = ((
     // z-10 sits above scrollable content (DataTable, MapView, etc.).
     // Classes mirror Matrix cell settings-strip 1:1.
     const settingsStrip = () => (
-      <div class="absolute inset-x-0 top-0 z-10 flex h-9 items-center gap-1 border-b border-border bg-card/80 px-2 text-sm">
+      <div class="absolute inset-x-0 top-0 z-10 flex h-9 items-center gap-1 border-b border-border bg-popover px-2 text-sm shadow-md">
         <For each={settings}>
           {(setting) => {
             // toggle: active when value(store.ctx.data) is truthy → 'default' variant,
