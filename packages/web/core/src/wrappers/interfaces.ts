@@ -8,7 +8,7 @@
  */
 
 import type { ICapsuleRouter } from '@capsuletech/web-router';
-import type { IBaseStateHandlers, IBaseStateSchema, IBridge } from '@capsuletech/web-state';
+import type { IBaseStateHandlers, IBaseStateSchema, IBridge, IMachineContext } from '@capsuletech/web-state';
 import type {
   Animate,
   Button,
@@ -278,6 +278,32 @@ declare global {
   // CapsuleApi живёт в @capsuletech/web-query/createApi.ts — родной дом
   // (это типизация getApiClient). web-core видит её через interface-merging,
   // потому что зависит от web-query (для value-import getApiClient).
+
+  /**
+   * Извлекает `TCtx` из phantom-поля `__ctx` компонента Controller/Feature.
+   *
+   * ```ts
+   * type ICtx = CtxOf<typeof Features.Incidents>;  // → IIncidentsCtx
+   * ```
+   *
+   * Возвращает `never` если `F` не несёт `__ctx` (например View/Widget без Feature-parent).
+   */
+  type CtxOf<F> = F extends { readonly __ctx?: infer C } ? C : never;
+
+  /**
+   * Типизированный `IBridge` для конкретного Controller/Feature.
+   * Оверрайдит `ctx` так, что `store.ctx.data` имеет тип `CtxOf<F>`.
+   *
+   * ```ts
+   * Widget((Ui, store: StoreOf<typeof Features.Incidents>) => {
+   *   store.ctx.data;  // → IIncidentsCtx
+   * });
+   * ```
+   *
+   * Backward-compat: если `Widget((Ui, store) => ...)` без аннотации —
+   * `store` остаётся `IBridge | undefined`.
+   */
+  type StoreOf<F> = Omit<IBridge, 'ctx'> & { readonly ctx: IMachineContext<CtxOf<F>> };
 }
 
 /**
@@ -326,11 +352,17 @@ export type IViewWrapper = <P extends Record<string, any> = Record<string, any>>
  * Registries (Views/Features/Controllers) доступны как глобалы через
  * `Object.assign(globalThis, _registry)` в bootstrap. Не нужны как args.
  */
-export type IWidgetRenderer<P extends Record<string, any> = Record<string, any>> = (
-  ui: WidgetUi,
-  store: IBridge | undefined,
-  props: P,
-) => JSX.Element;
+/**
+ * Widget render-function. Generic `S` — тип store:
+ *  - по умолчанию `IBridge | undefined` (backward-compat, без аннотации);
+ *  - при явной аннотации `store: StoreOf<typeof Features.X>` — `S` инферируется
+ *    и `store.ctx.data` типизируется как `CtxOf<typeof Features.X>`.
+ */
+export type IWidgetRenderer<
+  P extends Record<string, any> = Record<string, any>,
+  S = IBridge | undefined,
+> = (ui: WidgetUi, store: S, props: P) => JSX.Element;
+
 /**
  * Loader render-function: same shape as IViewRenderer — (Ui, props) only, no store.
  * The loader is stateless (no access to IBridge) — it cannot depend on data, only Ui primitives.
@@ -341,8 +373,11 @@ export type IWidgetLoader<P extends Record<string, any> = Record<string, any>> =
   props: P,
 ) => JSX.Element;
 
-export type IWidgetWrapper = <P extends Record<string, any> = Record<string, any>>(
-  component: IWidgetRenderer<P>,
+export type IWidgetWrapper = <
+  P extends Record<string, any> = Record<string, any>,
+  S = IBridge | undefined,
+>(
+  component: IWidgetRenderer<P, S>,
   loader?: IWidgetLoader<P>,
 ) => ParentComponent<P>;
 
@@ -360,13 +395,19 @@ export type IWidgetWrapper = <P extends Record<string, any> = Record<string, any
  * Registries (Widgets) доступны как глобалы через
  * `Object.assign(globalThis, _registry)` в bootstrap. Не нужны как args.
  */
-export type IPageRenderer<P extends Record<string, any> = Record<string, any>> = (
-  ui: PageUi,
-  store: IBridge | undefined,
-  props: P,
-) => JSX.Element;
-export type IPageWrapper = <P extends Record<string, any> = Record<string, any>>(
-  component: IPageRenderer<P>,
+/**
+ * Page render-function. Generic `S` — тип store (аналогично IWidgetRenderer).
+ */
+export type IPageRenderer<
+  P extends Record<string, any> = Record<string, any>,
+  S = IBridge | undefined,
+> = (ui: PageUi, store: S, props: P) => JSX.Element;
+
+export type IPageWrapper = <
+  P extends Record<string, any> = Record<string, any>,
+  S = IBridge | undefined,
+>(
+  component: IPageRenderer<P, S>,
 ) => ParentComponent<P>;
 
 // -----------------------------------------------------------------------------
@@ -586,9 +627,30 @@ export type IWrapperProps = {
  *
  * Backward-compat: старый app-код без явного `context` поля получает `TCtx = any`.
  */
+/**
+ * Тип wrapper-функции `Controller(factory) => Component`.
+ *
+ * Generic `TCtx` — выводится из возвращаемого типа factory через `context`-поле.
+ * Phantom-поле `__ctx` несёт `TCtx` на уровне типа компонента:
+ * `typeof MyFeature.__ctx` → `TCtx`, что позволяет `CtxOf<typeof MyFeature>`
+ * извлечь контекст без явного дженерика.
+ *
+ * ```ts
+ * const MyFeature = Feature((services) => ({
+ *   context: { count: 0 } as IMyCtx,
+ *   initial: 'idle',
+ *   states: { idle: {} },
+ * }));
+ *
+ * // В Widget:
+ * Widget((Ui, store: StoreOf<typeof MyFeature>) => {
+ *   store.ctx.data; // IMyCtx — типизировано
+ * });
+ * ```
+ */
 export type IControllerWrapper = <TCtx = any>(
   defineStateSchema: (services: IServices) => IDefineStateSchema<TCtx>,
-) => (props: IWrapperProps) => any;
+) => ((props: IWrapperProps) => any) & { readonly __ctx?: TCtx };
 
 export type IFeatureWrapper = IControllerWrapper;
 

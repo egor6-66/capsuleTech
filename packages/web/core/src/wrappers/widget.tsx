@@ -26,7 +26,7 @@ export const WidgetWrapper: IWidgetWrapper = (Component, Loader?) => {
     return (
       <ShapeUiContext.Provider value={proxiedUi}>
         <Show when={!isLoading()} fallback={Loader && (Loader(proxiedUi, wrapperProps) as any)}>
-          {Component(proxiedUi, store, wrapperProps)}
+          {(Component as import('./interfaces').IWidgetRenderer)(proxiedUi, store, wrapperProps)}
         </Show>
       </ShapeUiContext.Provider>
     );
