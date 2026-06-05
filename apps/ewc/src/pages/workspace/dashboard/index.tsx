@@ -24,27 +24,31 @@
  * Page лишь расставляет виджеты по слотам Matrix (children + DnD-параметры).
  */
 const Dashboard = Page(() => (
-  <Features.Incidents>
-    <Shell.Matrix
-      preset="app-shell"
-      slots={{
-        main: {
-          children: <Widgets.Tables.Incidents />,
-          swapGroup: 'widgets',
-        },
-        rightBar: {
-          children: <Widgets.Sidebars.Main />,
-          swapGroup: 'widgets',
-          initialSize: 0.25,
-        },
-        footer: {
-          children: <Widgets.Maps.World />,
-          swapGroup: 'widgets',
-          initialSize: 0.35,
-        },
-      }}
-    />
-  </Features.Incidents>
+  // Features.Shell (снаружи) ловит всплывшие события Shell.Matrix (onLayoutChange →
+  // persist раскладки). Features.Incidents (ближе к виджетам) даёт им items-store.
+  <Features.Shell>
+    <Features.Incidents>
+      <Shell.Matrix
+        preset="app-shell"
+        slots={{
+          main: {
+            children: <Widgets.Tables.Incidents />,
+            swapGroup: 'widgets',
+          },
+          rightBar: {
+            children: <Widgets.Sidebars.Main />,
+            swapGroup: 'widgets',
+            initialSize: 0.25,
+          },
+          footer: {
+            children: <Widgets.Maps.World />,
+            swapGroup: 'widgets',
+            initialSize: 0.35,
+          },
+        }}
+      />
+    </Features.Incidents>
+  </Features.Shell>
 ));
 
 export default Dashboard;
