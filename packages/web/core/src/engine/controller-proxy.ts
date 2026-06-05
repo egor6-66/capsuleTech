@@ -2,7 +2,10 @@ import type { IDefineStateSchema, INext, IStateApi, ITarget } from '../wrappers/
 import type { ICtx } from './ctx';
 
 interface IControllerProxyParams {
-  schema: IDefineStateSchema;
+  // Рантайм работает только с open-формой schema (index signature разрешает любые поля).
+  // Typed-events (closed форма) применяются только на уровне типов IControllerWrapper,
+  // внутрь engine не проникают.
+  schema: IDefineStateSchema<any>;
   /** реактивный snapshot из useMachine */
   state: any;
   send: (event: any) => void;

@@ -281,6 +281,27 @@ declare global {
   type CtxOf<F> = F extends { readonly __ctx?: infer C } ? C : never;
 
   /**
+   * Извлекает event-map из phantom-поля `__events` пакетного Controller/Feature-компонента.
+   *
+   * Пакетные компоненты (из `@capsuletech/web-shell`, `@capsuletech/web-dnd` и т.д.)
+   * несут `readonly __events?: TEvents` на своём типе. `EventsOf` позволяет
+   * получить этот map и передать его в `Feature<EventsOf<typeof Shell.Matrix>>(...)`.
+   *
+   * ```ts
+   * // В app-Feature, адаптирующей пакетный Controller:
+   * const LayoutFeature = Feature<EventsOf<typeof Shell.Matrix>, ILayoutCtx>((s) => ({
+   *   context: { saving: false } as ILayoutCtx,
+   *   onLayoutChange({ target }) {
+   *     // target.payload: { id: string; kind: 'swap' | 'resize' } | undefined  ← типизировано
+   *   },
+   * }));
+   * ```
+   *
+   * Возвращает `never` если компонент не несёт `__events` (plain компоненты без пакетного контракта).
+   */
+  type EventsOf<C> = C extends { readonly __events?: infer E } ? E : never;
+
+  /**
    * Типизированный `IBridge` для конкретного Controller/Feature.
    * Оверрайдит `ctx` так, что `store.ctx.data` имеет тип `CtxOf<F>`.
    *
@@ -429,7 +450,7 @@ export type IPageWrapper = <
 // Logic-вкус: FSM-schema + handler-API для Controller/Feature.
 // -----------------------------------------------------------------------------
 
-export interface ITarget {
+export interface ITarget<TPayload = unknown> {
   name?: string;
   value?: unknown;
   type?: string;
@@ -444,8 +465,11 @@ export interface ITarget {
    * Не меняется при bubble через `next()` / `next.with()` — каждый уровень
    * цепочки видит один и тот же payload, заданный в JSX. Для трансформации
    * между уровнями используй `target.from` (см. ниже) + `next.with(arg)`.
+   *
+   * Generic `TPayload` типизируется автоматически для пакетных событий через
+   * `IHandlerApi<TCtx, TPayload>` — при использовании `Feature<TEvents>`.
    */
-  payload?: unknown;
+  payload?: TPayload;
   /**
    * Данные, которые **непосредственный предыдущий уровень** цепочки передал
    * через `next.with(arg)`. Сбрасывается в `undefined`:
@@ -460,6 +484,15 @@ export interface ITarget {
   /** для keyboard-событий */
   key?: string;
   modifiers?: { ctrl: boolean; shift: boolean; alt: boolean; meta: boolean };
+  /**
+   * Идентификатор источника события — компонент/пакет, который эмитнул событие.
+   * Позволяет разграничивать одноимённые методы от разных источников.
+   * Выставляется пакетными контроллерами через `useEmit` с явным `source` в partial.
+   * Опционально — не заполняется при DOM-dispatch'е через UiProxy.
+   *
+   * Пример: `emit('onLayoutChange', { source: '@capsuletech/web-shell/matrix', payload: {...} })`
+   */
+  source?: string;
 }
 
 export interface IStateApi {
@@ -485,8 +518,8 @@ export interface INext {
   with: <T = any>(arg: unknown) => Promise<T | null>;
 }
 
-export interface IHandlerApi<TCtx = any> {
-  target: ITarget;
+export interface IHandlerApi<TCtx = any, TPayload = unknown> {
+  target: ITarget<TPayload>;
   context: TCtx;
   next: INext;
   state: IStateApi;
@@ -500,15 +533,10 @@ export interface IErrorHandlerApi<TCtx = any> extends IHandlerApi<TCtx> {
 }
 
 /**
- * Per-state user-handlers. Расширяет engine-shape `IBaseStateHandlers` из
- * `@capsuletech/web-state` (shared-base паттерн, см. Phase F unification),
- * добавляя `IHandlerApi`-типизацию для UI-событий и custom-методов.
- *
- * Generic `TCtx` — тип `context` из `schema.context` (выводится через инференс
- * в `IDefineStateSchema<TCtx>`). Default `any` — backward-compat для app-кода
- * без явной аннотации.
+ * Фиксированные DOM/lifecycle-хэндлеры — общая часть для open и closed форм.
+ * Выделены в отдельный тип чтобы не дублировать в conditional.
  */
-export interface IStateHandlers<TCtx = any> extends IBaseStateHandlers {
+type IFixedHandlers<TCtx> = {
   onInit?: (api: IHandlerApi<TCtx>) => void | Promise<void>;
   onExit?: (api: IHandlerApi<TCtx>) => void | Promise<void>;
   onClick?: (api: IHandlerApi<TCtx>) => any;
@@ -518,26 +546,26 @@ export interface IStateHandlers<TCtx = any> extends IBaseStateHandlers {
   onBlur?: (api: IHandlerApi<TCtx>) => any;
   onFocus?: (api: IHandlerApi<TCtx>) => any;
   onKeyDown?: (api: IHandlerApi<TCtx>) => any;
+};
+
+/**
+ * Per-state user-handlers. Типизирует UI-события и custom-методы.
+ *
+ * Намеренно не расширяет `IBaseStateHandlers` напрямую — `IBaseStateHandlers.onExit`
+ * типизирован как `(api: any) => any`, что несовместимо с `IFixedHandlers.onExit`.
+ * Структурная совместимость сохранена (все ключи `IBaseStateHandlers` присутствуют).
+ *
+ * Generic `TCtx` — тип `context` из `schema.context`. Default `any` — backward-compat.
+ */
+export interface IStateHandlers<TCtx = any> extends IFixedHandlers<TCtx> {
   /** пользовательские методы (для приёма от next()) */
   [methodName: string]: ((api: IHandlerApi<TCtx>) => any) | undefined;
 }
 
 /**
- * Полный публичный shape HCA-схемы. Расширяет `IBaseStateSchema` из
- * `@capsuletech/web-state` (engine-minimum: `initial`, `context`, `states`),
- * добавляя HCA-specific lifecycle (`onMount`) и top-level fallback handlers
- * (`onClick`/`onInput`/...).
- *
- * Generic `TCtx` — тип `context` из `schema.context`. TS инферирует `TCtx`
- * автоматически когда factory возвращает `{ context: someValue, ... }`:
- * `TCtx = typeof someValue`. Благодаря этому handler-параметры
- * `{ target, context, store, state, next }` типизируются без явных аннотаций
- * — работает как в аппе (через codegen), так и в пакете (без codegen).
- *
- * Default `any` — backward-compat для существующего app-кода.
+ * Lifecycle + error-хэндлеры верхнего уровня — общие для open и closed форм.
  */
-export interface IDefineStateSchema<TCtx = any> extends IBaseStateSchema<TCtx> {
-  states: Record<string, IStateHandlers<TCtx>>;
+type ITopLevelLifecycle<TCtx> = {
   /**
    * Lifecycle: фаерит **реактивно** при каждой регистрации/анрегистрации
    * компонента в `store.components`. То есть первый вызов — на mount'е (часто
@@ -550,9 +578,6 @@ export interface IDefineStateSchema<TCtx = any> extends IBaseStateSchema<TCtx> {
    * Семантически отличается от `states[X].onInit`: последний — про вход в
    * стейт FSM (фаер на каждом переходе FSM); `onRegister` — про настройку
    * реактивного состояния по составу UI-дерева.
-   *
-   * Если нужен одноразовый hook на mount Controller'а — используй `states[initial].onInit`.
-   * Если нужен teardown — используй [[onDispose]].
    */
   onRegister?: (api: IHandlerApi<TCtx>) => any;
   /**
@@ -582,15 +607,85 @@ export interface IDefineStateSchema<TCtx = any> extends IBaseStateSchema<TCtx> {
    * Полезно для: централизованный setErrors → store, sentry-репорт, fallback-логика.
    */
   onError?: (api: IErrorHandlerApi<TCtx>) => any;
-  onClick?: (api: IHandlerApi<TCtx>) => any;
-  onDblClick?: (api: IHandlerApi<TCtx>) => any;
-  onInput?: (api: IHandlerApi<TCtx>) => any;
-  onChange?: (api: IHandlerApi<TCtx>) => any;
-  onBlur?: (api: IHandlerApi<TCtx>) => any;
-  onFocus?: (api: IHandlerApi<TCtx>) => any;
-  onKeyDown?: (api: IHandlerApi<TCtx>) => any;
-  [methodName: string]: any;
-}
+};
+
+/**
+ * Полный публичный shape HCA-схемы — ОТКРЫТАЯ форма (backward-compat).
+ *
+ * Используется когда `TEvents = {}` (default, `keyof TEvents extends never`).
+ * Разрешает `[methodName: string]: any` — пользовательские методы без типизации.
+ * TCtx инферируется из поля `context` объекта, возвращаемого factory.
+ *
+ * Backward-compat: существующий app-код без `TEvents` работает без изменений.
+ */
+type IDefineStateSchemaOpen<TCtx> = IBaseStateSchema<TCtx> &
+  ITopLevelLifecycle<TCtx> &
+  IFixedHandlers<TCtx> & {
+    states: Record<string, IStateHandlers<TCtx>>;
+    /** пользовательские top-level методы — открытая форма */
+    [methodName: string]: any;
+  };
+
+/**
+ * Полный публичный shape HCA-схемы — ЗАКРЫТАЯ форма (typed events).
+ *
+ * Используется когда `TEvents` явно передан в `Feature<TEvents>`.
+ * Mapped type `{ [K in keyof TEvents]?: (api: IHandlerApi<TCtx, TEvents[K]>) => any }`
+ * даёт contextual typing `target.payload` **без** per-handler аннотации.
+ *
+ * Нет `[methodName: string]: any` и нет `extends IBaseStateSchema` — намеренно.
+ * Index signature убивает contextual typing (PoC C.1). `IBaseStateSchema` содержит
+ * `[methodName: string]: any` — поэтому в closed форме мы не расширяем его,
+ * а декларируем нужные поля явно. Structural compatibility с `IBaseStateSchema`
+ * сохранена через `initial` + `context` + `states`.
+ *
+ * Все custom-методы должны входить в TEvents.
+ *
+ * TCtx должен быть передан явно вторым generic'ом — circular inference TS не позволяет
+ * одновременно вывести TCtx из `context`-поля и использовать его в typed handlers
+ * одного объекта.
+ */
+type IDefineStateSchemaClosed<TCtx, TEvents> = ITopLevelLifecycle<TCtx> &
+  IFixedHandlers<TCtx> & {
+    /** FSM initial state. */
+    initial?: string;
+    /** User context — типизируется TCtx. */
+    context?: TCtx;
+    states?: Record<string, IStateHandlers<TCtx>>;
+  } & {
+    [K in keyof TEvents]?: (api: IHandlerApi<TCtx, TEvents[K]>) => any;
+  };
+
+/**
+ * Полный публичный shape HCA-схемы. Conditional форма:
+ *
+ * - `TEvents = {}` (default) → открытая форма: `[methodName: string]: any`.
+ *   Полный backward-compat — существующий app-код без изменений.
+ *
+ * - `TEvents` явный → закрытая форма: `{ [K in keyof TEvents]?: handler }`.
+ *   `target.payload` типизируется по имени метода без per-handler аннотации.
+ *   `TCtx` следует передавать явно вторым generic'ом для типизации `context`.
+ *
+ * ```ts
+ * // Открытая форма (существующий app-код — не меняется):
+ * const AuthCtrl = Controller((s) => ({
+ *   context: { loading: false },
+ *   states: { idle: { onClick({ target }) { ... } } }
+ * }));
+ *
+ * // Закрытая форма (пакетный Controller/Feature с типизацией событий):
+ * type IMyEvents = { onLayoutChange: { id: string; kind: 'swap' | 'resize' } };
+ * const LayoutFeature = Feature<IMyEvents, ILayoutCtx>((s) => ({
+ *   context: { saving: false } as ILayoutCtx,
+ *   onLayoutChange({ target }) {
+ *     // target.payload: { id: string; kind: 'swap' | 'resize' } | undefined
+ *   },
+ * }));
+ * ```
+ */
+export type IDefineStateSchema<TCtx = any, TEvents = {}> = keyof TEvents extends never
+  ? IDefineStateSchemaOpen<TCtx>
+  : IDefineStateSchemaClosed<TCtx, TEvents>;
 
 export interface IServices {
   router: ICapsuleRouter;
@@ -663,8 +758,20 @@ export type IWrapperProps = {
  * });
  * ```
  */
-export type IControllerWrapper = <TCtx = any>(
-  defineStateSchema: (services: IServices) => IDefineStateSchema<TCtx>,
+/**
+ * Тип wrapper-функции `Controller(factory)` / `Feature(factory)`.
+ *
+ * Generic-arity: `TEvents` первым (explicit при пакетных событиях), `TCtx` вторым.
+ *
+ * - `Controller((s) => ...)` — TEvents = {}, TCtx инферируется из `context`-поля. Backward-compat.
+ * - `Feature<IMyEvents>((s) => ...)` — открыта closed-форма, TCtx = any (payload типизирован).
+ * - `Feature<IMyEvents, IMyCtx>((s) => ...)` — оба явные, payload + context типизированы.
+ *
+ * Phantom-поле `__ctx` несёт `TCtx` на уровне типа компонента:
+ * `CtxOf<typeof MyFeature>` → `TCtx`.
+ */
+export type IControllerWrapper = <TEvents = {}, TCtx = any>(
+  defineStateSchema: (services: IServices) => IDefineStateSchema<TCtx, TEvents>,
 ) => ((props: IWrapperProps) => any) & { readonly __ctx?: TCtx };
 
 export type IFeatureWrapper = IControllerWrapper;
