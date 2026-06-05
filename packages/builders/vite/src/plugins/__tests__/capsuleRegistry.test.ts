@@ -417,9 +417,15 @@ describe('generateAppConfigRuntime', () => {
     expect(out).toContain('setApiClient(createApi(appConfig.api, endpoints));');
   });
 
-  it('contains type-only IAppConfig import', () => {
+  it('contains IAppConfig type import and applyIntlConfig value import', () => {
     const out = generateAppConfigRuntime({});
-    expect(out).toContain("import { type IAppConfig } from '@capsuletech/web-core/app-config';");
+    expect(out).toContain("import { type IAppConfig, applyIntlConfig } from '@capsuletech/web-core/app-config';");
+  });
+
+  it('contains applyIntlConfig guarded by intl check', () => {
+    const out = generateAppConfigRuntime({});
+    expect(out).toContain('if (appConfig.intl) {');
+    expect(out).toContain('applyIntlConfig(appConfig.intl);');
   });
 
   it('uses static endpoints import (not dynamic)', () => {
