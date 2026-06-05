@@ -41,7 +41,17 @@ const Incidents = Widget(
       />
     );
   },
-  (Ui) => <Ui.Skeleton variant="table" rows={100} />,
+  {
+    // Data-load loader: пока store.loading — table-скелетон вместо контента.
+    loader: (Ui) => <Ui.Skeleton variant="table" rows={100} />,
+    // Декларативные настройки виджета — рендерятся в settings-strip при settingsMode.
+    //   «Синк с картой»        — таблица скроллит к выбору ИЗ КАРТЫ (cross-widget).
+    //   «Скроллить к выбранному» — клик по строке центрирует её в таблице (self).
+    settings: [
+      { type: 'toggle', label: 'Синк с картой', value: (d) => d.scrollToSelected, tags: ['toggle-scroll'] },
+      { type: 'toggle', label: 'Скроллить к выбранному', value: (d) => d.centerOnClick, tags: ['toggle-center'] },
+    ],
+  },
 );
 
 export default Incidents;

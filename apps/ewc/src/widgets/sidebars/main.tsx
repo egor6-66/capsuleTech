@@ -8,19 +8,24 @@
  * которая делает переход. Виджет навигацию сам не выполняет.
  */
 
-const Main = Widget((Ui, store) => {
-  const selected = () => store?.ctx.data?.selected;
+const Main = Widget(
+  (Ui, store: StoreOf<typeof Features.Incidents>) => {
+    const selected = () => store.ctx.data?.selected;
 
-  return (
-    <Ui.Layout.Flex orientation={'vertical'} class="h-full justify-between pb-2">
-      <Shapes.IncidentPreview data={selected()} />
-      <Ui.Flow.Show when={selected()}>
-        <Ui.Button variant={'ghost'} meta={{ tags: ['open-card'] }}>
-          Открыть карточку
-        </Ui.Button>
-      </Ui.Flow.Show>
-    </Ui.Layout.Flex>
-  );
-});
+    return (
+      <Ui.Layout.Flex orientation={'vertical'} class="h-full justify-between pb-2">
+        <Shapes.IncidentPreview data={selected()} />
+        <Ui.Flow.Show when={selected()}>
+          <Ui.Button variant={'ghost'} meta={{ tags: ['open-card'] }}>
+            Открыть карточку
+          </Ui.Button>
+        </Ui.Flow.Show>
+      </Ui.Layout.Flex>
+    );
+  },
+  // Data-load loader: пока store.loading — card-скелетон вместо контента.
+  // Presentation лоадера живёт в виджете, не в слоте Matrix (фича знает лишь сигнал загрузки).
+  { loader: (Ui) => <Ui.Skeleton variant="card" /> },
+);
 
 export default Main;
