@@ -21,19 +21,15 @@ import type {
   List,
   Table,
 } from '@capsuletech/web-ui';
-import type { DarkModeToggle } from '@capsuletech/web-ui/darkModeToggle';
 import type { Dropdown } from '@capsuletech/web-ui/dropdown';
 import type { DropdownMenu } from '@capsuletech/web-ui/dropdownMenu';
-import type { LayoutModeToggle } from '@capsuletech/web-ui/layoutModeToggle';
 import type { PreviewCard } from '@capsuletech/web-ui/previewCard';
 import type { Select } from '@capsuletech/web-ui/select';
 import type { Skeleton } from '@capsuletech/web-ui/skeleton';
 import type { Spinner } from '@capsuletech/web-ui/spinner';
 import type { Textarea } from '@capsuletech/web-ui/textarea';
-import type { ThemePicker } from '@capsuletech/web-ui/themePicker';
 import type { Tooltip } from '@capsuletech/web-ui/tooltip';
 import type { Typography } from '@capsuletech/web-ui/typography';
-import type { WidgetSettingsToggle } from '@capsuletech/web-ui/widgetSettingsToggle';
 import type { Link } from '@tanstack/solid-router';
 import type {
   Component,
@@ -129,7 +125,7 @@ type StaticProps<T> = {
  *  - Callable `(props: P) => R` с attached statics (Card, Field) →
  *    `((props: P & IUiMetaProps) => R) & WithMetaProps<StaticProps<T[K]>>`
  *    Статические sub-компоненты тоже рекурсивно augment'ятся `IUiMetaProps`.
- *  - Plain object (Layout namespace `{ Grid, Flex, Matrix }`) → рекурсивный
+ *  - Plain object (Layout namespace `{ Grid, Flex }`) → рекурсивный
  *    `WithMetaProps<T[K]>`
  *  - Всё остальное (Outlet, примитивы) → без изменений
  *
@@ -165,7 +161,7 @@ type FlowNamespace = {
   Dynamic: typeof Dynamic;
 };
 
-/** Layout-subset доступный внутри View — Grid + Flex (без Matrix; Matrix = page-level shell). */
+/** Layout-subset: Grid + Flex. Matrix переехал в @capsuletech/web-shell (ADR 033), не в Ui-namespace. */
 type ViewLayoutSubset = Pick<typeof Layout, 'Grid' | 'Flex'>;
 
 type ViewUiRaw = {
@@ -185,14 +181,10 @@ type ViewUiRaw = {
   Tooltip: typeof Tooltip;
   Select: typeof Select;
   Textarea: typeof Textarea;
-  DarkModeToggle: typeof DarkModeToggle;
-  LayoutModeToggle: typeof LayoutModeToggle;
-  ThemePicker: typeof ThemePicker;
-  WidgetSettingsToggle: typeof WidgetSettingsToggle;
   Card: typeof Card;
   Typography: typeof Typography;
   Link: typeof Link;
-  /** Grid + Flex для internal View layout. Matrix намеренно исключён — это page-level shell. */
+  /** Grid + Flex для internal View/Widget/Page layout. Matrix переехал в @capsuletech/web-shell. */
   Layout: ViewLayoutSubset;
   /**
    * Solid control-flow primitives. Raw — NOT UiProxy-wrapped.
@@ -208,7 +200,8 @@ type WidgetUiRaw = {
   Card: typeof Card;
   Outlet: Outlet;
   Animate: typeof Animate;
-  Layout: typeof Layout;
+  /** Grid + Flex. Matrix переехал в @capsuletech/web-shell. */
+  Layout: ViewLayoutSubset;
   Table: typeof Table;
   DataTable: typeof DataTable;
   PreviewCard: typeof PreviewCard;
@@ -219,10 +212,6 @@ type WidgetUiRaw = {
   Tooltip: typeof Tooltip;
   Select: typeof Select;
   Textarea: typeof Textarea;
-  DarkModeToggle: typeof DarkModeToggle;
-  LayoutModeToggle: typeof LayoutModeToggle;
-  ThemePicker: typeof ThemePicker;
-  WidgetSettingsToggle: typeof WidgetSettingsToggle;
   /**
    * Solid control-flow primitives. Raw — NOT UiProxy-wrapped.
    * `<Ui.Flow.For each={...}>{(x) => ...}</Ui.Flow.For>`
@@ -230,7 +219,8 @@ type WidgetUiRaw = {
   Flow: FlowNamespace;
 };
 type PageUiRaw = {
-  Layout: typeof Layout;
+  /** Grid + Flex. Matrix переехал в @capsuletech/web-shell. */
+  Layout: ViewLayoutSubset;
   Outlet: Outlet;
   Animate: typeof Animate;
   /**

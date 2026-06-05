@@ -13,7 +13,6 @@ import { Group as GroupBase, GroupSeparator } from '@capsuletech/web-ui/group';
 import { Input } from '@capsuletech/web-ui/input';
 import { Label } from '@capsuletech/web-ui/label';
 import { List } from '@capsuletech/web-ui/list';
-import { Matrix } from '@capsuletech/web-ui/matrix';
 import { Separator } from '@capsuletech/web-ui/separator';
 import { Skeleton } from '@capsuletech/web-ui/skeleton';
 import { Spinner } from '@capsuletech/web-ui/spinner';
@@ -25,8 +24,8 @@ import { Dynamic } from 'solid-js/web';
 // Re-export static critical-path primitives
 export { Button, Input, Label, Separator, Toggle, Typography };
 
-// Layout namespace: Grid + Flex + Matrix (static)
-export const Layout = { Grid, Flex, Matrix };
+// Layout namespace: Grid + Flex (static). Matrix переехал в @capsuletech/web-shell.
+export const Layout = { Grid, Flex };
 
 // List, Skeleton, Spinner (static)
 export { List, Skeleton, Spinner };
@@ -111,23 +110,9 @@ export const Select = Object.assign(SelectBase, {
 // Textarea — multiline text input, mirrors Input in styling conventions
 export const Textarea = createLazy(() => import('@capsuletech/web-ui/textarea'), 'Textarea');
 
-// Switcher widgets — tiny but pull web-style hooks; header-only, not critical path
-export const DarkModeToggle = createLazy(
-  () => import('@capsuletech/web-ui/darkModeToggle'),
-  'DarkModeToggle',
-);
-export const LayoutModeToggle = createLazy(
-  () => import('@capsuletech/web-ui/layoutModeToggle'),
-  'LayoutModeToggle',
-);
-export const ThemePicker = createLazy(
-  () => import('@capsuletech/web-ui/themePicker'),
-  'ThemePicker',
-);
-export const WidgetSettingsToggle = createLazy(
-  () => import('@capsuletech/web-ui/widgetSettingsToggle'),
-  'WidgetSettingsToggle',
-);
+// NB: connected mode-toggles + theme picker moved to `@capsuletech/web-shell`
+// (tier-2, ADR 032). They hold web-style state, so they are no longer part of
+// the stateless `Ui` namespace — apps import them from `@capsuletech/web-shell/ui`.
 
 // Реэкспорт сторонних утилит
 export { Link } from '@tanstack/solid-router';
