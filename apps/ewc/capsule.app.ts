@@ -8,4 +8,11 @@ export default defineAppConfig({
   api: () => ({
     bases: { default: '/api' },
   }),
+  intl: {
+    defaultLocale: 'ru',
+    dictionaries: {
+      ru: { 'app.title': 'EWC' },
+      en: { 'app.title': 'EWC' },
+    },
+  },
 });

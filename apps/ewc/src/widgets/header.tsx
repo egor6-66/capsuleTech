@@ -41,6 +41,11 @@ const Header = Widget((Ui) => (
         </Shell.Header.Menu.Group>
         <Shell.Header.Menu.Separator />
         <Shell.Header.Menu.Group>
+          <Shell.Header.Menu.Label>Язык</Shell.Header.Menu.Label>
+          <Shell.LocalePicker mode="sub" labels={{ ru: 'Русский', en: 'English' }} />
+        </Shell.Header.Menu.Group>
+        <Shell.Header.Menu.Separator />
+        <Shell.Header.Menu.Group>
           <Shell.Header.Menu.Label>Account</Shell.Header.Menu.Label>
           <Ui.Button variant="ghost" class="w-full justify-start" meta={{ tags: ['logout'] }}>
             Logout
