@@ -1,100 +1,80 @@
-import type { JSX, ValidComponent } from 'solid-js';
+import type { Component, JSX, ParentProps } from 'solid-js';
 
-import type { BuiltinMode } from '../modeToggle/interfaces';
-
-/**
- * A single custom action item in the Header menu.
- *
- * Rendered as `Dropdown.Item`. Unlike built-in mode-toggles (which manage
- * web-style state directly), custom items carry no bound state — the caller
- * decides what to do on activation.
- *
- * Binding pattern (ADR 032): the app wraps `onSelect` with `useEmit` so the
- * click reaches the nearest Controller/Feature in the tree:
- *
- * ```tsx
- * const emit = useEmit();
- * <Shell.Header
- *   menu={{
- *     items: [
- *       {
- *         label: 'Logout',
- *         onSelect: () => emit('onClick', { payload: { tags: ['logout'] } }),
- *       },
- *     ],
- *   }}
- * />
- * ```
- *
- * This keeps `/ui` free of `@capsuletech/web-core` while still routing events
- * through the HCA dispatch path.
- */
-export interface IHeaderMenuItem {
-  /** Visible label rendered inside the `Dropdown.Item`. */
-  label: string;
-  /** Called when the item is selected (click or keyboard Enter/Space). */
-  onSelect?: () => void;
-}
+import type { IGroupProps } from '@capsuletech/web-ui/group';
 
 /**
- * A single navigation item in the Header bar.
+ * Shell.Header — bar-контейнер. ParentComponent: рендерит children в Flex
+ * (h-full items-center justify-between border-b bg-background px-cell).
+ * Слева/справа раскладку даёт justify-between по children.
+ * НЕТ props brand/nav/menu — всё через composition.
+ */
+export type IHeaderProps = ParentProps<{
+  class?: string;
+}>;
+
+/**
+ * Shell.Header.Navigation — батч-контейнер, Shape-совместимый (тот же контракт,
+ * что ui.Group: data + itemAs + itemProps + orientation + variant).
  *
- * `to` is passed through to the link component. The nav button receives active
- * styling via `aria-[current=page]` — TanStack Router sets this attribute when
- * the route is active, so no explicit `active` prop is needed.
+ * Использовать в Shape:
+ * ```ts
+ * Shape((z, ui) => ({
+ *   schema: z.array(z.object({ label: z.string(), to: z.string() })),
+ *   defaults: [{ label: 'Dashboard', to: '/dashboard' }],
+ *   as: Shell.Header.Navigation,
+ *   itemAs: ui.Button,
+ *   itemProps: (i) => ({ as: ui.Link, to: i.to, children: i.label, variant: 'outline', size: 'sm' }),
+ *   orientation: 'horizontal',
+ *   variant: 'attached',
+ * }))
+ * ```
  *
- * `linkComponent` defaults to a native `<a>` element; pass a TanStack Router
- * `<Link>` (or any other routing component) to enable client-side navigation:
- *
+ * Extends IGroupProps — форвардит все батч-props в ui.Group.
+ * Header-специфичный дефолт: orientation='horizontal', gap=1.
+ */
+export type IHeaderNavigationProps<T = unknown> = IGroupProps<T> & {
+  class?: string;
+};
+
+/**
+ * Shell.Header.Menu — dropdown-контейнер.
+ * Trigger = Button ghost/icon + Menu-иконка.
+ * Content рендерит children — тогглы/пункты, которые КОМПОЗИРУЕТ апп.
+ * Toggle'ы НЕ оборачиваются в Dropdown.Item — апп сам решает структуру.
+ */
+export type IHeaderMenuProps = ParentProps<{
+  /** aria-label для кнопки-триггера. Дефолт: 'Меню'. */
+  label?: string;
+}>;
+
+/**
+ * Sub-namespace саб-хелперов Menu — re-export Dropdown.* со стилями.
+ * Используется если апп хочет семантическую структуру внутри Menu:
  * ```tsx
- * import { Link } from '@tanstack/solid-router';
- * <Shell.Header nav={[{ label: 'Dashboard', to: '/dashboard', linkComponent: Link }]} />
+ * <Shell.Header.Menu>
+ *   <Shell.Header.Menu.Group>
+ *     <Shell.Header.Menu.Label>Layout</Shell.Header.Menu.Label>
+ *     <Shell.ModeToggle mode="dnd" />
+ *   </Shell.Header.Menu.Group>
+ * </Shell.Header.Menu>
  * ```
  */
-export interface IHeaderNavItem {
-  /** Visible label for the navigation button. */
-  label: string;
-  /**
-   * Destination — forwarded to `linkComponent` as `to` (for router links) or
-   * `href` (for native anchors). Header does not interpret this value.
-   */
-  to: string;
-  /**
-   * The polymorphic component used to render the nav link.
-   * Defaults to a native `<a>` element (`href` = `to` value).
-   * Pass a TanStack Router `Link` for SPA navigation.
-   */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  linkComponent?: ValidComponent;
+export interface IHeaderMenuSubProps {
+  children?: JSX.Element;
+  class?: string;
 }
 
-export interface IHeaderMenuProps {
-  /**
-   * Which built-in mode-toggles to show.
-   * Defaults to all four: `['dnd', 'resize', 'settings', 'dark']`.
-   */
-  modes?: BuiltinMode[];
-  /**
-   * Whether to include the `ThemePicker` sub-menu.
-   * Defaults to `true`.
-   */
-  theme?: boolean;
-  /**
-   * Additional action items appended after the Theme group (e.g. Logout).
-   * Each item is rendered as a `Dropdown.Item` in its own group.
-   */
-  items?: IHeaderMenuItem[];
-}
-
-export interface IHeaderProps {
-  /** Optional leading slot — rendered to the left of the nav links (e.g. a logo). */
-  brand?: JSX.Element;
-  /**
-   * Navigation links rendered as routing buttons.
-   * Each entry becomes a `Button` with a configurable link component.
-   * Active-state styling uses `aria-[current=page]` set by the router.
-   */
-  nav?: IHeaderNavItem[];
-  /** Menu configuration for the right-side hamburger dropdown. */
-  menu?: IHeaderMenuProps;
+/**
+ * Compound-тип всего Header: базовый компонент + .Navigation + .Menu.
+ */
+export interface IHeaderCompound {
+  (props: IHeaderProps): JSX.Element;
+  Navigation: Component<IHeaderNavigationProps<any>>;
+  Menu: {
+    (props: IHeaderMenuProps): JSX.Element;
+    Group: Component<IHeaderMenuSubProps>;
+    Label: Component<IHeaderMenuSubProps>;
+    Item: Component<IHeaderMenuSubProps & { onSelect?: () => void }>;
+    Separator: Component<object>;
+  };
 }

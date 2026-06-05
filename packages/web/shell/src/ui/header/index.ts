@@ -1,2 +1,8 @@
 export { Header } from './header';
-export type { IHeaderMenuItem, IHeaderMenuProps, IHeaderProps } from './interfaces';
+export type {
+  IHeaderCompound,
+  IHeaderMenuProps,
+  IHeaderMenuSubProps,
+  IHeaderNavigationProps,
+  IHeaderProps,
+} from './interfaces';
