@@ -1,4 +1,5 @@
 import { useRouter } from '@capsuletech/web-router';
+import { Matrix } from '@capsuletech/web-shell/matrix';
 import { Show } from 'solid-js';
 
 /**
@@ -17,8 +18,9 @@ const Cards = Page((Ui) => {
   const isDetail = () => router.current().split('/').filter(Boolean).at(-1) !== 'cards';
 
   return (
-    <Ui.Layout.Matrix
-      layoutMode="view"
+    <Matrix
+      dnd={false}
+      resize={false}
       preset="app-shell"
       slots={{
         header: {

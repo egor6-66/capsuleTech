@@ -1,17 +1,22 @@
+import { ModeToggle, ThemePicker } from '@capsuletech/web-shell/ui';
+
 /**
  * WorkspaceMenu — dropdown в правой части header workspace.
  *
  * Состав:
+ *   - Layout — `ModeToggle mode="dnd"` + `ModeToggle mode="resize"`. Раньше был
+ *     один `LayoutModeToggle`; web-style разнёс его на два независимых сигнала
+ *     (`useDndMode` / `useResizeMode`), которые читает Matrix.
+ *   - Widget settings — `ModeToggle mode="settings"`.
+ *   - Theme — `ModeToggle mode="dark"` (☀/☾) + `ThemePicker mode="sub"`
+ *     (nested submenu со списком всех тем; ✓ маркер на текущей).
  *   - Account / Logout — Dropdown.Item с tag 'logout'. Click перехватывает
  *     UiProxy → Feature `Workspace.onClick` → clear token + redirect /login.
- *   - Layout — `Ui.LayoutModeToggle` (toggle button).
- *   - Theme — `Ui.DarkModeToggle` (☀/☾) + `Ui.ThemePicker mode="sub"`
- *     (nested submenu со списком всех тем; ✓ маркер на текущей).
  *
- * `mode="sub"` на ThemePicker даёт `Dropdown.Sub`-рендер вместо own root —
- * корректно встраивается в parent menu без конфликта focus / outside-click.
- * Toggle'ы (Layout/Dark) — не оборачиваем в Dropdown.Item, иначе click
- * закроет parent menu.
+ * `ModeToggle` / `ThemePicker` — tier-2 connected-блоки из `@capsuletech/web-shell`
+ * (ADR 032). До ADR 033 phase 3 импортятся напрямую из `/ui`. `mode="sub"` на
+ * ThemePicker даёт `Dropdown.Sub`-рендер; toggle'ы не оборачиваем в Dropdown.Item,
+ * иначе click закроет parent menu.
  */
 const WorkspaceMenu = View((Ui) => (
   <Ui.Dropdown modal={false}>
@@ -35,24 +40,25 @@ const WorkspaceMenu = View((Ui) => (
     <Ui.Dropdown.Content>
       <Ui.Dropdown.Group>
         <Ui.Dropdown.Label>Layout</Ui.Dropdown.Label>
-        <div class="px-2 py-1.5">
-          <Ui.LayoutModeToggle />
+        <div class="flex flex-col gap-1.5 px-2 py-1.5">
+          <ModeToggle mode="dnd" />
+          <ModeToggle mode="resize" />
         </div>
       </Ui.Dropdown.Group>
       <Ui.Dropdown.Separator />
       <Ui.Dropdown.Group>
         <Ui.Dropdown.Label>Widget settings</Ui.Dropdown.Label>
         <div class="px-2 py-1.5">
-          <Ui.WidgetSettingsToggle />
+          <ModeToggle mode="settings" />
         </div>
       </Ui.Dropdown.Group>
       <Ui.Dropdown.Separator />
       <Ui.Dropdown.Group>
         <Ui.Dropdown.Label>Theme</Ui.Dropdown.Label>
         <div class="px-2 py-1.5">
-          <Ui.DarkModeToggle />
+          <ModeToggle mode="dark" />
         </div>
-        <Ui.ThemePicker mode="sub" />
+        <ThemePicker mode="sub" />
       </Ui.Dropdown.Group>
       <Ui.Dropdown.Separator />
       <Ui.Dropdown.Group>

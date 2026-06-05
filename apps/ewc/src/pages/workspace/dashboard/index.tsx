@@ -1,3 +1,5 @@
+import { Matrix } from '@capsuletech/web-shell/matrix';
+
 /**
  * Dashboard (`/workspace/dashboard`) — основной операционный экран EWC.
  *
@@ -24,7 +26,7 @@
  */
 const Dashboard = Page((Ui) => (
   <Features.Incidents>
-    <Ui.Layout.Matrix
+    <Matrix
       preset="app-shell"
       slots={{
         main: {
