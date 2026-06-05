@@ -8,13 +8,17 @@
  * Until ADR 033 phase 3 lands (the package-registration runtime), apps consume
  * these blocks through a direct import from `@capsuletech/web-shell/ui`. The
  * manifest is kept in place so the contract is stable once the runtime ships.
+ *
+ * Shell.Matrix — Controller-обёрнутая версия (из /controllers), не raw /matrix.
+ * Несёт phantom __events: IMatrixEvents → EventsOf<typeof Shell.Matrix> работает
+ * в Feature<Shell.Matrix.Events>(...) (ADR 032).
  */
 import { defineCapsuleModule } from '@capsuletech/web-core/module';
 
-import { Matrix } from './matrix';
-import { ModeToggle, ThemePicker } from './ui';
+import { MatrixController } from './controllers/matrixController';
+import { Header, ModeToggle, ThemePicker } from './ui';
 
 export default defineCapsuleModule({
   name: 'Shell',
-  components: { ModeToggle, ThemePicker, Matrix },
+  components: { Header, ModeToggle, ThemePicker, Matrix: MatrixController },
 });

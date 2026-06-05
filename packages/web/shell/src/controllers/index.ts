@@ -1,14 +1,24 @@
 /**
  * @capsuletech/web-shell/controllers — HCA integration layer (ADR 032).
  *
- * This is the only subpath that depends on `@capsuletech/web-core`. It will ship
- * package-level Controllers (e.g. `Controllers.Shell` for the Header: active
- * route, menu open/close FSM) wired through `useEmit`, registered into the app's
- * global `Controllers.*` namespace via the package-registration mechanism
- * (ADR 033 phase 3 — currently pending).
+ * Единственный subpath, который может зависеть от `@capsuletech/web-core`.
+ * Содержит Controller-обёртки package-level блоков, транслирующие
+ * нативные callback'ы в HCA event-pipeline через `useEmit`.
  *
- * Empty until the Header block lands. Kept as a present entry-point so the
- * multi-entry build and the `/controllers` subpath contract stay stable.
+ * Текущие блоки:
+ *  - MatrixController — Controller-обёртка Shell.Matrix (ADR 032):
+ *    `onLayoutChange` → emit → auto-next() → родительская Feature аппа.
+ *
+ * Пример подключения:
+ * ```ts
+ * const LayoutSync = Feature<Shell.Matrix.Events>((services) => ({
+ *   context: { saving: false },
+ *   onLayoutChange: ({ target }) => {
+ *     services.api.saveLayout(target.payload);
+ *   },
+ * }));
+ * ```
  */
 
-export {};
+export { MatrixController } from './matrixController';
+export type { IMatrixEvents } from '../matrix/interfaces';

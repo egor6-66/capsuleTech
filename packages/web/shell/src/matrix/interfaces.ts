@@ -230,6 +230,19 @@ export type LayoutChangeEvent =
   | { kind: 'insert'; id: string; toRow: number; toIndex: number }
   | { kind: 'grid'; id: string; zone: string; x: number; y: number; w: number; h: number };
 
+/**
+ * Event-map для Shell.Matrix (ADR 032).
+ *
+ * Значение каждого ключа — тип payload'а, который кладётся в `target.payload`
+ * при `emit('onLayoutChange', { payload: e })`. Используется:
+ *   - `MatrixController.__events` (phantom phantom-поле) — чтобы `EventsOf<typeof Shell.Matrix>` работал.
+ *   - `Feature<Shell.Matrix.Events>((s) => ({ onLayoutChange({ target }) { target.payload } }))`
+ *     → `target.payload` типизируется как `LayoutChangeEvent | undefined`.
+ */
+export interface IMatrixEvents {
+  onLayoutChange: LayoutChangeEvent;
+}
+
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------

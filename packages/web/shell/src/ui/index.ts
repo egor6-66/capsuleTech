@@ -5,5 +5,6 @@
  * barrel re-exports each block's public surface; Header and future blocks add a
  * sibling folder rather than piling files at this level.
  */
+export * from './header';
 export * from './modeToggle';
 export * from './themePicker';
