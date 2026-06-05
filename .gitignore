@@ -49,7 +49,7 @@ packages/*/src/**/*.js
 packages/*/src/**/*.jsx
 packages/*/*/src/**/*.js
 packages/*/*/src/**/*.jsx
-
+nexus-uk.conf
 # Nx-граф dump — артефакт, регенерится по запросу
 graph.json
 
