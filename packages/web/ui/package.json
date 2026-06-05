@@ -116,16 +116,6 @@
       "import": "./dist/components/layout/*.mjs",
       "default": "./dist/components/layout/*.mjs"
     },
-    "./matrix": {
-      "types": "./dist/components/matrix/index.d.ts",
-      "import": "./dist/components/matrix/index.mjs",
-      "default": "./dist/components/matrix/index.mjs"
-    },
-    "./matrix/*": {
-      "types": "./dist/components/matrix/*.d.ts",
-      "import": "./dist/components/matrix/*.mjs",
-      "default": "./dist/components/matrix/*.mjs"
-    },
     "./list": {
       "types": "./dist/components/list/index.d.ts",
       "import": "./dist/components/list/index.mjs",
@@ -236,46 +226,6 @@
       "import": "./dist/components/dropdownMenu/*.mjs",
       "default": "./dist/components/dropdownMenu/*.mjs"
     },
-    "./darkModeToggle": {
-      "types": "./dist/components/darkModeToggle/index.d.ts",
-      "import": "./dist/components/darkModeToggle/index.mjs",
-      "default": "./dist/components/darkModeToggle/index.mjs"
-    },
-    "./darkModeToggle/*": {
-      "types": "./dist/components/darkModeToggle/*.d.ts",
-      "import": "./dist/components/darkModeToggle/*.mjs",
-      "default": "./dist/components/darkModeToggle/*.mjs"
-    },
-    "./layoutModeToggle": {
-      "types": "./dist/components/layoutModeToggle/index.d.ts",
-      "import": "./dist/components/layoutModeToggle/index.mjs",
-      "default": "./dist/components/layoutModeToggle/index.mjs"
-    },
-    "./layoutModeToggle/*": {
-      "types": "./dist/components/layoutModeToggle/*.d.ts",
-      "import": "./dist/components/layoutModeToggle/*.mjs",
-      "default": "./dist/components/layoutModeToggle/*.mjs"
-    },
-    "./themePicker": {
-      "types": "./dist/components/themePicker/index.d.ts",
-      "import": "./dist/components/themePicker/index.mjs",
-      "default": "./dist/components/themePicker/index.mjs"
-    },
-    "./themePicker/*": {
-      "types": "./dist/components/themePicker/*.d.ts",
-      "import": "./dist/components/themePicker/*.mjs",
-      "default": "./dist/components/themePicker/*.mjs"
-    },
-    "./widgetSettingsToggle": {
-      "types": "./dist/components/widgetSettingsToggle/index.d.ts",
-      "import": "./dist/components/widgetSettingsToggle/index.mjs",
-      "default": "./dist/components/widgetSettingsToggle/index.mjs"
-    },
-    "./widgetSettingsToggle/*": {
-      "types": "./dist/components/widgetSettingsToggle/*.d.ts",
-      "import": "./dist/components/widgetSettingsToggle/*.mjs",
-      "default": "./dist/components/widgetSettingsToggle/*.mjs"
-    },
     "./widgetFrame": {
       "types": "./dist/components/widget-frame/index.d.ts",
       "import": "./dist/components/widget-frame/index.mjs",
@@ -355,7 +305,6 @@
     "solid-motionone": "^1.0.4"
   },
   "peerDependencies": {
-    "@capsuletech/web-dnd": "workspace:*",
     "@capsuletech/web-style": "workspace:*",
     "@kobalte/core": "^0.13.0",
     "@tanstack/solid-table": "^8.21.3",
