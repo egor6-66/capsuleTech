@@ -16,9 +16,9 @@
 import { defineCapsuleModule } from '@capsuletech/web-core/module';
 
 import { MatrixController } from './controllers/matrixController';
-import { Header, ModeToggle, ThemePicker } from './ui';
+import { Header, LocalePicker, ModeToggle, ThemePicker } from './ui';
 
 export default defineCapsuleModule({
   name: 'Shell',
-  components: { Header, ModeToggle, ThemePicker, Matrix: MatrixController },
+  components: { Header, LocalePicker, ModeToggle, ThemePicker, Matrix: MatrixController },
 });
