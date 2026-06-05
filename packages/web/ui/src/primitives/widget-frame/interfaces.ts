@@ -26,3 +26,23 @@ export interface IWidgetFrameHandleProps {
   /** Extra classes. */
   class?: string;
 }
+
+export interface IWidgetFrameGripProps {
+  /**
+   * Interaction kind — drives icon and cursor.
+   * - 'dnd'    → Move icon, cursor-grab / active:cursor-grabbing
+   * - 'resize' → Maximize2 icon, cursor-nwse-resize
+   */
+  kind: 'dnd' | 'resize';
+  /**
+   * Positioning classes — supplied by the host (e.g. `absolute right-1 top-1 z-50`).
+   * The component itself is a styled badge-button; the host only positions it.
+   */
+  class?: string;
+  /** Forwarded to the root <button>. */
+  onPointerDown?: (e: PointerEvent) => void;
+  /** Forwarded to the root <button>. */
+  title?: string;
+  /** Forwarded to the root <button>. */
+  'aria-label'?: string;
+}

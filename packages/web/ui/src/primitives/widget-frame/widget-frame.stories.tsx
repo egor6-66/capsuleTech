@@ -1,8 +1,8 @@
-import { Move, Settings2 } from 'lucide-solid';
+import { Settings2 } from 'lucide-solid';
 import { createSignal } from 'solid-js';
 import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
-import { WidgetFrame, WidgetFrameHandle } from '.';
+import { WidgetFrame, WidgetFrameGrip, WidgetFrameHandle } from '.';
 
 const meta = {
   title: 'Components/WidgetFrame',
@@ -182,7 +182,7 @@ export const CustomSlots: Story = {
     <div class="p-8 bg-background">
       <div style={{ width: '240px', height: '160px' }}>
         <WidgetFrame
-          grip={<Move size={14} class="text-primary" />}
+          grip={<WidgetFrameGrip kind="dnd" aria-label="Drag" />}
           gripClass="cap-widget-grip"
           gripCorner="bottom-left"
           controls={<Settings2 size={14} class="text-primary" />}
@@ -191,6 +191,31 @@ export const CustomSlots: Story = {
             Custom slots, grip bottom-left
           </div>
         </WidgetFrame>
+      </div>
+    </div>
+  ),
+};
+
+// ---------------------------------------------------------------------------
+// WidgetFrameGrip standalone — both kinds
+// ---------------------------------------------------------------------------
+/** WidgetFrameGrip — both kinds side by side (DnD = Move icon, Resize = Maximize2). */
+export const GripBadges: Story = {
+  render: () => (
+    <div class="p-8 bg-background flex gap-6 items-center">
+      <div class="flex flex-col items-center gap-2">
+        <WidgetFrameGrip kind="dnd" aria-label="Drag to move" />
+        <span class="text-xs text-muted-foreground">kind="dnd"</span>
+        <span class="text-xs text-muted-foreground opacity-60">cursor-grab</span>
+      </div>
+      <div class="flex flex-col items-center gap-2">
+        <WidgetFrameGrip kind="resize" aria-label="Resize widget" />
+        <span class="text-xs text-muted-foreground">kind="resize"</span>
+        <span class="text-xs text-muted-foreground opacity-60">cursor-nwse-resize</span>
+      </div>
+      <div class="flex flex-col items-center gap-2">
+        <WidgetFrameGrip kind="dnd" class="absolute right-2 top-2" aria-label="Positioned" />
+        <span class="text-xs text-muted-foreground">with class= (relative parent)</span>
       </div>
     </div>
   ),

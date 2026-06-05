@@ -1,7 +1,7 @@
-import { GripVertical, Maximize2 } from 'lucide-solid';
+import { Maximize2, Move } from 'lucide-solid';
 import { Show, splitProps } from 'solid-js';
 
-import type { IWidgetFrameHandleProps, IWidgetFrameProps } from './interfaces';
+import type { IWidgetFrameGripProps, IWidgetFrameHandleProps, IWidgetFrameProps } from './interfaces';
 import { getClipPath, gripCornerClasses } from './variants';
 
 // ---------------------------------------------------------------------------
@@ -43,6 +43,35 @@ export const WidgetFrameHandle = (props: IWidgetFrameHandleProps) => {
 };
 
 // ---------------------------------------------------------------------------
+// WidgetFrameGrip — unified badge-button for DnD and resize handles.
+// The host positions it (absolute/z-index via `class` prop).
+// ---------------------------------------------------------------------------
+
+const GRIP_BASE =
+  'flex h-7 w-7 items-center justify-center rounded border border-border bg-card shadow-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:bg-accent';
+
+export const WidgetFrameGrip = (props: IWidgetFrameGripProps) => {
+  const cursorClass = () =>
+    props.kind === 'dnd' ? 'cursor-grab active:cursor-grabbing' : 'cursor-nwse-resize';
+
+  return (
+    <button
+      type="button"
+      class={`${GRIP_BASE} ${cursorClass()}${props.class ? ` ${props.class}` : ''}`}
+      onPointerDown={props.onPointerDown}
+      title={props.title}
+      aria-label={props['aria-label']}
+    >
+      {props.kind === 'dnd' ? (
+        <Move size={16} class="text-muted-foreground" />
+      ) : (
+        <Maximize2 size={16} class="text-muted-foreground" />
+      )}
+    </button>
+  );
+};
+
+// ---------------------------------------------------------------------------
 // WidgetFrame — main component
 // ---------------------------------------------------------------------------
 
@@ -76,8 +105,9 @@ export const WidgetFrame = (props: IWidgetFrameProps) => {
   };
 
   // Grip sits in its corner, inside the chamfer triangle.
+  // cursor is owned by the inner element (WidgetFrameGrip or custom), not the wrapper.
   const gripClass = () =>
-    `absolute z-10 cursor-move ${gripCornerClasses[resolvedCorner()]} ${resolvedGripClass()}`;
+    `absolute z-10 ${gripCornerClasses[resolvedCorner()]} ${resolvedGripClass()}`;
 
   // Active state tokens (CSS custom properties from theme)
   const rimColor = () => (local.active ? 'var(--color-ring)' : 'var(--color-border)');
@@ -120,14 +150,14 @@ export const WidgetFrame = (props: IWidgetFrameProps) => {
       {/* Surface layer — inset by rim width, card background, content clips here */}
       <div style={surfaceLayerStyle()}>{local.children}</div>
 
-      {/* Grip — cursor-move, sits in the chamfered corner above surface */}
+      {/* Grip — sits in the chamfered corner above surface */}
       <div class={gripClass()}>
-        {local.grip ?? <GripVertical size={14} class="text-muted-foreground" />}
+        {local.grip ?? <WidgetFrameGrip kind="dnd" aria-label="Drag to move" />}
       </div>
 
       {/* Controls — always visible, opposite corner from grip */}
       <div class={controlsClass()}>
-        {local.controls ?? <Maximize2 size={14} class="text-muted-foreground" />}
+        {local.controls ?? <WidgetFrameGrip kind="resize" aria-label="Resize widget" />}
       </div>
 
       {/* Resize handles — only when active */}
