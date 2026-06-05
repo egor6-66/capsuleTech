@@ -1,4 +1,5 @@
-import type { CapsuleZ } from '@capsuletech/shared-zod';
+import type { CapsuleZ, ZodTypeAny } from '@capsuletech/shared-zod';
+import type { z } from 'zod';
 
 /**
  * Результат Entity factory — plain config объект с zod-схемой и опциональными
@@ -28,7 +29,15 @@ export type IEntityFactory<T extends IEntityDefinition> = (z: CapsuleZ) => T;
  * Публичный тип wrapper-функции `Entity`.
  *
  * `Entity((z) => ({ schema: z.array(...), defaults: [...] }))` возвращает
- * то же самое, что вернула factory — plain config object.
+ * plain config object с дополнительным phantom-полем `$infer`.
+ *
+ * Phantom `$infer` — **только тип**, рантайм его не создаёт.
+ * Consumer использует `typeof Entities.X.$infer`:
+ *
+ * ```ts
+ * type IUser  = typeof Entities.Users.$infer;             // z.infer<schema>
+ * type IRow   = typeof Entities.Users.$infer[number];     // если schema — массив
+ * ```
  *
  * Wrapper намеренно прозрачен (identity по значению):
  *  - нет Solid-обёртки, нет lazy, нет компонента;
@@ -37,4 +46,10 @@ export type IEntityFactory<T extends IEntityDefinition> = (z: CapsuleZ) => T;
  *
  * В будущем (Phase 2): сюда попадут validators, transforms, relations.
  */
-export type IEntityWrapper = <T extends IEntityDefinition>(factory: IEntityFactory<T>) => T;
+export type IEntityWrapper = <
+  TSchema extends ZodTypeAny,
+  TDefaults = unknown,
+  T extends IEntityDefinition<TSchema, TDefaults> = IEntityDefinition<TSchema, TDefaults>,
+>(
+  factory: (z: CapsuleZ) => T,
+) => T & { readonly $infer: z.infer<TSchema> };

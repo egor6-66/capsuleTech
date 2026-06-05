@@ -12,8 +12,8 @@ const [enabled, setEnabled] = createSignal<boolean>(
  * in createMemo / JSX. Signal initialised once on module-load from
  * localStorage (browser-only guard). Changes via `setSettingsMode(...)`.
  *
- * settingsMode is orthogonal to layoutMode — a user can have
- * layoutMode='edit' and settingsMode on/off independently.
+ * settingsMode is orthogonal to resizeMode/dndMode — all three signals
+ * are independent and can be toggled separately.
  *
  * Storage key: `capsule-settings-mode`.
  */

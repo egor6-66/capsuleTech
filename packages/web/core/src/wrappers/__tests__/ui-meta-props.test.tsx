@@ -307,75 +307,12 @@ describe('WidgetUi — DataTable: is callable and accepts IUiMetaProps', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Compile-time: ThemePicker — Dropdown-based theme picker composite (web-ui).
-// Added to ViewUi + WidgetUi (replaces legacy ThemeSwitcher `<select>`).
+// NOTE (ADR 032): ThemePicker, DarkModeToggle, LayoutModeToggle и
+// WidgetSettingsToggle удалены из ViewUi/WidgetUi. Это connected-контролы со
+// state из @capsuletech/web-style — переехали в @capsuletech/web-shell (tier-2),
+// больше не часть stateless Ui-namespace. Апп импортит их из
+// `@capsuletech/web-shell/ui` (ModeToggle config-driven + ThemePicker).
 // ---------------------------------------------------------------------------
-
-describe('ViewUi — ThemePicker: is callable and accepts IUiMetaProps', () => {
-  it('Ui.ThemePicker is a function', () => {
-    expectTypeOf<ViewUi['ThemePicker']>().toBeFunction();
-  });
-
-  it('Ui.ThemePicker accepts IUiMetaProps (meta prop)', () => {
-    type Props = Parameters<ViewUi['ThemePicker']>[0];
-    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
-  });
-});
-
-describe('WidgetUi — ThemePicker: is callable and accepts IUiMetaProps', () => {
-  it('Ui.ThemePicker is a function', () => {
-    expectTypeOf<WidgetUi['ThemePicker']>().toBeFunction();
-  });
-
-  it('Ui.ThemePicker accepts IUiMetaProps (meta prop)', () => {
-    type Props = Parameters<WidgetUi['ThemePicker']>[0];
-    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Compile-time: LayoutModeToggle — button toggle for Matrix layoutMode.
-// Added to ViewUi + WidgetUi alongside DarkModeToggle.
-// ---------------------------------------------------------------------------
-
-describe('ViewUi — LayoutModeToggle: is callable and accepts IUiMetaProps', () => {
-  it('Ui.LayoutModeToggle is a function', () => {
-    expectTypeOf<ViewUi['LayoutModeToggle']>().toBeFunction();
-  });
-});
-
-describe('WidgetUi — LayoutModeToggle: is callable and accepts IUiMetaProps', () => {
-  it('Ui.LayoutModeToggle is a function', () => {
-    expectTypeOf<WidgetUi['LayoutModeToggle']>().toBeFunction();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Compile-time: DarkModeToggle — plain callable (no sub-components)
-// Added to ViewUi + WidgetUi alongside ThemeSwitcher (2026-05-22).
-// ---------------------------------------------------------------------------
-
-describe('ViewUi — DarkModeToggle: is callable and accepts IUiMetaProps', () => {
-  it('Ui.DarkModeToggle is a function', () => {
-    expectTypeOf<ViewUi['DarkModeToggle']>().toBeFunction();
-  });
-
-  it('Ui.DarkModeToggle accepts IUiMetaProps (meta prop)', () => {
-    type Props = Parameters<ViewUi['DarkModeToggle']>[0];
-    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
-  });
-});
-
-describe('WidgetUi — DarkModeToggle: is callable and accepts IUiMetaProps', () => {
-  it('Ui.DarkModeToggle is a function', () => {
-    expectTypeOf<WidgetUi['DarkModeToggle']>().toBeFunction();
-  });
-
-  it('Ui.DarkModeToggle accepts IUiMetaProps (meta prop)', () => {
-    type Props = Parameters<WidgetUi['DarkModeToggle']>[0];
-    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
-  });
-});
 
 // ---------------------------------------------------------------------------
 // NOTE (ADR 033 фаза 1): MapView и Chart удалены из ViewUi/WidgetUi.
@@ -426,10 +363,11 @@ describe('ViewUi — Layout subset: Grid and Flex present', () => {
   });
 });
 
-describe('WidgetUi — Layout remains full (Grid + Flex + Matrix)', () => {
-  it('Ui.Layout.Matrix is present in WidgetUi', () => {
+describe('WidgetUi — Layout is Grid + Flex only (Matrix moved to web-shell, ADR 033)', () => {
+  it('Ui.Layout does NOT expose Matrix in WidgetUi (web-shell guard)', () => {
     type LayoutInWidget = WidgetUi['Layout'];
-    expectTypeOf<LayoutInWidget>().toHaveProperty('Matrix');
+    // @ts-expect-error Matrix must not exist on WidgetUi Layout (moved to web-shell)
+    type _guard = LayoutInWidget['Matrix'];
   });
 
   it('Ui.Layout.Grid is present in WidgetUi', () => {

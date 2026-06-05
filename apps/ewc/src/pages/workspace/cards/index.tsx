@@ -17,8 +17,8 @@ const Cards = Page((Ui) => {
   const isDetail = () => router.current().split('/').filter(Boolean).at(-1) !== 'cards';
 
   return (
-    <Ui.Layout.Matrix
-      layoutMode="view"
+    <Shell.Matrix
+      mode="view"
       preset="app-shell"
       slots={{
         header: {

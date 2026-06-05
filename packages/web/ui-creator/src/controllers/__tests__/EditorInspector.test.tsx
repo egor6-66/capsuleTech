@@ -106,7 +106,6 @@ vi.mock('@capsuletech/web-ui/textarea', () => ({
 
 // Flex из @capsuletech/web-ui/flex — div-обёртка.
 vi.mock('@capsuletech/web-ui/flex', () => ({
-  // biome-ignore lint/suspicious/noExplicitAny: тест-мок — props принимаются как any
   Flex: (props: any) => (
     <div class={props.class} style={props.style}>
       {props.children}
@@ -116,7 +115,6 @@ vi.mock('@capsuletech/web-ui/flex', () => ({
 
 // Button из @capsuletech/web-ui/button — нативный button.
 vi.mock('@capsuletech/web-ui/button', () => ({
-  // biome-ignore lint/suspicious/noExplicitAny: тест-мок — props принимаются как any
   Button: (props: any) => <button type="button" {...props} />,
 }));
 

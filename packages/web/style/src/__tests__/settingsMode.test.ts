@@ -111,15 +111,15 @@ describe('useSettingsMode / setSettingsMode / toggleSettingsMode', () => {
     expect(localStorageMock.setItem).toHaveBeenLastCalledWith('capsule-settings-mode', 'false');
   });
 
-  it('is independent of layoutMode — no shared state', async () => {
+  it('is independent of resizeMode — no shared state', async () => {
     // Both modules can be loaded simultaneously without interference.
-    const [settingsMod, layoutMod] = await Promise.all([
+    const [settingsMod, resizeMod] = await Promise.all([
       loadModule(),
-      import('../switcher/layoutMode'),
+      import('../switcher/resizeMode'),
     ]);
     settingsMod.setSettingsMode(true);
-    // layoutMode remains at its own default
-    expect(layoutMod.useLayoutMode()()).toBe('view');
+    // resizeMode remains at its own default
+    expect(resizeMod.useResizeMode()()).toBe(true);
     expect(settingsMod.useSettingsMode()()).toBe(true);
   });
 });

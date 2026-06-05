@@ -19,8 +19,8 @@ import { bindEvents } from './ui-proxy';
 type Kind = 'controller' | 'feature';
 
 export const createLogicWrapper =
-  // `IDefineStateSchema<any>` — нижняя граница (принимает любой TCtx); generic
-  // инференс происходит на стороне IControllerWrapper/IFeatureWrapper при вызове.
+  // `IDefineStateSchema<any>` — нижняя граница, open-форма (принимает любой TCtx).
+  // generic-инференс для TCtx/TEvents происходит на стороне IControllerWrapper/IFeatureWrapper при вызове.
   (kind: Kind) => (defineStateSchema: (services: IServices) => IDefineStateSchema<any>) =>
     function LogicWrapper(props: IWrapperProps) {
       const parent = useCtx();

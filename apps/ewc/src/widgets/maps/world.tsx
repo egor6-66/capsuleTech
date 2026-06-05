@@ -11,20 +11,39 @@
  * `Maps.Sky`, `Ui.MapView.Marker` → `Maps.Marker` (+ emit через package-controller).
  */
 
-const World = Widget((Ui) => (
-  <Ui.Layout.Flex class="h-full items-center justify-center text-sm opacity-60">
-    Карта временно отключена (ADR 033 — ждёт package-контроллеров, ADR 032 ф.4)
-  </Ui.Layout.Flex>
-));
+const World = Widget(
+  (Ui) => (
+    <Ui.Layout.Flex class="h-full items-center justify-center text-sm opacity-60">
+      Карта временно отключена (ADR 033 — ждёт package-контроллеров, ADR 032 ф.4)
+    </Ui.Layout.Flex>
+  ),
+  {
+    // Декларативные настройки карты — рендерятся в settings-strip при settingsMode.
+    //   «Синк с таблицей»       — карта подлетает к выбору ИЗ ТАБЛИЦЫ (cross-widget).
+    //   «Подлететь к выбранному» — клик по маркеру подлетает к нему (self).
+    settings: [
+      {
+        type: 'toggle',
+        label: 'Синк с таблицей',
+        value: (d) => d.flyToSelected,
+        tags: ['toggle-fly'],
+      },
+      {
+        type: 'toggle',
+        label: 'Подлететь к выбранному',
+        value: (d) => d.flyOnClick,
+        tags: ['toggle-fly-self'],
+      },
+    ],
+  },
+);
 
 export default World;
 
 /* === ОРИГИНАЛ — восстановить после ADR 032 фаза 4 ===
-import type { IIncidentsContext } from '../../features/incidents';
-
 const World = Widget(
-  (Ui, store) => {
-    const data = () => store?.ctx.data as IIncidentsContext | undefined;
+  (Ui, store: StoreOf<typeof Features.Incidents>) => {
+    const data = () => store.ctx.data;
     const flyTo = (): [number, number] | undefined => {
       const sel = data()?.selected;
       if (!sel) return undefined;

@@ -49,7 +49,7 @@ packages/*/src/**/*.js
 packages/*/src/**/*.jsx
 packages/*/*/src/**/*.js
 packages/*/*/src/**/*.jsx
-
+nexus-uk.conf
 # Nx-граф dump — артефакт, регенерится по запросу
 graph.json
 
@@ -63,3 +63,6 @@ graph.json
 *.pfx
 credentials*.json
 secrets*.json
+# VPN / tunnel configs (WireGuard/OpenVPN — contain private keys)
+*.conf
+*.ovpn

@@ -15,44 +15,39 @@
  * `layoutMode` НЕ передаём — Matrix сам подцепит глобальный store от
  * `@capsuletech/web-style`.
  *
- * **Per-slot Suspense (chunk-load):** каждый виджет — отдельный lazy-чанк из
- * реестра. Matrix оборачивает контент КАЖДОГО слота в собственный `<Suspense>`
- * (под капотом), иначе любой suspend всплыл бы к единственному `<Suspense>`
- * Feature'а и погасил ВЕСЬ Matrix до загрузки всех чанков. `skeleton` на слоте —
- * fallback на время загрузки чанка; совпадает с data-loading скелетоном виджета
- * (table/map) — без визуального скачка. Без `skeleton` слот получает нейтральный
- * pulse-дефолт от Matrix.
+ * **Слоты — только композиция.** Презентация loader'а и настроек живёт В
+ * слое виджета, не на Page:
+ *   - loader (data-load скелетон) — 2-й аргумент `Widget(content, { loader })`;
+ *   - settings — декларативный конфиг `Widget(content, { settings: [...] })`,
+ *     web-core рисует их в settings-strip при включённом settingsMode.
+ * Page лишь расставляет виджеты по слотам Matrix (children + DnD-параметры).
  */
-const Dashboard = Page((Ui) => (
-  <Features.Incidents>
-    <Ui.Layout.Matrix
-      preset="app-shell"
-      slots={{
-        main: {
-          children: <Widgets.Tables.Incidents />,
-          skeleton: <Ui.Skeleton variant="table" rows={100} />,
-          settings: <Views.Settings.TableSync />,
-          draggable: true,
-          swapGroup: 'widgets',
-        },
-        rightBar: {
-          children: <Widgets.Sidebars.Main />,
-          skeleton: <Ui.Skeleton variant="card" />,
-          draggable: true,
-          swapGroup: 'widgets',
-          initialSize: 0.25,
-        },
-        footer: {
-          children: <Widgets.Maps.World />,
-          skeleton: <Ui.Skeleton variant="map" />,
-          settings: <Views.Settings.MapSync />,
-          draggable: true,
-          swapGroup: 'widgets',
-          initialSize: 0.35,
-        },
-      }}
-    />
-  </Features.Incidents>
+const Dashboard = Page(() => (
+  // Features.Shell (снаружи) ловит всплывшие события Shell.Matrix (onLayoutChange →
+  // persist раскладки). Features.Incidents (ближе к виджетам) даёт им items-store.
+  <Features.Shell>
+    <Features.Incidents>
+      <Shell.Matrix
+        preset="app-shell"
+        slots={{
+          main: {
+            children: <Widgets.Tables.Incidents />,
+            swapGroup: 'widgets',
+          },
+          rightBar: {
+            children: <Widgets.Sidebars.Main />,
+            swapGroup: 'widgets',
+            initialSize: 0.25,
+          },
+          footer: {
+            children: <Widgets.Maps.World />,
+            swapGroup: 'widgets',
+            initialSize: 0.35,
+          },
+        }}
+      />
+    </Features.Incidents>
+  </Features.Shell>
 ));
 
 export default Dashboard;

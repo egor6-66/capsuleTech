@@ -156,6 +156,7 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
       // Благодаря этому Vite будет обрабатывать их на лету через плагины
       // (включая JSX транспиляцию).
       exclude: [
+        '@capsuletech/web-agent',
         '@capsuletech/web-core',
         '@capsuletech/web-dnd',
         '@capsuletech/web-flow',
@@ -167,6 +168,7 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
         '@capsuletech/web-remote',
         '@capsuletech/web-renderer',
         '@capsuletech/web-router',
+        '@capsuletech/web-shell',
         '@capsuletech/web-state',
         '@capsuletech/web-style',
         '@capsuletech/web-ui',

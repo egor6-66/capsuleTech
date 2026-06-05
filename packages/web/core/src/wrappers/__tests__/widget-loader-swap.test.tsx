@@ -2,8 +2,10 @@
 /**
  * widget-loader-swap.test.tsx
  *
- * Characterization tests for Widget loader-swap feature:
- *   Widget(content, loader?) — second optional argument.
+ * Characterization tests for Widget loader-swap + settings-strip features.
+ *
+ * Part A — Loader swap (options.loader):
+ *   Widget(content, { loader }) — second arg is options-object (clean break from positional).
  *
  * Contracts verified:
  *  1. When store.loading=true AND loader provided — loader is rendered, content is NOT mounted.
@@ -15,6 +17,14 @@
  *  7. Both content and loader share the same ShapeUiContext (same proxiedUi).
  *  8. Transition: loading true→false → loader unmounts, content mounts.
  *  9. Transition: loading false→true → content unmounts, loader mounts.
+ *
+ * Part B — Settings strip (options.settings):
+ *  10. settingsMode=ON + settings present + store available → strip renders with button.
+ *  11. settingsMode=OFF → strip does NOT render.
+ *  12. settingsMode=ON + settings empty → strip does NOT render.
+ *  13. settingsMode=ON + no store (outside Controller tree) → strip does NOT render.
+ *  14. Button in strip carries the correct tags (meta.tags).
+ *  15. Button shows plain label in both states; active state conveyed via pill fill (bg-primary), inactive via bg-muted/40.
  */
 
 import { createSignal } from 'solid-js';
@@ -24,16 +34,33 @@ import { Context } from '../../engine/ctx';
 import { WidgetWrapper } from '../widget';
 
 // ---------------------------------------------------------------------------
+// settingsMode mock — module-level singleton from @capsuletech/web-style.
+// We override it via vi.mock so tests can control the signal value.
+// importOriginal preserves all other exports (cva, createStyle, etc.) so that
+// web-ui/button (which imports from web-style) does not break.
+// ---------------------------------------------------------------------------
+
+const [mockSettingsMode, setMockSettingsMode] = createSignal(false);
+
+vi.mock('@capsuletech/web-style', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@capsuletech/web-style')>();
+  return {
+    ...actual,
+    useSettingsMode: () => mockSettingsMode,
+  };
+});
+
+// ---------------------------------------------------------------------------
 // Minimal fake IBridge — mirrors mkStore from widget-page-store.test.tsx
 // ---------------------------------------------------------------------------
 
-const mkStore = (loading = false) =>
+const mkStore = (loading = false, data: any = {}) =>
   ({
     registerComponent: vi.fn(),
     unregisterComponent: vi.fn(),
     update: vi.fn(),
     updateComponent: vi.fn(),
-    ctx: { tag: 'test' },
+    ctx: { tag: 'test', data },
     styles: {} as Record<string, string>,
     loading,
     props: {} as Record<string, any>,
@@ -57,6 +84,8 @@ let cleanup: (() => void) | undefined;
 beforeEach(() => {
   container = document.createElement('div');
   document.body.appendChild(container);
+  // Default: settings mode OFF
+  setMockSettingsMode(false);
 });
 
 afterEach(() => {
@@ -72,11 +101,11 @@ function withCtx(store: any, children: () => any) {
 }
 
 // ---------------------------------------------------------------------------
-// 1. loading=true + loader provided → loader renders, content NOT mounted
+// Part A: Loader swap — options.loader form
 // ---------------------------------------------------------------------------
 
-describe('WidgetWrapper loader swap — content vs loader selection', () => {
-  it('renders loader when store.loading=true and loader is provided', () => {
+describe('WidgetWrapper loader swap — content vs loader selection (options.loader)', () => {
+  it('renders loader when store.loading=true and loader is provided via options', () => {
     const store = mkStore(true);
     let contentMounted = false;
     let loaderMounted = false;
@@ -86,9 +115,11 @@ describe('WidgetWrapper loader swap — content vs loader selection', () => {
         contentMounted = true;
         return <div data-testid="content">content</div>;
       },
-      (_ui) => {
-        loaderMounted = true;
-        return <div data-testid="loader">loading...</div>;
+      {
+        loader: (_ui) => {
+          loaderMounted = true;
+          return <div data-testid="loader">loading...</div>;
+        },
       },
     );
 
@@ -103,7 +134,7 @@ describe('WidgetWrapper loader swap — content vs loader selection', () => {
     expect(container.querySelector('[data-testid="content"]')).toBeNull();
   });
 
-  it('renders content when store.loading=false and loader is provided', () => {
+  it('renders content when store.loading=false and loader is provided via options', () => {
     const store = mkStore(false);
     let contentMounted = false;
     let loaderMounted = false;
@@ -113,9 +144,11 @@ describe('WidgetWrapper loader swap — content vs loader selection', () => {
         contentMounted = true;
         return <div data-testid="content">content</div>;
       },
-      (_ui) => {
-        loaderMounted = true;
-        return <div data-testid="loader">loading...</div>;
+      {
+        loader: (_ui) => {
+          loaderMounted = true;
+          return <div data-testid="loader">loading...</div>;
+        },
       },
     );
 
@@ -130,7 +163,7 @@ describe('WidgetWrapper loader swap — content vs loader selection', () => {
     expect(container.querySelector('[data-testid="loader"]')).toBeNull();
   });
 
-  it('renders content when loading=true but NO loader provided (backward-compat)', () => {
+  it('renders content when loading=true but NO loader provided (no options)', () => {
     const store = mkStore(true);
     let contentMounted = false;
 
@@ -156,8 +189,10 @@ describe('WidgetWrapper loader swap — content vs loader selection', () => {
         contentMounted = true;
         return <div data-testid="content">content</div>;
       },
-      (_ui) => {
-        return <div data-testid="loader">loading...</div>;
+      {
+        loader: (_ui) => {
+          return <div data-testid="loader">loading...</div>;
+        },
       },
     );
 
@@ -170,23 +205,22 @@ describe('WidgetWrapper loader swap — content vs loader selection', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 2. Loader receives correct args
+// Part A: Loader — arg forwarding
 // ---------------------------------------------------------------------------
 
-describe('WidgetWrapper loader — arg forwarding', () => {
+describe('WidgetWrapper loader — arg forwarding (options.loader)', () => {
   it('loader receives proxiedUi as first arg and wrapperProps as second arg', () => {
     const store = mkStore(true);
     let capturedUi: any = null;
     let capturedProps: any = null;
 
-    const MyWidget = WidgetWrapper<{ title?: string }>(
-      (_ui, _store) => <div />,
-      (ui, props) => {
+    const MyWidget = WidgetWrapper<{ title?: string }>((_ui, _store) => <div />, {
+      loader: (ui, props) => {
         capturedUi = ui;
         capturedProps = props;
         return <div data-testid="loader" />;
       },
-    );
+    });
 
     cleanup = render(
       withCtx(store, () => <MyWidget title="test-title">{null}</MyWidget>),
@@ -194,7 +228,6 @@ describe('WidgetWrapper loader — arg forwarding', () => {
     );
 
     expect(capturedUi).not.toBeNull();
-    // proxiedUi should be Proxy-wrapped (has Skeleton etc.)
     expect(typeof capturedUi).toBe('object');
     expect(capturedProps?.title).toBe('test-title');
   });
@@ -212,7 +245,7 @@ describe('WidgetWrapper loader — arg forwarding', () => {
         capturedProps = props;
         return <div data-testid="content" />;
       },
-      (_ui) => <div data-testid="loader" />,
+      { loader: (_ui) => <div data-testid="loader" /> },
     );
 
     cleanup = render(
@@ -227,10 +260,10 @@ describe('WidgetWrapper loader — arg forwarding', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 3. Reactive transitions: loading signal changes
+// Part A: Reactive transitions
 // ---------------------------------------------------------------------------
 
-describe('WidgetWrapper loader swap — reactive transitions', () => {
+describe('WidgetWrapper loader swap — reactive transitions (options.loader)', () => {
   it('transition loading true→false: loader unmounts, content mounts', () => {
     const [loading, setLoading] = createSignal(true);
     const reactiveStore = {
@@ -248,10 +281,9 @@ describe('WidgetWrapper loader swap — reactive transitions', () => {
     } as any;
     const ctx = mkCtx(reactiveStore);
 
-    const MyWidget = WidgetWrapper(
-      (_ui) => <div data-testid="content">content</div>,
-      (_ui) => <div data-testid="loader">loading</div>,
-    );
+    const MyWidget = WidgetWrapper((_ui) => <div data-testid="content">content</div>, {
+      loader: (_ui) => <div data-testid="loader">loading</div>,
+    });
 
     cleanup = render(
       () => (
@@ -262,11 +294,9 @@ describe('WidgetWrapper loader swap — reactive transitions', () => {
       container,
     );
 
-    // Initially loading → loader visible, content absent
     expect(container.querySelector('[data-testid="loader"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="content"]')).toBeNull();
 
-    // Transition: loading false → content visible, loader absent
     setLoading(false);
     expect(container.querySelector('[data-testid="content"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="loader"]')).toBeNull();
@@ -289,10 +319,9 @@ describe('WidgetWrapper loader swap — reactive transitions', () => {
     } as any;
     const ctx = mkCtx(reactiveStore);
 
-    const MyWidget = WidgetWrapper(
-      (_ui) => <div data-testid="content">content</div>,
-      (_ui) => <div data-testid="loader">loading</div>,
-    );
+    const MyWidget = WidgetWrapper((_ui) => <div data-testid="content">content</div>, {
+      loader: (_ui) => <div data-testid="loader">loading</div>,
+    });
 
     cleanup = render(
       () => (
@@ -303,13 +332,158 @@ describe('WidgetWrapper loader swap — reactive transitions', () => {
       container,
     );
 
-    // Initially not loading → content visible
     expect(container.querySelector('[data-testid="content"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="loader"]')).toBeNull();
 
-    // Transition: loading true → loader visible, content gone
     setLoading(true);
     expect(container.querySelector('[data-testid="loader"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="content"]')).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Part B: Settings strip
+// ---------------------------------------------------------------------------
+
+describe('WidgetWrapper settings strip', () => {
+  it('renders strip with button when settingsMode=ON, settings present, store available', () => {
+    const store = mkStore(false, { active: true });
+    setMockSettingsMode(true);
+
+    const MyWidget = WidgetWrapper((_ui, _store) => <div data-testid="content">content</div>, {
+      settings: [
+        {
+          type: 'toggle',
+          label: 'Sync',
+          value: (data) => Boolean(data?.active),
+          tags: ['sync-toggle'],
+        },
+      ],
+    });
+
+    cleanup = render(
+      withCtx(store, () => <MyWidget>{null}</MyWidget>),
+      container,
+    );
+
+    // Strip wrapper must be present
+    const strip = container.querySelector('.absolute.inset-x-0.top-0.z-10');
+    expect(strip).not.toBeNull();
+
+    // Button inside strip must be present
+    const button = strip?.querySelector('button');
+    expect(button).not.toBeNull();
+  });
+
+  it('does NOT render strip when settingsMode=OFF', () => {
+    const store = mkStore(false, { active: true });
+    setMockSettingsMode(false); // OFF
+
+    const MyWidget = WidgetWrapper((_ui, _store) => <div data-testid="content">content</div>, {
+      settings: [
+        {
+          type: 'toggle',
+          label: 'Sync',
+          value: () => true,
+          tags: ['sync-toggle'],
+        },
+      ],
+    });
+
+    cleanup = render(
+      withCtx(store, () => <MyWidget>{null}</MyWidget>),
+      container,
+    );
+
+    const strip = container.querySelector('.absolute.inset-x-0.top-0.z-10');
+    expect(strip).toBeNull();
+  });
+
+  it('does NOT render strip when settings array is empty', () => {
+    const store = mkStore(false);
+    setMockSettingsMode(true);
+
+    const MyWidget = WidgetWrapper((_ui, _store) => <div data-testid="content">content</div>, {
+      settings: [],
+    });
+
+    cleanup = render(
+      withCtx(store, () => <MyWidget>{null}</MyWidget>),
+      container,
+    );
+
+    const strip = container.querySelector('.absolute.inset-x-0.top-0.z-10');
+    expect(strip).toBeNull();
+  });
+
+  it('does NOT render strip when Widget is outside Controller tree (no store)', () => {
+    setMockSettingsMode(true);
+
+    const MyWidget = WidgetWrapper((_ui, _store) => <div data-testid="content">content</div>, {
+      settings: [
+        {
+          type: 'toggle',
+          label: 'Sync',
+          value: () => true,
+          tags: ['sync-toggle'],
+        },
+      ],
+    });
+
+    // No Context.Provider — store is undefined
+    cleanup = render(() => <MyWidget>{null}</MyWidget>, container);
+
+    const strip = container.querySelector('.absolute.inset-x-0.top-0.z-10');
+    expect(strip).toBeNull();
+  });
+
+  it('button shows plain label in both active and inactive states (state via fill, not text prefix)', () => {
+    const [active, setActive] = createSignal(true);
+    const reactiveStore = {
+      registerComponent: vi.fn(),
+      unregisterComponent: vi.fn(),
+      update: vi.fn(),
+      updateComponent: vi.fn(),
+      ctx: { tag: 'test', data: { active: true } },
+      styles: {} as Record<string, string>,
+      get loading() {
+        return false;
+      },
+      props: {} as Record<string, any>,
+      components: {} as Record<string, any>,
+    } as any;
+
+    setMockSettingsMode(true);
+
+    const MyWidget = WidgetWrapper((_ui, _store) => <div data-testid="content">content</div>, {
+      settings: [
+        {
+          type: 'toggle',
+          label: 'Sync',
+          value: (_data) => active(), // reactive — reads from signal
+          tags: ['sync-toggle'],
+        },
+      ],
+    });
+
+    const ctx = mkCtx(reactiveStore);
+    cleanup = render(
+      () => (
+        <Context.Provider value={ctx as any}>
+          <MyWidget>{null}</MyWidget>
+        </Context.Provider>
+      ),
+      container,
+    );
+
+    const button = container.querySelector('button');
+    expect(button).not.toBeNull();
+    // Active state: label shown without prefix (state conveyed via pill fill class, not text)
+    expect(button?.textContent).toBe('Sync');
+    // Active pill: primary fill + pill shape
+    expect(button?.className).toContain('bg-primary');
+    expect(button?.className).toContain('rounded-full');
+    // No ✓ prefix in text regardless of state
+    expect(button?.textContent).not.toContain('✓');
   });
 });

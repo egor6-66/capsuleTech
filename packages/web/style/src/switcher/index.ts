@@ -1,20 +1,25 @@
 /**
- * Switcher state-stores и helpers. Visual widget'ы (DarkModeToggle / ThemePicker /
- * LayoutModeToggle) живут в `@capsuletech/web-ui/composites` — web-style не
- * зависит от web-ui (иначе cycle), поэтому видимые компоненты переехали туда.
+ * Switcher state-stores и helpers. Visual widget'ы (ModeToggle / ThemePicker)
+ * живут в `@capsuletech/web-shell` (tier-2, ADR 032) и потребляют эти сигналы —
+ * web-style не зависит от web-ui/web-shell (иначе cycle), поэтому видимые
+ * компоненты переехали туда.
  *
  * Web-style оставляет только:
- *  - Reactive signal stores (`useTheme` / `useDarkMode` / `useLayoutMode`).
+ *  - Reactive signal stores (`useTheme` / `useDarkMode` / `useResizeMode` / `useDndMode`).
  *  - Setters / togglers + DOM-apply helpers.
  *  - `DISCOVERED_THEMES` (eager-glob по themes/).
  */
 
 export {
-  type LayoutMode,
-  setLayoutMode,
-  toggleLayoutMode,
-  useLayoutMode,
-} from './layoutMode';
+  setDndMode,
+  toggleDndMode,
+  useDndMode,
+} from './dndMode';
+export {
+  setResizeMode,
+  toggleResizeMode,
+  useResizeMode,
+} from './resizeMode';
 export {
   setSettingsMode,
   toggleSettingsMode,

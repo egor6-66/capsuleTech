@@ -41,7 +41,6 @@ export const createRouter = <TRouteTree extends AnyRoute>(opts: ICreateRouterOpt
   // потому что `TRouteTree` — bounded generic и TS не может narrowed-совместить
   // конкретный `TBeforeLoadFn` с нашим `IBeforeLoadContext`-колбэком.
   if (opts.beforeLoad !== undefined) {
-    // biome-ignore lint/suspicious/noExplicitAny: AnyRoute['options']['beforeLoad'] имеет тип any через TBeforeLoadFn=any; cast нужен чтобы обойти несовместимость с конкретным TRouteTree-generic'ом.
     (opts.routeTree as AnyRoute).options.beforeLoad = opts.beforeLoad as any;
   }
 

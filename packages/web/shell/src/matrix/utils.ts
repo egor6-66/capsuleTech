@@ -1,0 +1,76 @@
+import type { JSX } from 'solid-js';
+import type { SlotValue } from './interfaces';
+
+/**
+ * Нормализованный slot — всегда объект с `children` + размерами + `draggable`.
+ */
+export interface INormalizedSlot {
+  children: JSX.Element;
+  initialSize?: number;
+  minSize?: number;
+  maxSize?: number;
+  /**
+   * Per-slot draggable override.
+   * `undefined` = not set (opt-out model: engine treats as draggable when DnD is active).
+   * `false` = explicit opt-out (cell is never draggable).
+   * `true` = explicit opt-in (redundant with default, but valid).
+   */
+  draggable?: boolean;
+  /** Свап-группа (передаётся в preset → ICell.swapGroup). */
+  swapGroup?: string;
+  /** Explicit resizable override — undefined = preset применяет свой default. */
+  resizable?: boolean;
+  /**
+   * Per-slot Suspense fallback — forwarded to ICell.skeleton.
+   * Shown while the slot's child is suspended (lazy chunk loading).
+   */
+  skeleton?: JSX.Element;
+}
+
+/**
+ * Нормализует SlotValue в INormalizedSlot.
+ *
+ * Heuristic: если у значения есть собственный ключ `children` — это object-форма.
+ * Иначе — JSX-элемент (строка / функция / массив / число / boolean / null).
+ *
+ * Это покрывает все realistic cases:
+ * - `<Header />` — функция без `children` → JSX-форма
+ * - `"text"` — строка → JSX-форма
+ * - `{ children: <Header />, initialSize: 0.2 }` → object-форма
+ * - `{ children: <Header /> }` — объект с `children`, без size → object-форма
+ *
+ * Returns `null` для `undefined`/`null`.
+ */
+export const normalizeSlotValue = (slot: SlotValue | undefined): INormalizedSlot | null => {
+  if (slot === undefined || slot === null) return null;
+
+  // Object-форма: любой plain-object с ключом `children`
+  if (typeof slot === 'object' && !Array.isArray(slot) && Object.hasOwn(slot, 'children')) {
+    const config = slot as {
+      children: JSX.Element;
+      initialSize?: number;
+      minSize?: number;
+      maxSize?: number;
+      draggable?: boolean;
+      swapGroup?: string;
+      resizable?: boolean;
+      skeleton?: JSX.Element;
+    };
+    return {
+      children: config.children,
+      initialSize: config.initialSize,
+      minSize: config.minSize,
+      maxSize: config.maxSize,
+      draggable: config.draggable,
+      swapGroup: config.swapGroup,
+      resizable: config.resizable,
+      skeleton: config.skeleton,
+    };
+  }
+
+  // JSX-форма: строка, число, boolean, функция, массив, или любой другой объект
+  return {
+    children: slot as JSX.Element,
+    draggable: undefined,
+  };
+};

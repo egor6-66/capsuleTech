@@ -2,7 +2,7 @@
  * Workspace shell (`/workspace`) — общий каркас для всех авторизованных
  * страниц.
  *
- *   header — `Widgets.Headers.Main`
+ *   header — `Widgets.Header`
  *   main   — `<Ui.Outlet/>` для дочерних роутов
  *              `/workspace/dashboard` — главный операционный экран
  *              `/workspace/cards`     — sandbox генерации форм
@@ -25,12 +25,12 @@
  * вернёмся к задаче — копать оттуда.
  */
 const Workspace = Page((Ui) => (
-  <Ui.Layout.Matrix
-    layoutMode="view"
+  <Shell.Matrix
+    mode="view"
     preset="app-shell"
     slots={{
       header: {
-        children: <Widgets.Headers.Main />,
+        children: <Widgets.Header />,
         resizable: false,
         initialSize: 0.04,
       },

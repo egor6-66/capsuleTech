@@ -36,7 +36,6 @@ import type { Component } from 'solid-js';
  * Строгий `Component<P>` ломал бы inference для таких компонентов —
  * поэтому тип намеренно широкий: оба варианта приемлемы.
  */
-// biome-ignore lint/suspicious/noExplicitAny: wide union intentional — covers Component + context-only maplibre-style components
 type AnyComponent = Component<any> | ((...args: any[]) => any);
 
 /**
@@ -70,14 +69,12 @@ export interface ICapsuleModule {
    * Курируемая поверхность компонентов пакета.
    * Ключи становятся именами в глобал-namespace: `components.View` → `Maps.View`.
    */
-  // biome-ignore lint/suspicious/noExplicitAny: intentionally wide — see AnyComponent above
   components: Record<string, AnyComponent | any>;
   /**
    * Опционально: HCA-контроллеры пакета (ADR 032 фаза 4).
    * Будет использован кодгеном `CapsuleRegistryPlugin` для интерлока
    * с `Controllers.X` namespace. Сейчас зарезервировано.
    */
-  // biome-ignore lint/suspicious/noExplicitAny: reserved slot, shape TBD in ADR 032 phase 4
   controllers?: Record<string, any>;
 }
 

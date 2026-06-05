@@ -22,7 +22,7 @@ export const PageWrapper: IPageWrapper = (Component) => {
     const proxiedUi = ctx ? UiProxy(rawUi, ctx, wrapperProps) : rawUi;
     return (
       <ShapeUiContext.Provider value={proxiedUi}>
-        {Component(proxiedUi, store, wrapperProps)}
+        {(Component as import('./interfaces').IPageRenderer)(proxiedUi, store, wrapperProps)}
       </ShapeUiContext.Provider>
     );
   };
