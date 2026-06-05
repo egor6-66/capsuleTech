@@ -53,6 +53,7 @@
   "dependencies": {
     "@capsuletech/shared-zod": "workspace:*",
     "@capsuletech/web-core": "workspace:*",
+    "@capsuletech/web-query": "workspace:*",
     "@capsuletech/web-ui": "workspace:*"
   },
   "peerDependencies": {

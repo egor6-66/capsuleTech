@@ -595,6 +595,9 @@ importers:
       '@capsuletech/web-core':
         specifier: workspace:*
         version: link:../core
+      '@capsuletech/web-query':
+        specifier: workspace:*
+        version: link:../query
       '@capsuletech/web-ui':
         specifier: workspace:*
         version: link:../ui

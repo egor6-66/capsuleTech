@@ -57,10 +57,19 @@ scriber править НЕ здесь** — это зона `owner-scriber` (э
 3. **`/controllers` зависит на `web-core`** — остальные блоки framework-agnostic.
 4. **Транспорт (cloud) всегда через серверный релей** — браузер не держит API-ключ.
    `/client` ходит в scriber, не в Anthropic/OpenAI напрямую.
+5. **SSE-парсер — в web-query, не в web-agent** — `sse-parser.ts` удалён из
+   `/client`. Парсинг кадров делегируется в `@capsuletech/web-query/stream`
+   (см. `packages/web/query/src/stream/sse-parser.ts`). Тесты парсера
+   (`sse-parser.test.ts`) тоже удалены — они теперь зона web-query.
+6. **PENDING(scriber): `continueWithToolResults`** — multi-turn tool-feedback
+   требует `messages[]` в `POST /chat/stream`. Пока не реализовано: ждём
+   расширения контракта scriber (эскалация через главного к owner-scriber).
 
 ## Открытые решения (согласовать с главным по ходу)
 
-- Транспорт `/client`: сырой SSE/`EventSource` vs `@capsuletech/web-query` (это deps).
+- ~~Транспорт `/client`: сырой SSE vs `@capsuletech/web-query`~~ — **закрыто**:
+  транспорт = `streamSse` из `@capsuletech/web-query/stream` (импорт по subpath,
+  tree-shake, иерархия ошибок web-query, bases-резолв).
 - Финальный split `/ui` (один блок vs `/panel` + `/composer`).
 - Форма tool-relay для native (как `/tools.execute` маршалит в scriber ToolProvider).
 
@@ -73,8 +82,11 @@ scriber править НЕ здесь** — это зона `owner-scriber` (э
 ## Roadmap
 
 - [x] Skeleton: configs + subpath-блоки + регистрация путей/exclude (главный, bootstrap)
-- [ ] `/client` — createAgentClient (SSE к scriber) + agent-loop + tool-relay
-- [ ] `/tools` — createToolRegistry + ToolDef-сериализация
+- [x] `/client` — createAgentClient (SSE к scriber) + agent-loop + mock-транспорт
+  - Транспорт: `streamSse` из `@capsuletech/web-query/stream` (dep добавлен)
+  - SSE-парсер удалён из web-agent (живёт в web-query)
+  - `continueWithToolResults` — PENDING(scriber)
+- [x] `/tools` — createToolRegistry + ToolDef-сериализация + allowlist-фильтр
 - [ ] `/personas` — реестр + allowlist-резолв
 - [ ] `/controllers` — AgentController (FSM, useEmit) + регистрация в capsule.ts
 - [ ] `/ui` — чат-панель на web-ui + (позже) split на /panel /composer
