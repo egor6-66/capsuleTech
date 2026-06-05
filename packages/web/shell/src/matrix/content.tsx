@@ -8,11 +8,11 @@ import { useDnD } from '@capsuletech/web-dnd';
 import { Flex, type IFlex } from '@capsuletech/web-ui';
 import type { Accessor, JSX } from 'solid-js';
 import { createMemo, createSignal, For, Show, Suspense } from 'solid-js';
-import { MatrixCellFallback, renderCell, NOOP_REF, type ICellDndState } from './cell';
+import { type ICellDndState, MatrixCellFallback, NOOP_REF } from './cell';
+import { DragBadge } from './dnd/drag-badge';
 import { createInsertEngine } from './dnd/insert';
 import { createSwapEngine } from './dnd/swap';
-import { DragBadge } from './dnd/drag-badge';
-import type { ICell, IRow, MatrixDndKind, LayoutChangeEvent } from './interfaces';
+import type { ICell, IRow, LayoutChangeEvent, MatrixDndKind } from './interfaces';
 import { renderRow } from './rows/flex-row';
 import type { IGridOpts } from './rows/grid-row';
 
@@ -111,12 +111,8 @@ export const MatrixContent = (props: IMatrixContentProps) => {
   const isDragging = createMemo(() => dnd.state.activeId() !== null);
 
   // DnD gating by both enabled flag and kind.
-  const swapEnabled = createMemo(
-    () => props.dndEnabled() && props.dndKind() === 'swap',
-  );
-  const insertEnabled = createMemo(
-    () => props.dndEnabled() && props.dndKind() === 'insert',
-  );
+  const swapEnabled = createMemo(() => props.dndEnabled() && props.dndKind() === 'swap');
+  const insertEnabled = createMemo(() => props.dndEnabled() && props.dndKind() === 'insert');
 
   const sizesSnapshot: SizesMap = {};
 
@@ -217,7 +213,8 @@ export const MatrixContent = (props: IMatrixContentProps) => {
       const cell = rows[0].cells[0];
       if (!rows[0].height || rows[0].height === 'fr') {
         const children = swapGetChildren ? swapGetChildren(cell.id) : cell.children;
-        const cellRef = cell.draggable !== false && swapBind ? swapBind(cell, rows[0].id) : NOOP_REF;
+        const cellRef =
+          cell.draggable !== false && swapBind ? swapBind(cell, rows[0].id) : NOOP_REF;
         const dndState = cellDndState ? cellDndState(cell) : undefined;
         return (
           <div ref={cellRef} class="relative flex h-full w-full items-center justify-center">
@@ -225,9 +222,7 @@ export const MatrixContent = (props: IMatrixContentProps) => {
               class="absolute inset-0 overflow-auto flex items-center justify-center"
               classList={{ 'pointer-events-none': isDragging() }}
             >
-              <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>
-                {children}
-              </Suspense>
+              <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{children}</Suspense>
             </div>
             <Show
               when={dndState && (dndState.canAccept() || dndState.canDrop() || dndState.isOver())}

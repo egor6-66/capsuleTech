@@ -15,20 +15,14 @@
  * Vitest-suite: один smoke-it чтобы vitest не падал с "no test suite found".
  */
 
-import type {
-  IControllerWrapper,
-  IDefineStateSchema,
-  IHandlerApi,
-  ITarget,
-} from '../interfaces';
+import type { IDefineStateSchema, IHandlerApi, ITarget } from '../interfaces';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
-  ? true
-  : false;
+type Equal<A, B> =
+  (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 type Expect<T extends true> = T;
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
@@ -45,9 +39,7 @@ type _TargetHasSource = Expect<Equal<ITarget['source'], string | undefined>>;
 type _HandlerApiPayload = Expect<
   Equal<IHandlerApi<any, { id: string }>['target']['payload'], { id: string } | undefined>
 >;
-type _HandlerApiDefaultPayload = Expect<
-  Equal<IHandlerApi['target']['payload'], unknown>
->;
+type _HandlerApiDefaultPayload = Expect<Equal<IHandlerApi['target']['payload'], unknown>>;
 
 // ---------------------------------------------------------------------------
 // 3. EventsOf<C> — извлекает phantom __events или never

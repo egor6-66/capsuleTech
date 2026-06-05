@@ -1,4 +1,3 @@
-
 /**
  * Dashboard (`/workspace/dashboard`) — основной операционный экран EWC.
  *

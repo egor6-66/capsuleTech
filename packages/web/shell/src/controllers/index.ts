@@ -20,5 +20,5 @@
  * ```
  */
 
-export { MatrixController } from './matrixController';
 export type { IMatrixEvents } from '../matrix/interfaces';
+export { MatrixController } from './matrixController';

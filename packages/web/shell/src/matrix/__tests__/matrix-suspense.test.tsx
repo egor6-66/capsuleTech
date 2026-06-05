@@ -121,7 +121,10 @@ describe('Matrix per-slot Suspense — structural presence in source', () => {
     // - grid row (rows/grid-row.tsx)
     const cellSrc = fs.readFileSync(path.resolve(__dirname, '../cell.tsx'), 'utf-8');
     const contentSrc = fs.readFileSync(path.resolve(__dirname, '../content.tsx'), 'utf-8');
-    const packingRowSrc = fs.readFileSync(path.resolve(__dirname, '../rows/packing-row.tsx'), 'utf-8');
+    const packingRowSrc = fs.readFileSync(
+      path.resolve(__dirname, '../rows/packing-row.tsx'),
+      'utf-8',
+    );
     const gridRowSrc = fs.readFileSync(path.resolve(__dirname, '../rows/grid-row.tsx'), 'utf-8');
     const allSrc = cellSrc + contentSrc + packingRowSrc + gridRowSrc;
     const suspenseCount = (allSrc.match(/<Suspense\b/g) ?? []).length;

@@ -7,7 +7,7 @@ import type { ISortableZone } from '@capsuletech/web-dnd';
 import type { Accessor, JSX } from 'solid-js';
 import { For, Suspense } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
-import { NOOP_REF, MatrixCellFallback } from '../cell';
+import { MatrixCellFallback, NOOP_REF } from '../cell';
 import type { ICell, IRow } from '../interfaces';
 import { matrixSlots } from '../variants';
 

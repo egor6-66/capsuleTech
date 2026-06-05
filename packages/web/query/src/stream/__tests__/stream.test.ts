@@ -31,7 +31,10 @@ function makeSseBody(...events: Array<{ event: string; data: unknown }>): string
 
 /** Stub глобального fetch с заданным ответом. */
 function stubFetch(response: Response) {
-  vi.stubGlobal('fetch', vi.fn(async () => response));
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => response),
+  );
 }
 
 /** Stub fetch для SSE-стрима. */
@@ -41,7 +44,10 @@ function stubFetchStream(events: Array<{ event: string; data: unknown }>, status
     status,
     headers: { 'Content-Type': 'text/event-stream' },
   });
-  vi.stubGlobal('fetch', vi.fn(async () => response));
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => response),
+  );
   return response;
 }
 
@@ -82,11 +88,12 @@ describe('streamSse — базовый сценарий', () => {
   });
 
   it('использует POST по умолчанию', async () => {
-    const spy = vi.fn(async () =>
-      new Response(makeStream('event: done\ndata: {}\n\n'), {
-        status: 200,
-        headers: { 'Content-Type': 'text/event-stream' },
-      }),
+    const spy = vi.fn(
+      async () =>
+        new Response(makeStream('event: done\ndata: {}\n\n'), {
+          status: 200,
+          headers: { 'Content-Type': 'text/event-stream' },
+        }),
     );
     vi.stubGlobal('fetch', spy);
 
@@ -98,11 +105,12 @@ describe('streamSse — базовый сценарий', () => {
   });
 
   it('поддерживает кастомный метод (GET)', async () => {
-    const spy = vi.fn(async () =>
-      new Response(makeStream('event: ping\ndata: {}\n\n'), {
-        status: 200,
-        headers: { 'Content-Type': 'text/event-stream' },
-      }),
+    const spy = vi.fn(
+      async () =>
+        new Response(makeStream('event: ping\ndata: {}\n\n'), {
+          status: 200,
+          headers: { 'Content-Type': 'text/event-stream' },
+        }),
     );
     vi.stubGlobal('fetch', spy);
 
@@ -117,11 +125,12 @@ describe('streamSse — базовый сценарий', () => {
 
 describe('streamSse — body', () => {
   it('JSON-объект → stringify + Content-Type: application/json', async () => {
-    const spy = vi.fn(async () =>
-      new Response(makeStream('event: done\ndata: {}\n\n'), {
-        status: 200,
-        headers: { 'Content-Type': 'text/event-stream' },
-      }),
+    const spy = vi.fn(
+      async () =>
+        new Response(makeStream('event: done\ndata: {}\n\n'), {
+          status: 200,
+          headers: { 'Content-Type': 'text/event-stream' },
+        }),
     );
     vi.stubGlobal('fetch', spy);
 
@@ -133,11 +142,12 @@ describe('streamSse — body', () => {
   });
 
   it('строка передаётся as-is, Content-Type не ставится', async () => {
-    const spy = vi.fn(async () =>
-      new Response(makeStream('event: done\ndata: {}\n\n'), {
-        status: 200,
-        headers: { 'Content-Type': 'text/event-stream' },
-      }),
+    const spy = vi.fn(
+      async () =>
+        new Response(makeStream('event: done\ndata: {}\n\n'), {
+          status: 200,
+          headers: { 'Content-Type': 'text/event-stream' },
+        }),
     );
     vi.stubGlobal('fetch', spy);
 
@@ -149,11 +159,12 @@ describe('streamSse — body', () => {
   });
 
   it('явный Content-Type в headers не перезаписывается', async () => {
-    const spy = vi.fn(async () =>
-      new Response(makeStream('event: done\ndata: {}\n\n'), {
-        status: 200,
-        headers: { 'Content-Type': 'text/event-stream' },
-      }),
+    const spy = vi.fn(
+      async () =>
+        new Response(makeStream('event: done\ndata: {}\n\n'), {
+          status: 200,
+          headers: { 'Content-Type': 'text/event-stream' },
+        }),
     );
     vi.stubGlobal('fetch', spy);
 
@@ -166,9 +177,7 @@ describe('streamSse — body', () => {
     );
 
     const [, init] = getCallArgs(spy);
-    expect((init.headers as Record<string, string>)['Content-Type']).toBe(
-      'application/x-ndjson',
-    );
+    expect((init.headers as Record<string, string>)['Content-Type']).toBe('application/x-ndjson');
   });
 });
 
@@ -176,28 +185,28 @@ describe('streamSse — body', () => {
 
 describe('streamSse — URL резолв', () => {
   it('baseUrl + path → склеивает', async () => {
-    const spy = vi.fn(async () =>
-      new Response(makeStream('event: done\ndata: {}\n\n'), {
-        status: 200,
-        headers: { 'Content-Type': 'text/event-stream' },
-      }),
+    const spy = vi.fn(
+      async () =>
+        new Response(makeStream('event: done\ndata: {}\n\n'), {
+          status: 200,
+          headers: { 'Content-Type': 'text/event-stream' },
+        }),
     );
     vi.stubGlobal('fetch', spy);
 
-    await collectSse(
-      streamSse({ baseUrl: 'https://api.example.com', path: '/chat/stream' }),
-    );
+    await collectSse(streamSse({ baseUrl: 'https://api.example.com', path: '/chat/stream' }));
 
     const [url] = getCallArgs(spy);
     expect(url).toBe('https://api.example.com/chat/stream');
   });
 
   it('абсолютный path → используется as-is (игнорирует baseUrl)', async () => {
-    const spy = vi.fn(async () =>
-      new Response(makeStream('event: done\ndata: {}\n\n'), {
-        status: 200,
-        headers: { 'Content-Type': 'text/event-stream' },
-      }),
+    const spy = vi.fn(
+      async () =>
+        new Response(makeStream('event: done\ndata: {}\n\n'), {
+          status: 200,
+          headers: { 'Content-Type': 'text/event-stream' },
+        }),
     );
     vi.stubGlobal('fetch', spy);
 
@@ -213,11 +222,12 @@ describe('streamSse — URL резолв', () => {
   });
 
   it('QueryClient.bases резолвит base → URL prefix', async () => {
-    const spy = vi.fn(async () =>
-      new Response(makeStream('event: done\ndata: {}\n\n'), {
-        status: 200,
-        headers: { 'Content-Type': 'text/event-stream' },
-      }),
+    const spy = vi.fn(
+      async () =>
+        new Response(makeStream('event: done\ndata: {}\n\n'), {
+          status: 200,
+          headers: { 'Content-Type': 'text/event-stream' },
+        }),
     );
     vi.stubGlobal('fetch', spy);
 
@@ -232,11 +242,12 @@ describe('streamSse — URL резолв', () => {
   });
 
   it('QueryClient.bases default base если base не указан', async () => {
-    const spy = vi.fn(async () =>
-      new Response(makeStream('event: done\ndata: {}\n\n'), {
-        status: 200,
-        headers: { 'Content-Type': 'text/event-stream' },
-      }),
+    const spy = vi.fn(
+      async () =>
+        new Response(makeStream('event: done\ndata: {}\n\n'), {
+          status: 200,
+          headers: { 'Content-Type': 'text/event-stream' },
+        }),
     );
     vi.stubGlobal('fetch', spy);
 
@@ -249,11 +260,12 @@ describe('streamSse — URL резолв', () => {
   });
 
   it('QueryClient.defaultHeaders объединяются с headers конфига', async () => {
-    const spy = vi.fn(async () =>
-      new Response(makeStream('event: done\ndata: {}\n\n'), {
-        status: 200,
-        headers: { 'Content-Type': 'text/event-stream' },
-      }),
+    const spy = vi.fn(
+      async () =>
+        new Response(makeStream('event: done\ndata: {}\n\n'), {
+          status: 200,
+          headers: { 'Content-Type': 'text/event-stream' },
+        }),
     );
     vi.stubGlobal('fetch', spy);
 
@@ -262,23 +274,22 @@ describe('streamSse — URL резолв', () => {
       defaultHeaders: { Authorization: 'Bearer token', Accept: 'text/event-stream' },
     });
 
-    await collectSse(
-      streamSse({ client, path: '/stream', headers: { 'X-Custom': 'yes' } }),
-    );
+    await collectSse(streamSse({ client, path: '/stream', headers: { 'X-Custom': 'yes' } }));
 
     const [, init] = getCallArgs(spy);
     const headers = init.headers as Record<string, string>;
-    expect(headers['Authorization']).toBe('Bearer token');
-    expect(headers['Accept']).toBe('text/event-stream');
+    expect(headers.Authorization).toBe('Bearer token');
+    expect(headers.Accept).toBe('text/event-stream');
     expect(headers['X-Custom']).toBe('yes');
   });
 
   it('headers конфига перезаписывают defaultHeaders', async () => {
-    const spy = vi.fn(async () =>
-      new Response(makeStream('event: done\ndata: {}\n\n'), {
-        status: 200,
-        headers: { 'Content-Type': 'text/event-stream' },
-      }),
+    const spy = vi.fn(
+      async () =>
+        new Response(makeStream('event: done\ndata: {}\n\n'), {
+          status: 200,
+          headers: { 'Content-Type': 'text/event-stream' },
+        }),
     );
     vi.stubGlobal('fetch', spy);
 
@@ -296,7 +307,7 @@ describe('streamSse — URL резолв', () => {
     );
 
     const [, init] = getCallArgs(spy);
-    expect((init.headers as Record<string, string>)['Authorization']).toBe('Bearer new');
+    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer new');
   });
 });
 
@@ -312,23 +323,17 @@ describe('streamSse — HTTP ошибки', () => {
 
   it('403 → ForbiddenError', async () => {
     stubFetch(new Response('Forbidden', { status: 403, statusText: 'Forbidden' }));
-    await expect(collectSse(streamSse({ path: '/stream' }))).rejects.toBeInstanceOf(
-      ForbiddenError,
-    );
+    await expect(collectSse(streamSse({ path: '/stream' }))).rejects.toBeInstanceOf(ForbiddenError);
   });
 
   it('404 → NotFoundError', async () => {
     stubFetch(new Response('Not Found', { status: 404, statusText: 'Not Found' }));
-    await expect(collectSse(streamSse({ path: '/stream' }))).rejects.toBeInstanceOf(
-      NotFoundError,
-    );
+    await expect(collectSse(streamSse({ path: '/stream' }))).rejects.toBeInstanceOf(NotFoundError);
   });
 
   it('409 → ConflictError', async () => {
     stubFetch(new Response('Conflict', { status: 409, statusText: 'Conflict' }));
-    await expect(collectSse(streamSse({ path: '/stream' }))).rejects.toBeInstanceOf(
-      ConflictError,
-    );
+    await expect(collectSse(streamSse({ path: '/stream' }))).rejects.toBeInstanceOf(ConflictError);
   });
 
   it('500 → ServerError', async () => {
@@ -349,9 +354,7 @@ describe('streamSse — HTTP ошибки', () => {
   });
 
   it('ServerError несёт правильный status', async () => {
-    stubFetch(
-      new Response('Server Error', { status: 503, statusText: 'Service Unavailable' }),
-    );
+    stubFetch(new Response('Server Error', { status: 503, statusText: 'Service Unavailable' }));
     const err = (await collectSse(streamSse({ path: '/stream' })).catch((e) => e)) as ServerError;
     expect(err.status).toBe(503);
   });
@@ -365,18 +368,14 @@ describe('streamSse — NetworkError', () => {
         throw new TypeError('Failed to fetch');
       }),
     );
-    await expect(collectSse(streamSse({ path: '/stream' }))).rejects.toBeInstanceOf(
-      NetworkError,
-    );
+    await expect(collectSse(streamSse({ path: '/stream' }))).rejects.toBeInstanceOf(NetworkError);
   });
 
   it('response.body === null → NetworkError', async () => {
     stubFetch(
       new Response(null, { status: 200, headers: { 'Content-Type': 'text/event-stream' } }),
     );
-    await expect(collectSse(streamSse({ path: '/stream' }))).rejects.toBeInstanceOf(
-      NetworkError,
-    );
+    await expect(collectSse(streamSse({ path: '/stream' }))).rejects.toBeInstanceOf(NetworkError);
   });
 });
 
@@ -384,11 +383,12 @@ describe('streamSse — NetworkError', () => {
 
 describe('streamSse — AbortSignal', () => {
   it('прокидывает signal в fetch', async () => {
-    const spy = vi.fn(async () =>
-      new Response(makeStream('event: done\ndata: {}\n\n'), {
-        status: 200,
-        headers: { 'Content-Type': 'text/event-stream' },
-      }),
+    const spy = vi.fn(
+      async () =>
+        new Response(makeStream('event: done\ndata: {}\n\n'), {
+          status: 200,
+          headers: { 'Content-Type': 'text/event-stream' },
+        }),
     );
     vi.stubGlobal('fetch', spy);
 
@@ -450,11 +450,12 @@ describe('streamSseJson', () => {
   it('бросает SyntaxError если data не является валидным JSON', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () =>
-        new Response(makeStream('event: token\ndata: not-valid-json\n\n'), {
-          status: 200,
-          headers: { 'Content-Type': 'text/event-stream' },
-        }),
+      vi.fn(
+        async () =>
+          new Response(makeStream('event: token\ndata: not-valid-json\n\n'), {
+            status: 200,
+            headers: { 'Content-Type': 'text/event-stream' },
+          }),
       ),
     );
 

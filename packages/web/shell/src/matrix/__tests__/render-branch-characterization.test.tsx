@@ -239,12 +239,16 @@ describe('renderContent — Branch 2: direction=horizontal', () => {
             {
               id: 'left',
               resizable: false,
-              cells: [{ id: 'l', resizable: false, children: <div data-testid="nr-left">Left</div> }],
+              cells: [
+                { id: 'l', resizable: false, children: <div data-testid="nr-left">Left</div> },
+              ],
             },
             {
               id: 'right',
               resizable: false,
-              cells: [{ id: 'r', resizable: false, children: <div data-testid="nr-right">Right</div> }],
+              cells: [
+                { id: 'r', resizable: false, children: <div data-testid="nr-right">Right</div> },
+              ],
             },
           ]}
         />

@@ -59,7 +59,7 @@ describe('defineAgentTool', () => {
 // ─── createToolRegistry — базовые операции ───────────────────────────────────
 
 describe('createToolRegistry', () => {
-  it('создаёт реестр из переданных tool\'ов', () => {
+  it("создаёт реестр из переданных tool'ов", () => {
     const reg = createToolRegistry([searchTool, insertBlockTool]);
     expect(reg.has('search')).toBe(true);
     expect(reg.has('insertBlock')).toBe(true);
@@ -134,16 +134,16 @@ describe('dispatch', () => {
 
   it('бросает с понятным сообщением при неизвестном tool', async () => {
     const reg = createToolRegistry([searchTool]);
-    await expect(
-      reg.dispatch({ id: 'x', name: 'unknown', arguments: {} }),
-    ).rejects.toThrow('unknown');
+    await expect(reg.dispatch({ id: 'x', name: 'unknown', arguments: {} })).rejects.toThrow(
+      'unknown',
+    );
   });
 
   it('сообщение об ошибке содержит список доступных tools', async () => {
     const reg = createToolRegistry([searchTool, insertBlockTool]);
-    await expect(
-      reg.dispatch({ id: 'x', name: 'missing', arguments: {} }),
-    ).rejects.toThrow(/search.*insertBlock|insertBlock.*search/);
+    await expect(reg.dispatch({ id: 'x', name: 'missing', arguments: {} })).rejects.toThrow(
+      /search.*insertBlock|insertBlock.*search/,
+    );
   });
 
   it('поддерживает async execute', async () => {
@@ -175,9 +175,9 @@ describe('dispatch', () => {
       },
     };
     const reg = createToolRegistry([failingTool]);
-    await expect(
-      reg.dispatch({ id: 'id', name: 'fail', arguments: {} }),
-    ).rejects.toThrow('execute error');
+    await expect(reg.dispatch({ id: 'id', name: 'fail', arguments: {} })).rejects.toThrow(
+      'execute error',
+    );
   });
 
   it('возвращает toolCallId из переданного call.id', async () => {
@@ -195,10 +195,9 @@ describe('dispatch', () => {
 
 describe('allowlist фильтр', () => {
   it('оставляет только разрешённые tools', () => {
-    const reg = createToolRegistry(
-      [searchTool, insertBlockTool, deleteBlockTool],
-      { allow: ['insertBlock'] },
-    );
+    const reg = createToolRegistry([searchTool, insertBlockTool, deleteBlockTool], {
+      allow: ['insertBlock'],
+    });
 
     expect(reg.has('insertBlock')).toBe(true);
     expect(reg.has('search')).toBe(false);
@@ -206,22 +205,18 @@ describe('allowlist фильтр', () => {
   });
 
   it('toToolDefs содержит только разрешённые', () => {
-    const reg = createToolRegistry(
-      [searchTool, insertBlockTool, deleteBlockTool],
-      { allow: ['search', 'deleteBlock'] },
-    );
+    const reg = createToolRegistry([searchTool, insertBlockTool, deleteBlockTool], {
+      allow: ['search', 'deleteBlock'],
+    });
     const names = reg.toToolDefs().map((d) => d.name);
     expect(names).toEqual(['search', 'deleteBlock']);
   });
 
   it('dispatch бросает для tool-а вне allowlist', async () => {
-    const reg = createToolRegistry(
-      [searchTool, insertBlockTool],
-      { allow: ['insertBlock'] },
+    const reg = createToolRegistry([searchTool, insertBlockTool], { allow: ['insertBlock'] });
+    await expect(reg.dispatch({ id: 'x', name: 'search', arguments: { q: 'hi' } })).rejects.toThrow(
+      'search',
     );
-    await expect(
-      reg.dispatch({ id: 'x', name: 'search', arguments: { q: 'hi' } }),
-    ).rejects.toThrow('search');
   });
 
   it('пустой allowlist [] — реестр пустой', () => {
@@ -238,10 +233,7 @@ describe('allowlist фильтр', () => {
   });
 
   it('несуществующие имена в allow игнорируются (не добавляют ghosts)', () => {
-    const reg = createToolRegistry(
-      [searchTool],
-      { allow: ['search', 'nonexistent'] },
-    );
+    const reg = createToolRegistry([searchTool], { allow: ['search', 'nonexistent'] });
     expect(reg.toToolDefs()).toHaveLength(1);
     expect(reg.has('nonexistent')).toBe(false);
   });

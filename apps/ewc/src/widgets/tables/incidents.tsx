@@ -48,8 +48,18 @@ const Incidents = Widget(
     //   «Синк с картой»        — таблица скроллит к выбору ИЗ КАРТЫ (cross-widget).
     //   «Скроллить к выбранному» — клик по строке центрирует её в таблице (self).
     settings: [
-      { type: 'toggle', label: 'Синк с картой', value: (d) => d.scrollToSelected, tags: ['toggle-scroll'] },
-      { type: 'toggle', label: 'Скроллить к выбранному', value: (d) => d.centerOnClick, tags: ['toggle-center'] },
+      {
+        type: 'toggle',
+        label: 'Синк с картой',
+        value: (d) => d.scrollToSelected,
+        tags: ['toggle-scroll'],
+      },
+      {
+        type: 'toggle',
+        label: 'Скроллить к выбранному',
+        value: (d) => d.centerOnClick,
+        tags: ['toggle-center'],
+      },
     ],
   },
 );

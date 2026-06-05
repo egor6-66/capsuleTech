@@ -8,7 +8,7 @@
  */
 
 import type { ICapsuleRouter } from '@capsuletech/web-router';
-import type { IBaseStateHandlers, IBaseStateSchema, IBridge, IMachineContext } from '@capsuletech/web-state';
+import type { IBaseStateSchema, IBridge, IMachineContext } from '@capsuletech/web-state';
 import type {
   Animate,
   Button,
@@ -393,8 +393,12 @@ export type IWidgetLoader<P extends Record<string, any> = Record<string, any>> =
  * `tags` are passed directly to `meta.tags` — UiProxy binds onClick and routes
  * the event to the parent Feature/Controller handler.
  */
-// biome-ignore lint/suspicious/noExplicitAny: data shape depends on the consuming Feature context
-export type ISetting = { type: 'toggle'; label: string; value: (data: any) => boolean; tags: string[] };
+export type ISetting = {
+  type: 'toggle';
+  label: string;
+  value: (data: any) => boolean;
+  tags: string[];
+};
 
 /**
  * Options bag for `Widget(component, options?)`.
@@ -683,7 +687,10 @@ type IDefineStateSchemaClosed<TCtx, TEvents> = ITopLevelLifecycle<TCtx> &
  * }));
  * ```
  */
-export type IDefineStateSchema<TCtx = any, TEvents = {}> = keyof TEvents extends never
+export type IDefineStateSchema<
+  TCtx = any,
+  TEvents = Record<never, never>,
+> = keyof TEvents extends never
   ? IDefineStateSchemaOpen<TCtx>
   : IDefineStateSchemaClosed<TCtx, TEvents>;
 
@@ -770,7 +777,7 @@ export type IWrapperProps = {
  * Phantom-поле `__ctx` несёт `TCtx` на уровне типа компонента:
  * `CtxOf<typeof MyFeature>` → `TCtx`.
  */
-export type IControllerWrapper = <TEvents = {}, TCtx = any>(
+export type IControllerWrapper = <TEvents = Record<never, never>, TCtx = any>(
   defineStateSchema: (services: IServices) => IDefineStateSchema<TCtx, TEvents>,
 ) => ((props: IWrapperProps) => any) & { readonly __ctx?: TCtx };
 

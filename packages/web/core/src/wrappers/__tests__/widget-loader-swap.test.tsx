@@ -214,16 +214,13 @@ describe('WidgetWrapper loader — arg forwarding (options.loader)', () => {
     let capturedUi: any = null;
     let capturedProps: any = null;
 
-    const MyWidget = WidgetWrapper<{ title?: string }>(
-      (_ui, _store) => <div />,
-      {
-        loader: (ui, props) => {
-          capturedUi = ui;
-          capturedProps = props;
-          return <div data-testid="loader" />;
-        },
+    const MyWidget = WidgetWrapper<{ title?: string }>((_ui, _store) => <div />, {
+      loader: (ui, props) => {
+        capturedUi = ui;
+        capturedProps = props;
+        return <div data-testid="loader" />;
       },
-    );
+    });
 
     cleanup = render(
       withCtx(store, () => <MyWidget title="test-title">{null}</MyWidget>),
@@ -284,10 +281,9 @@ describe('WidgetWrapper loader swap — reactive transitions (options.loader)', 
     } as any;
     const ctx = mkCtx(reactiveStore);
 
-    const MyWidget = WidgetWrapper(
-      (_ui) => <div data-testid="content">content</div>,
-      { loader: (_ui) => <div data-testid="loader">loading</div> },
-    );
+    const MyWidget = WidgetWrapper((_ui) => <div data-testid="content">content</div>, {
+      loader: (_ui) => <div data-testid="loader">loading</div>,
+    });
 
     cleanup = render(
       () => (
@@ -323,10 +319,9 @@ describe('WidgetWrapper loader swap — reactive transitions (options.loader)', 
     } as any;
     const ctx = mkCtx(reactiveStore);
 
-    const MyWidget = WidgetWrapper(
-      (_ui) => <div data-testid="content">content</div>,
-      { loader: (_ui) => <div data-testid="loader">loading</div> },
-    );
+    const MyWidget = WidgetWrapper((_ui) => <div data-testid="content">content</div>, {
+      loader: (_ui) => <div data-testid="loader">loading</div>,
+    });
 
     cleanup = render(
       () => (
@@ -355,19 +350,16 @@ describe('WidgetWrapper settings strip', () => {
     const store = mkStore(false, { active: true });
     setMockSettingsMode(true);
 
-    const MyWidget = WidgetWrapper(
-      (_ui, _store) => <div data-testid="content">content</div>,
-      {
-        settings: [
-          {
-            type: 'toggle',
-            label: 'Sync',
-            value: (data) => Boolean(data?.active),
-            tags: ['sync-toggle'],
-          },
-        ],
-      },
-    );
+    const MyWidget = WidgetWrapper((_ui, _store) => <div data-testid="content">content</div>, {
+      settings: [
+        {
+          type: 'toggle',
+          label: 'Sync',
+          value: (data) => Boolean(data?.active),
+          tags: ['sync-toggle'],
+        },
+      ],
+    });
 
     cleanup = render(
       withCtx(store, () => <MyWidget>{null}</MyWidget>),
@@ -375,9 +367,7 @@ describe('WidgetWrapper settings strip', () => {
     );
 
     // Strip wrapper must be present
-    const strip = container.querySelector(
-      '.absolute.inset-x-0.top-0.z-10',
-    );
+    const strip = container.querySelector('.absolute.inset-x-0.top-0.z-10');
     expect(strip).not.toBeNull();
 
     // Button inside strip must be present
@@ -389,19 +379,16 @@ describe('WidgetWrapper settings strip', () => {
     const store = mkStore(false, { active: true });
     setMockSettingsMode(false); // OFF
 
-    const MyWidget = WidgetWrapper(
-      (_ui, _store) => <div data-testid="content">content</div>,
-      {
-        settings: [
-          {
-            type: 'toggle',
-            label: 'Sync',
-            value: () => true,
-            tags: ['sync-toggle'],
-          },
-        ],
-      },
-    );
+    const MyWidget = WidgetWrapper((_ui, _store) => <div data-testid="content">content</div>, {
+      settings: [
+        {
+          type: 'toggle',
+          label: 'Sync',
+          value: () => true,
+          tags: ['sync-toggle'],
+        },
+      ],
+    });
 
     cleanup = render(
       withCtx(store, () => <MyWidget>{null}</MyWidget>),
@@ -416,10 +403,9 @@ describe('WidgetWrapper settings strip', () => {
     const store = mkStore(false);
     setMockSettingsMode(true);
 
-    const MyWidget = WidgetWrapper(
-      (_ui, _store) => <div data-testid="content">content</div>,
-      { settings: [] },
-    );
+    const MyWidget = WidgetWrapper((_ui, _store) => <div data-testid="content">content</div>, {
+      settings: [],
+    });
 
     cleanup = render(
       withCtx(store, () => <MyWidget>{null}</MyWidget>),
@@ -433,19 +419,16 @@ describe('WidgetWrapper settings strip', () => {
   it('does NOT render strip when Widget is outside Controller tree (no store)', () => {
     setMockSettingsMode(true);
 
-    const MyWidget = WidgetWrapper(
-      (_ui, _store) => <div data-testid="content">content</div>,
-      {
-        settings: [
-          {
-            type: 'toggle',
-            label: 'Sync',
-            value: () => true,
-            tags: ['sync-toggle'],
-          },
-        ],
-      },
-    );
+    const MyWidget = WidgetWrapper((_ui, _store) => <div data-testid="content">content</div>, {
+      settings: [
+        {
+          type: 'toggle',
+          label: 'Sync',
+          value: () => true,
+          tags: ['sync-toggle'],
+        },
+      ],
+    });
 
     // No Context.Provider — store is undefined
     cleanup = render(() => <MyWidget>{null}</MyWidget>, container);
@@ -463,26 +446,25 @@ describe('WidgetWrapper settings strip', () => {
       updateComponent: vi.fn(),
       ctx: { tag: 'test', data: { active: true } },
       styles: {} as Record<string, string>,
-      get loading() { return false; },
+      get loading() {
+        return false;
+      },
       props: {} as Record<string, any>,
       components: {} as Record<string, any>,
     } as any;
 
     setMockSettingsMode(true);
 
-    const MyWidget = WidgetWrapper(
-      (_ui, _store) => <div data-testid="content">content</div>,
-      {
-        settings: [
-          {
-            type: 'toggle',
-            label: 'Sync',
-            value: (_data) => active(), // reactive — reads from signal
-            tags: ['sync-toggle'],
-          },
-        ],
-      },
-    );
+    const MyWidget = WidgetWrapper((_ui, _store) => <div data-testid="content">content</div>, {
+      settings: [
+        {
+          type: 'toggle',
+          label: 'Sync',
+          value: (_data) => active(), // reactive — reads from signal
+          tags: ['sync-toggle'],
+        },
+      ],
+    });
 
     const ctx = mkCtx(reactiveStore);
     cleanup = render(

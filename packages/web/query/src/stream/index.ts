@@ -16,23 +16,23 @@
  * @module
  */
 
+import type { ZodType } from 'zod';
+import type { QueryClient } from '../client';
 import {
+  ConflictError,
   ForbiddenError,
   HttpError,
   NetworkError,
   NotFoundError,
   ServerError,
   UnauthorizedError,
-  ConflictError,
 } from '../errors';
 import type { HttpMethod } from '../types';
-import type { QueryClient } from '../client';
-import { parseSseStream } from './sse-parser';
 import type { SseFrame } from './sse-parser';
-import type { ZodType } from 'zod';
+import { parseSseStream } from './sse-parser';
 
 export type { SseFrame } from './sse-parser';
-export { parseSseStream, parseSseFrame } from './sse-parser';
+export { parseSseFrame, parseSseStream } from './sse-parser';
 
 // ─── Конфиг стримингового запроса ────────────────────────────────────────────
 

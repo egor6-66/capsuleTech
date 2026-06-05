@@ -249,14 +249,20 @@ describe('generateBarrelRegistry — flat entity leaf (no nesting)', () => {
 describe('generateBarrelRegistry — multiple leaves same subdir', () => {
   // 3-segment leaves: Forms/Auth/Login, Forms/Auth/Register → both in auth/index.ts
   const leaf1 = wrapperLeaf('widgets', '@widgets/forms/auth/login', ['Forms', 'Auth', 'Login']);
-  const leaf2 = wrapperLeaf('widgets', '@widgets/forms/auth/register', ['Forms', 'Auth', 'Register']);
+  const leaf2 = wrapperLeaf('widgets', '@widgets/forms/auth/register', [
+    'Forms',
+    'Auth',
+    'Register',
+  ]);
 
   it('both leaves appear in auth/index.ts', () => {
     const files = generateBarrelRegistry([leaf1, leaf2]);
     const authIndex = files.get('widgets/forms/auth/index.ts');
     expect(authIndex).toBeDefined();
     expect(authIndex).toContain("export { default as Login } from '@widgets/forms/auth/login';");
-    expect(authIndex).toContain("export { default as Register } from '@widgets/forms/auth/register';");
+    expect(authIndex).toContain(
+      "export { default as Register } from '@widgets/forms/auth/register';",
+    );
   });
 
   it('forms/index.ts links to auth/ subdir via export * as Auth', () => {
@@ -1412,7 +1418,9 @@ describe('resolvePackageEntries — { use, as } override form', () => {
 
 describe("CapsuleRegistryPlugin.config — '@capsule/registry' alias", () => {
   it('config() hook returns resolve.alias with @capsule/registry pointing to registry/index.ts', () => {
-    const plugin = makePlugin() as Plugin & { config: () => { resolve: { alias: Record<string, string> } } };
+    const plugin = makePlugin() as Plugin & {
+      config: () => { resolve: { alias: Record<string, string> } };
+    };
     const result = plugin.config();
     expect(result).toBeDefined();
     expect(result.resolve).toBeDefined();
@@ -1422,7 +1430,9 @@ describe("CapsuleRegistryPlugin.config — '@capsule/registry' alias", () => {
   });
 
   it('alias path ends with .capsule/registry/index.ts', () => {
-    const plugin = makePlugin() as Plugin & { config: () => { resolve: { alias: Record<string, string> } } };
+    const plugin = makePlugin() as Plugin & {
+      config: () => { resolve: { alias: Record<string, string> } };
+    };
     const result = plugin.config();
     const aliasPath = result.resolve.alias['@capsule/registry'];
     expect(aliasPath.replace(/\\/g, '/')).toContain('.capsule/registry/index.ts');

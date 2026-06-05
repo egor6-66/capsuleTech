@@ -1,6 +1,5 @@
-import type { Component, JSX, ParentProps } from 'solid-js';
-
 import type { IGroupProps } from '@capsuletech/web-ui/group';
+import type { Component, JSX, ParentProps } from 'solid-js';
 
 /**
  * Shell.Header — bar-контейнер. ParentComponent: рендерит children в Flex

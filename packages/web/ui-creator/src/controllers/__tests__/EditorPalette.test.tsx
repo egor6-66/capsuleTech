@@ -121,10 +121,7 @@ vi.mock('@capsuletech/web-ui/dropdown', () => ({
 // ref не извлекаем вручную — в Solid ref не является обычным prop (обрабатывается компилятором).
 // Просто спредим всё: компилятор Solid сам правильно обработает ref при render.
 vi.mock('@capsuletech/web-ui/button', () => ({
-  Button: (props: Record<string, unknown>) => (
-    // biome-ignore lint/suspicious/noExplicitAny: тест-мок — props принимаются как any
-    <button type="button" {...(props as any)} />
-  ),
+  Button: (props: Record<string, unknown>) => <button type="button" {...(props as any)} />,
 }));
 
 // Flex из @capsuletech/web-ui/flex — простой div-обёртка для children.
@@ -188,7 +185,6 @@ describe('catRank / orderRank — утилиты сортировки', () => {
   });
 
   it('catRank возвращает CATEGORY_ORDER.length для неизвестной категории', () => {
-    // biome-ignore lint/suspicious/noExplicitAny: тест-мок — props принимаются как any
     expect(catRank('unknown_cat' as any)).toBe(CATEGORY_ORDER.length);
   });
 

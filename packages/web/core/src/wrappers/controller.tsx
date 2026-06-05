@@ -1,4 +1,6 @@
 import { createLogicWrapper } from '../engine/logic-wrapper';
 import type { IControllerWrapper } from './interfaces';
 
-export const ControllerWrapper: IControllerWrapper = createLogicWrapper('controller') as IControllerWrapper;
+export const ControllerWrapper: IControllerWrapper = createLogicWrapper(
+  'controller',
+) as IControllerWrapper;

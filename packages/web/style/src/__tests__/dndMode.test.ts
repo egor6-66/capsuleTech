@@ -110,10 +110,7 @@ describe('useDndMode / setDndMode / toggleDndMode', () => {
   });
 
   it('is independent of resizeMode — no shared state', async () => {
-    const [dndMod, resizeMod] = await Promise.all([
-      loadModule(),
-      import('../switcher/resizeMode'),
-    ]);
+    const [dndMod, resizeMod] = await Promise.all([loadModule(), import('../switcher/resizeMode')]);
     dndMod.setDndMode(false);
     // resizeMode remains at its own default
     expect(resizeMod.useResizeMode()()).toBe(true);

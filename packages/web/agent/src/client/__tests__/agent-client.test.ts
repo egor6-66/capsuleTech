@@ -1,10 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ChatChunk } from '../../types';
-import {
-  createAgentClient,
-  createMockAgentClient,
-  createMockAgentClientFactory,
-} from '../index';
+import { createAgentClient, createMockAgentClient, createMockAgentClientFactory } from '../index';
 
 // После рефактора транспорт делегирован в @capsuletech/web-query/stream (streamSse).
 // HTTP-ошибки теперь типизированы: 404 → NotFoundError, body=null → NetworkError.
@@ -275,8 +271,6 @@ describe('createAgentClient (fetch transport)', () => {
 describe('continueWithToolResults', () => {
   it('бросает с понятным PENDING-сообщением', async () => {
     const client = createMockAgentClient({ baseUrl: '', provider: 'x', model: 'y' }, []);
-    await expect(
-      collect(client.continueWithToolResults('conv-1', [])),
-    ).rejects.toThrow('PENDING');
+    await expect(collect(client.continueWithToolResults('conv-1', []))).rejects.toThrow('PENDING');
   });
 });

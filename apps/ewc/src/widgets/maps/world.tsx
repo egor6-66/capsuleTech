@@ -22,8 +22,18 @@ const World = Widget(
     //   «Синк с таблицей»       — карта подлетает к выбору ИЗ ТАБЛИЦЫ (cross-widget).
     //   «Подлететь к выбранному» — клик по маркеру подлетает к нему (self).
     settings: [
-      { type: 'toggle', label: 'Синк с таблицей', value: (d) => d.flyToSelected, tags: ['toggle-fly'] },
-      { type: 'toggle', label: 'Подлететь к выбранному', value: (d) => d.flyOnClick, tags: ['toggle-fly-self'] },
+      {
+        type: 'toggle',
+        label: 'Синк с таблицей',
+        value: (d) => d.flyToSelected,
+        tags: ['toggle-fly'],
+      },
+      {
+        type: 'toggle',
+        label: 'Подлететь к выбранному',
+        value: (d) => d.flyOnClick,
+        tags: ['toggle-fly-self'],
+      },
     ],
   },
 );

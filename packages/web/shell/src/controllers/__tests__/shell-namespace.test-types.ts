@@ -11,8 +11,7 @@
  * Нет импорта vitest — чисто type-level файл.
  */
 
-import type { IMatrixEvents, LayoutChangeEvent } from '../matrixController';
-import { MatrixController } from '../matrixController';
+import type { IMatrixEvents, LayoutChangeEvent, MatrixController } from '../matrixController';
 
 // Имитация codegen-объявления: `declare const Shell` (value namespace, обычно из .capsule/registry).
 // В самом пакете codegen отсутствует — тестируем merge на минимальном скретче.

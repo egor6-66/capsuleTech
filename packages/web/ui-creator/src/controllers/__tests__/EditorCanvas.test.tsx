@@ -80,7 +80,6 @@ vi.mock('@capsuletech/web-renderer', () => ({
 
 // Flex из @capsuletech/web-ui/flex — div-обёртка, форвардит class и children.
 vi.mock('@capsuletech/web-ui/flex', () => ({
-  // biome-ignore lint/suspicious/noExplicitAny: тест-мок — props принимаются как any
   Flex: (props: any) => (
     <div class={props.class} style={props.style}>
       {props.children}

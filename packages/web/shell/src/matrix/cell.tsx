@@ -99,11 +99,7 @@ export const renderCell = (
     // Scroll is delegated entirely to the inner div (innerClass above); the outer
     // stays a clean `relative` container so DragBadge's z-30 wins globally.
     return (
-      <Dynamic
-        component={tag}
-        ref={cellRef}
-        class="h-full w-full relative"
-      >
+      <Dynamic component={tag} ref={cellRef} class="h-full w-full relative">
         {/* Inner scroll wrapper; pointer-events-none during drag prevents hover leaking
             into cell content (table row hover, map hover, etc.).
             DnD ref lives on the outer wrapper so elementFromPoint() always hits it. */}

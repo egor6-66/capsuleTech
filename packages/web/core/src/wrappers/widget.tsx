@@ -9,7 +9,6 @@ import { ShapeUiContext } from './shape';
 
 // Cast to IWidgetWrapper: the implementation uses `any` internally to handle
 // the generic <P, S> without losing type safety at the call site.
-// biome-ignore lint/suspicious/noExplicitAny: generic wrapper implementation
 export const WidgetWrapper: IWidgetWrapper = ((
   Component: IWidgetRenderer<any, any>,
   options?: IWidgetOptions<any>,

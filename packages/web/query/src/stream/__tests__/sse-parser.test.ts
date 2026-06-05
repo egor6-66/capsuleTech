@@ -105,7 +105,10 @@ describe('parseSseStream', () => {
   });
 
   it('разбирает кадр tool_call', async () => {
-    const call = { type: 'tool_call', call: { id: 'c1', name: 'search', arguments: { q: 'hello' } } };
+    const call = {
+      type: 'tool_call',
+      call: { id: 'c1', name: 'search', arguments: { q: 'hello' } },
+    };
     const sse = `event: tool_call\ndata: ${JSON.stringify(call)}\n\n`;
     const frames = await collectFrames(stringToStream(sse));
 
@@ -165,7 +168,11 @@ describe('parseSseStream', () => {
   });
 
   it('разбирает кадр done с tool_calls', async () => {
-    const chunk = { type: 'done', content: 'ok', tool_calls: [{ id: 't1', name: 'fn', arguments: {} }] };
+    const chunk = {
+      type: 'done',
+      content: 'ok',
+      tool_calls: [{ id: 't1', name: 'fn', arguments: {} }],
+    };
     const sse = `event: done\ndata: ${JSON.stringify(chunk)}\n\n`;
     const frames = await collectFrames(stringToStream(sse));
 

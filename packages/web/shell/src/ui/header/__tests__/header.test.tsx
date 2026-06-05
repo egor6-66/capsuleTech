@@ -26,13 +26,11 @@ import { Header } from '../header';
 
 vi.mock('@capsuletech/web-ui/dropdown', () => {
   const Trigger = (props: any) => (
-    <button data-testid="menu-trigger" aria-label={props['aria-label']}>
+    <button type="button" data-testid="menu-trigger" aria-label={props['aria-label']}>
       {props.children}
     </button>
   );
-  const Content = (props: any) => (
-    <div data-testid="menu-content">{props.children}</div>
-  );
+  const Content = (props: any) => <div data-testid="menu-content">{props.children}</div>;
   const Group = (props: any) => (
     <div data-testid="dropdown-group" class={props.class}>
       {props.children}
@@ -45,6 +43,7 @@ vi.mock('@capsuletech/web-ui/dropdown', () => {
   );
   const Item = (props: any) => (
     <button
+      type="button"
       data-testid="dropdown-item"
       class={props.class}
       onClick={() => props.onSelect?.()}
@@ -54,9 +53,7 @@ vi.mock('@capsuletech/web-ui/dropdown', () => {
   );
   const Separator = () => <hr data-testid="dropdown-separator" />;
 
-  const DropdownImpl = (props: any) => (
-    <div data-testid="dropdown-root">{props.children}</div>
-  );
+  const DropdownImpl = (props: any) => <div data-testid="dropdown-root">{props.children}</div>;
 
   const Dropdown = Object.assign(DropdownImpl, {
     Trigger,
@@ -73,6 +70,7 @@ vi.mock('@capsuletech/web-ui/dropdown', () => {
 vi.mock('@capsuletech/web-ui/button', () => ({
   Button: (props: any) => (
     <button
+      type="button"
       data-testid={props['data-testid'] ?? 'ui-button'}
       aria-label={props['aria-label']}
       class={props.class}
@@ -83,9 +81,7 @@ vi.mock('@capsuletech/web-ui/button', () => ({
 }));
 
 vi.mock('@capsuletech/web-ui/icons', () => ({
-  Menu: (props: any) => (
-    <svg data-testid="menu-icon" aria-hidden={props['aria-hidden']} />
-  ),
+  Menu: (props: any) => <svg data-testid="menu-icon" aria-hidden={props['aria-hidden']} />,
 }));
 
 // Group stub: wrapper mode passes children, batch mode iterates data via itemAs.
@@ -106,9 +102,7 @@ vi.mock('@capsuletech/web-ui/group', () => {
       >
         {isBatch() ? (
           <For each={props.data}>
-            {(item: any) => (
-              <Dynamic component={props.itemAs} {...getItemProps(item)} />
-            )}
+            {(item: any) => <Dynamic component={props.itemAs} {...getItemProps(item)} />}
           </For>
         ) : (
           props.children
@@ -173,8 +167,12 @@ describe('Shell.Header.Navigation — wrapper mode', () => {
     cleanup = render(
       () => (
         <Header.Navigation>
-          <a data-testid="nav-link-1">Dashboard</a>
-          <a data-testid="nav-link-2">Reports</a>
+          <a href="/" data-testid="nav-link-1">
+            Dashboard
+          </a>
+          <a href="/" data-testid="nav-link-2">
+            Reports
+          </a>
         </Header.Navigation>
       ),
       container,
@@ -186,7 +184,11 @@ describe('Shell.Header.Navigation — wrapper mode', () => {
 
   it('defaults to orientation=horizontal', () => {
     cleanup = render(
-      () => <Header.Navigation><span>x</span></Header.Navigation>,
+      () => (
+        <Header.Navigation>
+          <span>x</span>
+        </Header.Navigation>
+      ),
       container,
     );
 
@@ -198,7 +200,9 @@ describe('Shell.Header.Navigation — wrapper mode', () => {
 describe('Shell.Header.Navigation — batch mode', () => {
   it('iterates data through itemAs', () => {
     const NavItem = (props: { label: string }) => (
-      <a data-testid="batch-item">{props.label}</a>
+      <a href="/" data-testid="batch-item">
+        {props.label}
+      </a>
     );
 
     const data = [{ label: 'Dashboard' }, { label: 'Reports' }];
@@ -221,7 +225,7 @@ describe('Shell.Header.Navigation — batch mode', () => {
   });
 
   it('forwards variant and orientation to Group', () => {
-    const NavItem = (props: { label: string }) => <a>{props.label}</a>;
+    const NavItem = (props: { label: string }) => <a href="/">{props.label}</a>;
 
     cleanup = render(
       () => (
@@ -294,9 +298,7 @@ describe('Shell.Header.Menu sub-helpers', () => {
     );
 
     expect(container.querySelector('[data-testid="dropdown-group"]')).not.toBeNull();
-    expect(
-      container.querySelector('[data-testid="inside-group"]'),
-    ).not.toBeNull();
+    expect(container.querySelector('[data-testid="inside-group"]')).not.toBeNull();
   });
 
   it('Menu.Label renders dropdown-label', () => {
@@ -350,7 +352,9 @@ describe('Shell.Header.Menu sub-helpers', () => {
 describe('Shell.Header — composition (full widget pattern)', () => {
   it('composes Navigation + Menu as children of Header', () => {
     const NavItem = (props: { label: string }) => (
-      <a data-testid="nav-item">{props.label}</a>
+      <a href="/" data-testid="nav-item">
+        {props.label}
+      </a>
     );
 
     cleanup = render(

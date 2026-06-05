@@ -42,7 +42,7 @@
 
 import { useCtx, useEmit } from '@capsuletech/web-core';
 import { splitProps } from 'solid-js';
-import type { IMatrixEvents, IMatrixProps, LayoutChangeEvent } from '../matrix/interfaces';
+import type { IMatrixEvents, IMatrixProps } from '../matrix/interfaces';
 import { Matrix } from '../matrix/matrix';
 
 // Re-export types для потребителей /controllers
@@ -61,7 +61,6 @@ const MatrixControllerComponent = (props: IMatrixProps) => {
   // useEmit() вызываем только если контекст есть, иначе standalone-Matrix
   // работает как pure layout (без emit).
   // В Solid условный вызов хука в render-scope допустим.
-  // biome-ignore lint/correctness/useHookAtTopLevel: guard — intentional, ctx определён через useContext
   const emit = ctx ? useEmit() : undefined;
 
   const [local, rest] = splitProps(props, ['onLayoutChange']);

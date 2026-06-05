@@ -7,11 +7,11 @@ import type { ISortableZone } from '@capsuletech/web-dnd';
 import { Flex, type IFlex } from '@capsuletech/web-ui';
 import type { Accessor, JSX } from 'solid-js';
 import { For } from 'solid-js';
-import { NOOP_REF, renderCell, type ICellDndState } from '../cell';
+import { type ICellDndState, NOOP_REF, renderCell } from '../cell';
+import type { ICell, IRow } from '../interfaces';
 import type { IGridOpts } from './grid-row';
 import { renderGridRow } from './grid-row';
 import { isPackingZone, renderPackingRow } from './packing-row';
-import type { ICell, IRow } from '../interfaces';
 
 // ---------------------------------------------------------------------------
 // rowToFlexItems
@@ -25,7 +25,7 @@ export const rowToFlexItems = (
   /** Saved sizes for this row's horizontal panels (index-aligned). */
   savedSizes: number[] | undefined,
   isDragging: Accessor<boolean>,
-  resizeEnabled: Accessor<boolean>,
+  _resizeEnabled: Accessor<boolean>,
 ): IFlex.IFlexItem[] => {
   const rowIsAutoHeight = row.height === 'auto';
   return row.cells.map((cell, i) => {
@@ -88,14 +88,7 @@ export const renderRow = (
 ): JSX.Element => {
   // ADR 026: Grid-canvas render-path.
   if (zone && row.grid && gridOpts && row.id) {
-    return renderGridRow(
-      row,
-      getSwappedChildren,
-      zone,
-      isDragging,
-      resizeEnabled,
-      gridOpts,
-    );
+    return renderGridRow(row, getSwappedChildren, zone, isDragging, resizeEnabled, gridOpts);
   }
 
   // ADR 022: Packing zones use a separate render-path.

@@ -172,6 +172,7 @@ class AgentClient implements IAgentClient {
   }
 
   // eslint-disable-next-line require-yield
+  // biome-ignore lint/correctness/useYield: stub — yields добавятся при реализации MCP tool-streaming (PENDING scriber)
   async *continueWithToolResults(
     _conversationId: string,
     _toolResults: Array<{ toolCallId: string; result: unknown }>,

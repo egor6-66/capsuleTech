@@ -5,9 +5,7 @@ const STORAGE_KEY = 'capsule-dnd-mode';
 // Module-level singleton signal. SSR-safe: localStorage read guarded.
 // Default: true — drag-and-drop is enabled by default (no prior stored value → on).
 const [enabled, setEnabled] = createSignal<boolean>(
-  typeof window !== 'undefined'
-    ? localStorage.getItem(STORAGE_KEY) !== 'false'
-    : true,
+  typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) !== 'false' : true,
 );
 
 /**

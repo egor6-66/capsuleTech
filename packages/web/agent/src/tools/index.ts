@@ -19,7 +19,7 @@
 
 import type { IToolCall, IToolDef } from '../types';
 
-export type { IToolDef, IToolCall } from '../types';
+export type { IToolCall, IToolDef } from '../types';
 
 // ─── IAgentTool ───────────────────────────────────────────────────────────────
 

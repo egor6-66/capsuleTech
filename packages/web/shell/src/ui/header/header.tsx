@@ -3,7 +3,6 @@ import { Button } from '@capsuletech/web-ui/button';
 import { Dropdown } from '@capsuletech/web-ui/dropdown';
 import { Group } from '@capsuletech/web-ui/group';
 import { Menu } from '@capsuletech/web-ui/icons';
-import type { ParentProps } from 'solid-js';
 
 import type {
   IHeaderCompound,
@@ -68,18 +67,11 @@ function HeaderNavigation<T = unknown>(props: IHeaderNavigationProps<T>) {
 function HeaderMenu(props: IHeaderMenuProps) {
   return (
     <Dropdown modal={false}>
-      <Dropdown.Trigger
-        as={Button}
-        variant="ghost"
-        size="icon"
-        aria-label={props.label ?? 'Меню'}
-      >
+      <Dropdown.Trigger as={Button} variant="ghost" size="icon" aria-label={props.label ?? 'Меню'}>
         <Menu class="size-5" aria-hidden="true" />
       </Dropdown.Trigger>
 
-      <Dropdown.Content>
-        {props.children}
-      </Dropdown.Content>
+      <Dropdown.Content>{props.children}</Dropdown.Content>
     </Dropdown>
   );
 }
@@ -101,9 +93,7 @@ function MenuSeparator(_props: object) {
   return <Dropdown.Separator />;
 }
 
-function MenuItemSub(
-  props: IHeaderMenuSubProps & { onSelect?: () => void },
-) {
+function MenuItemSub(props: IHeaderMenuSubProps & { onSelect?: () => void }) {
   return (
     <Dropdown.Item onSelect={props.onSelect} class={props.class}>
       {props.children}
