@@ -40,6 +40,18 @@ export const defineAgentTool = <Args, Result>(
   tool: IAgentTool<Args, Result>,
 ): IAgentTool<Args, Result> => tool;
 
+/**
+ * Тип для хетерогенного хранения тулов с разными generic'ами.
+ *
+ * `IAgentTool<TInput, TOutput>` инвариантен по обоим параметрам
+ * (TInput — contravariant position в execute, TOutput — covariant),
+ * поэтому `IAgentTool<{q:string}, string[]>` не assignable к
+ * `IAgentTool<unknown, unknown>`. `any` правомерен только на уровне
+ * хранения (реестр гетерогенный по природе) — не внутри конкретного тула.
+ */
+// biome-ignore lint/suspicious/noExplicitAny: реестр — гетерогенный контейнер
+export type AnyAgentTool = IAgentTool<any, any>;
+
 // ─── ToolRegistry ────────────────────────────────────────────────────────────
 
 /** Опции реестра. */
@@ -71,7 +83,7 @@ export interface IToolRegistry {
   toToolDefs(): IToolDef[];
 
   /** Получить tool по имени. `undefined` если не найден. */
-  get(name: string): IAgentTool | undefined;
+  get(name: string): AnyAgentTool | undefined;
 
   /** Проверить наличие tool'а по имени. */
   has(name: string): boolean;
@@ -86,9 +98,9 @@ export interface IToolRegistry {
 // ─── Реализация ──────────────────────────────────────────────────────────────
 
 class ToolRegistry implements IToolRegistry {
-  private readonly tools: Map<string, IAgentTool>;
+  private readonly tools: Map<string, AnyAgentTool>;
 
-  constructor(tools: IAgentTool[], options?: IToolRegistryOptions) {
+  constructor(tools: AnyAgentTool[], options?: IToolRegistryOptions) {
     this.tools = new Map();
 
     for (const tool of tools) {
@@ -108,7 +120,7 @@ class ToolRegistry implements IToolRegistry {
     }));
   }
 
-  get(name: string): IAgentTool | undefined {
+  get(name: string): AnyAgentTool | undefined {
     return this.tools.get(name);
   }
 
@@ -157,6 +169,6 @@ class ToolRegistry implements IToolRegistry {
  * ```
  */
 export const createToolRegistry = (
-  tools: IAgentTool[],
+  tools: AnyAgentTool[],
   options?: IToolRegistryOptions,
 ): IToolRegistry => new ToolRegistry(tools, options);
