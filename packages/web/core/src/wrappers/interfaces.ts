@@ -778,7 +778,7 @@ export type IWrapperProps = {
  * `CtxOf<typeof MyFeature>` → `TCtx`.
  */
 export type IControllerWrapper = <TEvents = Record<never, never>, TCtx = any>(
-  defineStateSchema: (services: IServices) => IDefineStateSchema<TCtx, TEvents>,
+  defineStateSchema: (services: IServices) => IDefineStateSchema<TCtx, NoInfer<TEvents>>,
 ) => ((props: IWrapperProps) => any) & { readonly __ctx?: TCtx };
 
 export type IFeatureWrapper = IControllerWrapper;
