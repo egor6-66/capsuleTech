@@ -236,6 +236,35 @@ export type LayoutChangeEvent =
 
 export interface IMatrixCommonProps extends JSX.HTMLAttributes<HTMLDivElement> {
   /**
+   * Sugar shortcut for static (non-interactive) and fully interactive layouts.
+   *
+   * - `'view'` — locks **both** resize and DnD **off**, regardless of global signals.
+   *   Replaces the verbose `dnd={false} resize={false}` pattern used on static
+   *   shell layouts (cards, workspace panels that should never be user-resizable).
+   * - `'edit'` — locks **both** resize and DnD **on** (DnD kind = 'swap'), regardless
+   *   of global signals.
+   * - `undefined` (default) — no override; granular `resize`/`dnd` props and global
+   *   signals apply as usual.
+   *
+   * **Precedence (highest → lowest):**
+   * 1. Granular `resize` / `dnd` props (explicit per-axis override).
+   * 2. `mode` prop (both-axes shortcut).
+   * 3. Global `useResizeMode()` / `useDndMode()` signals from `@capsuletech/web-style`.
+   *
+   * Examples:
+   * ```tsx
+   * // Static layout — no resize, no DnD:
+   * <Matrix mode="view" preset="app-shell" slots={...} />
+   *
+   * // Fully interactive:
+   * <Matrix mode="edit" rows={rows} />
+   *
+   * // Mixed: DnD on (from mode="edit"), resize explicitly off:
+   * <Matrix mode="edit" resize={false} rows={rows} />
+   * ```
+   */
+  mode?: 'view' | 'edit';
+  /**
    * DnD mode prop — controls whether drag-and-drop is enabled and which kind.
    *
    * - `undefined` — follow global `useDndMode()` signal (from `@capsuletech/web-style`).
@@ -244,8 +273,10 @@ export interface IMatrixCommonProps extends JSX.HTMLAttributes<HTMLDivElement> {
    * - `'swap'` — DnD permanently enabled in swap mode.
    * - `'insert'` — DnD permanently enabled in insert mode.
    *
-   * Resolved in MatrixImpl:
-   *   dndEnabled = (dnd === undefined) ? globalDnd() : dnd !== false
+   * Resolved in mode.ts (createMatrixModes):
+   *   dndEnabled = (dnd !== undefined) ? dnd !== false
+   *              : (mode !== undefined) ? mode === 'edit'
+   *              : globalDnd()
    *   dndKind    = (dnd === 'insert') ? 'insert' : 'swap'
    */
   dnd?: false | MatrixDndKind;
@@ -257,6 +288,9 @@ export interface IMatrixCommonProps extends JSX.HTMLAttributes<HTMLDivElement> {
    * - `false` — resize permanently disabled on this Matrix.
    *
    * Per-cell: `cell.resizable ?? true` — opt-out default (resizable unless explicitly false).
+   *
+   * Resolved in mode.ts (createMatrixModes):
+   *   resizeEnabled = resize ?? (mode !== undefined ? mode === 'edit' : globalResize())
    */
   resize?: boolean;
   onLayoutChange?: (event: LayoutChangeEvent) => void;

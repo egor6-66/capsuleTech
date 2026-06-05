@@ -27,6 +27,7 @@ const MatrixImpl = (props: IMatrixProps) => {
     'rows',
     'dnd',
     'resize',
+    'mode',
     'onLayoutChange',
     'direction',
   ]);
@@ -50,6 +51,7 @@ const MatrixImpl = (props: IMatrixProps) => {
   const { resizeEnabled, dndEnabled, dndKind } = createMatrixModes({
     resize: local.resize,
     dnd: local.dnd,
+    mode: local.mode,
   });
 
   return (
@@ -94,8 +96,10 @@ const MatrixImpl = (props: IMatrixProps) => {
  *    ```
  *
  * **Mode props:**
- * - `resize?: boolean` — `undefined` → follows `useResizeMode()` from web-style; `true`/`false` → locked.
- * - `dnd?: false | 'swap' | 'insert'` — `undefined` → follows `useDndMode()` from web-style (kind='swap' by default);
+ * - `mode?: 'view' | 'edit'` — sugar shortcut: `'view'` → locks both resize+DnD off;
+ *   `'edit'` → locks both on. Overridden per-axis by explicit `resize`/`dnd` props.
+ * - `resize?: boolean` — `undefined` → follows `useResizeMode()` from web-style (or `mode`); `true`/`false` → locked.
+ * - `dnd?: false | 'swap' | 'insert'` — `undefined` → follows `useDndMode()` from web-style (or `mode`);
  *   `false` → locked off; `'swap'`/`'insert'` → locked on with the specified kind.
  *
  * **Per-cell opt-out defaults:**

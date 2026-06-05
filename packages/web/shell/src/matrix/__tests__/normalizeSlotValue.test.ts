@@ -10,20 +10,20 @@ describe('normalizeSlotValue', () => {
     expect(normalizeSlotValue(null as never)).toBeNull();
   });
 
-  it('wraps a bare string (JSX-form) as children with draggable=false', () => {
+  it('wraps a bare string (JSX-form) as children with draggable=undefined (opt-out model)', () => {
     const result = normalizeSlotValue('hello' as never);
     expect(result).not.toBeNull();
     expect(result!.children).toBe('hello');
-    expect(result!.draggable).toBe(false);
+    expect(result!.draggable).toBeUndefined();
     expect(result!.initialSize).toBeUndefined();
   });
 
-  it('wraps an array (JSX-form) as children', () => {
+  it('wraps an array (JSX-form) as children with draggable=undefined', () => {
     // Arrays are valid Solid JSX (fragments) — treated as JSX-form, not config
     const arr = ['a', 'b'] as never;
     const result = normalizeSlotValue(arr);
     expect(result!.children).toBe(arr);
-    expect(result!.draggable).toBe(false);
+    expect(result!.draggable).toBeUndefined();
   });
 
   it('passes through object-form with all fields', () => {
@@ -43,9 +43,9 @@ describe('normalizeSlotValue', () => {
     });
   });
 
-  it('object-form with only children defaults draggable to false', () => {
+  it('object-form with only children leaves draggable undefined (opt-out model)', () => {
     const result = normalizeSlotValue({ children: 'x' });
-    expect(result!.draggable).toBe(false);
+    expect(result!.draggable).toBeUndefined();
     expect(result!.initialSize).toBeUndefined();
   });
 

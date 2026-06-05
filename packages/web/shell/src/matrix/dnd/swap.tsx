@@ -81,7 +81,7 @@ const flatDraggableCells = (rows: IRow[]): ICellEntry[] => {
   const result: ICellEntry[] = [];
   for (const row of rows) {
     for (const cell of row.cells) {
-      if (cell.draggable) {
+      if (cell.draggable !== false) {
         result.push({ cell, rowId: row.id });
       }
     }

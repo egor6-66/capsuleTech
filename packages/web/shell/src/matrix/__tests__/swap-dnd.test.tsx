@@ -82,6 +82,8 @@ describe('Matrix — badge-UX swap DnD', () => {
   });
 
   it('badge NOT rendered when only 1 draggable cell (nothing to swap with)', () => {
+    // Opt-out model: cell without draggable field is now draggable by default.
+    // To explicitly exclude a cell, set draggable: false.
     cleanup = render(
       () => (
         <Matrix
@@ -102,7 +104,7 @@ describe('Matrix — badge-UX swap DnD', () => {
                 {
                   id: 'b',
                   children: <div>B</div>,
-                  // NOT draggable
+                  draggable: false, // explicit opt-out — excluded from swap engine
                   width: 0.5,
                   resizable: true,
                 },
@@ -306,14 +308,19 @@ describe('Matrix — badge-UX swap DnD', () => {
     expect(onLayoutChange).not.toHaveBeenCalled();
   });
 
-  it('preset app-shell with draggable sidebar + rightBar → 2 badges', () => {
+  it('preset app-shell with draggable sidebar + rightBar, locked main → 2 badges', () => {
+    // Opt-out model: main must be explicitly locked with draggable: false to prevent
+    // it from entering the swap engine. sidebar + rightBar are explicitly draggable: true.
     cleanup = render(
       () => (
         <Matrix
           preset="app-shell"
           dnd="swap"
           slots={{
-            main: <div data-testid="main">M</div>,
+            main: {
+              children: <div data-testid="main">M</div>,
+              draggable: false, // explicit opt-out — main stays fixed
+            },
             sidebar: {
               children: <div data-testid="sidebar">S</div>,
               draggable: true,

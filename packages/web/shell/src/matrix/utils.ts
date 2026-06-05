@@ -9,7 +9,13 @@ export interface INormalizedSlot {
   initialSize?: number;
   minSize?: number;
   maxSize?: number;
-  draggable: boolean;
+  /**
+   * Per-slot draggable override.
+   * `undefined` = not set (opt-out model: engine treats as draggable when DnD is active).
+   * `false` = explicit opt-out (cell is never draggable).
+   * `true` = explicit opt-in (redundant with default, but valid).
+   */
+  draggable?: boolean;
   /** Свап-группа (передаётся в preset → ICell.swapGroup). */
   swapGroup?: string;
   /** Explicit resizable override — undefined = preset применяет свой default. */
@@ -55,7 +61,7 @@ export const normalizeSlotValue = (slot: SlotValue | undefined): INormalizedSlot
       initialSize: config.initialSize,
       minSize: config.minSize,
       maxSize: config.maxSize,
-      draggable: config.draggable ?? false,
+      draggable: config.draggable,
       swapGroup: config.swapGroup,
       resizable: config.resizable,
       skeleton: config.skeleton,
@@ -65,6 +71,6 @@ export const normalizeSlotValue = (slot: SlotValue | undefined): INormalizedSlot
   // JSX-форма: строка, число, boolean, функция, массив, или любой другой объект
   return {
     children: slot as JSX.Element,
-    draggable: false,
+    draggable: undefined,
   };
 };
