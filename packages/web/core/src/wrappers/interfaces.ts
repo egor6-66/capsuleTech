@@ -373,12 +373,37 @@ export type IWidgetLoader<P extends Record<string, any> = Record<string, any>> =
   props: P,
 ) => JSX.Element;
 
+/**
+ * Descriptor for a single widget setting rendered in the settings-strip overlay.
+ *
+ * Union type — start with `toggle`, extend with `checkbox | input | select` later.
+ * `value` receives `store.ctx.data` (reactive, called inside JSX) and returns
+ * a boolean indicating the active/inactive visual state.
+ * `tags` are passed directly to `meta.tags` — UiProxy binds onClick and routes
+ * the event to the parent Feature/Controller handler.
+ */
+// biome-ignore lint/suspicious/noExplicitAny: data shape depends on the consuming Feature context
+export type ISetting = { type: 'toggle'; label: string; value: (data: any) => boolean; tags: string[] };
+
+/**
+ * Options bag for `Widget(component, options?)`.
+ * Replaces the positional `loader?` second argument (clean break).
+ *
+ * - `loader` — swap render while `store.loading === true` (same semantics as before).
+ * - `settings` — declarative config for the settings-strip overlay rendered when
+ *   global `settingsMode` is ON and `store` is available.
+ */
+export interface IWidgetOptions<P extends Record<string, any> = Record<string, any>> {
+  loader?: IWidgetLoader<P>;
+  settings?: ISetting[];
+}
+
 export type IWidgetWrapper = <
   P extends Record<string, any> = Record<string, any>,
   S = IBridge | undefined,
 >(
   component: IWidgetRenderer<P, S>,
-  loader?: IWidgetLoader<P>,
+  options?: IWidgetOptions<P>,
 ) => ParentComponent<P>;
 
 /**
