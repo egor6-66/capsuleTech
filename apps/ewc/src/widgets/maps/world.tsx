@@ -20,11 +20,9 @@ const World = Widget((Ui) => (
 export default World;
 
 /* === ОРИГИНАЛ — восстановить после ADR 032 фаза 4 ===
-import type { IIncidentsContext } from '../../features/incidents';
-
 const World = Widget(
-  (Ui, store) => {
-    const data = () => store?.ctx.data as IIncidentsContext | undefined;
+  (Ui, store: StoreOf<typeof Features.Incidents>) => {
+    const data = () => store.ctx.data;
     const flyTo = (): [number, number] | undefined => {
       const sel = data()?.selected;
       if (!sel) return undefined;

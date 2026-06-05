@@ -37,47 +37,25 @@
  */
 
 import { unwrap } from 'solid-js/store';
-import type { z } from 'zod';
 
-export type IIncident = z.infer<typeof Entities.Incident.schema>;
-
-/** Shape of Features.Incidents user-state — read via `store.ctx.data` / `context.data`. */
-export interface IIncidentsContext {
-  items: IIncident[];
-  selected: IIncident | null;
-  error: string | null;
-  /**
-   * Cross-widget sync prefs (opt-in) — toggled from the Matrix widget-settings strip.
-   * - `flyToSelected`   — карта подлетает к выбору, пришедшему из ТАБЛИЦЫ («Синк с таблицей»).
-   * - `scrollToSelected`— таблица скроллит к выбору, пришедшему из КАРТЫ («Синк с картой»).
-   */
-  flyToSelected: boolean;
-  scrollToSelected: boolean;
-  /**
-   * Self-click center prefs (opt-in) — реагируют на выбор из СВОЕГО виджета.
-   * - `centerOnClick` — клик по строке таблицы центрирует её («Скроллить к выбранному»).
-   * - `flyOnClick`    — клик по маркеру карты подлетает к нему («Подлететь к выбранному»).
-   */
-  centerOnClick: boolean;
-  flyOnClick: boolean;
-  /**
-   * Кто инициировал выбор: тег источника (`table` / `map`). Sync-prefs реагируют
-   * на ЧУЖОЙ источник, self-prefs — на СВОЙ.
-   */
-  selectionSource: 'table' | 'map' | null;
-}
+/** Тип строки incident'а — выводится из Entity-схемы (без импорта zod). */
+export type IIncident = typeof Entities.Incident.$infer;
 
 const Incidents = Feature(({ api, router }) => ({
   initial: 'idle' as const,
 
+  // Источник правды для типа контекста — TCtx инферится отсюда (CtxOf<typeof Features.Incidents>).
   context: {
     items: [] as IIncident[],
     selected: null as IIncident | null,
     error: null as string | null,
-    flyToSelected: false,
-    scrollToSelected: false,
-    centerOnClick: false,
-    flyOnClick: false,
+    // Cross-widget sync prefs (opt-in, флипаются из settings-strip Matrix'а):
+    flyToSelected: false, //  карта подлетает к выбору ИЗ ТАБЛИЦЫ («Синк с таблицей»)
+    scrollToSelected: false, //  таблица скроллит к выбору ИЗ КАРТЫ («Синк с картой»)
+    // Self-click center prefs (opt-in, реагируют на выбор из СВОЕГО виджета):
+    centerOnClick: false, //  клик по строке центрирует её («Скроллить к выбранному»)
+    flyOnClick: false, //  клик по маркеру подлетает к нему («Подлететь к выбранному»)
+    // Кто инициировал выбор: sync-prefs реагируют на ЧУЖОЙ источник, self — на СВОЙ.
     selectionSource: null as 'table' | 'map' | null,
   },
 

@@ -9,11 +9,9 @@
  * Stateless-проекция: значения читаются из стора через `useCtx`, клик несёт
  * meta-тег → `Features.Incidents.onClick` флипает флаг. View ничего не мутирует.
  */
-import type { IIncidentsContext } from '../../features/incidents';
-
 const TableSync = View((Ui) => {
   const ctx = useCtx();
-  const data = () => ctx.store.ctx.data as IIncidentsContext | undefined;
+  const data = () => ctx.store.ctx.data as CtxOf<typeof Features.Incidents> | undefined;
   const sync = () => !!data()?.scrollToSelected;
   const center = () => !!data()?.centerOnClick;
   return (

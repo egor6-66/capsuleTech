@@ -16,11 +16,11 @@
  * вместо контента. Presentation лоадера живёт здесь — фича знает только про
  * логический сигнал загрузки, не про вид скелетона.
  */
-import type { IIncident, IIncidentsContext } from '../../features/incidents';
+import type { IIncident } from '../../features/incidents';
 
 const Incidents = Widget(
-  (_Ui, store) => {
-    const data = () => store?.ctx.data as IIncidentsContext | undefined;
+  (_Ui, store: StoreOf<typeof Features.Incidents>) => {
+    const data = () => store.ctx.data;
     return (
       <Shapes.IncidentsTable
         data={data()?.items ?? []}
