@@ -164,13 +164,26 @@ type FlowNamespace = {
 /** Layout-subset: Grid + Flex. Matrix переехал в @capsuletech/web-shell (ADR 033), не в Ui-namespace. */
 type ViewLayoutSubset = Pick<typeof Layout, 'Grid' | 'Flex'>;
 
-type ViewUiRaw = {
+/**
+ * Примитивы, валидные в **любом** слое (View / Widget / Page).
+ * Рантайм всех трёх wrapper'ов спредит полный BaseUi — ограничение только типовое.
+ * `Flow` сюда не входит: он добавляется отдельно verbatim-интерсекцией
+ * в финальных `ViewUi`/`WidgetUi`/`PageUi`, чтобы `WithMetaProps` не трогал
+ * сигнатуры Solid control-flow компонентов.
+ */
+type UniversalUiRaw = {
+  /** Grid + Flex для internal layout. Matrix переехал в @capsuletech/web-shell. */
+  Layout: ViewLayoutSubset;
+  Animate: typeof Animate;
+  Typography: typeof Typography;
+};
+
+type ViewUiRaw = UniversalUiRaw & {
   Field: typeof Field;
   Button: typeof Button;
   Group: typeof Group;
   Input: typeof Input;
   List: typeof List;
-  Animate: typeof Animate;
   Table: typeof Table;
   DataTable: typeof DataTable;
   PreviewCard: typeof PreviewCard;
@@ -182,10 +195,7 @@ type ViewUiRaw = {
   Select: typeof Select;
   Textarea: typeof Textarea;
   Card: typeof Card;
-  Typography: typeof Typography;
   Link: typeof Link;
-  /** Grid + Flex для internal View/Widget/Page layout. Matrix переехал в @capsuletech/web-shell. */
-  Layout: ViewLayoutSubset;
   /**
    * Solid control-flow primitives. Raw — NOT UiProxy-wrapped.
    * `<Ui.Flow.For each={...}>{(x) => ...}</Ui.Flow.For>`
@@ -195,13 +205,10 @@ type ViewUiRaw = {
 
 type Outlet = () => JSXElement;
 
-type WidgetUiRaw = {
+type WidgetUiRaw = UniversalUiRaw & {
   Button: typeof Button;
   Card: typeof Card;
   Outlet: Outlet;
-  Animate: typeof Animate;
-  /** Grid + Flex. Matrix переехал в @capsuletech/web-shell. */
-  Layout: ViewLayoutSubset;
   Table: typeof Table;
   DataTable: typeof DataTable;
   PreviewCard: typeof PreviewCard;
@@ -218,11 +225,9 @@ type WidgetUiRaw = {
    */
   Flow: FlowNamespace;
 };
-type PageUiRaw = {
-  /** Grid + Flex. Matrix переехал в @capsuletech/web-shell. */
-  Layout: ViewLayoutSubset;
+
+type PageUiRaw = UniversalUiRaw & {
   Outlet: Outlet;
-  Animate: typeof Animate;
   /**
    * Solid control-flow primitives. Raw — NOT UiProxy-wrapped.
    * `<Ui.Flow.For each={...}>{(x) => ...}</Ui.Flow.For>`
