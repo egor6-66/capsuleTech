@@ -91,11 +91,18 @@ export const renderCell = (
       ? 'relative overflow-auto w-full'
       : 'absolute inset-0 overflow-auto';
 
+    // When DnD is active the outer wrapper must NOT carry overflow-auto/hidden.
+    // overflow on the outer element creates a new stacking context that clips the
+    // absolutely-positioned DragBadge (z-30) to the cell's scroll viewport — the
+    // badge disappears behind DataTable rows whose sticky thead (z-index:1 inside
+    // its own scroll container) also shares the same context.
+    // Scroll is delegated entirely to the inner div (innerClass above); the outer
+    // stays a clean `relative` container so DragBadge's z-30 wins globally.
     return (
       <Dynamic
         component={tag}
         ref={cellRef}
-        class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative`}
+        class="h-full w-full relative"
       >
         {/* Inner scroll wrapper; pointer-events-none during drag prevents hover leaking
             into cell content (table row hover, map hover, etc.).
