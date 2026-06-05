@@ -63,3 +63,6 @@ graph.json
 *.pfx
 credentials*.json
 secrets*.json
+# VPN / tunnel configs (WireGuard/OpenVPN — contain private keys)
+*.conf
+*.ovpn
