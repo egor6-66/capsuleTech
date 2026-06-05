@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 2. **[`docs/_meta/architect-routing.md`](docs/_meta/architect-routing.md)** — symptom → agent table. Куда делегировать в зависимости от запроса.
 3. **[`docs/_meta/anti-patterns.md`](docs/_meta/anti-patterns.md)** — каталог костылей с proper-fix'ами. Если соблазн на quick-fix — проверь здесь сначала.
 4. **`packages/<pkg>/OWNERSHIP.md`** — если задача касается одного пакета.
+5. **[`docs/_meta/parallel-dev-flow.md`](docs/_meta/parallel-dev-flow.md)** — если идёт **параллельная работа** (пользователь + N агентов на одном репо). Trunk `develop` + коммиты по путям. **Никогда `git add -A`; scope-тег в commit; shared-infra только главный.**
 
 ### 5 правил decision-making
 
