@@ -1,5 +1,3 @@
-import { ModeToggle, ThemePicker } from '@capsuletech/web-shell/ui';
-
 /**
  * WorkspaceMenu — dropdown в правой части header workspace.
  *
@@ -13,10 +11,10 @@ import { ModeToggle, ThemePicker } from '@capsuletech/web-shell/ui';
  *   - Account / Logout — Dropdown.Item с tag 'logout'. Click перехватывает
  *     UiProxy → Feature `Workspace.onClick` → clear token + redirect /login.
  *
- * `ModeToggle` / `ThemePicker` — tier-2 connected-блоки из `@capsuletech/web-shell`
- * (ADR 032). До ADR 033 phase 3 импортятся напрямую из `/ui`. `mode="sub"` на
- * ThemePicker даёт `Dropdown.Sub`-рендер; toggle'ы не оборачиваем в Dropdown.Item,
- * иначе click закроет parent menu.
+ * `Shell.ModeToggle` / `Shell.ThemePicker` — tier-2 connected-блоки из
+ * `@capsuletech/web-shell`, приходят глобалом через `packages:` в capsule.app.ts
+ * (ADR 033). `mode="sub"` на ThemePicker даёт `Dropdown.Sub`-рендер; toggle'ы не
+ * оборачиваем в Dropdown.Item, иначе click закроет parent menu.
  */
 const WorkspaceMenu = View((Ui) => (
   <Ui.Dropdown modal={false}>
@@ -41,24 +39,24 @@ const WorkspaceMenu = View((Ui) => (
       <Ui.Dropdown.Group>
         <Ui.Dropdown.Label>Layout</Ui.Dropdown.Label>
         <div class="flex flex-col gap-1.5 px-2 py-1.5">
-          <ModeToggle mode="dnd" />
-          <ModeToggle mode="resize" />
+          <Shell.ModeToggle mode="dnd" />
+          <Shell.ModeToggle mode="resize" />
         </div>
       </Ui.Dropdown.Group>
       <Ui.Dropdown.Separator />
       <Ui.Dropdown.Group>
         <Ui.Dropdown.Label>Widget settings</Ui.Dropdown.Label>
         <div class="px-2 py-1.5">
-          <ModeToggle mode="settings" />
+          <Shell.ModeToggle mode="settings" />
         </div>
       </Ui.Dropdown.Group>
       <Ui.Dropdown.Separator />
       <Ui.Dropdown.Group>
         <Ui.Dropdown.Label>Theme</Ui.Dropdown.Label>
         <div class="px-2 py-1.5">
-          <ModeToggle mode="dark" />
+          <Shell.ModeToggle mode="dark" />
         </div>
-        <ThemePicker mode="sub" />
+        <Shell.ThemePicker mode="sub" />
       </Ui.Dropdown.Group>
       <Ui.Dropdown.Separator />
       <Ui.Dropdown.Group>

@@ -1,4 +1,3 @@
-import { Matrix } from '@capsuletech/web-shell/matrix';
 
 /**
  * Dashboard (`/workspace/dashboard`) — основной операционный экран EWC.
@@ -24,25 +23,22 @@ import { Matrix } from '@capsuletech/web-shell/matrix';
  *     web-core рисует их в settings-strip при включённом settingsMode.
  * Page лишь расставляет виджеты по слотам Matrix (children + DnD-параметры).
  */
-const Dashboard = Page((Ui) => (
+const Dashboard = Page(() => (
   <Features.Incidents>
-    <Matrix
+    <Shell.Matrix
       preset="app-shell"
       slots={{
         main: {
           children: <Widgets.Tables.Incidents />,
-          draggable: true,
           swapGroup: 'widgets',
         },
         rightBar: {
           children: <Widgets.Sidebars.Main />,
-          draggable: true,
           swapGroup: 'widgets',
           initialSize: 0.25,
         },
         footer: {
           children: <Widgets.Maps.World />,
-          draggable: true,
           swapGroup: 'widgets',
           initialSize: 0.35,
         },

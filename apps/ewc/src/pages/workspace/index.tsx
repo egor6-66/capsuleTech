@@ -1,4 +1,3 @@
-import { Matrix } from '@capsuletech/web-shell/matrix';
 
 /**
  * Workspace shell (`/workspace`) — общий каркас для всех авторизованных
@@ -27,9 +26,8 @@ import { Matrix } from '@capsuletech/web-shell/matrix';
  * вернёмся к задаче — копать оттуда.
  */
 const Workspace = Page((Ui) => (
-  <Matrix
-    dnd={false}
-    resize={false}
+  <Shell.Matrix
+    mode="view"
     preset="app-shell"
     slots={{
       header: {
