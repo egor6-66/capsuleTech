@@ -34,7 +34,7 @@ last-updated: 2026-05-22
 
 ## Публичный API
 
-Два subpath-экспорта через `package.json.exports`:
+Три subpath-экспорта через `package.json.exports`:
 
 ### `.` — main barrel (`src/index.ts`)
 
@@ -82,7 +82,46 @@ export default defineAppConfig({
 });
 ```
 
+### `./stream` (`src/stream/index.ts`)
+
+Стриминговый транспорт — транспортный слой, НЕ участвует в pipeline.
+
+```ts
+import {
+  streamSse, streamSseJson,
+  parseSseStream, parseSseFrame,
+  type SseFrame, type StreamConfig,
+} from '@capsuletech/web-query/stream';
+
+// Низкоуровневый: сырые SSE-кадры
+for await (const frame of streamSse({ client, path: '/chat/stream', body: { prompt } })) {
+  console.log(frame.event, frame.data); // { event: 'token', data: '{"content":"hi"}' }
+}
+
+// Типизированный: JSON-парсинг + опциональная zod-схема
+const TokenEvent = z.object({ type: z.literal('token'), content: z.string() });
+for await (const ev of streamSseJson({ client, path: '/stream' }, TokenEvent)) {
+  store.update({ text: prev + ev.content });
+}
+```
+
+Переиспользует из транспортного слоя: `QueryClient.getBases()`, `QueryClient.getDefaultHeaders()`, иерархию ошибок (`HttpError` → `UnauthorizedError` / `ServerError` / ...), `AbortSignal`.
+
+**Future (не в этом батче):** `defineStreamEndpoint` + интеграция в `createApi`/`InferApi` (типизированный `api.x.stream(input) → AsyncIterable<T>`). Требует ADR — breaking shape для pipeline.
+
 Это **контракт**. Изменение публичного API = breaking change → bump major + координировать с главным.
+
+## Quirks / gotchas — stream
+
+- **`streamSse` НЕ участвует в pipeline.** Нет validateInput / validateResponse / cache. Middleware из `ApiConfig` не вызывается. Это транспортный helper, не endpoint.
+
+- **`response.body === null` → `NetworkError`.** В node-fetch / некоторых Jest/Vitest стабах `body` может быть `null`. Стриминг невозможен без readable stream.
+
+- **HTTP-ошибки маппятся на ту же иерархию что и pipeline** (`UnauthorizedError`/`ForbiddenError`/`NotFoundError`/`ConflictError`/`ServerError`). Feature ловит одинаково.
+
+- **`client.getBases()` / `client.getDefaultHeaders()`** — два новых публичных метода `QueryClient`, добавленные для интеграции стриминга. Не ломают существующий контракт.
+
+- **`parseSseFrame` экспортирован публично** для юзкейсов где нужен парсинг одного готового кадра без стрима (тестирование, debug).
 
 ## Quirks / gotchas
 
@@ -137,6 +176,8 @@ export default defineAppConfig({
 | Unit | `src/__tests__/pipeline.test.ts` | `compose`-семантика koa-style |
 | Unit | `src/__tests__/preRequest.test.ts` | preRequest: short-circuit, setInput, guards, async, ctx.endpoint, type-level |
 | Unit | `src/__tests__/devOnly.test.ts` | dev-passthrough, undefined-env fallback (prod-ветка — через Vite-сборку apps) |
+| Unit | `src/stream/__tests__/sse-parser.test.ts` | `parseSseFrame` unit + `parseSseStream` integration: чанки, комментарии, пустые кадры, reader-lock release |
+| Unit | `src/stream/__tests__/stream.test.ts` | `streamSse`: URL резолв (baseUrl/bases/absolute), body serialize, HTTP ошибки, NetworkError, AbortSignal; `streamSseJson`: JSON-парсинг, zod-validate, SyntaxError |
 | E2E | `packages/cli/e2e/smoke.mjs` | косвенно: full prod-сценарий, app dev-server up |
 
 **Перед изменением:** unit-tests должны быть green (`pnpm --filter @capsuletech/web-query test`).

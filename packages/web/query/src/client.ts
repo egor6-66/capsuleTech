@@ -199,6 +199,23 @@ export class QueryClient {
   }
 
   /**
+   * Возвращает карту `bases` этого клиента.
+   * Используется стриминговым транспортом (`streamSse`) для резолва baseURL
+   * без дублирования логики.
+   */
+  getBases(): Record<string, string> {
+    return this.opts.bases;
+  }
+
+  /**
+   * Возвращает `defaultHeaders` этого клиента.
+   * Используется стриминговым транспортом (`streamSse`) для слияния заголовков.
+   */
+  getDefaultHeaders(): Record<string, string> {
+    return this.opts.defaultHeaders;
+  }
+
+  /**
    * Помечает все matched по префиксу cache-entries как stale. Следующий `fetch`
    * по этим ключам сходит в сеть. Не удаляет данные — UI продолжает их видеть
    * до прихода свежих. Пример: `invalidate(['users'])` бьёт все `['users', ...]`.

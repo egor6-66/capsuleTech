@@ -49,6 +49,7 @@
       "@capsuletech/web-ui-creator/capsule": ["packages/web/ui-creator/src/capsule.ts"],
       "@capsuletech/web-profiler": ["packages/web/profiler/src/index.ts"],
       "@capsuletech/web-query": ["packages/web/query/src/index.ts"],
+      "@capsuletech/web-query/stream": ["packages/web/query/src/stream/index.ts"],
       "@capsuletech/web-remote": ["packages/web/remote/src/index.ts"],
       "@capsuletech/web-router": ["packages/web/router/src/index.ts"],
       "@capsuletech/web-style": ["packages/web/style/src/index.ts"],
