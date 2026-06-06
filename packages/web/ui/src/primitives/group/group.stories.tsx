@@ -143,15 +143,13 @@ export const AttachedBatch: Story = {
         variant="attached"
         orientation="horizontal"
         data={ALL_ITEMS}
-        itemAs={Button}
-        itemProps={itemProps}
+        item={{ use: Button, props: itemProps }}
       />
       <Group
         variant="attached"
         orientation="vertical"
         data={ALL_ITEMS}
-        itemAs={Button}
-        itemProps={(it: IItem) => ({ ...itemProps(it), class: 'w-28' })}
+        item={{ use: Button, props: (it: IItem) => ({ ...itemProps(it), class: 'w-28' }) }}
       />
     </div>
   ),
@@ -171,8 +169,7 @@ export const HorizontalAttachedWithVisibleSeparators: Story = {
         variant="attached"
         orientation="horizontal"
         data={ALL_ITEMS}
-        itemAs={Button}
-        itemProps={itemProps}
+        item={{ use: Button, props: itemProps }}
       />
       {/* Wrapper path: explicit Group.Separator orientation="vertical" */}
       <Group variant="attached" orientation="horizontal">
@@ -211,8 +208,7 @@ export const BatchMode: Story = {
   render: () => (
     <Group
       data={ALL_ITEMS}
-      itemAs={Button}
-      itemProps={itemProps}
+      item={{ use: Button, props: itemProps }}
       orientation="horizontal"
       gap={2}
     />
@@ -227,8 +223,7 @@ export const BatchWithTagFilter: Story = {
   render: () => (
     <Group
       data={ALL_ITEMS}
-      itemAs={Button}
-      itemProps={itemProps}
+      item={{ use: Button, props: itemProps }}
       tags={['main']}
       orientation="horizontal"
       gap={2}
@@ -248,12 +243,14 @@ export const ResizableItems: Story = {
         resizable
         withHandle
         data={[{ label: 'Panel A' }, { label: 'Panel B' }, { label: 'Panel C' }]}
-        as={(p: { label: string }) => (
-          <div class="flex h-full items-center justify-center bg-muted/40 text-sm font-medium">
-            {p.label}
-          </div>
-        )}
-        itemProps={(it: { label: string }) => ({ label: it.label })}
+        item={{
+          use: (p: { label: string }) => (
+            <div class="flex h-full items-center justify-center bg-muted/40 text-sm font-medium">
+              {p.label}
+            </div>
+          ),
+          props: (it: { label: string }) => ({ label: it.label }),
+        }}
         class="h-full w-full"
       />
     </div>

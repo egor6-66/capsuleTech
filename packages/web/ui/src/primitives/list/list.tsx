@@ -10,10 +10,10 @@ import type {
 } from './interfaces';
 import { listVariants } from './variants';
 
-/** Type guard: batch mode — data + (itemAs or as) present. */
+/** Type guard: batch mode — data + item.use present (ADR 036 §3). */
 function isBatchMode<T>(props: IListProps<T>): props is IListBatchProps<T> {
   const p = props as IListBatchProps<T>;
-  return p.data !== undefined && (p.itemAs !== undefined || p.as !== undefined);
+  return p.data !== undefined && p.item?.use !== undefined;
 }
 
 /** Type guard: render-prop mode — items + children (function) present. */
@@ -29,7 +29,7 @@ export function List<T = unknown>(props: IListProps<T>) {
   if (isBatchMode(props)) {
     const [local, variants, others] = splitProps(
       props,
-      ['class', 'style', 'data', 'itemAs', 'as', 'itemProps', 'min', 'gap'],
+      ['class', 'style', 'data', 'item', 'min', 'gap'],
       ['variant', 'orientation'],
     );
 
@@ -40,9 +40,8 @@ export function List<T = unknown>(props: IListProps<T>) {
       style: local.min ? undefined : local.style,
     });
 
-    const getItemProps = local.itemProps ?? ((item: T) => item as Record<string, unknown>);
-    // `itemAs` is canonical (Shape-compatible); `as` is the deprecated alias.
-    const ItemTpl = (local.itemAs ?? local.as) as NonNullable<typeof local.itemAs>;
+    const getItemProps = local.item.props ?? ((item: T) => item as Record<string, unknown>);
+    const ItemTpl = local.item.use;
 
     const gridStyle = (): JSX.CSSProperties | undefined =>
       local.min
