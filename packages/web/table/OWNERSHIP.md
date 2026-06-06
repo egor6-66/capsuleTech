@@ -43,12 +43,33 @@ Owner-agent: **owner-web-table**
   по-прежнему биндятся через meta (composite-internal rows).
 - ewc shape `as: ui.DataTable` → `as: Tables.DataTable` (зона главного/app).
 
-## Отложено (отдельный трек, после row-binding обсуждения с юзером)
+## Контракт типизации (решён — см. [ADR 036](../../../docs/01-architecture/adr/036-shape-redesign-and-table-package.md))
 
-- **Row-дженерик контракт** `IDataTableProps<TRow>` + HKT-маркер для `Shape<Tmpl>`
-  (автопривязка row из схемы). Цель: `Shape<Tables.DataTable>` типизирует методы
-  (`getRowId`/`isRowActive`/`columns`) по элементу схемы без ручных аннотаций.
-  Дизайн row-binding — на стадии обсуждения с пользователем.
+Дизайн утверждён и доказан type-спайком (`packages/web/core/src/wrappers/shape/__tests__/hkt-spike.test-types.ts`).
+
+- **Row-generic** `IDataTableProps<TRow>` — `data`/`columns`/`getRowId`/`isRowActive`/
+  `itemPayload` типизированы по `TRow`.
+- **Phantom HKT-маркер** `__tpl` на компоненте таблицы:
+  `interface DataTableTemplate { row: unknown; props: IDataTableProps<this['row']> }`.
+  `this['row']` валиден ТОЛЬКО на top-level property — nested-пропсы оборачивай во
+  внешний generic-helper (`IGroupProps<TRow>`), иначе TS2526.
+- Shape (web-core, двухфазная форма `Shape((ui)=>({schema,as}), (ui)=>({columns}))`)
+  выводит `RowOf<schema>` и применяет к маркеру → columns + методы консьюмера
+  типизируются строкой без явного generic и ручных аннотаций.
+- codegen (owner-builders) отдаёт dotted generic-тип `Tables.DataTable` (без импорта в апп).
+
+## Controller-слой (ADR 032)
+
+Таблица НЕ проксируется core'ом. У неё **свой** `/controllers` слой: события строк
+(клик/выбор) эмиттит через `useEmit` в ближайший app-Feature — как web-shell/web-map.
+НЕ полагаться на UiProxy composite-row binder.
+
+## Под-компоненты + Provider («super-shape»)
+
+DataTable — не монолит. Дробится на саб-компоненты, которые app может раскидать по
+разным виджетам; общие данные держит Provider/super-shape (одна сущность → несколько
+саб-презентаций, у каждой свои локальные данные). Точный механизм shared-data Provider
+проектируешь ты (owner-web-table) — см. ADR 036 §6 + обсуждение.
 
 ## Известные баги (унаследованы из web-ui)
 

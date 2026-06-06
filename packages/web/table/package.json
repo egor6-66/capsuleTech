@@ -28,6 +28,7 @@
   "dependencies": {
     "@capsuletech/web-core": "workspace:*",
     "@capsuletech/web-style": "workspace:*",
+    "@capsuletech/web-ui": "workspace:*",
     "@tanstack/solid-table": "^8.21.3",
     "@tanstack/solid-virtual": "^3.13.24"
   },
