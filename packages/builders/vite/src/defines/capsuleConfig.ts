@@ -173,6 +173,7 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
         '@capsuletech/web-style',
         '@capsuletech/web-intl',
         '@capsuletech/web-ui',
+        '@capsuletech/web-table',
       ],
     },
     plugins: [
@@ -201,6 +202,7 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
         // в Feature идёт `services.api.X.Y(...)`, не `endpoints.X.Y`.
         imports: [
           { '@capsuletech/web-core': [...WRAPPER_NAMES] },
+          { '@capsuletech/shared-zod': ['Zod'] },
           ...Object.entries(HOOK_IMPORTS).map(([mod, names]) => ({
             [mod]: [...names],
           })),
