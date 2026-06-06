@@ -50,7 +50,7 @@
 import { useCtx, useEmit } from '@capsuletech/web-core';
 import { splitProps } from 'solid-js';
 import { DataTable } from '../composites/dataTable';
-import type { IDataTableProps } from '../composites/dataTable/interfaces';
+import type { DataTableTemplate, IDataTableProps } from '../composites/dataTable/interfaces';
 import type { IDataTableEvents } from './interfaces';
 
 // Re-export types для потребителей /controllers
@@ -104,6 +104,7 @@ function DataTableControllerComponent<TRow>(props: IDataTableProps<TRow>) {
  * Регистрируется в capsule.ts вместо raw DataTable.
  */
 export const DataTableController: (<TRow>(props: IDataTableProps<TRow>) => any) & {
+  readonly __tpl?: DataTableTemplate;
   readonly __events?: IDataTableEvents;
 } = DataTableControllerComponent;
 
