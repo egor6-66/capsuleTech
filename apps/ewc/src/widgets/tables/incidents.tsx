@@ -1,25 +1,19 @@
 /**
- * Incidents table Widget — рендер через Shape pattern.
+ * Incidents table widget — рендер через Shape, данные из родительского
+ * `Features.Incidents` store (2-й арг фабрики). Per-row `itemMeta`/`itemPayload`
+ * вешают tags+payload на строки → клик роутится универсальным `Feature.onClick`
+ * (incident → select), без прямых колбэков. Активная строка — по `store.selected`.
  *
- * Данные приходят из родительского `<Features.Incidents>` store (2-й арг
- * Widget-фабрики). Shape отвечает за columns + sorting; Widget подаёт live
- * data из `store.ctx.data.items`.
+ * `loader` (опция) — table-скелетон, пока `store.loading`. `settings` — декларативные
+ * тогглы sync/center, рендерятся в settings-strip при settingsMode.
  *
- * События: per-row `itemMeta`/`itemPayload` навешивают tags+payload на строки.
- * Клик по строке → web-core биндит событие, универсальный `Feature.onClick`
- * роутит по `target.meta.tags` (incident → select). Никаких прямых колбэков.
- *
- * Подсветка активной строки: `isRowActive` сравнивает row.id с выбранным
- * incident'ом из store. Реактивность highlight'а — ответственность DataTable.
- *
- * Loader (2-й колбэк): пока `store.loading === true` Widget рисует table-скелетон
- * вместо контента. Presentation лоадера живёт здесь — фича знает только про
- * логический сигнал загрузки, не про вид скелетона.
+ * `scrollToId` центрирует строку при opt-in: «Синк с картой» (выбор из карты) или
+ * «Скроллить к выбранному» (выбор из своей таблицы) — иначе undefined.
  */
-import type { IIncident } from '../../features/incidents';
+type IIncident = Entities.Incident.Row;
 
-const Incidents = Widget(
-  (_Ui, store: StoreOf<typeof Features.Incidents>) => {
+const Incidents = Widget<Features.Incidents>(
+  (_Ui, store) => {
     const data = () => store.ctx.data;
     return (
       <Shapes.IncidentsTable
@@ -28,10 +22,6 @@ const Incidents = Widget(
         itemPayload={(row: IIncident) => ({ id: row.id })}
         isRowActive={(row: IIncident) => row.id === data()?.selected?.id}
         getRowId={(row: IIncident) => row.id}
-        // Центрируем строку при одном из opt-in условий (DataTable scrollToId
-        // делает scrollIntoView block:'center'):
-        //   • scrollToSelected + выбор из КАРТЫ  → «Синк с картой» (cross-widget)
-        //   • centerOnClick    + выбор из ТАБЛИЦЫ → «Скроллить к выбранному» (self)
         scrollToId={
           (data()?.scrollToSelected && data()?.selectionSource !== 'table') ||
           (data()?.centerOnClick && data()?.selectionSource === 'table')
@@ -42,11 +32,7 @@ const Incidents = Widget(
     );
   },
   {
-    // Data-load loader: пока store.loading — table-скелетон вместо контента.
     loader: (Ui) => <Ui.Skeleton variant="table" rows={100} />,
-    // Декларативные настройки виджета — рендерятся в settings-strip при settingsMode.
-    //   «Синк с картой»        — таблица скроллит к выбору ИЗ КАРТЫ (cross-widget).
-    //   «Скроллить к выбранному» — клик по строке центрирует её в таблице (self).
     settings: [
       {
         type: 'toggle',
