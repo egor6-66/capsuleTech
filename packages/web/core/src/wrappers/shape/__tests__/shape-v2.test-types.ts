@@ -28,6 +28,7 @@ import type {
   ApplyRow,
   ApplyRowFrom,
   IShapeBaseProps,
+  IShapeConfigBody,
   IShapeWrapper,
   MarkerOf,
   RowOf,
@@ -135,7 +136,7 @@ type _ApplyRowFrom_GetRowId_ExtendsIncident = Expect<Equal<_ApplyRowFrom_DataTab
 // Переиспользуем ApplyRowFrom из types.ts для форм
 declare function TestShape<S extends z.ZodType, A extends { readonly __tpl?: object }>(
   bind: (ui: any) => { schema: S; as?: A; item?: any },
-  config: ((props: IShapeBaseProps<ShapeData<S>> & ApplyRowFrom<A, RowOf<S>>) => Partial<ApplyRowFrom<A, RowOf<S>>>) | Partial<ApplyRowFrom<A, RowOf<S>>>,
+  config: ((props: IShapeBaseProps<ShapeData<S>> & ApplyRowFrom<A, RowOf<S>>) => IShapeConfigBody<ApplyRowFrom<A, RowOf<S>>, S>) | IShapeConfigBody<ApplyRowFrom<A, RowOf<S>>, S>,
 ): (props: IShapeBaseProps<ShapeData<S>> & ApplyRowFrom<A, RowOf<S>>) => unknown;
 
 declare function TestShapeNoConfig<S extends z.ZodType, A extends { readonly __tpl?: object }>(
@@ -338,6 +339,47 @@ void _t3NegTestRow.nonExistent;
 
 // T5-neg дублируется через вариант в describe (item.props it.nonExistent)
 // — тест T5 в describe уже покрывает это через @ts-expect-error внутри it()
+
+// ---------------------------------------------------------------------------
+// T9. defaults в config — object-форма и (props)=>-форма компилируются
+// ---------------------------------------------------------------------------
+
+describe('Shape v2 type-tests — defaults in config', () => {
+  it('T9a: defaults as Incident[] in object config compiles', () => {
+    const mockIncidents: Incident[] = [{ id: '1', applicant: { name: 'Alice' } }];
+    const _shape = TestShape(
+      (_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }),
+      {
+        defaults: mockIncidents,
+        columns: [{ accessorKey: 'id' }],
+      },
+    );
+    void _shape;
+  });
+
+  it('T9b: defaults as Incident[] in function config compiles', () => {
+    const mockIncidents: Incident[] = [{ id: '1', applicant: { name: 'Alice' } }];
+    const _shape = TestShape(
+      (_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }),
+      (_props) => ({
+        defaults: mockIncidents,
+      }),
+    );
+    void _shape;
+  });
+
+  // T10. Негатив: несовместимый defaults (число при array-схеме) → ошибка
+  it('T10: incompatible defaults type is a type error', () => {
+    const _shape = TestShape(
+      (_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }),
+      {
+        // @ts-expect-error — number не совместим с Incident[]
+        defaults: 123,
+      },
+    );
+    void _shape;
+  });
+});
 
 // ---------------------------------------------------------------------------
 // Vitest smoke — все type-ассерты выше проверяются tsc

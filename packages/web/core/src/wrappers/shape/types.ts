@@ -94,13 +94,25 @@ export type IShapeBindFn<S extends ZodType = ZodType, A = unknown> = (
 // ---------------------------------------------------------------------------
 
 /**
+ * Тело config-объекта: шаблонные props + опциональный `defaults`.
+ * `defaults` — начальные данные Shape (канон: arg2, ADR 036 §2).
+ *
+ * Используется вместо голого `Partial<TConfig>` в `IShapeConfigArg`,
+ * чтобы не требовать excess-property проверки для `defaults` на объектном литерале.
+ */
+export type IShapeConfigBody<TConfig, S extends ZodType> = Partial<TConfig> & {
+  defaults?: ShapeData<S>;
+};
+
+/**
  * Config arg2 — объект ИЛИ функция от консьюмер-props.
  * TConfig — тип конфигурации (определяется из маркера шаблона).
  * TProps — тип консьюмер-props (типизированы через RowOf).
+ * S — схема Shape (нужна для типизации `defaults`).
  */
-export type IShapeConfigArg<TConfig, TProps> =
-  | Partial<TConfig>
-  | ((props: TProps) => Partial<TConfig>);
+export type IShapeConfigArg<TConfig, TProps, S extends ZodType = ZodType> =
+  | IShapeConfigBody<TConfig, S>
+  | ((props: TProps) => IShapeConfigBody<TConfig, S>);
 
 // ---------------------------------------------------------------------------
 // Consumer props (что принимает итоговый компонент Shape на JSX-сайте)
@@ -145,7 +157,7 @@ export interface IShapeWrapper {
   // Перегрузка 1: шаблон с маркером __tpl + arg2
   <S extends ZodType, A extends { readonly __tpl?: object }>(
     bind: (ui: IShapeUi) => IShapeBind<S> & { as?: A },
-    config: IShapeConfigArg<ApplyRowFrom<A, RowOf<S>>, IShapeBaseProps<ShapeData<S>> & ApplyRowFrom<A, RowOf<S>>>,
+    config: IShapeConfigArg<ApplyRowFrom<A, RowOf<S>>, IShapeBaseProps<ShapeData<S>> & ApplyRowFrom<A, RowOf<S>>, S>,
   ): IShapeComponent<ShapeData<S>>;
 
   // Перегрузка 2: только bind (без arg2), шаблон с маркером
@@ -161,7 +173,7 @@ export interface IShapeWrapper {
   // Перегрузка 4: bind без маркера + generic config
   <S extends ZodType>(
     bind: (ui: IShapeUi) => IShapeBind<S>,
-    config: IShapeConfigArg<Record<string, unknown>, IShapeBaseProps<ShapeData<S>>>,
+    config: IShapeConfigArg<Record<string, unknown>, IShapeBaseProps<ShapeData<S>>, S>,
   ): IShapeComponent<ShapeData<S>>;
 }
 
