@@ -1,0 +1,47 @@
+{
+  "name": "@capsuletech/web-table",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    },
+    "./capsule": {
+      "types": "./dist/capsule.d.ts",
+      "import": "./dist/capsule.mjs",
+      "default": "./dist/capsule.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@capsuletech/web-core": "workspace:*",
+    "@capsuletech/web-style": "workspace:*",
+    "@tanstack/solid-table": "^8.21.3",
+    "@tanstack/solid-virtual": "^3.13.24"
+  },
+  "peerDependencies": {
+    "solid-js": "^1.9.0"
+  },
+  "devDependencies": {
+    "@capsuletech/lib-builder": "workspace:*",
+    "@capsuletech/vite-builder": "workspace:*",
+    "@testing-library/jest-dom": "^6.9.1",
+    "vite-plugin-solid": "^2.11.12"
+  },
+  "publishConfig": {
+    "access": "public",
+    "packageManager": "pnpm"
+  }
+}
