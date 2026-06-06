@@ -22,7 +22,7 @@ last-verified: 2026-05-27
 | Файл | Что |
 |---|---|
 | `packages/web/core/src/index.ts` | публичный barrel: 7 wrappers + `useShapeUi` + `Providers` namespace + типы |
-| `packages/web/core/src/wrappers/entity/wrapper.ts` | `Entity` — domain data layer factory. Plain config (не компонент). `Object.freeze(factory(z))`. |
+| `packages/web/core/src/wrappers/entity/wrapper.ts` | `Entity` — domain data layer factory. Plain config (не компонент). `Object.freeze(factory())`. Factory без аргументов — Zod через глобал. |
 | `packages/web/core/src/wrappers/entity/types.ts` | `IEntityDefinition`, `IEntityFactory`, `IEntityWrapper` |
 | `packages/web/core/src/wrappers/view.tsx` | `ViewWrapper` — простой leaf, UiProxy под ControllerContext, ShapeUiContext.Provider |
 | `packages/web/core/src/wrappers/widget.tsx` | `WidgetWrapper` — добавляет `Outlet` в Ui, ShapeUiContext.Provider |
@@ -67,8 +67,9 @@ import { BaseProviders } from '@capsuletech/web-core/providers';
 
 ```ts
 // Domain data layer — НЕ компонент, plain frozen config object
-Entity((z: CapsuleZ) => {
-  schema: ZodType;          // любая zod-схема (обычно z.array(z.object(...)))
+// z убран из аргументов (BREAKING). Схема строится через глобал Zod (auto-import shared-zod).
+Entity(() => {
+  schema: ZodType;          // любая zod-схема (обычно Zod.array(Zod.object(...)))
   defaults?: TData;         // sample fixtures для разработки и тестов
 }): { schema: ZodType; defaults?: TData }   // возвращает ровно то что вернула factory (frozen)
 
@@ -219,7 +220,7 @@ ControllerProxy резолвит `states[currentState][name]` → top-level → 
 
 ## Известные грабли
 
-19. **`Entity` — единственный wrapper без Solid-компонента.** Все остальные wrappers (`View`, `Widget`, `Page`, `Controller`, `Feature`, `Shape`) возвращают `Component<P>`. `Entity` возвращает **frozen plain object** `{ schema, defaults? }`. HMRWrappingPlugin не трогает `entities/` файлы (нет `const X = Wrapper(...)` component pattern). UiProxy и ControllerProxy к Entity не применяются — это pure data layer. AutoImport делает `Entity` глобальным через `WRAPPER_NAMES` (owner-builders добавляет). Codegen `Entities.*` — через `ExportGeneratorPlugin` scan `entities/` (owner-builders добавляет).
+19. **`Entity` — единственный wrapper без Solid-компонента.** Все остальные wrappers (`View`, `Widget`, `Page`, `Controller`, `Feature`, `Shape`) возвращают `Component<P>`. `Entity` возвращает **frozen plain object** `{ schema, defaults? }`. HMRWrappingPlugin не трогает `entities/` файлы (нет `const X = Wrapper(...)` component pattern). UiProxy и ControllerProxy к Entity не применяются — это pure data layer. AutoImport делает `Entity` глобальным через `WRAPPER_NAMES` (owner-builders добавляет). Codegen `Entities.*` — через `ExportGeneratorPlugin` scan `entities/` (owner-builders добавляет). **BREAKING (ADR 036 / web-table-founding):** `z` убран из factory-аргумента. Старая форма `Entity((z) => ...)` не работает — factory теперь `() => ...`, Zod строится через глобал `Zod`.
 
 20. **Типизация `Entities.*` глобала пока пуста.** `interface Entities {}` в `wrappers/interfaces.ts` — placeholder. Заполняется через codegen (ExportGeneratorPlugin scan `entities/` → `.capsule/@types/slots.d.ts`). До добавления owner-builders: `Entities.Users` будет `any`; после — `typeof import('@entities/users').default`.
 
@@ -285,7 +286,7 @@ ControllerProxy резолвит `states[currentState][name]` → top-level → 
 
 | Хочу… | Куда лезть |
 |---|---|
-| Добавить новый Entity (domain data) | `apps/<app>/src/entities/<name>.ts` → `Entity((z) => ({ schema, defaults? }))` + `export default`. Codegen подхватит в `Entities.*`. `z.infer<typeof Entities.X.schema>` для типа. |
+| Добавить новый Entity (domain data) | `apps/<app>/src/entities/<name>.ts` → `Entity(() => ({ schema: Zod.array(...), defaults? }))` + `export default`. Zod доступен как глобал через auto-import (@capsuletech/shared-zod). Codegen подхватит в `Entities.*`. `z.infer<typeof Entities.X.schema>` для типа. |
 | Расширить IEntityDefinition (validators, relations) | `packages/web/core/src/wrappers/entity/types.ts` → добавить поле в `IEntityDefinition`. При breaking change — bump major. |
 | Добавить новый primitive в `Ui` (например `Dialog`) | `src/ui-kit/imports.tsx` (lazy + `Object.assign` для compound) + тип в `ViewUiRaw`/`WidgetUiRaw` в `src/wrappers/interfaces.ts` + характеризационные тесты в `src/wrappers/__tests__/ui-meta-props.test.tsx`. Если primitive из другого пакета (не web-ui), проверь наличие subpath в его `package.json exports` и `tsconfig.base.json paths`. Composites (Dropdown, DropdownMenu, etc.) импортируются из web-ui (иногда с sub-components как `createLazy` named re-exports для compat). |
 | Добавить Layout component в View (например новый Matrix) | Layout.Grid и Layout.Flex уже доступны в ViewUi (PR #169 — subset). Matrix остаётся Widget/Page-only (дорогая по весу). Для добавления новой layout-варианты в View — определить в web-ui, затем добавить в `ViewUiRaw` тип и `src/ui-kit/imports.tsx`. |
