@@ -18,12 +18,10 @@ import {
   mergeProps,
   Show,
   splitProps,
-  useContext,
 } from 'solid-js';
 import { Button } from '@capsuletech/web-ui';
 import { createInfiniteScroll } from '../../lib/infiniteScroll';
 import { Table } from '../../primitives/table';
-import { CompositeProxyContext } from '../compositeProxy';
 import type { DataTableTemplate, IDataTableInfiniteOptions, IDataTableProps } from './interfaces';
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -111,12 +109,12 @@ function TableHeaders<TRow>(props: {
 }
 
 /**
- * Props for wrapped data-row components inside the table bodies.
+ * Props for data-row components inside the table bodies.
+ *
  * `meta` and `payload` are the per-row HCA target descriptors produced by
- * `itemMeta` / `itemPayload` factories on IDataTableProps. When
- * CompositeProxyContext.wrap is provided (injected by web-core), these are
- * read by the events-wrapper to build the HCA target for the emitted event.
- * When wrap is absent they are forwarded as plain HTML attributes (no-op).
+ * `itemMeta` / `itemPayload` factories on IDataTableProps. They are forwarded
+ * to the `onRowClick` / `onRowSelect` escape-hatch callbacks and collected by
+ * DataTableController for useEmit proводки.
  *
  * `active` is a reactive accessor (not a plain boolean) so that when external
  * state changes the highlight re-computes inside DataRow's own reactive scope
@@ -133,25 +131,40 @@ interface IDataRowProps<TRow> {
   active?: () => boolean;
   /** Stable row id for scrollToId — placed as data-row-id attribute. */
   rowId?: string | number;
+  /** Escape-hatch row-click callback forwarded from IDataTableProps. */
+  onRowClick?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
 }
 
 /**
- * Inner data-row component. Defined as a named component so the wrap factory
- * can attach a stable display name and web-core can register it correctly.
- * `meta` and `payload` are intentionally spread onto the <Table.Row> —
- * UiProxy in web-core reads them from the JSX props.
- * Non-standard props that DOM would reject are handled by UiProxy before
- * they reach the DOM (it strips them during event-binding).
+ * Inner data-row component.
+ *
+ * `onRowClick` is an escape-hatch callback forwarded from IDataTableProps — it is
+ * called directly when the row is clicked, carrying `{ meta, payload }`. This path
+ * is used both in standalone mode and as the underlying trigger for DataTableController's
+ * useEmit proводки (the controller wraps onRowClick and calls emit after it).
+ *
+ * Note: `meta` and `payload` are NOT spread onto the DOM element. They are only
+ * consumed inside this component and forwarded via `onRowClick`.
  */
 function DataRow<TRow>(props: IDataRowProps<TRow>) {
-  const [local, rowProps] = splitProps(props, [
+  const [local, _rest] = splitProps(props, [
     'row',
     'selection',
     'itemHeight',
     'hasMeta',
     'active',
     'rowId',
+    'meta',
+    'payload',
+    'onRowClick',
   ]);
+
+  const handleClick = () => {
+    if (local.onRowClick) {
+      local.onRowClick({ meta: local.meta, payload: local.payload });
+    }
+  };
+
   return (
     <Table.Row
       data-state={local.selection && local.row.getIsSelected() ? 'selected' : undefined}
@@ -162,7 +175,7 @@ function DataRow<TRow>(props: IDataRowProps<TRow>) {
         'cursor-pointer': local.hasMeta,
         'bg-primary/20': !!local.active?.(),
       }}
-      {...(rowProps as object)}
+      onClick={local.onRowClick ? handleClick : undefined}
     >
       <For each={local.row.getVisibleCells()}>
         {(cell) => (
@@ -183,7 +196,7 @@ function StandardTableBody<TRow>(props: {
   itemPayload?: (row: TRow) => Record<string, unknown>;
   isRowActive?: (row: TRow) => boolean;
   getRowId?: (row: TRow) => string | number;
-  WrappedDataRow: (props: IDataRowProps<TRow>) => import('solid-js').JSX.Element;
+  onRowClick?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
 }) {
   return (
     <Table.Body>
@@ -199,7 +212,7 @@ function StandardTableBody<TRow>(props: {
             ? props.getRowId(row.original)
             : ((row.original as Record<string, unknown>).id as string | number | undefined);
           return (
-            <props.WrappedDataRow
+            <DataRow
               row={row}
               selection={props.selection}
               hasMeta={!!meta}
@@ -207,6 +220,7 @@ function StandardTableBody<TRow>(props: {
               payload={payload}
               active={active}
               rowId={rowId}
+              onRowClick={props.onRowClick}
             />
           );
         }}
@@ -243,7 +257,7 @@ function InfiniteTable<TRow>(props: {
   isRowActive?: (row: TRow) => boolean;
   scrollToId?: string | number;
   getRowId?: (row: TRow) => string | number;
-  WrappedDataRow: (props: IDataRowProps<TRow>) => import('solid-js').JSX.Element;
+  onRowClick?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
 }) {
   const opts = resolveInfiniteOptions(props.infinite);
   const isPlain = opts.mode === 'plain';
@@ -324,7 +338,7 @@ function InfiniteTable<TRow>(props: {
                 ? props.getRowId(row().original)
                 : ((row().original as Record<string, unknown>).id as string | number | undefined);
               return (
-                <props.WrappedDataRow
+                <DataRow
                   row={row()}
                   selection={props.selection}
                   itemHeight={item.size}
@@ -333,7 +347,7 @@ function InfiniteTable<TRow>(props: {
                   payload={payload()}
                   active={active}
                   rowId={rowId}
-                  data-index={item.index}
+                  onRowClick={props.onRowClick}
                 />
               );
             }}
@@ -350,14 +364,6 @@ function InfiniteTable<TRow>(props: {
 }
 
 function DataTableComponent<TRow>(rawProps: IDataTableProps<TRow>) {
-  const { wrap } = useContext(CompositeProxyContext);
-
-  // Wrap the inner DataRow component once at construction time (not per render).
-  // When wrap is undefined (Storybook / standalone) → identity, DataRow used as-is.
-  const WrappedDataRow: (props: IDataRowProps<TRow>) => import('solid-js').JSX.Element = wrap
-    ? wrap(DataRow<TRow>, 'DataTableRow')
-    : DataRow<TRow>;
-
   const props = mergeProps(
     { sorting: false, pagination: false, selection: false, filtering: false } as const,
     rawProps,
@@ -379,6 +385,8 @@ function DataTableComponent<TRow>(rawProps: IDataTableProps<TRow>) {
     'emptyMessage',
     'toolbar',
     'class',
+    'onRowClick',
+    'onRowSelect',
   ]);
 
   // --- feature signals ---
@@ -492,7 +500,7 @@ function DataTableComponent<TRow>(rawProps: IDataTableProps<TRow>) {
                     itemPayload={local.itemPayload}
                     isRowActive={local.isRowActive}
                     getRowId={local.getRowId}
-                    WrappedDataRow={WrappedDataRow}
+                    onRowClick={local.onRowClick}
                   />
                 </Table>
               </div>
@@ -509,7 +517,7 @@ function DataTableComponent<TRow>(rawProps: IDataTableProps<TRow>) {
               isRowActive={local.isRowActive}
               scrollToId={local.scrollToId}
               getRowId={local.getRowId}
-              WrappedDataRow={WrappedDataRow}
+              onRowClick={local.onRowClick}
             />
           </Show>
         </Show>

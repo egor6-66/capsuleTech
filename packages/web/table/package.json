@@ -15,6 +15,11 @@
       "import": "./dist/capsule.mjs",
       "default": "./dist/capsule.mjs"
     },
+    "./controllers": {
+      "types": "./dist/controllers/index.d.ts",
+      "import": "./dist/controllers.mjs",
+      "default": "./dist/controllers.mjs"
+    },
     "./dataTable": {
       "types": "./dist/dataTable.d.ts",
       "import": "./dist/dataTable.mjs",

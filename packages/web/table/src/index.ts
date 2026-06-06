@@ -1,5 +1,5 @@
 // @capsuletech/web-table — main barrel.
-// Exports DataTable composite, Table primitives, and lib hooks.
+// Exports DataTable composite, Table primitives, lib hooks, and Provider.
 
 // --- composites ---
 export { DataTable } from './composites/dataTable';
@@ -10,6 +10,20 @@ export type {
   IDataTableInfiniteOptions,
   IDataTableProps,
 } from './composites/dataTable';
+
+// --- provider (super-shape / shared-data bus, ADR 036 §6) ---
+export {
+  DataTableProvider,
+  DataTableBody,
+  DataTableToolbar,
+  DataTablePagination,
+  useDataTableContext,
+} from './provider';
+export type {
+  IDataTableSharedContext,
+  IDataTableProviderProps,
+  IDataTableBodyProps,
+} from './provider';
 
 // --- primitives ---
 export { Table } from './primitives/table';

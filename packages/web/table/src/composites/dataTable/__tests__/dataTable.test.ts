@@ -332,15 +332,25 @@ describe('IDataTableProps itemMeta / itemPayload', () => {
     expect(!!withoutMeta.itemMeta).toBe(false);
   });
 
-  it('all opt-in flags default to absent (no onRowClick in props)', () => {
-    // Verify onRowClick is gone — accessing it must be a type error. At runtime
-    // the key should not exist on IDataTableProps.
+  it('onRowClick is an optional escape-hatch callback', () => {
+    // onRowClick is now part of IDataTableProps as an escape-hatch (non-HCA path).
+    // In HCA apps, DataTableController wraps this and routes via useEmit.
     const props: IDataTableProps<{ id: number }> = {
       data: [],
       columns: [],
     };
-    // @ts-expect-error — onRowClick was removed; TS should flag this access
+    // absent by default
     expect(props.onRowClick).toBeUndefined();
+
+    // can be provided
+    const withCallback: IDataTableProps<{ id: number }> = {
+      data: [],
+      columns: [],
+      onRowClick: (target) => {
+        void target;
+      },
+    };
+    expect(typeof withCallback.onRowClick).toBe('function');
   });
 });
 

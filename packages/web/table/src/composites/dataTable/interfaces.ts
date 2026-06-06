@@ -107,9 +107,9 @@ export interface IDataTableProps<TRow> {
 
   /**
    * Per-row HCA target meta factory. Called with each row's original data.
-   * The returned object is passed as the `meta` prop on the row component so
-   * the injected events-wrapper (CompositeProxyContext.wrap) can build a
-   * typed HCA target for that row.
+   * The returned object is forwarded to `onRowClick` / `onRowSelect` callbacks
+   * as `target.meta`, and collected by DataTableController for useEmit proводки
+   * into the parent Controller/Feature.
    *
    * Example:
    *   itemMeta={(row) => ({ tags: ['user', 'row'], id: row.id })}
@@ -163,6 +163,27 @@ export interface IDataTableProps<TRow> {
    *   itemPayload={(row) => ({ userId: row.id, userName: row.name })}
    */
   itemPayload?: (row: TRow) => Record<string, unknown>;
+
+  /**
+   * Direct row-click callback (escape-hatch, non-HCA).
+   *
+   * Called on every row click regardless of HCA context.
+   * In HCA apps prefer routing through Features via `onRowClick` emit
+   * (DataTableController / Tables.DataTable wrapping). Use this prop only
+   * when the table is rendered standalone without a Controller/Feature ancestor.
+   *
+   * Receives the same target object that DataTableController emits:
+   *   `{ meta?: { tags, ...}, payload?: Record<string,unknown> }`
+   */
+  onRowClick?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
+
+  /**
+   * Direct row-select callback (escape-hatch, non-HCA).
+   *
+   * Called when a row is selected (checkbox / programmatic).
+   * Same semantics as `onRowClick` — escape-hatch for standalone use.
+   */
+  onRowSelect?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
 
   /**
    * Enable a leading checkbox column + row selection state.
