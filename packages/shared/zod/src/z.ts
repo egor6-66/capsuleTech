@@ -20,10 +20,17 @@ import { z as zodRoot } from 'zod';
  * `Cannot assign to property 'component' of [object Module]`. Spread даёт
  * обычный объект без frozen-прототипа, оригинальный модуль не мутируется.
  */
-export interface CapsuleZ extends Omit<typeof zodRoot, never> {
+/**
+ * Intersection сохраняет оригинальные generic-сигнатуры методов zodRoot без
+ * маппинга. `interface extends Omit<typeof zodRoot, never>` применяло mapped
+ * type к namespace'у модуля, что деградировало generic-методы:
+ *   `array<T>(s:T): ZodArray<T>` → `array: (...) => ZodArray<any>`.
+ * `typeof zodRoot & { component }` — чистый intersection, generics сохраняются.
+ */
+export type CapsuleZ = typeof zodRoot & {
   /** zod-схема для Solid-renderable значения (JSX.Element, function-component, string и т.п.). */
   component: () => ZodType<JSX.Element>;
-}
+};
 
 const create = (): CapsuleZ => {
   const proxy = { ...zodRoot } as CapsuleZ;
