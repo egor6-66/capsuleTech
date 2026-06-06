@@ -171,6 +171,7 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
         '@capsuletech/web-shell',
         '@capsuletech/web-state',
         '@capsuletech/web-style',
+        '@capsuletech/web-intl',
         '@capsuletech/web-ui',
       ],
     },

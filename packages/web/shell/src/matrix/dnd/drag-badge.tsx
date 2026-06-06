@@ -1,8 +1,8 @@
 /**
  * DragBadge — per-cell drag handle badge.
  *
- * Renders a 6-dot grip icon in the top-right corner of a resizable cell.
- * Visible only when 2+ resizable cells exist (swap has a target).
+ * Thin host wrapper around the shared WidgetFrameGrip primitive (web-ui).
+ * Visible only when 2+ draggable cells exist (swap has a target).
  *
  * Pointerdown on badge → calls dnd.startDrag for the associated cell.
  * The cell element is registered as a draggable (via createDraggable ref)
@@ -12,7 +12,7 @@
  */
 import type { DraggableId } from '@capsuletech/web-dnd';
 import { useDnD } from '@capsuletech/web-dnd';
-import { GripIcon } from './grip-icon';
+import { WidgetFrameGrip } from '@capsuletech/web-ui';
 
 interface IDragBadgeProps {
   /** The draggable id to activate on pointerdown (matches createDraggable id). */
@@ -30,15 +30,12 @@ export const DragBadge = (props: IDragBadgeProps) => {
   };
 
   return (
-    <button
-      type="button"
-      aria-label="Drag to swap cell"
+    <WidgetFrameGrip
+      kind="dnd"
+      class="absolute right-1 top-1 z-50"
       title="Drag to swap"
-      class="absolute right-1 top-1 z-30 flex h-7 w-7 cursor-grab items-center justify-center rounded border border-border bg-card/80 opacity-80 shadow-sm backdrop-blur-sm transition-all hover:bg-accent hover:opacity-100 active:cursor-grabbing"
+      aria-label="Drag to swap cell"
       onPointerDown={onPointerDown}
-    >
-      {/* Shared grip icon; override wrapper to remove double-border inside the button */}
-      <GripIcon class="flex items-center justify-center" />
-    </button>
+    />
   );
 };

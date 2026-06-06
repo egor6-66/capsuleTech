@@ -1,2 +1,2 @@
 export type * as IWidgetFrame from './interfaces';
-export { WidgetFrame, WidgetFrameHandle } from './widget-frame';
+export { WidgetFrame, WidgetFrameGrip, WidgetFrameHandle } from './widget-frame';

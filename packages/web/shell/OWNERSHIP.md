@@ -39,7 +39,7 @@ presentation and emits → tier 1 in web-ui.**
 ## Публичный API
 
 - `.` — convenience barrel, re-exports `./ui`.
-- `./ui` — connected blocks: `ModeToggle`, `MODES`, `ThemePicker` + their types.
+- `./ui` — connected blocks: `ModeToggle`, `MODES`, `ThemePicker`, `LocalePicker` + their types.
   Stays free of `@capsuletech/web-core` so it tree-shakes independently.
 - `./controllers` — HCA Controllers (ADR 032, `useEmit`). Empty until Header lands.
 - `./capsule` — registration manifest (`defineCapsuleModule`, ADR 033). Depends on

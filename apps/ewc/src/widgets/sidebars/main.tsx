@@ -8,8 +8,8 @@
  * которая делает переход. Виджет навигацию сам не выполняет.
  */
 
-const Main = Widget(
-  (Ui, store: StoreOf<typeof Features.Incidents>) => {
+const Main = Widget<Features.Incidents>(
+  (Ui, store) => {
     const selected = () => store.ctx.data?.selected;
 
     return (

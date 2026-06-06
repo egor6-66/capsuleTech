@@ -38,8 +38,7 @@
 
 import { unwrap } from 'solid-js/store';
 
-/** Тип строки incident'а — выводится из Entity-схемы (без импорта zod). */
-export type IIncident = typeof Entities.Incident.$infer;
+export type IIncident = Entities.Incident.Row;
 
 const Incidents = Feature(({ api, router }) => ({
   initial: 'idle' as const,

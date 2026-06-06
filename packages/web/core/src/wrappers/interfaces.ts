@@ -164,13 +164,26 @@ type FlowNamespace = {
 /** Layout-subset: Grid + Flex. Matrix переехал в @capsuletech/web-shell (ADR 033), не в Ui-namespace. */
 type ViewLayoutSubset = Pick<typeof Layout, 'Grid' | 'Flex'>;
 
-type ViewUiRaw = {
+/**
+ * Примитивы, валидные в **любом** слое (View / Widget / Page).
+ * Рантайм всех трёх wrapper'ов спредит полный BaseUi — ограничение только типовое.
+ * `Flow` сюда не входит: он добавляется отдельно verbatim-интерсекцией
+ * в финальных `ViewUi`/`WidgetUi`/`PageUi`, чтобы `WithMetaProps` не трогал
+ * сигнатуры Solid control-flow компонентов.
+ */
+type UniversalUiRaw = {
+  /** Grid + Flex для internal layout. Matrix переехал в @capsuletech/web-shell. */
+  Layout: ViewLayoutSubset;
+  Animate: typeof Animate;
+  Typography: typeof Typography;
+};
+
+type ViewUiRaw = UniversalUiRaw & {
   Field: typeof Field;
   Button: typeof Button;
   Group: typeof Group;
   Input: typeof Input;
   List: typeof List;
-  Animate: typeof Animate;
   Table: typeof Table;
   DataTable: typeof DataTable;
   PreviewCard: typeof PreviewCard;
@@ -182,10 +195,7 @@ type ViewUiRaw = {
   Select: typeof Select;
   Textarea: typeof Textarea;
   Card: typeof Card;
-  Typography: typeof Typography;
   Link: typeof Link;
-  /** Grid + Flex для internal View/Widget/Page layout. Matrix переехал в @capsuletech/web-shell. */
-  Layout: ViewLayoutSubset;
   /**
    * Solid control-flow primitives. Raw — NOT UiProxy-wrapped.
    * `<Ui.Flow.For each={...}>{(x) => ...}</Ui.Flow.For>`
@@ -195,13 +205,10 @@ type ViewUiRaw = {
 
 type Outlet = () => JSXElement;
 
-type WidgetUiRaw = {
+type WidgetUiRaw = UniversalUiRaw & {
   Button: typeof Button;
   Card: typeof Card;
   Outlet: Outlet;
-  Animate: typeof Animate;
-  /** Grid + Flex. Matrix переехал в @capsuletech/web-shell. */
-  Layout: ViewLayoutSubset;
   Table: typeof Table;
   DataTable: typeof DataTable;
   PreviewCard: typeof PreviewCard;
@@ -218,11 +225,9 @@ type WidgetUiRaw = {
    */
   Flow: FlowNamespace;
 };
-type PageUiRaw = {
-  /** Grid + Flex. Matrix переехал в @capsuletech/web-shell. */
-  Layout: ViewLayoutSubset;
+
+type PageUiRaw = UniversalUiRaw & {
   Outlet: Outlet;
-  Animate: typeof Animate;
   /**
    * Solid control-flow primitives. Raw — NOT UiProxy-wrapped.
    * `<Ui.Flow.For each={...}>{(x) => ...}</Ui.Flow.For>`
@@ -364,10 +369,33 @@ export type IViewWrapper = <P extends Record<string, any> = Record<string, any>>
  * `Object.assign(globalThis, _registry)` в bootstrap. Не нужны как args.
  */
 /**
- * Widget render-function. Generic `S` — тип store:
- *  - по умолчанию `IBridge | undefined` (backward-compat, без аннотации);
- *  - при явной аннотации `store: StoreOf<typeof Features.X>` — `S` инферируется
- *    и `store.ctx.data` типизируется как `CtxOf<typeof Features.X>`.
+ * Маркер: «нет явного источника» — дефолтный F в Widget/Page generic.
+ * Отдельный номинальный тип, чтобы не конфликтовать с реальными Feature/Controller.
+ * @internal
+ */
+declare const _noSource: unique symbol;
+/** @internal */
+type DefaultFeatureSource = typeof _noSource;
+
+/**
+ * Разрешает тип store по явному источнику `F`:
+ *  - `F = DefaultFeatureSource` (дефолт, нет `<F>`) → `IBridge | undefined`
+ *  - любой Controller/Feature-тип (несёт phantom `__ctx`) → `StoreOf<F>`
+ *
+ * Благодаря этому:
+ *  - `Widget((Ui, store) => ...)` — `store: IBridge | undefined` (backward-compat)
+ *  - `Widget<typeof Features.X>((Ui, store) => ...)` — `store: StoreOf<typeof Features.X>`
+ */
+type WidgetStore<F> = F extends DefaultFeatureSource ? IBridge | undefined : StoreOf<F>;
+
+/**
+ * Widget render-function.
+ *
+ * Generic `S` — тип store; по умолчанию выводится из `F` через `WidgetStore<F>`:
+ *  - без явного `<F>`: `S = IBridge | undefined` (backward-compat);
+ *  - `Widget<typeof Features.X>(...)`: `S = StoreOf<typeof Features.X>` — выводится автоматически;
+ *  - inline-аннотация `store: StoreOf<typeof Features.X>`: `S` инферируется из аннотации
+ *    (второй generic), `F` остаётся `DefaultFeatureSource`. Оба стиля компилируются.
  */
 export type IWidgetRenderer<
   P extends Record<string, any> = Record<string, any>,
@@ -389,7 +417,7 @@ export type IWidgetLoader<P extends Record<string, any> = Record<string, any>> =
  *
  * Union type — start with `toggle`, extend with `checkbox | input | select` later.
  * `value` receives `store.ctx.data` (reactive, called inside JSX) and returns
- * a boolean indicating the active/inactive visual state.
+ * a boolean indicating the active/incoming visual state.
  * `tags` are passed directly to `meta.tags` — UiProxy binds onClick and routes
  * the event to the parent Feature/Controller handler.
  */
@@ -413,9 +441,35 @@ export interface IWidgetOptions<P extends Record<string, any> = Record<string, a
   settings?: ISetting[];
 }
 
+/**
+ * `IWidgetWrapper` — wrapper-функция Widget.
+ *
+ * **Generic-аrity: `<F, P, S>`**
+ *
+ * - `F` — **явный** логический источник (Feature/Controller-тип). Первый дженерик.
+ *   Определяет тип `store` по умолчанию через `WidgetStore<F>`:
+ *   ```ts
+ *   Widget<typeof Features.Incidents>((Ui, store) => {
+ *     store.ctx.data; // IIncidentsCtx — типизировано
+ *   });
+ *   ```
+ * - `P` — тип props (второй дженерик, обычно выводится). Default: `Record<string, any>`.
+ * - `S` — тип store (третий дженерик). По умолчанию `WidgetStore<F>`.
+ *   При inline-аннотации `store: StoreOf<typeof Features.X>` TS инферирует `S` из аннотации,
+ *   `F` остаётся `DefaultFeatureSource`. Оба стиля компилируются:
+ *   ```ts
+ *   // Стиль 1 — явный source generic:
+ *   Widget<typeof Features.Incidents>((Ui, store) => { store.ctx.data; });
+ *   // Стиль 2 — inline-аннотация (backward-compat, ewc):
+ *   Widget((Ui, store: StoreOf<typeof Features.Incidents>) => { store.ctx.data; });
+ *   ```
+ *
+ * **Дефолт без дженерика:** `Widget((Ui, store) => ...)` → `store: IBridge | undefined`.
+ */
 export type IWidgetWrapper = <
+  F = DefaultFeatureSource,
   P extends Record<string, any> = Record<string, any>,
-  S = IBridge | undefined,
+  S = WidgetStore<F>,
 >(
   component: IWidgetRenderer<P, S>,
   options?: IWidgetOptions<P>,
@@ -443,9 +497,19 @@ export type IPageRenderer<
   S = IBridge | undefined,
 > = (ui: PageUi, store: S, props: P) => JSX.Element;
 
+/**
+ * `IPageWrapper` — wrapper-функция Page. Та же generic-схема что `IWidgetWrapper`:
+ *
+ * - `F` — явный источник: `Page<typeof Features.X>((Ui, store) => { store.ctx.data; })`.
+ * - `P` — тип props.
+ * - `S` — тип store, по умолчанию `WidgetStore<F>`.
+ * - Без `<F>`: `store: IBridge | undefined`.
+ * - Inline-аннотация `store: StoreOf<typeof Features.X>` — backward-compat (ewc).
+ */
 export type IPageWrapper = <
+  F = DefaultFeatureSource,
   P extends Record<string, any> = Record<string, any>,
-  S = IBridge | undefined,
+  S = WidgetStore<F>,
 >(
   component: IPageRenderer<P, S>,
 ) => ParentComponent<P>;

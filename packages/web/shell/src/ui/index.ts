@@ -6,5 +6,6 @@
  * sibling folder rather than piling files at this level.
  */
 export * from './header';
+export * from './localePicker';
 export * from './modeToggle';
 export * from './themePicker';

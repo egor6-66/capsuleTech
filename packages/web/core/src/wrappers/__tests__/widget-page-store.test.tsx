@@ -16,14 +16,23 @@
  *  8. The store passed to Widget/Page is the exact same IBridge object from the context.
  *  9. Widget factory without store/props args — backward-compat, no runtime error.
  * 10. Page factory without store/props args — backward-compat, no runtime error.
+ *
+ * Type-level contracts (handoff #1 item #4 — Widget/Page store generic):
+ * 11. Widget<F> — explicit source generic: store typed as StoreOf<F>, ctx.data typed as CtxOf<F>.
+ * 12. Widget without <F> — store: IBridge | undefined (backward-compat default).
+ * 13. Widget inline-annotation style — backward-compat: store: StoreOf<typeof Features.X> compiles.
+ * 14. Page<F> — same generic pattern as Widget.
+ * 15. Page without <F> — store: IBridge | undefined.
  */
 
+import type { IBridge, IMachineContext } from '@capsuletech/web-state';
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Context } from '../../engine/ctx';
 import { PageWrapper } from '../page';
 import { ViewWrapper } from '../view';
 import { WidgetWrapper } from '../widget';
+import type { IWidgetRenderer, IWidgetWrapper, IPageWrapper } from '../interfaces';
 
 // ---------------------------------------------------------------------------
 // Minimal fake IBridge — mirrors the shape used by ui-proxy tests (mkCtx).
@@ -310,5 +319,167 @@ describe('ViewWrapper — signature unchanged (store NOT injected)', () => {
     // props should NOT contain any IBridge fields
     expect(capturedProps?.registerComponent).toBeUndefined();
     expect(capturedProps?.updateComponent).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 6. Type-level tests: Widget/Page store generic (handoff #1 item #4)
+//
+// All type assertions are compile-time only — they run through tsc typecheck.
+// The describe/it wrappers are needed so Vitest finds the suite.
+// ---------------------------------------------------------------------------
+
+// Type-level helpers
+type Equal<A, B> =
+  (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
+type Expect<T extends true> = T;
+
+// Fake phantom-bearing Feature/Controller types (mirrors real IControllerWrapper return type)
+type FakeCtx = { incidents: string[] };
+type FakeFeatureType = ((p: any) => any) & { readonly __ctx?: FakeCtx };
+
+// StoreOf<FakeFeatureType> — Omit<IBridge, 'ctx'> & { readonly ctx: IMachineContext<FakeCtx> }
+type FakeStoreOf = Omit<IBridge, 'ctx'> & { readonly ctx: IMachineContext<FakeCtx> };
+
+// --- Widget<F> explicit source generic ---
+
+// WidgetWrapper is typed as IWidgetWrapper — use it for type-level checks
+// Widget<FakeFeatureType>(...) must produce factory where store is FakeStoreOf.
+// We verify by checking IWidgetRenderer<Record<string,any>, FakeStoreOf> is assignable
+// to the component argument of IWidgetWrapper<FakeFeatureType, ...>.
+
+// Direct checks: ensure IWidgetWrapper accepts component with StoreOf<FakeFeatureType> store
+// when F = FakeFeatureType.
+const _widgetRendererWithF: IWidgetRenderer<Record<string, any>, FakeStoreOf> = (_ui, store) => {
+  // store.ctx must be typed as IMachineContext<FakeCtx>
+  const ctx: IMachineContext<FakeCtx> = store.ctx;
+  void ctx;
+  return null as any;
+};
+// This must compile: IWidgetWrapper accepts this renderer when F is inferred as FakeFeatureType
+const _wrappedWidget = (WidgetWrapper as IWidgetWrapper)<FakeFeatureType>(_widgetRendererWithF);
+void _wrappedWidget;
+
+// Type check: explicit F generic → store.ctx.data is FakeCtx
+type _WidgetExplicitFStore = Parameters<typeof _widgetRendererWithF>[1];
+type _WidgetExplicitFCtxData = _WidgetExplicitFStore['ctx']['data'];
+type _WidgetCtxDataCheck = Expect<Equal<_WidgetExplicitFCtxData, FakeCtx>>;
+
+// --- Widget without F — store must be IBridge | undefined ---
+// IWidgetRenderer default S = IBridge | undefined
+type _DefaultWidgetRendererStore = Parameters<IWidgetRenderer>[1];
+type _DefaultStoreCheck = Expect<Equal<_DefaultWidgetRendererStore, IBridge | undefined>>;
+
+// --- Inline-annotation style backward-compat ---
+// This is the ewc pattern: Widget((Ui, store: StoreOf<typeof Features.X>) => ...)
+// TS infers S from annotation, F defaults to DefaultFeatureSource.
+// Compile-time: check that IWidgetWrapper accepts a renderer with StoreOf-typed store
+// (S is inferred from component arg, F remains default).
+const _inlineAnnotationWidget = (WidgetWrapper as IWidgetWrapper)(
+  (_ui, store: FakeStoreOf) => {
+    const data: FakeCtx = store.ctx.data;
+    void data;
+    return null as any;
+  },
+);
+void _inlineAnnotationWidget;
+
+// --- Page<F> explicit source generic --- (same pattern)
+const _pageRendererWithF: import('../interfaces').IPageRenderer<Record<string, any>, FakeStoreOf> = (
+  _ui,
+  store,
+) => {
+  const ctx: IMachineContext<FakeCtx> = store.ctx;
+  void ctx;
+  return null as any;
+};
+const _wrappedPage = (PageWrapper as IPageWrapper)<FakeFeatureType>(_pageRendererWithF);
+void _wrappedPage;
+
+// Page without F — store: IBridge | undefined
+type _DefaultPageRendererStore = Parameters<import('../interfaces').IPageRenderer>[1];
+type _DefaultPageStoreCheck = Expect<Equal<_DefaultPageRendererStore, IBridge | undefined>>;
+
+// Inline-annotation style for Page
+const _inlineAnnotationPage = (PageWrapper as IPageWrapper)(
+  (_ui, store: FakeStoreOf) => {
+    const data: FakeCtx = store.ctx.data;
+    void data;
+    return null as any;
+  },
+);
+void _inlineAnnotationPage;
+
+describe('Widget/Page store generic — type-level contracts', () => {
+  it('IWidgetRenderer default store = IBridge | undefined', () => {
+    // Runtime smoke — the type checks above verify at compile time
+    const capturedStores: any[] = [];
+    const W = WidgetWrapper((_ui, store) => {
+      capturedStores.push(store);
+      return <span />;
+    });
+    const domContainer = document.createElement('div');
+    const c = render(() => <W>{null}</W>, domContainer);
+    expect(capturedStores[0]).toBeUndefined();
+    c();
+  });
+
+  it('Widget<F> explicit generic — store runtime value is still the IBridge from Context', () => {
+    const fakeStore = mkStore('generic-f-test');
+    let capturedStore: any = null;
+
+    // Using explicit F generic — type-level store is StoreOf<FakeFeatureType>,
+    // but at runtime the actual value comes from Context (same IBridge object).
+    const W = (WidgetWrapper as IWidgetWrapper)<FakeFeatureType>((_ui, store) => {
+      capturedStore = store;
+      return <span />;
+    });
+
+    const domContainer = document.createElement('div');
+    const c = render(
+      withCtx(fakeStore, () => <W>{null}</W>),
+      domContainer,
+    );
+
+    expect(capturedStore).toBe(fakeStore);
+    c();
+  });
+
+  it('Page<F> explicit generic — store runtime value is still the IBridge from Context', () => {
+    const fakeStore = mkStore('page-generic-f-test');
+    let capturedStore: any = null;
+
+    const P = (PageWrapper as IPageWrapper)<FakeFeatureType>((_ui, store) => {
+      capturedStore = store;
+      return <span />;
+    });
+
+    const domContainer = document.createElement('div');
+    const c = render(
+      withCtx(fakeStore, () => <P>{null}</P>),
+      domContainer,
+    );
+
+    expect(capturedStore).toBe(fakeStore);
+    c();
+  });
+
+  it('inline-annotation style backward-compat — runtime store is the IBridge from Context', () => {
+    const fakeStore = mkStore('inline-annot-test');
+    let capturedStore: any = null;
+
+    const W = (WidgetWrapper as IWidgetWrapper)((_ui, store: FakeStoreOf) => {
+      capturedStore = store;
+      return <span />;
+    });
+
+    const domContainer = document.createElement('div');
+    const c = render(
+      withCtx(fakeStore, () => <W>{null}</W>),
+      domContainer,
+    );
+
+    expect(capturedStore).toBe(fakeStore);
+    c();
   });
 });
