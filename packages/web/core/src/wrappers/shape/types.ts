@@ -61,8 +61,13 @@ export type ApplyRowFrom<A, R> =
 /**
  * Результат bind-функции (arg1). Содержит schema + as шаблон.
  * `item` — для batch-элементов (nav-паттерн): `{ use, props }`.
+ *
+ * Второй параметр `R` = row-тип из схемы (`RowOf<S>`).
+ * На call-site IShapeWrapper overloads инферируют `R` из `S` автоматически —
+ * вручную указывать не нужно. Значение по умолчанию `RowOf<S>` обеспечивает
+ * обратную совместимость с IShapeBindFn<S>.
  */
-export interface IShapeBind<S extends ZodType = ZodType> {
+export interface IShapeBind<S extends ZodType = ZodType, R = RowOf<S>> {
   schema: S;
   /** Контейнер/шаблон — несёт `__tpl` маркер для HKT-типизации. */
   as?: ValidComponent;
@@ -70,24 +75,24 @@ export interface IShapeBind<S extends ZodType = ZodType> {
    * Batch-элемент: `use` — компонент каждого элемента, `props` — маппер row→props.
    * `use` НЕ называется `as` чтобы не конфликтовать с верхнеуровневым `as`.
    *
-   * `props` принимает любой row-тип — `any` здесь намеренно: реальная
-   * типизация `it` обеспечивается через HKT-маркер (ApplyRowFrom) на уровне
-   * IShapeWrapper overloads, не через структуру IShapeBind.
+   * `props` типизирован через `R` = `RowOf<S>`: `it` = элемент схемы без ручных аннотаций.
+   * Вывод `R` происходит на уровне IShapeWrapper overloads, где `S` уже инферирован.
    */
-  // biome-ignore lint/suspicious/noExplicitAny: row-тип типизируется через HKT-маркер на уровне overloads
   item?: {
     use?: ValidComponent;
-    props?: (it: any) => Record<string, unknown>;
+    props?: (it: R) => Record<string, unknown>;
   };
 }
 
 /**
  * Bind-функция: принимает `ui` (path-tracker), возвращает `IShapeBind`.
  * Вызывается на module-load — один раз.
+ *
+ * `R = RowOf<S>` — row-тип передаётся в `IShapeBind` чтобы `item.props` был типизирован.
  */
-export type IShapeBindFn<S extends ZodType = ZodType, A = unknown> = (
+export type IShapeBindFn<S extends ZodType = ZodType, A = unknown, R = RowOf<S>> = (
   ui: IShapeUi,
-) => IShapeBind<S> & { as?: A };
+) => IShapeBind<S, R> & { as?: A };
 
 // ---------------------------------------------------------------------------
 // Config (arg2) — row-зависимая презентационная конфигурация
@@ -154,47 +159,28 @@ export type IShapeComponent<TData> = Component<IShapeComponentProps<TData>>;
  * ```
  */
 export interface IShapeWrapper {
-  // Перегрузка 1: шаблон с маркером __tpl + arg2
-  <S extends ZodType, A extends { readonly __tpl?: object }>(
-    bind: (ui: IShapeUi) => IShapeBind<S> & { as?: A },
-    config: IShapeConfigArg<ApplyRowFrom<A, RowOf<S>>, IShapeBaseProps<ShapeData<S>> & ApplyRowFrom<A, RowOf<S>>, S>,
-  ): IShapeComponent<ShapeData<S>>;
+  // Перегрузка 1: шаблон с маркером __tpl + arg2 → consumer-props row-типизированы.
+  // Возвращаемый компонент принимает: IShapeBaseProps (data/as) & ApplyRowFrom (itemPayload, getRowId, …).
+  // R = RowOf<S> — row-тип явно передаётся в IShapeBind чтобы item.props был типизирован.
+  <S extends ZodType, A extends { readonly __tpl?: object }, R extends RowOf<S> = RowOf<S>>(
+    bind: (ui: IShapeUi) => IShapeBind<S, R> & { as?: A },
+    config: IShapeConfigArg<ApplyRowFrom<A, R>, IShapeBaseProps<ShapeData<S>> & ApplyRowFrom<A, R>, S>,
+  ): Component<IShapeBaseProps<ShapeData<S>> & ApplyRowFrom<A, R>>;
 
-  // Перегрузка 2: только bind (без arg2), шаблон с маркером
-  <S extends ZodType, A extends { readonly __tpl?: object }>(
-    bind: (ui: IShapeUi) => IShapeBind<S> & { as?: A },
-  ): IShapeComponent<ShapeData<S>>;
+  // Перегрузка 2: только bind (без arg2), шаблон с маркером → consumer-props row-типизированы.
+  <S extends ZodType, A extends { readonly __tpl?: object }, R extends RowOf<S> = RowOf<S>>(
+    bind: (ui: IShapeUi) => IShapeBind<S, R> & { as?: A },
+  ): Component<IShapeBaseProps<ShapeData<S>> & ApplyRowFrom<A, R>>;
 
-  // Перегрузка 3: только bind без маркера (plain компонент)
+  // Перегрузка 3: только bind без маркера (plain компонент, row-тип недоступен).
   <S extends ZodType>(
     bind: (ui: IShapeUi) => IShapeBind<S>,
   ): IShapeComponent<ShapeData<S>>;
 
-  // Перегрузка 4: bind без маркера + generic config
+  // Перегрузка 4: bind без маркера + generic config (plain, без row-типизации).
   <S extends ZodType>(
     bind: (ui: IShapeUi) => IShapeBind<S>,
     config: IShapeConfigArg<Record<string, unknown>, IShapeBaseProps<ShapeData<S>>, S>,
   ): IShapeComponent<ShapeData<S>>;
 }
 
-// ---------------------------------------------------------------------------
-// Устаревшие типы (backward-compat для тестов, будут удалены после миграции apps)
-// ---------------------------------------------------------------------------
-
-/** @deprecated Используй `IShapeBind` и `IShapeWrapper` с двухфазной формой. */
-export interface IShapeDefinition<S extends ZodType = ZodType> {
-  schema: S;
-  defaults?: zod.infer<S>;
-  as?: ValidComponent;
-  [extraKey: string]: unknown;
-}
-
-/** @deprecated Используй `IShapeWrapper` с двухфазной формой. */
-export type IShapeFactory<S extends ZodType = ZodType> = (
-  z: Record<string, unknown>,
-  ui: IShapeUi,
-) => IShapeDefinition<S>;
-
-/** @deprecated Use `ShapeData<S>` */
-export type ShapeItem<S extends ZodArray<ZodTypeAny>> =
-  S extends ZodArray<infer E> ? (E extends ZodTypeAny ? zod.infer<E> : never) : never;

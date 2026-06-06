@@ -15,9 +15,5 @@ export type {
   MarkerOf,
   RowOf,
   ShapeData,
-  // deprecated (будут удалены после миграции apps)
-  IShapeDefinition,
-  IShapeFactory,
-  ShapeItem,
 } from './types';
 export { Shape } from './wrapper';

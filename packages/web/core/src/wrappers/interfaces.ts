@@ -853,10 +853,7 @@ export type { IEntityDefinition, IEntityFactory, IEntityWrapper } from './entity
 export type {
   IShapeComponent,
   IShapeComponentProps,
-  IShapeDefinition,
-  IShapeFactory,
   IShapeUi,
   IShapeWrapper,
   ShapeData,
-  ShapeItem,
 } from './shape/types';
