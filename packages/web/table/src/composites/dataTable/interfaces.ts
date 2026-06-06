@@ -178,6 +178,17 @@ export interface IDataTableProps<TRow> {
   onRowClick?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
 
   /**
+   * Direct row double-click callback (escape-hatch, non-HCA).
+   *
+   * Called on every row dblclick regardless of HCA context.
+   * In HCA apps use `onRowDblClick` emit via DataTableController (Tables.DataTable)
+   * for opening detail cards etc. Use this prop only for standalone use.
+   *
+   * Same target shape as `onRowClick`.
+   */
+  onRowDblClick?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
+
+  /**
    * Direct row-select callback (escape-hatch, non-HCA).
    *
    * Called when a row is selected (checkbox / programmatic).

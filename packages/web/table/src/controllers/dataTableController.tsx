@@ -21,7 +21,7 @@
  *   как pure-UI (без HCA-проводки).
  *
  * Escape-hatch:
- *   onRowClick / onRowSelect, переданные напрямую в props, вызываются ВСЕГДА —
+ *   onRowClick / onRowDblClick / onRowSelect, переданные напрямую в props, вызываются ВСЕГДА —
  *   независимо от наличия HCA-контекста.
  *
  * Phantom-поле `__events?: IDataTableEvents` позволяет:
@@ -33,7 +33,11 @@
  * const ShowIncidents = Feature<Tables.DataTable.Events>((services) => ({
  *   context: { selectedId: null as string | null },
  *   onRowClick: ({ target }) => {
+ *     // target.payload?.id — плоский ITarget, без вложенности
  *     services.store.update({ selectedId: target.payload?.id as string });
+ *   },
+ *   onRowDblClick: ({ target }) => {
+ *     services.store.update({ detailId: target.payload?.id as string });
  *   },
  * }));
  * // <Features.ShowIncidents>
@@ -67,30 +71,32 @@ function DataTableControllerComponent<TRow>(props: IDataTableProps<TRow>) {
   // как pure-UI (без emit).
   const emit = ctx ? useEmit() : undefined;
 
-  const [local, rest] = splitProps(props, ['onRowClick', 'onRowSelect']);
+  const [local, rest] = splitProps(props, ['onRowClick', 'onRowDblClick', 'onRowSelect']);
+
+  // target от raw DataTable уже является Partial<ITarget>: { meta?, payload? }.
+  // Эмитируем плоско — app-Feature ловит target.meta / target.payload напрямую,
+  // без дополнительной вложенности (канон ITarget, аналог UiProxy-событий).
 
   const handleRowClick = (target: IDataTableEvents['onRowClick']) => {
-    // Escape-hatch: прямой callback если передан.
     local.onRowClick?.(target);
-    // HCA emit — только если внутри Controller/Feature-scope.
-    emit?.('onRowClick', {
-      source: 'Tables.DataTable',
-      payload: target,
-    });
+    emit?.('onRowClick', target);
+  };
+
+  const handleRowDblClick = (target: IDataTableEvents['onRowDblClick']) => {
+    local.onRowDblClick?.(target);
+    emit?.('onRowDblClick', target);
   };
 
   const handleRowSelect = (target: IDataTableEvents['onRowSelect']) => {
     local.onRowSelect?.(target);
-    emit?.('onRowSelect', {
-      source: 'Tables.DataTable',
-      payload: target,
-    });
+    emit?.('onRowSelect', target);
   };
 
   return (
     <DataTable
       {...rest}
       onRowClick={handleRowClick}
+      onRowDblClick={handleRowDblClick}
       onRowSelect={handleRowSelect}
     />
   );

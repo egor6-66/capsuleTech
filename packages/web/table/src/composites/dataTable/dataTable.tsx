@@ -133,6 +133,8 @@ interface IDataRowProps<TRow> {
   rowId?: string | number;
   /** Escape-hatch row-click callback forwarded from IDataTableProps. */
   onRowClick?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
+  /** Escape-hatch row double-click callback forwarded from IDataTableProps. */
+  onRowDblClick?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
 }
 
 /**
@@ -157,11 +159,18 @@ function DataRow<TRow>(props: IDataRowProps<TRow>) {
     'meta',
     'payload',
     'onRowClick',
+    'onRowDblClick',
   ]);
 
   const handleClick = () => {
     if (local.onRowClick) {
       local.onRowClick({ meta: local.meta, payload: local.payload });
+    }
+  };
+
+  const handleDblClick = () => {
+    if (local.onRowDblClick) {
+      local.onRowDblClick({ meta: local.meta, payload: local.payload });
     }
   };
 
@@ -176,6 +185,7 @@ function DataRow<TRow>(props: IDataRowProps<TRow>) {
         'bg-primary/20': !!local.active?.(),
       }}
       onClick={local.onRowClick ? handleClick : undefined}
+      onDblClick={local.onRowDblClick ? handleDblClick : undefined}
     >
       <For each={local.row.getVisibleCells()}>
         {(cell) => (
@@ -197,6 +207,7 @@ function StandardTableBody<TRow>(props: {
   isRowActive?: (row: TRow) => boolean;
   getRowId?: (row: TRow) => string | number;
   onRowClick?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
+  onRowDblClick?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
 }) {
   return (
     <Table.Body>
@@ -221,6 +232,7 @@ function StandardTableBody<TRow>(props: {
               active={active}
               rowId={rowId}
               onRowClick={props.onRowClick}
+              onRowDblClick={props.onRowDblClick}
             />
           );
         }}
@@ -258,6 +270,7 @@ function InfiniteTable<TRow>(props: {
   scrollToId?: string | number;
   getRowId?: (row: TRow) => string | number;
   onRowClick?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
+  onRowDblClick?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
 }) {
   const opts = resolveInfiniteOptions(props.infinite);
   const isPlain = opts.mode === 'plain';
@@ -348,6 +361,7 @@ function InfiniteTable<TRow>(props: {
                   active={active}
                   rowId={rowId}
                   onRowClick={props.onRowClick}
+                  onRowDblClick={props.onRowDblClick}
                 />
               );
             }}
@@ -386,6 +400,7 @@ function DataTableComponent<TRow>(rawProps: IDataTableProps<TRow>) {
     'toolbar',
     'class',
     'onRowClick',
+    'onRowDblClick',
     'onRowSelect',
   ]);
 
@@ -501,6 +516,7 @@ function DataTableComponent<TRow>(rawProps: IDataTableProps<TRow>) {
                     isRowActive={local.isRowActive}
                     getRowId={local.getRowId}
                     onRowClick={local.onRowClick}
+                    onRowDblClick={local.onRowDblClick}
                   />
                 </Table>
               </div>
@@ -518,6 +534,7 @@ function DataTableComponent<TRow>(rawProps: IDataTableProps<TRow>) {
               scrollToId={local.scrollToId}
               getRowId={local.getRowId}
               onRowClick={local.onRowClick}
+              onRowDblClick={local.onRowDblClick}
             />
           </Show>
         </Show>

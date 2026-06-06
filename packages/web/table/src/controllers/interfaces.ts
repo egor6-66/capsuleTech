@@ -22,10 +22,12 @@ export interface IDataTableRowTarget {
 }
 
 /**
- * rowClick — клик по строке таблицы.
- * rowSelect — выбор строки (checkbox / programmatic).
+ * rowClick    — клик по строке таблицы.
+ * rowDblClick — двойной клик по строке (открытие детальной карточки и т.п.).
+ * rowSelect   — выбор строки (checkbox / programmatic).
  */
 export interface IDataTableEvents {
   onRowClick: IDataTableRowTarget;
+  onRowDblClick: IDataTableRowTarget;
   onRowSelect: IDataTableRowTarget;
 }
