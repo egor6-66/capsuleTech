@@ -11,6 +11,7 @@ export {
   generateBootstrap,
   generateEndpointsRuntime,
   generateEndpointsTypes,
+  generateLayerTypes,
   generatePackagesRuntime,
   generatePackagesTypes,
   generateRegistryIndex,
