@@ -6,8 +6,6 @@ import type { JSX } from 'solid-js';
  * Mirrors the accessor pattern from @tanstack/solid-table `ColumnDef` so that
  * consumers already familiar with DataTable feel at home.
  *
- * Canonical name is `IFieldDef<TRow>`; `IPreviewCardField` is kept as a
- * backward-compatible alias.
  */
 export interface IFieldDef<TRow> {
   /**
@@ -40,9 +38,6 @@ export interface IFieldDef<TRow> {
    */
   id?: string;
 }
-
-/** @deprecated Use `IFieldDef<TRow>` — backward-compatible alias. */
-export type IPreviewCardField<TData> = IFieldDef<TData>;
 
 export interface IPreviewCardProps<TRow> {
   /**

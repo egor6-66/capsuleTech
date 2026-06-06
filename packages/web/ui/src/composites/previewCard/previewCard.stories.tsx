@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite';
-import type { IPreviewCardField } from './interfaces';
+import type { IFieldDef } from './interfaces';
 import { PreviewCard } from './previewCard';
 
 // ---------------------------------------------------------------------------
@@ -29,7 +29,7 @@ const INCIDENT: IIncident = {
   resolvedAt: null,
 };
 
-const BASE_FIELDS: IPreviewCardField<IIncident>[] = [
+const BASE_FIELDS: IFieldDef<IIncident>[] = [
   { accessorKey: 'id', header: 'ID' },
   { accessorKey: 'title', header: 'Title' },
   { accessorKey: 'status', header: 'Status' },
@@ -64,7 +64,7 @@ export const Default: Story = {
 // WithFormatter — custom cell for date + applicant name via accessorFn
 // ---------------------------------------------------------------------------
 
-const FORMATTED_FIELDS: IPreviewCardField<IIncident>[] = [
+const FORMATTED_FIELDS: IFieldDef<IIncident>[] = [
   { accessorKey: 'id', header: 'ID' },
   {
     id: 'applicantName',
