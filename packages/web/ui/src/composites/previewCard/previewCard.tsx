@@ -2,7 +2,7 @@ import { cn } from '@capsuletech/web-style';
 import { For, Show, splitProps } from 'solid-js';
 
 import { Typography } from '../../primitives/typography';
-import type { IPreviewCardField, IPreviewCardProps } from './interfaces';
+import type { IFieldDef, IPreviewCardProps, PreviewCardTemplate } from './interfaces';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -16,7 +16,7 @@ import type { IPreviewCardField, IPreviewCardProps } from './interfaces';
  *  2. `row[field.accessorKey]` — direct key lookup.
  *  3. `undefined` — neither accessor provided.
  */
-function resolveValue<TData>(field: IPreviewCardField<TData>, row: TData): unknown {
+function resolveValue<TData>(field: IFieldDef<TData>, row: TData): unknown {
   if (field.accessorFn !== undefined) {
     return field.accessorFn(row);
   }
@@ -31,7 +31,7 @@ function resolveValue<TData>(field: IPreviewCardField<TData>, row: TData): unkno
  * Prefers explicit `id`, falls back to `accessorKey`.
  * Returns `undefined` when neither is set (accessor-fn-only fields without id).
  */
-function fieldKey<TData>(field: IPreviewCardField<TData>): string | undefined {
+function fieldKey<TData>(field: IFieldDef<TData>): string | undefined {
   return field.id ?? field.accessorKey;
 }
 
@@ -57,8 +57,12 @@ function fieldKey<TData>(field: IPreviewCardField<TData>): string | undefined {
  * **Field resolution order:** `accessorFn` wins over `accessorKey`.
  * **Cell override:** when `cell` is supplied the custom renderer is used instead
  * of the default `<Typography>` value display.
+ *
+ * Carries compile-time-only phantom `__tpl?: PreviewCardTemplate` for Shape HKT
+ * row-type inference (ADR 036). No runtime value is assigned — the marker is
+ * read only from .d.ts by Shape's type machinery.
  */
-export function PreviewCard<TData>(rawProps: IPreviewCardProps<TData>) {
+function PreviewCardComponent<TData>(rawProps: IPreviewCardProps<TData>) {
   const [local] = splitProps(rawProps, ['data', 'fields', 'emptyMessage', 'class', 'flat']);
 
   const chromeClass = () =>
@@ -106,3 +110,15 @@ export function PreviewCard<TData>(rawProps: IPreviewCardProps<TData>) {
     </Show>
   );
 }
+
+/**
+ * PreviewCard — row-generic composite with HKT phantom marker for Shape inference.
+ *
+ * Form mirrors DataTable (`packages/web/table/src/composites/dataTable/dataTable.tsx`):
+ *   export const PreviewCard: (<TRow>(props) => JSX.Element) & {
+ *     readonly __tpl?: PreviewCardTemplate;
+ *   } = PreviewCardComponent;
+ */
+export const PreviewCard: (<TRow>(props: IPreviewCardProps<TRow>) => import('solid-js').JSX.Element) & {
+  readonly __tpl?: PreviewCardTemplate;
+} = PreviewCardComponent;

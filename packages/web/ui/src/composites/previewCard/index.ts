@@ -1,2 +1,2 @@
-export type { IPreviewCardField, IPreviewCardProps } from './interfaces';
+export type { IFieldDef, IPreviewCardField, IPreviewCardProps, PreviewCardTemplate } from './interfaces';
 export { PreviewCard } from './previewCard';

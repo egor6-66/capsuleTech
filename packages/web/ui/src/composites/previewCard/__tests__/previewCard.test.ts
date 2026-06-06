@@ -19,13 +19,13 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import type { IPreviewCardField, IPreviewCardProps } from '../interfaces';
+import type { IFieldDef, IPreviewCardField, IPreviewCardProps, PreviewCardTemplate } from '../interfaces';
 
 // ---------------------------------------------------------------------------
 // Helpers re-implemented here to test the contract without importing .tsx
 // ---------------------------------------------------------------------------
 
-function resolveValue<TData>(field: IPreviewCardField<TData>, row: TData): unknown {
+function resolveValue<TData>(field: IFieldDef<TData>, row: TData): unknown {
   if (field.accessorFn !== undefined) {
     return field.accessorFn(row);
   }
@@ -35,7 +35,7 @@ function resolveValue<TData>(field: IPreviewCardField<TData>, row: TData): unkno
   return undefined;
 }
 
-function fieldKey<TData>(field: IPreviewCardField<TData>): string | undefined {
+function fieldKey<TData>(field: IFieldDef<TData>): string | undefined {
   return field.id ?? field.accessorKey;
 }
 
@@ -498,5 +498,48 @@ describe('multiple fields order', () => {
     const unique = new Set(keys.filter(Boolean));
     expect(unique.size).toBe(3);
     expect(keys).toEqual(['id', 'name', 'custom']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// HKT marker — PreviewCardTemplate structural contract (ADR 036)
+// ---------------------------------------------------------------------------
+
+describe('PreviewCardTemplate HKT marker', () => {
+  it('PreviewCardTemplate.row defaults to unknown', () => {
+    type Row = PreviewCardTemplate['row'];
+    // unknown is the widest type; assignability check at compile-time.
+    // At runtime we just document the structural intent.
+    const row: Row = { anything: true };
+    expect(row).toBeTruthy();
+  });
+
+  it('IFieldDef is assignable to IPreviewCardField (backward-compat alias)', () => {
+    type IIncident = { id: number; name: string };
+    const field: IFieldDef<IIncident> = { accessorKey: 'id', header: 'ID' };
+    // IPreviewCardField<TData> = IFieldDef<TData> — should compile without cast
+    const aliased: IPreviewCardField<IIncident> = field;
+    expect(aliased.accessorKey).toBe('id');
+  });
+
+  it('IPreviewCardField is assignable to IFieldDef (backward-compat alias reverse)', () => {
+    type IIncident = { id: number; name: string };
+    const legacy: IPreviewCardField<IIncident> = { accessorKey: 'name', header: 'Name' };
+    const canonical: IFieldDef<IIncident> = legacy;
+    expect(canonical.header).toBe('Name');
+  });
+
+  it('PreviewCardTemplate.props typed with row-generic IPreviewCardProps', () => {
+    // Structural: PreviewCardTemplate['props'] must have `fields: IFieldDef<unknown>[]`
+    // and `data: unknown | undefined | null`.
+    type TProps = PreviewCardTemplate['props'];
+    // If PreviewCardTemplate['props'] === IPreviewCardProps<unknown>, then these
+    // keys must exist. We verify by constructing a value satisfying the shape.
+    const sample: TProps = {
+      data: undefined,
+      fields: [],
+    };
+    expect(sample.fields).toHaveLength(0);
+    expect(sample.data).toBeUndefined();
   });
 });
