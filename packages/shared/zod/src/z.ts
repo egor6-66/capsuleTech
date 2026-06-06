@@ -32,3 +32,11 @@ const create = (): CapsuleZ => {
 };
 
 export const z: CapsuleZ = create();
+
+/**
+ * Canonical global alias for auto-import (unplugin-auto-import).
+ * Идентичен `z` по типу и значению — тот же CapsuleZ инстанс.
+ * Используется в app-коде как глобал: `Zod.array(...)`, `Zod.object(...)`, `Zod.component()`.
+ * `z` сохраняется как alias для фабрик (Entity, старые Shape) до их миграции.
+ */
+export const Zod: CapsuleZ = z;
