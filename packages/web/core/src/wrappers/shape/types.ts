@@ -1,70 +1,16 @@
-import type { CapsuleZ } from '@capsuletech/shared-zod';
 import type { Component, ValidComponent } from 'solid-js';
 import type { ZodArray, ZodType, ZodTypeAny, z as zod } from 'zod';
 
 /**
- * Path-tracker для второго аргумента factory'и (`ui`). Структурно — выглядит
- * как объединённый namespace:
- *  - top-level: Ui primitives (`ui.Field`, `ui.Button`) — backward-compat;
- *  - `ui.Views.<Group>.<Name>` — user-defined composite Views.
+ * Path-tracker для первого аргумента factory'и (`ui`). Proxy, фиксирующий путь.
+ * Резолв реального компонента происходит в момент рендера через `ShapeUiContext`.
  *
- * Реально — Proxy, фиксирующий путь. Резолв реального компонента происходит
- * в момент рендера через `ShapeUiContext` (combined namespace `{ ...Ui, Views }`).
- *
- * Тип намеренно гибкий (Record<string, any>) — tracker — это Proxy без реальной
- * структуры; `Views` описана отдельным ключом для IDE-подсказки.
+ * Тип намеренно гибкий (Record<string, any>) — tracker — это Proxy без реальной структуры.
  */
 export type IShapeUi = Record<string, any> & {
   /** Views registry — composite user Views (`ui.Views.Forms.Field`). */
   Views: Record<string, any>;
 };
-
-/**
- * Определение Shape — то что возвращает factory-функция.
- *
- * **v0.4.0 BREAKING:** per-item `props?: (item) => ...` mapper удалён.
- * Shape больше не итерирует данные — итерацией занимается batch-template
- * (`Ui.List` / `Ui.DataTable` / пользовательский компонент). Shape передаёт
- * весь `data` + дополнительные поля (`...extras`) в `as`-компонент.
- *
- * **v0.5.0:** `schema` принимает как `ZodArray` (batch/list), так и `ZodObject`
- * или любой `ZodType` (single-object / config-driven view). Runtime уже работает
- * обоими — только types были ограничены array-only.
- *
- * Extras: любые поля за пределами `schema` / `defaults` / `as` транзитно
- * передаются в template-компонент как props (например `columns`, `sorting`,
- * `infinite`, `itemAs`).
- */
-export interface IShapeDefinition<S extends ZodType = ZodType> {
-  /**
-   * zod-схема данных.
-   *  - `ZodArray` → batch/list semantics (data: T[]).
-   *  - `ZodObject` / любой `ZodType` → single-object semantics (data: T).
-   */
-  schema: S;
-  /** Дефолтные данные — рендерятся если в JSX не передан `data` prop. */
-  defaults?: zod.infer<S>;
-  /**
-   * Default batch-template — используется если в JSX не передан `as`. Принимает:
-   *  - path-tracker (`ui.Navigation.Item`) — резолв через `ShapeUiContext`
-   *    (получает proxied Ui для event-binding).
-   *  - готовый компонент (Ui.List, Ui.DataTable, пользовательский).
-   *
-   * Template получает `data` + extras из definition + consumer JSX props.
-   * Для batch-схем итерация — ответственность template'а.
-   */
-  as?: ValidComponent;
-  /**
-   * Любые дополнительные поля definition транзитно передаются в `as`-компонент.
-   * Примеры: `columns`, `sorting`, `infinite`, `itemAs`, `emptyState`, etc.
-   */
-  [extraKey: string]: unknown;
-}
-
-export type IShapeFactory<S extends ZodType = ZodType> = (
-  z: CapsuleZ,
-  ui: IShapeUi,
-) => IShapeDefinition<S>;
 
 /**
  * Извлекает тип `data` из схемы Shape:
@@ -74,34 +20,169 @@ export type IShapeFactory<S extends ZodType = ZodType> = (
 export type ShapeData<S extends ZodType> =
   S extends ZodArray<infer E> ? (E extends ZodTypeAny ? zod.infer<E>[] : never) : zod.infer<S>;
 
-/** @deprecated Use `ShapeData<S>` for generic schema support. Kept for backward-compat with array-only callers. */
-export type ShapeItem<S extends ZodArray<ZodTypeAny>> =
-  S extends ZodArray<infer E> ? (E extends ZodTypeAny ? zod.infer<E> : never) : never;
+/**
+ * Извлекает тип одной строки (элемента) из схемы:
+ *  - `ZodArray<E>` → `zod.infer<E>` (item type).
+ *  - Иной `ZodType` → `zod.infer<S>`.
+ */
+export type RowOf<S extends ZodType> =
+  S extends ZodArray<infer E extends ZodTypeAny> ? zod.infer<E> : zod.infer<S>;
+
+// ---------------------------------------------------------------------------
+// HKT-маркерная машинерия
+// ---------------------------------------------------------------------------
 
 /**
- * Props компонента Shape на JSX-сайте (consumer).
- *
- * **v0.4.0 BREAKING:** `children` render-prop удалён — per-item escape hatch
- * более не поддерживается. Используй batch-template (`as`) или напиши
- * полноценный View/Widget для сложной композиции.
- *
- * **v0.5.0:** `data` типизирован через `ShapeData<S>` — поддерживает как
- * array (batch), так и single-object схемы.
- *
- * Consumer может передать любые дополнительные props — они мерджатся поверх
- * definition extras и прокидываются в `as`-компонент (consumer wins).
+ * Извлекает маркер `__tpl` из компонента-шаблона.
+ * `MarkerOf<A>` = `A['__tpl']` если есть, иначе `never`.
  */
-export interface IShapeComponentProps<TData> {
+export type MarkerOf<A> = A extends { readonly __tpl?: infer M } ? M : never;
+
+/**
+ * Применяет конкретный row к HKT-маркеру через intersection.
+ * `(M & { row: R })['props']` — TS 5.x резолвит `this['row']` в маркере как `R`
+ * при intersection, если `props` типизирован через `this['row']` на top-level.
+ */
+export type ApplyRow<M extends { row: unknown; props: unknown }, R> = (M & { row: R })['props'];
+
+/**
+ * Применяет row к маркеру компонента `A`.
+ * Если `A` не имеет `__tpl` маркера — возвращает `Record<string, unknown>` (фолбэк).
+ */
+export type ApplyRowFrom<A, R> =
+  MarkerOf<A> extends { row: unknown; props: unknown }
+    ? ApplyRow<MarkerOf<A>, R>
+    : Record<string, unknown>;
+
+// ---------------------------------------------------------------------------
+// Bind (arg1) — фиксирует schema + as
+// ---------------------------------------------------------------------------
+
+/**
+ * Результат bind-функции (arg1). Содержит schema + as шаблон.
+ * `item` — для batch-элементов (nav-паттерн): `{ use, props }`.
+ */
+export interface IShapeBind<S extends ZodType = ZodType> {
+  schema: S;
+  /** Контейнер/шаблон — несёт `__tpl` маркер для HKT-типизации. */
+  as?: ValidComponent;
+  /**
+   * Batch-элемент: `use` — компонент каждого элемента, `props` — маппер row→props.
+   * `use` НЕ называется `as` чтобы не конфликтовать с верхнеуровневым `as`.
+   *
+   * `props` принимает любой row-тип — `any` здесь намеренно: реальная
+   * типизация `it` обеспечивается через HKT-маркер (ApplyRowFrom) на уровне
+   * IShapeWrapper overloads, не через структуру IShapeBind.
+   */
+  // biome-ignore lint/suspicious/noExplicitAny: row-тип типизируется через HKT-маркер на уровне overloads
+  item?: {
+    use?: ValidComponent;
+    props?: (it: any) => Record<string, unknown>;
+  };
+}
+
+/**
+ * Bind-функция: принимает `ui` (path-tracker), возвращает `IShapeBind`.
+ * Вызывается на module-load — один раз.
+ */
+export type IShapeBindFn<S extends ZodType = ZodType, A = unknown> = (
+  ui: IShapeUi,
+) => IShapeBind<S> & { as?: A };
+
+// ---------------------------------------------------------------------------
+// Config (arg2) — row-зависимая презентационная конфигурация
+// ---------------------------------------------------------------------------
+
+/**
+ * Config arg2 — объект ИЛИ функция от консьюмер-props.
+ * TConfig — тип конфигурации (определяется из маркера шаблона).
+ * TProps — тип консьюмер-props (типизированы через RowOf).
+ */
+export type IShapeConfigArg<TConfig, TProps> =
+  | Partial<TConfig>
+  | ((props: TProps) => Partial<TConfig>);
+
+// ---------------------------------------------------------------------------
+// Consumer props (что принимает итоговый компонент Shape на JSX-сайте)
+// ---------------------------------------------------------------------------
+
+/**
+ * Базовые консьюмер-props, всегда присутствующие независимо от шаблона.
+ */
+export interface IShapeBaseProps<TData> {
   /** Override данных. Приоритет: consumer `data` > definition `defaults`. */
   data?: TData;
   /** Override batch-template из definition. */
   as?: ValidComponent;
-  /** Любые дополнительные props → прокидываются в template поверх definition extras. */
+  /** Любые дополнительные props → прокидываются в template поверх config extras. */
   [extraKey: string]: unknown;
 }
 
+export type IShapeComponentProps<TData> = IShapeBaseProps<TData>;
 export type IShapeComponent<TData> = Component<IShapeComponentProps<TData>>;
 
-export type IShapeWrapper = <S extends ZodType>(
-  factory: IShapeFactory<S>,
-) => IShapeComponent<ShapeData<S>>;
+// ---------------------------------------------------------------------------
+// IShapeWrapper — полная типизированная сигнатура с перегрузками
+// ---------------------------------------------------------------------------
+
+/**
+ * Полный типизированный Shape-враппер.
+ *
+ * Три перегрузки для multi-template dispatch:
+ *  1. Маркированный шаблон (has `__tpl`) — config типизируется через HKT.
+ *  2. Без arg2 (простой кейс — только bind).
+ *  3. Generic фолбэк — без маркера, config = Record<string, unknown>.
+ *
+ * Двухфазная форма:
+ * ```ts
+ * Shape(
+ *   (ui) => ({ schema, as }),         // BIND: фиксирует schema и шаблон
+ *   (props) => ({ columns, sorting }) // CONFIG: row-типизирован из schema
+ * );
+ * ```
+ */
+export interface IShapeWrapper {
+  // Перегрузка 1: шаблон с маркером __tpl + arg2
+  <S extends ZodType, A extends { readonly __tpl?: object }>(
+    bind: (ui: IShapeUi) => IShapeBind<S> & { as?: A },
+    config: IShapeConfigArg<ApplyRowFrom<A, RowOf<S>>, IShapeBaseProps<ShapeData<S>> & ApplyRowFrom<A, RowOf<S>>>,
+  ): IShapeComponent<ShapeData<S>>;
+
+  // Перегрузка 2: только bind (без arg2), шаблон с маркером
+  <S extends ZodType, A extends { readonly __tpl?: object }>(
+    bind: (ui: IShapeUi) => IShapeBind<S> & { as?: A },
+  ): IShapeComponent<ShapeData<S>>;
+
+  // Перегрузка 3: только bind без маркера (plain компонент)
+  <S extends ZodType>(
+    bind: (ui: IShapeUi) => IShapeBind<S>,
+  ): IShapeComponent<ShapeData<S>>;
+
+  // Перегрузка 4: bind без маркера + generic config
+  <S extends ZodType>(
+    bind: (ui: IShapeUi) => IShapeBind<S>,
+    config: IShapeConfigArg<Record<string, unknown>, IShapeBaseProps<ShapeData<S>>>,
+  ): IShapeComponent<ShapeData<S>>;
+}
+
+// ---------------------------------------------------------------------------
+// Устаревшие типы (backward-compat для тестов, будут удалены после миграции apps)
+// ---------------------------------------------------------------------------
+
+/** @deprecated Используй `IShapeBind` и `IShapeWrapper` с двухфазной формой. */
+export interface IShapeDefinition<S extends ZodType = ZodType> {
+  schema: S;
+  defaults?: zod.infer<S>;
+  as?: ValidComponent;
+  [extraKey: string]: unknown;
+}
+
+/** @deprecated Используй `IShapeWrapper` с двухфазной формой. */
+export type IShapeFactory<S extends ZodType = ZodType> = (
+  z: Record<string, unknown>,
+  ui: IShapeUi,
+) => IShapeDefinition<S>;
+
+/** @deprecated Use `ShapeData<S>` */
+export type ShapeItem<S extends ZodArray<ZodTypeAny>> =
+  S extends ZodArray<infer E> ? (E extends ZodTypeAny ? zod.infer<E> : never) : never;

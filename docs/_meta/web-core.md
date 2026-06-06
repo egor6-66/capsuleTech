@@ -78,22 +78,29 @@ View<P>((Ui: ViewUi, props: P) => JSX.Element): Component<P>
 Widget<P>((Ui: WidgetUi, props: P) => JSX.Element): Component<P>
 Page<P>((Ui: PageUi, props: P) => JSX.Element): Component<P>
   // PageUi содержит Layout (Grid, Flex, Matrix), а также Widget-доступные компоненты
-// v0.4.0: batch flow — Shape НЕ итерирует, передаёт data[] целиком в as-template
-Shape((z: ZodHelpers, ui: UiPathTracker) => {
-  schema: ZodArray;
-  defaults?: TData[];
-  as?: Component;        // batch-template (Ui.List / Ui.DataTable / custom)
-  [extraKey: string]: unknown; // columns, sorting, itemAs, etc → forwarded to as
-}): Component<{
-  data?: TData[];        // overrides defaults
-  as?: Component;        // overrides definition.as
-  [extraKey: string]: unknown; // consumer extras win over definition extras
+// v2 (ADR 036): двухфазная форма. z убран из arg1; config вынесен в arg2.
+// arg1 (bind) — module-load; arg2 (config) — объект ИЛИ (props)=>config, реактивен.
+Shape(
+  (ui: UiPathTracker) => ({
+    schema: ZodType;          // → RowOf<S> для типизации arg2 и consumer-props
+    as?: Component;           // контейнер/шаблон; несёт __tpl HKT-маркер
+    item?: {                  // batch-элемент (nav-паттерн)
+      use?: Component;        // use — не второй as
+      props?: (it: Row) => Record<string, unknown>;  // row-типизирован через overloads
+    };
+  }),
+  // arg2 необязателен. Row-тип вытекает из schema через IShapeWrapper-overloads.
+  (props) => ({ defaults?, columns?, sorting?, ...extras }) // ИЛИ plain-объект
+): Component<{
+  data?: TData;        // overrides config.defaults
+  as?: Component;      // overrides bind.as
+  [extraKey: string]: unknown; // consumer extras win (переданы в шаблон)
 }>
 Controller((services: IServices) => IDefineStateSchema): Component
 Feature((services: IServices) => IDefineStateSchema): Component
 ```
 
-**Shape v0.4.0 BREAKING:** `props: (item) => ...` per-item mapper и `children` render-prop удалены. `IShapeTemplateProps` и `IShapeRender` убраны из публичного API. Используй batch-templates (`Ui.List` / `Ui.DataTable`). Реактивность через `splitProps` + `mergeProps`.
+**Shape v2 BREAKING (ADR 036):** `z` убран из bind-аргумента (был `(z, ui)`, стал `(ui)`). Config вынесен в arg2 (`(props)=>config` | объект). `IShapeFactory` и `IShapeDefinition` помечены `@deprecated`. `IShapeTemplateProps`/`IShapeRender` — удалены в v0.4.0, остаются удалёнными. Старая форма `Shape((z, ui) => { ...extras })` не поддерживается — hard-switch. HKT-маркер (`__tpl`, `MarkerOf`, `ApplyRowFrom`, `RowOf`) — новый публичный API из `shape/types.ts`.
 
 **Generic `<P extends Record<string, any>>`** на View/Widget/Page renderer'ах — для типизации props на call site (Shape `as`-pattern: template-View получает item-данные как props).
 
@@ -244,7 +251,7 @@ ControllerProxy резолвит `states[currentState][name]` → top-level → 
 
 12. **`ShapeUiContext` несёт только `Ui`** (после revert PR #114 в commit 477b0fb). Раньше был combined `{ ...Ui, Views }` — теперь Shape берёт View-templates через global `Views.X.Y` в `as`, не через `ui.Views.X.Y` path-tracker.
 
-18. **Shape v0.4.0 — batch flow, не per-item.** `<For each>` убран. `props: (item) => ...` и `children` render-prop — удалены. `IShapeTemplateProps` / `IShapeRender` — убраны из публичного API. Теперь `as` получает: `data` (целый массив) + extras из definition + consumer JSX props. Итерация — внутри batch-template (`Ui.List`, `Ui.DataTable`). Apps-код с per-item Shapes (старый `props: (item) => ...`) → нужно переписать на batch-template.
+18. **Shape v2 — двухфазная форма, hard-switch (ADR 036).** Старая форма `Shape((z, ui) => ({ schema, as, ...extras }))` удалена. Новая: `Shape((ui)=>({schema,as,item?}), (props)=>({...config}))`. `z` убран из bind; config вынесен в arg2. `item: { use, props }` — batch-элемент (use, не второй as). HKT-маркер `__tpl` на шаблоне даёт row-типизацию без дубля. Экспортируются `MarkerOf`, `ApplyRow`, `ApplyRowFrom`, `RowOf`, `IShapeBind`, `IShapeConfigArg` из `shape/index.ts`. `IShapeFactory`/`IShapeDefinition` — `@deprecated`, удалятся после миграции apps. Реактивность arg2-функции: `mergeProps(configSource)` — Solid сам оборачивает функцию в `createMemo`.
 
 13. **Generic `<P>` на wrapper'ах требует `extends Record<string, any>`** — чтобы соответствовать Solid `Component<P>`. Default `Record<string, any>` сохраняет backward-compat для factory без `<P>`. Не упрощай до `<P = unknown>` — Solid Component откажет.
 
