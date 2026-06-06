@@ -33,7 +33,7 @@ function HeaderRoot(props: IHeaderProps) {
 // ---------------------------------------------------------------------------
 // Shell.Header.Navigation — батч-контейнер, Shape-совместимый
 //
-// Обёртка над ui.Group — форвардит ВСЕ батч-props (data/itemAs/itemProps/
+// Обёртка над ui.Group — форвардит ВСЕ батч-props (data/item/
 // orientation/variant/gap/tags/resizable/withHandle/children).
 // Header-специфичные дефолты: orientation='horizontal', gap=1.
 // ---------------------------------------------------------------------------
@@ -45,8 +45,7 @@ function HeaderNavigation<T = unknown>(props: IHeaderNavigationProps<T>) {
       gap={props.gap ?? 1}
       variant={props.variant}
       data={props.data}
-      itemAs={props.itemAs}
-      itemProps={props.itemProps}
+      item={props.item}
       tags={props.tags}
       resizable={props.resizable}
       withHandle={props.withHandle}

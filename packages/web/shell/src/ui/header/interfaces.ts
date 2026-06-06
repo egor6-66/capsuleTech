@@ -13,7 +13,7 @@ export type IHeaderProps = ParentProps<{
 
 /**
  * Shell.Header.Navigation — батч-контейнер, Shape-совместимый (тот же контракт,
- * что ui.Group: data + itemAs + itemProps + orientation + variant).
+ * что ui.Group: data + item + orientation + variant).
  *
  * Использовать в Shape:
  * ```ts
@@ -21,8 +21,10 @@ export type IHeaderProps = ParentProps<{
  *   schema: z.array(z.object({ label: z.string(), to: z.string() })),
  *   defaults: [{ label: 'Dashboard', to: '/dashboard' }],
  *   as: Shell.Header.Navigation,
- *   itemAs: ui.Button,
- *   itemProps: (i) => ({ as: ui.Link, to: i.to, children: i.label, variant: 'outline', size: 'sm' }),
+ *   item: {
+ *     use: ui.Button,
+ *     props: (i) => ({ as: ui.Link, to: i.to, children: i.label, variant: 'outline', size: 'sm' }),
+ *   },
  *   orientation: 'horizontal',
  *   variant: 'attached',
  * }))

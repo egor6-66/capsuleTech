@@ -4,8 +4,8 @@
  * Coverage:
  *   1. Shell.Header рендерит children (ParentComponent).
  *   2. Shell.Header.Navigation — wrapper mode: рендерит children.
- *   3. Shell.Header.Navigation — batch mode: итерирует data через itemAs.
- *   4. Shell.Header.Navigation — itemProps маппятся на компонент.
+ *   3. Shell.Header.Navigation — batch mode: итерирует data через item.use.
+ *   4. Shell.Header.Navigation — item.props маппятся на компонент.
  *   5. Shell.Header.Menu — рендерит trigger с Menu-иконкой и aria-label.
  *   6. Shell.Header.Menu — рендерит children в Content.
  *   7. Shell.Header.Menu — кастомный label для trigger.
@@ -84,14 +84,14 @@ vi.mock('@capsuletech/web-ui/icons', () => ({
   Menu: (props: any) => <svg data-testid="menu-icon" aria-hidden={props['aria-hidden']} />,
 }));
 
-// Group stub: wrapper mode passes children, batch mode iterates data via itemAs.
+// Group stub: wrapper mode passes children, batch mode iterates data via item.use/item.props.
 vi.mock('@capsuletech/web-ui/group', () => {
   const { Dynamic } = require('solid-js/web');
   const { For } = require('solid-js');
 
   const Group = (props: any) => {
-    const isBatch = () => props.data !== undefined && props.itemAs !== undefined;
-    const getItemProps = props.itemProps ?? ((item: any) => item);
+    const isBatch = () => props.data !== undefined && props.item?.use !== undefined;
+    const getItemProps = props.item?.props ?? ((item: any) => item);
 
     return (
       <div
@@ -102,7 +102,7 @@ vi.mock('@capsuletech/web-ui/group', () => {
       >
         {isBatch() ? (
           <For each={props.data}>
-            {(item: any) => <Dynamic component={props.itemAs} {...getItemProps(item)} />}
+            {(item: any) => <Dynamic component={props.item.use} {...getItemProps(item)} />}
           </For>
         ) : (
           props.children
@@ -163,7 +163,7 @@ describe('Shell.Header — bar container', () => {
 });
 
 describe('Shell.Header.Navigation — wrapper mode', () => {
-  it('renders children when no data/itemAs', () => {
+  it('renders children when no data/item', () => {
     cleanup = render(
       () => (
         <Header.Navigation>
@@ -198,7 +198,7 @@ describe('Shell.Header.Navigation — wrapper mode', () => {
 });
 
 describe('Shell.Header.Navigation — batch mode', () => {
-  it('iterates data through itemAs', () => {
+  it('iterates data through item.use', () => {
     const NavItem = (props: { label: string }) => (
       <a href="/" data-testid="batch-item">
         {props.label}
@@ -211,8 +211,7 @@ describe('Shell.Header.Navigation — batch mode', () => {
       () => (
         <Header.Navigation
           data={data}
-          itemAs={NavItem}
-          itemProps={(i: any) => ({ label: i.label })}
+          item={{ use: NavItem, props: (i: any) => ({ label: i.label }) }}
         />
       ),
       container,
@@ -231,7 +230,7 @@ describe('Shell.Header.Navigation — batch mode', () => {
       () => (
         <Header.Navigation
           data={[{ label: 'A' }]}
-          itemAs={NavItem}
+          item={{ use: NavItem }}
           orientation="horizontal"
           variant="attached"
         />
@@ -362,8 +361,7 @@ describe('Shell.Header — composition (full widget pattern)', () => {
         <Header>
           <Header.Navigation
             data={[{ label: 'Dashboard' }, { label: 'Reports' }]}
-            itemAs={NavItem}
-            itemProps={(i: any) => ({ label: i.label })}
+            item={{ use: NavItem, props: (i: any) => ({ label: i.label }) }}
           />
           <Header.Menu>
             <span data-testid="logout-btn">Logout</span>
