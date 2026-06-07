@@ -117,6 +117,9 @@
           "@capsuletech/web-state",
           "@capsuletech/web-style",
           "@capsuletech/web-ui",
+          "@capsuletech/web-intl",
+          "@capsuletech/web-shell",
+          "@capsuletech/web-table",
           "@capsuletech/shared-zod"
         ],
         "projectsRelationship": "fixed",

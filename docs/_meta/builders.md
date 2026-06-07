@@ -49,7 +49,17 @@ biome-config → ничего (zero-deps, чисто config-файл)
 | `packages/builders/vite/src/plugins/constants.ts` | **SSOT** для `WRAPPER_NAMES`, `DEFINE_FACTORIES`, `LAYER_TO_NAMESPACE` |
 | `packages/builders/vite/src/plugins/HMRWrapping.ts` | babel-AST pre-transform: `const X = Page(...)` → `(props) => Page(...)(props)` + `export default` |
 | `packages/builders/vite/src/plugins/capsuleRegistry.ts` | **Unified codegen orchestrator.** Владеет ВСЕМ что генерируется в `.capsule/`. `LAYER_INIT_ORDER` — единственная точка контроля порядка инициализации. Stateless sub-generators: `generateWrappersRuntime`, `generateEndpointsRuntime`, `generateAppConfigRuntime`, `generateBootstrap`. Единый watcher на `src/**`. Заменяет ExportGeneratorPlugin + EndpointsRegistryPlugin + AppConfigPlugin (codegen). Генерирует `.capsule/bootstrap.tsx` детерминированно (не статический template). Alias `@capsule/registry` регистрируется через **`config()`-хук** (не `configResolved`!) — только так alias попадает и в dev-resolver, и в build (см. ADR-034 dev fix). |
-| `packages/builders/vite/src/plugins/__tests__/capsuleRegistry.test.ts` | Тесты sub-generators + LAYER_INIT_ORDER контракт + transform hooks + ordering regression |
+| `packages/builders/vite/src/plugins/__tests__/capsuleRegistry.test.ts` | Тесты pure sub-generators + LAYER_INIT_ORDER контракт + transform hooks + ordering regression |
+| `packages/builders/vite/src/plugins/__tests__/codegenOrchestrator.test.ts` | Тесты нового оркестратора: plugin shape, config alias, transform chain, sub-gen factory contract, ordering invariant |
+| `packages/builders/vite/src/plugins/codegen/interfaces.ts` | **CodegenContext + SubGenerator контракты** (ADR 037) |
+| `packages/builders/vite/src/plugins/codegen/orchestrator.ts` | **createCapsuleRegistryPlugin** — новый публичный API оркестратора. Принимает массив SubGenerator, единый watcher, dispatch, flush по order |
+| `packages/builders/vite/src/plugins/codegen/index.ts` | barrel: createCapsuleRegistryPlugin + createXxxSubGenerator + type SubGenerator/CodegenContext |
+| `packages/builders/vite/src/plugins/codegen/shared.ts` | re-export чистых генераторов из capsuleRegistry.ts для кастомных sub-gen модулей |
+| `packages/builders/vite/src/plugins/codegen/generators/barrelRegistry.ts` | SubGenerator order:10 — barrel-registry + @capsule/registry alias + legacy cleanup |
+| `packages/builders/vite/src/plugins/codegen/generators/endpoints.ts` | SubGenerator order:20 — endpoints.ts + api.d.ts + defineEndpoint transform |
+| `packages/builders/vite/src/plugins/codegen/generators/appConfig.ts` | SubGenerator order:30 — app-config.gen.ts + app-tags.d.ts + defineAppConfig transform |
+| `packages/builders/vite/src/plugins/codegen/generators/packages.ts` | SubGenerator order:40 — registry/packages.ts + packages.d.ts |
+| `packages/builders/vite/src/plugins/codegen/generators/bootstrap.ts` | SubGenerator order:90 — bootstrap.tsx (assembled last) |
 | `packages/builders/vite/src/plugins/router/index.ts` | RouterPlugin: ensureRoot + page-mirror generator + TanStackRouterVite |
 | `packages/builders/vite/src/plugins/router/template/__root.tsx.template` | шаблон корневого route |
 | `packages/builders/vite/src/plugins/scaffold/index.ts` | EnsureScaffoldPlugin: копирует `index.html / index.ts / paths.config.json / styles.css` в `.capsule/` если их нет. `bootstrap.tsx` **НЕ** в списке — генерируется `CapsuleRegistryPlugin`. |
@@ -77,6 +87,37 @@ biome-config → ничего (zero-deps, чисто config-файл)
 - `EAGER_IMPORT_LAYERS = Set(['entities'])` — слои, для которых `CapsuleRegistryPlugin` генерирует eager `import X from '...'` вместо `lazy()`. Entity — plain value (zod schema), не Solid component.
 
 Добавляешь новый слой → правишь ОДИН файл, плагины подхватят.
+
+## Sub-generator архитектура (ADR 037 P1)
+
+**`createCapsuleRegistryPlugin`** — новый публичный API (замена будущих consumers; `CapsuleRegistryPlugin` остаётся для backward compat).
+
+```ts
+import { createCapsuleRegistryPlugin, type SubGenerator } from '@capsuletech/vite-builder';
+
+// Добавить новый саб-ген:
+const myGen: SubGenerator = {
+  id: 'my-manifest',
+  order: 50,          // между packages(40) и bootstrap(90)
+  match: (file) => file.includes('/widgets/'),
+  onEvent: (ev, file, ctx) => { /* обновить стейт */ return true; },
+  flush: (ctx, forced) => { ctx.writeOut(..., content); },
+  bootstrap: (ctx) => ({ phase: 'subsystems', importPath: './my-manifest' }),
+};
+
+const plugin = createCapsuleRegistryPlugin({
+  capsuleRoot, watchDir, appConfigPath,
+  extraGenerators: [myGen],
+});
+```
+
+**CodegenContext** — shared context (writeOut / removeOut / parse / names / loadAppConfig).
+
+**Порядок flush:** barrel(10) → endpoints(20) → app-config(30) → packages(40) → [extra] → bootstrap(90).
+
+**Bootstrap** всегда последний — собирает `bootstrap.tsx` из LAYER_INIT_ORDER. Сейчас использует `generateBootstrap()` (статичный, от LAYER_INIT_ORDER). В будущем переключится на сборку из `bootstrap()` вкладов каждого gen (P2 roadmap).
+
+**Добавить новый codegen-вывод** = 1 файл (`plugins/codegen/generators/myGen.ts`) + регистрация в `createCapsuleRegistryPlugin > extraGenerators`. Оркестратор не трогаем.
 
 ## Главный поток в dev (что собирается в каком порядке)
 
@@ -199,6 +240,15 @@ biome-config → ничего (zero-deps, чисто config-файл)
 12. **Scaffold templates не попадают в dist автоматически** — `EnsureScaffoldPlugin` при runtime'е читает `.template`-файлы из `dist/plugins/scaffold/template/` (через `__dirname`). Но `libConfig` / rollup не копируют non-JS ресурсы — нужна явная запись в `staticCopyPlugin` в `vite/vite.config.mts`. Если добавить новый `.template`-файл в `src/` без добавления в `staticCopyPlugin` → `copyFile` бросит ENOENT при запуске dev-сервера, scaffold тихо ломается. Фикс уже применён (2026-05-20): `scaffold/template` копируется в `dist/plugins/scaffold/template/`.
 
 13. **[CLOSED 2026-05-28] Layer init ordering — ESM hoisting TDZ.** Fix: `wrappers.ts` выполняет `Object.assign(globalThis, ...)` как top-level side-effect. `bootstrap.tsx` теперь **генерируется** `CapsuleRegistryPlugin` по `LAYER_INIT_ORDER` — порядок фаз (globals → subsystems → render) невозможно нарушить случайно.
+
+### RouterPlugin как потенциальный SubGenerator (отложено)
+
+RouterPlugin уже использует тот же `watcherManager`. Консолидация в один watcher технически возможна, но:
+- FileGenerator — async (`async fileGenerator`), все остальные sub-gens синхронны в `flush`
+- `ensureRootRoutePlugin` должен запускаться до `TanStackRouterVite` (отдельный Vite plugin)
+- `TanStackRouterVite` — внешний плагин, не может быть Sub-generator
+
+Вывод: RouterPlugin лучше оставить отдельным плагином-тройкой (`[ensureRoot, generator, TanStackRouterVite]`). Консолидация watcher-подписки не даёт пользы, риск async-рассинхрона — неоправдан. Отдельный шаг если понадобится.
 
 ## Что менять когда
 
