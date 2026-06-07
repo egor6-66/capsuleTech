@@ -2,14 +2,15 @@
  * wrapper.test.ts — характеризационные тесты Entity wrapper (domain data layer).
  *
  * Entity — plain config factory. Не компонент, не Solid-wrapper.
- * Factory вызывается на module-load time, результат — frozen plain object.
+ * Factory вызывается на module-load time БЕЗ аргументов, результат — frozen plain object.
+ * Zod-схема строится через глобал Zod (или напрямую через import { z } from 'zod' в тестах).
  *
  * Покрытие:
  *  1. Возвращает объект с полем `schema`
  *  2. `schema` — правильная zod-схема (можно вызвать .parse)
  *  3. `defaults` опциональны — Entity без defaults валиден
  *  4. `defaults` присутствуют когда переданы
- *  5. z helper доступен через первый аргумент factory (стандартный CapsuleZ)
+ *  5. factory не получает аргументов (hard-switch: нет z-параметра)
  *  6. Результат совпадает ровно с тем, что вернула factory (прозрачный wrapper)
  *  7. Возвращённый объект заморожен (Object.isFrozen)
  *  8. Несколько Entity независимы (разные объекты)
@@ -18,7 +19,7 @@
  */
 
 import { describe, expect, expectTypeOf, it } from 'vitest';
-import { z as zodDirect } from 'zod';
+import { z } from 'zod';
 import { Entity } from '../wrapper';
 
 // ---------------------------------------------------------------------------
@@ -27,7 +28,7 @@ import { Entity } from '../wrapper';
 
 describe('Entity — schema field', () => {
   it('returns an object with a schema property', () => {
-    const Users = Entity((z) => ({
+    const Users = Entity(() => ({
       schema: z.array(z.object({ id: z.string() })),
     }));
 
@@ -35,7 +36,7 @@ describe('Entity — schema field', () => {
   });
 
   it('schema is a valid zod schema (parse succeeds)', () => {
-    const Users = Entity((z) => ({
+    const Users = Entity(() => ({
       schema: z.array(z.object({ id: z.string(), name: z.string() })),
     }));
 
@@ -44,7 +45,7 @@ describe('Entity — schema field', () => {
   });
 
   it('schema rejects invalid data (zod parse throws)', () => {
-    const Users = Entity((z) => ({
+    const Users = Entity(() => ({
       schema: z.array(z.object({ id: z.string() })),
     }));
 
@@ -59,14 +60,14 @@ describe('Entity — schema field', () => {
 describe('Entity — defaults are optional', () => {
   it('Entity without defaults is valid (no error)', () => {
     expect(() =>
-      Entity((z) => ({
+      Entity(() => ({
         schema: z.array(z.object({ id: z.string() })),
       })),
     ).not.toThrow();
   });
 
   it('defaults are undefined when not provided', () => {
-    const Users = Entity((z) => ({
+    const Users = Entity(() => ({
       schema: z.array(z.object({ id: z.string() })),
     }));
 
@@ -78,7 +79,7 @@ describe('Entity — defaults are optional', () => {
   it('defaults are present when provided', () => {
     const sample = [{ id: '1', name: 'Alice', amount: 100 }];
 
-    const Users = Entity((z) => ({
+    const Users = Entity(() => ({
       schema: z.array(z.object({ id: z.string(), name: z.string(), amount: z.number() })),
       defaults: sample,
     }));
@@ -88,12 +89,23 @@ describe('Entity — defaults are optional', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 3. z helper — первый аргумент factory
+// 3. factory не принимает аргументов (hard-switch)
 // ---------------------------------------------------------------------------
 
-describe('Entity — z helper', () => {
-  it('z.string() is available through factory arg', () => {
-    const Tags = Entity((z) => ({
+describe('Entity — factory has no arguments', () => {
+  it('factory receives no arguments (z is not injected)', () => {
+    let receivedArgs: unknown[] = [];
+
+    Entity((...args: unknown[]) => {
+      receivedArgs = args;
+      return { schema: z.array(z.string()) };
+    });
+
+    expect(receivedArgs).toHaveLength(0);
+  });
+
+  it('z.string() usable via direct import (not via factory arg)', () => {
+    const Tags = Entity(() => ({
       schema: z.array(z.string()),
       defaults: ['alpha', 'beta'],
     }));
@@ -101,8 +113,8 @@ describe('Entity — z helper', () => {
     expect(Tags.schema.parse(['x', 'y'])).toEqual(['x', 'y']);
   });
 
-  it('z.number() is available through factory arg', () => {
-    const Prices = Entity((z) => ({
+  it('z.number() usable via direct import', () => {
+    const Prices = Entity(() => ({
       schema: z.array(z.number()),
       defaults: [1.5, 2.0],
     }));
@@ -110,8 +122,8 @@ describe('Entity — z helper', () => {
     expect(Prices.schema.parse([10, 20])).toEqual([10, 20]);
   });
 
-  it('z.object() is available through factory arg', () => {
-    const Orders = Entity((z) => ({
+  it('z.object() usable via direct import', () => {
+    const Orders = Entity(() => ({
       schema: z.object({ id: z.string(), total: z.number() }),
     }));
 
@@ -126,10 +138,10 @@ describe('Entity — z helper', () => {
 
 describe('Entity — transparent wrapper', () => {
   it('result has exactly the same keys as factory return', () => {
-    const schema = zodDirect.array(zodDirect.string());
+    const schema = z.array(z.string());
     const defaults = ['a'];
 
-    const MyEntity = Entity((_z) => ({ schema, defaults }));
+    const MyEntity = Entity(() => ({ schema, defaults }));
 
     expect(MyEntity.schema).toBe(schema);
     expect(MyEntity.defaults).toBe(defaults);
@@ -137,7 +149,7 @@ describe('Entity — transparent wrapper', () => {
 
   it('extra fields from factory are preserved', () => {
     const MyEntity = Entity(
-      (z) =>
+      () =>
         ({
           schema: z.array(z.string()),
           // extra field beyond IEntityDefinition contract — still preserved
@@ -155,7 +167,7 @@ describe('Entity — transparent wrapper', () => {
 
 describe('Entity — result is frozen', () => {
   it('Object.isFrozen returns true', () => {
-    const Users = Entity((z) => ({
+    const Users = Entity(() => ({
       schema: z.array(z.object({ id: z.string() })),
     }));
 
@@ -163,7 +175,7 @@ describe('Entity — result is frozen', () => {
   });
 
   it('mutating frozen object throws in strict mode (or silently fails)', () => {
-    const Users = Entity((z) => ({
+    const Users = Entity(() => ({
       schema: z.array(z.object({ id: z.string() })),
       defaults: [{ id: '1' }],
     }));
@@ -181,11 +193,11 @@ describe('Entity — result is frozen', () => {
 
 describe('Entity — multiple instances are independent', () => {
   it('two Entity calls produce separate objects', () => {
-    const Users = Entity((z) => ({
+    const Users = Entity(() => ({
       schema: z.array(z.object({ id: z.string() })),
     }));
 
-    const Products = Entity((z) => ({
+    const Products = Entity(() => ({
       schema: z.array(z.object({ sku: z.string(), price: z.number() })),
     }));
 
@@ -200,7 +212,7 @@ describe('Entity — multiple instances are independent', () => {
 
 describe('Entity — type-level checks', () => {
   it('result schema type infers correctly', () => {
-    const Users = Entity((z) => ({
+    const Users = Entity(() => ({
       schema: z.array(z.object({ id: z.string(), name: z.string() })),
       defaults: [{ id: '1', name: 'Alice' }],
     }));
@@ -210,7 +222,7 @@ describe('Entity — type-level checks', () => {
   });
 
   it('Entity without defaults: result type has no defaults field (correct narrowing)', () => {
-    const Tags = Entity((z) => ({
+    const Tags = Entity(() => ({
       schema: z.array(z.string()),
     }));
 
@@ -222,13 +234,13 @@ describe('Entity — type-level checks', () => {
     expect((Tags as any).defaults).toBeUndefined();
   });
 
-  it('z arg in factory is typed as CapsuleZ (has .array, .object, .string etc)', () => {
-    Entity((z) => {
-      // z.component() — CapsuleZ extension
-      expectTypeOf(z.component).toBeFunction();
-      expectTypeOf(z.array).toBeFunction();
-      expectTypeOf(z.object).toBeFunction();
-      return { schema: z.array(z.string()) };
-    });
+  it('factory type is () => T — no z parameter in IEntityFactory', () => {
+    // Проверяем что IEntityFactory не принимает аргументов.
+    // Если factory ожидает z — TS-error здесь (compile-time check).
+    const factory: import('../types').IEntityFactory<{ schema: ReturnType<typeof z.string> }> =
+      () => ({ schema: z.string() });
+    expect(factory).toBeTypeOf('function');
+    // factory() вызывается без аргументов
+    expect(factory()).toHaveProperty('schema');
   });
 });

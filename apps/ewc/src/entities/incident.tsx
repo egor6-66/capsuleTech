@@ -15,19 +15,19 @@
  * имён/описаний вырезается tree-shaking'ом — ни скрипт, ни данные не едут в
  * bundle. Реальные данные придут через `services.api.incidents.list()`.
  */
-const Incident = Entity((z) => {
-  const schema = z.object({
-    id: z.string(),
-    applicant: z.object({
-      name: z.string(),
-      phone: z.string(),
+const Incident = Entity(() => {
+  const schema = Zod.object({
+    id: Zod.string(),
+    applicant: Zod.object({
+      name: Zod.string(),
+      phone: Zod.string(),
     }),
-    location: z.object({
-      lng: z.number(),
-      lat: z.number(),
+    location: Zod.object({
+      lng: Zod.number(),
+      lat: Zod.number(),
     }),
-    description: z.string(),
-    createdAt: z.string(), // ISO timestamp
+    description: Zod.string(),
+    createdAt: Zod.string(), // ISO timestamp
   });
 
   // Dev-only генератор. Всё (словари + RNG + сборка) живёт внутри makeMock,

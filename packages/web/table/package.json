@@ -14,6 +14,26 @@
       "types": "./dist/capsule.d.ts",
       "import": "./dist/capsule.mjs",
       "default": "./dist/capsule.mjs"
+    },
+    "./controllers": {
+      "types": "./dist/controllers/index.d.ts",
+      "import": "./dist/controllers.mjs",
+      "default": "./dist/controllers.mjs"
+    },
+    "./dataTable": {
+      "types": "./dist/dataTable.d.ts",
+      "import": "./dist/dataTable.mjs",
+      "default": "./dist/dataTable.mjs"
+    },
+    "./table": {
+      "types": "./dist/table.d.ts",
+      "import": "./dist/table.mjs",
+      "default": "./dist/table.mjs"
+    },
+    "./lib": {
+      "types": "./dist/lib.d.ts",
+      "import": "./dist/lib.mjs",
+      "default": "./dist/lib.mjs"
     }
   },
   "files": [

@@ -15,20 +15,22 @@ export interface IGroupProps<T = unknown> {
   class?: string;
   style?: JSX.CSSProperties | string;
 
-  /** Batch mode: массив данных для итерации. Требует `itemAs`. */
+  /** Batch mode: массив данных для итерации. Требует `item.use`. */
   data?: T[];
   /**
-   * Batch mode: компонент-шаблон для каждого item. Имя выбрано `itemAs`
-   * (не `as`), чтобы не конфликтовать с Shape-wrapper'ом `as` — он
-   * extract'ит `as` как batch-template, и synonym поломал бы chain
-   * `Shape({ as: Ui.Group, itemAs: Ui.Button })`.
+   * Batch mode: объект с компонентом-шаблоном и маппером props.
+   *
+   * ```tsx
+   * <Group data={items} item={{ use: Button, props: (it) => ({ children: it.label }) }} />
+   * ```
+   *
+   * `item.use` — компонент каждого элемента (ADR 036 §3, был `itemAs`).
+   * `item.props` — маппер данных → props; опционален (по умолчанию сам item как Record).
    */
-  itemAs?: Component<any>;
-  /**
-   * Batch mode: маппер данных → props для `itemAs` компонента.
-   * По умолчанию сам item кастуется как Record (подходит для plain objects).
-   */
-  itemProps?: (item: T) => Record<string, unknown>;
+  item?: {
+    use?: Component<any>;
+    props?: (it: T) => Record<string, unknown>;
+  };
   /**
    * Batch mode: фильтр по тегам — оставляет только items, у которых
    * `item.tags ∩ props.tags ≠ ∅`. Требует `item.tags: string[]`.

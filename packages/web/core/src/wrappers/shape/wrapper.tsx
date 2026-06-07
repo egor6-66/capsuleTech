@@ -1,4 +1,3 @@
-import { z } from '@capsuletech/shared-zod';
 import { mergeProps, splitProps } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import { useShapeUi } from './context';
@@ -11,52 +10,52 @@ import {
 } from './ui-tracker';
 
 /**
- * Shape wrapper — single batch flow (v0.4.0+).
+ * Shape wrapper v2 — двухфазная форма (Shape ADR 036).
  *
- * Shape НЕ итерирует данные. Вся итерация — ответственность batch-template
- * (`Ui.List`, `Ui.DataTable` или пользовательского компонента, переданного в `as`).
+ * ```ts
+ * Shape(
+ *   (ui) => ({ schema, as }),              // BIND: фиксирует данные + шаблон
+ *   (ui, props) => ({ child, ...config }), // CONFIG: row-типизирован из schema (объект ИЛИ функция(ui, props))
+ * )
+ * ```
  *
- * Flow:
- *  1. Factory вызывается на module-load: `{ schema, defaults, as, ...extras }`.
- *  2. При рендере:
- *     a. `data` = consumer JSX `data` ?? definition `defaults` ?? undefined.
- *     b. template = consumer JSX `as` ?? resolveTemplate(definition.as) ?? undefined.
- *     c. extras из definition (за исключением `schema`/`defaults`/`as`) + consumer JSX
- *        props (consumer wins) → все передаются в template.
- *  3. `<Dynamic component={Template} data={data} {...extras} {...consumerProps} />`
+ * Runtime flow:
+ *  1. `bind(ui)` вызывается на module-load: `{ schema, as, defaults? }`.
+ *     `ui` — path-tracker (реального Ui ещё нет; резолв lazy на рендере).
+ *  2. `config` = объект ИЛИ `(ui, props) => config`. Хранится as-is; вычисляется per-render.
+ *  3. При рендере:
+ *     a. template = consumer `as` ?? resolveTemplate(bind.as) ?? undefined.
+ *     b. configValue = typeof config === 'function' ? config(uiTracker, consumerProps) : config.
+ *     c. `data` = consumer `data` ?? configValue.defaults ?? undefined.
+ *     d. `child` из configValue резолвится (trackers → realUi) и передаётся шаблону как `child`.
+ *     e. extras из configValue (за исключением `defaults` и `child`) + consumer extras (consumer wins).
+ *     f. `<Dynamic component={Template} data={data} child={resolvedChild} {...extras} />`.
  *
- * Реактивность: `consumerProps` — Solid-реактивный proxy. `mergeProps` и `splitProps`
- * сохраняют реактивный tracking, поэтому сигнальные props обновляют template.
+ * `child: { use, props }` (batch-элемент, nav-паттерн):
+ *  - `use` — компонент каждого элемента (tracker → rezolvируется).
+ *  - `props(it)` — маппер row→props (результат тоже резолвится).
+ *  Передаётся в шаблон как `child` prop (шаблон сам итерирует через `child.use` / `child.props`).
  *
- * Path-tracker (`definition.as = ui.Navigation.Item`) резолвится **lazy** на
- * каждый рендер через `useShapeUi()` — получает proxied Ui из родительского
- * View/Widget, что важно для UiProxy event-binding'а.
- *
- * Если template не определён ни в definition, ни в consumer JSX — Shape рендерит null.
- *
- * **BREAKING (v0.4.0):**
- *  - `props: (item) => ...` per-item mapper — УДАЛЁН. Используй batch-template.
- *  - `children` render-prop — УДАЛЁН. Используй batch-template или View/Widget.
+ * Реактивность: `consumerProps` — Solid-реактивный proxy. `mergeProps`/`splitProps`
+ * сохраняют реактивный tracking. Config-функция вычисляется реактивно если передана.
  */
-const shape = (factory: any) => {
-  // Factory вызывается на module-load. `ui` — path-tracker (real Ui ещё нет).
-  const definition = factory(z, createUiTracker());
+const shape = (bind: (...args: unknown[]) => unknown, config?: unknown) => {
+  // Bind вызывается на module-load. ui — path-tracker (real Ui ещё нет).
+  // item убран из bind в ADR 036 — batch-дескриптор переехал в arg2 (child).
+  const bindUiTracker = createUiTracker();
+  const bindResult = bind(bindUiTracker) as {
+    schema?: unknown;
+    as?: unknown;
+    defaults?: unknown;
+    [key: string]: unknown;
+  };
 
-  // Деструктурируем известные Shape-internal поля; оставшееся — extras.
-  // `_deprecatedPropsFn` поглощает старое поле `props` на случай если app-код
-  // ещё его передаёт — предотвращает прокидку в template.
-  const {
-    schema: _schema,
-    defaults,
-    as: defaultAs,
-    props: _deprecatedPropsFn,
-    ...definitionExtras
-  } = definition;
+  const { schema: _schema, as: defaultAs, defaults: bindDefaults, ...bindExtras } = bindResult;
 
   return (consumerProps: IShapeComponentProps<unknown>) => {
     const realUi = useShapeUi();
 
-    /** Резолв batch-template: consumer `as` > definition.as (path-tracker резолв) > undefined. */
+    // --- Резолв template ---
     const resolveTemplate = (): unknown => {
       if (consumerProps.as) return consumerProps.as;
       if (!defaultAs) return undefined;
@@ -68,30 +67,92 @@ const shape = (factory: any) => {
     const Template = resolveTemplate();
     if (!Template) return null;
 
-    // Разделяем Shape-internal props из consumerProps: `as` и `data` выводим отдельно.
-    // Всё остальное (`rest`) — consumer extras, мерджятся поверх definition extras.
     const [ownProps, rest] = splitProps(consumerProps as Record<string, unknown>, ['as', 'data']);
 
-    // Резолв trackers в definitionExtras: `itemAs: ui.Button` → реальный компонент,
-    // `itemProps: (item) => ({ as: ui.Link })` → обёрнутая функция с резолвом результата.
-    // Non-tracker значения (primitives, plain objects, arrays) проходят без изменений.
-    const resolvedDefinitionExtras = resolveValuesInObject(definitionExtras, realUi);
+    // Вычисляем сырой config-объект (ui-tracker + consumer props).
+    // Функциональная форма получает (ui, props) — ui — path-tracker (тот же экземпляр,
+    // что и при bind; trackers внутри конфига резолвируются в realUi при рендере).
+    const getRawConfig = (): Record<string, unknown> => {
+      if (typeof config === 'function') {
+        return (config as (ui: unknown, p: unknown) => Record<string, unknown>)(
+          bindUiTracker,
+          consumerProps,
+        ) ?? {};
+      }
+      return config != null ? (config as Record<string, unknown>) : {};
+    };
 
-    // mergeProps: resolvedDefinitionExtras (статика) < rest (реактивные consumer extras).
-    // mergeProps от Solid сохраняет реактивность — сигналы в `rest` работают.
-    const mergedExtras = mergeProps(resolvedDefinitionExtras, rest);
+    // Config-функция как source для mergeProps.
+    // Solid mergeProps обрабатывает функции: вызывает createMemo(fn) внутри,
+    // что позволяет сигналам внутри config-функции корректно трекуваться.
+    const configSource = (): Record<string, unknown> => {
+      const raw = getRawConfig();
+      // Вырезаем defaults и child — они обрабатываются отдельно
+      const { defaults: _d, child: _c, ...extras } = raw;
+      return extras;
+    };
 
-    // data: consumer `data` overrides definition `defaults`.
-    // Читаем ownProps.data прямо в JSX-разметке (через геттер) чтобы сохранить
-    // реактивный tracking Solid — иначе computed-значение вне JSX теряет tracking.
-    // `'data' in consumerProps` проверяем через наличие ключа в ownProps (splitProps
-    // копирует only own-keys): если consumer передал data=[], ownProps.data === [].
+    // Резолвим trackers в bindExtras (static, вычисляется один раз)
+    const resolvedBindExtras = resolveValuesInObject(bindExtras as Record<string, unknown>, realUi);
+
+    // Резолвим child из config (batch-дескриптор, раньше был item в bind).
+    // Вычисляется реактивно (внутри configSource-цикла), т.к. config может быть функцией.
+    const getResolvedChild = (): Record<string, unknown> | undefined => {
+      const raw = getRawConfig();
+      const configChild = raw.child as { use?: unknown; props?: (it: unknown) => unknown } | undefined;
+      if (!configChild) return undefined;
+
+      const resolvedChildUse = configChild.use != null
+        ? (() => {
+            const path = getTrackerPath(configChild.use);
+            if (path && realUi) return resolveByPath(realUi, path);
+            return configChild.use;
+          })()
+        : undefined;
+
+      const resolvedChildProps = configChild.props != null
+        ? (() => {
+            const fn = configChild.props;
+            return (it: unknown) => {
+              const result = fn(it);
+              if (result !== null && typeof result === 'object' && !Array.isArray(result)) {
+                return resolveValuesInObject(result as Record<string, unknown>, realUi);
+              }
+              return result;
+            };
+          })()
+        : undefined;
+
+      return {
+        child: {
+          use: resolvedChildUse,
+          props: resolvedChildProps,
+        },
+      };
+    };
+
     const hasConsumerData = 'data' in (consumerProps as Record<string, unknown>);
+
+    // Порядок приоритета: resolvedBindExtras < configSource() < resolvedChild < consumer rest.
+    // configSource и resolvedChild — функции → mergeProps сам оборачивает в createMemo.
+    const mergedExtras = mergeProps(
+      resolvedBindExtras,
+      configSource,                              // функция — Solid обернёт в createMemo
+      () => getResolvedChild() ?? {},            // child реактивно из config
+      rest,
+    );
+
+    // data: читаем config-defaults реактивно через геттер в JSX
+    const getData = () => {
+      if (hasConsumerData) return ownProps.data;
+      const raw = getRawConfig();
+      return 'defaults' in raw ? raw.defaults : bindDefaults;
+    };
 
     return (
       <Dynamic
-        component={Template as any}
-        data={hasConsumerData ? ownProps.data : defaults}
+        component={Template as Parameters<typeof Dynamic>[0]['component']}
+        data={getData()}
         {...(mergedExtras as Record<string, unknown>)}
       />
     );

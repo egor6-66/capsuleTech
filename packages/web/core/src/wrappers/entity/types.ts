@@ -1,4 +1,4 @@
-import type { CapsuleZ, ZodTypeAny } from '@capsuletech/shared-zod';
+import type { ZodTypeAny } from '@capsuletech/shared-zod';
 import type { z } from 'zod';
 
 /**
@@ -17,19 +17,24 @@ export interface IEntityDefinition<TSchema = unknown, TDefaults = unknown> {
 }
 
 /**
- * Фабрика Entity — функция, получающая `z` (CapsuleZ helper) и
- * возвращающая `IEntityDefinition`-совместимый объект.
+ * Фабрика Entity — функция без аргументов, возвращающая
+ * `IEntityDefinition`-совместимый объект.
+ *
+ * Zod-схема строится через глобал `Zod` (auto-import из `@capsuletech/shared-zod`).
  *
  * Generic `T` — тип возвращаемого definition. Используется wrapper'ом
  * чтобы пробросить структуру без потери информации о полях.
  */
-export type IEntityFactory<T extends IEntityDefinition> = (z: CapsuleZ) => T;
+export type IEntityFactory<T extends IEntityDefinition> = () => T;
 
 /**
  * Публичный тип wrapper-функции `Entity`.
  *
- * `Entity((z) => ({ schema: z.array(...), defaults: [...] }))` возвращает
+ * `Entity(() => ({ schema: Zod.array(...), defaults: [...] }))` возвращает
  * plain config object с дополнительным phantom-полем `$infer`.
+ *
+ * Zod-схема строится через глобал `Zod` (auto-import из `@capsuletech/shared-zod`).
+ * Аргумент `z` убран — factory теперь без параметров (breaking change).
  *
  * Phantom `$infer` — **только тип**, рантайм его не создаёт.
  * Consumer использует `typeof Entities.X.$infer`:
@@ -51,5 +56,5 @@ export type IEntityWrapper = <
   TDefaults = unknown,
   T extends IEntityDefinition<TSchema, TDefaults> = IEntityDefinition<TSchema, TDefaults>,
 >(
-  factory: (z: CapsuleZ) => T,
+  factory: () => T,
 ) => T & { readonly $infer: z.infer<TSchema> };

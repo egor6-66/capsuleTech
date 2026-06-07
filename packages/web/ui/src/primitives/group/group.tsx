@@ -22,9 +22,9 @@ import { groupSeparatorVariants } from './variants';
  *    </Group>
  *    ```
  *
- * 2. **Batch mode** — data + as (+ опциональный itemProps/tags):
+ * 2. **Batch mode** — data + item.use (+ опциональный item.props / tags):
  *    ```tsx
- *    <Group data={items} as={Button} itemProps={(it) => ({ children: it.label })} />
+ *    <Group data={items} item={{ use: Button, props: (it) => ({ children: it.label }) }} />
  *    ```
  *
  * **Варианты:**
@@ -40,8 +40,7 @@ export function Group<T = unknown>(props: IGroupProps<T>) {
     'class',
     'style',
     'data',
-    'itemAs',
-    'itemProps',
+    'item',
     'tags',
     'resizable',
     'withHandle',
@@ -49,7 +48,7 @@ export function Group<T = unknown>(props: IGroupProps<T>) {
   ]);
 
   const orientation = (): FlexOrientation => local.orientation ?? 'horizontal';
-  const isBatch = () => local.data !== undefined && local.itemAs !== undefined;
+  const isBatch = () => local.data !== undefined && local.item?.use !== undefined;
 
   // Batch mode: фильтрация по тегам
   const visible = createMemo(() => {
@@ -60,7 +59,7 @@ export function Group<T = unknown>(props: IGroupProps<T>) {
     );
   });
 
-  const getItemProps = local.itemProps ?? ((item: T) => item as Record<string, unknown>);
+  const getItemProps = local.item?.props ?? ((item: T) => item as Record<string, unknown>);
 
   const isAttached = () => local.variant === 'attached';
   const isVertical = () => orientation() === 'vertical';
@@ -93,7 +92,7 @@ export function Group<T = unknown>(props: IGroupProps<T>) {
   // Batch + spaced/resizable: items-array for Flex (keeps resizable support)
   const batchItems = createMemo<IFlexItem[]>(() =>
     visible().map((item) => ({
-      children: <Dynamic component={local.itemAs as Component<any>} {...getItemProps(item)} />,
+      children: <Dynamic component={local.item!.use as Component<any>} {...getItemProps(item)} />,
       resizable: !!local.resizable,
     })),
   );
@@ -112,7 +111,7 @@ export function Group<T = unknown>(props: IGroupProps<T>) {
           <For each={items()}>
             {(item, idx) => (
               <>
-                <Dynamic component={local.itemAs as Component<any>} {...getItemProps(item)} />
+                <Dynamic component={local.item!.use as Component<any>} {...getItemProps(item)} />
                 {idx() < items().length - 1 && <GroupSeparator orientation={sepOrientation()} />}
               </>
             )}

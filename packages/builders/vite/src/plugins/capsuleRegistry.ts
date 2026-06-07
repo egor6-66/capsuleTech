@@ -60,6 +60,12 @@ export interface ResolvedPackageEntry {
    * These are merged into the global `Controllers` namespace (not under globalName).
    */
   controllerKeys?: string[];
+  /**
+   * Component keys from manifest.components, if present.
+   * e.g. `{ DataTable: DataTableComp }` → `['DataTable']`
+   * Used to generate `namespace <Global> { namespace <Comp> { type Events } }` in packages.d.ts.
+   */
+  componentKeys?: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -328,6 +334,8 @@ interface ResolvedManifestInfo {
   name: string;
   /** Keys from manifest.controllers (empty array if absent). */
   controllerKeys: string[];
+  /** Keys from manifest.components (empty array if absent). */
+  componentKeys: string[];
 }
 
 /**
@@ -344,7 +352,7 @@ interface ResolvedManifestInfo {
 export const parseManifestSource = (
   source: string,
   fileName: string,
-): { name: string; controllerKeys: string[] } | null => {
+): { name: string; controllerKeys: string[]; componentKeys: string[] } | null => {
   const isTs = /\.[mc]?ts$/.test(fileName);
   const ast = parse(source, {
     sourceType: 'module',
@@ -353,6 +361,7 @@ export const parseManifestSource = (
 
   let foundName: string | null = null;
   let foundControllerKeys: string[] = [];
+  let foundComponentKeys: string[] = [];
 
   traverse(ast, {
     ObjectExpression(path) {
@@ -361,6 +370,7 @@ export const parseManifestSource = (
 
       let localName: string | null = null;
       let localControllerKeys: string[] | null = null;
+      let localComponentKeys: string[] | null = null;
 
       for (const prop of path.node.properties) {
         // Only ObjectProperty (not SpreadElement / RestElement)
@@ -392,6 +402,20 @@ export const parseManifestSource = (
               if (ctrlKey !== null) localControllerKeys.push(ctrlKey);
             }
           }
+        } else if (keyName === 'components') {
+          if (prop.value.type === 'ObjectExpression') {
+            localComponentKeys = [];
+            for (const compProp of prop.value.properties) {
+              if (compProp.type !== 'ObjectProperty') continue;
+              const compKey =
+                compProp.key.type === 'Identifier'
+                  ? compProp.key.name
+                  : compProp.key.type === 'StringLiteral'
+                    ? compProp.key.value
+                    : null;
+              if (compKey !== null) localComponentKeys.push(compKey);
+            }
+          }
         }
       }
 
@@ -399,13 +423,14 @@ export const parseManifestSource = (
       if (localName !== null) {
         foundName = localName;
         foundControllerKeys = localControllerKeys ?? [];
+        foundComponentKeys = localComponentKeys ?? [];
         path.stop();
       }
     },
   });
 
   if (foundName === null) return null;
-  return { name: foundName, controllerKeys: foundControllerKeys };
+  return { name: foundName, controllerKeys: foundControllerKeys, componentKeys: foundComponentKeys };
 };
 
 /**
@@ -445,7 +470,7 @@ const resolveManifestInfo = (
   }
 
   // Step 3: parse via pure AST function
-  let parsed: { name: string; controllerKeys: string[] } | null;
+  let parsed: { name: string; controllerKeys: string[]; componentKeys: string[] } | null;
   try {
     parsed = parseManifestSource(source, manifestFile);
   } catch (e) {
@@ -464,7 +489,11 @@ const resolveManifestInfo = (
     return null;
   }
 
-  return { name: resolvedName, controllerKeys: parsed?.controllerKeys ?? [] };
+  return {
+    name: resolvedName,
+    controllerKeys: parsed?.controllerKeys ?? [],
+    componentKeys: parsed?.componentKeys ?? [],
+  };
 };
 
 /**
@@ -485,6 +514,7 @@ export const resolvePackageEntries = (
         pkg: entry.pkg,
         globalName: info.name,
         controllerKeys: info.controllerKeys.length > 0 ? info.controllerKeys : undefined,
+        componentKeys: info.componentKeys.length > 0 ? info.componentKeys : undefined,
       });
     }
   }
@@ -585,6 +615,22 @@ export const generatePackagesTypes = (entries: ResolvedPackageEntry[]): string =
           `    ${key}: typeof import('${pkg}/capsule')['default']['controllers'][${JSON.stringify(key)}];`,
         );
       }
+    }
+    lines.push('  }');
+  }
+
+  // Events namespace augmentation: namespace <Global> { namespace <Comp> { type Events } }
+  // Merges with the const <Global> declaration above (value+type merge in declare global).
+  // Components without __events marker produce Events = never (harmless).
+  const componentEntries = entries.filter((e) => e.componentKeys && e.componentKeys.length > 0);
+  for (const { pkg, globalName, componentKeys } of componentEntries) {
+    lines.push(`  namespace ${globalName} {`);
+    for (const compKey of componentKeys!) {
+      lines.push(`    namespace ${compKey} {`);
+      lines.push(
+        `      type Events = (typeof import('${pkg}/capsule')['default']['components'])[${JSON.stringify(compKey)}] extends { __events?: infer E } ? NonNullable<E> : never;`,
+      );
+      lines.push('    }');
     }
     lines.push('  }');
   }

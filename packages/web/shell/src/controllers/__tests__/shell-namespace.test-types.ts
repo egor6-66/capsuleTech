@@ -17,7 +17,7 @@ import type { IMatrixEvents, LayoutChangeEvent, MatrixController } from '../matr
 // В самом пакете codegen отсутствует — тестируем merge на минимальном скретче.
 declare const Shell: { Matrix: typeof MatrixController };
 
-// Открываем namespace Shell (type-side only) — аналог shell-events.d.ts declare global.
+// Открываем namespace Shell (type-side only).
 // Используем declare namespace для merge с value-декларацией Shell выше.
 declare namespace Shell {
   namespace Matrix {

@@ -6,17 +6,17 @@
  * ConfigInfoDto (ответ списка) = эта схема без `model` — выводится в
  * эндпойнте через `.omit({ model: true })`, отдельная entity не нужна.
  */
-const Config = Entity((z) => ({
-  schema: z.object({
-    id: z.string().uuid().optional(),
-    versionId: z.string().uuid().optional(),
-    version: z.number().int().optional(),
-    name: z.string().optional(),
-    displayName: z.string().optional(),
-    branchId: z.string().uuid().optional(),
-    branchVersionId: z.string().uuid().optional(),
-    createdAt: z.string().optional(),
-    model: z.record(z.unknown()).optional(),
+const Config = Entity(() => ({
+  schema: Zod.object({
+    id: Zod.string().uuid().optional(),
+    versionId: Zod.string().uuid().optional(),
+    version: Zod.number().int().optional(),
+    name: Zod.string().optional(),
+    displayName: Zod.string().optional(),
+    branchId: Zod.string().uuid().optional(),
+    branchVersionId: Zod.string().uuid().optional(),
+    createdAt: Zod.string().optional(),
+    model: Zod.record(Zod.unknown()).optional(),
   }),
 }));
 

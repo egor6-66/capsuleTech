@@ -89,4 +89,4 @@ export const MatrixController: ((props: IMatrixProps) => any) & {
   readonly __events?: IMatrixEvents;
 } = MatrixControllerComponent;
 
-// Namespace-merge `Shell.Matrix.Events` живёт в ./shell-events.d.ts (ambient).
+// Namespace-merge `Shell.Matrix.Events` генерится codegen аппа из phantom __events.

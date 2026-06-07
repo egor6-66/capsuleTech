@@ -3,194 +3,137 @@ tags: [hca, binding, shape]
 status: documented
 ---
 
-# 🧬 Shape — декларативные data-формы
+# Shape — типизированный presentation-recipe (v2, ADR 036)
 
 **Файлы:**
-- `packages/web/core/src/wrappers/shape/wrapper.tsx` — фабрика
-- `packages/web/core/src/wrappers/shape/ui-tracker.ts` — path-tracker для `definition.as`
-- `packages/web/core/src/wrappers/shape/context.tsx` — `ShapeUiContext` (Entity → Shape проброс Ui)
-- `packages/web/core/src/wrappers/shape/types.ts` — типы
+- `packages/web/core/src/wrappers/shape/wrapper.tsx` — фабрика (двухфазная форма)
+- `packages/web/core/src/wrappers/shape/ui-tracker.ts` — path-tracker для `bind.as`
+- `packages/web/core/src/wrappers/shape/context.tsx` — `ShapeUiContext` (проброс Ui)
+- `packages/web/core/src/wrappers/shape/types.ts` — типы (HKT-маркер, overloads)
 
-> Раньше всё это жило в `wrappers/logic/shape/`; после Phase E (split engine/wrappers) — `wrappers/shape/`.
+Shape — **typed presentation-recipe**: связывает форму данных (zod) с компонентом-контейнером, который их рисует. Границы:
+- **Data-external** — Shape НЕ владеет данными; `data` приходит сверху (Widget кормит store'ом).
+- **Stateless-recipe** — ниже Widget. Один Shape = одна форма данных + один контейнер.
+- **Не композирует вверх** — Shape не встраивает Widget/View как слоты.
 
-Shape — wrapper для повторяющихся data-форм: nav-item'ы, чипы, поля табличной формы и т.п. Из одного описания (zod-схема + дефолты + маппинг `item → templateProps`) получается типизированный polymorphic-компонент, который рендерит список через `<For>` и резолвит template из проксированного Ui родительского Entity.
-
-## Когда использовать
-
-- Список «однотипных» элементов внутри Entity (навигация, список вкладок, чип-список).
-- Хочется единое место под форму данных + дефолты + шаблон.
-- Каждый элемент списка должен получить **тот же** UiProxy event-binding, что и собственный UI Entity.
-
-## Каркас
+## Двухфазная форма (v2)
 
 ```ts
-// apps/<app>/src/shapes/navigation.ts
-export const NavigationItems = Shape((z, ui) => ({
-  schema: z.array(
-    z.object({
-      label: z.string(),
-      href:  z.string(),
-      icon:  z.string().optional(),
-    }),
-  ),
-  defaults: [
-    { label: 'Branches', href: '/branches' },
-    { label: 'Search',   href: '/search'   },
-  ],
-  as: ui.Navigation.Item,                  // path-tracker
-  props: (item) => ({
-    meta:    { tags: ['nav'] },
-    payload: { href: item.href },
-    children: item.label,
-  }),
-}));
-```
-
-Внутри Entity:
-
-```tsx
-// apps/<app>/src/entities/sidebar/index.tsx
-const Sidebar = Entity(({ Navigation }, { NavigationItems }) => (
-  <Navigation>
-    <NavigationItems />               {/* подхватывает defaults */}
-  </Navigation>
-));
-```
-
-С внешними данными:
-
-```tsx
-<NavigationItems data={items()} />
-```
-
-С render-prop (escape hatch):
-
-```tsx
-<NavigationItems>
-  {(item, index) => <Custom key={index()} {...item} />}
-</NavigationItems>
-```
-
-## Path-tracker для `definition.as`
-
-`Shape((z, ui) => ...)` вызывается **на import** — реальный Ui (с UiProxy event-binding'ом) ещё не существует. Поэтому `ui` — это **Proxy-tracker**, который фиксирует путь property-access'ов:
-
-```ts
-// ui-tracker.ts
-ui.Navigation.Item   // → tracker с path = ['Navigation', 'Item']
-ui.Card.Header       // → tracker с path = ['Card', 'Header']
-```
-
-На render-этапе `Shape` достаёт **реальный** проксированный Ui через `useShapeUi()` и резолвит путь:
-
-```ts
-const realUi = useShapeUi();
-const path = getTrackerPath(defaultAs);
-const Template = path ? resolveByPath(realUi, path) : defaultAs;
-```
-
-Это даёт ключевое свойство: template, отрисованный Shape'ом, **получает UiProxy event-binding** так же, как если бы автор Entity написал `<Navigation.Item meta={...}>` руками.
-
-## ShapeUiContext
-
-Чтобы Shape мог достучаться до проксированного Ui, `EntityWrapper` оборачивает свой рендер в `ShapeUiContext.Provider value={Ui}`:
-
-```tsx
-// packages/web/core/src/wrappers/entity.tsx
-const Ui = ctx ? UiProxy(ctx, wrapperProps) : BaseUi;
-return (
-  <ShapeUiContext.Provider value={Ui}>
-    {Component(Ui, getShapes())}
-  </ShapeUiContext.Provider>
+Shape(
+  (ui) => ({ schema, as /*, item */ }),   // BIND: данные + чем рисуем (с ui)
+  (props) => ({ /* presentation-конфиг */ }), // CONFIG: row-типизирован, видит props (ИЛИ объект)
 );
 ```
 
-Shape читает через `useShapeUi()`. Если Entity рендерится без Controller'а (нет `ctx`) — в контексте лежит **базовый** Ui (без proxy), и path-tracker всё равно резолвится (просто без event-binding'а).
+- **arg1 (bind)** — вызывается на module-load. Фиксирует `schema` (→ row) и `as` (контейнер/шаблон, несёт `__tpl` маркер). `ui` — per-instance path-tracker.
+- **arg2 (config)** — объект ИЛИ `(props) => config`. Row выводится из `schema` arg1 и **втекает** в arg2 (перегрузки per-template в `IShapeWrapper`). `ui` НЕ нужен. Выполняется per-instance реактивно (Solid `mergeProps(configSource)` — функция оборачивается в createMemo).
 
-## Приоритет рендера
+## Примеры
 
-Для каждого элемента из `data` (или `defaults`) Shape выбирает template в таком порядке:
-
-| # | Источник | Условие |
-|---|---|---|
-| 1 | `props.children` (render-prop в JSX) | Если передан — это escape hatch, всё остальное игнорируется |
-| 2 | `props.as` (override на JSX-сайте) | Explicit-override от потребителя Shape'а |
-| 3 | `definition.as` (default из factory) | Если это path-tracker — резолвится через `ShapeUiContext`; иначе используется как готовый компонент |
-| 4 | _нет template_ | Рендерится `templateProps.children` без обёртки (`<>{tplProps.children}</>`) |
+### Таблица
 
 ```tsx
-// Дефолтный template
-<NavigationItems />
-// → For(item) → <Navigation.Item {...propsFn(item)} />
-
-// JSX-override template
-<NavigationItems as={Card.Header} />
-// → For(item) → <Card.Header {...propsFn(item)} />
-
-// Render-prop
-<NavigationItems>
-  {(item) => <li>{item.label}</li>}
-</NavigationItems>
-// → For(item) → <li>...</li>  (propsFn игнорируется)
+const IncidentsTable = Shape(
+  (ui) => ({ schema: Zod.array(Entities.Incident.schema), as: Tables.DataTable }),
+  (props) => ({
+    defaults: Entities.Incident.mock,
+    sorting: true,
+    infinite: { itemHeight: 40, mode: 'plain' },
+    columns: [
+      { accessorKey: 'id', header: 'ID' },
+      { header: 'Заявитель', id: 'applicantName',
+        accessorFn: (row) => row.applicant.name },   // row: Incident ✓ (без аннотации)
+    ],
+  }),
+);
 ```
 
-## Маппинг `item → templateProps`
+Консьюмер (виджет):
+```tsx
+<Shapes.IncidentsTable
+  data={data()?.items ?? []}
+  itemPayload={(row) => ({ id: row.id })}             // row: Incident ✓
+  isRowActive={(row) => row.id === data()?.selected?.id}
+  getRowId={(row) => row.id}
+/>
+```
 
-Поле `props` в `definition` (`propsFn`) превращает каждый item массива в props для template'а:
+### Навигация (batch-элементы, только arg1)
+
+```tsx
+const Navigation = Shape((ui) => ({
+  schema: Zod.array(Entities.Nav.schema),
+  as: ui.Group,                                       // path-tracker → контейнер
+  item: {
+    use: ui.Button,                                   // path-tracker → каждый элемент
+    props: (it) => ({ as: ui.Link, to: it.to, children: it.label }),  // it: NavItem ✓
+  },
+}));
+// arg2 не нужен — нет row-зависимого presentation-конфига
+```
+
+## Нейминг
+
+- `as` — **контейнер** (единственный `as` на верхнем уровне). Принимает path-tracker (`ui.Group`) или компонент (`Tables.DataTable`).
+- `item: { use, props }` — **каждый элемент**: `use` (не второй `as`) — компонент элемента; `props(it)` — маппер (полиморфный `as` у самого элемента).
+- Простой кейс — без `item`: `as` рисует данные напрямую.
+
+## Типизация (HKT-маркер)
+
+Шаблон несёт phantom-маркер `__tpl` (HKT-эмуляция):
 
 ```ts
-{
-  props: (item) => ({
-    meta:    { tags: ['nav'] },               // подхватится UiProxy
-    payload: { href: item.href },             // станет target.payload в Controller'е
-    children: item.label,
-  })
-}
+interface DataTableTemplate { row: unknown; props: IDataTableProps<this['row']>; }
+type ApplyRow<M, R> = (M & { row: R })['props'];
+type RowOf<S> = S extends ZodArray<infer E> ? z.infer<E> : z.infer<S>;
 ```
 
-Если `props` не задан — item передаётся template'у as-is (поля item = props).
+`IShapeWrapper` содержит перегрузки per-template:
+1. Шаблон с маркером + arg2 → config типизируется через `ApplyRowFrom<A, RowOf<S>>`
+2. Только bind (без arg2)
+3. Plain-компонент без маркера + generic config
 
-Что приходит template'у — типизировано через `IShapeTemplateProps`:
+**Нулевой дубль**: сущность названа раз (`schema`), шаблон раз (`as`); явный generic не нужен.
+
+Фолбэк: если шаблон не имеет `__tpl` — config = `Record<string, unknown>` (graceful).
+
+## Runtime flow
+
+1. `bind(ui)` → `{ schema, as, item?, ...bindExtras }` (module-load, один раз).
+2. `config` = объект или функция — хранится как-есть.
+3. При рендере:
+   - template = consumer `as` ?? resolveTemplate(bind.as) ?? null.
+   - configSource() — функция передаётся в `mergeProps` как source → createMemo внутри → реактивность.
+   - `data` = consumer `data` ?? `config.defaults` ?? undefined.
+   - extras: `resolvedBindExtras` < `configExtras` < `resolvedItem` < `consumer rest`.
+   - `item.use/props` — trackers резолвятся через `realUi`.
+   - `<Dynamic component={Template} data={data} {...extras} />`.
+
+## Path-tracker
+
+`bind(ui)` вызывается на module-load — реального Ui ещё нет. `ui` — Proxy-tracker, фиксирующий путь:
 
 ```ts
-interface IShapeTemplateProps {
-  meta?:    Record<string, unknown>;
-  payload?: Record<string, unknown>;
-  children?: JSX.Element;
-  [k: string]: unknown;
-}
+ui.Group        // → tracker с path = ['Group']
+ui.Navigation.Item  // → path = ['Navigation', 'Item']
 ```
 
-## Полная цепочка тегирования
+На render-этапе: `resolveByPath(realUi, path)` → реальный компонент из `ShapeUiContext`.
 
-В типичном кейсе nav-list'а каждый item получает теги в трёх местах:
+## ShapeUiContext
 
-```ts
-{
-  meta:    { tags: ['nav'] },                       // от Shape (для pick(['nav']))
-  payload: { href: item.href },                     // данные для Controller'а / Feature'а
-  children: item.label,
-}
-```
-
-В Controller'е:
-
-```ts
-onClick: ({ target, next }) => {
-  // target.payload === { href: '/branches' }       — от Shape
-  // target.meta    === { tags: ['nav'] }           — от Shape
-  // target.dynamicMeta                              — от <Sidebar meta={...} /> в Widget'е
-  return next({ from: target.payload.href });       // переписать payload для Feature
-}
-```
+`ViewWrapper`/`WidgetWrapper`/`PageWrapper` оборачивают рендер в `<ShapeUiContext.Provider value={Ui}>`. Shape читает через `useShapeUi()`. Если рендерится без Controller (нет ctx) — базовый Ui (без proxy).
 
 ## Что Shape не делает
 
-- **Не валидирует runtime**. `z.array(...)` нужна для типизации `item` в `props: (item) => ...` (через `z.infer`); runtime-проверки `parse` не вызываются. Если нужны рантайм-проверки — делать в Feature перед `data={...}`.
-- **Не управляет состоянием**. Это Stateless-wrapper. Все side-effects — в Controller/Feature.
-- **Не композирует другие Shape'ы**. Один Shape = один список. Композиция — в Widget.
+- **Не валидирует runtime**. `schema` нужна только для типизации.
+- **Не управляет состоянием** — stateless. Все side-effects — в Controller/Feature.
+- **Не загружает данные** — data-external. Widget кормит store'ом.
+- **Не композирует другие Shape'ы**. Композиция — в Widget.
 
 ## Связанное
 
+- [[036-shape-redesign-and-table-package|ADR 036]] — design rationale + HKT-доказательство
+- [[shape-v2-and-table|docs/_meta/shape-v2-and-table.md]] — реализационный reference
 - [[ui-proxy]] · [[controller-proxy]]
 - [[layers]] · [[tagging-system]]

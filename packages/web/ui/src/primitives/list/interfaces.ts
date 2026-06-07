@@ -16,9 +16,7 @@ export interface IListRenderProps<T> extends Omit<JSX.HTMLAttributes<HTMLDivElem
   children: (item: T, index: () => number) => JSX.Element;
   /** Batch mode props must be absent in render-prop mode. */
   data?: never;
-  as?: never;
-  itemAs?: never;
-  itemProps?: never;
+  item?: never;
   variant?: VariantProps<typeof listVariants>['variant'];
   orientation?: VariantProps<typeof listVariants>['orientation'];
   class?: string;
@@ -26,31 +24,27 @@ export interface IListRenderProps<T> extends Omit<JSX.HTMLAttributes<HTMLDivElem
 }
 
 /**
- * Batch mode: pass `data` array + item template component.
+ * Batch mode: pass `data` array + `item` descriptor (ADR 036 §3).
  *
- * **Canonical (Shape-compatible):** use `itemAs` for the per-item template,
- * mirroring `Group`'s contract so `Shape({ as: ui.List, itemAs: Tpl })` works.
+ * ```tsx
+ * <List data={rows} item={{ use: NavItem, props: (it) => ({ label: it.label }) }} />
+ * ```
  *
- * **Deprecated alias:** `as` is accepted for backwards-compat with pre-existing
- * batch stories/tests. Prefer `itemAs` in new code.
- *
- * At least one of `itemAs` / `as` is required.
+ * `item.use` — per-item template component (был `itemAs` / `as`).
+ * `item.props` — маппер данных → props; опционален (по умолчанию identity).
+ * Requires `item.use`.
  */
 export interface IListBatchProps<T> extends Omit<JSX.HTMLAttributes<HTMLDivElement>, 'children'> {
   /** Data array — rendered via <For> internally. */
   data: T[];
   /**
-   * Per-item template component (canonical, Shape-compatible).
-   * Receives spread of `itemProps(item)`.
+   * Batch descriptor: template component + optional props mapper (ADR 036 §3).
+   * `item.use` is required for batch mode to activate.
    */
-  itemAs?: Component<any>;
-  /**
-   * @deprecated Use `itemAs` instead. Kept for back-compat.
-   * Per-item template component. `itemAs` takes precedence when both are set.
-   */
-  as?: Component<any>;
-  /** Maps each item to props for the template. Defaults to identity (item as-is). */
-  itemProps?: (item: T) => Record<string, unknown>;
+  item: {
+    use: Component<any>;
+    props?: (it: T) => Record<string, unknown>;
+  };
   /**
    * When set, switches the `<ul>` to a responsive CSS Grid:
    * `grid-template-columns: repeat(auto-fit, minmax(<min>, 1fr))`.
@@ -76,9 +70,7 @@ export interface IListBatchProps<T> extends Omit<JSX.HTMLAttributes<HTMLDivEleme
 /** Semantic (no data) mode: plain children, no iteration. */
 export interface IListSemanticProps extends JSX.HTMLAttributes<HTMLUListElement> {
   data?: never;
-  as?: never;
-  itemAs?: never;
-  itemProps?: never;
+  item?: never;
   items?: never;
   variant?: VariantProps<typeof listVariants>['variant'];
   orientation?: VariantProps<typeof listVariants>['orientation'];

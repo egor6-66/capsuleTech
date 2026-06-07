@@ -22,7 +22,7 @@ last-verified: 2026-05-27
 | Файл | Что |
 |---|---|
 | `packages/web/core/src/index.ts` | публичный barrel: 7 wrappers + `useShapeUi` + `Providers` namespace + типы |
-| `packages/web/core/src/wrappers/entity/wrapper.ts` | `Entity` — domain data layer factory. Plain config (не компонент). `Object.freeze(factory(z))`. |
+| `packages/web/core/src/wrappers/entity/wrapper.ts` | `Entity` — domain data layer factory. Plain config (не компонент). `Object.freeze(factory())`. Factory без аргументов — Zod через глобал. |
 | `packages/web/core/src/wrappers/entity/types.ts` | `IEntityDefinition`, `IEntityFactory`, `IEntityWrapper` |
 | `packages/web/core/src/wrappers/view.tsx` | `ViewWrapper` — простой leaf, UiProxy под ControllerContext, ShapeUiContext.Provider |
 | `packages/web/core/src/wrappers/widget.tsx` | `WidgetWrapper` — добавляет `Outlet` в Ui, ShapeUiContext.Provider |
@@ -67,8 +67,9 @@ import { BaseProviders } from '@capsuletech/web-core/providers';
 
 ```ts
 // Domain data layer — НЕ компонент, plain frozen config object
-Entity((z: CapsuleZ) => {
-  schema: ZodType;          // любая zod-схема (обычно z.array(z.object(...)))
+// z убран из аргументов (BREAKING). Схема строится через глобал Zod (auto-import shared-zod).
+Entity(() => {
+  schema: ZodType;          // любая zod-схема (обычно Zod.array(Zod.object(...)))
   defaults?: TData;         // sample fixtures для разработки и тестов
 }): { schema: ZodType; defaults?: TData }   // возвращает ровно то что вернула factory (frozen)
 
@@ -78,22 +79,29 @@ View<P>((Ui: ViewUi, props: P) => JSX.Element): Component<P>
 Widget<P>((Ui: WidgetUi, props: P) => JSX.Element): Component<P>
 Page<P>((Ui: PageUi, props: P) => JSX.Element): Component<P>
   // PageUi содержит Layout (Grid, Flex, Matrix), а также Widget-доступные компоненты
-// v0.4.0: batch flow — Shape НЕ итерирует, передаёт data[] целиком в as-template
-Shape((z: ZodHelpers, ui: UiPathTracker) => {
-  schema: ZodArray;
-  defaults?: TData[];
-  as?: Component;        // batch-template (Ui.List / Ui.DataTable / custom)
-  [extraKey: string]: unknown; // columns, sorting, itemAs, etc → forwarded to as
-}): Component<{
-  data?: TData[];        // overrides defaults
-  as?: Component;        // overrides definition.as
-  [extraKey: string]: unknown; // consumer extras win over definition extras
+// v2 (ADR 036): двухфазная форма. z убран из arg1; config вынесен в arg2.
+// arg1 (bind) — module-load; arg2 (config) — объект ИЛИ (props)=>config, реактивен.
+Shape(
+  (ui: UiPathTracker) => ({
+    schema: ZodType;          // → RowOf<S> для типизации arg2 и consumer-props
+    as?: Component;           // контейнер/шаблон; несёт __tpl HKT-маркер
+    item?: {                  // batch-элемент (nav-паттерн)
+      use?: Component;        // use — не второй as
+      props?: (it: Row) => Record<string, unknown>;  // row-типизирован через overloads
+    };
+  }),
+  // arg2 необязателен. Row-тип вытекает из schema через IShapeWrapper-overloads.
+  (props) => ({ defaults?, columns?, sorting?, ...extras }) // ИЛИ plain-объект
+): Component<{
+  data?: TData;        // overrides config.defaults
+  as?: Component;      // overrides bind.as
+  [extraKey: string]: unknown; // consumer extras win (переданы в шаблон)
 }>
 Controller((services: IServices) => IDefineStateSchema): Component
 Feature((services: IServices) => IDefineStateSchema): Component
 ```
 
-**Shape v0.4.0 BREAKING:** `props: (item) => ...` per-item mapper и `children` render-prop удалены. `IShapeTemplateProps` и `IShapeRender` убраны из публичного API. Используй batch-templates (`Ui.List` / `Ui.DataTable`). Реактивность через `splitProps` + `mergeProps`.
+**Shape v2 BREAKING (ADR 036):** `z` убран из bind-аргумента (был `(z, ui)`, стал `(ui)`). Config вынесен в arg2 (`(props)=>config` | объект). `IShapeFactory` и `IShapeDefinition` помечены `@deprecated`. `IShapeTemplateProps`/`IShapeRender` — удалены в v0.4.0, остаются удалёнными. Старая форма `Shape((z, ui) => { ...extras })` не поддерживается — hard-switch. HKT-маркер (`__tpl`, `MarkerOf`, `ApplyRowFrom`, `RowOf`) — новый публичный API из `shape/types.ts`.
 
 **Generic `<P extends Record<string, any>>`** на View/Widget/Page renderer'ах — для типизации props на call site (Shape `as`-pattern: template-View получает item-данные как props).
 
@@ -212,7 +220,7 @@ ControllerProxy резолвит `states[currentState][name]` → top-level → 
 
 ## Известные грабли
 
-19. **`Entity` — единственный wrapper без Solid-компонента.** Все остальные wrappers (`View`, `Widget`, `Page`, `Controller`, `Feature`, `Shape`) возвращают `Component<P>`. `Entity` возвращает **frozen plain object** `{ schema, defaults? }`. HMRWrappingPlugin не трогает `entities/` файлы (нет `const X = Wrapper(...)` component pattern). UiProxy и ControllerProxy к Entity не применяются — это pure data layer. AutoImport делает `Entity` глобальным через `WRAPPER_NAMES` (owner-builders добавляет). Codegen `Entities.*` — через `ExportGeneratorPlugin` scan `entities/` (owner-builders добавляет).
+19. **`Entity` — единственный wrapper без Solid-компонента.** Все остальные wrappers (`View`, `Widget`, `Page`, `Controller`, `Feature`, `Shape`) возвращают `Component<P>`. `Entity` возвращает **frozen plain object** `{ schema, defaults? }`. HMRWrappingPlugin не трогает `entities/` файлы (нет `const X = Wrapper(...)` component pattern). UiProxy и ControllerProxy к Entity не применяются — это pure data layer. AutoImport делает `Entity` глобальным через `WRAPPER_NAMES` (owner-builders добавляет). Codegen `Entities.*` — через `ExportGeneratorPlugin` scan `entities/` (owner-builders добавляет). **BREAKING (ADR 036 / web-table-founding):** `z` убран из factory-аргумента. Старая форма `Entity((z) => ...)` не работает — factory теперь `() => ...`, Zod строится через глобал `Zod`.
 
 20. **Типизация `Entities.*` глобала пока пуста.** `interface Entities {}` в `wrappers/interfaces.ts` — placeholder. Заполняется через codegen (ExportGeneratorPlugin scan `entities/` → `.capsule/@types/slots.d.ts`). До добавления owner-builders: `Entities.Users` будет `any`; после — `typeof import('@entities/users').default`.
 
@@ -244,7 +252,7 @@ ControllerProxy резолвит `states[currentState][name]` → top-level → 
 
 12. **`ShapeUiContext` несёт только `Ui`** (после revert PR #114 в commit 477b0fb). Раньше был combined `{ ...Ui, Views }` — теперь Shape берёт View-templates через global `Views.X.Y` в `as`, не через `ui.Views.X.Y` path-tracker.
 
-18. **Shape v0.4.0 — batch flow, не per-item.** `<For each>` убран. `props: (item) => ...` и `children` render-prop — удалены. `IShapeTemplateProps` / `IShapeRender` — убраны из публичного API. Теперь `as` получает: `data` (целый массив) + extras из definition + consumer JSX props. Итерация — внутри batch-template (`Ui.List`, `Ui.DataTable`). Apps-код с per-item Shapes (старый `props: (item) => ...`) → нужно переписать на batch-template.
+18. **Shape v2 — двухфазная форма, hard-switch (ADR 036).** Старая форма `Shape((z, ui) => ({ schema, as, ...extras }))` удалена. Новая: `Shape((ui)=>({schema,as,item?}), (props)=>({...config}))`. `z` убран из bind; config вынесен в arg2. `item: { use, props }` — batch-элемент (use, не второй as). HKT-маркер `__tpl` на шаблоне даёт row-типизацию без дубля. Экспортируются `MarkerOf`, `ApplyRow`, `ApplyRowFrom`, `RowOf`, `IShapeBind`, `IShapeConfigArg` из `shape/index.ts`. `IShapeFactory`/`IShapeDefinition` — `@deprecated`, удалятся после миграции apps. Реактивность arg2-функции: `mergeProps(configSource)` — Solid сам оборачивает функцию в `createMemo`.
 
 13. **Generic `<P>` на wrapper'ах требует `extends Record<string, any>`** — чтобы соответствовать Solid `Component<P>`. Default `Record<string, any>` сохраняет backward-compat для factory без `<P>`. Не упрощай до `<P = unknown>` — Solid Component откажет.
 
@@ -278,7 +286,7 @@ ControllerProxy резолвит `states[currentState][name]` → top-level → 
 
 | Хочу… | Куда лезть |
 |---|---|
-| Добавить новый Entity (domain data) | `apps/<app>/src/entities/<name>.ts` → `Entity((z) => ({ schema, defaults? }))` + `export default`. Codegen подхватит в `Entities.*`. `z.infer<typeof Entities.X.schema>` для типа. |
+| Добавить новый Entity (domain data) | `apps/<app>/src/entities/<name>.ts` → `Entity(() => ({ schema: Zod.array(...), defaults? }))` + `export default`. Zod доступен как глобал через auto-import (@capsuletech/shared-zod). Codegen подхватит в `Entities.*`. `z.infer<typeof Entities.X.schema>` для типа. |
 | Расширить IEntityDefinition (validators, relations) | `packages/web/core/src/wrappers/entity/types.ts` → добавить поле в `IEntityDefinition`. При breaking change — bump major. |
 | Добавить новый primitive в `Ui` (например `Dialog`) | `src/ui-kit/imports.tsx` (lazy + `Object.assign` для compound) + тип в `ViewUiRaw`/`WidgetUiRaw` в `src/wrappers/interfaces.ts` + характеризационные тесты в `src/wrappers/__tests__/ui-meta-props.test.tsx`. Если primitive из другого пакета (не web-ui), проверь наличие subpath в его `package.json exports` и `tsconfig.base.json paths`. Composites (Dropdown, DropdownMenu, etc.) импортируются из web-ui (иногда с sub-components как `createLazy` named re-exports для compat). |
 | Добавить Layout component в View (например новый Matrix) | Layout.Grid и Layout.Flex уже доступны в ViewUi (PR #169 — subset). Matrix остаётся Widget/Page-only (дорогая по весу). Для добавления новой layout-варианты в View — определить в web-ui, затем добавить в `ViewUiRaw` тип и `src/ui-kit/imports.tsx`. |

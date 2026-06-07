@@ -141,6 +141,9 @@ importers:
       '@capsuletech/web-style':
         specifier: workspace:*
         version: link:../../packages/web/style
+      '@capsuletech/web-table':
+        specifier: workspace:*
+        version: link:../../packages/web/table
       '@capsuletech/web-ui':
         specifier: workspace:*
         version: link:../../packages/web/ui

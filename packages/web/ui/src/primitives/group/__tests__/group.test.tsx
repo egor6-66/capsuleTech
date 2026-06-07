@@ -109,8 +109,7 @@ describe('Group — batch mode does NOT get empty-state min-height', () => {
       () => (
         <Group
           data={data}
-          itemAs={ItemBtn}
-          itemProps={(it: { label: string }) => ({ label: it.label })}
+          item={{ use: ItemBtn, props: (it: { label: string }) => ({ label: it.label }) }}
         />
       ),
       container,
@@ -133,8 +132,7 @@ describe('Group — batch mode does NOT get empty-state min-height', () => {
         <Group
           variant="attached"
           data={data}
-          itemAs={ItemBtn}
-          itemProps={(it: { label: string }) => ({ label: it.label })}
+          item={{ use: ItemBtn, props: (it: { label: string }) => ({ label: it.label }) }}
         />
       ),
       container,

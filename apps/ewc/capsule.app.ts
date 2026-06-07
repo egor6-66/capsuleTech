@@ -4,7 +4,7 @@ export default defineAppConfig({
     '@input': ['input'],
     '@submit': ['submit'],
   },
-  packages: ['@capsuletech/web-shell'],
+  packages: ['@capsuletech/web-shell', '@capsuletech/web-table'],
   api: () => ({
     bases: { default: '/api' },
   }),

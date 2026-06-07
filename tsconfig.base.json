@@ -32,6 +32,7 @@
       "@capsuletech/web-intl": ["packages/web/intl/src/index.ts"],
       "@capsuletech/web-table": ["packages/web/table/src/index.ts"],
       "@capsuletech/web-table/capsule": ["packages/web/table/capsule.ts"],
+      "@capsuletech/web-table/controllers": ["packages/web/table/src/controllers/index.ts"],
       "@capsuletech/web-map": ["packages/web/map/src/index.ts"],
       "@capsuletech/web-map/capsule": ["packages/web/map/src/capsule.ts"],
       "@capsuletech/web-agent": ["packages/web/agent/src/index.ts"],
