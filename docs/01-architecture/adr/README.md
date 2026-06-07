@@ -29,6 +29,9 @@ status: index
 | [[032-package-controllers-and-useemit\|032]] | Package-integration слой (`/controllers`) + `useEmit` | ✅ accepted | 2026-06-04 |
 | [[033-package-registration\|033]] | Механизм регистрации пакетов (`capsule.app.ts: packages`) | ✅ accepted | 2026-06-04 |
 | [[034-code-splitting-granularity\|034]] | Code-splitting: module-backed registry + auto-import (нативный route-scoping) | ✅ accepted | 2026-06-05 |
+| [[035-web-agent-package\|035]] | web-agent package (встраиваемый агент-примитив) | 📝 proposed | 2026-06-05 |
+| [[036-shape-redesign-and-table-package\|036]] | Редизайн Shape (typed presentation-recipe) + вынос таблицы в пакет | ✅ accepted | 2026-06-06 |
+| [[037-playground-capability-and-codegen-subgenerators\|037]] | Playground как способность фреймворка + рефактор кодгена (sub-generators) + artifact-manifest | ✅ accepted | 2026-06-07 |
 
 > [!info]
 > Status:
