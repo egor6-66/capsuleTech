@@ -1,11 +1,11 @@
 ---
-tags: [hca, adr, accepted, mocks, msw, testing]
-status: accepted
+tags: [hca, adr, superseded, mocks, msw, testing]
+status: superseded
 date: 2026-06-07
 ---
 
-> [!info] Status
-> **Accepted (направление)** — 2026-06-07. Решение из playground-сессии: заменить шаткую inline-мок-систему на MSW + faker, **без мусора в слоях**. Реализация кросс-пакетная по owner'ам (builders + web-query) + конвенция `mocks/`. Связано: [[037-playground-capability-and-codegen-subgenerators|ADR 037]] (playground/эталон), [[013-explicit-define-app-config|ADR 013]] (app-config).
+> [!warning] Status: 🔄 superseded by [[040-data-gen-utility|ADR 040]]
+> **Superseded 2026-06-07 (в тот же день).** MSW-подход отклонён в пользу более лёгкого: один генератор данных `@capsuletech/shared-zod/gen` (faker-база + injectable generators) + существующий `preRequest` для API-моков — без отдельной мок-системы и нового пакета. Сетевой перехват MSW избыточен. См. [[040-data-gen-utility|ADR 040]]. Ниже — исходное (отменённое) решение.
 
 # ADR 038 — Мок-система на MSW + faker (моки вне слоёв)
 
