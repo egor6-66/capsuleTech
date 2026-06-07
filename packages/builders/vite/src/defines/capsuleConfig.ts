@@ -157,6 +157,7 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
       // (включая JSX транспиляцию).
       exclude: [
         '@capsuletech/web-agent',
+        '@capsuletech/web-auth',
         '@capsuletech/web-core',
         '@capsuletech/web-dnd',
         '@capsuletech/web-flow',
