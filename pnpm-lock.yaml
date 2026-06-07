@@ -579,6 +579,9 @@ importers:
 
   packages/shared/zod:
     dependencies:
+      '@faker-js/faker':
+        specifier: ^9.0.0
+        version: 9.9.0
       solid-js:
         specifier: 1.9.12
         version: 1.9.12
@@ -592,6 +595,9 @@ importers:
       '@capsuletech/vite-builder':
         specifier: workspace:*
         version: link:../../builders/vite
+      vitest:
+        specifier: ~4.1.0
+        version: 4.1.6(@types/node@25.9.0)(@vitest/ui@4.1.6)(jsdom@29.1.1)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
 
   packages/web/agent:
     dependencies:
@@ -2068,6 +2074,10 @@ packages:
     peerDependenciesMeta:
       '@noble/hashes':
         optional: true
+
+  '@faker-js/faker@9.9.0':
+    resolution: {integrity: sha512-OEl393iCOoo/z8bMezRlJu+GlRGlsKbUAN7jKB6LhnKoqKve5DXRpalbItIIcwnCjs1k/FOPjFzcA6Qn+H+YbA==}
+    engines: {node: '>=18.0.0', npm: '>=9.0.0'}
 
   '@floating-ui/core@1.7.5':
     resolution: {integrity: sha512-1Ih4WTWyw0+lKyFMcBHGbb5U5FtuHJuujoyyr5zTaWS5EYMeT6Jb2AuDeftsCsEuchO+mM2ij5+q9crhydzLhQ==}
@@ -8002,6 +8012,8 @@ snapshots:
       levn: 0.4.1
 
   '@exodus/bytes@1.15.0': {}
+
+  '@faker-js/faker@9.9.0': {}
 
   '@floating-ui/core@1.7.5':
     dependencies:

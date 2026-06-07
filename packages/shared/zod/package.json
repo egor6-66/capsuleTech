@@ -9,6 +9,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "default": "./dist/index.mjs"
+    },
+    "./gen": {
+      "types": "./dist/gen/index.d.ts",
+      "import": "./dist/gen.mjs",
+      "default": "./dist/gen.mjs"
     }
   },
   "files": [
@@ -16,16 +21,21 @@
   ],
   "scripts": {
     "build": "vite build",
-    "dev": "vite build --watch"
+    "dev": "vite build --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@faker-js/faker": "^9.0.0"
+  },
   "peerDependencies": {
     "solid-js": "^1.9.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@capsuletech/lib-builder": "workspace:*",
-    "@capsuletech/vite-builder": "workspace:*"
+    "@capsuletech/vite-builder": "workspace:*",
+    "vitest": "~4.1.0"
   },
   "publishConfig": {
     "access": "public",
