@@ -4,7 +4,7 @@ const ShellNavigation = Shape(
     as: Shell.Header.Navigation,
   }),
   (ui, props) => ({
-    child: {
+    item: {
       use: ui.Button,
       props: (it) => ({
         as: ui.Link,
