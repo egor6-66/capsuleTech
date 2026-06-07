@@ -2,9 +2,9 @@
  * Navigation — batch-shape основной навигации UI-creator.
  *
  * Двухфазная форма (ADR 036):
- *  - bind: schema (`Zod.array({ label, to })`) + контейнер `ui.Group` (attached),
- *    `item: { use: ui.Button, props }` — `ui.Button as={ui.Link}` на пункт.
- *  - config: defaults + orientation/variant контейнера.
+ *  - bind (arg1): schema (`Zod.array({ label, to })`) + контейнер `ui.Group` (attached).
+ *  - config (arg2): `item: { use: ui.Button, props }` (row-типизирован из schema)
+ *    + defaults + orientation/variant контейнера.
  *
  * Активный пункт (`aria-current=page` от TanStack) подсвечивается акцентом.
  * Глобал `Shapes.Navigation`. Mount — `Widgets.Header` (workspace header).
@@ -13,6 +13,8 @@ const Navigation = Shape(
   (ui) => ({
     schema: Zod.array(Zod.object({ label: Zod.string(), to: Zod.string() })),
     as: ui.Group,
+  }),
+  (ui) => ({
     item: {
       use: ui.Button,
       props: (item) => ({
@@ -24,15 +26,13 @@ const Navigation = Shape(
         children: item.label,
       }),
     },
-  }),
-  {
     defaults: [
       { label: 'Конструктор', to: '/workspace/constructor' },
       { label: 'Демо', to: '/workspace/demo' },
     ],
     orientation: 'horizontal',
     variant: 'attached',
-  },
+  }),
 );
 
 export default Navigation;

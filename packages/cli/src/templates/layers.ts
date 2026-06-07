@@ -24,7 +24,9 @@ export const LAYER_ICONS: Record<Layer, string> = {
 
 export const layerTemplates: Record<Layer, (Name: string) => string> = {
   pages: (Name) => `const ${Name} = Page((Ui) => (
-  <Ui.Layout slots={{ main: <div>${Name}</div> }} />
+  <Ui.Layout.Flex class="min-h-screen items-center justify-center">
+    <div>${Name}</div>
+  </Ui.Layout.Flex>
 ));
 
 export default ${Name};
@@ -64,12 +66,18 @@ export default ${Name};
 export default ${Name};
 `,
 
-  shapes: (Name) => `const ${Name} = Shape((z, _ui) => ({
-  schema: z.array(z.object({})),
-  defaults: [],
-  as: 'div',
-  props: () => ({}),
-}));
+  shapes: (Name) => `const ${Name} = Shape(
+  (ui) => ({
+    schema: Zod.array(Zod.object({})),
+    as: ui.Group,
+  }),
+  (ui) => ({
+    item: {
+      use: ui.Button,
+      props: (it) => ({ children: '' }),
+    },
+  }),
+);
 
 export default ${Name};
 `,

@@ -15,7 +15,7 @@ import {
  * ```ts
  * Shape(
  *   (ui) => ({ schema, as }),              // BIND: фиксирует данные + шаблон
- *   (ui, props) => ({ child, ...config }), // CONFIG: row-типизирован из schema (объект ИЛИ функция(ui, props))
+ *   (ui, props) => ({ item, ...config }), // CONFIG: row-типизирован из schema (объект ИЛИ функция(ui, props))
  * )
  * ```
  *
@@ -27,21 +27,21 @@ import {
  *     a. template = consumer `as` ?? resolveTemplate(bind.as) ?? undefined.
  *     b. configValue = typeof config === 'function' ? config(uiTracker, consumerProps) : config.
  *     c. `data` = consumer `data` ?? configValue.defaults ?? undefined.
- *     d. `child` из configValue резолвится (trackers → realUi) и передаётся шаблону как `child`.
- *     e. extras из configValue (за исключением `defaults` и `child`) + consumer extras (consumer wins).
- *     f. `<Dynamic component={Template} data={data} child={resolvedChild} {...extras} />`.
+ *     d. `item` из configValue резолвится (trackers → realUi) и передаётся шаблону как `item`.
+ *     e. extras из configValue (за исключением `defaults` и `item`) + consumer extras (consumer wins).
+ *     f. `<Dynamic component={Template} data={data} item={resolvedItem} {...extras} />`.
  *
- * `child: { use, props }` (batch-элемент, nav-паттерн):
+ * `item: { use, props }` (batch-элемент, nav-паттерн):
  *  - `use` — компонент каждого элемента (tracker → rezolvируется).
  *  - `props(it)` — маппер row→props (результат тоже резолвится).
- *  Передаётся в шаблон как `child` prop (шаблон сам итерирует через `child.use` / `child.props`).
+ *  Передаётся в шаблон как `item` prop (шаблон сам итерирует через `item.use` / `item.props`).
  *
  * Реактивность: `consumerProps` — Solid-реактивный proxy. `mergeProps`/`splitProps`
  * сохраняют реактивный tracking. Config-функция вычисляется реактивно если передана.
  */
 const shape = (bind: (...args: unknown[]) => unknown, config?: unknown) => {
   // Bind вызывается на module-load. ui — path-tracker (real Ui ещё нет).
-  // item убран из bind в ADR 036 — batch-дескриптор переехал в arg2 (child).
+  // item убран из bind в ADR 036 — batch-дескриптор живёт в arg2 (item).
   const bindUiTracker = createUiTracker();
   const bindResult = bind(bindUiTracker) as {
     schema?: unknown;
@@ -87,32 +87,32 @@ const shape = (bind: (...args: unknown[]) => unknown, config?: unknown) => {
     // что позволяет сигналам внутри config-функции корректно трекуваться.
     const configSource = (): Record<string, unknown> => {
       const raw = getRawConfig();
-      // Вырезаем defaults и child — они обрабатываются отдельно
-      const { defaults: _d, child: _c, ...extras } = raw;
+      // Вырезаем defaults и item — они обрабатываются отдельно
+      const { defaults: _d, item: _i, ...extras } = raw;
       return extras;
     };
 
     // Резолвим trackers в bindExtras (static, вычисляется один раз)
     const resolvedBindExtras = resolveValuesInObject(bindExtras as Record<string, unknown>, realUi);
 
-    // Резолвим child из config (batch-дескриптор, раньше был item в bind).
+    // Резолвим item из config (batch-дескриптор).
     // Вычисляется реактивно (внутри configSource-цикла), т.к. config может быть функцией.
-    const getResolvedChild = (): Record<string, unknown> | undefined => {
+    const getResolvedItem = (): Record<string, unknown> | undefined => {
       const raw = getRawConfig();
-      const configChild = raw.child as { use?: unknown; props?: (it: unknown) => unknown } | undefined;
-      if (!configChild) return undefined;
+      const configItem = raw.item as { use?: unknown; props?: (it: unknown) => unknown } | undefined;
+      if (!configItem) return undefined;
 
-      const resolvedChildUse = configChild.use != null
+      const resolvedItemUse = configItem.use != null
         ? (() => {
-            const path = getTrackerPath(configChild.use);
+            const path = getTrackerPath(configItem.use);
             if (path && realUi) return resolveByPath(realUi, path);
-            return configChild.use;
+            return configItem.use;
           })()
         : undefined;
 
-      const resolvedChildProps = configChild.props != null
+      const resolvedItemProps = configItem.props != null
         ? (() => {
-            const fn = configChild.props;
+            const fn = configItem.props;
             return (it: unknown) => {
               const result = fn(it);
               if (result !== null && typeof result === 'object' && !Array.isArray(result)) {
@@ -124,9 +124,9 @@ const shape = (bind: (...args: unknown[]) => unknown, config?: unknown) => {
         : undefined;
 
       return {
-        child: {
-          use: resolvedChildUse,
-          props: resolvedChildProps,
+        item: {
+          use: resolvedItemUse,
+          props: resolvedItemProps,
         },
       };
     };
@@ -138,7 +138,7 @@ const shape = (bind: (...args: unknown[]) => unknown, config?: unknown) => {
     const mergedExtras = mergeProps(
       resolvedBindExtras,
       configSource,                              // функция — Solid обернёт в createMemo
-      () => getResolvedChild() ?? {},            // child реактивно из config
+      () => getResolvedItem() ?? {},             // item реактивно из config
       rest,
     );
 
