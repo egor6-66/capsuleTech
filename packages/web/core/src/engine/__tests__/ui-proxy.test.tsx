@@ -604,6 +604,118 @@ describe('UiProxy — Flow namespace is returned raw (not wrapped)', () => {
 // as a signal for future Widget-level loader swap (content ↔ spinner), but
 // UiProxy must not give it a hidden side-effect of disabling components.
 
+// ---------------------------------------------------------------------------
+// Kobalte-style raw-value onChange / onInput
+// ---------------------------------------------------------------------------
+//
+// Kobalte components (Select, Checkbox, etc.) call onChange(value: string) — NOT
+// a DOM Event. The first argument is the raw value itself (no currentTarget).
+// UiProxy must:
+//   1. Detect that the argument is not a DOM Event (isDomEvent check).
+//   2. Pass the raw value as rawValue to getTargetData.
+//   3. Write the raw value into store.components[id].value via updateComponent.
+//   4. Forward the original raw value to the user handler (props.onChange).
+//   5. NOT deduplicate (no event marker settable on a string).
+
+describe('wrapComponent — kobalte-style raw-value onChange', () => {
+  // StubSelect simulates a kobalte-style Select that calls onChange(value: string)
+  // instead of onChange(event: Event). The component passes the value string directly.
+  const StubSelect = (props: any) => {
+    // Expose a trigger via data-testid so tests can fire the handler manually
+    return (
+      <button
+        type="button"
+        data-testid="select"
+        onClick={() => {
+          // Simulate kobalte: calls onChange with raw string value
+          props.onChange?.('developer');
+        }}
+      />
+    );
+  };
+
+  it('onChange with raw string value → updateComponent called with that value', () => {
+    const ctx = mkCtx() as any;
+    const Wrapped = wrapComponent(ctx, {}, StubSelect, 'Select');
+    cleanup = render(() => <Wrapped meta={{ tags: ['role'] }} />, container);
+    const el = container.querySelector('[data-testid="select"]') as HTMLElement;
+    el.click();
+    expect(ctx.store.updateComponent).toHaveBeenCalledOnce();
+    const arg = ctx.store.updateComponent.mock.calls[0][0];
+    const [, payload] = Object.entries(arg)[0] as [string, any];
+    expect(payload.value).toBe('developer');
+  });
+
+  it('onChange with raw string value → controller.onChange called with correct target', () => {
+    const ctx = mkCtx() as any;
+    const Wrapped = wrapComponent(ctx, {}, StubSelect, 'Select');
+    cleanup = render(() => <Wrapped meta={{ tags: ['role'] }} />, container);
+    const el = container.querySelector('[data-testid="select"]') as HTMLElement;
+    el.click();
+    expect(ctx.controller.onChange).toHaveBeenCalledOnce();
+    const [target] = ctx.controller.onChange.mock.calls[0];
+    expect(target.value).toBe('developer');
+    expect(target.name).toBe('role');
+  });
+
+  it('raw-value path: modifiers are undefined (no DOM event)', () => {
+    const ctx = mkCtx() as any;
+    const Wrapped = wrapComponent(ctx, {}, StubSelect, 'Select');
+    cleanup = render(() => <Wrapped meta={{ tags: ['role'] }} />, container);
+    const el = container.querySelector('[data-testid="select"]') as HTMLElement;
+    el.click();
+    const [target] = ctx.controller.onChange.mock.calls[0];
+    expect(target.modifiers).toBeUndefined();
+  });
+
+  it('raw-value path: user onChange handler also receives the raw value', () => {
+    const ctx = mkCtx() as any;
+    const userHandler = vi.fn();
+    const Wrapped = wrapComponent(ctx, {}, StubSelect, 'Select');
+    cleanup = render(() => <Wrapped meta={{ tags: ['role'] }} onChange={userHandler} />, container);
+    const el = container.querySelector('[data-testid="select"]') as HTMLElement;
+    el.click();
+    expect(userHandler).toHaveBeenCalledOnce();
+    // User handler receives original raw value (string), not a DOM event
+    expect(userHandler).toHaveBeenCalledWith('developer');
+  });
+
+  it('Select auto-injects "input" kind-tag (KIND_TAGS whitelist)', () => {
+    const ctx = mkCtx() as any;
+    const Wrapped = wrapComponent(ctx, {}, StubSelect, 'Select');
+    cleanup = render(() => <Wrapped meta={{ tags: ['role'] }} />, container);
+    const arg = ctx.store.registerComponent.mock.calls[0][0];
+    const [, registered] = Object.entries(arg)[0] as [string, any];
+    expect(registered.meta.tags).toContain('input');
+    expect(registered.meta.tags).toContain('role');
+  });
+
+  it('initial value from JSX props is present in registerComponent payload', () => {
+    const ctx = mkCtx() as any;
+    const Wrapped = wrapComponent(ctx, {}, StubSelect, 'Select');
+    // Simulates <Select value="developer" meta={{tags:['role']}} />
+    cleanup = render(() => <Wrapped meta={{ tags: ['role'] }} value="developer" />, container);
+    expect(ctx.store.registerComponent).toHaveBeenCalledOnce();
+    const arg = ctx.store.registerComponent.mock.calls[0][0];
+    const [, registered] = Object.entries(arg)[0] as [string, any];
+    // Initial value is captured from JSX props at registration time
+    expect(registered.value).toBe('developer');
+  });
+
+  it('native input onChange with DOM Event still works (no regression)', () => {
+    const ctx = mkCtx() as any;
+    const Wrapped = wrapComponent(ctx, {}, StubInput);
+    cleanup = render(() => <Wrapped meta={{ tags: ['email'] }} />, container);
+    const inp = container.querySelector('[data-testid="inp"]') as HTMLInputElement;
+    inp.value = 'test@example.com';
+    inp.dispatchEvent(new Event('change', { bubbles: true }));
+    expect(ctx.store.updateComponent).toHaveBeenCalledOnce();
+    const arg = ctx.store.updateComponent.mock.calls[0][0];
+    const [, payload] = Object.entries(arg)[0] as [string, any];
+    expect(payload.value).toBe('test@example.com');
+  });
+});
+
 describe('wrapComponent — disabled: no auto-inject from store.loading', () => {
   it('disabled is NOT set when store.loading=true and props.disabled is absent', () => {
     // ctx with loading=true — must NOT appear as disabled on the element

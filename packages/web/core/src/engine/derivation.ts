@@ -53,10 +53,20 @@ export const deriveInputType = (meta: any): string | undefined => {
  *
  * Приоритет полей:
  *  - `name`: DOM-атрибут `name` → derived из meta.tags → `props.name`.
- *  - `value`: для checkbox — el.checked, иначе el.value, иначе `props.value`.
+ *  - `value`:
+ *      1. checkbox → el.checked
+ *      2. нативный DOM-элемент (el.value) — text/select/etc.
+ *      3. `rawValue` — raw-значение от kobalte-style компонентов (onChange(value),
+ *         не DOM Event): передаётся явно вызывающим кодом когда `e` не является
+ *         DOM Event (нет `currentTarget`). Имеет приоритет над `finalProps.value`.
+ *      4. `finalProps.value` — JSX-prop (последний fallback, initial/controlled).
  *  - `meta`/`payload`: JSX-props напрямую (Solid не сериализует объекты в
  *    DOM-атрибуты — см. A-5 в cleanup-plan).
  *  - `modifiers`: если event есть — boolean-флаги, иначе undefined.
+ *
+ * @param rawValue — raw-значение от non-DOM компонентов (kobalte, etc.). Передаётся
+ *   из `buildEventBindings` когда аргумент обработчика не является DOM Event.
+ *   Когда задан, побеждает над `el?.value` и `finalProps.value` (но не над checkbox).
  */
 export const getTargetData = (
   e: AnyEvent | undefined,
@@ -68,11 +78,20 @@ export const getTargetData = (
     payload?: unknown;
   },
   derivedName?: string,
+  rawValue?: unknown,
 ) => {
   const el = e?.currentTarget as any;
+  const resolvedValue =
+    el?.type === 'checkbox'
+      ? el?.checked
+      : el?.value !== undefined
+        ? el.value
+        : rawValue !== undefined
+          ? rawValue
+          : finalProps.value;
   return {
     name: el?.name || derivedName || finalProps.name,
-    value: el?.type === 'checkbox' ? el?.checked : (el?.value ?? finalProps.value),
+    value: resolvedValue,
     type: el?.type,
     meta: finalProps?.meta,
     dynamicMeta: finalProps?.dynamicMeta,

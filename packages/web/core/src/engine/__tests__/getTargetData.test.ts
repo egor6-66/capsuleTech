@@ -130,3 +130,51 @@ describe('getTargetData — no event (lifecycle calls)', () => {
     });
   });
 });
+
+describe('getTargetData — rawValue (kobalte-style onChange)', () => {
+  it('rawValue wins over finalProps.value when el has no value', () => {
+    // kobalte-style: e=undefined (no DOM event), rawValue='developer'
+    const data = getTargetData(undefined, { value: 'old-default' }, 'role', 'developer');
+    expect(data.value).toBe('developer');
+  });
+
+  it('rawValue wins over finalProps.value when e provided but has no currentTarget', () => {
+    // kobalte passes raw value as first arg — caller passes as rawValue, e=undefined
+    const data = getTargetData(undefined, { name: 'role', value: 'old' }, 'role', 'admin');
+    expect(data.value).toBe('admin');
+  });
+
+  it('el.value still wins over rawValue (native DOM input takes priority)', () => {
+    // Both el.value and rawValue present — DOM wins (native input semantics)
+    const e = makeEvent({ currentTarget: makeEl({ type: 'text', value: 'dom-value' }) });
+    const data = getTargetData(e, { value: 'props-value' }, 'field', 'raw-value');
+    expect(data.value).toBe('dom-value');
+  });
+
+  it('el.checked wins over rawValue for checkbox (native checkbox semantics)', () => {
+    const e = makeEvent({ currentTarget: makeEl({ type: 'checkbox', checked: true }) });
+    const data = getTargetData(e, {}, undefined, false as unknown as unknown);
+    expect(data.value).toBe(true);
+  });
+
+  it('rawValue can be an object (kobalte multi-select or custom component)', () => {
+    const rawObj = { id: 42, label: 'Admin' };
+    const data = getTargetData(undefined, { value: 'fallback' }, 'role', rawObj);
+    expect(data.value).toBe(rawObj);
+  });
+
+  it('rawValue=undefined falls back to finalProps.value (no regression)', () => {
+    const data = getTargetData(undefined, { value: 'props-default' }, 'role', undefined);
+    expect(data.value).toBe('props-default');
+  });
+
+  it('name still derived from meta.tags even with rawValue', () => {
+    const data = getTargetData(undefined, { meta: { tags: ['role'] } }, 'role', 'developer');
+    expect(data.name).toBe('role');
+  });
+
+  it('modifiers are undefined when no DOM event (rawValue path)', () => {
+    const data = getTargetData(undefined, {}, 'role', 'developer');
+    expect(data.modifiers).toBeUndefined();
+  });
+});

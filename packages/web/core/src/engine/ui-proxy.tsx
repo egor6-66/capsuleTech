@@ -91,6 +91,19 @@ const safeCall = (fn: any, ...args: any[]) => {
 };
 
 /**
+ * Определяет, является ли аргумент события DOM-Event'ом (имеет `currentTarget`).
+ *
+ * Kobalte-style компоненты (Select, Checkbox, etc.) вызывают onChange/onInput
+ * с raw-значением (`onChange(value: string)`), а не с DOM-Event. В этом случае
+ * `e.currentTarget === undefined` и `e` сам является значением.
+ *
+ * Правило: если аргумент — примитив (не объект) ИЛИ объект без `currentTarget` —
+ * это raw-значение, а не DOM-Event.
+ */
+const isDomEvent = (e: unknown): e is AnyEvent =>
+  typeof e === 'object' && e !== null && 'currentTarget' in e;
+
+/**
  * Внутренний хелпер: строит объект с 6 event-handlers с дедупликацией bubbling
  * и диспатчингом в ctx.controller. Используется как `wrapComponent` (full path),
  * так и `bindEvents` (events-only path для composite-строк).
@@ -110,18 +123,37 @@ const buildEventBindings = (
   const bindings: Record<string, (e: AnyEvent) => void> = {};
   for (const { name, updateStore, marker } of EVENT_ENTRIES) {
     bindings[name] = (e: AnyEvent) => {
+      const isNativeDomEvent = isDomEvent(e);
+
       // Дедупликация на bubbling: первый сработавший handler помечает event,
       // верхние обёртки в DOM-цепочке пропускают повторные вызовы.
-      if ((e as any)[marker]) return;
-      (e as any)[marker] = true;
+      // Raw-value аргументы (kobalte) не являются объектами с маркером — пропускаем
+      // дедупликацию для них (bubble не происходит; компонент сам контролирует вызов).
+      if (isNativeDomEvent) {
+        if ((e as any)[marker]) return;
+        (e as any)[marker] = true;
+      }
 
       const props = getProps();
       const effectiveMeta = getEffMeta();
-      const data = getTargetData(e, { ...props, meta: effectiveMeta }, deriveName(effectiveMeta));
+
+      // Если аргумент не является DOM-Event — это raw value (kobalte onChange(value)).
+      // Передаём его явно в getTargetData как rawValue, e остаётся undefined
+      // (не несёт currentTarget / key / modifiers).
+      const domEvent: AnyEvent | undefined = isNativeDomEvent ? e : undefined;
+      const rawValue: unknown = isNativeDomEvent ? undefined : e;
+
+      const data = getTargetData(
+        domEvent,
+        { ...props, meta: effectiveMeta },
+        deriveName(effectiveMeta),
+        rawValue,
+      );
       if (updateStore && data.name && onUpdateStore) {
         onUpdateStore(data);
       }
       safeCall(ctx.controller[name], data, ctx.store.ctx);
+      // Форвардим оригинальный аргумент пользовательскому обработчику (e или raw value).
       safeCall(props[name], e);
     };
   }
