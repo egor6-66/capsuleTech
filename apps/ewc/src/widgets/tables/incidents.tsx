@@ -1,7 +1,7 @@
 /**
  * Incidents table widget — рендер через Shape, данные из родительского
  * `Features.Incidents` store (2-й арг фабрики). Per-row `itemMeta`/`itemPayload`
- * вешают tags+payload на строки → клик роутится универсальным `Feature.onClick`
+ * вешают tags+payload на строки → клик ловится именованным `Feature.onRowClick`
  * (incident → select), без прямых колбэков. Активная строка — по `store.selected`.
  *
  * `loader` (опция) — table-скелетон, пока `store.loading`. `settings` — декларативные
@@ -10,8 +10,6 @@
  * `scrollToId` центрирует строку при opt-in: «Синк с картой» (выбор из карты) или
  * «Скроллить к выбранному» (выбор из своей таблицы) — иначе undefined.
  */
-type IIncident = Entities.Incident.Row;
-
 const Incidents = Widget<Features.Incidents>(
   (_Ui, store) => {
     const data = () => store.ctx.data;
@@ -19,9 +17,9 @@ const Incidents = Widget<Features.Incidents>(
       <Shapes.IncidentsTable
         data={data()?.items ?? []}
         itemMeta={() => ({ tags: ['incident', 'table'] })}
-        itemPayload={(row: IIncident) => ({ id: row.id })}
-        isRowActive={(row: IIncident) => row.id === data()?.selected?.id}
-        getRowId={(row: IIncident) => row.id}
+        itemPayload={(row) => ({ id: row.id })}
+        isRowActive={(row) => row.id === data()?.selected?.id}
+        getRowId={(row) => row.id}
         scrollToId={
           (data()?.scrollToSelected && data()?.selectionSource !== 'table') ||
           (data()?.centerOnClick && data()?.selectionSource === 'table')

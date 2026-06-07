@@ -17,7 +17,6 @@
 const Shell = Feature<Shell.Matrix.Events>(() => ({
   initial: 'idle' as const,
   states: { idle: {} },
-
   /**
    * onLayoutChange — Matrix сообщил об изменении раскладки (swap/insert/grid).
    * `target.payload: LayoutChangeEvent` — типизирован. Сохраняем последнюю

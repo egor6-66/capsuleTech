@@ -25,8 +25,8 @@
  * `store.ctx.data.X` или handler param `context.data.X`):
  * ```ts
  * {
- *   items: IIncident[];           // загруженный список
- *   selected: IIncident | null;   // выбранная карточка (готова к отрисовке)
+ *   items: Entities.Incident.Row[];           // загруженный список
+ *   selected: Entities.Incident.Row | null;   // выбранная карточка (готова к отрисовке)
  *   error: string | null;         // последнее сообщение об ошибке
  * }
  * ```
@@ -36,17 +36,13 @@
  * directly"). Read через `context.data.X`.
  */
 
-import { unwrap } from 'solid-js/store';
-
-export type IIncident = Entities.Incident.Row;
-
-const Incidents = Feature(({ api, router }) => ({
+const Incidents = Feature<Tables.DataTable.Events>(({ api, router }) => ({
   initial: 'idle' as const,
 
   // Источник правды для типа контекста — TCtx инферится отсюда (CtxOf<typeof Features.Incidents>).
   context: {
-    items: [] as IIncident[],
-    selected: null as IIncident | null,
+    items: [] as Entities.Incident.Row[],
+    selected: null as Entities.Incident.Row | null,
     error: null as string | null,
     // Cross-widget sync prefs (opt-in, флипаются из settings-strip Matrix'а):
     flyToSelected: false, //  карта подлетает к выбору ИЗ ТАБЛИЦЫ («Синк с таблицей»)
@@ -59,7 +55,32 @@ const Incidents = Feature(({ api, router }) => ({
   },
 
   /**
-   * onClick — универсальный роутер кликов по `target.meta.tags`.
+   * onRowClick — именованное событие от `Tables.DataTable` (ADR 032, шелл-флоу
+   * как `Features.Shell.onLayoutChange`). Пакет эмиттит его через useEmit с
+   * плоским target: `target.payload` = `itemPayload(row)` = `{ id }`.
+   * Резолвим incident по id и кладём готовый объект в `selected`.
+   */
+  onRowClick: ({ target, store }) => {
+    const id = (target.payload as { id?: string } | undefined)?.id;
+    if (!id || store.ctx.data.selected?.id === id) return;
+    const item = store.ctx.data.items.find((i) => i.id === id);
+    store.update({
+      selected: item ?? null,
+      selectionSource: 'table',
+    });
+  },
+
+  /**
+   * onRowDblClick — даблклик по строке таблицы → сразу детальная карточка.
+   */
+  onRowDblClick: ({ target }) => {
+    const id = (target.payload as { id?: string } | undefined)?.id;
+    if (id) router.goTo(`/workspace/cards/${id}`);
+  },
+
+  /**
+   * onClick — универсальный роутер кликов по `target.meta.tags` (карта-маркеры,
+   * settings-тоглы, open-card). Таблица теперь шлёт именованный `onRowClick`.
    *
    * Top-level (вне `states`) → ControllerProxy находит его как fallback после
    * `states[current]`, значит ловит клик в любом стейте.
@@ -74,19 +95,11 @@ const Incidents = Feature(({ api, router }) => ({
     if (tags.includes('incident')) {
       const id = (target as { payload?: { id?: string } }).payload?.id;
       if (!id || store.ctx.data.selected?.id === id) return;
-      const item = store.ctx.data.items.find((i: IIncident) => i.id === id);
-      // Источник выбора из тега виджета — sync реагирует только на чужой источник.
-      const source: 'table' | 'map' | null = tags.includes('table')
-        ? 'table'
-        : tags.includes('map')
-          ? 'map'
-          : null;
-      // Store a plain deep clone, NOT the live `items[k]` store-proxy node:
-      // putting a store node into another store field aliases them in
-      // @xstate/solid's reconcile, which corrupts items[k] on the next select.
+      const item = store.ctx.data.items.find((i) => i.id === id);
+      // Сюда incident приходит только с карты (таблица шлёт именованный onRowClick).
       store.update({
-        selected: item ? structuredClone(unwrap(item)) : null,
-        selectionSource: source,
+        selected: item ?? null,
+        selectionSource: 'map',
       });
     }
 
@@ -158,7 +171,7 @@ const Incidents = Feature(({ api, router }) => ({
         store.setLoading(true);
         try {
           const result = await api.incidents.list({});
-          const items = Entities.Incident.schema.array().parse(result) as IIncident[];
+          const items = Entities.Incident.schema.array().parse(result) as Entities.Incident.Row[];
 
           store.update({ items, error: null });
           state.set('loaded');
