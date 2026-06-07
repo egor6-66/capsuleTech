@@ -32,6 +32,8 @@ status: index
 | [[035-web-agent-package\|035]] | web-agent package (встраиваемый агент-примитив) | 📝 proposed | 2026-06-05 |
 | [[036-shape-redesign-and-table-package\|036]] | Редизайн Shape (typed presentation-recipe) + вынос таблицы в пакет | ✅ accepted | 2026-06-06 |
 | [[037-playground-capability-and-codegen-subgenerators\|037]] | Playground как способность фреймворка + рефактор кодгена (sub-generators) + artifact-manifest | ✅ accepted | 2026-06-07 |
+| [[038-msw-mock-system\|038]] | Мок-система на MSW + faker (моки вне слоёв) | ✅ accepted | 2026-06-07 |
+| [[039-web-auth-package\|039]] | Auth как domain-пакет `@capsuletech/web-auth` (ось стратегии) | ✅ accepted | 2026-06-07 |
 
 > [!info]
 > Status:
