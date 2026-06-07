@@ -1,0 +1,84 @@
+{
+  "name": "@capsuletech/web-auth",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    },
+    "./role": {
+      "types": "./dist/role/index.d.ts",
+      "import": "./dist/role.mjs",
+      "default": "./dist/role.mjs"
+    },
+    "./credentials": {
+      "types": "./dist/credentials/index.d.ts",
+      "import": "./dist/credentials.mjs",
+      "default": "./dist/credentials.mjs"
+    },
+    "./oauth2": {
+      "types": "./dist/oauth2/index.d.ts",
+      "import": "./dist/oauth2.mjs",
+      "default": "./dist/oauth2.mjs"
+    },
+    "./qr": {
+      "types": "./dist/qr/index.d.ts",
+      "import": "./dist/qr.mjs",
+      "default": "./dist/qr.mjs"
+    },
+    "./session": {
+      "types": "./dist/session/index.d.ts",
+      "import": "./dist/session.mjs",
+      "default": "./dist/session.mjs"
+    },
+    "./controllers": {
+      "types": "./dist/controllers/index.d.ts",
+      "import": "./dist/controllers.mjs",
+      "default": "./dist/controllers.mjs"
+    },
+    "./ui": {
+      "types": "./dist/ui/index.d.ts",
+      "import": "./dist/ui.mjs",
+      "default": "./dist/ui.mjs"
+    },
+    "./capsule": {
+      "types": "./dist/capsule.d.ts",
+      "import": "./dist/capsule.mjs",
+      "default": "./dist/capsule.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@capsuletech/shared-zod": "workspace:*",
+    "@capsuletech/web-core": "workspace:*",
+    "@capsuletech/web-query": "workspace:*",
+    "@capsuletech/web-state": "workspace:*",
+    "@capsuletech/web-ui": "workspace:*"
+  },
+  "peerDependencies": {
+    "solid-js": "^1.9.0"
+  },
+  "devDependencies": {
+    "@capsuletech/lib-builder": "workspace:*",
+    "@capsuletech/vite-builder": "workspace:*",
+    "@testing-library/jest-dom": "^6.9.1",
+    "jsdom": "~29.1.1",
+    "vite-plugin-solid": "^2.11.12"
+  },
+  "publishConfig": {
+    "access": "public",
+    "packageManager": "pnpm"
+  }
+}
