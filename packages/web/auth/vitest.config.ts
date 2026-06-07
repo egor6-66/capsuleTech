@@ -12,5 +12,8 @@ export default defineConfig({
     include: ['src/**/__tests__/**/*.test.ts', 'src/**/__tests__/**/*.test.tsx'],
     environment: 'jsdom',
     globals: false,
+    // Phase 0 skeleton — контракты и TODO-заглушки, тестов нет.
+    // Снимется когда owner-web-auth добавит первую реализацию.
+    passWithNoTests: true,
   },
 });
