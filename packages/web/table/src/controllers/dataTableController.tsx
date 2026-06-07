@@ -114,4 +114,4 @@ export const DataTableController: (<TRow>(props: IDataTableProps<TRow>) => any) 
   readonly __events?: IDataTableEvents;
 } = DataTableControllerComponent;
 
-// Namespace-merge `Tables.DataTable.Events` живёт в ./table-events.d.ts (ambient).
+// Namespace `Tables.DataTable.Events` генерится codegen аппа из phantom-маркера __events.
