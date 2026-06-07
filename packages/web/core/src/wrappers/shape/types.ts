@@ -74,7 +74,7 @@ export type ApplyRowFrom<A, R> =
 
 /**
  * Результат bind-функции (arg1). Содержит schema + as шаблон.
- * `item` убран в ADR 036: batch-дескриптор переехал в arg2 (`child`),
+ * Batch-дескриптор (`item`) живёт в arg2 (config),
  * чтобы избежать sibling-инференс (item.props рядом со schema → it: any).
  */
 export interface IShapeBind<S extends ZodType = ZodType> {
@@ -96,9 +96,9 @@ export type IShapeBindFn<S extends ZodType = ZodType, A = unknown> = (
 // ---------------------------------------------------------------------------
 
 /**
- * Тело config-объекта: шаблонные props + опциональный `defaults` + опциональный `child`.
+ * Тело config-объекта: шаблонные props + опциональный `defaults` + опциональный `item`.
  * `defaults` — начальные данные Shape (канон: arg2, ADR 036 §2).
- * `child` — batch-дескриптор (переехал из arg1 `item` в ADR 036):
+ * `item` — batch-дескриптор:
  *   `use` — компонент каждого элемента, `props` — маппер row→props.
  *   Типизирован через `RowOf<S>` — резолвится без sibling-инференс,
  *   т.к. arg2 отдельно от `schema` в arg1.
@@ -113,9 +113,9 @@ export type IShapeConfigBody<TConfig, S extends ZodType> = Partial<TConfig> & {
    * `use` НЕ называется `as` чтобы не конфликтовать с верхнеуровневым контейнером.
    *
    * `it: RowOf<S>` — тип элемента схемы выводится автоматически, без аннотации,
-   * т.к. `child` находится в arg2, отдельно от `schema` (нет sibling-инференс).
+   * т.к. `item` находится в arg2, отдельно от `schema` (нет sibling-инференс).
    */
-  child?: {
+  item?: {
     use?: ValidComponent;
     props?: (it: RowOf<S>) => Record<string, unknown>;
   };
@@ -125,10 +125,10 @@ export type IShapeConfigBody<TConfig, S extends ZodType> = Partial<TConfig> & {
  * Config arg2 — объект ИЛИ функция `(ui, props) => body`.
  * TConfig — тип конфигурации (определяется из маркера шаблона).
  * TProps — тип консьюмер-props (типизированы через RowOf).
- * S — схема Shape (нужна для типизации `defaults` и `child.props`).
+ * S — схема Shape (нужна для типизации `defaults` и `item.props`).
  *
  * Функциональная форма получает `ui` первым аргументом (path-tracker),
- * что позволяет использовать `ui.Link`, `ui.Button` и т.д. в `child.use`
+ * что позволяет использовать `ui.Link`, `ui.Button` и т.д. в `item.use`
  * и других полях config.
  */
 export type IShapeConfigArg<TConfig, TProps, S extends ZodType = ZodType> =
@@ -170,7 +170,7 @@ export type IShapeComponent<TData> = Component<IShapeComponentProps<TData>>;
  * ```ts
  * Shape(
  *   (ui) => ({ schema, as }),                    // BIND: фиксирует schema и шаблон
- *   (ui, props) => ({ columns, child, sorting }) // CONFIG: row-типизирован из schema; ui — path-tracker
+ *   (ui, props) => ({ columns, item, sorting }) // CONFIG: row-типизирован из schema; ui — path-tracker
  * );
  * ```
  */

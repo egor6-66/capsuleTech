@@ -22,7 +22,7 @@
  *  9.  config = объект без функции → defaults из объекта используются
  *  10. consumer `data` = пустой массив → переопределяет defaults (не fallback)
  *  11. config = функция от props → вычисляется per-render
- *  12. child: { use, props } из arg2 config → передаётся в шаблон как `child` prop (ADR 036)
+ *  12. item: { use, props } из arg2 config → передаётся в шаблон как `item` prop (ADR 036)
  *  13. shape без arg2 (только bind) — defaults из bind поля
  *  14. single-object schema (ZodObject) — data не array
  *  15. reactive data via signal
@@ -430,18 +430,17 @@ describe('Shape v2 — config as function of props', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 12. child: { use, props } из arg2 передаётся в шаблон
-// (item переехал из bind в config arg2 как child — ADR 036)
+// 12. item: { use, props } из arg2 передаётся в шаблон как `item` prop
 // ---------------------------------------------------------------------------
 
-describe('Shape v2 — child batch element from config (arg2)', () => {
-  it('child.use and child.props are passed to template as `child` prop', () => {
+describe('Shape v2 — item batch element from config (arg2)', () => {
+  it('item.use and item.props are passed to template as `item` prop', () => {
     const ButtonComp = (_props: any) => <button type="button" />;
-    let capturedChild: unknown;
+    let capturedItem: unknown;
 
     const Template = (props: Record<string, unknown>) => {
-      capturedChild = props.child;
-      return <div data-testid="child-tpl" />;
+      capturedItem = props.item;
+      return <div data-testid="item-tpl" />;
     };
 
     const MyShape = Shape(
@@ -450,7 +449,7 @@ describe('Shape v2 — child batch element from config (arg2)', () => {
         as: Template,
       }),
       (_ui, _props) => ({
-        child: {
+        item: {
           use: ButtonComp,
           props: (it: { label: string }) => ({ children: it.label }),
         },
@@ -458,22 +457,22 @@ describe('Shape v2 — child batch element from config (arg2)', () => {
     );
 
     cleanup = render(() => <MyShape />, container);
-    expect(capturedChild).toBeDefined();
-    const child = capturedChild as { use: unknown; props: (it: unknown) => unknown };
-    expect(child.use).toBe(ButtonComp);
-    expect(typeof child.props).toBe('function');
-    expect(child.props({ label: 'Hello' })).toEqual({ children: 'Hello' });
+    expect(capturedItem).toBeDefined();
+    const item = capturedItem as { use: unknown; props: (it: unknown) => unknown };
+    expect(item.use).toBe(ButtonComp);
+    expect(typeof item.props).toBe('function');
+    expect(item.props({ label: 'Hello' })).toEqual({ children: 'Hello' });
   });
 
-  it('child.use as path-tracker resolves via ShapeUiContext', () => {
+  it('item.use as path-tracker resolves via ShapeUiContext', () => {
     const LinkComp = (_props: any) => <a href="https://example.com">link</a>;
     const fakeUi = { Link: LinkComp };
     const tracker = createUiTracker();
-    let capturedChildUse: unknown;
+    let capturedItemUse: unknown;
 
     const Template = (props: Record<string, unknown>) => {
-      capturedChildUse = (props.child as any)?.use;
-      return <div data-testid="child-tracker-tpl" />;
+      capturedItemUse = (props.item as any)?.use;
+      return <div data-testid="item-tracker-tpl" />;
     };
 
     const MyShape = Shape(
@@ -482,7 +481,7 @@ describe('Shape v2 — child batch element from config (arg2)', () => {
         as: Template,
       }),
       (_ui, _props) => ({
-        child: {
+        item: {
           use: tracker.Link as any,
           props: (it: { to: string }) => ({ to: it.to }),
         },
@@ -497,7 +496,7 @@ describe('Shape v2 — child batch element from config (arg2)', () => {
       ),
       container,
     );
-    expect(capturedChildUse).toBe(LinkComp);
+    expect(capturedItemUse).toBe(LinkComp);
   });
 });
 

@@ -31,6 +31,7 @@
 
 import { z } from 'zod';
 import { describe, it } from 'vitest';
+import type { JSX } from 'solid-js';
 import type {
   ApplyRow,
   ApplyRowFrom,
@@ -100,7 +101,7 @@ declare const GroupComp: ((props: IGroupProps<any>) => unknown) & {
   readonly __tpl?: GroupTemplate;
 };
 
-declare const ButtonComp: (props: { to?: string; children?: string }) => unknown;
+declare const ButtonComp: (props: { to?: string; children?: string }) => JSX.Element;
 
 // ---------------------------------------------------------------------------
 // Test entities

@@ -216,9 +216,9 @@ const _sModCNeg = Shape(
 void _sModCNeg;
 
 // ---------------------------------------------------------------------------
-// BATCH (nav-pattern): `child` в arg2 — row-типизирован из schema
+// BATCH (nav-pattern): `item` в arg2 — row-типизирован из schema
 //
-// Доказывает: `child` переехал из arg1 в arg2 → `it` в `child.props` выводится
+// Доказывает: `item` в arg2 → `it` в `item.props` выводится
 // как NavItem без аннотации (нет sibling-инференс с schema).
 // Негатив: it.nonExistent → @ts-expect-error.
 // arg2-коллбэк получает (ui, props) — ui: IShapeUi (первый аргумент).
@@ -229,16 +229,16 @@ type NavItem = z.infer<typeof NavSchema>;
 
 // Mock batch-container template
 interface INavGroupProps<TRow> {
-  child?: { use?: unknown; props?: (it: TRow) => unknown };
+  item?: { use?: unknown; props?: (it: TRow) => unknown };
 }
 interface NavGroupTemplate { row: unknown; props: INavGroupProps<this['row']>; }
 declare const NavGroupComp: Component<INavGroupProps<any>> & { readonly __tpl?: NavGroupTemplate };
 
-// ПОЗИТИВ: child.props it = NavItem — без аннотации
+// ПОЗИТИВ: item.props it = NavItem — без аннотации
 const _sBatch = Shape(
   (ui) => ({ schema: z.array(NavSchema), as: NavGroupComp }),
   (ui, props) => ({
-    child: {
+    item: {
       // ui доступен в arg2 для path-tracker (например ui.Button)
       use: ui.Button,
       props: (it) => {
@@ -257,7 +257,7 @@ void _sBatch;
 const _sBatchCheck = Shape(
   (ui) => ({ schema: z.array(NavSchema), as: NavGroupComp }),
   (ui, props) => ({
-    child: {
+    item: {
       props: (it): Record<string, unknown> => {
         type _ItIsNavItem = Expect<Equal<typeof it, NavItem>>;
         type _ItNotAny = Expect<Equal<IsAny<typeof it>, false>>;
@@ -272,7 +272,7 @@ void _sBatchCheck;
 const _sBatchNeg = Shape(
   (ui) => ({ schema: z.array(NavSchema), as: NavGroupComp }),
   (ui, props) => ({
-    child: {
+    item: {
       props: (it) =>
         // @ts-expect-error — nonExistent не существует в NavItem
         ({ bad: it.nonExistent }),
@@ -281,7 +281,7 @@ const _sBatchNeg = Shape(
 );
 void _sBatchNeg;
 
-// ОБЪЕКТНАЯ ФОРМА arg2 — child без функции (static конфиг)
+// ОБЪЕКТНАЯ ФОРМА arg2 — item без функции (static конфиг)
 const _sBatchObj = Shape(
   (ui) => ({ schema: z.array(NavSchema), as: NavGroupComp }),
   { defaults: [{ label: 'Static', to: '/static' }] },
@@ -314,11 +314,11 @@ describe('shape-real-wrapper — IShapeWrapper type-level core test', () => {
     void _sModCNeg;
   });
 
-  it('batch: child.props it = NavItem without annotation (arg2 child, no sibling-infer)', () => {
+  it('batch: item.props it = NavItem without annotation (arg2 item, no sibling-infer)', () => {
     void _sBatchCheck;
   });
 
-  it('batch-neg: child.props it.nonExistent is a type error (it not any)', () => {
+  it('batch-neg: item.props it.nonExistent is a type error (it not any)', () => {
     void _sBatchNeg;
   });
 
@@ -326,7 +326,7 @@ describe('shape-real-wrapper — IShapeWrapper type-level core test', () => {
     void _sBatch;
   });
 
-  it('batch: object form of arg2 works (no child fn required)', () => {
+  it('batch: object form of arg2 works (no item fn required)', () => {
     void _sBatchObj;
   });
 });
