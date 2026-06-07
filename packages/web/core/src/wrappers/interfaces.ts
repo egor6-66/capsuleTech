@@ -13,13 +13,11 @@ import type {
   Animate,
   Button,
   Card,
-  DataTable,
   Field,
   Group,
   Input,
   Layout,
   List,
-  Table,
 } from '@capsuletech/web-ui';
 import type { Dropdown } from '@capsuletech/web-ui/dropdown';
 import type { DropdownMenu } from '@capsuletech/web-ui/dropdownMenu';
@@ -184,8 +182,6 @@ type ViewUiRaw = UniversalUiRaw & {
   Group: typeof Group;
   Input: typeof Input;
   List: typeof List;
-  Table: typeof Table;
-  DataTable: typeof DataTable;
   PreviewCard: typeof PreviewCard;
   Skeleton: typeof Skeleton;
   Spinner: typeof Spinner;
@@ -203,14 +199,27 @@ type ViewUiRaw = UniversalUiRaw & {
   Flow: FlowNamespace;
 };
 
+/**
+ * Сырой (без WithMetaProps) набор UI-примитивов View-уровня.
+ * Экспортируется для Shape: `IShapeUi` производится из этого типа,
+ * чтобы `ui.PreviewCard`, `ui.Group` и т.д. несли реальные типы
+ * компонентов (включая phantom `__tpl`-маркеры) без hardcode-списка.
+ *
+ * Компоненты в `IShapeUi` НЕ оборачиваются `WithMetaProps` (meta-opt-in
+ * актуален только в View-дереве под Controller; в Shape factory
+ * выбирается только `as`-шаблон, а не рендерится JSX).
+ *
+ * При добавлении нового компонента в `ViewUiRaw` — `IShapeUi` автоматически
+ * подхватит его без каких-либо ручных правок в `shape/types.ts`.
+ */
+export type IViewUiRaw = ViewUiRaw;
+
 type Outlet = () => JSXElement;
 
 type WidgetUiRaw = UniversalUiRaw & {
   Button: typeof Button;
   Card: typeof Card;
   Outlet: Outlet;
-  Table: typeof Table;
-  DataTable: typeof DataTable;
   PreviewCard: typeof PreviewCard;
   Skeleton: typeof Skeleton;
   Spinner: typeof Spinner;

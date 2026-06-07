@@ -52,9 +52,6 @@ const createLazy = (importer: () => Promise<any>, name: string) =>
 export const Animate = createLazy(() => import('@capsuletech/web-ui/wrappers'), 'Animate');
 export const Resizable = createLazy(() => import('@capsuletech/web-ui/wrappers'), 'Resizable');
 
-// DataTable — 126KB (tanstack-table + virtual), not in every page
-export const DataTable = createLazy(() => import('@capsuletech/web-ui/dataTable'), 'DataTable');
-
 // PreviewCard — single-item renderer, optional; separate chunk
 export const PreviewCard = createLazy(
   () => import('@capsuletech/web-ui/previewCard'),
@@ -66,16 +63,6 @@ export const DropdownMenu = createLazy(
   () => import('@capsuletech/web-ui/dropdownMenu'),
   'DropdownMenu',
 );
-
-// Table — raw HTML table primitives (used for custom table layouts, not every page)
-const TableBase = createLazy(() => import('@capsuletech/web-ui/table'), 'Table');
-export const Table = Object.assign(TableBase, {
-  Header: createLazy(() => import('@capsuletech/web-ui/table'), 'TableHeader'),
-  Body: createLazy(() => import('@capsuletech/web-ui/table'), 'TableBody'),
-  Row: createLazy(() => import('@capsuletech/web-ui/table'), 'TableRow'),
-  Head: createLazy(() => import('@capsuletech/web-ui/table'), 'TableHead'),
-  Cell: createLazy(() => import('@capsuletech/web-ui/table'), 'TableCell'),
-});
 
 // Dropdown — 126KB, kobalte-heavy, only used where explicit dropdown menus appear
 const DropdownBase = createLazy(() => import('@capsuletech/web-ui/dropdown'), 'Dropdown');

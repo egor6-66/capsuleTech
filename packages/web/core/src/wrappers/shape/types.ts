@@ -1,15 +1,29 @@
 import type { Component, ValidComponent } from 'solid-js';
 import type { ZodArray, ZodType, ZodTypeAny, z as zod } from 'zod';
+import type { IViewUiRaw } from '../interfaces';
 
 /**
  * Path-tracker для первого аргумента factory'и (`ui`). Proxy, фиксирующий путь.
  * Резолв реального компонента происходит в момент рендера через `ShapeUiContext`.
  *
- * Тип намеренно гибкий (Record<string, any>) — tracker — это Proxy без реальной структуры.
+ * Тип производится из `IViewUiRaw` (без `WithMetaProps`) — это гарантирует что
+ * `ui.PreviewCard`, `ui.Button`, `ui.Group` и т.д. несут реальные типы компонентов
+ * с phantom `__tpl`-маркерами. При добавлении нового компонента в `ViewUiRaw`
+ * `IShapeUi` подхватит его автоматически — без ручных правок в этом файле.
+ *
+ * Рантайм: `createUiTracker` возвращает Proxy, тип с ним расходится — это норма.
+ * Proxy-структура нужна только для фиксации пути к компоненту (`as: ui.PreviewCard`).
+ *
+ * Сохранены гибкие расширения:
+ *  - `Views: Record<string, any>` — composite user Views (`ui.Views.Forms.Field`)
+ *  - `[key: string]: any` — любые нестандартные пути, которые tracker поддерживает
+ *    в рантайме (например `ui.SomePackageWidget`)
  */
-export type IShapeUi = Record<string, any> & {
+export type IShapeUi = IViewUiRaw & {
   /** Views registry — composite user Views (`ui.Views.Forms.Field`). */
   Views: Record<string, any>;
+  /** Index-fallback — позволяет использовать произвольные пути через tracker. */
+  [key: string]: any;
 };
 
 /**
@@ -60,64 +74,66 @@ export type ApplyRowFrom<A, R> =
 
 /**
  * Результат bind-функции (arg1). Содержит schema + as шаблон.
- * `item` — для batch-элементов (nav-паттерн): `{ use, props }`.
- *
- * Второй параметр `R` = row-тип из схемы (`RowOf<S>`).
- * На call-site IShapeWrapper overloads инферируют `R` из `S` автоматически —
- * вручную указывать не нужно. Значение по умолчанию `RowOf<S>` обеспечивает
- * обратную совместимость с IShapeBindFn<S>.
+ * `item` убран в ADR 036: batch-дескриптор переехал в arg2 (`child`),
+ * чтобы избежать sibling-инференс (item.props рядом со schema → it: any).
  */
-export interface IShapeBind<S extends ZodType = ZodType, R = RowOf<S>> {
+export interface IShapeBind<S extends ZodType = ZodType> {
   schema: S;
   /** Контейнер/шаблон — несёт `__tpl` маркер для HKT-типизации. */
   as?: ValidComponent;
-  /**
-   * Batch-элемент: `use` — компонент каждого элемента, `props` — маппер row→props.
-   * `use` НЕ называется `as` чтобы не конфликтовать с верхнеуровневым `as`.
-   *
-   * `props` типизирован через `R` = `RowOf<S>`: `it` = элемент схемы без ручных аннотаций.
-   * Вывод `R` происходит на уровне IShapeWrapper overloads, где `S` уже инферирован.
-   */
-  item?: {
-    use?: ValidComponent;
-    props?: (it: R) => Record<string, unknown>;
-  };
 }
 
 /**
  * Bind-функция: принимает `ui` (path-tracker), возвращает `IShapeBind`.
  * Вызывается на module-load — один раз.
- *
- * `R = RowOf<S>` — row-тип передаётся в `IShapeBind` чтобы `item.props` был типизирован.
  */
-export type IShapeBindFn<S extends ZodType = ZodType, A = unknown, R = RowOf<S>> = (
+export type IShapeBindFn<S extends ZodType = ZodType, A = unknown> = (
   ui: IShapeUi,
-) => IShapeBind<S, R> & { as?: A };
+) => IShapeBind<S> & { as?: A };
 
 // ---------------------------------------------------------------------------
 // Config (arg2) — row-зависимая презентационная конфигурация
 // ---------------------------------------------------------------------------
 
 /**
- * Тело config-объекта: шаблонные props + опциональный `defaults`.
+ * Тело config-объекта: шаблонные props + опциональный `defaults` + опциональный `child`.
  * `defaults` — начальные данные Shape (канон: arg2, ADR 036 §2).
+ * `child` — batch-дескриптор (переехал из arg1 `item` в ADR 036):
+ *   `use` — компонент каждого элемента, `props` — маппер row→props.
+ *   Типизирован через `RowOf<S>` — резолвится без sibling-инференс,
+ *   т.к. arg2 отдельно от `schema` в arg1.
  *
  * Используется вместо голого `Partial<TConfig>` в `IShapeConfigArg`,
  * чтобы не требовать excess-property проверки для `defaults` на объектном литерале.
  */
 export type IShapeConfigBody<TConfig, S extends ZodType> = Partial<TConfig> & {
   defaults?: ShapeData<S>;
+  /**
+   * Batch-дескриптор: `use` — компонент каждого элемента, `props` — маппер row→props.
+   * `use` НЕ называется `as` чтобы не конфликтовать с верхнеуровневым контейнером.
+   *
+   * `it: RowOf<S>` — тип элемента схемы выводится автоматически, без аннотации,
+   * т.к. `child` находится в arg2, отдельно от `schema` (нет sibling-инференс).
+   */
+  child?: {
+    use?: ValidComponent;
+    props?: (it: RowOf<S>) => Record<string, unknown>;
+  };
 };
 
 /**
- * Config arg2 — объект ИЛИ функция от консьюмер-props.
+ * Config arg2 — объект ИЛИ функция `(ui, props) => body`.
  * TConfig — тип конфигурации (определяется из маркера шаблона).
  * TProps — тип консьюмер-props (типизированы через RowOf).
- * S — схема Shape (нужна для типизации `defaults`).
+ * S — схема Shape (нужна для типизации `defaults` и `child.props`).
+ *
+ * Функциональная форма получает `ui` первым аргументом (path-tracker),
+ * что позволяет использовать `ui.Link`, `ui.Button` и т.д. в `child.use`
+ * и других полях config.
  */
 export type IShapeConfigArg<TConfig, TProps, S extends ZodType = ZodType> =
   | IShapeConfigBody<TConfig, S>
-  | ((props: TProps) => IShapeConfigBody<TConfig, S>);
+  | ((ui: IShapeUi, props: TProps) => IShapeConfigBody<TConfig, S>);
 
 // ---------------------------------------------------------------------------
 // Consumer props (что принимает итоговый компонент Shape на JSX-сайте)
@@ -153,24 +169,24 @@ export type IShapeComponent<TData> = Component<IShapeComponentProps<TData>>;
  * Двухфазная форма:
  * ```ts
  * Shape(
- *   (ui) => ({ schema, as }),         // BIND: фиксирует schema и шаблон
- *   (props) => ({ columns, sorting }) // CONFIG: row-типизирован из schema
+ *   (ui) => ({ schema, as }),                    // BIND: фиксирует schema и шаблон
+ *   (ui, props) => ({ columns, child, sorting }) // CONFIG: row-типизирован из schema; ui — path-tracker
  * );
  * ```
  */
 export interface IShapeWrapper {
   // Перегрузка 1: шаблон с маркером __tpl + arg2 → consumer-props row-типизированы.
   // Возвращаемый компонент принимает: IShapeBaseProps (data/as) & ApplyRowFrom (itemPayload, getRowId, …).
-  // R = RowOf<S> — row-тип явно передаётся в IShapeBind чтобы item.props был типизирован.
-  <S extends ZodType, A extends { readonly __tpl?: object }, R extends RowOf<S> = RowOf<S>>(
-    bind: (ui: IShapeUi) => IShapeBind<S, R> & { as?: A },
-    config: IShapeConfigArg<ApplyRowFrom<A, R>, IShapeBaseProps<ShapeData<S>> & ApplyRowFrom<A, R>, S>,
-  ): Component<IShapeBaseProps<ShapeData<S>> & ApplyRowFrom<A, R>>;
+  // RowOf<S> инлайнится напрямую — нет контравариантного R-generic.
+  <S extends ZodType, A extends { readonly __tpl?: object }>(
+    bind: (ui: IShapeUi) => IShapeBind<S> & { as?: A },
+    config: IShapeConfigArg<ApplyRowFrom<A, RowOf<S>>, IShapeBaseProps<ShapeData<S>> & ApplyRowFrom<A, RowOf<S>>, S>,
+  ): Component<IShapeBaseProps<ShapeData<S>> & ApplyRowFrom<A, RowOf<S>>>;
 
   // Перегрузка 2: только bind (без arg2), шаблон с маркером → consumer-props row-типизированы.
-  <S extends ZodType, A extends { readonly __tpl?: object }, R extends RowOf<S> = RowOf<S>>(
-    bind: (ui: IShapeUi) => IShapeBind<S, R> & { as?: A },
-  ): Component<IShapeBaseProps<ShapeData<S>> & ApplyRowFrom<A, R>>;
+  <S extends ZodType, A extends { readonly __tpl?: object }>(
+    bind: (ui: IShapeUi) => IShapeBind<S> & { as?: A },
+  ): Component<IShapeBaseProps<ShapeData<S>> & ApplyRowFrom<A, RowOf<S>>>;
 
   // Перегрузка 3: только bind без маркера (plain компонент, row-тип недоступен).
   <S extends ZodType>(
