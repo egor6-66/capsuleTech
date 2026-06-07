@@ -767,10 +767,12 @@ const pkgEntry = (
   pkg: string,
   globalName: string,
   controllerKeys?: string[],
+  componentKeys?: string[],
 ): ResolvedPackageEntry => ({
   pkg,
   globalName,
   controllerKeys: controllerKeys && controllerKeys.length > 0 ? controllerKeys : undefined,
+  componentKeys: componentKeys && componentKeys.length > 0 ? componentKeys : undefined,
 });
 
 describe('generatePackagesRuntime — empty list', () => {
@@ -1689,5 +1691,149 @@ describe('generateLayerTypes — import path uses single quotes', () => {
     const leaves = [wrapperLeaf('features', '@features/incidents', ['Incidents'])];
     const out = generateLayerTypes(leaves);
     expect(out).toContain("import('@capsule/registry')");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generatePackagesTypes — componentKeys Events namespace (ADR 032)
+// ---------------------------------------------------------------------------
+
+describe('generatePackagesTypes — package with componentKeys emits Events namespace', () => {
+  const entries = [pkgEntry('@capsuletech/web-table', 'Tables', undefined, ['DataTable'])];
+
+  it('emits const Tables declaration', () => {
+    const out = generatePackagesTypes(entries);
+    expect(out).toContain(
+      "const Tables: typeof import('@capsuletech/web-table/capsule')['default']['components'];",
+    );
+  });
+
+  it('emits namespace Tables { namespace DataTable { type Events } }', () => {
+    const out = generatePackagesTypes(entries);
+    expect(out).toContain('namespace Tables {');
+    expect(out).toContain('namespace DataTable {');
+    expect(out).toContain(
+      "type Events = (typeof import('@capsuletech/web-table/capsule')['default']['components'])[\"DataTable\"] extends { __events?: infer E } ? NonNullable<E> : never;",
+    );
+  });
+
+  it('namespace Tables is inside declare global block', () => {
+    const out = generatePackagesTypes(entries);
+    const globalStart = out.indexOf('declare global {');
+    const globalEnd = out.lastIndexOf('}');
+    const nsIdx = out.indexOf('namespace Tables {');
+    expect(nsIdx).toBeGreaterThan(globalStart);
+    expect(nsIdx).toBeLessThan(globalEnd);
+  });
+
+  it('has balanced braces', () => {
+    const out = generatePackagesTypes(entries);
+    const opens = (out.match(/\{/g) ?? []).length;
+    const closes = (out.match(/\}/g) ?? []).length;
+    expect(opens).toBe(closes);
+  });
+
+  it('contains export {} for module augmentation', () => {
+    const out = generatePackagesTypes(entries);
+    expect(out).toContain('export {};');
+  });
+});
+
+describe('generatePackagesTypes — package with multiple componentKeys', () => {
+  const entries = [
+    pkgEntry('@capsuletech/web-table', 'Tables', undefined, ['DataTable', 'VirtualTable']),
+  ];
+
+  it('emits namespace for each component key', () => {
+    const out = generatePackagesTypes(entries);
+    expect(out).toContain('namespace DataTable {');
+    expect(out).toContain('namespace VirtualTable {');
+  });
+
+  it('emits type Events for each component', () => {
+    const out = generatePackagesTypes(entries);
+    const count = (out.match(/type Events = /g) ?? []).length;
+    expect(count).toBe(2);
+  });
+});
+
+describe('generatePackagesTypes — package with both controllerKeys and componentKeys', () => {
+  const entries = [
+    pkgEntry('@capsuletech/web-shell', 'Shell', ['Navigation'], ['Matrix', 'Header']),
+  ];
+
+  it('emits Controllers interface augmentation', () => {
+    const out = generatePackagesTypes(entries);
+    expect(out).toContain('interface Controllers {');
+    expect(out).toContain(
+      "Navigation: typeof import('@capsuletech/web-shell/capsule')['default']['controllers'][\"Navigation\"];",
+    );
+  });
+
+  it('emits namespace Shell with nested component namespaces', () => {
+    const out = generatePackagesTypes(entries);
+    expect(out).toContain('namespace Shell {');
+    expect(out).toContain('namespace Matrix {');
+    expect(out).toContain('namespace Header {');
+  });
+
+  it('emits exactly one declare global block', () => {
+    const out = generatePackagesTypes(entries);
+    const count = (out.match(/declare global \{/g) ?? []).length;
+    expect(count).toBe(1);
+  });
+});
+
+describe('generatePackagesTypes — package without componentKeys (no regression)', () => {
+  const entries = [pkgEntry('@capsuletech/web-map', 'Maps')];
+
+  it('does NOT emit any namespace block (no componentKeys)', () => {
+    const out = generatePackagesTypes(entries);
+    expect(out).not.toContain('namespace Maps');
+    expect(out).not.toContain('type Events');
+  });
+});
+
+describe('generatePackagesTypes — Events type uses __events infer pattern (web-table example)', () => {
+  it('Events = never for component without __events (the infer pattern handles it)', () => {
+    // The generated type correctly uses conditional inference:
+    // if component has no __events?, the conditional resolves to `never`
+    const entries = [pkgEntry('@capsuletech/web-table', 'Tables', undefined, ['DataTable'])];
+    const out = generatePackagesTypes(entries);
+    expect(out).toContain('__events?: infer E');
+    expect(out).toContain('NonNullable<E>');
+    expect(out).toContain(': never');
+  });
+});
+
+describe('parseManifestSource — componentKeys extraction', () => {
+  it('extracts componentKeys from manifest with components object', () => {
+    const source = `
+var c = s({ name: "Tables", components: { DataTable: d, VirtualTable: v } });
+export { c as default };
+`;
+    const result = parseManifestSource(source, 'capsule.mjs');
+    expect(result).not.toBeNull();
+    expect(result!.componentKeys).toEqual(['DataTable', 'VirtualTable']);
+  });
+
+  it('returns componentKeys=[] when components property absent', () => {
+    const source = `
+var c = s({ name: "Shell", controllers: { Navigation: n } });
+export { c as default };
+`;
+    const result = parseManifestSource(source, 'capsule.mjs');
+    expect(result).not.toBeNull();
+    expect(result!.componentKeys).toEqual([]);
+  });
+
+  it('handles StringLiteral component keys { "DataTable": d }', () => {
+    const source = `
+var c = s({ name: "Tables", components: { "DataTable": d } });
+export { c as default };
+`;
+    const result = parseManifestSource(source, 'capsule.mjs');
+    expect(result).not.toBeNull();
+    expect(result!.componentKeys).toEqual(['DataTable']);
   });
 });
