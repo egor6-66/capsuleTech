@@ -624,7 +624,9 @@ describe('wrapComponent — kobalte-style raw-value onChange', () => {
     // Expose a trigger via data-testid so tests can fire the handler manually
     return (
       <div
+        role="button"
         data-testid="select"
+        onKeyDown={() => {}}
         onClick={() => {
           // Simulate kobalte: calls onChange with raw string value
           props.onChange?.('developer');
