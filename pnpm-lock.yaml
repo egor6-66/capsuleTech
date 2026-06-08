@@ -284,6 +284,9 @@ importers:
       '@capsuletech/web-router':
         specifier: workspace:*
         version: link:../../packages/web/router
+      '@capsuletech/web-shell':
+        specifier: workspace:*
+        version: link:../../packages/web/shell
       '@capsuletech/web-state':
         specifier: workspace:*
         version: link:../../packages/web/state
