@@ -16,10 +16,11 @@
  *   authed.onInit → /workspace/home   (после входа — в shell-воркспейс)
  *
  * Контекст (user-данные в context.data, read через `useCtx().store.ctx.data.X`):
- *   viewer: { role } | null — текущий вьювер; null = гость.
+ *   viewer: Entities.Viewer.Row | null — текущий вьювер; null = гость.
+ *   Тип — глобал `Entities.Viewer.Row` (codegen $infer), без импорта.
  */
 
-type AppCtx = { viewer: { role: string } | null };
+type AppCtx = { viewer: Entities.Viewer.Row | null };
 
 const App = Feature<Auth.Login.Events, AppCtx>(({ router, utils }) => ({
   initial: 'guest',
