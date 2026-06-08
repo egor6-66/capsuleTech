@@ -669,11 +669,31 @@ type IFixedHandlers<TCtx> = {
  * Структурная совместимость сохранена (все ключи `IBaseStateHandlers` присутствуют).
  *
  * Generic `TCtx` — тип `context` из `schema.context`. Default `any` — backward-compat.
+ *
+ * Используется в ОТКРЫТОЙ форме (без TEvents). Index-signature разрешает произвольные
+ * имена методов — backward-compat для app-кода без typed events.
  */
 export interface IStateHandlers<TCtx = any> extends IFixedHandlers<TCtx> {
   /** пользовательские методы (для приёма от next()) */
   [methodName: string]: ((api: IHandlerApi<TCtx>) => any) | undefined;
 }
+
+/**
+ * Per-state handlers для ЗАКРЫТОЙ формы (typed events).
+ *
+ * Аналог `IStateHandlers`, но **без** index-signature — иначе contextual typing
+ * `target.payload` убивается (index sig принуждает TS выводить наименее конкретный
+ * общий тип). Вместо index-sig: `IFixedHandlers<TCtx>` (фиксированные DOM/lifecycle)
+ * плюс mapped union `{ [K in keyof TEvents]?: (api: IHandlerApi<TCtx, TEvents[K]>) => any }`.
+ *
+ * Итог: внутри состояния в closed-форме:
+ *   - `onClick`, `onInit`, `onExit` и др. из IFixedHandlers — сохраняют типизацию TCtx;
+ *   - `onLogin`, `onDrop` и др. из TEvents — `target.payload` типизирован по событию;
+ *   - произвольные строковые ключи НЕ разрешены (всё должно быть в TEvents).
+ */
+type IStateHandlersClosed<TCtx, TEvents> = IFixedHandlers<TCtx> & {
+  [K in keyof TEvents]?: (api: IHandlerApi<TCtx, TEvents[K]>) => any;
+};
 
 /**
  * Lifecycle + error-хэндлеры верхнего уровня — общие для open и closed форм.
@@ -764,7 +784,14 @@ type IDefineStateSchemaClosed<TCtx, TEvents> = ITopLevelLifecycle<TCtx> &
     initial?: string;
     /** User context — типизируется TCtx. */
     context?: TCtx;
-    states?: Record<string, IStateHandlers<TCtx>>;
+    /**
+     * Per-state handlers — ЗАКРЫТАЯ форма.
+     * Использует `IStateHandlersClosed<TCtx, TEvents>` вместо `IStateHandlers<TCtx>`,
+     * чтобы typed-event handlers (из TEvents) внутри состояния получали типизированный
+     * `target.payload` — так же, как top-level handlers в той же закрытой схеме.
+     * Index-signature намеренно отсутствует (см. комментарий к IStateHandlersClosed).
+     */
+    states?: Record<string, IStateHandlersClosed<TCtx, TEvents>>;
   } & {
     [K in keyof TEvents]?: (api: IHandlerApi<TCtx, TEvents[K]>) => any;
   };
