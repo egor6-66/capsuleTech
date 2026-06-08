@@ -123,7 +123,56 @@ type _OpenSchemaContext = IDefineStateSchema<{ count: number }>['context'];
 type _OpenSchemaContextCheck = Expect<Equal<_OpenSchemaContext, { count: number } | undefined>>;
 
 // ---------------------------------------------------------------------------
-// 6. ITarget.source доступен в рантайм-паттерне (через useEmit partial)
+// 6. Per-state typed payload в ЗАКРЫТОЙ форме (основной предмет исправления).
+//
+//    Проблема: states?: Record<string, IStateHandlers<TCtx>> использовал
+//    открытую форму IStateHandlers с index-sig → payload = unknown внутри стейта.
+//    Исправление: IStateHandlersClosed<TCtx, TEvents> без index-sig.
+//
+//    Верифицируем:
+//    a) handler onLogin ВНУТРИ стейта получает payload с user (не unknown)
+//    b) onClick ВНУТРИ стейта (IFixedHandlers) сохраняет типизацию TCtx
+//    c) handler ОДНОГО события может быть объявлен и на top-level, и в стейте
+//       (runtime: state-first → top-level; типы не конфликтуют)
+// ---------------------------------------------------------------------------
+
+type IAuthEvents = { onLogin: { user: string; token: string } };
+type IAuthCtx = { loading: boolean };
+type ClosedAuthSchema = IDefineStateSchema<IAuthCtx, IAuthEvents>;
+
+// a) per-state payload: states.guest.onLogin → target.payload typed
+type _GuestStateHandlers = NonNullable<ClosedAuthSchema['states']>[string];
+type _GuestOnLoginHandler = NonNullable<_GuestStateHandlers['onLogin']>;
+type _GuestOnLoginPayload = Parameters<_GuestOnLoginHandler>[0]['target']['payload'];
+type _GuestPayloadCheck = Expect<
+  Equal<_GuestOnLoginPayload, { user: string; token: string } | undefined>
+>;
+
+// b) onClick в стейте сохраняет типизацию TCtx (из IFixedHandlers<TCtx>)
+type _GuestOnClickHandler = NonNullable<_GuestStateHandlers['onClick']>;
+type _GuestOnClickCtx = Parameters<_GuestOnClickHandler>[0]['context'];
+type _GuestOnClickCtxCheck = Expect<Equal<_GuestOnClickCtx, IAuthCtx>>;
+
+// c) onLogin на top-level и в стейте — одинаковая сигнатура (не конфликтуют)
+type _TopLevelOnLoginHandler = NonNullable<ClosedAuthSchema['onLogin']>;
+type _TopLevelOnLoginPayload = Parameters<_TopLevelOnLoginHandler>[0]['target']['payload'];
+type _TopLevelPayloadCheck = Expect<
+  Equal<_TopLevelOnLoginPayload, { user: string; token: string } | undefined>
+>;
+// top-level и per-state payload-тип совпадают (Equal)
+type _TopVsStatePayloadConsistent = Expect<
+  Equal<_TopLevelOnLoginPayload, _GuestOnLoginPayload>
+>;
+
+// d) Backward-compat: open форма — states[string] по-прежнему IStateHandlers с index-sig
+type OpenAuthSchema = IDefineStateSchema<IAuthCtx>;
+type _OpenStateHandlers = NonNullable<OpenAuthSchema['states']>[string];
+// в open форме произвольный ключ присваивается (index-sig разрешён)
+type _OpenIndexSigCheck = _OpenStateHandlers extends { [k: string]: any } ? true : false;
+type _OpenIndexSigAssert = Expect<Equal<_OpenIndexSigCheck, true>>;
+
+// ---------------------------------------------------------------------------
+// 7. ITarget.source доступен в рантайм-паттерне (через useEmit partial)
 //    Тип-level: partial с source присваивается к Partial<ITarget>
 // ---------------------------------------------------------------------------
 
@@ -138,7 +187,7 @@ void _sourcePartial;
 // Vitest smoke-suite (type-level checks run at tsc typecheck time above)
 // ---------------------------------------------------------------------------
 
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 describe('typed-events — type contracts (ADR 032 Track #3)', () => {
   it('ITarget has source field (string | undefined)', () => {
@@ -153,5 +202,13 @@ describe('typed-events — type contracts (ADR 032 Track #3)', () => {
     // ITarget default = ITarget<unknown> — payload accepted as unknown
     const _: unknown = t.payload;
     void _;
+  });
+
+  it('per-state typed payload in closed form — type checks pass at compile time', () => {
+    // Type-level checks for section 6 run at tsc typecheck time (see _GuestPayloadCheck etc).
+    // This runtime-it exists solely so vitest sees the suite as non-empty.
+    // Если _GuestPayloadCheck / _GuestOnClickCtxCheck и другие проверки выше не скомпилились —
+    // tsc typecheck упадёт раньше, чем эта строчка выполнится в runtime.
+    expect(true).toBe(true);
   });
 });
