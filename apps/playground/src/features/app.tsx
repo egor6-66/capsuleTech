@@ -4,12 +4,13 @@
  * Монтируется RouterPlugin'ом в `__root` ВЫШЕ `<Outlet/>` → живёт один раз на
  * всё приложение, переживает все навигации (mount-once persist), держит вьювера.
  *
- * Ловит ИМЕНОВАННЫЕ события пакета авторизации (ADR 032, top-level → payload типизирован
- * через `Auth.Login.Events`):
- *   onLogin — Auth.Login сообщил об успешном входе → сохраняем вьювера, → authed.
- *   onError — ошибка входа → лог (позже toast).
+ * Ловит ИМЕНОВАННЫЕ события домена авторизации (ADR 032; payload типизирован через
+ * package-агрегат `Auth.Events` — все события пакета, не per-component):
+ *   onLogin (в guest)      — успешный вход → сохраняем вьювера, → authed.
+ *   onLoginError (в guest) — ошибка входа → лог (позже toast).
  *
- * Logout — клик с тегом 'logout' на authed-странице → чистим вьювера → guest.
+ * Logout — клик с тегом 'logout' на authed-странице → `authApi.logout()` (инжектированный
+ * action пакета чистит auth-сессию) + чистим вьювера → guest.
  *
  * Роутинг — через lifecycle `onInit` стейтов (guard):
  *   guest.onInit  → /login            (гость не видит приватные роуты)
@@ -22,7 +23,7 @@
 
 type AppCtx = { viewer: Entities.Viewer.Row | null };
 
-const App = Feature<Auth.Login.Events, AppCtx>(({ router, utils }) => ({
+const App = Feature<Auth.Events, AppCtx>(({ router, utils, authApi }) => ({
   initial: 'guest',
 
   context: {
@@ -48,6 +49,9 @@ const App = Feature<Auth.Login.Events, AppCtx>(({ router, utils }) => ({
       },
       onClick: ({ target, store, state }) => {
         if (utils.includes(target.meta?.tags ?? [], 'logout')) {
+          // auth — инжектированный action пакета web-auth (services injection spike):
+          // чистит auth-сессию пакета (defaultAuthSession), приходит первым аргументом.
+          auth?.logout();
           store.update({ viewer: null });
           state.set('guest');
         }

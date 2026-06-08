@@ -37,6 +37,13 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@capsuletech/testhub", "dev"],
       "port": 3100
+    },
+    {
+      "name": "playground-dev",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@capsuletech/playground", "dev"],
+      "port": 3050,
+      "autoPort": false
     }
   ]
 }
