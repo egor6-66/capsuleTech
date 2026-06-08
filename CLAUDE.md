@@ -159,9 +159,9 @@ Single-platform binary на Phase 1 (multi-platform — Phase 2 отдельны
 
 | Слой | Папка | Что это | Wrapper |
 |---|---|---|---|
-| **Entity** | `entities/` | Domain data layer: zod schema + defaults + meta. **БЕЗ UI**. Single source of truth для сущностей (User, Product, Order). Возвращает plain config (не component). | `Entity((z) => ({ schema, defaults? }))` |
+| **Entity** | `entities/` | Domain data layer: zod schema + defaults + meta. **БЕЗ UI**. Single source of truth для сущностей (User, Product, Order). Возвращает plain config (не component). | `Entity(({ zod }) => ({ schema, defaults? }))` |
 | **View** | `views/` | Stateless UI в виде JSX. Только Solid JSX + `data-meta`. Не знает про XState, API, router. | `View((Ui, props?) => JSX)` |
-| **Shape** | `shapes/` | **Presentation**: как нарисовать сущность через batch-template (`Ui.DataTable`, `Ui.List`). Ссылается на Entity для schema/defaults. | `Shape((z, ui) => ({ schema, defaults?, as?, ...extras }))` |
+| **Shape** | `shapes/` | **Presentation**: как нарисовать сущность через batch-template (`Ui.DataTable`, `Ui.List`). Ссылается на Entity для schema/defaults. **Two-phase (ADR 036):** фаза-1 bind `(ui, { zod }) => ({ schema, as })`, фаза-2 config `(ui, props) => ({ ...config })`. | `Shape((ui, { zod }) => ({ schema, as }), (ui, props) => ({ ...config }))` |
 | **Controller** | `controllers/` | Поведение на FSM-схеме. Через Proxy перехватывает `onClick`/`onInput` у потомков. | `Controller((services) => ({ initial, states }))` |
 | **Feature** | `features/` | Domain logic / side effects. Только тут разрешены API. Валидирует через `Entities.X.schema.parse(...)`. | `Feature((services) => ({ initial, states }))` |
 | **Widget** | `widgets/` | Композиция View / Shape + Controller / Feature. Единственное место, где можно «склеивать». | `Widget((Ui, props?) => JSX)` |
@@ -194,12 +194,12 @@ Single-platform binary на Phase 1 (multi-platform — Phase 2 отдельны
 Структура namespace: **nested по структуре папок**. `widgets/forms/auth.tsx` → `Widgets.Forms.Auth`, `views/viewer/loginForm.tsx` → `Views.Viewer.LoginForm`. Папка = namespace-уровень, имя файла = leaf. **Не** flat (`Views.AuthLoginForm` — неправильно). Корневые файлы без папки: `views/hello.tsx` → `Views.Hello`.
 
 Полные сигнатуры (см. `packages/web/core/src/wrappers/interfaces.ts`):
-- `Entity((z) => ({ schema, defaults? }))` — plain config, без UI. `Entities` global registry.
-- `View((Ui, props?) => JSX)` — `Shapes`/`Views`/`Entities` доступны как глобалы.
+- `Entity(({ zod }) => ({ schema, defaults? }))` — plain config, без UI. `zod` инжектится объектом (tool-injection). `Entities` global registry.
+- `View((Ui, props?) => JSX)` — `Shapes`/`Views`/`Entities` доступны как глобалы. **БЕЗ тулз** (zod/utils не инжектятся в UI-слои).
 - `Widget((Ui, props?) => JSX)` — `Views`/`Shapes`/`Controllers`/`Features`/`Entities` доступны как глобалы.
 - `Page((Ui, props?) => JSX)` — `Widgets` доступны как глобал.
-- `Shape((z, ui) => ({ schema, defaults?, as?, ...extras }))` — `Views`/`Entities` доступны как глобалы. Batch flow: Shape passes data + extras в `as` template.
-- `Controller((services) => schema)`, `Feature((services) => schema)` — `Entities` доступны для validation.
+- `Shape((ui, { zod }) => ({ schema, as }), (ui, props) => ({ ...config }))` — **two-phase (ADR 036)**: фаза-1 bind (schema + `as`-template), фаза-2 config (маппинг props → props template'а). `Views`/`Entities` доступны как глобалы.
+- `Controller(({ ...services }) => schema)`, `Feature(({ router, utils, ...pkgApi }) => schema)` — services инжектятся объектом (деструктуризация: `router`/`utils`/`<pkg>Api`). `Entities` доступны для validation.
 
 Типы слотов живут в `CapsuleSlots` (`.capsule/@types/slots.d.ts`, генерится `ExportGeneratorPlugin`'ом). Каждое property типизировано как `typeof import('@<layer>/...').default` — Ctrl+Click ведёт в источник.
 

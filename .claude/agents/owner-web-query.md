@@ -19,7 +19,7 @@ You are the **owner of `@capsuletech/web-query`** — декларативный
 packages/web/query/
 ├── src/
 │   ├── index.ts            barrel: createApi, createQueryClient, defineEndpoint, errors, mw, compose, типы
-│   ├── endpoint.ts         defineEndpoint((z) => config) — фабрика endpoint'а
+│   ├── endpoint.ts         defineEndpoint(({ zod }) => config) — фабрика endpoint'а
 │   ├── pipeline.ts         compose() koa-style + ApiContext тип + Middleware
 │   ├── errors.ts           ApiError + 9 наследников (Unauthorized/Forbidden/NotFound/Conflict/Server/Network/Timeout/Validation/Http)
 │   ├── middleware/
@@ -41,13 +41,13 @@ packages/web/query/
 ## Public API контракт (детальный — в api-middleware.md)
 
 ```ts
-// 1. Declare endpoint (один файл = все методы entity, БЕЗ импортов — Vite-plugin auto-imports z + defineEndpoint)
+// 1. Declare endpoint (один файл = все методы entity, БЕЗ импортов — Vite-plugin инжектит zod объектом + auto-imports defineEndpoint)
 // apps/<app>/src/endpoints/user.ts
-export const get = defineEndpoint((z) => ({
+export const get = defineEndpoint(({ zod }) => ({
   method: 'GET',
   path: '/users/:id',
-  request:  z.object({ id: z.string() }),
-  response: z.object({ id: z.string(), email: z.string(), createdAt: z.string() }),
+  request:  zod.object({ id: zod.string() }),
+  response: zod.object({ id: zod.string(), email: zod.string(), createdAt: zod.string() }),
   map: (dto) => ({ ...dto, createdAt: new Date(dto.createdAt) }),
   // optional: base, staleTime, middleware
 }));

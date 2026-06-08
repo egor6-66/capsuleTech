@@ -15,19 +15,23 @@ export type IHeaderProps = ParentProps<{
  * Shell.Header.Navigation — батч-контейнер, Shape-совместимый (тот же контракт,
  * что ui.Group: data + item + orientation + variant).
  *
- * Использовать в Shape:
+ * Использовать в Shape (ADR 036, two-phase):
  * ```ts
- * Shape((z, ui) => ({
- *   schema: z.array(z.object({ label: z.string(), to: z.string() })),
- *   defaults: [{ label: 'Dashboard', to: '/dashboard' }],
- *   as: Shell.Header.Navigation,
- *   item: {
- *     use: ui.Button,
- *     props: (i) => ({ as: ui.Link, to: i.to, children: i.label, variant: 'outline', size: 'sm' }),
- *   },
- *   orientation: 'horizontal',
- *   variant: 'attached',
- * }))
+ * Shape(
+ *   (ui, { zod }) => ({
+ *     schema: zod.array(zod.object({ label: zod.string(), to: zod.string() })),
+ *     as: Shell.Header.Navigation,
+ *   }),
+ *   (ui, props) => ({
+ *     data: props.data,
+ *     item: {
+ *       use: ui.Button,
+ *       props: (i) => ({ as: ui.Link, to: i.to, children: i.label, variant: 'outline', size: 'sm' }),
+ *     },
+ *     orientation: 'horizontal',
+ *     variant: 'attached',
+ *   }),
+ * )
  * ```
  *
  * Extends IGroupProps — форвардит все батч-props в ui.Group.
