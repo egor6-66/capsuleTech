@@ -98,8 +98,18 @@ export const renderCell = (
     // its own scroll container) also shares the same context.
     // Scroll is delegated entirely to the inner div (innerClass above); the outer
     // stays a clean `relative` container so DragBadge's z-30 wins globally.
+    //
+    // vt-route-content: marks this element as the named View Transition region
+    // "capsule-content" (defined in @capsuletech/web-style/index.css).
+    // Applied only to cell.id='main' — the single content region per shell —
+    // ensuring view-transition-name uniqueness as required by the native API.
+    // The class is inert when View Transitions are disabled (no-op CSS property).
     return (
-      <Dynamic component={tag} ref={cellRef} class="h-full w-full relative">
+      <Dynamic
+        component={tag}
+        ref={cellRef}
+        class={`h-full w-full relative${isMain ? ' vt-route-content' : ''}`}
+      >
         {/* Inner scroll wrapper; pointer-events-none during drag prevents hover leaking
             into cell content (table row hover, map hover, etc.).
             DnD ref lives on the outer wrapper so elementFromPoint() always hits it. */}
@@ -128,11 +138,13 @@ export const renderCell = (
   }
 
   const isMain = cell.id === 'main';
+  // vt-route-content: named View Transition region "capsule-content" (web-style/index.css).
+  // Applied only to the main cell — ensures uniqueness of view-transition-name in the DOM.
   return (
     <Dynamic
       component={tag}
       ref={cellRef}
-      class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative`}
+      class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative${isMain ? ' vt-route-content' : ''}`}
     >
       <div class="absolute inset-0 overflow-auto">
         <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
