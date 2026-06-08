@@ -1750,10 +1750,11 @@ describe('generatePackagesTypes — package with multiple componentKeys', () => 
     expect(out).toContain('namespace VirtualTable {');
   });
 
-  it('emits type Events for each component', () => {
+  it('emits type Events for each component plus one package-level aggregate', () => {
+    // 2 components → 2 per-component Events + 1 package-level aggregate = 3 total
     const out = generatePackagesTypes(entries);
     const count = (out.match(/type Events = /g) ?? []).length;
-    expect(count).toBe(2);
+    expect(count).toBe(3);
   });
 });
 
@@ -1803,6 +1804,155 @@ describe('generatePackagesTypes — Events type uses __events infer pattern (web
     expect(out).toContain('__events?: infer E');
     expect(out).toContain('NonNullable<E>');
     expect(out).toContain(': never');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generatePackagesTypes — package-level Events aggregate (intersection)
+// ---------------------------------------------------------------------------
+
+describe('generatePackagesTypes — package-level Events aggregate (single component)', () => {
+  // Single-component package: Auth with Login component.
+  // Auth.Events should equal the events of Login.
+  const entries = [pkgEntry('@capsuletech/web-auth', 'Auth', undefined, ['Login'])];
+
+  it('emits package-level type Events inside namespace Auth', () => {
+    const out = generatePackagesTypes(entries);
+    expect(out).toContain('namespace Auth {');
+    expect(out).toContain('type Events =');
+  });
+
+  it('aggregate uses {} fallback (not never) for components without __events', () => {
+    const out = generatePackagesTypes(entries);
+    // The aggregate part for Login must use `: {}` not `: never`
+    expect(out).toMatch(/\? NonNullable<E> : \{\}/);
+  });
+
+  it('aggregate does NOT use : never (would collapse intersection to never)', () => {
+    const out = generatePackagesTypes(entries);
+    // The package-level Events line must NOT end with `: never`
+    // (per-component namespaces below do, but the aggregate type line itself should not)
+    const lines = out.split('\n');
+    const aggregateLine = lines.find(
+      (l) => l.includes('type Events =') && !l.includes('namespace'),
+    );
+    expect(aggregateLine).toBeDefined();
+    // The aggregate line uses `? NonNullable<E> : {}`, not `: never`
+    expect(aggregateLine).not.toMatch(/: never;$/);
+  });
+
+  it('package-level Events appears before per-component namespace Login', () => {
+    const out = generatePackagesTypes(entries);
+    const eventsIdx = out.indexOf('type Events =');
+    const loginNsIdx = out.indexOf('namespace Login {');
+    expect(eventsIdx).toBeGreaterThanOrEqual(0);
+    expect(loginNsIdx).toBeGreaterThanOrEqual(0);
+    expect(eventsIdx).toBeLessThan(loginNsIdx);
+  });
+
+  it('per-component Login.Events still emitted (granularity preserved)', () => {
+    const out = generatePackagesTypes(entries);
+    expect(out).toContain('namespace Login {');
+    // Per-component uses : never (per spec)
+    expect(out).toContain(': never;');
+  });
+
+  it('has balanced braces', () => {
+    const out = generatePackagesTypes(entries);
+    const opens = (out.match(/\{/g) ?? []).length;
+    const closes = (out.match(/\}/g) ?? []).length;
+    expect(opens).toBe(closes);
+  });
+});
+
+describe('generatePackagesTypes — package-level Events aggregate (multiple components, intersection)', () => {
+  // Multi-component package: Shell with Header, LocalePicker, ModeToggle, ThemePicker, Matrix.
+  // Shell.Events = (…Header extends…? NonNullable<E>:{}) & (…LocalePicker…) & …
+  const entries = [
+    pkgEntry('@capsuletech/web-shell', 'Shell', undefined, [
+      'Header',
+      'LocalePicker',
+      'ModeToggle',
+      'ThemePicker',
+      'Matrix',
+    ]),
+  ];
+
+  it('emits package-level type Events as intersection of all 5 components', () => {
+    const out = generatePackagesTypes(entries);
+    const lines = out.split('\n');
+    const aggregateLine = lines.find(
+      (l) => l.includes('type Events =') && !l.includes('namespace'),
+    );
+    expect(aggregateLine).toBeDefined();
+    // Must contain all 5 component keys
+    for (const comp of ['Header', 'LocalePicker', 'ModeToggle', 'ThemePicker', 'Matrix']) {
+      expect(aggregateLine).toContain(JSON.stringify(comp));
+    }
+  });
+
+  it('aggregate line contains & intersections between components', () => {
+    const out = generatePackagesTypes(entries);
+    const lines = out.split('\n');
+    const aggregateLine = lines.find(
+      (l) => l.includes('type Events =') && !l.includes('namespace'),
+    );
+    expect(aggregateLine).toBeDefined();
+    // 5 components → 4 & separators
+    const ampCount = (aggregateLine!.match(/ & /g) ?? []).length;
+    expect(ampCount).toBe(4);
+  });
+
+  it('each component in aggregate uses {} fallback (not never)', () => {
+    const out = generatePackagesTypes(entries);
+    const lines = out.split('\n');
+    const aggregateLine = lines.find(
+      (l) => l.includes('type Events =') && !l.includes('namespace'),
+    );
+    expect(aggregateLine).toBeDefined();
+    // Should NOT contain `: never` anywhere in the aggregate line
+    expect(aggregateLine).not.toContain(': never');
+    // Should contain `: {}` fallback
+    expect(aggregateLine).toContain(': {}');
+  });
+
+  it('per-component namespaces for all 5 components are still present', () => {
+    const out = generatePackagesTypes(entries);
+    for (const comp of ['Header', 'LocalePicker', 'ModeToggle', 'ThemePicker', 'Matrix']) {
+      expect(out).toContain(`namespace ${comp} {`);
+    }
+  });
+
+  it('output has exactly 5 per-component Events declarations', () => {
+    const out = generatePackagesTypes(entries);
+    // Per-component events use : never; — count those
+    const perCompCount = (out.match(/: never;/g) ?? []).length;
+    expect(perCompCount).toBe(5);
+  });
+
+  it('has balanced braces', () => {
+    const out = generatePackagesTypes(entries);
+    const opens = (out.match(/\{/g) ?? []).length;
+    const closes = (out.match(/\}/g) ?? []).length;
+    expect(opens).toBe(closes);
+  });
+});
+
+describe('generatePackagesTypes — package-level Events aggregate comment', () => {
+  it('emits inline comment referencing per-component escape-hatch', () => {
+    const entries = [pkgEntry('@capsuletech/web-auth', 'Auth', undefined, ['Login'])];
+    const out = generatePackagesTypes(entries);
+    // Comment should mention per-component granularity
+    expect(out).toContain('Auth.Comp.Events');
+  });
+});
+
+describe('generatePackagesTypes — package without componentKeys has no Events aggregate (no regression)', () => {
+  it('does NOT emit package-level type Events when no componentKeys', () => {
+    const entries = [pkgEntry('@capsuletech/web-map', 'Maps')];
+    const out = generatePackagesTypes(entries);
+    expect(out).not.toContain('type Events');
+    expect(out).not.toContain('namespace Maps');
   });
 });
 

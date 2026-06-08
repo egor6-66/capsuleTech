@@ -16,6 +16,7 @@ import type {
 } from '../wrappers/interfaces';
 import { ControllerProxy } from './controller-proxy';
 import { Context, useCtx } from './ctx';
+import { getPackageServices } from './package-services';
 import { bindEvents } from './ui-proxy';
 import { createEmit } from './use-emit';
 
@@ -32,10 +33,15 @@ export const createLogicWrapper =
       // Feature получает `api` (typed proxy из createApi) дополнительно. Controller
       // — только `router`: compliance запрещает IO в Controller'е, а api именно про IO.
       // z и utils — capabilities, инжектируются в оба слоя (Controller и Feature).
+      //
+      // Пакетные services (web-auth, web-dnd, …) добавляются через спред
+      // getPackageServices(): { [namespace]: services }. Базовые поля идут ПЕРВЫМИ,
+      // зарегистрированные namespace'ы — ПОСЛЕ, что гарантирует: пакет не может
+      // перезаписать router / api / zod / utils (namespace'ы по контракту уникальны).
       const services: IServices =
         kind === 'feature'
-          ? { router, api: getApiClient(), zod: Zod, utils: Utils }
-          : { router, zod: Zod, utils: Utils };
+          ? { ...getPackageServices(), router, api: getApiClient(), zod: Zod, utils: Utils }
+          : { ...getPackageServices(), router, zod: Zod, utils: Utils };
 
       const schema = defineStateSchema(services);
 

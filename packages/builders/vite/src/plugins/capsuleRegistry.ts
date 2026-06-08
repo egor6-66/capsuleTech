@@ -619,12 +619,32 @@ export const generatePackagesTypes = (entries: ResolvedPackageEntry[]): string =
     lines.push('  }');
   }
 
-  // Events namespace augmentation: namespace <Global> { namespace <Comp> { type Events } }
+  // Events namespace augmentation: namespace <Global> { type Events; namespace <Comp> { type Events } }
   // Merges with the const <Global> declaration above (value+type merge in declare global).
-  // Components without __events marker produce Events = never (harmless).
+  //
+  // Package-level <Pkg>.Events is an intersection of all component event types:
+  //   type Events = (…Login extends { __events?: infer E } ? NonNullable<E> : {}) & (…Register…) & …
+  //
+  // NOTE: the aggregate uses `{}` (not `never`) when a component has no __events — otherwise the
+  // intersection collapses to `never` and the whole type becomes useless. Per-component namespace
+  // blocks (Pkg.Comp.Events) keep `: never` because there they are standalone and harmlessness holds.
+  //
+  // Collision note: if two components declare an event with the same name but different payload,
+  // the intersection narrows the payload to the intersection of both payloads. Use per-component
+  // Pkg.Comp.Events as an escape-hatch when you need to handle a component-specific overload.
   const componentEntries = entries.filter((e) => e.componentKeys && e.componentKeys.length > 0);
   for (const { pkg, globalName, componentKeys } of componentEntries) {
     lines.push(`  namespace ${globalName} {`);
+
+    // Package-level aggregate: intersection of all component __events (using {} for no-events to avoid collapsing).
+    const aggregateParts = componentKeys!.map(
+      (compKey) =>
+        `(typeof import('${pkg}/capsule')['default']['components'])[${JSON.stringify(compKey)}] extends { __events?: infer E } ? NonNullable<E> : {}`,
+    );
+    lines.push(`    // Aggregate of all component events. Use ${globalName}.Comp.Events for per-component granularity.`);
+    lines.push(`    type Events = ${aggregateParts.join(' & ')};`);
+
+    // Per-component namespace blocks (granularity + collision escape-hatch).
     for (const compKey of componentKeys!) {
       lines.push(`    namespace ${compKey} {`);
       lines.push(

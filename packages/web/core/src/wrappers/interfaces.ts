@@ -830,7 +830,49 @@ export type IDefineStateSchema<
   ? IDefineStateSchemaOpen<TCtx>
   : IDefineStateSchemaClosed<TCtx, TEvents>;
 
-export interface IServices {
+/**
+ * Augmentable interface для пакетных services.
+ *
+ * Доменные пакеты (web-auth, web-dnd, …) расширяют этот интерфейс через
+ * TypeScript module augmentation, чтобы поля, зарегистрированные через
+ * `registerPackageServices(namespace, obj)`, получили строгую типизацию
+ * в factory-телах Controller/Feature:
+ *
+ * ```ts
+ * // В @capsuletech/web-auth:
+ * import '@capsuletech/web-core';
+ *
+ * declare module '@capsuletech/web-core' {
+ *   interface CapsuleServices {
+ *     auth: {
+ *       login: (credentials: ICredentials) => Promise<IAuthToken>;
+ *       logout: () => Promise<void>;
+ *     };
+ *   }
+ * }
+ * ```
+ *
+ * После этого в любом Feature/Controller приложения:
+ * ```ts
+ * Feature((services) => ({
+ *   states: {
+ *     idle: {
+ *       async onSubmit({ target }) {
+ *         const token = await services.auth.login(target.value);
+ *         // ^^^^^^ типизировано без импорта типов web-auth
+ *       },
+ *     },
+ *   },
+ * }));
+ * ```
+ *
+ * Пустой fallback ({}): пакеты добавляют поля через merging,
+ * конфликтов с базовыми полями IServices нет по контракту namespace'ов.
+ */
+// biome-ignore lint/suspicious/noEmptyInterface: intentional augmentation point
+export interface CapsuleServices {}
+
+export interface IServices extends CapsuleServices {
   router: ICapsuleRouter;
   /**
    * Typed API — собран `createApi(...)` из endpoints. Инжектится ТОЛЬКО в Feature
