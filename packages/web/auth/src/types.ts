@@ -10,6 +10,8 @@
  * от @capsuletech/shared-zod, валидация ответа возможна через `schema.parse`).
  */
 
+import type { JSX } from 'solid-js';
+
 // ─── Session ─────────────────────────────────────────────────────────────────
 
 /** Статус auth-FSM (generic-флоу, параметризуется стратегией). */
@@ -31,6 +33,23 @@ export interface IAuthSession {
   token: string | null;
   user: IAuthUser | null;
   status: AuthStatus;
+}
+
+/**
+ * Контракт session-store (реализован в /session, объявлен здесь чтобы
+ * избежать циклического импорта types ↔ session).
+ *
+ * Реализация `createAuthSession` / `defaultAuthSession` — в `@capsuletech/web-auth/session`.
+ */
+export interface IAuthSessionStore {
+  /** Реактивное состояние сессии. */
+  readonly session: IAuthSession;
+  /** Установить сессию после успешного логина. */
+  login(token: string, user: IAuthUser): void;
+  /** Сбросить сессию при логауте. */
+  logout(): void;
+  /** Установить промежуточный статус (submitting/error). */
+  setStatus(status: AuthStatus): void;
 }
 
 // ─── Login-контракт (граница пакет ↔ backend) ─────────────────────────────────
@@ -85,5 +104,89 @@ export interface IAuthStrategy<TInput = Record<string, unknown>> {
 export interface IAuthEvents {
   onLogin: { token: string; user: IAuthUser };
   onLogout: Record<string, never>;
-  onError: { message: string };
+  onLoginError: { message: string };
 }
+
+// ─── Публичный props-контракт Auth.Login (discriminated union) ─────────────────
+
+/**
+ * Брендинг и общие props Auth.Login — не зависят от стратегии.
+ *
+ * Апп передаёт только данные-пропсы. `Ui` отсутствует: форма построена
+ * на web-core `View`, который подхватывает Ui-kit автоматически из
+ * ближайшего Controller-scope (AuthFsm) через UiProxy.
+ */
+export interface IAuthBranding {
+  /** Заголовок формы. @default 'Вход' */
+  title?: string;
+  /** Подзаголовок формы (опционально). */
+  subtitle?: string;
+  /** Текст кнопки. @default 'Войти' */
+  submitLabel?: string;
+  /** Сноска внизу формы (брендинг аппа). */
+  footerNote?: string;
+  /**
+   * Session-store. Дефолт — `defaultAuthSession` (singleton memory).
+   * Апп передаёт кастомный store если нужен localStorage или изолированный root.
+   */
+  sessionStore?: IAuthSessionStore;
+  /** Overrides для ControllerProxy name-mapping. */
+  overrides?: Record<string, string>;
+  /** Кастомная форма (заменяет встроенную). */
+  children?: JSX.Element;
+}
+
+/**
+ * Публичный props-тип `Auth.Login` — discriminated union по `type`.
+ *
+ * Стратегия = дискриминатор; поля типизируются от него.
+ * Апп передаёт только данные (roles, defaultRole) — никаких импортов билдеров.
+ *
+ * @example
+ * ```tsx
+ * // Ноль импортов в app — только данные-пропсы:
+ * <Auth.Login
+ *   type="role"
+ *   roles={[{ value: 'developer', label: 'Developer' }, { value: 'support', label: 'Support' }]}
+ *   title="Вход"
+ * />
+ * ```
+ */
+export type IAuthLoginProps =
+  | ({
+      /** Стратегия входа по роли: Select(role) + Input(password). */
+      type: 'role';
+      /** Список ролей для Select. НЕ хардкод в пакете — апп задаёт. */
+      roles: ReadonlyArray<{ value: string; label: string }>;
+      /** Дефолтная роль. @default первая роль из `roles` */
+      defaultRole?: string;
+      /** Метка поля роли в Select. @default 'Роль' */
+      roleLabel?: string;
+      /** Метка поля пароля. @default 'Пароль' */
+      passwordLabel?: string;
+    } & IAuthBranding)
+  | ({
+      /**
+       * Стратегия по логину+паролю.
+       * TODO: реализовать в следующей итерации.
+       */
+      type: 'credentials';
+      // TODO arms — fields for login/password form
+    } & IAuthBranding)
+  | ({
+      /**
+       * Стратегия через OAuth 2.0 (redirect/PKCE).
+       * Провайдер/redirect — config-driven props аппа (air-gapped, НЕ хардкод URL).
+       * TODO: реализовать в следующей итерации.
+       */
+      type: 'oauth2';
+      // TODO arms — provider config, redirect URI via props
+    } & IAuthBranding)
+  | ({
+      /**
+       * Стратегия через QR-код (polling за подтверждением скана).
+       * TODO: реализовать в следующей итерации.
+       */
+      type: 'qr';
+      // TODO arms — polling interval, QR endpoint via props
+    } & IAuthBranding);

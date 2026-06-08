@@ -9,11 +9,11 @@
  */
 const MOCK_LATENCY_MS = 200;
 
-export const list = defineEndpoint((z) => ({
+export const list = defineEndpoint(({ zod }) => ({
   method: 'GET',
   path: '/incidents',
-  request: z.object({}),
-  response: z.array(Entities.Incident.schema),
+  request: zod.object({}),
+  response: zod.array(Entities.Incident.schema),
   // Мок только когда __CAPSULE_MOCKS__ (build-time флаг). В реальной сборке
   // (без флага) preRequest = undefined → endpoint идёт в сеть на `/api/incidents`.
   preRequest: __CAPSULE_MOCKS__

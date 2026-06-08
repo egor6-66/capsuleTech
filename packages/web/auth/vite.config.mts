@@ -8,7 +8,7 @@ export default libConfig({
     oauth2: 'src/oauth2/index.ts',
     qr: 'src/qr/index.ts',
     session: 'src/session/index.ts',
-    controllers: 'src/controllers/index.ts',
+    controllers: 'src/controllers/index.tsx',
     ui: 'src/ui/index.ts',
     capsule: 'src/capsule.ts',
   },

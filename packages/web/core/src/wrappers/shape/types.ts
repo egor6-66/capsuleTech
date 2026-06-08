@@ -1,3 +1,4 @@
+import type { Zod as ZodNamespace } from '@capsuletech/shared-zod';
 import type { Component, ValidComponent } from 'solid-js';
 import type { ZodArray, ZodType, ZodTypeAny, z as zod } from 'zod';
 import type { IViewUiRaw } from '../interfaces';
@@ -73,6 +74,14 @@ export type ApplyRowFrom<A, R> =
 // ---------------------------------------------------------------------------
 
 /**
+ * Объект инструментов, инжектируемых во второй аргумент bind-функции Shape.
+ */
+export interface IShapeTools {
+  /** Capsule-расширенный Zod namespace. Идентичен глобалу `Zod` из shared-zod. */
+  zod: typeof ZodNamespace;
+}
+
+/**
  * Результат bind-функции (arg1). Содержит schema + as шаблон.
  * Batch-дескриптор (`item`) живёт в arg2 (config),
  * чтобы избежать sibling-инференс (item.props рядом со schema → it: any).
@@ -84,11 +93,12 @@ export interface IShapeBind<S extends ZodType = ZodType> {
 }
 
 /**
- * Bind-функция: принимает `ui` (path-tracker), возвращает `IShapeBind`.
+ * Bind-функция: принимает `ui` (path-tracker) и `tools: { zod }`, возвращает `IShapeBind`.
  * Вызывается на module-load — один раз.
  */
 export type IShapeBindFn<S extends ZodType = ZodType, A = unknown> = (
   ui: IShapeUi,
+  tools: IShapeTools,
 ) => IShapeBind<S> & { as?: A };
 
 // ---------------------------------------------------------------------------
@@ -179,24 +189,27 @@ export interface IShapeWrapper {
   // Возвращаемый компонент принимает: IShapeBaseProps (data/as) & ApplyRowFrom (itemPayload, getRowId, …).
   // RowOf<S> инлайнится напрямую — нет контравариантного R-generic.
   <S extends ZodType, A extends { readonly __tpl?: object }>(
-    bind: (ui: IShapeUi) => IShapeBind<S> & { as?: A },
-    config: IShapeConfigArg<ApplyRowFrom<A, RowOf<S>>, IShapeBaseProps<ShapeData<S>> & ApplyRowFrom<A, RowOf<S>>, S>,
+    bind: (ui: IShapeUi, tools: IShapeTools) => IShapeBind<S> & { as?: A },
+    config: IShapeConfigArg<
+      ApplyRowFrom<A, RowOf<S>>,
+      IShapeBaseProps<ShapeData<S>> & ApplyRowFrom<A, RowOf<S>>,
+      S
+    >,
   ): Component<IShapeBaseProps<ShapeData<S>> & ApplyRowFrom<A, RowOf<S>>>;
 
   // Перегрузка 2: только bind (без arg2), шаблон с маркером → consumer-props row-типизированы.
   <S extends ZodType, A extends { readonly __tpl?: object }>(
-    bind: (ui: IShapeUi) => IShapeBind<S> & { as?: A },
+    bind: (ui: IShapeUi, tools: IShapeTools) => IShapeBind<S> & { as?: A },
   ): Component<IShapeBaseProps<ShapeData<S>> & ApplyRowFrom<A, RowOf<S>>>;
 
   // Перегрузка 3: только bind без маркера (plain компонент, row-тип недоступен).
   <S extends ZodType>(
-    bind: (ui: IShapeUi) => IShapeBind<S>,
+    bind: (ui: IShapeUi, tools: IShapeTools) => IShapeBind<S>,
   ): IShapeComponent<ShapeData<S>>;
 
   // Перегрузка 4: bind без маркера + generic config (plain, без row-типизации).
   <S extends ZodType>(
-    bind: (ui: IShapeUi) => IShapeBind<S>,
+    bind: (ui: IShapeUi, tools: IShapeTools) => IShapeBind<S>,
     config: IShapeConfigArg<Record<string, unknown>, IShapeBaseProps<ShapeData<S>>, S>,
   ): IShapeComponent<ShapeData<S>>;
 }
-

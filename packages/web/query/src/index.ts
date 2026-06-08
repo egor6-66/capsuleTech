@@ -12,6 +12,7 @@ export { devOnly } from './devOnly';
 export type {
   Endpoint,
   EndpointConfig,
+  EndpointTools,
   InferInput,
   InferOutput,
   PreRequest,

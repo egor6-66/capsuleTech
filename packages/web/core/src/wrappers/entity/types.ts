@@ -1,4 +1,4 @@
-import type { ZodTypeAny } from '@capsuletech/shared-zod';
+import type { Zod as ZodNamespace, ZodTypeAny } from '@capsuletech/shared-zod';
 import type { z } from 'zod';
 
 /**
@@ -17,24 +17,30 @@ export interface IEntityDefinition<TSchema = unknown, TDefaults = unknown> {
 }
 
 /**
- * Фабрика Entity — функция без аргументов, возвращающая
+ * Объект инструментов, инжектируемых в Entity factory.
+ */
+export interface IEntityTools {
+  /** Capsule-расширенный Zod namespace. Идентичен глобалу `Zod` из shared-zod. */
+  zod: typeof ZodNamespace;
+}
+
+/**
+ * Фабрика Entity — функция, принимающая объект `{ zod }` и возвращающая
  * `IEntityDefinition`-совместимый объект.
- *
- * Zod-схема строится через глобал `Zod` (auto-import из `@capsuletech/shared-zod`).
  *
  * Generic `T` — тип возвращаемого definition. Используется wrapper'ом
  * чтобы пробросить структуру без потери информации о полях.
  */
-export type IEntityFactory<T extends IEntityDefinition> = () => T;
+export type IEntityFactory<T extends IEntityDefinition> = (tools: IEntityTools) => T;
 
 /**
  * Публичный тип wrapper-функции `Entity`.
  *
- * `Entity(() => ({ schema: Zod.array(...), defaults: [...] }))` возвращает
+ * `Entity(({ zod }) => ({ schema: zod.array(...), defaults: [...] }))` возвращает
  * plain config object с дополнительным phantom-полем `$infer`.
  *
- * Zod-схема строится через глобал `Zod` (auto-import из `@capsuletech/shared-zod`).
- * Аргумент `z` убран — factory теперь без параметров (breaking change).
+ * Инструменты инжектируются явно: `({ zod }) => ...` — без зависимости от AutoImport.
+ * Глобал `Zod` из auto-import тоже работает, но `{ zod }` — рекомендованный способ.
  *
  * Phantom `$infer` — **только тип**, рантайм его не создаёт.
  * Consumer использует `typeof Entities.X.$infer`:
@@ -56,5 +62,5 @@ export type IEntityWrapper = <
   TDefaults = unknown,
   T extends IEntityDefinition<TSchema, TDefaults> = IEntityDefinition<TSchema, TDefaults>,
 >(
-  factory: () => T,
+  factory: (tools: IEntityTools) => T,
 ) => T & { readonly $infer: z.infer<TSchema> };

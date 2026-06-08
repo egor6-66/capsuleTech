@@ -18,6 +18,7 @@
     "@capsuletech/web-ui": "workspace:*",
     "@capsuletech/web-query": "workspace:*",
     "@capsuletech/shared-zod": "workspace:*",
+    "@capsuletech/shared-utils": "workspace:*",
     "@capsuletech/vite-builder": "workspace:*",
     "@capsuletech/web-style": "workspace:*",
     "@capsuletech/web-intl": "workspace:*"

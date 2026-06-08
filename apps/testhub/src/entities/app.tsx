@@ -11,12 +11,12 @@
  * В сборке без моков `__CAPSULE_MOCKS__` → `false`, тернарник сворачивается в `[]`.
  * Реальные данные придут через `services.api.apps.list()` или Shape fetch'ер.
  */
-const App = Entity((z) => {
-  const schema = z.object({
-    name: z.string(),
-    base: z.string(),
-    url: z.string(),
-    deployedAt: z.string().nullable(),
+const App = Entity(({ zod }) => {
+  const schema = zod.object({
+    name: zod.string(),
+    base: zod.string(),
+    url: zod.string(),
+    deployedAt: zod.string().nullable(),
   });
 
   return {

@@ -7,18 +7,11 @@
  * engine-типы (`ICtx`, `IControllerHandle`) живут в `engine/ctx.ts`.
  */
 
+import type { Utils as UtilsNamespace } from '@capsuletech/shared-utils';
+import type { Zod as ZodNamespace } from '@capsuletech/shared-zod';
 import type { ICapsuleRouter } from '@capsuletech/web-router';
 import type { IBaseStateSchema, IBridge, IMachineContext } from '@capsuletech/web-state';
-import type {
-  Animate,
-  Button,
-  Card,
-  Field,
-  Group,
-  Input,
-  Layout,
-  List,
-} from '@capsuletech/web-ui';
+import type { Animate, Button, Card, Field, Group, Input, Layout, List } from '@capsuletech/web-ui';
 import type { Dropdown } from '@capsuletech/web-ui/dropdown';
 import type { DropdownMenu } from '@capsuletech/web-ui/dropdownMenu';
 import type { PreviewCard } from '@capsuletech/web-ui/previewCard';
@@ -581,6 +574,21 @@ export interface IStateApi {
 export type { IRegisteredComponent } from '@capsuletech/web-state';
 
 /**
+ * Тип функции `emit` в `IHandlerApi` и `IServices`.
+ *
+ * `emit(eventName, partial?)`:
+ *  - нормализует `partial` → полный `ITarget` (через `normalizeTarget`);
+ *  - диспатчит в СОБСТВЕННЫЙ контроллер: `ctx.controller[eventName](target, ctx.store.ctx)`;
+ *  - ControllerProxy резолвит `states[cur][eventName]` → top-level → `next()` автобаблинг.
+ *
+ * Определён в `wrappers/interfaces.ts` (не в engine), чтобы избежать circular import:
+ * engine/use-emit.ts импортирует этот тип, а не наоборот.
+ *
+ * ADR 032, фаза 1.
+ */
+export type EmitFn = (eventName: string, target?: Partial<ITarget>) => unknown;
+
+/**
  * Bubble-up функция:
  *  - `next()` — пассивный bubble к родителю; `target.payload` сохраняется (immutable),
  *    `target.from` сбрасывается в `undefined` (нет явного сигнала от этого уровня).
@@ -601,6 +609,34 @@ export interface IHandlerApi<TCtx = any, TPayload = unknown> {
   next: INext;
   state: IStateApi;
   store: IBridge;
+  /**
+   * Программный HCA-event dispatch в **собственный** контроллер.
+   *
+   * `emit(eventName, partial?)` → нормализует target → `ctx.controller[eventName](target, ctx.store.ctx)`
+   *
+   * ControllerProxy резолвит `states[cur][eventName]` → top-level → `next()` автобаблинг
+   * к родительской Feature/Controller — ровно как DOM-событие через UiProxy.
+   *
+   * Ключевой кейс: пакетный Controller эмитит именованное событие из async lifecycle
+   * (`onInit`/`onExit`), которое app-Feature ловит через свой handler (cross-boundary канал).
+   *
+   * @example
+   * ```ts
+   * Controller(({ api }) => ({
+   *   states: {
+   *     submitting: {
+   *       onInit: async ({ store, state, emit }) => {
+   *         const res = await api.auth.login(input);
+   *         emit('onLogin', { payload: { token: res.token } });
+   *       },
+   *     },
+   *   },
+   * }));
+   * ```
+   *
+   * ADR 032, фаза 1 (handler-API extension).
+   */
+  emit: EmitFn;
 }
 
 /** Расширение `IHandlerApi` для `schema.onError` — добавляет сам `error` + `method`. */
@@ -779,6 +815,37 @@ export interface IServices {
    * api.d.ts` → `services.api.user.get({ id })` корректно типизируется.
    */
   api?: CapsuleApi;
+  /**
+   * Программный HCA-event dispatch — доступен в factory-теле Controller/Feature.
+   *
+   * `emit` в `services` — удобный alias когда нужно сослаться на emit **на уровне
+   * factory** (вне конкретного handler'а). Например, чтобы передать его в helper или
+   * хранить ссылку. В большинстве случаев достаточно `emit` из `IHandlerApi`
+   * (приходит в каждый handler, event + lifecycle).
+   *
+   * `undefined` до первого рендера контроллера (factory вызывается до создания ctx).
+   * Замыкание обновляется реактивно — вызывать лениво (внутри handler'а), не на верхнем
+   * уровне factory.
+   *
+   * ADR 032, фаза 1.
+   */
+  emit?: EmitFn;
+  /**
+   * Capsule-расширенный Zod namespace (CapsuleZ). Инжектируется per-instance в
+   * factory тела Controller/Feature. Идентичен глобалу `Zod` (unplugin-auto-import),
+   * но доступен явно как capability — без зависимости от AutoImport.
+   *
+   * Пример: `zod.object({ email: zod.string().email() })`
+   */
+  zod: typeof ZodNamespace;
+  /**
+   * Curated utility surface (es-toolkit + gap-филлеры). Инжектируется per-instance
+   * в factory тела Controller/Feature. Идентичен глобалу `Utils` (unplugin-auto-import),
+   * но доступен явно как capability — без зависимости от AutoImport.
+   *
+   * Пример: `utils.includes(target.meta?.tags ?? [], 'logout')`
+   */
+  utils: typeof UtilsNamespace;
   [k: string]: any;
 }
 
@@ -857,11 +924,17 @@ export type IControllerWrapper = <TEvents = Record<never, never>, TCtx = any>(
 export type IFeatureWrapper = IControllerWrapper;
 
 // Re-export Entity types для удобства потребителей.
-export type { IEntityDefinition, IEntityFactory, IEntityWrapper } from './entity/types';
+export type {
+  IEntityDefinition,
+  IEntityFactory,
+  IEntityTools,
+  IEntityWrapper,
+} from './entity/types';
 // Re-export Shape types для удобства потребителей.
 export type {
   IShapeComponent,
   IShapeComponentProps,
+  IShapeTools,
   IShapeUi,
   IShapeWrapper,
   ShapeData,

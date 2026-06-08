@@ -8,14 +8,14 @@ import type { Component } from 'solid-js';
  *   - `label` / `icon` — презентация (icon = component-ref);
  *   - `w` / `h` — стартовый размер ноды на канвасе (px).
  */
-const NodeKind = Entity((z) => ({
-  schema: z.array(
-    z.object({
-      type: z.string(),
-      label: z.string(),
-      icon: z.custom<Component<{ class?: string }>>(),
-      w: z.number(),
-      h: z.number(),
+const NodeKind = Entity(({ zod }) => ({
+  schema: zod.array(
+    zod.object({
+      type: zod.string(),
+      label: zod.string(),
+      icon: zod.custom<Component<{ class?: string }>>(),
+      w: zod.number(),
+      h: zod.number(),
     }),
   ),
   defaults: [

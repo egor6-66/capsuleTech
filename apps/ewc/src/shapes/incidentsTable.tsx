@@ -2,7 +2,7 @@
  * IncidentsTable — батч-вид списка карточек происшествий через Tables.DataTable.
  *
  * Двухфазная форма (ADR 036):
- *  - bind: schema (`Zod.array(Entities.Incident.schema)`) + контейнер `Tables.DataTable`.
+ *  - bind: schema (`zod.array(Entities.Incident.schema)`) + контейнер `Tables.DataTable`.
  *  - config: row-зависимая презентация (columns/sorting/infinite/defaults).
  *    `row` в `accessorFn` типизируется автоматически из `__tpl` маркера
  *    `Tables.DataTable` — без ручных аннотаций.
@@ -11,8 +11,8 @@
  * Заменяются реальным списком когда подключим `services.api.incidents.list()`.
  */
 const IncidentsTable = Shape(
-  () => ({
-    schema: Zod.array(Entities.Incident.schema),
+  (_ui, { zod }) => ({
+    schema: zod.array(Entities.Incident.schema),
     as: Tables.DataTable,
   }),
   {

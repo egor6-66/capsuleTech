@@ -4,11 +4,9 @@
  *
  * Двухфазная сигнатура:
  *   Shape(
- *     (ui) => ({ schema, as, item? }),     // BIND
- *     (props) => ({ ...config })           // CONFIG (объект или функция)
+ *     (ui, { zod }) => ({ schema, as, item? }),  // BIND: ui — path-tracker, tools — { zod }
+ *     (ui, props) => ({ ...config })              // CONFIG (объект или функция)
  *   )
- *
- * BREAKING (v2): z убран из arg1 bind; config вынесен в arg2.
  *
  * Покрытие:
  *  1.  data array передаётся в as-template целиком
@@ -26,6 +24,7 @@
  *  13. shape без arg2 (только bind) — defaults из bind поля
  *  14. single-object schema (ZodObject) — data не array
  *  15. reactive data via signal
+ *  16. bind получает tools с { zod } — инжектированный zod работает
  */
 
 import { createSignal } from 'solid-js';
@@ -71,10 +70,9 @@ describe('Shape v2 — data passes through as array', () => {
   it('passes defaults array from config to template as `data` prop', () => {
     const { Template, getCapture } = makeCaptureTemplate('batch-1');
 
-    const MyShape = Shape(
-      (_ui) => ({ schema: z.array(z.string()), as: Template }),
-      { defaults: ['a', 'b', 'c'] },
-    );
+    const MyShape = Shape((_ui) => ({ schema: z.array(z.string()), as: Template }), {
+      defaults: ['a', 'b', 'c'],
+    });
 
     cleanup = render(() => <MyShape />, container);
     expect(getCapture().data).toEqual(['a', 'b', 'c']);
@@ -88,10 +86,9 @@ describe('Shape v2 — data passes through as array', () => {
       return <div data-testid="single">{String(Array.isArray(props.data))}</div>;
     };
 
-    const MyShape = Shape(
-      (_ui) => ({ schema: z.array(z.number()), as: Template }),
-      { defaults: [1, 2, 3] },
-    );
+    const MyShape = Shape((_ui) => ({ schema: z.array(z.number()), as: Template }), {
+      defaults: [1, 2, 3],
+    });
 
     cleanup = render(() => <MyShape />, container);
     expect(received).toHaveLength(1);
@@ -108,10 +105,9 @@ describe('Shape v2 — consumer data overrides defaults', () => {
   it('consumer JSX data prop replaces config defaults', () => {
     const { Template, getCapture } = makeCaptureTemplate('override-data');
 
-    const MyShape = Shape(
-      (_ui) => ({ schema: z.array(z.string()), as: Template }),
-      { defaults: ['default-1', 'default-2'] },
-    );
+    const MyShape = Shape((_ui) => ({ schema: z.array(z.string()), as: Template }), {
+      defaults: ['default-1', 'default-2'],
+    });
 
     cleanup = render(() => <MyShape data={['override-a', 'override-b']} />, container);
     expect(getCapture().data).toEqual(['override-a', 'override-b']);
@@ -120,10 +116,9 @@ describe('Shape v2 — consumer data overrides defaults', () => {
   it('consumer data=[] overrides defaults (empty array is explicit)', () => {
     const { Template, getCapture } = makeCaptureTemplate('empty-override');
 
-    const MyShape = Shape(
-      (_ui) => ({ schema: z.array(z.string()), as: Template }),
-      { defaults: ['should-not-appear'] },
-    );
+    const MyShape = Shape((_ui) => ({ schema: z.array(z.string()), as: Template }), {
+      defaults: ['should-not-appear'],
+    });
 
     cleanup = render(() => <MyShape data={[]} />, container);
     expect(getCapture().data).toEqual([]);
@@ -132,10 +127,9 @@ describe('Shape v2 — consumer data overrides defaults', () => {
   it('no consumer data → config defaults used', () => {
     const { Template, getCapture } = makeCaptureTemplate('use-defaults');
 
-    const MyShape = Shape(
-      (_ui) => ({ schema: z.array(z.string()), as: Template }),
-      { defaults: ['from-defaults'] },
-    );
+    const MyShape = Shape((_ui) => ({ schema: z.array(z.string()), as: Template }), {
+      defaults: ['from-defaults'],
+    });
 
     cleanup = render(() => <MyShape />, container);
     expect(getCapture().data).toEqual(['from-defaults']);
@@ -151,10 +145,7 @@ describe('Shape v2 — consumer as overrides bind as', () => {
     const DefinitionTemplate = (_props: any) => <div data-testid="def-tpl">DEF</div>;
     const ConsumerTemplate = (_props: any) => <div data-testid="consumer-tpl">CONSUMER</div>;
 
-    const MyShape = Shape(
-      (_ui) => ({ schema: z.array(z.string()), as: DefinitionTemplate }),
-      {},
-    );
+    const MyShape = Shape((_ui) => ({ schema: z.array(z.string()), as: DefinitionTemplate }), {});
 
     cleanup = render(() => <MyShape as={ConsumerTemplate} />, container);
     expect(container.querySelector('[data-testid="consumer-tpl"]')).not.toBeNull();
@@ -164,9 +155,7 @@ describe('Shape v2 — consumer as overrides bind as', () => {
   it('bind as is used when consumer does not provide as', () => {
     const DefinitionTemplate = (_props: any) => <div data-testid="def-default">DEF</div>;
 
-    const MyShape = Shape(
-      (_ui) => ({ schema: z.array(z.string()), as: DefinitionTemplate }),
-    );
+    const MyShape = Shape((_ui) => ({ schema: z.array(z.string()), as: DefinitionTemplate }));
 
     cleanup = render(() => <MyShape />, container);
     expect(container.querySelector('[data-testid="def-default"]')).not.toBeNull();
@@ -194,10 +183,11 @@ describe('Shape v2 — config extras passed to template', () => {
   it('multiple extras all arrive in template', () => {
     const { Template, getCapture } = makeCaptureTemplate('extras-multi');
 
-    const MyShape = Shape(
-      (_ui) => ({ schema: z.array(z.string()), as: Template }),
-      { sortable: true, pageSize: 20, emptyLabel: 'No items' },
-    );
+    const MyShape = Shape((_ui) => ({ schema: z.array(z.string()), as: Template }), {
+      sortable: true,
+      pageSize: 20,
+      emptyLabel: 'No items',
+    });
 
     cleanup = render(() => <MyShape />, container);
     expect(getCapture().sortable).toBe(true);
@@ -208,10 +198,9 @@ describe('Shape v2 — config extras passed to template', () => {
   it('schema/as fields are NOT forwarded as extras', () => {
     const { Template, getCapture } = makeCaptureTemplate('no-internal-fields');
 
-    const MyShape = Shape(
-      (_ui) => ({ schema: z.array(z.string()), as: Template }),
-      { defaults: ['x'] },
-    );
+    const MyShape = Shape((_ui) => ({ schema: z.array(z.string()), as: Template }), {
+      defaults: ['x'],
+    });
 
     cleanup = render(() => <MyShape />, container);
     expect(getCapture().schema).toBeUndefined();
@@ -228,10 +217,9 @@ describe('Shape v2 — consumer extras win over config extras', () => {
   it('consumer prop overrides same-named config extra', () => {
     const { Template, getCapture } = makeCaptureTemplate('consumer-wins');
 
-    const MyShape = Shape(
-      (_ui) => ({ schema: z.array(z.string()), as: Template }),
-      { pageSize: 10 },
-    );
+    const MyShape = Shape((_ui) => ({ schema: z.array(z.string()), as: Template }), {
+      pageSize: 10,
+    });
 
     cleanup = render(() => <MyShape pageSize={50} />, container);
     expect(getCapture().pageSize).toBe(50);
@@ -246,10 +234,9 @@ describe('Shape v2 — config and consumer extras are merged', () => {
   it('non-overlapping keys from both sources appear in template', () => {
     const { Template, getCapture } = makeCaptureTemplate('merge-extras');
 
-    const MyShape = Shape(
-      (_ui) => ({ schema: z.array(z.string()), as: Template }),
-      { fromConfig: 'config-value' },
-    );
+    const MyShape = Shape((_ui) => ({ schema: z.array(z.string()), as: Template }), {
+      fromConfig: 'config-value',
+    });
 
     cleanup = render(() => <MyShape fromConsumer="consumer-value" />, container);
     expect(getCapture().fromConfig).toBe('config-value');
@@ -268,12 +255,10 @@ describe('Shape v2 — path-tracker resolves via ShapeUiContext', () => {
     const fakeUi = { MyGroup: { MyTpl: TrackedTemplate } };
     const tracker = createUiTracker();
 
-    const MyShape = Shape(
-      (_ui) => ({
-        schema: z.array(z.string()),
-        as: tracker.MyGroup.MyTpl as any,
-      }),
-    );
+    const MyShape = Shape((_ui) => ({
+      schema: z.array(z.string()),
+      as: tracker.MyGroup.MyTpl as any,
+    }));
 
     cleanup = render(
       () => (
@@ -290,12 +275,10 @@ describe('Shape v2 — path-tracker resolves via ShapeUiContext', () => {
     const tracker = createUiTracker();
     const fakeUi = { SomeGroup: {} };
 
-    const MyShape = Shape(
-      (_ui) => ({
-        schema: z.array(z.string()),
-        as: tracker.SomeGroup.NonExistent as any,
-      }),
-    );
+    const MyShape = Shape((_ui) => ({
+      schema: z.array(z.string()),
+      as: tracker.SomeGroup.NonExistent as any,
+    }));
 
     cleanup = render(
       () => (
@@ -315,10 +298,7 @@ describe('Shape v2 — path-tracker resolves via ShapeUiContext', () => {
 
 describe('Shape v2 — no template renders null', () => {
   it('shape with no bind.as and no consumer.as renders null', () => {
-    const MyShape = Shape(
-      (_ui) => ({ schema: z.array(z.string()) }),
-      { defaults: ['a', 'b'] },
-    );
+    const MyShape = Shape((_ui) => ({ schema: z.array(z.string()) }), { defaults: ['a', 'b'] });
 
     cleanup = render(() => <MyShape />, container);
     expect(container.innerHTML).toBe('');
@@ -327,12 +307,10 @@ describe('Shape v2 — no template renders null', () => {
   it('shape with no Ui in context and path-tracker as → renders null gracefully', () => {
     const tracker = createUiTracker();
 
-    const MyShape = Shape(
-      (_ui) => ({
-        schema: z.array(z.string()),
-        as: tracker.SomeComponent as any,
-      }),
-    );
+    const MyShape = Shape((_ui) => ({
+      schema: z.array(z.string()),
+      as: tracker.SomeComponent as any,
+    }));
 
     cleanup = render(() => <MyShape />, container);
     expect(container.innerHTML).toBe('');
@@ -347,10 +325,10 @@ describe('Shape v2 — config as plain object', () => {
   it('static config object: defaults and extras both arrive', () => {
     const { Template, getCapture } = makeCaptureTemplate('static-config');
 
-    const MyShape = Shape(
-      (_ui) => ({ schema: z.array(z.string()), as: Template }),
-      { defaults: ['x', 'y'], sorting: true },
-    );
+    const MyShape = Shape((_ui) => ({ schema: z.array(z.string()), as: Template }), {
+      defaults: ['x', 'y'],
+      sorting: true,
+    });
 
     cleanup = render(() => <MyShape />, container);
     expect(getCapture().data).toEqual(['x', 'y']);
@@ -366,10 +344,9 @@ describe('Shape v2 — consumer data=[] is explicit override', () => {
   it('empty array consumer data beats defaults', () => {
     const { Template, getCapture } = makeCaptureTemplate('empty-arr');
 
-    const MyShape = Shape(
-      (_ui) => ({ schema: z.array(z.string()), as: Template }),
-      { defaults: ['def'] },
-    );
+    const MyShape = Shape((_ui) => ({ schema: z.array(z.string()), as: Template }), {
+      defaults: ['def'],
+    });
 
     cleanup = render(() => <MyShape data={[]} />, container);
     expect(getCapture().data).toEqual([]);
@@ -508,9 +485,7 @@ describe('Shape v2 — bind only (no config arg)', () => {
   it('bind without config — no defaults, template renders with undefined data', () => {
     const { Template, getCapture } = makeCaptureTemplate('bind-only');
 
-    const MyShape = Shape(
-      (_ui) => ({ schema: z.array(z.string()), as: Template }),
-    );
+    const MyShape = Shape((_ui) => ({ schema: z.array(z.string()), as: Template }));
 
     cleanup = render(() => <MyShape />, container);
     // Нет defaults ни в bind, ни в config → data = undefined
@@ -520,9 +495,7 @@ describe('Shape v2 — bind only (no config arg)', () => {
   it('consumer data works without config arg', () => {
     const { Template, getCapture } = makeCaptureTemplate('bind-only-data');
 
-    const MyShape = Shape(
-      (_ui) => ({ schema: z.array(z.string()), as: Template }),
-    );
+    const MyShape = Shape((_ui) => ({ schema: z.array(z.string()), as: Template }));
 
     cleanup = render(() => <MyShape data={['from-consumer']} />, container);
     expect(getCapture().data).toEqual(['from-consumer']);
@@ -567,12 +540,10 @@ describe('Shape v2 — single-object schema', () => {
   it('single-object schema with no defaults → data is undefined', () => {
     const { Template, getCapture } = makeCaptureTemplate('single-obj-no-data');
 
-    const MyShape = Shape(
-      (_ui) => ({
-        schema: z.object({ label: z.string() }),
-        as: Template,
-      }),
-    );
+    const MyShape = Shape((_ui) => ({
+      schema: z.object({ label: z.string() }),
+      as: Template,
+    }));
 
     cleanup = render(() => <MyShape />, container);
     expect(getCapture().data).toBeUndefined();
@@ -593,14 +564,103 @@ describe('Shape v2 — reactive data', () => {
 
     const [data, setData] = createSignal(['initial']);
 
-    const MyShape = Shape(
-      (_ui) => ({ schema: z.array(z.string()), as: Template }),
-    );
+    const MyShape = Shape((_ui) => ({ schema: z.array(z.string()), as: Template }));
 
     cleanup = render(() => <MyShape data={data()} />, container);
     expect(container.querySelector('[data-testid="reactive"]')?.textContent).toBe('initial');
 
     setData(['updated', 'list']);
     expect(container.querySelector('[data-testid="reactive"]')?.textContent).toBe('updated,list');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 16. bind получает tools с { zod } — инжектированный zod работает
+// ---------------------------------------------------------------------------
+
+describe('Shape v2 — bind receives { zod } tools', () => {
+  it('bind is called with tools object as second argument', () => {
+    let receivedTools: unknown;
+
+    const { Template } = makeCaptureTemplate('tools-basic');
+
+    Shape((_ui, tools) => {
+      receivedTools = tools;
+      return { schema: z.array(z.string()), as: Template };
+    });
+
+    expect(receivedTools).toBeDefined();
+    expect(typeof (receivedTools as any)?.zod).toBe('object');
+  });
+
+  it('injected zod.array + zod.string build a working schema', () => {
+    const { Template, getCapture } = makeCaptureTemplate('tools-schema');
+
+    const MyShape = Shape(
+      (_ui, { zod }) => ({
+        schema: zod.array(zod.string()),
+        as: Template,
+      }),
+      { defaults: ['injected', 'zod'] },
+    );
+
+    cleanup = render(() => <MyShape />, container);
+    expect(getCapture().data).toEqual(['injected', 'zod']);
+  });
+
+  it('injected zod.object builds schema with nested fields', () => {
+    const { Template, getCapture } = makeCaptureTemplate('tools-object');
+
+    const MyShape = Shape(
+      (_ui, { zod }) => ({
+        schema: zod.array(zod.object({ id: zod.string(), label: zod.string() })),
+        as: Template,
+      }),
+      {
+        defaults: [
+          { id: '1', label: 'Alpha' },
+          { id: '2', label: 'Beta' },
+        ],
+      },
+    );
+
+    cleanup = render(() => <MyShape />, container);
+    expect(getCapture().data).toEqual([
+      { id: '1', label: 'Alpha' },
+      { id: '2', label: 'Beta' },
+    ]);
+  });
+
+  it('zod tools do not affect ui path-tracker (ui still works)', () => {
+    const TrackedTemplate = (_props: any) => <div data-testid="tools-ui-tracked">OK</div>;
+    const fakeUi = { MyComp: TrackedTemplate };
+    const tracker = createUiTracker();
+
+    const MyShape = Shape((_ui, { zod }) => ({
+      schema: zod.array(zod.string()),
+      as: tracker.MyComp as any,
+    }));
+
+    cleanup = render(
+      () => (
+        <ShapeUiContext.Provider value={fakeUi as any}>
+          <MyShape />
+        </ShapeUiContext.Provider>
+      ),
+      container,
+    );
+    expect(container.querySelector('[data-testid="tools-ui-tracked"]')).not.toBeNull();
+  });
+
+  it('bind-only (no config) with injected zod — consumer data works', () => {
+    const { Template, getCapture } = makeCaptureTemplate('tools-no-config');
+
+    const MyShape = Shape((_ui, { zod }) => ({
+      schema: zod.array(zod.number()),
+      as: Template,
+    }));
+
+    cleanup = render(() => <MyShape data={[10, 20, 30]} />, container);
+    expect(getCapture().data).toEqual([10, 20, 30]);
   });
 });

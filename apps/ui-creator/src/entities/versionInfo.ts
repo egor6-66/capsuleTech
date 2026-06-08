@@ -3,11 +3,11 @@
  * (Config / Branch / App / AppSchema). Ответ versions-эндпойнтов.
  * Поля optional — OpenAPI не помечает их required.
  */
-const VersionInfo = Entity(() => ({
-  schema: Zod.object({
-    versionId: Zod.string().uuid().optional(),
-    version: Zod.number().int().optional(),
-    createdAt: Zod.string().optional(),
+const VersionInfo = Entity(({ zod }) => ({
+  schema: zod.object({
+    versionId: zod.string().uuid().optional(),
+    version: zod.number().int().optional(),
+    createdAt: zod.string().optional(),
   }),
 }));
 

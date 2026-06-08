@@ -4,16 +4,16 @@
  */
 
 /** GET /branches — список с фильтрами. BranchInfoDto = Branch без parents/children/createdAt/model. */
-export const list = defineEndpoint((z) => ({
+export const list = defineEndpoint(({ zod }) => ({
   method: 'GET',
   path: '/branches',
-  request: z.object({
-    isTemplate: z.boolean().optional(),
-    isRoot: z.boolean().optional(),
-    rootId: z.string().uuid().optional(),
-    category: z.enum(['VIEW', 'SCHEMA']).optional(),
+  request: zod.object({
+    isTemplate: zod.boolean().optional(),
+    isRoot: zod.boolean().optional(),
+    rootId: zod.string().uuid().optional(),
+    category: zod.enum(['VIEW', 'SCHEMA']).optional(),
   }),
-  response: z.array(
+  response: zod.array(
     Entities.Branch.schema.omit({
       parents: true,
       children: true,
@@ -24,88 +24,88 @@ export const list = defineEndpoint((z) => ({
 }));
 
 /** POST /branches — создать ветку (BranchCreateDto). */
-export const create = defineEndpoint((z) => ({
+export const create = defineEndpoint(({ zod }) => ({
   method: 'POST',
   path: '/branches',
-  request: z.object({
-    name: z.string().min(1),
-    displayName: z.string().min(1),
-    rootId: z.string().uuid().optional(),
-    positionX: z.number().optional(),
-    positionY: z.number().optional(),
-    parents: z.array(z.string().uuid()).optional(),
-    model: z.record(z.unknown()).optional(),
-    category: z.string().optional(),
-    isTemplate: z.boolean().optional(),
+  request: zod.object({
+    name: zod.string().min(1),
+    displayName: zod.string().min(1),
+    rootId: zod.string().uuid().optional(),
+    positionX: zod.number().optional(),
+    positionY: zod.number().optional(),
+    parents: zod.array(zod.string().uuid()).optional(),
+    model: zod.record(zod.unknown()).optional(),
+    category: zod.string().optional(),
+    isTemplate: zod.boolean().optional(),
   }),
   response: Entities.Branch.schema,
 }));
 
 /** GET /branches/{id} — последняя версия. */
-export const getById = defineEndpoint((z) => ({
+export const getById = defineEndpoint(({ zod }) => ({
   method: 'GET',
   path: '/branches/:id',
-  request: z.object({ id: z.string().uuid() }),
+  request: zod.object({ id: zod.string().uuid() }),
   response: Entities.Branch.schema,
 }));
 
 /** PUT /branches/{id} — новая версия (BranchVersionUpdateDto). */
-export const update = defineEndpoint((z) => ({
+export const update = defineEndpoint(({ zod }) => ({
   method: 'PUT',
   path: '/branches/:id',
-  request: z.object({
-    id: z.string().uuid(),
-    parents: z.array(z.string().uuid()).optional(),
-    model: z.record(z.unknown()).optional(),
+  request: zod.object({
+    id: zod.string().uuid(),
+    parents: zod.array(zod.string().uuid()).optional(),
+    model: zod.record(zod.unknown()).optional(),
   }),
   response: Entities.Branch.schema,
 }));
 
 /** PATCH /branches/{id} — метаданные (BranchUpdateDto). */
-export const updateMeta = defineEndpoint((z) => ({
+export const updateMeta = defineEndpoint(({ zod }) => ({
   method: 'PATCH',
   path: '/branches/:id',
-  request: z.object({
-    id: z.string().uuid(),
-    name: z.string().optional(),
-    displayName: z.string().optional(),
-    category: z.string().optional(),
-    isSchemaBranch: z.boolean().optional(),
-    meta: z
-      .object({ positionX: z.number().optional(), positionY: z.number().optional() })
+  request: zod.object({
+    id: zod.string().uuid(),
+    name: zod.string().optional(),
+    displayName: zod.string().optional(),
+    category: zod.string().optional(),
+    isSchemaBranch: zod.boolean().optional(),
+    meta: zod
+      .object({ positionX: zod.number().optional(), positionY: zod.number().optional() })
       .optional(),
-    template: z.boolean().optional(),
+    template: zod.boolean().optional(),
   }),
   response: Entities.Branch.schema,
 }));
 
 /** DELETE /branches/{id} — 204 No Content. */
-export const remove = defineEndpoint((z) => ({
+export const remove = defineEndpoint(({ zod }) => ({
   method: 'DELETE',
   path: '/branches/:id',
-  request: z.object({ id: z.string().uuid() }),
+  request: zod.object({ id: zod.string().uuid() }),
 }));
 
 /** GET /branches/{id}/versions — список версий. */
-export const versions = defineEndpoint((z) => ({
+export const versions = defineEndpoint(({ zod }) => ({
   method: 'GET',
   path: '/branches/:id/versions',
-  request: z.object({ id: z.string().uuid() }),
-  response: z.array(Entities.VersionInfo.schema),
+  request: zod.object({ id: zod.string().uuid() }),
+  response: zod.array(Entities.VersionInfo.schema),
 }));
 
 /** GET /branches/{id}/versions/{versionId} — версия по ID. */
-export const versionById = defineEndpoint((z) => ({
+export const versionById = defineEndpoint(({ zod }) => ({
   method: 'GET',
   path: '/branches/:id/versions/:versionId',
-  request: z.object({ id: z.string().uuid(), versionId: z.string().uuid() }),
+  request: zod.object({ id: zod.string().uuid(), versionId: zod.string().uuid() }),
   response: Entities.Branch.schema,
 }));
 
 /** GET /branches/{id}/versions/number/{versionNumber} — версия по номеру. */
-export const versionByNumber = defineEndpoint((z) => ({
+export const versionByNumber = defineEndpoint(({ zod }) => ({
   method: 'GET',
   path: '/branches/:id/versions/number/:versionNumber',
-  request: z.object({ id: z.string().uuid(), versionNumber: z.number().int() }),
+  request: zod.object({ id: zod.string().uuid(), versionNumber: zod.number().int() }),
   response: Entities.Branch.schema,
 }));

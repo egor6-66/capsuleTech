@@ -1,4 +1,4 @@
-import type { IDefineStateSchema, INext, IStateApi, ITarget } from '../wrappers/interfaces';
+import type { EmitFn, IDefineStateSchema, INext, IStateApi, ITarget } from '../wrappers/interfaces';
 import type { ICtx } from './ctx';
 
 interface IControllerProxyParams {
@@ -12,6 +12,12 @@ interface IControllerProxyParams {
   store: any;
   parent?: ICtx<any>;
   overrides?: Record<string, string>;
+  /**
+   * Программный emit в СОБСТВЕННЫЙ контроллер (createEmit(ctx) из logic-wrapper).
+   * Прокидывается в IHandlerApi каждого хендлера (event + lifecycle).
+   * `undefined` когда ControllerProxy создаётся в тестах без логики emit (backward-compat).
+   */
+  emit?: EmitFn;
 }
 
 const buildStateApi = (state: any, send: any): IStateApi => ({
@@ -30,6 +36,7 @@ export const ControllerProxy = ({
   store,
   parent,
   overrides,
+  emit,
 }: IControllerProxyParams): any => {
   return new Proxy({} as any, {
     get(_, methodName: string) {
@@ -73,8 +80,19 @@ export const ControllerProxy = ({
         // `?? context` — фолбэк для не-XState/мок-контекстов без `.data`.
         const userCtx = (context as { data?: unknown })?.data ?? context;
 
+        // Нейтральный fallback для emit: если emit не прокинут (тесты без logic-wrapper),
+        // возвращаем no-op, чтобы вызов emit(...) в хендлере не крашил runtime.
+        const safeEmit: EmitFn = emit ?? (() => undefined);
+
         try {
-          return await method({ target, context: userCtx, next, store, state: stateApi });
+          return await method({
+            target,
+            context: userCtx,
+            next,
+            store,
+            state: stateApi,
+            emit: safeEmit,
+          });
         } catch (err) {
           console.error(`[Controller] метод "${methodName}" в стейте "${current}" упал:`, err);
           // Централизованный hook: вызываем `schema.onError`, если он определён.
@@ -89,6 +107,7 @@ export const ControllerProxy = ({
                 next,
                 store,
                 state: stateApi,
+                emit: safeEmit,
                 error: err,
                 method: methodName,
               });

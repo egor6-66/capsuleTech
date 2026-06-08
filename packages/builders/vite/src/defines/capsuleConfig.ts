@@ -155,7 +155,13 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
       // Исключаем внутренние пакеты монорепозитория из пре-бандлинга esbuild.
       // Благодаря этому Vite будет обрабатывать их на лету через плагины
       // (включая JSX транспиляцию).
+      //
+      // shared-* пакеты (shared-utils, shared-zod) тоже исключены — они workspace
+      // пакеты с внешними deps (es-toolkit, zod). Без исключения esbuild пытается
+      // пре-бандлить их вместе с app-кодом; workspace-границы при этом нарушаются.
       exclude: [
+        '@capsuletech/shared-utils',
+        '@capsuletech/shared-zod',
         '@capsuletech/web-agent',
         '@capsuletech/web-auth',
         '@capsuletech/web-core',
@@ -203,7 +209,6 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
         // в Feature идёт `services.api.X.Y(...)`, не `endpoints.X.Y`.
         imports: [
           { '@capsuletech/web-core': [...WRAPPER_NAMES] },
-          { '@capsuletech/shared-zod': ['Zod'] },
           ...Object.entries(HOOK_IMPORTS).map(([mod, names]) => ({
             [mod]: [...names],
           })),
@@ -244,6 +249,7 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
       RouterPlugin({
         watchDir,
         outDir: join(capsuleRoot, 'routes'),
+        appRoot: root,
       }),
       // Exclude entities/ from solid-refresh HMR wrapping.
       // vite-plugin-solid internally uses solid-refresh which wraps every

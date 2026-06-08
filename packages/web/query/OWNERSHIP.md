@@ -125,6 +125,8 @@ for await (const ev of streamSseJson({ client, path: '/stream' }, TokenEvent)) {
 
 ## Quirks / gotchas
 
+- **`defineEndpoint` factory принимает `{ zod, utils }` объектом** (не позиционный `z`). Унифицировано с конвенцией capsule. `EndpointTools` тип экспортируется из `src/endpoint.ts` и barrel.
+
 - **`validateInput` запускается ДО `preRequest`.** `ctx.input` внутри `preRequest`-хэндлера — уже zod-parsed (типа `ZOut<request>`). Источник: `src/createApi.ts:79-87`.
 
 - **`setInput()` НЕ перевалидируется.** Caller-ответственность поддерживать корректный type. Если нужно перевалидировать после трансформации — вставь custom-middleware после `preRequestHook`. Источник: `src/middleware/core.ts > preRequestHook`.
@@ -189,6 +191,7 @@ for await (const ev of streamSseJson({ client, path: '/stream' }, TokenEvent)) {
 | Зона | Owner |
 |---|---|
 | zod schemas (CapsuleZ) | owner-shared-zod |
+| Utils namespace (es-toolkit + gap-fillers) | owner-shared |
 | Bridge + services injection в Feature | owner-web-core |
 | EndpointsRegistryPlugin / AppConfigPlugin | owner-builders |
 | Theme variables / createStyle | owner-web-style |

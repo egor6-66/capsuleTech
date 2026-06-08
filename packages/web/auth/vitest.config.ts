@@ -12,8 +12,32 @@ export default defineConfig({
     include: ['src/**/__tests__/**/*.test.ts', 'src/**/__tests__/**/*.test.tsx'],
     environment: 'jsdom',
     globals: false,
-    // Phase 0 skeleton — контракты и TODO-заглушки, тестов нет.
-    // Снимется когда owner-web-auth добавит первую реализацию.
-    passWithNoTests: true,
+    setupFiles: ['./vitest.setup.ts'],
+    // server.deps.inline: deps, которые содержат .jsx/.tsx в dist.
+    // Node нативно не может обработать JSX — инлайним через Vite transform.
+    // Паттерн из @capsuletech/web-shell vitest.config.ts.
+    server: {
+      deps: {
+        inline: [
+          /solid-js/,
+          /@capsuletech\/web-core/,
+          /@capsuletech\/web-ui/,
+          /@capsuletech\/web-state/,
+          /@capsuletech\/web-query/,
+          /@capsuletech\/web-router/,
+          /@capsuletech\/web-style/,
+          /@capsuletech\/shared-zod/,
+          /@kobalte\/core/,
+          /@corvu\//,
+          /@tanstack\/solid-router/,
+          /@xstate\/solid/,
+          /@solidjs\/meta/,
+          /lucide-solid/,
+          /solid-prevent-scroll/,
+          /solid-presence/,
+          /solid-motionone/,
+        ],
+      },
+    },
   },
 });

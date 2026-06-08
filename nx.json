@@ -120,7 +120,9 @@
           "@capsuletech/web-intl",
           "@capsuletech/web-shell",
           "@capsuletech/web-table",
-          "@capsuletech/shared-zod"
+          "@capsuletech/web-auth",
+          "@capsuletech/shared-zod",
+          "@capsuletech/shared-utils"
         ],
         "projectsRelationship": "fixed",
         "releaseTagPattern": "web@{version}",

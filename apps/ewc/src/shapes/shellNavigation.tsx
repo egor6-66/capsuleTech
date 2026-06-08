@@ -1,6 +1,6 @@
 const ShellNavigation = Shape(
-  (ui) => ({
-    schema: Zod.array(Zod.object({ label: Zod.string(), to: Zod.string() })),
+  (ui, { zod }) => ({
+    schema: zod.array(zod.object({ label: zod.string(), to: zod.string() })),
     as: Shell.Header.Navigation,
   }),
   (ui, props) => ({

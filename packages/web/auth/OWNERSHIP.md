@@ -32,7 +32,7 @@ form-блок. Апп подключает нужные. Auth-FSM (`idle → sub
 
 **В пакете:** стратегии (`/role`…), generic auth-FSM, form-блоки (web-ui,
 config-driven), session + `useAuth()`, Controllers + ИМЕНОВАННЫЕ события
-`onLogin`/`onLogout`/`onError` (ADR 032, `useEmit`).
+`onLogin`/`onLogout`/`onLoginError` (ADR 032, `useEmit`).
 
 **В аппе:** роутинг (login-роут, post-login, route-guards), маппинг роль→права,
 брендинг/копирайт формы, выбор стратегии(й) + конфиг, backend endpoint `/auth/login`.
@@ -41,15 +41,15 @@ config-driven), session + `useAuth()`, Controllers + ИМЕНОВАННЫЕ со
 
 | Subpath | Статус | Что |
 |---|---|---|
-| `.` | stub | barrel: types + session (стратегии/ui/controllers — отдельными subpath'ами) |
-| `/role` | stub | `IRoleInput`, `roleStrategy` (TODO). Стартовая стратегия |
+| `.` | ready | barrel: types + session |
+| `/role` | **ready** | `IRoleInput`, `roleStrategy(config)`, `loginRequestSchema`/`loginResponseSchema` |
 | `/credentials` | stub | `ICredentialsInput`, `credentialsStrategy` (TODO) |
 | `/oauth2` | stub | `IOAuth2Input`, `oauth2Strategy` (TODO) |
 | `/qr` | stub | `IQrInput`, `qrStrategy` (TODO) |
-| `/session` | stub | `IAuthSession`, `emptySession`, `useAuth()` (TODO) |
-| `/controllers` | empty | `Controllers.Auth` FSM через `useEmit` (ADR 032). Единственный subpath с `web-core`-dep |
-| `/ui` | empty | form-блоки на `@capsuletech/web-ui` (config-driven). Headless НЕ подключает |
-| `/capsule` | stub | `defineCapsuleModule({ name: 'Auth', … })` (ADR 033). components/controllers — TODO |
+| `/session` | **ready** | `createAuthSession`, `useAuth()`, `ITokenStorage`, `memoryStorage`, `localStorageStorage`, `defaultAuthSession` |
+| `/controllers` | **ready** | `AuthController` FSM (idle→submitting→authed/error), phantom `__events`, EmitProbe pattern |
+| `/ui` | **ready** | `AuthLoginForm` — web-core `View<IAuthLoginFormProps>` (strategy.fields → Select/Input/Button; Ui от View-wrapper, не проп) |
+| `/capsule` | **ready** | `defineCapsuleModule({ name:'Auth', components:{LoginForm}, controllers:{Auth} })` |
 
 ## Моки — `preRequest` + `gen` (НЕ MSW)
 
@@ -74,7 +74,8 @@ config-driven), session + `useAuth()`, Controllers + ИМЕНОВАННЫЕ со
 
 1. **Multi-entry vite build** — все 9 subpaths обязаны быть в dist. `/controllers`
    и `/ui` пустые → warning «empty chunk», это ОК для skeleton.
-2. **`/ui` тянет UI-зависимости** — не импортировать в headless-bundle.
+2. **`/ui` тянет UI-зависимости** — не импортировать в headless-bundle. `AuthLoginForm` — web-core `View`, рендерится ВНУТРИ AuthFsm Controller-scope: UiProxy автоматически проксирует Ui под AuthFsm → `meta.tags` биндятся корректно.
+   JSX inference quirk: `<Ui.Input meta={{ tags: [...] }}/>` внутри `fallback={}` пропа Solid's `Show` → TS видит `tags` как `never` из-за `IInputProps extends JSX.InputHTMLAttributes`. Обходится через `as any` на `meta`. Это TypeScript/JSX-fallback inference issue, не баг пакета.
 3. **`/controllers` зависит на `web-core`** — остальные блоки framework-agnostic.
 4. **Air-gapped** — никаких внешних URL по умолчанию (oauth2-провайдер/redirect —
    config-driven props аппа, не хардкод).
@@ -82,21 +83,24 @@ config-driven), session + `useAuth()`, Controllers + ИМЕНОВАННЫЕ со
    правок — `pnpm --filter @capsuletech/web-auth build` + рестарт dev. Новые
    subpath-экспорты/deps требуют рестарта.
 6. **Имя глобала 'Auth'** — не JS-builtin (ок). Не переименовывать в Map/Set/…
+7. **Зарезервированные имена событий** — пакетные события (`IAuthEvents`) НЕ должны использовать имена, занятые web-core lifecycle/UiProxy:
+   `onInit`, `onExit`, `onRegister`, `onDispose`, `onError`, `onClick`, `onDblClick`, `onInput`, `onChange`, `onBlur`, `onFocus`, `onKeyDown`.
+   Пример: auth-пакет использует `onLoginError` (не `onError`) — именно по этой причине.
 
 ## Тест-покрытие
 
-Пока нет (skeleton). Owner добавляет при наполнении:
-- `controllers/__tests__` — AuthController FSM-переходы + emit событий (jsdom).
-- `session/__tests__` — useAuth чтение роли/статуса.
-- `role/__tests__` — резолв стратегии + form-конфиг.
+48 тестов (vitest jsdom), все green:
+- `controllers/__tests__/authController.test.tsx` — FSM schema (idle/submitting/authed/error), emit onLogin/onLoginError/onLogout, phantom __events, render/children.
+- `session/__tests__/session.test.ts` — createAuthSession, login/logout/setStatus, useAuth reads, ITokenStorage impls (memory/localStorage).
+- `role/__tests__/roleStrategy.test.ts` — roleStrategy fields/defaults, кастомные роли, zod-схемы (loginRequestSchema/loginResponseSchema).
 
 ## Roadmap
 
 - [x] Skeleton: configs + subpath-блоки + регистрация путей/exclude (главный, bootstrap)
-- [ ] `/session` — session-store (web-state) + `useAuth()`
-- [ ] `/role` — roleStrategy + form-конфиг (миграция playground)
-- [ ] `/controllers` — AuthController (generic FSM, useEmit) + регистрация в capsule.ts
-- [ ] `/ui` — config-driven LoginForm-блок на web-ui
+- [x] `/session` — `createAuthSession`, `useAuth()`, `ITokenStorage` (memory/localStorage), `defaultAuthSession`
+- [x] `/role` — `roleStrategy(config)`, `loginRequestSchema`/`loginResponseSchema`, `IAuthFormField`
+- [x] `/controllers` — `AuthController` (generic FSM, EmitProbe + useEmit) + регистрация в capsule.ts
+- [x] `/ui` — `AuthLoginForm` config-driven на web-ui
 - [ ] добавить в `nx.json` web_base group (через главного, при releasable-контенте)
 - [ ] `/credentials`, `/oauth2`, `/qr` — итерациями
 - [ ] `docs/_meta/web-auth.md` AI-anchor + user-guide

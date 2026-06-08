@@ -1,7 +1,8 @@
+import { Zod } from '@capsuletech/shared-zod';
 import { mergeProps, splitProps } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import { useShapeUi } from './context';
-import type { IShapeComponentProps, IShapeWrapper } from './types';
+import type { IShapeComponentProps, IShapeTools, IShapeWrapper } from './types';
 import {
   createUiTracker,
   getTrackerPath,
@@ -39,11 +40,14 @@ import {
  * Реактивность: `consumerProps` — Solid-реактивный proxy. `mergeProps`/`splitProps`
  * сохраняют реактивный tracking. Config-функция вычисляется реактивно если передана.
  */
+/** Singleton инструментов для Shape bind. Создаётся один раз. */
+const shapeTools: IShapeTools = { zod: Zod };
+
 const shape = (bind: (...args: unknown[]) => unknown, config?: unknown) => {
   // Bind вызывается на module-load. ui — path-tracker (real Ui ещё нет).
   // item убран из bind в ADR 036 — batch-дескриптор живёт в arg2 (item).
   const bindUiTracker = createUiTracker();
-  const bindResult = bind(bindUiTracker) as {
+  const bindResult = bind(bindUiTracker, shapeTools) as {
     schema?: unknown;
     as?: unknown;
     defaults?: unknown;
@@ -74,10 +78,12 @@ const shape = (bind: (...args: unknown[]) => unknown, config?: unknown) => {
     // что и при bind; trackers внутри конфига резолвируются в realUi при рендере).
     const getRawConfig = (): Record<string, unknown> => {
       if (typeof config === 'function') {
-        return (config as (ui: unknown, p: unknown) => Record<string, unknown>)(
-          bindUiTracker,
-          consumerProps,
-        ) ?? {};
+        return (
+          (config as (ui: unknown, p: unknown) => Record<string, unknown>)(
+            bindUiTracker,
+            consumerProps,
+          ) ?? {}
+        );
       }
       return config != null ? (config as Record<string, unknown>) : {};
     };
@@ -99,29 +105,33 @@ const shape = (bind: (...args: unknown[]) => unknown, config?: unknown) => {
     // Вычисляется реактивно (внутри configSource-цикла), т.к. config может быть функцией.
     const getResolvedItem = (): Record<string, unknown> | undefined => {
       const raw = getRawConfig();
-      const configItem = raw.item as { use?: unknown; props?: (it: unknown) => unknown } | undefined;
+      const configItem = raw.item as
+        | { use?: unknown; props?: (it: unknown) => unknown }
+        | undefined;
       if (!configItem) return undefined;
 
-      const resolvedItemUse = configItem.use != null
-        ? (() => {
-            const path = getTrackerPath(configItem.use);
-            if (path && realUi) return resolveByPath(realUi, path);
-            return configItem.use;
-          })()
-        : undefined;
+      const resolvedItemUse =
+        configItem.use != null
+          ? (() => {
+              const path = getTrackerPath(configItem.use);
+              if (path && realUi) return resolveByPath(realUi, path);
+              return configItem.use;
+            })()
+          : undefined;
 
-      const resolvedItemProps = configItem.props != null
-        ? (() => {
-            const fn = configItem.props;
-            return (it: unknown) => {
-              const result = fn(it);
-              if (result !== null && typeof result === 'object' && !Array.isArray(result)) {
-                return resolveValuesInObject(result as Record<string, unknown>, realUi);
-              }
-              return result;
-            };
-          })()
-        : undefined;
+      const resolvedItemProps =
+        configItem.props != null
+          ? (() => {
+              const fn = configItem.props;
+              return (it: unknown) => {
+                const result = fn(it);
+                if (result !== null && typeof result === 'object' && !Array.isArray(result)) {
+                  return resolveValuesInObject(result as Record<string, unknown>, realUi);
+                }
+                return result;
+              };
+            })()
+          : undefined;
 
       return {
         item: {
@@ -137,8 +147,8 @@ const shape = (bind: (...args: unknown[]) => unknown, config?: unknown) => {
     // configSource и resolvedChild — функции → mergeProps сам оборачивает в createMemo.
     const mergedExtras = mergeProps(
       resolvedBindExtras,
-      configSource,                              // функция — Solid обернёт в createMemo
-      () => getResolvedItem() ?? {},             // item реактивно из config
+      configSource, // функция — Solid обернёт в createMemo
+      () => getResolvedItem() ?? {}, // item реактивно из config
       rest,
     );
 

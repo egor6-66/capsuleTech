@@ -1,3 +1,4 @@
+import { Utils as _Utils, type Utils } from '@capsuletech/shared-utils';
 import { type CapsuleZ, z } from '@capsuletech/shared-zod';
 import type { ZodType } from 'zod';
 import type { Middleware } from './pipeline';
@@ -111,22 +112,46 @@ export type InferInput<E> = E extends Endpoint<infer I, any> ? I : never;
 export type InferOutput<E> = E extends Endpoint<any, infer D> ? D : never;
 
 /**
- * Фабрика endpoint'а. Получает `z` (CapsuleZ из `@capsuletech/shared-zod`),
- * возвращает конфиг. Дизайн повторяет `Shape((z, ui) => ...)`:
- * пользователь не импортирует zod руками.
+ * Инструменты, прокидываемые в factory `defineEndpoint`.
+ * Унифицировано с конвенцией capsule: логические/config-слои получают
+ * инструменты **объектом** (деструктуризация, порядок не важен, расширяемо).
+ *
+ * - `zod` — CapsuleZ (расширенный zod-namespace, тот же инстанс что и глобал `Zod`).
+ * - `utils` — Utils namespace из `@capsuletech/shared-utils` (es-toolkit + gap-fillers).
+ */
+export interface EndpointTools {
+  zod: CapsuleZ;
+  utils: typeof Utils;
+}
+
+/**
+ * Фабрика endpoint'а. Получает объект `{ zod, utils }` — единая конвенция capsule
+ * для config-слоёв (аналогично Controller/Feature `services`, Entity `({ zod })`).
+ * Пользователь не импортирует zod или utils руками.
  *
  * ```ts
- * export const get = defineEndpoint((z) => ({
+ * export const get = defineEndpoint(({ zod }) => ({
  *   method: 'GET',
  *   path: '/users/:id',
- *   request: z.object({ id: z.string() }),
- *   response: z.object({ id: z.string(), email: z.string() }),
+ *   request: zod.object({ id: zod.string() }),
+ *   response: zod.object({ id: zod.string(), email: zod.string() }),
+ * }));
+ *
+ * export const login = defineEndpoint(({ zod, utils }) => ({
+ *   method: 'POST',
+ *   path: '/auth/login',
+ *   request: zod.object({ email: zod.string(), password: zod.string() }),
+ *   response: zod.object({ token: zod.string() }),
+ *   preRequest: async ({ input, resolve }) => {
+ *     await utils.delay(700);
+ *     resolve({ token: 'mock-token' });
+ *   },
  * }));
  * ```
  */
 export const defineEndpoint = <TReq extends ZodType, TRes extends ZodType, D = ZOut<TRes>>(
-  factory: (z: CapsuleZ) => EndpointConfig<TReq, TRes, D>,
+  factory: (tools: EndpointTools) => EndpointConfig<TReq, TRes, D>,
 ): Endpoint<ZOut<TReq>, D> => {
-  const config = factory(z);
+  const config = factory({ zod: z, utils: _Utils });
   return { config: config as EndpointConfig } as Endpoint<ZOut<TReq>, D>;
 };

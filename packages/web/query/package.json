@@ -26,7 +26,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@capsuletech/shared-zod": "workspace:*"
+    "@capsuletech/shared-zod": "workspace:*",
+    "@capsuletech/shared-utils": "workspace:*"
   },
   "peerDependencies": {
     "solid-js": "^1.9.0",
