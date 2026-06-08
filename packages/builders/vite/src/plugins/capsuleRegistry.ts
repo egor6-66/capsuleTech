@@ -880,6 +880,7 @@ export const generateBootstrap = (): string => {
   lines.push('      basepath={import.meta.env.BASE_URL}');
   lines.push('      notFoundRedirect={appConfig.router?.notFoundRedirect}');
   lines.push('      beforeLoad={appConfig.router?.beforeLoad}');
+  lines.push('      transition={appConfig.router?.transition}');
   lines.push('    />');
   lines.push('  );');
   lines.push('};');

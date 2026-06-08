@@ -21,7 +21,7 @@ interface IBaseProviderProps<TRouteTree extends AnyRoute = AnyRoute> {
    */
   basepath?: string;
   /**
-   * Включить Vitals-мониторинг (Web Vitals + 4 doп. coll.). По умолчанию выключен,
+   * Включить Vitals-мониторинг (Web Vitals + 4 доп. coll.). По умолчанию выключен,
    * чтобы прод-бандлы apps/<app> не тянули overhead профайлера без необходимости.
    *
    *  - `true` — оборачивает дерево в `VitalsMonitoringProvider` с дашбордом.
@@ -49,6 +49,18 @@ interface IBaseProviderProps<TRouteTree extends AnyRoute = AnyRoute> {
    * Роутер не знает про auth — вся политика тут.
    */
   beforeLoad?: ICreateRouterOpts['beforeLoad'];
+  /**
+   * Включить нативные переходы между роутами через View Transitions API.
+   *
+   * `undefined` или `'none'` → переходы выключены (дефолт).
+   * `true` → `createRouter` получает `viewTransition: true` →
+   * TanStack Router вызывает `document.startViewTransition()` на каждом
+   * переходе. Внешний вид задаётся через CSS `::view-transition-*` в
+   * `@capsuletech/web-style`.
+   *
+   * Прокидывается генерируемым bootstrap'ом из capsule.app.ts → router.transition.
+   */
+  transition?: boolean | 'none';
   children?: any;
 }
 
@@ -62,6 +74,12 @@ interface IBaseProviderProps<TRouteTree extends AnyRoute = AnyRoute> {
 export function BaseProviders<TRouteTree extends AnyRoute = AnyRoute>(
   props: IBaseProviderProps<TRouteTree>,
 ) {
+  // transition truthy && != 'none' → включаем View Transitions API в роутере.
+  const viewTransitionEnabled = (): boolean => {
+    const t = props.transition;
+    return t != null && t !== 'none' && t !== false;
+  };
+
   const tree = (
     <Show when={props.routeTree} fallback={props.children}>
       {(routeTree) => {
@@ -71,6 +89,7 @@ export function BaseProviders<TRouteTree extends AnyRoute = AnyRoute>(
           basepath: props.basepath,
           notFoundRedirect: props.notFoundRedirect ?? '/',
           beforeLoad: props.beforeLoad,
+          viewTransition: viewTransitionEnabled(),
         });
         return (
           // RouterContext is parameterised on the default AnyRoute branch;

@@ -315,6 +315,53 @@
 }
 
 /* =============================================================================
+   Popover / Dropdown / Tooltip enter+exit animations.
+   Usage: add class `popover-animate` to any Kobalte *.Content element.
+   Kobalte sets data-expanded on open, data-closed on close (and keeps the
+   element in the DOM while the closing animation runs).
+   ============================================================================= */
+
+@keyframes popover-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes popover-out {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+}
+
+/*
+  transform-origin: top center — большинство дропдаунов открываются вниз
+  от якоря (Select, Dropdown). Для Tooltip/верхних поповеров origin не критичен
+  при малом scale-дельте (0.04). Если понадобится placement-aware origin —
+  добавить селекторы по [data-placement].
+*/
+.popover-animate {
+  transform-origin: top center;
+}
+
+.popover-animate[data-expanded] {
+  animation: popover-in 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.popover-animate[data-closed] {
+  animation: popover-out 120ms ease-in;
+}
+
+/* =============================================================================
    Scrollbar styling — theme-aware, cross-browser.
    Global: always-visible thin scrollbar with theme colors.
    ============================================================================= */
@@ -420,4 +467,64 @@
 
 .has-status:hover {
   filter: brightness(0.6);
+}
+
+/* =============================================================================
+   View Transitions API — routing animation (Stage 2: named content region).
+   Requires defaultViewTransition: true in TanStack Router config.
+   Browser takes old/new snapshots and animates the pseudo-elements below.
+
+   Architecture:
+   - root (Header/chrome) is STATIC — no animation, no flicker on nested nav.
+   - Only the named region `capsule-content` crossfades.
+   - Apps mark the stable content container with .vt-route-content
+     (wrapping the router Outlet) — this activates the capsule-content name.
+
+   Usage in app:
+     <div class="vt-route-content">
+       <Outlet />
+     </div>
+
+   Note on group morph: ::view-transition-group(capsule-content) runs a
+   position/size morph by default when the region changes geometry (e.g.
+   login → workspace). We suppress the group animation duration to match the
+   fade so the morph is instant and only the opacity cross-dissolve is visible.
+   For same-size transitions (home ↔ profile) this has no visible effect.
+   ============================================================================= */
+
+@keyframes vt-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes vt-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* root (Header/chrome) — static, no animation */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+/* Named content region — crossfade only */
+::view-transition-old(capsule-content) {
+  animation: 200ms ease-out both vt-fade-out;
+}
+
+::view-transition-new(capsule-content) {
+  animation: 220ms ease-in both vt-fade-in;
+}
+
+/* Suppress group morph so geometry changes (login→workspace) don't slide;
+   pure crossfade without position/size interpolation. */
+::view-transition-group(capsule-content) {
+  animation-duration: 0ms;
+}
+
+/* Utility class — apply to the stable content wrapper around <Outlet />.
+   Exactly ONE element with this class must exist in the DOM at any moment. */
+.vt-route-content {
+  view-transition-name: capsule-content;
 }

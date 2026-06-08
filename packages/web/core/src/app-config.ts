@@ -8,6 +8,7 @@
 // type-inversion приемлема, runtime-cycle она не создаёт.
 import type { ApiConfig, MwToolbox } from '@capsuletech/web-query';
 import type { ICreateRouterOpts } from '@capsuletech/web-router';
+
 // `intl?:` — import типов + runtime-функций из web-intl (headless singleton, нет
 // runtime-cycle; пакет в dependencies, поэтому статический import безопасен).
 import type { Dictionary, Locale, Tenant } from '@capsuletech/web-intl';
@@ -96,6 +97,31 @@ export interface IAppConfig {
      * Роутер не знает про auth — вся политика тут.
      */
     beforeLoad?: ICreateRouterOpts['beforeLoad'];
+    /**
+     * Включить нативные переходы между роутами через View Transitions API.
+     *
+     * По умолчанию — выключено (`undefined` или `'none'`): навигация без transition.
+     *
+     * При `true` роутер вызывает `document.startViewTransition()` на каждом
+     * переходе. Внешний вид анимации задаётся через глобальный CSS
+     * `::view-transition-old(root)` / `::view-transition-new(root)` в
+     * `@capsuletech/web-style` (по умолчанию — кроссфейд).
+     *
+     * Технически: `BaseProviders` передаёт `viewTransition: true` в
+     * `createRouter` из `@capsuletech/web-router` → TanStack Router вызывает
+     * `defaultViewTransition: true`.
+     *
+     * Стадия 2 добавит `{ variant, duration }` для кастомных CSS-переменных.
+     *
+     * @example
+     * // capsule.app.ts — включить
+     * router: { transition: true }
+     *
+     * @example
+     * // явно выключить (эквивалентно отсутствию поля)
+     * router: { transition: 'none' }
+     */
+    transition?: boolean | 'none';
   };
 }
 

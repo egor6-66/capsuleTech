@@ -105,9 +105,11 @@ describe('ROOT_WITH_APP_TEMPLATE', () => {
   });
 
   it('imports Outlet and createRootRouteWithContext from @tanstack/solid-router', () => {
-    expect(tmpl).toContain(
-      `import { Outlet, createRootRouteWithContext } from '@tanstack/solid-router'`,
-    );
+    expect(tmpl).toContain(`import { Outlet, createRootRouteWithContext } from '@tanstack/solid-router'`);
+  });
+
+  it('does NOT import from @capsuletech/web-core', () => {
+    expect(tmpl).not.toContain('@capsuletech/web-core');
   });
 
   it('wraps <Outlet /> inside <App>', () => {
@@ -120,6 +122,10 @@ describe('ROOT_WITH_APP_TEMPLATE', () => {
     const appClose = tmpl.indexOf('</App>');
     expect(outletIdx).toBeGreaterThan(appOpen);
     expect(outletIdx).toBeLessThan(appClose);
+  });
+
+  it('does NOT contain AnimatedOutlet', () => {
+    expect(tmpl).not.toContain('AnimatedOutlet');
   });
 
   it('preserves createRootRouteWithContext<MyRouterContext>()()', () => {
@@ -172,6 +178,7 @@ describe('generateRootRoute — with features/app.tsx present', () => {
     expect(content).toContain('<App>');
     expect(content).toContain('<Outlet />');
     expect(content).toContain('</App>');
+    expect(content).not.toContain('AnimatedOutlet');
   });
 
   it('generated __root.tsx still has createRootRouteWithContext', async () => {
@@ -206,12 +213,13 @@ describe('generateRootRoute — without features/app.tsx (regression)', () => {
     await rm(tmpDir, { recursive: true, force: true });
   });
 
-  it('generates plain __root.tsx with bare <Outlet/> (no App import)', async () => {
+  it('generates plain __root.tsx with <Outlet/> (no App import)', async () => {
     const outDir = join(tmpDir, 'routes');
     await generateRootRoute(outDir, TEMPLATE_DIR, appRoot);
 
     const content = await readFile(join(outDir, '__root.tsx'), 'utf-8');
     expect(content).toContain('<Outlet');
+    expect(content).not.toContain('AnimatedOutlet');
     expect(content).not.toContain(`import App from '@features/app'`);
     expect(content).not.toContain('<App>');
   });
@@ -223,6 +231,7 @@ describe('generateRootRoute — without features/app.tsx (regression)', () => {
     const content = await readFile(join(outDir, '__root.tsx'), 'utf-8');
     expect(content).not.toContain(`import App from '@features/app'`);
     expect(content).toContain('<Outlet');
+    expect(content).not.toContain('AnimatedOutlet');
   });
 
   it('plain __root.tsx still has createRootRouteWithContext', async () => {

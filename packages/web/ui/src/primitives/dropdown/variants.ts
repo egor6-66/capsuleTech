@@ -3,6 +3,10 @@ import { cva } from '@capsuletech/web-style';
 /**
  * Popover panel that contains the dropdown items.
  * Uses `bg-popover` + `text-popover-foreground` so it adapts to any theme.
+ *
+ * Enter + exit animations are driven by the `popover-animate` class (web-style
+ * `@keyframes popover-in`/`popover-out`) keyed off Kobalte's `data-[expanded]` /
+ * `data-[closed]` attributes — applies to both `Content` and `SubContent`.
  */
 export const dropdownContentCva = cva(
   'z-50 min-w-32 overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md outline-none focus:outline-none focus-visible:outline-none',

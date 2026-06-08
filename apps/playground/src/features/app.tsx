@@ -51,7 +51,7 @@ const App = Feature<Auth.Events, AppCtx>(({ router, utils, authApi }) => ({
         if (utils.includes(target.meta?.tags ?? [], 'logout')) {
           // auth — инжектированный action пакета web-auth (services injection spike):
           // чистит auth-сессию пакета (defaultAuthSession), приходит первым аргументом.
-          auth?.logout();
+          authApi?.logout();
           store.update({ viewer: null });
           state.set('guest');
         }

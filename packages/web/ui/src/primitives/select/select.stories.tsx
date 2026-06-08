@@ -86,3 +86,30 @@ export const WithDefaultValue: Story = {
     <Select options={FRAMEWORK_OPTIONS} defaultValue="solid" placeholder="Select framework…" />
   ),
 };
+
+/** Many options — tests max-height, overflow scroll, and animation feel. */
+export const ManyOptions: Story = {
+  render: () => {
+    const [value, setValue] = createSignal<string | null>(null);
+    const MANY = [
+      { value: 'solid', label: 'Solid.js' },
+      { value: 'react', label: 'React' },
+      { value: 'vue', label: 'Vue' },
+      { value: 'svelte', label: 'Svelte' },
+      { value: 'qwik', label: 'Qwik' },
+      { value: 'astro', label: 'Astro' },
+      { value: 'remix', label: 'Remix' },
+      { value: 'next', label: 'Next.js' },
+      { value: 'nuxt', label: 'Nuxt' },
+      { value: 'sveltekit', label: 'SvelteKit' },
+      { value: 'angular', label: 'Angular', disabled: true },
+      { value: 'ember', label: 'Ember', disabled: true },
+    ];
+    return (
+      <div class="flex flex-col gap-2">
+        <Select options={MANY} value={value()} onChange={setValue} placeholder="Select framework…" />
+        <p class="text-sm text-muted-foreground">Selected: {value() ?? '(none)'}</p>
+      </div>
+    );
+  },
+};

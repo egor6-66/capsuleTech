@@ -1,5 +1,6 @@
 import { cn } from '@capsuletech/web-style';
 import { Select as KobalteSelect } from '@kobalte/core/select';
+import { Check, ChevronDown } from 'lucide-solid';
 import { splitProps } from 'solid-js';
 
 import type {
@@ -15,42 +16,6 @@ import {
   selectTriggerCva,
 } from './variants';
 
-/** Chevron icon rendered inside the trigger. Pure SVG — no lucide dep at runtime. */
-const ChevronDownIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="2"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    aria-hidden="true"
-  >
-    <path d="m6 9 6 6 6-6" />
-  </svg>
-);
-
-/** Checkmark icon rendered next to the selected item. */
-const CheckIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="2"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    aria-hidden="true"
-  >
-    <path d="M20 6 9 17l-5-5" />
-  </svg>
-);
-
 /**
  * The button that opens / closes the select popover.
  * Intended for compound usage — wraps `KobalteSelect.Trigger`.
@@ -60,8 +25,8 @@ const Trigger = (props: ISelectTriggerProps) => {
   return (
     <KobalteSelect.Trigger class={cn(selectTriggerCva(), local.class)} {...(others as object)}>
       {local.children}
-      <KobalteSelect.Icon>
-        <ChevronDownIcon />
+      <KobalteSelect.Icon class="shrink-0 text-muted-foreground transition-transform duration-fast data-[expanded]:rotate-180">
+        <ChevronDown size={16} aria-hidden="true" />
       </KobalteSelect.Icon>
     </KobalteSelect.Trigger>
   );
@@ -86,12 +51,25 @@ const Value = (props: ISelectValueProps) => {
 /**
  * The dropdown panel containing the list of selectable items.
  * Rendered inside a Kobalte Portal (teleported to `document.body`).
+ *
+ * ## Enter + exit animation
+ * Kobalte natively delays Content removal from the DOM while a closing CSS
+ * animation plays — no `forceMount` or motionone needed. The `popover-animate`
+ * class (defined in `@capsuletech/web-style/index.css`) attaches:
+ *   - enter → `popover-in` keyframe on `[data-expanded]` (opacity 0→1, scale 0.95→1)
+ *   - exit  → `popover-out` keyframe on `[data-closed]`  (opacity 1→0, scale 1→0.95)
+ *
+ * Kobalte sets `--kb-select-content-available-width` / `-height` on the Content
+ * element; `selectContentCva()` uses those CSS variables for `min-w` / `max-h`.
  */
 const Content = (props: ISelectContentProps) => {
   const [local, others] = splitProps(props, ['class', 'portalProps']);
   return (
     <KobalteSelect.Portal {...(local.portalProps as object)}>
-      <KobalteSelect.Content class={cn(selectContentCva(), local.class)} {...(others as object)}>
+      <KobalteSelect.Content
+        class={cn(selectContentCva(), 'popover-animate', local.class)}
+        {...(others as object)}
+      >
         <KobalteSelect.Listbox />
       </KobalteSelect.Content>
     </KobalteSelect.Portal>
@@ -128,9 +106,14 @@ const Content = (props: ISelectContentProps) => {
  *   <Select.Content />
  * </Select>
  * ```
+ *
+ * `gutter` defaults to `2` px — keeps the dropdown visually attached to the
+ * trigger for a cohesive input-select appearance while leaving just enough gap
+ * for the panel shadow/border not to bleed into the trigger.
+ * Pass an explicit `gutter` prop to override.
  */
 const SelectImpl = (props: ISelectProps) => {
-  const [local, kobalteProps] = splitProps(props, ['options', 'placeholder', 'class', 'children']);
+  const [local, kobalteProps] = splitProps(props, ['options', 'placeholder', 'class', 'children', 'gutter']);
 
   const optionValues = () => (local.options ?? []).map((o) => o.value);
   const labelMap = () => {
@@ -147,10 +130,11 @@ const SelectImpl = (props: ISelectProps) => {
       options={optionValues()}
       placeholder={local.placeholder}
       optionDisabled={(v) => disabledSet().has(v)}
+      gutter={local.gutter ?? 2}
       itemComponent={(itemProps) => (
         <KobalteSelect.Item item={itemProps.item} class={selectItemCva()}>
           <KobalteSelect.ItemIndicator class={selectItemIndicatorCva()}>
-            <CheckIcon />
+            <Check size={14} aria-hidden="true" />
           </KobalteSelect.ItemIndicator>
           <KobalteSelect.ItemLabel>
             {labelMap()[itemProps.item.rawValue] ?? itemProps.item.rawValue}

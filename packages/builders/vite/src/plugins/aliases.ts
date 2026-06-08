@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import path, { basename, join } from 'node:path';
+import path, { basename, join, resolve } from 'node:path';
 import type { Plugin } from 'vite';
 
 interface IProps {
@@ -17,9 +17,15 @@ interface IProps {
  *
  * Что делает на старте Vite:
  *   1. Регистрирует Vite `resolve.alias` для всех ключей из `paths.config.json`
- *      (с поддержкой `/*` шаблонов через regex). `@capsuletech/*` уже резолвится
- *      нативным `resolve.tsconfigPaths: true` (Vite 8), дублировать не нужно.
- *   2. Пишет `<app>/.capsule/tsconfig.paths.json` со слитыми paths
+ *      (с поддержкой `/*` шаблонов через regex).
+ *   2. Регистрирует Vite `resolve.alias` для `@capsuletech/*` из `tsconfig.base.json`
+ *      — само-различающийся: alias добавляется ТОЛЬКО если src-файл существует
+ *      на диске (workspace / monorepo). В capsule-test пакеты установлены из
+ *      Verdaccio и src нет → alias не создаётся → Vite использует package.json
+ *      exports (dist). В монорепо src есть → alias срабатывает → Vite читает src
+ *      напрямую с полным HMR. Так решается capsule-test dist-tension без
+ *      добавления "development" exports в каждый package.json.
+ *   3. Пишет `<app>/.capsule/tsconfig.paths.json` со слитыми paths
  *      (base'овые + локальные, последние пере-проецированы относительно
  *      workspace-root). Apps'овый `tsconfig.json` делает
  *      `extends: [base, .capsule/tsconfig.paths.json]` — TypeScript
@@ -55,12 +61,19 @@ export const AliasesPlugin = ({ appRoot, workspaceRoot }: IProps): Plugin => ({
     await mkdir(join(appRoot, '.capsule'), { recursive: true });
     await writeFile(outPath, `${JSON.stringify(tsPathsOutput, null, 2)}\n`, 'utf-8');
 
-    // (2) Vite: build resolve.alias entries from local-only paths
-    //     (@capsuletech/* are handled by native resolve.tsconfigPaths: true)
-    const viteAliases = buildViteAliases(localRaw, appRoot);
+    // (2) Vite: build resolve.alias entries
+    //   (a) local paths (@pages/*, @widgets/*, etc.)
+    const localAliases = buildViteAliases(localRaw, appRoot);
+    //   (b) workspace src aliases for @capsuletech/* — self-discriminating:
+    //       alias is only added when the src target actually exists on disk.
+    //       In capsule-test (packages installed from Verdaccio) there is no src/
+    //       directory → alias is skipped → Vite falls back to package.json exports
+    //       (dist). In the monorepo src/ is present → alias wins → HMR on src.
+    const workspaceAliases = buildWorkspaceSrcAliases(basePaths, workspaceRoot);
+
     return {
       resolve: {
-        alias: viteAliases,
+        alias: [...workspaceAliases, ...localAliases],
       },
     };
   },
@@ -76,6 +89,47 @@ async function readBasePaths(baseConfigPath: string): Promise<Record<string, str
     console.warn(`[capsule-aliases] failed to read ${baseConfigPath}:`, err);
     return {};
   }
+}
+
+/**
+ * Строит Vite resolve.alias для workspace-пакетов @capsuletech/* → src/.
+ *
+ * Само-различающийся алгоритм:
+ *   - Читает paths из tsconfig.base.json (уже прочитаны как basePaths).
+ *   - Для каждой записи проверяет: существует ли target-файл на диске
+ *     (resolve(workspaceRoot, target[0])).
+ *   - Если да — добавляет alias с абсолютным src-путём.
+ *   - Если нет — пропускает (пакет установлен из registry, dist-only).
+ *
+ * Wildcard-записи (key = '@pkg/*', target = 'src/*') НЕ преобразуются в Vite
+ * regex-алиасы намеренно: tsconfig.base.json уже не содержит wildcard для
+ * web-ui (заменены явными subpath-записями). Если в будущем появится wildcardentry
+ * — она будет проигнорирована (target с /* не существует как файл), что
+ * безопасно (fallback на exports).
+ */
+function buildWorkspaceSrcAliases(
+  basePaths: Record<string, string[]>,
+  workspaceRoot: string,
+): ViteAliasEntry[] {
+  const aliases: ViteAliasEntry[] = [];
+  for (const [specifier, targets] of Object.entries(basePaths)) {
+    const target = targets[0];
+    if (!target) continue;
+    // Skip wildcard entries — they can't point to a single real file.
+    if (specifier.endsWith('/*') || target.endsWith('/*')) continue;
+    const absTarget = resolve(workspaceRoot, target);
+    // Self-discriminating check: only add alias if the src file actually exists.
+    // In capsule-test the packages/ directory doesn't exist → existsSync false
+    // → alias skipped → Vite uses package.json exports (dist).
+    if (!existsSync(absTarget)) continue;
+    aliases.push({ find: specifier, replacement: absTarget });
+  }
+  // Sort most-specific first (longer find = more specific).
+  // Vite alias matching is prefix-based: "@capsuletech/web-ui" would match
+  // "@capsuletech/web-ui/select" before the subpath entry gets a chance.
+  // Sorting by descending find-length ensures subpaths win over bare specifiers.
+  aliases.sort((a, b) => String(b.find).length - String(a.find).length);
+  return aliases;
 }
 
 async function readLocalRaw(localPathsConfigPath: string): Promise<Record<string, string[]>> {
@@ -129,6 +183,8 @@ function buildViteAliases(local: Record<string, string[]>, appRoot: string): Vit
       });
     }
   }
+  // Sort most-specific first — same reason as in buildWorkspaceSrcAliases.
+  aliases.sort((a, b) => String(b.find).length - String(a.find).length);
   return aliases;
 }
 

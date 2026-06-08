@@ -10,4 +10,7 @@ export default defineAppConfig({
   api: () => ({
     bases: { default: '/api' },
   }),
+  router: {
+    transition: true,
+  },
 });

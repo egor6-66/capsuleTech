@@ -48,8 +48,7 @@ export { Card, Field };
 const createLazy = (importer: () => Promise<any>, name: string) =>
   lazy(() => importer().then((m) => ({ default: m[name] })));
 
-// Animate / Resizable — motionone (~46KB), only used in specific animated sections
-export const Animate = createLazy(() => import('@capsuletech/web-ui/wrappers'), 'Animate');
+// Resizable — motionone, only used in specific resizable sections
 export const Resizable = createLazy(() => import('@capsuletech/web-ui/wrappers'), 'Resizable');
 
 // PreviewCard — single-item renderer, optional; separate chunk

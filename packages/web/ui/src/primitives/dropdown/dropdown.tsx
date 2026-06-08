@@ -49,13 +49,17 @@ const Trigger = <T extends ValidComponent = 'button'>(props: IDropdownTriggerPro
 /**
  * Dropdown panel teleported into a Portal (mounted on `document.body` by default).
  * Kobalte uses Floating UI internally for viewport-safe collision detection + flip.
+ *
+ * Enter + exit animations are applied via the `popover-animate` class (from web-style
+ * `@keyframes popover-in`/`popover-out`) using Kobalte's native `data-[expanded]` /
+ * `data-[closed]` attributes — no forceMount or motionone required.
  */
 const Content = (props: IDropdownContentProps) => {
   const [local, others] = splitProps(props, ['class', 'style', 'portalProps']);
   return (
     <KobalteDropdown.Portal {...local.portalProps}>
       <KobalteDropdown.Content
-        class={cn(dropdownContentCva(), local.class)}
+        class={cn(dropdownContentCva(), 'popover-animate', local.class)}
         style={local.style}
         {...(others as object)}
       />
@@ -135,13 +139,16 @@ const SubTrigger = (props: IDropdownSubTriggerProps) => {
 
 /**
  * Panel for a nested submenu — same Portal + collision-detection behaviour as `Content`.
+ *
+ * Inherits the same enter + exit animations via `popover-animate` (`data-[expanded]` /
+ * `data-[closed]` Kobalte attributes) — nested submenus animate independently.
  */
 const SubContent = (props: IDropdownSubContentProps) => {
   const [local, others] = splitProps(props, ['class', 'style', 'portalProps']);
   return (
     <KobalteDropdown.Portal {...local.portalProps}>
       <KobalteDropdown.Content
-        class={cn(dropdownContentCva(), local.class)}
+        class={cn(dropdownContentCva(), 'popover-animate', local.class)}
         style={local.style}
         {...(others as object)}
       />

@@ -11,7 +11,7 @@ import type { Utils as UtilsNamespace } from '@capsuletech/shared-utils';
 import type { Zod as ZodNamespace } from '@capsuletech/shared-zod';
 import type { ICapsuleRouter } from '@capsuletech/web-router';
 import type { IBaseStateSchema, IBridge, IMachineContext } from '@capsuletech/web-state';
-import type { Animate, Button, Card, Field, Group, Input, Layout, List } from '@capsuletech/web-ui';
+import type { Button, Card, Field, Group, Input, Layout, List } from '@capsuletech/web-ui';
 import type { Dropdown } from '@capsuletech/web-ui/dropdown';
 import type { DropdownMenu } from '@capsuletech/web-ui/dropdownMenu';
 import type { PreviewCard } from '@capsuletech/web-ui/previewCard';
@@ -165,7 +165,6 @@ type ViewLayoutSubset = Pick<typeof Layout, 'Grid' | 'Flex'>;
 type UniversalUiRaw = {
   /** Grid + Flex для internal layout. Matrix переехал в @capsuletech/web-shell. */
   Layout: ViewLayoutSubset;
-  Animate: typeof Animate;
   Typography: typeof Typography;
 };
 

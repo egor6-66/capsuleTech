@@ -16,6 +16,7 @@ createRouter<TRouteTree>({
   basepath?,          // URL-префикс под-пути раздачи (e.g. '/ewc')
   notFoundRedirect?,  // путь редиректа при 404; undefined → дефолтный экран TanStack
   beforeLoad?,        // глобальный guard (auth, roles, maintenance) — ADR 030
+  viewTransition?,    // нативный View Transitions API (TanStack defaultViewTransition); дефолт false
 }): { raw: TanStackRouter<TRouteTree>; capsuleRouter: ICapsuleRouter<TRouteTree> }
 
 // Hook
@@ -26,7 +27,7 @@ ICapsuleRouter<TRouteTree>    // { goTo, back, current, raw }
 ICapsuleRouterContext<TUser>  // TUser & { [k]: unknown }
 IGoToOpts                     // { params?, search?, hash?, replace? }
 IBeforeLoadContext            // { location, cause, params, search, context, preload, abortController }
-ICreateRouterOpts<TRouteTree> // { routeTree, context?, basepath?, notFoundRedirect?, beforeLoad? }
+ICreateRouterOpts<TRouteTree> // { routeTree, context?, basepath?, notFoundRedirect?, beforeLoad?, viewTransition? }
 TanStackRouter                // re-export @tanstack/solid-router
 AnyRoute                      // re-export @tanstack/router-core
 redirect                      // re-export @tanstack/solid-router (для throw redirect(...))
@@ -47,10 +48,10 @@ notFound                      // re-export @tanstack/solid-router (для throw 
 | Файл | Что |
 |---|---|
 | `src/types.ts` | `wrap()`, `normalizeBase()`, все типы (включая `IBeforeLoadContext`, `ICreateRouterOpts`). Type-only импорт TanStack — секрет node-env тестов. |
-| `src/service.ts` | `createRouter()` — value-импорт `@tanstack/solid-router`, проводит `notFoundRedirect` и `beforeLoad` |
+| `src/service.ts` | `createRouter()` — value-импорт `@tanstack/solid-router`, проводит `notFoundRedirect`, `beforeLoad`, `viewTransition` |
 | `src/context.ts` | `RouterContext` + `useRouter()` hook |
 | `src/index.ts` | barrel + ре-экспорт `redirect`/`notFound` из `@tanstack/solid-router` |
-| `src/__tests__/` | 35 тестов: wrap (14), normalizeBase (8), context (2), notFoundRedirect (5), beforeLoad (6) — node-env без jsdom |
+| `src/__tests__/` | 39 тестов: wrap (14), normalizeBase (8), context (2), notFoundRedirect (5), beforeLoad (6), viewTransition (4) — node-env без jsdom |
 
 ## Ключевые инварианты
 

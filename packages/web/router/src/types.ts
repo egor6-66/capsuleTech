@@ -120,6 +120,14 @@ export interface ICreateRouterOpts<TRouteTree extends AnyRoute = AnyRoute> {
    */
   notFoundRedirect?: string;
   /**
+   * Включает нативный браузерный View Transitions API для всех навигаций
+   * (TanStack `defaultViewTransition`). Кроссфейд старого/нового DOM делается
+   * браузером; внешний вид настраивается глобальным CSS `::view-transition-old/new(...)`
+   * (в @capsuletech/web-style). Дефолт — выключено (undefined/false).
+   * Грейсфул-деградация: в браузерах без поддержки API навигация просто без анимации.
+   */
+  viewTransition?: boolean;
+  /**
    * Глобальный guard, вызываемый TanStack **перед** рендером любого маршрута.
    * Исполняется на root-route — охватывает **все** навигации в приложении.
    *

@@ -301,8 +301,7 @@
   "dependencies": {
     "@corvu/resizable": "^0.2.5",
     "class-variance-authority": "^0.7.1",
-    "lucide-solid": "^1.16.0",
-    "solid-motionone": "^1.0.4"
+    "lucide-solid": "^1.16.0"
   },
   "peerDependencies": {
     "@capsuletech/web-style": "workspace:*",

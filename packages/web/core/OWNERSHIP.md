@@ -93,12 +93,15 @@ createRoot(Bootstrap, { container: 'my-app', defaultTheme: 'light' });
 import { BaseProviders } from '@capsuletech/web-core/providers';
 <BaseProviders routeTree={routeTree} routerContext={...} basepath={import.meta.env.BASE_URL} vitals showDashboard
   notFoundRedirect="/workspace"
-  beforeLoad={({ location }) => { ... }}>
+  beforeLoad={({ location }) => { ... }}
+  transition={true}>
   ...
 </BaseProviders>
 ```
 
 `beforeLoad?: ICreateRouterOpts['beforeLoad']` — переиспользует тип из web-router (не дублирует); `undefined` = нет guard'а (дефолт).
+
+`transition?: boolean | 'none'` — включатель нативного View Transitions API. Дефолт — выключено (`undefined` или `'none'`). При `true` BaseProviders передаёт `viewTransition: true` в `createRouter` → TanStack Router вызывает `document.startViewTransition()` на каждом переходе. Внешний вид задаётся через CSS `::view-transition-old/new(root)` в `@capsuletech/web-style`. `AnimatedOutlet` и `RouterTransitionContext` удалены. `Ui.Outlet` в Widget/Page — сырой TanStack `<Outlet/>`.
 
 **НЕТ** `./css` — CSS был удалён из этого пакета. Bootstrap-стили теперь живут в `.capsule/styles.css`, который генерится builders scaffold и импортируется в `bootstrap.tsx` приложения.
 
@@ -116,7 +119,7 @@ import { BaseProviders } from '@capsuletech/web-core/providers';
 
 - **`Providers` — namespace, не named export.** `import { Providers } from '@capsuletech/web-core'; <Providers.BaseProviders>`. Расширяемая namespace для будущих `Providers.TestingProvider` и т.д. Не плющить в named.
 
-- **`Ui.Layout` — plain object**, не вызываемый компонент. `{ Grid, Flex, Matrix }` — три lazy-компонента. Источник: `src/ui-kit/imports.tsx:17`.
+- **`Ui.Layout` — plain object**, не вызываемый компонент. `{ Grid, Flex }` — два lazy-компонента. Источник: `src/ui-kit/imports.tsx:17`.
 
 - **Все `Ui.*` — lazy через `createLazy`.** Обёртка над `lazy(() => import(...).then(m => ({ default: m[name] })))`. Нужен `<Suspense>` вокруг дерева где они используются.
 
@@ -136,6 +139,8 @@ import { BaseProviders } from '@capsuletech/web-core/providers';
 
 ## План рефакторинга / оптимизаций
 
+- [x] **`Ui.Animate` удалён** — routing/popover-анимации переведены на нативный CSS (View Transitions + Kobalte data-attrs); `Animate` убран из `import type` в `interfaces.ts`, из `UniversalUiRaw`, из `page.tsx rawUi`, из `ui-kit/imports.tsx` (lazy export). `solid-motionone` удаляет owner-web-ui следующим шагом. 391 тест green (2026-06-08).
+- [x] **View Transitions API — config-driven route transitions** — `IAppConfig.router.transition: boolean | 'none'`; при `true` BaseProviders передаёт `viewTransition: true` в `createRouter` → TanStack Router вызывает `document.startViewTransition()`; внешний вид — CSS в web-style; `AnimatedOutlet`/`RouterTransitionContext`/`solid-motionone` удалены; `Ui.Outlet` = сырой TanStack `<Outlet/>`; 4 новых теста в `base-providers-view-transition.test.ts`. 392 теста green (2026-06-08).
 - [ ] **Завести `docs/_meta/web-core.md` AI anchor** — без него Claude-инстансы каждый раз перечитывают весь README. (priority: high)
 - [ ] **Покрытие engine тестами выше 70%** — сейчас точечное: `ui-proxy`, `controller-proxy`, `derivation`, `getTargetData` покрыты; пробелы в `logic-wrapper` и `ctx`. (priority: medium)
 - [ ] **SSR-готовность** — `createRoot` CSR-only (`document` в hot path). Нужна `hydrate`-ветка для SSR. (priority: low)

@@ -54,6 +54,7 @@ export const createRouter = <TRouteTree extends AnyRoute>(opts: ICreateRouterOpt
             Navigate({ to: notFoundRedirect, replace: true } as never),
         }
       : {}),
+    ...(opts.viewTransition ? { defaultViewTransition: true } : {}),
   });
 
   return {
