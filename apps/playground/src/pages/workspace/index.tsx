@@ -20,11 +20,7 @@ const Workspace = Page((Ui) => (
         initialSize: 0.04,
       },
       main: {
-        children: (
-          <Ui.Layout.Flex direction="col" class="vt-route-content h-full w-full">
-            <Ui.Outlet />
-          </Ui.Layout.Flex>
-        ),
+        children: <Ui.Outlet />,
         resizable: false,
       },
     }}

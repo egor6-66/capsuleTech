@@ -49,6 +49,20 @@ presentation and emits → tier 1 in web-ui.**
 
 ## Quirks / gotchas
 
+- **`vt-route-content` on main slot** — `cell.id='main'` (in `app-shell` preset and
+  raw rows alike) automatically receives CSS class `vt-route-content`, which maps to
+  `view-transition-name: capsule-content` defined in `@capsuletech/web-style/index.css`.
+  This makes the main content region animate on nested navigation while chrome
+  (header/sidebar/footer) stays static — zero app boilerplate needed.
+  Uniqueness is guaranteed by convention: only `cell.id='main'` gets the class, and
+  a well-formed shell has exactly one such cell at a time. If two `Matrix` instances
+  with `id='main'` cells are in the DOM simultaneously, the browser will warn about a
+  duplicate `view-transition-name`; pass a custom class override or use raw rows without
+  `id='main'` on the second Matrix to avoid this. The class is inert when View
+  Transitions are disabled (`view-transition-name` with no active transition = no-op).
+  Apps that previously wrapped `Ui.Outlet` in `<... class="vt-route-content">` manually
+  should remove that wrapper — Matrix now provides the region automatically.
+
 - **`ModeToggle` is config-driven** (`src/ui/modeToggle/`). One component for all
   boolean app-modes via `IModeDescriptor` — replaced the four near-identical
   `*ModeToggle` components deleted from `@capsuletech/web-ui/composites`. Built-in
