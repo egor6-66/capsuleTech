@@ -7,12 +7,12 @@
  * Auth.Login одиночный компонент, Shape тут = типизированный props-контейнер.
  */
 const Login = Shape(
-  (ui, { zod }) => ({
+  (_, { zod }) => ({
     // Схема ролей стратегии 'role' — данные формы входа.
     schema: zod.array(zod.object({ value: zod.string(), label: zod.string() })),
     as: Auth.Login,
   }),
-  (ui, props) => ({
+  (_, props) => ({
     type: props?.type ?? 'role',
     roles: [
       { value: 'developer', label: 'Developer' },
@@ -20,7 +20,7 @@ const Login = Shape(
     ],
     title: 'Вход',
     submitLabel: 'Войти',
-    footerNote: 'Это эталонный app фреймворка Capsule',
+    footerNote: 'Web playgrounD',
   }),
 );
 

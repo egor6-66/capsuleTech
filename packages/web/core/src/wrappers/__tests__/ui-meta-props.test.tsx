@@ -88,10 +88,6 @@ describe('WidgetUi — IUiMetaProps injected into component props', () => {
     expectTypeOf<CardProps>().toMatchTypeOf<{ meta?: ITagMeta }>();
   });
 
-  it('Ui.Animate accepts meta prop', () => {
-    type AnimateProps = Parameters<WidgetUi['Animate']>[0];
-    expectTypeOf<AnimateProps>().toMatchTypeOf<{ meta?: ITagMeta }>();
-  });
 });
 
 // ---------------------------------------------------------------------------

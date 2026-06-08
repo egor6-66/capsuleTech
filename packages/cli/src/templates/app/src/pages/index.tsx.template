@@ -1,6 +1,6 @@
 const Index = Page((Ui) => (
   <Ui.Layout.Flex class="min-h-screen items-center justify-center">
-    <Widgets.Welcome />
+    <Ui.Typography.H1>Capsule App</Ui.Typography.H1>
   </Ui.Layout.Flex>
 ));
 

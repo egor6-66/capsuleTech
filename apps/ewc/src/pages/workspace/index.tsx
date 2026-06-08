@@ -14,15 +14,9 @@
  * header/main edit-affordances. Внутренние страницы (Dashboard) подключают
  * `useLayoutMode` сами через Matrix internal default.
  *
- * **Page-transition анимация — TODO:** будем делать через проектный
- * `Ui.Animate` (solid-motionone). Предыдущая попытка (`<For each={[pathname]}>`
- * + локальный FadeIn на opacity-signal'е) откачена — не подходит, нужно
- * через свою либу. Подходить надо аккуратно: тест показал что
- * `<Animate keyed={pathname}>` не пере-mount'ит Motion на смену keyed
- * (тот же DOM-нод остаётся, opacity не дрожит). Корень не до конца
- * выяснен — возможно lazy-wrapping `Ui.Animate` через `createLazy()`
- * + Presence `resolveFirst` в solid-motionone не находит swap. Когда
- * вернёмся к задаче — копать оттуда.
+ * **Page-transition анимация:** доступна нативно через
+ * `config.router.transition` (View Transitions API) — включается в
+ * `capsule.app.ts`, без правок этого файла.
  */
 const Workspace = Page((Ui) => (
   <Shell.Matrix

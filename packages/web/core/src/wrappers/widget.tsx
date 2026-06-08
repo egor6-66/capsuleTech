@@ -1,5 +1,5 @@
-import { useSettingsMode } from '@capsuletech/web-style';
 import { Outlet } from '@tanstack/solid-router';
+import { useSettingsMode } from '@capsuletech/web-style';
 import { For, Show } from 'solid-js';
 import { useCtx } from '../engine/ctx';
 import { UiProxy } from '../engine/ui-proxy';

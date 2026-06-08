@@ -85,7 +85,7 @@ export const AuthLoginForm = View<IAuthLoginFormProps>((Ui, props) => {
                   >
                     <Ui.Select
                       options={(field.options ?? []) as Array<{ value: string; label: string }>}
-                      value={field.defaultValue}
+                      defaultValue={field.defaultValue}
                       meta={{ tags: [field.tag] }}
                       placeholder={field.placeholder ?? `Выберите ${field.label.toLowerCase()}…`}
                     />

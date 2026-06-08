@@ -206,6 +206,8 @@ localStorage keys: `capsule-theme` (theme name) and `capsule-theme-mode` (`"ligh
 
 - **Solid-Motion / animation tokens** — пока нет (есть `pulse-subtle` keyframe но это для status-indicator). Анимации делаются через `solid-motionone` в web-ui (Animate primitive).
 
+- **View Transitions (Stage 2, 2026-06-08)** — `root` статичен (`animation: none`), кроссфейдится только именованный регион `capsule-content`. Приложение вешает класс `.vt-route-content` на стабильный контейнер вокруг `<Outlet />`. `::view-transition-group(capsule-content)` имеет `animation-duration: 0ms` — подавляет морф позиции/размера при смене лейаута (login→workspace), оставляя только чистый opacity-fade. Keyframes: `vt-fade-in` / `vt-fade-out` (200/220ms).
+
 - **Scrollbar overlay (no gutter)** — `.scrollbar-hover` намеренно НЕ содержит `scrollbar-gutter: stable`. Скроллбар рисуется поверх контента (overlay), пространство не резервируется. Trade-off: на Firefox при первом появлении скроллбара возможен однократный layout shift шириной 1× scrollbar-size. Если понадобится custom overlay scrollbar без layout shift — заводить отдельный floating-элемент (см. план рефакторинга).
 
 ## План рефакторинга / оптимизаций

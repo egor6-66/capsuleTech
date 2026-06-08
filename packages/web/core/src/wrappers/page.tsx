@@ -13,7 +13,6 @@ export const PageWrapper: IPageWrapper = (Component) => {
       ...(BaseUi as any),
       Layout: (BaseUi as any).Layout,
       Outlet,
-      Animate: (BaseUi as any).Animate,
     } as any;
     // Mirror view.tsx: wrap through UiProxy when inside a Controller-tree.
     // Pages are typically root-level (no Controller parent), so ctx is usually
