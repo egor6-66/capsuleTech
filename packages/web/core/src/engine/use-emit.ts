@@ -24,7 +24,8 @@
  */
 
 import { useContext } from 'solid-js';
-import type { ITarget } from '../wrappers/interfaces';
+import type { EmitFn, ITarget } from '../wrappers/interfaces';
+import type { ICtx } from './ctx';
 import { Context } from './ctx';
 import { deriveName, getTargetData } from './derivation';
 
@@ -71,6 +72,28 @@ export const normalizeTarget = (partial: Partial<ITarget> = {}): ITarget => {
 };
 
 /**
+ * Фабрика функции `emit` по готовому `ICtx`.
+ *
+ * Используется и внутри `logic-wrapper.tsx` (для инжекта в handler-API event + lifecycle),
+ * и внутри `useEmit()` (для Views/render-scope).
+ *
+ * Замыкание читает `ctx.controller` и `ctx.store.ctx` **лениво** при каждом вызове —
+ * тайминг не сломается даже если ctx создан до того как XState-машина успела
+ * инициализировать store.ctx.
+ *
+ * Dispatch-путь идентичен UiProxy `buildEventBindings`:
+ *   `ctx.controller[eventName](target, ctx.store.ctx)`
+ *
+ * @internal Не экспортируется из публичного barrel — только для use-emit.ts + logic-wrapper.tsx.
+ */
+export const createEmit =
+  (ctx: ICtx): EmitFn =>
+  (eventName: string, partial?: Partial<ITarget>): unknown => {
+    const target = normalizeTarget(partial);
+    return ctx.controller[eventName](target, ctx.store.ctx);
+  };
+
+/**
  * Возвращает функцию `emit`, которая программно диспатчит событие в ближайший
  * Controller/Feature по тому же пути, что UiProxy для DOM-событий:
  *
@@ -81,7 +104,7 @@ export const normalizeTarget = (partial: Partial<ITarget> = {}): ITarget => {
  *
  * @throws {Error} если вызван вне Controller/Feature-scope (нет ControllerContext).
  */
-export const useEmit = (): ((eventName: string, target?: Partial<ITarget>) => unknown) => {
+export const useEmit = (): EmitFn => {
   const ctx = useContext(Context);
 
   if (!ctx) {
@@ -91,12 +114,5 @@ export const useEmit = (): ((eventName: string, target?: Partial<ITarget>) => un
     );
   }
 
-  return (eventName: string, partial?: Partial<ITarget>): unknown => {
-    const target = normalizeTarget(partial);
-    // Dispatch-путь идентичен UiProxy buildEventBindings (строка 124 ui-proxy.tsx):
-    //   safeCall(ctx.controller[name], data, ctx.store.ctx)
-    // Здесь не оборачиваем в safeCall — пользователь может и должен ловить ошибки
-    // на своём уровне. async-reject пробрасывается как есть (см. аналог в ControllerProxy).
-    return ctx.controller[eventName](target, ctx.store.ctx);
-  };
+  return createEmit(ctx);
 };

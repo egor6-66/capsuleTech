@@ -4,27 +4,27 @@
  */
 
 /** GET /app-schemas — список. AppSchemaInfoDto = AppSchema без templates. */
-export const list = defineEndpoint((z) => ({
+export const list = defineEndpoint(({ zod }) => ({
   method: 'GET',
   path: '/app-schemas',
-  request: z.object({}),
-  response: z.array(Entities.AppSchema.schema.omit({ templates: true })),
+  request: zod.object({}),
+  response: zod.array(Entities.AppSchema.schema.omit({ templates: true })),
 }));
 
 /** POST /app-schemas — создать схему (AppSchemaCreateDto). */
-export const create = defineEndpoint((z) => ({
+export const create = defineEndpoint(({ zod }) => ({
   method: 'POST',
   path: '/app-schemas',
-  request: z.object({
-    name: z.string().min(1),
-    displayName: z.string().min(1),
-    templates: z
+  request: zod.object({
+    name: zod.string().min(1),
+    displayName: zod.string().min(1),
+    templates: zod
       .array(
-        z.object({
-          name: z.string().min(1),
-          bind: z.string().optional(),
-          description: z.string().optional(),
-          templateIds: z.array(z.string().uuid()).optional(),
+        zod.object({
+          name: zod.string().min(1),
+          bind: zod.string().optional(),
+          description: zod.string().optional(),
+          templateIds: zod.array(zod.string().uuid()).optional(),
         }),
       )
       .optional(),
@@ -33,26 +33,26 @@ export const create = defineEndpoint((z) => ({
 }));
 
 /** GET /app-schemas/{id} — последняя версия. */
-export const getById = defineEndpoint((z) => ({
+export const getById = defineEndpoint(({ zod }) => ({
   method: 'GET',
   path: '/app-schemas/:id',
-  request: z.object({ id: z.string().uuid() }),
+  request: zod.object({ id: zod.string().uuid() }),
   response: Entities.AppSchema.schema,
 }));
 
 /** PUT /app-schemas/{id} — новая версия (AppSchemaVersionUpdateDto). */
-export const update = defineEndpoint((z) => ({
+export const update = defineEndpoint(({ zod }) => ({
   method: 'PUT',
   path: '/app-schemas/:id',
-  request: z.object({
-    id: z.string().uuid(),
-    templates: z
+  request: zod.object({
+    id: zod.string().uuid(),
+    templates: zod
       .array(
-        z.object({
-          name: z.string().min(1),
-          bind: z.string().optional(),
-          description: z.string().optional(),
-          templateIds: z.array(z.string().uuid()).optional(),
+        zod.object({
+          name: zod.string().min(1),
+          bind: zod.string().optional(),
+          description: zod.string().optional(),
+          templateIds: zod.array(zod.string().uuid()).optional(),
         }),
       )
       .optional(),
@@ -61,20 +61,20 @@ export const update = defineEndpoint((z) => ({
 }));
 
 /** PATCH /app-schemas/{id} — метаданные (AppSchemaUpdateDto). */
-export const updateMeta = defineEndpoint((z) => ({
+export const updateMeta = defineEndpoint(({ zod }) => ({
   method: 'PATCH',
   path: '/app-schemas/:id',
-  request: z.object({
-    id: z.string().uuid(),
-    name: z.string().optional(),
-    displayName: z.string().optional(),
-    templates: z
+  request: zod.object({
+    id: zod.string().uuid(),
+    name: zod.string().optional(),
+    displayName: zod.string().optional(),
+    templates: zod
       .array(
-        z.object({
-          name: z.string().min(1),
-          bind: z.string().optional(),
-          description: z.string().optional(),
-          templateIds: z.array(z.string().uuid()).optional(),
+        zod.object({
+          name: zod.string().min(1),
+          bind: zod.string().optional(),
+          description: zod.string().optional(),
+          templateIds: zod.array(zod.string().uuid()).optional(),
         }),
       )
       .optional(),
@@ -83,32 +83,32 @@ export const updateMeta = defineEndpoint((z) => ({
 }));
 
 /** DELETE /app-schemas/{id} — 204 No Content. */
-export const remove = defineEndpoint((z) => ({
+export const remove = defineEndpoint(({ zod }) => ({
   method: 'DELETE',
   path: '/app-schemas/:id',
-  request: z.object({ id: z.string().uuid() }),
+  request: zod.object({ id: zod.string().uuid() }),
 }));
 
 /** GET /app-schemas/{id}/versions — список версий. */
-export const versions = defineEndpoint((z) => ({
+export const versions = defineEndpoint(({ zod }) => ({
   method: 'GET',
   path: '/app-schemas/:id/versions',
-  request: z.object({ id: z.string().uuid() }),
-  response: z.array(Entities.VersionInfo.schema),
+  request: zod.object({ id: zod.string().uuid() }),
+  response: zod.array(Entities.VersionInfo.schema),
 }));
 
 /** GET /app-schemas/{id}/versions/{versionId} — версия по ID. */
-export const versionById = defineEndpoint((z) => ({
+export const versionById = defineEndpoint(({ zod }) => ({
   method: 'GET',
   path: '/app-schemas/:id/versions/:versionId',
-  request: z.object({ id: z.string().uuid(), versionId: z.string().uuid() }),
+  request: zod.object({ id: zod.string().uuid(), versionId: zod.string().uuid() }),
   response: Entities.AppSchema.schema,
 }));
 
 /** GET /app-schemas/{id}/versions/number/{versionNumber} — версия по номеру. */
-export const versionByNumber = defineEndpoint((z) => ({
+export const versionByNumber = defineEndpoint(({ zod }) => ({
   method: 'GET',
   path: '/app-schemas/:id/versions/number/:versionNumber',
-  request: z.object({ id: z.string().uuid(), versionNumber: z.number().int() }),
+  request: zod.object({ id: zod.string().uuid(), versionNumber: zod.number().int() }),
   response: Entities.AppSchema.schema,
 }));

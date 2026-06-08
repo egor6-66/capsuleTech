@@ -13,15 +13,15 @@
 
 const MOCK_LATENCY_MS = 800;
 
-export const login = defineEndpoint((z) => ({
+export const login = defineEndpoint(({ zod }) => ({
   method: 'POST',
   path: '/auth/login',
-  request: z.object({
-    login: z.string(),
-    password: z.string(),
+  request: zod.object({
+    login: zod.string(),
+    password: zod.string(),
   }),
-  response: z.object({
-    token: z.string(),
+  response: zod.object({
+    token: zod.string(),
   }),
   preRequest: async ({ input, resolve, reject }) => {
     await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS));
@@ -33,15 +33,15 @@ export const login = defineEndpoint((z) => ({
   },
 }));
 
-export const register = defineEndpoint((z) => ({
+export const register = defineEndpoint(({ zod }) => ({
   method: 'POST',
   path: '/auth/register',
-  request: z.object({
-    login: z.string(),
-    password: z.string(),
+  request: zod.object({
+    login: zod.string(),
+    password: zod.string(),
   }),
-  response: z.object({
-    token: z.string(),
+  response: zod.object({
+    token: zod.string(),
   }),
   preRequest: async ({ resolve }) => {
     await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS));

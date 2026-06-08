@@ -13,15 +13,15 @@
 
 const MOCK_LATENCY_MS = 800;
 
-export const login = defineEndpoint((z) => ({
+export const login = defineEndpoint(({ zod }) => ({
   method: 'POST',
   path: '/auth/login',
-  request: z.object({
-    login: z.string(),
-    password: z.string(),
+  request: zod.object({
+    login: zod.string(),
+    password: zod.string(),
   }),
-  response: z.object({
-    token: z.string(),
+  response: zod.object({
+    token: zod.string(),
   }),
   // Мок только когда __CAPSULE_MOCKS__ (build-time флаг). В реальной сборке
   // (без флага) preRequest = undefined → endpoint идёт в сеть на `/api/auth/login`.

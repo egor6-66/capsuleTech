@@ -1,3 +1,5 @@
+import { Utils } from '@capsuletech/shared-utils';
+import { Zod } from '@capsuletech/shared-zod';
 import { getApiClient } from '@capsuletech/web-query';
 import { useRouter } from '@capsuletech/web-router';
 import { createBridge, createState } from '@capsuletech/web-state';
@@ -15,6 +17,7 @@ import type {
 import { ControllerProxy } from './controller-proxy';
 import { Context, useCtx } from './ctx';
 import { bindEvents } from './ui-proxy';
+import { createEmit } from './use-emit';
 
 type Kind = 'controller' | 'feature';
 
@@ -28,7 +31,11 @@ export const createLogicWrapper =
 
       // Feature получает `api` (typed proxy из createApi) дополнительно. Controller
       // — только `router`: compliance запрещает IO в Controller'е, а api именно про IO.
-      const services: IServices = kind === 'feature' ? { router, api: getApiClient() } : { router };
+      // z и utils — capabilities, инжектируются в оба слоя (Controller и Feature).
+      const services: IServices =
+        kind === 'feature'
+          ? { router, api: getApiClient(), zod: Zod, utils: Utils }
+          : { router, zod: Zod, utils: Utils };
 
       const schema = defineStateSchema(services);
 
@@ -37,6 +44,20 @@ export const createLogicWrapper =
 
       const store = createBridge(state, send);
 
+      // ctx строится в два шага: сначала объект без controller (нужен для замыкания emit),
+      // потом controller строится через ControllerProxy (читает ctx лениво), потом
+      // controller присваивается в ctx. Порядок гарантирует, что при первом вызове emit
+      // (из хендлера после первого рендера) ctx.controller уже заполнен.
+      const ctx = { controller: null as any, state, store, parent };
+
+      // proxyEmit — ленивая обёртка: читает ctxEmit из замыкания в момент ВЫЗОВА,
+      // не в момент создания. Это позволяет передать её в ControllerProxy до того
+      // как ctxEmit создан, при этом избежав circular-dependency.
+      // Хендлеры вызываются только после рендера, к тому моменту ctxEmit уже задан.
+      let ctxEmit: ReturnType<typeof createEmit> | undefined;
+      const proxyEmit: ReturnType<typeof createEmit> = (eventName, partial) =>
+        ctxEmit!(eventName, partial);
+
       const controller = ControllerProxy({
         schema,
         state,
@@ -44,7 +65,23 @@ export const createLogicWrapper =
         store,
         parent,
         overrides: props.overrides,
+        // emit прокидывается в IHandlerApi каждого хендлера (event + lifecycle).
+        // proxyEmit — ленивое замыкание, ctxEmit присваивается ниже до первого вызова.
+        emit: proxyEmit,
       });
+
+      // controller готов — теперь создаём ctxEmit (ctx.controller уже присвоен).
+      ctx.controller = controller;
+
+      // Единственный экземпляр emit-функции для этого LogicWrapper'а.
+      // Переиспользуется: proxyEmit → ctxEmit (события в handler-API),
+      // lifecycleEmit (lifecycle-API), services.emit (factory-alias).
+      ctxEmit = createEmit(ctx);
+
+      // services.emit — ленивый alias для factory-тела. factory вызывается синхронно
+      // до ctx.controller, поэтому emit в services работает только при ленивом вызове
+      // (внутри хендлера, не на верхнем уровне factory). Это задокументировано в IServices.emit.
+      services.emit = ctxEmit;
 
       const stateApi: IStateApi = {
         get current() {
@@ -68,6 +105,9 @@ export const createLogicWrapper =
         store,
         state: stateApi,
         next: lifecycleNext,
+        // proxyEmit — ленивая обёртка над ctxEmit; к моменту вызова lifecycle-хука
+        // ctxEmit уже инициализирован (lifecycle createEffect запускается после рендера).
+        emit: proxyEmit,
       });
 
       // Lifecycle: onInit / onExit, плюс initial-onInit на mount
@@ -112,11 +152,6 @@ export const createLogicWrapper =
           console.error('[LogicWrapper] onDispose sync threw:', err);
         }
       });
-
-      // Захватываем ctx в замыкании для CompositeProxyContext.wrap.
-      // ctx — это объект с controller/store/state того же LogicWrapper'а,
-      // который UiProxy уже использует для event-dispatch.
-      const ctx = { controller, state, store, parent };
 
       return (
         <Suspense fallback={props.fallback}>

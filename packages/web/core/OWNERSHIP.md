@@ -55,9 +55,26 @@ import {
   type IDefineStateSchema, type IStateHandlers,     // schema-типы
   type IServices, type IWrapperProps,               // injected types
   type INext, type IStateApi,                       // handler-API helpers
+  type EmitFn,                                      // тип функции emit (ADR 032)
   type IViewWrapper, type IViewRenderer,            // View-specific types
   type IEntityDefinition, type IEntityWrapper,      // Entity-specific types
 } from '@capsuletech/web-core';
+```
+
+**`emit` в `IHandlerApi`** — программный HCA-event dispatch доступен в каждом хендлере (event + lifecycle):
+
+```ts
+Controller(({ api }) => ({
+  states: {
+    submitting: {
+      onInit: async ({ store, state, emit }) => {
+        const res = await api.auth.login(input);
+        emit('onLogin', { payload: { token: res.token } });
+        // Если контроллер не обрабатывает 'onLogin' → автобаблинг к родительской Feature
+      },
+    },
+  },
+}));
 ```
 
 Wrapper-имена (`View/Widget/Page/Controller/Feature/Shape/Entity`) — **глобальные в apps** через AutoImport. В app-коде их явно не импортируют, но они должны экспортироваться из barrel чтобы AutoImport мог их инжектить. `Entity` добавлен в WRAPPER_NAMES — pending owner-builders.
@@ -133,6 +150,7 @@ import { BaseProviders } from '@capsuletech/web-core/providers';
 - [x] **ShapeUiContext поднят в Widget/Page** — Shape первоклассный leaf из любого слоя (2026-05-21).
 - [x] **Layout добавлен в WidgetUi** — `Ui.Layout.Matrix` доступен в Widget (2026-05-21).
 - [x] **Wrapper signatures упрощены до `(Ui, props?)`** — registry-args убраны, `Views`/`Widgets`/`Shapes`/`Controllers`/`Features` — глобалы. `ShapeUiContext` revert (несёт только Ui, без Views-merge). Generic `<P>` для типизации props в Shape `as`-pattern (2026-05-21).
+- [x] **`emit` добавлен в `IHandlerApi` и `IServices`** — программный HCA-event dispatch нативно из любого хендлера, включая async lifecycle (`onInit`/`onExit`). `createEmit(ctx)` — единый хелпер без дублирования; `useEmit()` (Views) тоже использует его. `EmitFn` определён в `wrappers/interfaces.ts` (не в engine) — нет circular import. `proxyEmit`-замыкание в `logic-wrapper.tsx` решает chicken-and-egg `ctx.controller` vs `emit`. 11 новых тестов в `emit-in-handler-api.test.ts`. 360 тестов green, typecheck чистый (2026-06-08, ADR 032 фаза 1 extension).
 - [x] **`beforeLoad?` добавлен в `IAppConfig.router` и `IBaseProviderProps`** — generic глобальный guard на root-route (ADR 030, 2026-06-03). Тип переиспользован из `ICreateRouterOpts['beforeLoad']` web-router — не дублируется. `undefined` = нет guard'а. 320 тестов green.
 - [x] **Widget/Page store generic (handoff #1 item #4)** — `IWidgetWrapper`/`IPageWrapper` получили первый явный дженерик `F` (логический источник). `Widget<typeof Features.X>((Ui, store) => ...)` → `store: StoreOf<typeof Features.X>`, `store.ctx.data` типизирован как `CtxOf<typeof Features.X>`. Без `<F>`: `store: IBridge | undefined` (дефолт через `DefaultFeatureSource` маркер + `WidgetStore<F>` conditional). Inline-аннотация `store: StoreOf<...>` (ewc-стиль) backward-compatible — `S` инферируется из аннотации. Рантайм не изменился. 352 теста green, typecheck чистый (2026-06-06).
 - [x] **`Tooltip` добавлен в `Ui` namespace** — lazy compound (`Tooltip` + `Tooltip.Trigger/Content/Arrow`) зарегистрирован в `ui-kit/imports.tsx`; тип `typeof Tooltip` (из `@capsuletech/web-ui/tooltip`) добавлен в `ViewUiRaw` и `WidgetUiRaw` → `WithMetaProps` автоматически покрывает все 3 sub-components. Named re-exports в web-ui: `TooltipTrigger`, `TooltipContent`, `TooltipArrow` для `createLazy`. 16 новых характеризационных тестов в `src/wrappers/__tests__/ui-meta-props.test.tsx`. 336 тестов green (2026-06-03).

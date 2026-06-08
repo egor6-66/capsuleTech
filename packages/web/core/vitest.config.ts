@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import solid from 'vite-plugin-solid';
 import { defineConfig } from 'vitest/config';
 
@@ -5,6 +6,14 @@ export default defineConfig({
   // hot:false — отключаем solid-refresh для тестов (иначе jsdom получает
   // file:///@solid-refresh URL и ругается на 'filename must be ...').
   plugins: [solid({ hot: false })],
+  resolve: {
+    alias: {
+      // workspace-пакеты, которые ещё не материализованы в node_modules
+      // (pnpm install не запускался после добавления dep). Алиасы указывают
+      // прямо на src — Vite трансформирует их как обычные модули.
+      '@capsuletech/shared-utils': resolve(__dirname, '../../shared/utils/src/index.ts'),
+    },
+  },
   test: {
     include: ['src/**/__tests__/**/*.test.ts', 'src/**/__tests__/**/*.test.tsx'],
     // jsdom нужен для UiProxy render-тестов (создание элементов, dispatchEvent).
@@ -35,6 +44,7 @@ export default defineConfig({
           /lucide-solid/,
           /solid-motionone/,
           /solid-map-gl/,
+          /@capsuletech\/shared-utils/,
         ],
       },
     },

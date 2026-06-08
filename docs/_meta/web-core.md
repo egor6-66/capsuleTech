@@ -67,11 +67,11 @@ import { BaseProviders } from '@capsuletech/web-core/providers';
 
 ```ts
 // Domain data layer — НЕ компонент, plain frozen config object
-// z убран из аргументов (BREAKING). Схема строится через глобал Zod (auto-import shared-zod).
-Entity(() => {
-  schema: ZodType;          // любая zod-схема (обычно Zod.array(Zod.object(...)))
+// factory получает объект { zod } — инжектированный Zod namespace.
+Entity(({ zod }) => ({
+  schema: ZodType;          // любая zod-схема (обычно zod.array(zod.object(...)))
   defaults?: TData;         // sample fixtures для разработки и тестов
-}): { schema: ZodType; defaults?: TData }   // возвращает ровно то что вернула factory (frozen)
+})): { schema: ZodType; defaults?: TData }   // возвращает ровно то что вернула factory (frozen)
 
 View<P>((Ui: ViewUi, props: P) => JSX.Element): Component<P>
   // ViewUi теперь содержит: Layout (Grid, Flex), Table, DataTable, Button, Input, Card, Field, 
@@ -79,29 +79,33 @@ View<P>((Ui: ViewUi, props: P) => JSX.Element): Component<P>
 Widget<P>((Ui: WidgetUi, props: P) => JSX.Element): Component<P>
 Page<P>((Ui: PageUi, props: P) => JSX.Element): Component<P>
   // PageUi содержит Layout (Grid, Flex, Matrix), а также Widget-доступные компоненты
-// v2 (ADR 036): двухфазная форма. z убран из arg1; config вынесен в arg2.
-// arg1 (bind) — module-load; arg2 (config) — объект ИЛИ (props)=>config, реактивен.
+// v2 (ADR 036): двухфазная форма.
+// bind(ui, { zod }) — module-load; arg2 (config) — объект ИЛИ (ui, props)=>config, реактивен.
 Shape(
-  (ui: UiPathTracker) => ({
+  (ui: UiPathTracker, { zod }: IShapeTools) => ({
     schema: ZodType;          // → RowOf<S> для типизации arg2 и consumer-props
     as?: Component;           // контейнер/шаблон; несёт __tpl HKT-маркер
-    item?: {                  // batch-элемент (nav-паттерн)
-      use?: Component;        // use — не второй as
-      props?: (it: Row) => Record<string, unknown>;  // row-типизирован через overloads
-    };
   }),
   // arg2 необязателен. Row-тип вытекает из schema через IShapeWrapper-overloads.
-  (props) => ({ defaults?, columns?, sorting?, ...extras }) // ИЛИ plain-объект
+  (ui, props) => ({ defaults?, columns?, sorting?, ...extras }) // ИЛИ plain-объект
 ): Component<{
   data?: TData;        // overrides config.defaults
   as?: Component;      // overrides bind.as
   [extraKey: string]: unknown; // consumer extras win (переданы в шаблон)
 }>
 Controller((services: IServices) => IDefineStateSchema): Component
+  // services: { router, zod, utils }
 Feature((services: IServices) => IDefineStateSchema): Component
+  // services: { router, api?, zod, utils, emit? }
 ```
 
-**Shape v2 BREAKING (ADR 036):** `z` убран из bind-аргумента (был `(z, ui)`, стал `(ui)`). Config вынесен в arg2 (`(props)=>config` | объект). `IShapeFactory` и `IShapeDefinition` помечены `@deprecated`. `IShapeTemplateProps`/`IShapeRender` — удалены в v0.4.0, остаются удалёнными. Старая форма `Shape((z, ui) => { ...extras })` не поддерживается — hard-switch. HKT-маркер (`__tpl`, `MarkerOf`, `ApplyRowFrom`, `RowOf`) — новый публичный API из `shape/types.ts`.
+**Инъекция инструментов — объектом во всех wrapper'ах:**
+- `Controller`/`Feature`: `({ router, api, zod, utils, emit })` — деструктурируй что нужно, порядок не важен.
+- `Entity`: `({ zod })` — единственный инструмент, Zod идентичен глобалу `Zod` из shared-zod.
+- `Shape bind`: `(ui, { zod })` — `ui` первым (path-tracker), `{ zod }` вторым.
+- `Shape config`: `(ui, props)` — без изменений.
+
+**Shape v2 BREAKING (ADR 036):** Старая форма `Shape((z, ui) => { ...extras })` не поддерживается — hard-switch. `IShapeFactory`/`IShapeDefinition` — `@deprecated`. HKT-маркер (`__tpl`, `MarkerOf`, `ApplyRowFrom`, `RowOf`) — новый публичный API из `shape/types.ts`.
 
 **Generic `<P extends Record<string, any>>`** на View/Widget/Page renderer'ах — для типизации props на call site (Shape `as`-pattern: template-View получает item-данные как props).
 
@@ -178,6 +182,33 @@ ctx.store.updateComponent({ [id]: { value: data.value, type: data.type } });
 
 Полный `target` (8 полей: name/value/type/meta/dynamicMeta/payload/key/modifiers) **по-прежнему** идёт в `ctx.controller[name]` как аргумент. В store-payload — только runtime-mutable поля (value/type). Семантика разделения: `registerComponent` — единоразово на mount; `updateComponent` — runtime patches, мержится в существующий `components[id]`; `update`/SET_DATA — user API для `schema.context`, UiProxy её больше не использует. Подробнее — [[web-state]] + [[020-component-data-flow-split]].
 
+## emit в IHandlerApi (ADR 032, фаза 1 extension)
+
+`emit` доступен в каждом хендлере (event + lifecycle) через `IHandlerApi`. Главный кейс — эмит из async lifecycle без захвата `useEmit()` в render-scope:
+
+```ts
+Controller(({ api }) => ({
+  states: {
+    submitting: {
+      onInit: async ({ store, state, emit }) => {    // emit прямо в handler-API
+        const res = await api.auth.login(input);
+        emit('onLogin', { payload: { token: res.token, user } });
+        // Если Controller не обрабатывает 'onLogin' → автобаблинг к родительской Feature
+      },
+    },
+  },
+}));
+```
+
+**Семантика:** `emit(eventName, partial?)` → `normalizeTarget(partial)` → `ctx.controller[eventName](target, ctx.store.ctx)` → ControllerProxy FSM dispatch → `next()` автобаблинг. Тот же путь что UiProxy DOM-событие и `useEmit()`.
+
+**Реализация (без дублирования):**
+- `EmitFn` определён в `wrappers/interfaces.ts` (не в engine) — нет circular import.
+- `createEmit(ctx): EmitFn` — единый хелпер в `engine/use-emit.ts`. `useEmit()` и `logic-wrapper.tsx` оба используют его.
+- `logic-wrapper.tsx`: `proxyEmit` = ленивая обёртка (читает `ctxEmit` при вызове, не при создании) → нет chicken-and-egg с `ctx.controller`.
+- `ControllerProxy`: принимает опциональный `emit?: EmitFn`, прокидывает в `{ target, context, next, store, state, emit }`. Если `emit` не передан (старые тесты, compat) — no-op fallback.
+- `services.emit` — ленивый alias в factory: работает только при вызове изнутри хендлера (не на верхнем уровне factory, т.к. factory вызывается до инициализации ctx).
+
 ## useEmit (engine/use-emit.ts) — ADR 032, фаза 1
 
 Программный близнец DOM-dispatch'а UiProxy. Источник: `src/engine/use-emit.ts`, экспортируется из `wrappers/index.ts` → `src/index.ts`.
@@ -192,12 +223,13 @@ emit('onDrop', { payload: { nodeId: 'x' }, meta: { tags: ['canvas'] } });
 // → ControllerProxy: states[cur].onDrop → top-level → next() автобаблинг
 ```
 
-**Сигнатура:** `useEmit(): (eventName: string, target?: Partial<ITarget>) => unknown`
+**Сигнатура:** `useEmit(): EmitFn` = `(eventName: string, target?: Partial<ITarget>) => unknown`
 
 - `eventName: string` — любое имя (строгая типизация против schema-ключей — фазы 3-4 ADR 032, TODO в файле).
 - `target?: Partial<ITarget>` — нормализуется через `normalizeTarget()`: `name` выводится из `meta.tags` через `deriveName`, `modifiers` не выставляется (нет DOM-события), `from` пробрасывается если задан.
 - Возврат — то что вернул handler (включая Promise); async-reject не проглатывается.
 - Вне Controller/Feature-scope бросает: `"useEmit must be used inside a Controller or Feature scope"`.
+- Внутри использует `createEmit(ctx)` — тот же хелпер что и handler-API emit. Нет дублирования dispatch-логики.
 
 **Dispatch-путь идентичен UiProxy (`buildEventBindings`, строка 124 ui-proxy.tsx):**
 `ctx.controller[eventName](normalizedTarget, ctx.store.ctx)`
@@ -214,13 +246,13 @@ ControllerProxy резолвит `states[currentState][name]` → top-level → 
 
 - Текущий стейт **читается из XState**: `state.value`. Собственного runtime нет.
 - При вызове `controller.<method>(target, ctx)` ищет хэндлер: `schema.states[current][method]` → `schema[method]` (top-level) → `await next()` (автобабблинг).
-- Передаёт в хэндлер API: `{ target, context, next, store, state }`.
+- Передаёт в хэндлер API: `{ target, context, next, store, state, emit }`.
 - `state.set(name)` — `__GOTO_<name>__` в XState; `state.matches(name|name[])` — сверка.
 - `next(payload)` — **прямой вызов** `parent.controller[name]`, не XState event-bus. Опционально ремапит имя через `overrides` prop на Controller-обёртке.
 
 ## Известные грабли
 
-19. **`Entity` — единственный wrapper без Solid-компонента.** Все остальные wrappers (`View`, `Widget`, `Page`, `Controller`, `Feature`, `Shape`) возвращают `Component<P>`. `Entity` возвращает **frozen plain object** `{ schema, defaults? }`. HMRWrappingPlugin не трогает `entities/` файлы (нет `const X = Wrapper(...)` component pattern). UiProxy и ControllerProxy к Entity не применяются — это pure data layer. AutoImport делает `Entity` глобальным через `WRAPPER_NAMES` (owner-builders добавляет). Codegen `Entities.*` — через `ExportGeneratorPlugin` scan `entities/` (owner-builders добавляет). **BREAKING (ADR 036 / web-table-founding):** `z` убран из factory-аргумента. Старая форма `Entity((z) => ...)` не работает — factory теперь `() => ...`, Zod строится через глобал `Zod`.
+19. **`Entity` — единственный wrapper без Solid-компонента.** Все остальные wrappers (`View`, `Widget`, `Page`, `Controller`, `Feature`, `Shape`) возвращают `Component<P>`. `Entity` возвращает **frozen plain object** `{ schema, defaults? }`. HMRWrappingPlugin не трогает `entities/` файлы (нет `const X = Wrapper(...)` component pattern). UiProxy и ControllerProxy к Entity не применяются — это pure data layer. AutoImport делает `Entity` глобальным через `WRAPPER_NAMES` (owner-builders добавляет). Codegen `Entities.*` — через `ExportGeneratorPlugin` scan `entities/` (owner-builders добавляет). **Контракт factory:** `Entity(({ zod }) => ({ schema: zod.object({...}) }))` — инструменты передаются объектом, деструктурируй `zod`. Глобал `Zod` из auto-import тоже работает, но инжект предпочтителен. `$infer` и `RowOf` не зависят от формы factory-аргументов — типизация сохранена.
 
 20. **Типизация `Entities.*` глобала пока пуста.** `interface Entities {}` в `wrappers/interfaces.ts` — placeholder. Заполняется через codegen (ExportGeneratorPlugin scan `entities/` → `.capsule/@types/slots.d.ts`). До добавления owner-builders: `Entities.Users` будет `any`; после — `typeof import('@entities/users').default`.
 
@@ -252,7 +284,7 @@ ControllerProxy резолвит `states[currentState][name]` → top-level → 
 
 12. **`ShapeUiContext` несёт только `Ui`** (после revert PR #114 в commit 477b0fb). Раньше был combined `{ ...Ui, Views }` — теперь Shape берёт View-templates через global `Views.X.Y` в `as`, не через `ui.Views.X.Y` path-tracker.
 
-18. **Shape v2 — двухфазная форма, hard-switch (ADR 036).** Старая форма `Shape((z, ui) => ({ schema, as, ...extras }))` удалена. Новая: `Shape((ui)=>({schema,as,item?}), (props)=>({...config}))`. `z` убран из bind; config вынесен в arg2. `item: { use, props }` — batch-элемент (use, не второй as). HKT-маркер `__tpl` на шаблоне даёт row-типизацию без дубля. Экспортируются `MarkerOf`, `ApplyRow`, `ApplyRowFrom`, `RowOf`, `IShapeBind`, `IShapeConfigArg` из `shape/index.ts`. `IShapeFactory`/`IShapeDefinition` — `@deprecated`, удалятся после миграции apps. Реактивность arg2-функции: `mergeProps(configSource)` — Solid сам оборачивает функцию в `createMemo`.
+18. **Shape v2 — двухфазная форма, hard-switch (ADR 036).** Новая форма: `Shape((ui, { zod })=>({schema,as}), (ui, props)=>({...config}))`. `ui` — path-tracker первым, `{ zod }` — инструменты вторым в bind-функции. Config arg2 — `(ui, props)=>config` | plain-объект. `item: { use, props }` — batch-элемент в arg2 (use, не второй as). HKT-маркер `__tpl` на шаблоне даёт row-типизацию без дубля. Экспортируются `MarkerOf`, `ApplyRow`, `ApplyRowFrom`, `RowOf`, `IShapeBind`, `IShapeConfigArg`, `IShapeTools` из `shape/index.ts`. `IShapeFactory`/`IShapeDefinition` — `@deprecated`. Реактивность arg2-функции: `mergeProps(configSource)` — Solid сам оборачивает в `createMemo`. `IShapeBindFn` обновлён: `(ui: IShapeUi, tools: IShapeTools) => IShapeBind`.
 
 13. **Generic `<P>` на wrapper'ах требует `extends Record<string, any>`** — чтобы соответствовать Solid `Component<P>`. Default `Record<string, any>` сохраняет backward-compat для factory без `<P>`. Не упрощай до `<P = unknown>` — Solid Component откажет.
 
@@ -286,7 +318,7 @@ ControllerProxy резолвит `states[currentState][name]` → top-level → 
 
 | Хочу… | Куда лезть |
 |---|---|
-| Добавить новый Entity (domain data) | `apps/<app>/src/entities/<name>.ts` → `Entity(() => ({ schema: Zod.array(...), defaults? }))` + `export default`. Zod доступен как глобал через auto-import (@capsuletech/shared-zod). Codegen подхватит в `Entities.*`. `z.infer<typeof Entities.X.schema>` для типа. |
+| Добавить новый Entity (domain data) | `apps/<app>/src/entities/<name>.ts` → `Entity(({ zod }) => ({ schema: zod.array(...), defaults? }))` + `export default`. `zod` инжектируется wrapper'ом (тот же объект что глобал `Zod`). Codegen подхватит в `Entities.*`. `z.infer<typeof Entities.X.schema>` для типа. |
 | Расширить IEntityDefinition (validators, relations) | `packages/web/core/src/wrappers/entity/types.ts` → добавить поле в `IEntityDefinition`. При breaking change — bump major. |
 | Добавить новый primitive в `Ui` (например `Dialog`) | `src/ui-kit/imports.tsx` (lazy + `Object.assign` для compound) + тип в `ViewUiRaw`/`WidgetUiRaw` в `src/wrappers/interfaces.ts` + характеризационные тесты в `src/wrappers/__tests__/ui-meta-props.test.tsx`. Если primitive из другого пакета (не web-ui), проверь наличие subpath в его `package.json exports` и `tsconfig.base.json paths`. Composites (Dropdown, DropdownMenu, etc.) импортируются из web-ui (иногда с sub-components как `createLazy` named re-exports для compat). |
 | Добавить Layout component в View (например новый Matrix) | Layout.Grid и Layout.Flex уже доступны в ViewUi (PR #169 — subset). Matrix остаётся Widget/Page-only (дорогая по весу). Для добавления новой layout-варианты в View — определить в web-ui, затем добавить в `ViewUiRaw` тип и `src/ui-kit/imports.tsx`. |

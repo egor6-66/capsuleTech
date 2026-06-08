@@ -2,7 +2,7 @@
  * Navigation — batch-shape основной навигации UI-creator.
  *
  * Двухфазная форма (ADR 036):
- *  - bind (arg1): schema (`Zod.array({ label, to })`) + контейнер `ui.Group` (attached).
+ *  - bind (arg1): schema (`zod.array({ label, to })`) + контейнер `ui.Group` (attached).
  *  - config (arg2): `item: { use: ui.Button, props }` (row-типизирован из schema)
  *    + defaults + orientation/variant контейнера.
  *
@@ -10,8 +10,8 @@
  * Глобал `Shapes.Navigation`. Mount — `Widgets.Header` (workspace header).
  */
 const Navigation = Shape(
-  (ui) => ({
-    schema: Zod.array(Zod.object({ label: Zod.string(), to: Zod.string() })),
+  (ui, { zod }) => ({
+    schema: zod.array(zod.object({ label: zod.string(), to: zod.string() })),
     as: ui.Group,
   }),
   (ui) => ({

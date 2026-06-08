@@ -6,29 +6,29 @@
  * BranchInfoDto (ответ списка) = эта схема без parents/children/createdAt/model
  * — выводится в эндпойнте через `.omit(...)`.
  */
-const Branch = Entity(() => {
+const Branch = Entity(({ zod }) => {
   // BranchMetaDto — координаты ветки на канвасе.
-  const meta = Zod.object({
-    positionX: Zod.number().optional(),
-    positionY: Zod.number().optional(),
+  const meta = zod.object({
+    positionX: zod.number().optional(),
+    positionY: zod.number().optional(),
   });
 
   return {
-    schema: Zod.object({
-      id: Zod.string().uuid().optional(),
-      versionId: Zod.string().uuid().optional(),
-      version: Zod.number().int().optional(),
-      name: Zod.string().optional(),
-      displayName: Zod.string().optional(),
-      rootId: Zod.string().uuid().optional(),
-      category: Zod.enum(['VIEW', 'SCHEMA']).optional(),
-      parents: Zod.array(Zod.string().uuid()).optional(),
-      children: Zod.array(Zod.string().uuid()).optional(),
-      createdAt: Zod.string().optional(),
-      model: Zod.record(Zod.unknown()).optional(),
+    schema: zod.object({
+      id: zod.string().uuid().optional(),
+      versionId: zod.string().uuid().optional(),
+      version: zod.number().int().optional(),
+      name: zod.string().optional(),
+      displayName: zod.string().optional(),
+      rootId: zod.string().uuid().optional(),
+      category: zod.enum(['VIEW', 'SCHEMA']).optional(),
+      parents: zod.array(zod.string().uuid()).optional(),
+      children: zod.array(zod.string().uuid()).optional(),
+      createdAt: zod.string().optional(),
+      model: zod.record(zod.unknown()).optional(),
       meta: meta.optional(),
-      isTemplate: Zod.boolean().optional(),
-      isRoot: Zod.boolean().optional(),
+      isTemplate: zod.boolean().optional(),
+      isRoot: zod.boolean().optional(),
     }),
   };
 });

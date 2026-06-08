@@ -37,31 +37,31 @@ afterEach(() => {
 
 describe('createApi — structure', () => {
   it('flat namespace: registry { ep } → api.ep is callable', () => {
-    const ep = defineEndpoint((z) => ({
+    const ep = defineEndpoint(({ zod }) => ({
       method: 'GET',
       path: '/x',
-      response: z.any(),
+      response: zod.any(),
     }));
     const api = createApi({}, { ep });
     expect(typeof (api as any).ep).toBe('function');
   });
 
   it('nested namespace: registry { user: { get } } → api.user.get callable', () => {
-    const get = defineEndpoint((z) => ({
+    const get = defineEndpoint(({ zod }) => ({
       method: 'GET',
       path: '/u/:id',
-      request: z.object({ id: z.string() }),
-      response: z.object({ id: z.string() }),
+      request: zod.object({ id: zod.string() }),
+      response: zod.object({ id: zod.string() }),
     }));
     const api = createApi({}, { user: { get } });
     expect(typeof (api as any).user.get).toBe('function');
   });
 
   it('deeply nested namespaces work', () => {
-    const get = defineEndpoint((z) => ({
+    const get = defineEndpoint(({ zod }) => ({
       method: 'GET',
       path: '/p',
-      response: z.any(),
+      response: zod.any(),
     }));
     const api = createApi({}, { a: { b: { c: { get } } } });
     expect(typeof (api as any).a.b.c.get).toBe('function');
@@ -96,11 +96,11 @@ describe('createApi — end-to-end call', () => {
     const fetchSpy = mockFetch({ id: '1', email: 'a@b.c' });
     vi.stubGlobal('fetch', fetchSpy);
     try {
-      const get = defineEndpoint((z) => ({
+      const get = defineEndpoint(({ zod }) => ({
         method: 'GET',
         path: '/users/:id',
-        request: z.object({ id: z.string() }),
-        response: z.object({ id: z.string(), email: z.string() }),
+        request: zod.object({ id: zod.string() }),
+        response: zod.object({ id: zod.string(), email: zod.string() }),
       }));
       const api = createApi({ bases: { default: '/api' } }, { user: { get } });
       const out = await (api as any).user.get({ id: '1' });
@@ -114,10 +114,10 @@ describe('createApi — end-to-end call', () => {
   it('mapDomain runs after response-validation', async () => {
     vi.stubGlobal('fetch', mockFetch({ id: '1', createdAt: '2020-01-01' }));
     try {
-      const get = defineEndpoint((z) => ({
+      const get = defineEndpoint(({ zod }) => ({
         method: 'GET',
         path: '/u',
-        response: z.object({ id: z.string(), createdAt: z.string() }),
+        response: zod.object({ id: zod.string(), createdAt: zod.string() }),
         map: (dto) => ({ id: dto.id, createdAt: new Date(dto.createdAt) }),
       }));
       const api = createApi({}, { get });
@@ -132,10 +132,10 @@ describe('createApi — end-to-end call', () => {
     const fetchSpy = mockFetch({});
     vi.stubGlobal('fetch', fetchSpy);
     try {
-      const get = defineEndpoint((z) => ({
+      const get = defineEndpoint(({ zod }) => ({
         method: 'GET',
         path: '/x',
-        response: z.any(),
+        response: zod.any(),
       }));
       const api = createApi(
         ({ mw }) => ({
@@ -154,10 +154,10 @@ describe('createApi — end-to-end call', () => {
     vi.stubGlobal('fetch', mockFetch({ v: 1 }));
     try {
       const trace: string[] = [];
-      const get = defineEndpoint((z) => ({
+      const get = defineEndpoint(({ zod }) => ({
         method: 'GET',
         path: '/x',
-        response: z.any(),
+        response: zod.any(),
         middleware: [
           async (_ctx, next) => {
             trace.push('ep-pre');
@@ -193,10 +193,10 @@ describe('createApi — endpointName qualification', () => {
     vi.stubGlobal('fetch', fetchSpy);
     try {
       let seenName = '';
-      const get = defineEndpoint((z) => ({
+      const get = defineEndpoint(({ zod }) => ({
         method: 'GET',
         path: '/x',
-        response: z.any(),
+        response: zod.any(),
         middleware: [
           async (ctx, next) => {
             seenName = ctx.endpointName;
@@ -231,11 +231,11 @@ describe('createApi — QueryClient publishing', () => {
     ) as unknown as typeof fetch;
     vi.stubGlobal('fetch', fetchSpy);
     try {
-      const get = defineEndpoint((z) => ({
+      const get = defineEndpoint(({ zod }) => ({
         method: 'GET',
         path: '/u/:id',
-        request: z.object({ id: z.string() }),
-        response: z.object({ id: z.string() }),
+        request: zod.object({ id: zod.string() }),
+        response: zod.object({ id: zod.string() }),
       }));
       const api = createApi({ bases: { default: '/api' }, defaultStaleTime: 60_000 }, { get });
       await (api as any).get({ id: '1' });

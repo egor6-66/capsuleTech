@@ -3,8 +3,8 @@
  * Static spec only (`key` → store-gauge key, `label`). Live values come from
  * `Features.SystemMonitor` store; `Shapes.MonitorGauges` batches this catalog.
  */
-const GaugeKinds = Entity((z) => ({
-  schema: z.array(z.object({ key: z.string(), label: z.string() })),
+const GaugeKinds = Entity(({ zod }) => ({
+  schema: zod.array(zod.object({ key: zod.string(), label: zod.string() })),
   defaults: [
     { key: 'cpu', label: 'CPU' },
     { key: 'mem', label: 'RAM' },

@@ -12,11 +12,11 @@
  */
 const MOCK_LATENCY_MS = 150;
 
-export const list = defineEndpoint((z) => ({
+export const list = defineEndpoint(({ zod }) => ({
   method: 'GET',
   path: '/apps',
-  request: z.object({}),
-  response: z.array(Entities.App.schema),
+  request: zod.object({}),
+  response: zod.array(Entities.App.schema),
   preRequest: __CAPSULE_MOCKS__
     ? async ({ resolve }) => {
         await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS));

@@ -5,25 +5,25 @@
  *
  * AppInfoDto (ответ списка) = эта схема без `selections` — `.omit(...)` в эндпойнте.
  */
-const App = Entity(() => {
+const App = Entity(({ zod }) => {
   // TemplateConfigSelectionDto — выбор конфига (+ версии) для шаблона по `bind`.
-  const selection = Zod.object({
-    bind: Zod.string().min(1),
-    configId: Zod.string().uuid(),
-    configVersionId: Zod.string().uuid(),
+  const selection = zod.object({
+    bind: zod.string().min(1),
+    configId: zod.string().uuid(),
+    configVersionId: zod.string().uuid(),
   });
 
   return {
-    schema: Zod.object({
-      id: Zod.string().uuid().optional(),
-      versionId: Zod.string().uuid().optional(),
-      version: Zod.number().int().optional(),
-      name: Zod.string().optional(),
-      displayName: Zod.string().optional(),
-      appSchemaId: Zod.string().uuid().optional(),
-      appSchemaVersionId: Zod.string().uuid().optional(),
-      createdAt: Zod.string().optional(),
-      selections: Zod.array(selection).optional(),
+    schema: zod.object({
+      id: zod.string().uuid().optional(),
+      versionId: zod.string().uuid().optional(),
+      version: zod.number().int().optional(),
+      name: zod.string().optional(),
+      displayName: zod.string().optional(),
+      appSchemaId: zod.string().uuid().optional(),
+      appSchemaVersionId: zod.string().uuid().optional(),
+      createdAt: zod.string().optional(),
+      selections: zod.array(selection).optional(),
     }),
   };
 });

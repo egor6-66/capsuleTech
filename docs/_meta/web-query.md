@@ -12,7 +12,7 @@ audience: claude
 
 ## TL;DR
 
-Декларативный API-слой capsule. `defineEndpoint((z) => config)` фабрика создаёт endpoint с zod-схемами `request`/`response` и опциональным `map(dto) → domain`. `createApi(config, registry)` собирает typed-proxy `(input) => Promise<domain>` за каждый endpoint. Внутри — koa-style middleware pipeline (`compose`) с фиксированным порядком: `validateInput → preRequestHook → buildRequest → ...globalMw → httpTransport → validateResponse → mapDomain → ...endpointMw`. **`preRequest`** — typed-сахар для per-endpoint mock'инга / input-трансформации / business-rule-аборта (между validateInput и buildRequest). **`devOnly()`** — wrapper для tree-shake'a в prod-build (`import.meta.env.DEV`-based). `setApiClient(api)` публикует proxy в module-singleton, `getApiClient()` достаёт из `services.api` Feature'а. Subpath `/app-config` — `defineAppConfig`/`IAppConfig`.
+Декларативный API-слой capsule. `defineEndpoint(({ zod, utils }) => config)` фабрика создаёт endpoint с zod-схемами `request`/`response` и опциональным `map(dto) → domain`. Factory получает объект инструментов `{ zod: CapsuleZ, utils: Utils }` — унифицированная конвенция capsule (аналогично Entity `({ zod })`, Controller/Feature `services`). `createApi(config, registry)` собирает typed-proxy `(input) => Promise<domain>` за каждый endpoint. Внутри — koa-style middleware pipeline (`compose`) с фиксированным порядком: `validateInput → preRequestHook → buildRequest → ...globalMw → httpTransport → validateResponse → mapDomain → ...endpointMw`. **`preRequest`** — typed-сахар для per-endpoint mock'инга / input-трансформации / business-rule-аборта (между validateInput и buildRequest). **`devOnly()`** — wrapper для tree-shake'a в prod-build (`import.meta.env.DEV`-based). `setApiClient(api)` публикует proxy в module-singleton, `getApiClient()` достаёт из `services.api` Feature'а. Subpath `/app-config` — `defineAppConfig`/`IAppConfig`.
 
 ## Где что лежит
 
@@ -37,7 +37,7 @@ audience: claude
 
 ```
 apps/<app>/api/<namespace>/<endpoint>.ts
-  └─ defineEndpoint((z) => ({ method, path, request, response, map?, middleware?, preRequest? }))
+  └─ defineEndpoint(({ zod, utils }) => ({ method, path, request, response, map?, middleware?, preRequest? }))
         ↓ (export через `apps/<app>/.capsule/registry/endpoints.gen.ts`, генерится EndpointsRegistryPlugin'ом)
         ↓
 apps/<app>/.capsule/registry/endpoints.gen.ts
@@ -101,6 +101,18 @@ preRequest: ({ resolve }) => { if (!localStorage.token) resolve([]); }
 preRequest: ({ input, reject }) => {
   if (input.amount > 10_000) reject(new Error('amount too large'));
 }
+
+// 5. Async с utils.delay (доступен через EndpointTools в factory)
+defineEndpoint(({ zod, utils }) => ({
+  method: 'POST',
+  path: '/auth/login',
+  request: zod.object({ email: zod.string(), password: zod.string() }),
+  response: zod.object({ token: zod.string() }),
+  preRequest: async ({ resolve }) => {
+    await utils.delay(700);
+    resolve({ token: 'mock-token' });
+  },
+}))
 ```
 
 Combined with `devOnly` для tree-shake:
@@ -250,7 +262,8 @@ catch (e) {
 ## Cross-package etiquette
 
 - **`web-core` — главный consumer** через `createLogicWrapper` (`services.api = getApiClient()`). Breaking change в `getApiClient()`-return или `CapsuleApi`-shape → owner-web-core.
-- **`shared-zod` — peer dep** для `CapsuleZ`-type. defineEndpoint factory принимает `z: CapsuleZ` (расширенный zod). owner-shared-zod при изменении.
+- **`shared-zod` — peer dep** для `CapsuleZ`-type. defineEndpoint factory принимает `{ zod: CapsuleZ, utils: Utils }` (инструменты объектом). owner-shared-zod при изменении CapsuleZ.
+- **`shared-utils` — dep** для `Utils`-namespace. defineEndpoint factory прокидывает `utils: Utils` (es-toolkit + gap-fillers). owner-shared при изменении Utils.
 - **`builders/vite > EndpointsRegistryPlugin`** генерит `apps/<app>/.capsule/@types/api.d.ts`. Любое изменение shape'а endpoints/registry — согласуй с owner-builders.
 - **`builders/vite > AppConfigPlugin`** парсит `capsule.app.ts`, генерит tag/alias-registry runtime-binding. owner-builders при изменении `IAppConfig`.
 - **Все Features (apps)** дёргают `services.api.<namespace>.<endpoint>({...})`. Breaking change в return-type / signature `wrapEndpoint` — массовый impact.

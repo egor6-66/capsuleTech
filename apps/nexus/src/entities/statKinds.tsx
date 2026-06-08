@@ -3,8 +3,8 @@
  * Static spec only (`key` → store-stat key, `label`). Live values come from
  * `Features.SystemMonitor` store; `Shapes.MonitorStats` batches this catalog.
  */
-const StatKinds = Entity((z) => ({
-  schema: z.array(z.object({ key: z.string(), label: z.string() })),
+const StatKinds = Entity(({ zod }) => ({
+  schema: zod.array(zod.object({ key: zod.string(), label: zod.string() })),
   defaults: [
     { key: 'ram', label: 'RAM' },
     { key: 'cpu', label: 'CPU' },

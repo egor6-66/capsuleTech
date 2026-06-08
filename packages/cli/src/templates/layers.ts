@@ -67,8 +67,8 @@ export default ${Name};
 `,
 
   shapes: (Name) => `const ${Name} = Shape(
-  (ui) => ({
-    schema: Zod.array(Zod.object({})),
+  (ui, { zod }) => ({
+    schema: zod.array(zod.object({})),
     as: ui.Group,
   }),
   (ui) => ({
