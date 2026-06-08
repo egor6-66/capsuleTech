@@ -19,7 +19,7 @@ Entity — самый нижний слой data. Single source of truth для 
 - Потребляется:
   - **Shape** — берёт `Entities.X.schema` + `Entities.X.defaults` для presentation.
   - **Feature** — валидирует API request/response через `Entities.X.schema.parse(...)`.
-  - **Controller** — типизирует payload через `z.infer<typeof Entities.X.schema>`.
+  - **Controller** — типизирует payload через `zod.infer<typeof Entities.X.schema>`.
 
 ## Path
 
@@ -30,13 +30,13 @@ Entity — самый нижний слой data. Single source of truth для 
 ## Канонический шаблон
 
 ```tsx
-const User = Entity((z) => ({
-  schema: z.object({
-    id: z.string(),
-    email: z.string().email(),
-    name: z.string(),
-    role: z.enum(['admin', 'editor', 'viewer']),
-    createdAt: z.string().datetime(),
+const User = Entity(({ zod }) => ({
+  schema: zod.object({
+    id: zod.string(),
+    email: zod.string().email(),
+    name: zod.string(),
+    role: zod.enum(['admin', 'editor', 'viewer']),
+    createdAt: zod.string().datetime(),
   }),
   defaults: {
     id: '1',
@@ -53,12 +53,12 @@ export default User;
 **Коллекция** (для таблиц / списков):
 
 ```tsx
-const Users = Entity((z) => ({
-  schema: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      email: z.string().email(),
+const Users = Entity(({ zod }) => ({
+  schema: zod.array(
+    zod.object({
+      id: zod.string(),
+      name: zod.string(),
+      email: zod.string().email(),
     }),
   ),
   defaults: [
@@ -72,7 +72,7 @@ export default Users;
 
 ## ЖЁСТКИЕ правила
 
-1. **Никаких `import`** — `Entity` и `z` приходят через auto-import / wrapper arg.
+1. **Никаких `import`** — `Entity` приходит через auto-import; `zod` инжектится объектом (деструктуризация `({ zod })`).
 2. **Никакого UI** — никаких JSX-узлов, компонентов, ссылок на `Ui.*`. Entity это data spec, не view.
 3. **Stateless** — нет signals, effects, lifecycle. Module-load time evaluation.
 4. **Никаких API-вызовов** — Entity статичен. Реальные данные приходят через Feature → store.
@@ -87,29 +87,29 @@ export default Users;
 | Содержит UI template | ❌ | ✅ (`as: ui.DataTable` / `ui.List`) |
 | Содержит columns/itemAs | ❌ | ✅ |
 | Reusable across presentations | ✅ | ❌ (specific к layout) |
-| Может ссылаться на других | ✅ (`schema: z.object({ author: Entities.User.schema })`) | ✅ (`schema: Entities.Users.schema`) |
+| Может ссылаться на других | ✅ (`schema: zod.object({ author: Entities.User.schema })`) | ✅ (`schema: Entities.Users.schema`) |
 
 Правило: **если про сущность — Entity. Если про то как нарисовать — Shape.**
 
-## z-расширения (capsule-специфичные)
+## zod-расширения (capsule-специфичные)
 
 | Метод | Возвращает | Когда использовать |
 |---|---|---|
-| `z.component()` | `ZodType<JSX.Element>` | Поле — Solid-renderable. **В Entity редко нужно** (это presentation concern). |
+| `zod.component()` | `ZodType<JSX.Element>` | Поле — Solid-renderable. **В Entity редко нужно** (это presentation concern). |
 
-Стандартные `z.*` — обычный zod docs.
+Стандартные `zod.*` — обычный zod docs.
 
 ## Примеры
 
 ### Один объект — Product
 
 ```tsx
-const Product = Entity((z) => ({
-  schema: z.object({
-    sku: z.string(),
-    title: z.string(),
-    price: z.number().positive(),
-    inStock: z.boolean(),
+const Product = Entity(({ zod }) => ({
+  schema: zod.object({
+    sku: zod.string(),
+    title: zod.string(),
+    price: zod.number().positive(),
+    inStock: zod.boolean(),
   }),
   defaults: { sku: 'DEMO-001', title: 'Demo Product', price: 99.99, inStock: true },
 }));
@@ -122,12 +122,12 @@ export default Product;
 Когда данные **всегда** приходят из Feature/API, defaults не нужны:
 
 ```tsx
-const Order = Entity((z) => ({
-  schema: z.object({
-    id: z.string(),
-    userId: z.string(),
-    total: z.number(),
-    status: z.enum(['pending', 'paid', 'shipped']),
+const Order = Entity(({ zod }) => ({
+  schema: zod.object({
+    id: zod.string(),
+    userId: zod.string(),
+    total: zod.number(),
+    status: zod.enum(['pending', 'paid', 'shipped']),
   }),
 }));
 
@@ -137,10 +137,10 @@ export default Order;
 ### Ссылка на другую Entity
 
 ```tsx
-const Comment = Entity((z) => ({
-  schema: z.object({
-    id: z.string(),
-    text: z.string(),
+const Comment = Entity(({ zod }) => ({
+  schema: zod.object({
+    id: zod.string(),
+    text: zod.string(),
     // Ссылаемся на schema другой Entity через global registry
     author: Entities.User.schema,
   }),

@@ -23,7 +23,7 @@ import type { IAuthStrategy } from '../types';
  * Схема тела POST /auth/login для стратегии 'role'.
  * Апп переиспользует в своём defineEndpoint:
  *   import { loginRequestSchema } from '@capsuletech/web-auth/role';
- *   export const login = defineEndpoint((z) => ({
+ *   export const login = defineEndpoint(({ zod }) => ({
  *     method: 'POST', path: '/auth/login',
  *     request: loginRequestSchema,
  *     response: loginResponseSchema,
