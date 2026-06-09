@@ -1,15 +1,15 @@
 /**
- * /workspace/profile — placeholder-страница (демонстрирует навигацию shell'а).
+ * /workspace/ui — placeholder секции (контент по мере роста эталона).
  */
-const Profile = Page((Ui) => (
+const UiSection = Page((Ui) => (
   <Ui.Layout.Flex class="min-h-full flex-col items-center justify-center gap-cell p-cell">
     <Ui.Typography variant="h3" class="text-xl font-semibold text-foreground">
-      Профиль
+      UI
     </Ui.Typography>
     <Ui.Typography variant="p" class="text-muted-foreground">
-      Placeholder-страница. Добавляй сюда контент по мере роста эталона.
+      Раздел в разработке.
     </Ui.Typography>
   </Ui.Layout.Flex>
 ));
 
-export default Profile;
+export default UiSection;

@@ -15,7 +15,7 @@
  * Регистрируется в capsule.ts как components.LoginForm.
  */
 
-import { View } from '@capsuletech/web-core';
+import { View, useCtx } from '@capsuletech/web-core';
 import type { IAuthFormField, IRoleStrategy } from '../role/index';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -49,6 +49,12 @@ export interface IAuthLoginFormProps {
  * Сигнатура: `View<IAuthLoginFormProps>((Ui, props) => JSX)`
  */
 export const AuthLoginForm = View<IAuthLoginFormProps>((Ui, props) => {
+  // Реактивный errorMessage из FSM context.data (store.update({ errorMessage })).
+  // View рендерится внутри AuthFsm-scope → useCtx() достаёт контекст Feature.
+  // При отсутствии контекста (storybook / out-of-scope) — тихо пустая строка.
+  const ctx = useCtx();
+  const errorMessage = () => (ctx?.store?.ctx?.data?.errorMessage as string | undefined) ?? '';
+
   return (
     <Ui.Layout.Flex class="min-h-screen items-center justify-center bg-background p-cell">
       <Ui.Card class="w-96 shadow-lg">
@@ -98,6 +104,18 @@ export const AuthLoginForm = View<IAuthLoginFormProps>((Ui, props) => {
           <Ui.Button meta={{ tags: ['submit'] }} class="mt-cell w-full">
             {props.submitLabel ?? 'Войти'}
           </Ui.Button>
+
+          {/* Ошибка входа — package-level, из FSM context.data.errorMessage.
+              Показывается только когда текст ненулевой. Стиль: text-destructive
+              (тема-токен web-ui; НЕ инлайн-цвета). */}
+          <Ui.Flow.Show when={errorMessage()}>
+            <Ui.Typography
+              variant="p"
+              class="text-center text-sm text-destructive"
+            >
+              {errorMessage()}
+            </Ui.Typography>
+          </Ui.Flow.Show>
 
           <Ui.Flow.Show when={props.footerNote}>
             <Ui.Layout.Flex class="flex-col items-center">

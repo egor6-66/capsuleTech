@@ -70,6 +70,29 @@ config-driven), session + `useAuth()`, Controllers + ИМЕНОВАННЫЕ со
 - тонкая app-обвязка остаётся в playground (routing/rights/branding).
 `/credentials`, `/oauth2`, `/qr` — следующими итерациями.
 
+## Error display + clear-on-input (Auth.Login контракт)
+
+**Показ ошибки в форме (package-level):**
+При переходе FSM в `error` (login failed) контроллер вызывает
+`store.update({ errorMessage: '<дружелюбный текст>' })`. `AuthLoginForm` (View)
+читает это через `useCtx().store.ctx.data.errorMessage` и рендерит
+`Ui.Typography` с классом `text-destructive` под кнопкой submit.
+`emit('onLoginError', { payload: { message: rawMessage } })` при этом сохраняется
+(app-уровень тоже видит событие).
+
+**Маппинг кодов ошибок (`mapAuthError`):**
+- `401 / unauthorized / invalid / wrong / incorrect / password` → «Неверный логин или пароль»
+- `network / fetch / connection / timeout / econnrefused` → «Не удалось подключиться к серверу»
+- остальное → «Не удалось войти. Попробуйте ещё раз.»
+
+`emit('onLoginError')` несёт оригинальный `rawMessage` (для app), форма — дружелюбный.
+
+**Гашение ошибки при взаимодействии с формой:**
+`error.onInput` и `error.onChange` → `store.update({ errorMessage: '' })` + `state.set('idle')`.
+`error.onClick(submit)` — то же (retry через кнопку).
+Таким образом, первое нажатие клавиши или изменение Select немедленно убирает
+ошибку и возвращает форму в `idle` для повторного submit.
+
 ## Известные ограничения / quirks
 
 1. **Multi-entry vite build** — все 9 subpaths обязаны быть в dist. `/controllers`
@@ -89,8 +112,8 @@ config-driven), session + `useAuth()`, Controllers + ИМЕНОВАННЫЕ со
 
 ## Тест-покрытие
 
-48 тестов (vitest jsdom), все green:
-- `controllers/__tests__/authController.test.tsx` — FSM schema (idle/submitting/authed/error), emit onLogin/onLoginError/onLogout, phantom __events, render/children.
+52 тестов (vitest jsdom), все green:
+- `controllers/__tests__/authController.test.tsx` — FSM schema (idle/submitting/authed/error), emit onLogin/onLoginError/onLogout, phantom __events, render/children; error-state: store.update(errorMessage), clear-on-input/onChange, mapAuthError маппинг (401/network/default).
 - `session/__tests__/session.test.ts` — createAuthSession, login/logout/setStatus, useAuth reads, ITokenStorage impls (memory/localStorage).
 - `role/__tests__/roleStrategy.test.ts` — roleStrategy fields/defaults, кастомные роли, zod-схемы (loginRequestSchema/loginResponseSchema).
 

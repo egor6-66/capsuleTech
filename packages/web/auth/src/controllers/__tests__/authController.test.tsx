@@ -255,7 +255,7 @@ describe('Auth.Login — FSM schema', () => {
     expect(mockState.set).not.toHaveBeenCalled();
   });
 
-  it('error.onClick с тегом "submit" → state.set("idle") (retry)', () => {
+  it('error.onClick с тегом "submit" → state.set("idle") + store.update errorMessage="" (retry)', () => {
     cleanup = render(
       () => (
         <AuthLogin type="role" roles={testRoles}>
@@ -266,13 +266,62 @@ describe('Auth.Login — FSM schema', () => {
     );
 
     const mockState = { set: vi.fn() };
+    const mockStore = { update: vi.fn(), patch: vi.fn(), values: vi.fn(() => ({})) };
     capturedSchema.states.error.onClick({
       target: { meta: { tags: ['submit'] } },
       state: mockState,
+      store: mockStore,
       emit: vi.fn(),
     });
 
     expect(mockState.set).toHaveBeenCalledWith('idle');
+    expect(mockStore.update).toHaveBeenCalledWith({ errorMessage: '' });
+  });
+
+  it('error.onInput → state.set("idle") + store.update errorMessage="" (clear-on-input)', () => {
+    cleanup = render(
+      () => (
+        <AuthLogin type="role" roles={testRoles}>
+          <div />
+        </AuthLogin>
+      ),
+      container,
+    );
+
+    const mockState = { set: vi.fn() };
+    const mockStore = { update: vi.fn(), patch: vi.fn(), values: vi.fn(() => ({})) };
+    capturedSchema.states.error.onInput({
+      target: {},
+      state: mockState,
+      store: mockStore,
+      emit: vi.fn(),
+    });
+
+    expect(mockState.set).toHaveBeenCalledWith('idle');
+    expect(mockStore.update).toHaveBeenCalledWith({ errorMessage: '' });
+  });
+
+  it('error.onChange → state.set("idle") + store.update errorMessage="" (clear-on-change для Select)', () => {
+    cleanup = render(
+      () => (
+        <AuthLogin type="role" roles={testRoles}>
+          <div />
+        </AuthLogin>
+      ),
+      container,
+    );
+
+    const mockState = { set: vi.fn() };
+    const mockStore = { update: vi.fn(), patch: vi.fn(), values: vi.fn(() => ({})) };
+    capturedSchema.states.error.onChange({
+      target: {},
+      state: mockState,
+      store: mockStore,
+      emit: vi.fn(),
+    });
+
+    expect(mockState.set).toHaveBeenCalledWith('idle');
+    expect(mockStore.update).toHaveBeenCalledWith({ errorMessage: '' });
   });
 });
 
@@ -296,6 +345,7 @@ describe('Auth.Login — onLogin emit', () => {
     const mockEmit = vi.fn();
     const mockStore = {
       patch: vi.fn(),
+      update: vi.fn(),
       values: vi.fn().mockReturnValue({ role: 'developer', password: '123' }),
     };
     const mockState = { set: vi.fn() };
@@ -337,6 +387,7 @@ describe('Auth.Login — onLogin emit', () => {
 
     const mockStore = {
       patch: vi.fn(),
+      update: vi.fn(),
       values: vi.fn().mockReturnValue({ role: 'support', password: 'secret' }),
     };
 
@@ -350,10 +401,10 @@ describe('Auth.Login — onLogin emit', () => {
   });
 });
 
-// ─── Тесты — onLoginError emit ────────────────────────────────────────────────
+// ─── Тесты — onLoginError emit + error-state display ─────────────────────────
 
 describe('Auth.Login — onLoginError emit', () => {
-  it('ошибка login → emit("onLoginError") с message', async () => {
+  it('ошибка login → emit("onLoginError") с rawMessage + store.update дружелюбным текстом', async () => {
     mockLogin.mockRejectedValue(new Error('Invalid password'));
     const sessionStore = createAuthSession();
 
@@ -369,6 +420,7 @@ describe('Auth.Login — onLoginError emit', () => {
     const mockEmit = vi.fn();
     const mockStore = {
       patch: vi.fn(),
+      update: vi.fn(),
       values: vi.fn().mockReturnValue({ role: 'developer', password: 'wrong' }),
     };
     const mockState = { set: vi.fn() };
@@ -379,6 +431,7 @@ describe('Auth.Login — onLoginError emit', () => {
       emit: mockEmit,
     });
 
+    // emit несёт оригинальный rawMessage (для app-уровня)
     expect(mockEmit).toHaveBeenCalledWith(
       'onLoginError',
       expect.objectContaining({
@@ -386,8 +439,73 @@ describe('Auth.Login — onLoginError emit', () => {
       }),
     );
 
+    // store.update несёт дружелюбный текст (для отображения в форме)
+    expect(mockStore.update).toHaveBeenCalledWith(
+      expect.objectContaining({ errorMessage: 'Неверный логин или пароль' }),
+    );
+
     expect(mockState.set).toHaveBeenCalledWith('error');
     expect(sessionStore.session.status).toBe('error');
+  });
+
+  it('сетевая ошибка → дружелюбное "Не удалось подключиться к серверу"', async () => {
+    mockLogin.mockRejectedValue(new Error('Network error'));
+    const sessionStore = createAuthSession();
+
+    cleanup = render(
+      () => (
+        <AuthLogin type="role" roles={testRoles} sessionStore={sessionStore}>
+          <div />
+        </AuthLogin>
+      ),
+      container,
+    );
+
+    const mockStore = {
+      patch: vi.fn(),
+      update: vi.fn(),
+      values: vi.fn().mockReturnValue({ role: 'developer', password: '' }),
+    };
+
+    await capturedSchema.states.submitting.onInit({
+      store: mockStore,
+      state: { set: vi.fn() },
+      emit: vi.fn(),
+    });
+
+    expect(mockStore.update).toHaveBeenCalledWith(
+      expect.objectContaining({ errorMessage: 'Не удалось подключиться к серверу' }),
+    );
+  });
+
+  it('неизвестная ошибка → дефолт "Не удалось войти. Попробуйте ещё раз."', async () => {
+    mockLogin.mockRejectedValue(new Error('Unexpected server error'));
+    const sessionStore = createAuthSession();
+
+    cleanup = render(
+      () => (
+        <AuthLogin type="role" roles={testRoles} sessionStore={sessionStore}>
+          <div />
+        </AuthLogin>
+      ),
+      container,
+    );
+
+    const mockStore = {
+      patch: vi.fn(),
+      update: vi.fn(),
+      values: vi.fn().mockReturnValue({ role: 'developer', password: '' }),
+    };
+
+    await capturedSchema.states.submitting.onInit({
+      store: mockStore,
+      state: { set: vi.fn() },
+      emit: vi.fn(),
+    });
+
+    expect(mockStore.update).toHaveBeenCalledWith(
+      expect.objectContaining({ errorMessage: 'Не удалось войти. Попробуйте ещё раз.' }),
+    );
   });
 });
 

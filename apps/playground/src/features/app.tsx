@@ -45,7 +45,7 @@ const App = Feature<Auth.Events, AppCtx>(({ router, utils, authApi }) => ({
 
     authed: {
       onInit: () => {
-        router.goTo('/workspace/home');
+        router.goTo('/workspace');
       },
       onClick: ({ target, store, state }) => {
         if (utils.includes(target.meta?.tags ?? [], 'logout')) {
