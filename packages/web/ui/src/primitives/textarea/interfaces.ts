@@ -15,4 +15,6 @@ export interface ITextareaProps
    * - `both`      — free resize
    */
   resize?: 'none' | 'vertical' | 'horizontal' | 'both';
+  /** Initial value for uncontrolled usage (data-filled seed). Not in Solid JSX types. */
+  defaultValue?: string | number;
 }

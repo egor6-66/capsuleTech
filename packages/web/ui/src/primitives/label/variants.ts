@@ -2,7 +2,9 @@ import { cva } from '@capsuletech/web-style';
 
 export const variants = {
   variant: {
-    default: 'text-primary shadow',
+    // text-primary: label text uses primary colour for visual hierarchy.
+    // shadow removed — text-shadow on label text is inappropriate.
+    default: 'text-primary',
   },
   size: {
     default: '',

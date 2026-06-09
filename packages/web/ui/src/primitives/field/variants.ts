@@ -17,7 +17,9 @@ export const variants = {
 };
 
 export const fieldCva = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+  // Field group container — layout only, no button chrome.
+  // Orientation (flex-col / flex-row / responsive) is controlled via variants below.
+  'flex w-full gap-2',
   {
     variants,
     defaultVariants: {
