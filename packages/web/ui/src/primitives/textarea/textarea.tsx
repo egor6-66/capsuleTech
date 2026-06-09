@@ -1,5 +1,5 @@
 import { createStyle } from '@capsuletech/web-style';
-import { splitProps } from 'solid-js';
+import { type JSX, createMemo, createSignal, splitProps } from 'solid-js';
 
 import type { ITextareaProps } from './interfaces';
 import { textareaCva } from './variants';
@@ -11,6 +11,9 @@ import { textareaCva } from './variants';
  * a `<textarea>` element. Supports controlled and uncontrolled usage via
  * native `value` / `onInput` attributes.
  *
+ * Tracks filled state via `data-filled` attribute (set when value is non-empty)
+ * to drive the 3-state background: transparent → muted/40 (filled) → bg-background (focus).
+ *
  * @example
  * ```tsx
  * <Textarea placeholder="Enter description…" rows={4} />
@@ -20,7 +23,7 @@ import { textareaCva } from './variants';
 export const Textarea = (props: ITextareaProps) => {
   const [local, variants, others] = splitProps(
     props,
-    ['class', 'style', 'resize'],
+    ['class', 'style', 'resize', 'value', 'defaultValue', 'onInput'],
     ['size', 'variant'],
   );
 
@@ -41,5 +44,35 @@ export const Textarea = (props: ITextareaProps) => {
     return { ...base, ...resizeCss } as typeof base;
   };
 
-  return <textarea class={className()} style={resizeStyle()} {...others} />;
+  // Track whether the field has a non-empty value so we can set data-filled.
+  // Controlled path: derive from props.value reactively.
+  // Uncontrolled path: track via an internal signal updated in onInput.
+  const [uncontrolledFilled, setUncontrolledFilled] = createSignal(
+    Boolean(local.defaultValue !== undefined && local.defaultValue !== ''),
+  );
+
+  const isFilled = createMemo(() => {
+    if (local.value !== undefined) {
+      return local.value !== '' && local.value !== null;
+    }
+    return uncontrolledFilled();
+  });
+
+  const handleInput: JSX.EventHandler<HTMLTextAreaElement, InputEvent> = (e) => {
+    setUncontrolledFilled(e.currentTarget.value !== '');
+    if (typeof local.onInput === 'function') {
+      (local.onInput as JSX.EventHandler<HTMLTextAreaElement, InputEvent>)(e);
+    }
+  };
+
+  return (
+    <textarea
+      class={className()}
+      style={resizeStyle()}
+      value={local.value}
+      {...(others as any)}
+      data-filled={isFilled() ? '' : undefined}
+      onInput={handleInput}
+    />
+  );
 };

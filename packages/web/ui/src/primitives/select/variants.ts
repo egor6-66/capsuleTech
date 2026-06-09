@@ -12,21 +12,32 @@ export const selectTriggerCva = cva(
   [
     // Layout & sizing — identical to Input
     'flex h-auto w-full items-center justify-between gap-2 rounded-md',
-    // Border & background
-    'border border-input bg-background px-input py-input',
+    // Border
+    'border border-input px-input py-input',
     // Typography
     'text-sm font-normal',
     // Shadow to match Input
     'shadow-sm',
+    // Background — 3-state fill (mirrors input/textarea data-filled scheme via Kobalte data-attrs)
+    // Kobalte sets data-[placeholder-shown] when no value is selected (inverse of data-filled).
+    // 1. empty  (data-[placeholder-shown]):    transparent — blends with parent bg
+    // 2. filled (no placeholder-shown):        muted/40    — subtle tint signals content
+    // 3. open/focus-visible:                   bg-background — full bg "lifts" the control + ring
+    //    expanded/focus order is after filled so open state always wins specificity.
+    'bg-muted/40',
+    'data-[placeholder-shown]:bg-transparent',
+    'data-[expanded]:bg-background',
+    'focus-visible:bg-background',
     // Focus ring
-    'focus:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-    // Open state — ring to signal focus
+    'focus:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:border-ring',
+    // Open state — border + ring
     'data-[expanded]:border-ring data-[expanded]:ring-1 data-[expanded]:ring-ring',
-    // States
-    'disabled:cursor-not-allowed disabled:opacity-50',
+    // Placeholder text color
     'data-[placeholder-shown]:text-muted-foreground',
-    // Smooth border/ring transition
-    'transition-[border-color,box-shadow] duration-200',
+    // Disabled
+    'disabled:cursor-not-allowed disabled:opacity-50',
+    // Smooth transition
+    'transition-[background-color,border-color,box-shadow] duration-200',
   ].join(' '),
   {
     variants: {},

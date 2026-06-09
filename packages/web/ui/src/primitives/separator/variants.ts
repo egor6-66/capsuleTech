@@ -2,8 +2,8 @@ import { cva } from '@capsuletech/web-style';
 
 export const variants = {
   variant: {
-    horizontal: 'h-[1px] w-full',
-    vertical: 'h-full w-[1px]',
+    horizontal: 'h-px w-full',
+    vertical: 'h-full w-px',
   },
 };
 

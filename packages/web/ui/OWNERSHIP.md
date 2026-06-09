@@ -248,7 +248,7 @@ Stateless composite for rendering one data object as an ordered list of label + 
   - Matrix slots: `px-layout py-component` / `p-component` / `p-layout` — убраны `px-[--layout-padding]` arbitrary.
   - DataTable toolbar/pagination gaps: `mb-component` / `mt-component`.
   - Typography: текстовые классы `text-4xl/3xl/base/xl` + `leading-tight/normal/relaxed`.
-  - Transitions: везде `transition-colors duration-fast` (= `--motion-fast: 150ms`), убрано `duration-200` и `transition-all`.
+  - Transitions: везде `transition-colors duration-200` (numeric-канон; `--motion-fast = 200ms`), убрано `transition-all`. Утилита `duration-fast` не существует — используется числовой `duration-200`.
   - Radii: унифицированы — Button = `rounded-md`, Card = `rounded-lg` (раньше `rounded-xl`).
   - Storybook: добавлен **density toolbar** (`default / compact / comfortable`) — переключает `.compact`/`.comfortable` на `<html>`.
   - Typography variants: мигрированы с `--font-size-h1/h2/p` старых aliases на `text-4xl/3xl/base` Tailwind.

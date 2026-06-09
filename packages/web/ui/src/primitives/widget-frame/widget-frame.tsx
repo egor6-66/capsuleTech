@@ -125,7 +125,7 @@ export const WidgetFrame = (props: IWidgetFrameProps) => {
     'clip-path': clipPath(),
     background: rimColor(),
     filter: glowFilter(),
-    transition: 'background 0.15s, filter 0.15s',
+    transition: 'background 0.2s, filter 0.2s',
     'pointer-events': 'none' as const,
   });
 
