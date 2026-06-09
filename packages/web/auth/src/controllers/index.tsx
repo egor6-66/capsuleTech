@@ -43,6 +43,41 @@ import { defaultAuthSession, type IAuthSessionStore } from '../session/index';
 import type { IAuthEvents, IAuthLoginProps, IAuthUser } from '../types';
 import { AuthLoginForm } from '../ui/loginForm';
 
+// ─── mapAuthError: маппинг HTTP/сетевых ошибок в дружелюбный текст ──────────
+//
+// Правило: 401 / "invalid" / "wrong" / "incorrect" → «Неверный логин или пароль».
+// Сетевые ошибки (fetch/network) → «Не удалось подключиться к серверу».
+// Остальное → дефолт «Не удалось войти. Попробуйте ещё раз.»
+// Сообщение показывается В ФОРМЕ (package-level). emit('onLoginError') несёт
+// оригинальный rawMessage для app-уровня.
+
+const mapAuthError = (rawMessage: string): string => {
+  const msg = rawMessage.toLowerCase();
+  if (
+    msg.includes('401') ||
+    msg.includes('unauthorized') ||
+    msg.includes('invalid') ||
+    msg.includes('wrong') ||
+    msg.includes('incorrect') ||
+    msg.includes('password') ||
+    msg.includes('пароль') ||
+    msg.includes('неверн')
+  ) {
+    return 'Неверный логин или пароль';
+  }
+  if (
+    msg.includes('network') ||
+    msg.includes('fetch') ||
+    msg.includes('connection') ||
+    msg.includes('connect') ||
+    msg.includes('timeout') ||
+    msg.includes('econnrefused')
+  ) {
+    return 'Не удалось подключиться к серверу';
+  }
+  return 'Не удалось войти. Попробуйте ещё раз.';
+};
+
 // ─── buildAuthFeature: строит Feature-компонент с auth-FSM ───────────────────
 //
 // IO (api.auth.login) требует Feature, а не Controller — api инжектится
@@ -77,6 +112,7 @@ const buildAuthFeature = (
             console.error('[Auth.Login] api client not initialized');
             sessionStore.setStatus('error');
             state.set('error');
+            store.update({ errorMessage: 'Не удалось войти. Попробуйте ещё раз.' });
             emit('onLoginError', { payload: { message: 'API not initialized' } });
             return;
           }
@@ -111,10 +147,12 @@ const buildAuthFeature = (
 
             emit('onLogin', { payload: { token: result.token, user } });
           } catch (err) {
-            const message = err instanceof Error ? err.message : 'Login failed';
+            const rawMessage = err instanceof Error ? err.message : '';
+            const errorMessage = mapAuthError(rawMessage);
             sessionStore.setStatus('error');
             state.set('error');
-            emit('onLoginError', { payload: { message } });
+            store.update({ errorMessage });
+            emit('onLoginError', { payload: { message: rawMessage || errorMessage } });
           } finally {
             store.patch(['@submit'], { loading: false });
             store.patch(['@input'], { disabled: false });
@@ -131,9 +169,23 @@ const buildAuthFeature = (
       },
 
       error: {
-        onClick: ({ target, state }: IHandlerApi) => {
+        /** Retry через submit — гасим ошибку и возвращаемся в idle. */
+        onClick: ({ target, store, state }: IHandlerApi) => {
           const tags = (target.meta?.tags ?? []) as readonly string[];
-          if (tags.includes('submit')) state.set('idle');
+          if (tags.includes('submit')) {
+            store.update({ errorMessage: '' });
+            state.set('idle');
+          }
+        },
+        /** Любое взаимодействие с инпутом — сразу гасим ошибку + возврат в idle. */
+        onInput: ({ store, state }: IHandlerApi) => {
+          store.update({ errorMessage: '' });
+          state.set('idle');
+        },
+        /** onChange — для Select (изменение роли тоже гасит ошибку). */
+        onChange: ({ store, state }: IHandlerApi) => {
+          store.update({ errorMessage: '' });
+          state.set('idle');
         },
       },
     },
