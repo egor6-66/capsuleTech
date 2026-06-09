@@ -1,11 +1,17 @@
 ---
 tags: [meta, design-system, tokens]
-updated: 2026-05-22
+updated: 2026-06-09
 ---
 
 # Design tokens reference
 
 Source of truth: `packages/web/style/src/index.css`. All tokens are CSS custom properties on `:root`. Themes (`src/themes/*.css`) provide color variables, `--radius`, `--spacing`, and `--tracking-normal` — everything else is theme-independent.
+
+> [!warning] Набор токенов ЗАМОРОЖЕН (2026-06-09)
+> После канонизации (ADR 042) набор согласован и синкается с Figma. **Любое изменение/добавление токена теперь тянет цепочку действий** (код → `tokens.json` → Figma/Tokens Studio → пересборка zip → правки на стороне дизайнера). Поэтому:
+> - **Работаем с тем, что есть.** База мощная и покрывает подавляющее большинство кейсов — сначала решаем задачу существующими токенами/утилитами.
+> - **Новый токен — только в исключительных случаях**, когда задачу объективно нельзя решить имеющимися. Через owner-web-style, с осознанием sync-стоимости.
+> - Это касается ВСЕХ токенов (не только цветов — см. также skin-контракт в `docs/figma-handoff/CONTRACT.md`).
 
 ## Spacing
 
