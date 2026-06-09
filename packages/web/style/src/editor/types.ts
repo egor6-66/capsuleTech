@@ -2,7 +2,7 @@ export type ThemeMode = 'light' | 'dark';
 
 /**
  * Один прокручиваемый «дизайн» — то, что меняется в редакторе. Покрывает
- * shadcn-набор токенов + наши `spacing-base`/`text-base-size`.
+ * shadcn-набор токенов + наши canonical spacing/typography tokens.
  *
  * Намеренно flat: проще apply'ить в `style.setProperty` без обхода вложений.
  */
@@ -12,9 +12,9 @@ export interface ITheme {
   primary: string;
   /** Border-radius в rem. Применяется к `--radius`; sm/md/lg деривированы. */
   radius: number;
-  /** Базовый отступ в rem. `--spacing-base`. */
+  /** Tailwind base spacing unit в rem. Применяется к `--spacing`. */
   spacingBase: number;
-  /** Базовый размер шрифта в rem. `--text-base-size`. */
+  /** Базовый размер шрифта в rem. Применяется к `--font-size-base`. */
   fontBaseSize: number;
   /** font-family. Применяется к scope-элементу. */
   fontFamily: string;

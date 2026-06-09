@@ -45,8 +45,8 @@ describe('exportTheme', () => {
   it('numeric fields get rem suffix', () => {
     const css = exportTheme(mkTheme({ radius: 0.75, spacingBase: 0.3, fontBaseSize: 1.125 }));
     expect(css).toContain('--radius: 0.75rem;');
-    expect(css).toContain('--spacing-base: 0.3rem;');
-    expect(css).toContain('--text-base-size: 1.125rem;');
+    expect(css).toContain('--spacing: 0.3rem;');
+    expect(css).toContain('--font-size-base: 1.125rem;');
   });
 
   it('emits font-family without rem/quote transformation', () => {

@@ -19,7 +19,7 @@ export const variants = {
 };
 
 export const typographyCva = cva(
-  'transition-colors duration-fast relative group/typo flex items-center gap-2',
+  'transition-colors duration-200 relative group/typo flex items-center gap-2',
   {
     variants,
     defaultVariants: {

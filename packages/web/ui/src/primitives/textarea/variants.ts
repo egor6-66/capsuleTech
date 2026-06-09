@@ -12,7 +12,7 @@ export const variants = {
 } as const;
 
 export const textareaCva = cva(
-  'flex min-h-[80px] w-full rounded-md border border-input bg-background text-foreground shadow-sm transition-colors duration-fast placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
+  'flex min-h-[80px] w-full rounded-md border border-input bg-background text-foreground shadow-sm transition-colors duration-200 placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
   {
     variants,
     defaultVariants: {

@@ -13,8 +13,8 @@ export const exportTheme = (theme: ITheme): string => {
   --primary-foreground: ${contrastForeground(theme.primary)};
   --ring: ${theme.primary};
   --radius: ${theme.radius}rem;
-  --spacing-base: ${theme.spacingBase}rem;
-  --text-base-size: ${theme.fontBaseSize}rem;
+  --spacing: ${theme.spacingBase}rem;
+  --font-size-base: ${theme.fontBaseSize}rem;
   font-family: ${theme.fontFamily};
 }`;
 };
