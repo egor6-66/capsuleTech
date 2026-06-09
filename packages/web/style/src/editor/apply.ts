@@ -15,8 +15,8 @@ export const applyTheme = (el: HTMLElement, theme: ITheme): void => {
   // `--ring` обычно идёт «по primary» — повторим, чтобы focus-кольцо тоже окрасилось.
   el.style.setProperty('--ring', theme.primary);
   el.style.setProperty('--radius', `${theme.radius}rem`);
-  el.style.setProperty('--spacing-base', `${theme.spacingBase}rem`);
-  el.style.setProperty('--text-base-size', `${theme.fontBaseSize}rem`);
+  el.style.setProperty('--spacing', `${theme.spacingBase}rem`);
+  el.style.setProperty('--font-size-base', `${theme.fontBaseSize}rem`);
   el.style.setProperty('font-family', theme.fontFamily);
   if (theme.mode === 'dark') el.classList.add('dark');
   else el.classList.remove('dark');
@@ -29,8 +29,8 @@ export const resetTheme = (el: HTMLElement): void => {
     '--primary-foreground',
     '--ring',
     '--radius',
-    '--spacing-base',
-    '--text-base-size',
+    '--spacing',
+    '--font-size-base',
   ]) {
     el.style.removeProperty(prop);
   }

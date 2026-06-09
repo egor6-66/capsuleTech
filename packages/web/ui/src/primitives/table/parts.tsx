@@ -24,7 +24,7 @@ export const TableRow = (props: ITableRowProps) => {
   return (
     <tr
       class={cn(
-        'border-b transition-colors duration-fast hover:bg-muted/50 data-[state=selected]:bg-muted',
+        'border-b transition-colors duration-200 hover:bg-muted/50 data-[state=selected]:bg-muted',
         local.class,
       )}
       {...others}

@@ -98,16 +98,16 @@ Compound: `--transition-colors`, `--transition-opacity`, `--transition-transform
 | `leading-tight` … `leading-loose` | `--leading-{n}: var(--leading-{n})` |
 | `tracking-tight` … `tracking-widest` | relative to per-theme `--tracking-normal` |
 | `rounded-xs` … `rounded-full` | `--radius-{n}: var(--radius-{n})` |
-| `duration-instant` … `duration-slower` | `--duration-{n}: var(--motion-{n})` |
 | `ease-in`, `ease-spring`, etc. | `--ease-{n}: var(--ease-{n})` |
 
-### Backward compat aliases (until Phase 2 migration)
+### Backward compat aliases
 
-These stay in `:root` so existing primitives don't break:
-- `--spacing-base`, `--spacing-layout`, `--spacing-component`, `--spacing-container` → new space tokens
-- `--layout-padding`, `--component-padding` → `--space-layout` / `--space-component` (used by matrix variants)
-- `--text-base-size`, `--font-size-h1`, `--font-size-h2`, `--font-size-p` → new font-size tokens
 - `--transition-ui` → `--transition-all`
+
+Legacy tokens removed in Phase 3/4 (no longer present):
+`--duration-{n}` Tailwind mappings, `--spacing-base/layout/component/container`,
+`--layout-padding`, `--component-padding`, `--text-base-size`, `--font-size-h1/h2/p`.
+Durations are now set via numeric Tailwind classes (`duration-200`, `duration-[320ms]`).
 
 ### Не трогает
 

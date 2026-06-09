@@ -62,10 +62,6 @@ Components reference these, not the raw scale.
 
 `p-1` = `1 × --spacing`. With `--spacing: 0.25rem`, `p-4` = `1rem`. Semantic spacing available as `p-cell`, `p-button`, `p-card`, etc. via `@theme inline`.
 
-### Backward compat (until Phase 2)
-
-`--spacing-base` → `--space-4`, `--spacing-layout` → `--space-layout`, `--spacing-component` → `--space-component`, `--spacing-container` → `--space-container`, `--layout-padding` → `--space-layout`, `--component-padding` → `--space-component`.
-
 ---
 
 ## Typography
@@ -110,9 +106,34 @@ Relative to per-theme `--tracking-normal` (fallback: `0em`). Themes that use a n
 | `--tracking-wider` | `--tracking-normal + 0.05em` | `tracking-wider` |
 | `--tracking-widest` | `--tracking-normal + 0.1em` | `tracking-widest` |
 
-### Backward compat (until Phase 2)
+---
 
-`--text-base-size` → `--font-size-base`. `--font-size-h1` → `--font-size-base × 2.5`. `--font-size-h2` → `--font-size-base × 2`. `--font-size-p` → `--font-size-base`.
+## Status
+
+Canonical status tokens live in `index.css :root` (theme-independent defaults). Community themes do not carry these — they are capsule-internal.
+
+| CSS property | Default value (OKLCH) | Tailwind utility |
+|---|---|---|
+| `--success` | `oklch(0.627 0.194 149.214)` | `bg-success`, `text-success` |
+| `--success-foreground` | `oklch(0.985 0 0)` (near-white) | `bg-success-foreground`, `text-success-foreground` |
+| `--warning` | `oklch(0.769 0.188 70.08)` | `bg-warning`, `text-warning` |
+| `--warning-foreground` | `oklch(0.145 0 0)` (near-black) | `bg-warning-foreground`, `text-warning-foreground` |
+| `--destructive` | per-theme (skin var) | `bg-destructive`, `text-destructive` |
+| `--destructive-foreground` | per-theme (skin var) | `bg-destructive-foreground` |
+
+`--success-foreground` is near-white (0.985 lightness) for contrast on the dark-ish green base (L≈0.63). `--warning-foreground` is near-black (0.145 lightness) for contrast on the bright amber base (L≈0.77).
+
+### `STATUS_VARIABLES` (runtime helper)
+
+`constants.ts` exports `STATUS_VARIABLES: Record<ComponentStatus, Record<string, string>>`. Sets `--current-status` inline style on the wrapper element; `.has-status` class in `index.css` reads it via `background-color`/`border-color`.
+
+```ts
+import { STATUS_VARIABLES } from '@capsuletech/web-style';
+// STATUS_VARIABLES.success  → { '--current-status': 'var(--success)' }
+// STATUS_VARIABLES.error    → { '--current-status': 'var(--destructive)' }
+// STATUS_VARIABLES.warning  → { '--current-status': 'var(--warning)' }
+// STATUS_VARIABLES.idle     → { '--current-status': 'transparent' }
+```
 
 ---
 
@@ -137,13 +158,15 @@ Anchored to per-theme `--radius` (fallback: `0.5rem`). Adding a theme with a dif
 
 ### Duration
 
-| CSS property | Value | Tailwind utility |
+`--motion-*` — internal plain-vars. Используются **только** внутри `--transition-*` composites и `createStyle`, не как Tailwind-утилиты. В коде длительности задаются numeric-каноном: `duration-200`, `duration-[320ms]` и т.д.
+
+| CSS property | Value | Назначение |
 |---|---|---|
-| `--motion-instant` | 75ms | `duration-instant` |
-| `--motion-fast` | 150ms | `duration-fast` |
-| `--motion-normal` | 250ms | `duration-normal` |
-| `--motion-slow` | 400ms | `duration-slow` |
-| `--motion-slower` | 600ms | `duration-slower` |
+| `--motion-instant` | 75ms | внутри `--transition-*` composites |
+| `--motion-fast` | 200ms | внутри `--transition-*` composites |
+| `--motion-normal` | 320ms | внутри `--transition-*` composites |
+| `--motion-slow` | 400ms | внутри `--transition-*` composites |
+| `--motion-slower` | 600ms | внутри `--transition-*` composites |
 
 ### Easing
 
@@ -177,9 +200,9 @@ Pre-composed for common use cases. Reference as `transition: var(--transition-co
 1. Create `packages/web/style/src/themes/<name>.css`.
 2. Define `[data-theme="<name>"] { ... }` with all color variables + `--radius`, `--font-*`, `--shadow-*`, `--tracking-normal`, `--spacing`.
 3. Optionally add `[data-theme="<name>"].dark, [data-theme="<name>"] .dark { ... }`.
-4. Add the same `@theme inline { ... }` block as in other theme files (colors + fonts + shadows + radii + optional tracking scale).
+4. Do NOT add `@theme inline` to the theme file. The sole utility mapping lives in `index.css`. Themes carry only skin-vars: color variables, `--radius`, `--font-*`, `--shadow-*`, `--tracking-normal`, `--spacing`.
 5. Add `@import "./<name>.css";` to `themes/index.css`.
-6. Token scales (spacing, motion, line heights) are inherited from `index.css :root` — no duplication needed.
+6. All token scales (spacing, motion, radii, line heights, letter-spacing, typography) are inherited from `index.css` — no duplication needed.
 
 ---
 

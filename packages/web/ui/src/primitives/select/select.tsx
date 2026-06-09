@@ -25,7 +25,7 @@ const Trigger = (props: ISelectTriggerProps) => {
   return (
     <KobalteSelect.Trigger class={cn(selectTriggerCva(), local.class)} {...(others as object)}>
       {local.children}
-      <KobalteSelect.Icon class="shrink-0 text-muted-foreground transition-transform duration-fast data-[expanded]:rotate-180">
+      <KobalteSelect.Icon class="shrink-0 text-muted-foreground transition-transform duration-200 data-[expanded]:rotate-180">
         <ChevronDown size={16} aria-hidden="true" />
       </KobalteSelect.Icon>
     </KobalteSelect.Trigger>

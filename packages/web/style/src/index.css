@@ -74,6 +74,12 @@
   /* Structural tokens — theme-independent */
   --color-status: var(--current-status);
 
+  /* Status colors — canonical tokens */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+
   /* Spacing — base unit. Themes override --spacing directly (most use 0.25rem).
      Tailwind p-1 = 1 × --spacing, p-2 = 2 × --spacing, etc. */
   --spacing: var(--spacing);
@@ -125,13 +131,6 @@
   --tracking-wider: calc(var(--tracking-normal) + 0.05em);
   --tracking-widest: calc(var(--tracking-normal) + 0.1em);
 
-  /* Motion — duration utilities */
-  --duration-instant: var(--motion-instant);
-  --duration-fast: var(--motion-fast);
-  --duration-normal: var(--motion-normal);
-  --duration-slow: var(--motion-slow);
-  --duration-slower: var(--motion-slower);
-
   /* Motion — easing utilities */
   --ease-linear: var(--ease-linear);
   --ease-in: var(--ease-in);
@@ -142,9 +141,6 @@
 
   --gradient-primary: linear-gradient(to right, oklch(0.7 0.2 340), oklch(0.5 0.2 250));
   --gradient-accent: linear-gradient(to bottom right, var(--primary), var(--accent));
-
-  --color-text-main: var(--foreground);
-  --color-text-muted: var(--muted-foreground);
 
   --animate-pulse-subtle: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
@@ -197,14 +193,6 @@
      Кандидат на вынос в ThemeEditor (editor/) как настраиваемый параметр сетки. */
   --size-slot: calc(var(--space-7) * var(--density));
 
-  /* Backward compat: old names used by matrix variants (until Phase 2 migration) */
-  --spacing-base: var(--space-4);
-  --spacing-layout: var(--space-layout);
-  --spacing-component: var(--space-component);
-  --spacing-tight: var(--space-tight);
-  --layout-padding: var(--space-layout);
-  --component-padding: var(--space-component);
-
   /* Fallback --spacing for themes that don't set it (matches Tailwind default) */
   --spacing: 0.25rem;
 
@@ -229,12 +217,6 @@
   --leading-relaxed: 1.7;
   --leading-loose: 2;
 
-  /* Backward compat: old typography names used by typography variants (until Phase 2 migration) */
-  --text-base-size: var(--font-size-base);
-  --font-size-h1: calc(var(--font-size-base) * 2.5);
-  --font-size-h2: calc(var(--font-size-base) * 2);
-  --font-size-p: var(--font-size-base);
-
   /* Fallback tracking — themes override --tracking-normal */
   --tracking-normal: 0em;
 
@@ -251,13 +233,14 @@
 
   /* --- Motion ---
      Tuned 2026-05-28 for smoother hover/active feel across the kit.
-     - `fast` (was 150ms → 200ms): for components that reference it via
-       `duration-fast` directly — List, Toggle, Input, Table rows, Typography.
-     - `normal` (was 250ms → 320ms): feeds --transition-all + --transition-ui,
-       and through the global `button, input, a { transition: var(--transition-ui) !important }`
-       rule below — this is what actually drives hover/bg-change/active-state
-       smoothness on every interactive element. The bump is the main effect
-       the user feels. Adjust further here if it ever feels too slow / too fast. */
+     --motion-* are internal plain-vars; they feed --transition-* composites
+     (--transition-colors, --transition-ui, etc.) and the global
+     `button, input, a { transition: var(--transition-ui) }` rule below —
+     that rule drives hover/bg-change/active-state smoothness on every
+     interactive element. In components, durations are set via numeric
+     Tailwind classes (e.g. duration-200, duration-[320ms]), not through
+     --motion-* directly. Adjust fast/normal here if the kit ever feels
+     too slow / too fast overall. */
   --motion-instant: 75ms;
   --motion-fast: 200ms;
   --motion-normal: 320ms;
@@ -288,10 +271,11 @@
   /* Backward compat: existing --transition-ui */
   --transition-ui: var(--transition-all);
 
-  /* Status colors */
-  --status-success: oklch(0.627 0.194 149.214);
-  --status-error: oklch(0.577 0.245 27.325);
-  --status-warning: oklch(0.769 0.188 70.08);
+  /* Status colors — canonical tokens (theme-independent defaults) */
+  --success: oklch(0.627 0.194 149.214);
+  --success-foreground: oklch(0.985 0 0);
+  --warning: oklch(0.769 0.188 70.08);
+  --warning-foreground: oklch(0.145 0 0);
   --current-status: inherit;
 }
 

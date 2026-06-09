@@ -26,7 +26,7 @@ export const selectTriggerCva = cva(
     'disabled:cursor-not-allowed disabled:opacity-50',
     'data-[placeholder-shown]:text-muted-foreground',
     // Smooth border/ring transition
-    'transition-[border-color,box-shadow] duration-fast',
+    'transition-[border-color,box-shadow] duration-200',
   ].join(' '),
   {
     variants: {},
@@ -75,7 +75,7 @@ export const selectItemCva = cva(
     'px-2 py-1.5 pl-8',
     'text-sm outline-none',
     // Highlighted state
-    'transition-colors duration-fast',
+    'transition-colors duration-200',
     'data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground',
     // Disabled state
     'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
