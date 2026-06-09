@@ -24,12 +24,12 @@
     "@capsuletech/web-ui-creator": "workspace:*",
     "@capsuletech/shared-zod": "workspace:*",
     "@kobalte/core": "^0.13.0",
-    "@tanstack/router-core": "^1.169.0",
-    "@tanstack/solid-router": "^1.169.0",
-    "@tanstack/solid-virtual": "^3.13.24",
+    "@tanstack/router-core": "^1.171.13",
+    "@tanstack/solid-router": "^1.170.15",
+    "@tanstack/solid-virtual": "^3.13.28",
     "@xstate/solid": "^2.0.0",
-    "solid-js": "1.9.12",
-    "xstate": "^5.0.0",
+    "solid-js": "1.9.13",
+    "xstate": "^5.32.0",
     "zod": "^3.23.8"
   }
 }

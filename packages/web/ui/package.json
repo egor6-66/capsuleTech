@@ -301,7 +301,7 @@
   "dependencies": {
     "@corvu/resizable": "^0.2.5",
     "class-variance-authority": "^0.7.1",
-    "lucide-solid": "^1.16.0"
+    "lucide-solid": "^1.17.0"
   },
   "peerDependencies": {
     "@capsuletech/web-style": "workspace:*",
@@ -320,7 +320,7 @@
     "jsdom": "~29.1.1",
     "storybook": "^10",
     "storybook-solidjs-vite": "^10",
-    "vite": "^8.0.13",
+    "vite": "^8.0.16",
     "vite-plugin-solid": "^2.11.12",
     "vite-tsconfig-paths": "^6.1.1"
   }
