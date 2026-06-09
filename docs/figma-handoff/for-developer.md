@@ -1,6 +1,6 @@
 # 🛠️ Для разработчика — связь токенов с кодом
 
-> **Навигация:** 📍 [Общее](README.md) · 🎨 [Дизайнеру](for-designer.md) · 🛠️ [Разработчику](for-developer.md) · 📐 [Контракт](CONTRACT.md) · 🎛️ [Токены](tokens/)
+> **Навигация:** 📍 [Общее](README.md) · 🎨 [Дизайнеру](for-designer.md) · 🔄 [Синхрон](sync-roundtrip.md) · 🛠️ [Разработчику](for-developer.md) · 📐 [Контракт](CONTRACT.md) · 🎛️ [Токены](tokens/)
 
 Контекст для того, кто ведёт дизайн-систему в коде и поддерживает мост в Figma.
 
@@ -41,7 +41,7 @@
 
 1. **tokens.json генератор** (owner-web-style): `index.css` + `themes/*` → DTCG JSON (OKLCH→hex), все 11 тем, в структуре этого эталона. Заменяет ручную сборку `figma-handoff/tokens/`.
 2. **Tokens Studio** — двусторонний синк токенов code↔Figma (git-backed).
-3. **Компоненты** code→Figma — отдельно (story.to.design или свой плагин на `web-ui-creator/manifests`).
-4. **Figma→code** — плагин-экспортёр фрейма в `web-renderer` ISchema.
+3. **Компоненты code→Figma (PUSH)** — генерация наших компонентов в Figma **из нашего кода/контрактов через `web-renderer`** (НЕ Storybook/story.to.design). variant-props = наши props **1:1** (identity, без перемапливаний).
+4. **Figma→code (PULL)** — плагин-экспортёр фрейма в `web-renderer` ISchema. Живёт в **`plugins/figma/`** (standalone build, рядом с `webstorm-agent`).
 
 Этот каталог (`figma-handoff/`) — **эталон формата**, который генератор должен воспроизводить 1:1.

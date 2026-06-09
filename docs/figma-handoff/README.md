@@ -1,6 +1,6 @@
 # 🎨 Design System — Figma Handoff
 
-> **Навигация:** 📍 [Общее](README.md) · 🎨 [Дизайнеру](for-designer.md) · 🛠️ [Разработчику](for-developer.md) · 📐 [Контракт](CONTRACT.md) · 🎛️ [Токены](tokens/)
+> **Навигация:** 📍 [Общее](README.md) · 🎨 [Дизайнеру](for-designer.md) · 🔄 [Синхрон](sync-roundtrip.md) · 🛠️ [Разработчику](for-developer.md) · 📐 [Контракт](CONTRACT.md) · 🎛️ [Токены](tokens/)
 
 Стартовый пакет для переноса дизайн-системы в Figma: токены (цвета, отступы, скругления, шрифты, тени, анимации) и контракт о том, как держать дизайн и код **в одном языке**.
 
@@ -16,7 +16,8 @@
 |---|---|
 | 1️⃣ Понять систему и завести токены | 🎨 [**for-designer.md**](for-designer.md) — гайд, ресурсы, промпты для ИИ |
 | 2️⃣ Узнать правила именования | 📐 [**CONTRACT.md**](CONTRACT.md) — пара важных правил |
-| 3️⃣ Связь с кодом | 🛠️ [**for-developer.md**](for-developer.md) |
+| 3️⃣ Перенос дизайна Figma ↔ редактор | 🔄 [**sync-roundtrip.md**](sync-roundtrip.md) — пошагово, с метками «пингани владельца» |
+| 4️⃣ Связь с кодом | 🛠️ [**for-developer.md**](for-developer.md) |
 
 ---
 
@@ -26,6 +27,7 @@
 figma-handoff/
 ├── 📍 README.md          ← общее, точка входа
 ├── 🎨 for-designer.md    ← гайд дизайнера + ресурсы + промпты
+├── 🔄 sync-roundtrip.md  ← пошаговый перенос Figma ↔ редактор (с метками «пингани владельца»)
 ├── 🛠️ for-developer.md   ← связь токенов с кодом
 ├── 📐 CONTRACT.md        ← правила именования + «skin-контракт»
 └── 🎛️ tokens/
