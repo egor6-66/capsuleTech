@@ -444,6 +444,54 @@ describe('generateAppConfigRuntime', () => {
     const out = generateAppConfigRuntime(undefined);
     expect(out).toContain('registerAliases({});');
   });
+
+  // ── access / auth conditional imports ─────────────────────────────────────
+
+  it('does NOT emit web-access import when hasAccess is false (default)', () => {
+    const out = generateAppConfigRuntime({});
+    expect(out).not.toContain("@capsuletech/web-access");
+    expect(out).not.toContain('setupAccess(');
+  });
+
+  it('does NOT emit web-auth import when hasAuthSession is false (default)', () => {
+    const out = generateAppConfigRuntime({});
+    expect(out).not.toContain("@capsuletech/web-auth");
+    expect(out).not.toContain('configureAuthSession(');
+  });
+
+  it('emits setupAccess import and guarded call when hasAccess is true', () => {
+    const out = generateAppConfigRuntime({}, { hasAccess: true });
+    expect(out).toContain("import { setupAccess } from '@capsuletech/web-access';");
+    expect(out).toContain('if (appConfig.access) {');
+    expect(out).toContain('  setupAccess(appConfig.access);');
+  });
+
+  it('emits configureAuthSession import and guarded call when hasAuthSession is true', () => {
+    const out = generateAppConfigRuntime({}, { hasAuthSession: true });
+    expect(out).toContain("import { configureAuthSession } from '@capsuletech/web-auth/session';");
+    expect(out).toContain('if (appConfig.auth?.session) {');
+    expect(out).toContain('  configureAuthSession(appConfig.auth.session);');
+  });
+
+  it('emits both access and auth blocks when both opts are true', () => {
+    const out = generateAppConfigRuntime({}, { hasAccess: true, hasAuthSession: true });
+    expect(out).toContain("import { setupAccess } from '@capsuletech/web-access';");
+    expect(out).toContain("import { configureAuthSession } from '@capsuletech/web-auth/session';");
+    expect(out).toContain('if (appConfig.access) {');
+    expect(out).toContain('if (appConfig.auth?.session) {');
+  });
+
+  it('access/auth imports appear before appConfigRaw import', () => {
+    const out = generateAppConfigRuntime({}, { hasAccess: true, hasAuthSession: true });
+    const accessIdx = out.indexOf("import { setupAccess }");
+    const authIdx = out.indexOf("import { configureAuthSession }");
+    const rawIdx = out.indexOf("import appConfigRaw from");
+    expect(accessIdx).toBeGreaterThanOrEqual(0);
+    expect(authIdx).toBeGreaterThanOrEqual(0);
+    expect(rawIdx).toBeGreaterThanOrEqual(0);
+    expect(accessIdx).toBeLessThan(rawIdx);
+    expect(authIdx).toBeLessThan(rawIdx);
+  });
 });
 
 // ---------------------------------------------------------------------------

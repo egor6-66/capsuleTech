@@ -19,6 +19,7 @@ import { resolve } from 'node:path';
 import {
   generateAppConfigRuntime,
   renderAppTagsTypes,
+  type AppConfigRuntimeOpts,
 } from '../../capsuleRegistry';
 import type { AppConfigShape, CodegenContext, SubGenerator } from '../interfaces';
 
@@ -69,6 +70,10 @@ export const createAppConfigSubGenerator = (opts?: {
       const tags = config?.meta?.tags ?? [];
       const aliases = config?.aliases ?? {};
       const aliasKeys = Object.keys(aliases);
+      const runtimeOpts: AppConfigRuntimeOpts = {
+        hasAccess: Boolean(config?.access),
+        hasAuthSession: Boolean(config?.auth?.session),
+      };
 
       ctx.writeOut(
         resolve(ctx.capsuleRoot, '@types', 'app-tags.d.ts'),
@@ -76,7 +81,7 @@ export const createAppConfigSubGenerator = (opts?: {
       );
       ctx.writeOut(
         resolve(ctx.capsuleRoot, 'app-config.gen.ts'),
-        generateAppConfigRuntime(aliases),
+        generateAppConfigRuntime(aliases, runtimeOpts),
       );
 
       opts?.onAppConfigLoad?.(config);

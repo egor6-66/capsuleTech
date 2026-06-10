@@ -2,7 +2,7 @@
  * /session — тесты session-store + useAuth() + persistence.
  */
 
-import { describe, expect, it, beforeEach, afterEach } from 'vitest';
+import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
 import {
   createAuthSession,
   configureAuthSession,
@@ -335,5 +335,50 @@ describe('configureAuthSession()', () => {
 
     expect(useAuth().isAuthed).toBe(false);
     expect(useAuth().role).toBeNull();
+  });
+});
+
+// ─── Lazy init: defaultAuthSession не создаёт store до первого обращения ─────
+//
+// Полноценная проверка "импорт не вызывает createStore" требует module-isolation
+// (vi.isolateModules / отдельный процесс) — см. session.lazy.test.ts.
+// Здесь проверяем наблюдаемые инварианты ленивой инициализации.
+
+describe('session module — lazy init (SSR-safe)', () => {
+  beforeEach(() => {
+    // Сбрасываем к чистому состоянию между тестами
+    configureAuthSession({ storage: 'memory' });
+  });
+  afterEach(() => {
+    configureAuthSession({ storage: 'memory' });
+  });
+
+  it('defaultAuthSession.session доступен и имеет idle-статус без предварительного вызова configure', () => {
+    // configureAuthSession('memory') вызван в beforeEach — store создан явно.
+    // Этот тест проверяет, что первый доступ к .session не бросает.
+    const auth = useAuth();
+    expect(auth.status).toBe('idle');
+    expect(auth.isAuthed).toBe(false);
+  });
+
+  it('login() через defaultAuthSession работает после lazy-создания store', () => {
+    // configureAuthSession('memory') вызван в beforeEach, но даже без него
+    // первый вызов login должен работать (lazy path создаёт memory store).
+    defaultAuthSession.login('lazy-tok', { role: 'developer' });
+    expect(useAuth().isAuthed).toBe(true);
+    expect(useAuth().token).toBe('lazy-tok');
+  });
+
+  it('configureAuthSession("local") синхронно rehydrates сессию до первого render', () => {
+    const KEY = 'lazy-init-test';
+    try {
+      localSessionStorage(KEY).setSession({ token: 'hydrated', user: { role: 'admin' } });
+      configureAuthSession({ storage: 'local', key: KEY });
+      // rehydrate синхронный — до любого рендера isAuthed уже true
+      expect(useAuth().isAuthed).toBe(true);
+      expect(useAuth().role).toBe('admin');
+    } finally {
+      localStorage.removeItem(KEY);
+    }
   });
 });

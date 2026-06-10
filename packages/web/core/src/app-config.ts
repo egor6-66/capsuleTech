@@ -123,6 +123,50 @@ export interface IAppConfig {
      */
     transition?: boolean | 'none';
   };
+
+  /**
+   * RBAC policy: роль → список capability-слагов.
+   *
+   * Значение-элемент может быть:
+   * - `'*'` — все capability'ы разрешены для данной роли;
+   * - `'ns.*'` — все capability'ы с префиксом `ns.`;
+   * - конкретный слаг, например `'users.read'`.
+   *
+   * Потребляется client-side сгенерированным кодом
+   * (`app-config.gen.ts → setupAccess`). Не импортирует
+   * `@capsuletech/web-access` — inline structural type, нет цикла зависимостей.
+   *
+   * @example
+   * access: {
+   *   admin:  ['*'],
+   *   editor: ['posts.*', 'media.read'],
+   *   viewer: ['posts.read', 'media.read'],
+   * }
+   */
+  access?: Record<string, readonly string[]>;
+
+  /**
+   * Настройки auth-сессии (персист).
+   *
+   * Потребляется client-side сгенерированным кодом
+   * (`app-config.gen.ts → configureAuthSession`). Не импортирует
+   * `@capsuletech/web-auth` — inline structural type, нет цикла зависимостей.
+   */
+  auth?: {
+    session?: {
+      /**
+       * Хранилище токена/сессии.
+       * - `'local'` — `localStorage` (персист между сессиями браузера; дефолт).
+       * - `'memory'` — только в памяти (сбрасывается при перезагрузке; удобно для SSR / тестов).
+       */
+      storage?: 'local' | 'memory';
+      /**
+       * Ключ в выбранном хранилище.
+       * Дефолт задаётся потребителем (`app-config.gen`), обычно `'capsule-auth'`.
+       */
+      key?: string;
+    };
+  };
 }
 
 /**

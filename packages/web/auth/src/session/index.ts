@@ -203,13 +203,29 @@ export const createAuthSession = (
 // ─── Mutable singleton для useAuth() ─────────────────────────────────────────
 
 /**
- * Внутренний ref-обёртка вокруг defaultAuthSession. Позволяет
- * `configureAuthSession` заменить реализацию после инициализации модуля,
- * при этом все уже вызванные `useAuth()` (без аргументов) автоматически
- * начнут читать из новой сессии через одну и ту же ссылку на прокси-объект.
+ * Внутренний ref-обёртка вокруг defaultAuthSession. Инициализируется ЛЕНИВО
+ * (null на старте модуля) чтобы не вызывать Solid `createStore` при
+ * module-eval в Node/SSR-контексте (capsule-registry читает capsule.app.ts
+ * через Node — простой импорт модуля не должен запускать client-only API).
+ *
+ * Первый реальный клиентский вызов (useAuth(), configureAuthSession(), login/
+ * logout) создаёт store через `_getDefaultSession()` и запоминает результат.
  */
-const _sessionRef: { current: IAuthSessionStore } = {
-  current: createAuthSession(),
+const _sessionRef: { current: IAuthSessionStore | null } = {
+  current: null,
+};
+
+/**
+ * Возвращает (или создаёт при первом обращении) дефолтный session-store.
+ * Единственная точка, где вызывается `createAuthSession()` для синглтона.
+ * Клиентский код всегда попадает сюда через useAuth()/configureAuthSession() —
+ * т.е. только на стороне браузера.
+ */
+const _getDefaultSession = (): IAuthSessionStore => {
+  if (_sessionRef.current === null) {
+    _sessionRef.current = createAuthSession();
+  }
+  return _sessionRef.current;
 };
 
 /**
@@ -219,19 +235,22 @@ const _sessionRef: { current: IAuthSessionStore } = {
  * Апп может изменить хранилище через `configureAuthSession` (один раз при
  * загрузке). Для нескольких независимых app-root'ов — используй
  * `createAuthSession(storage)` и пробрасывай явно.
+ *
+ * Сам объект — ленивый прокси: Solid `createStore` НЕ вызывается при импорте
+ * модуля; store создаётся при первом клиентском обращении к члену объекта.
  */
 export const defaultAuthSession: IAuthSessionStore = {
   get session() {
-    return _sessionRef.current.session;
+    return _getDefaultSession().session;
   },
   login(token, user) {
-    _sessionRef.current.login(token, user);
+    _getDefaultSession().login(token, user);
   },
   logout() {
-    _sessionRef.current.logout();
+    _getDefaultSession().logout();
   },
   setStatus(status) {
-    _sessionRef.current.setStatus(status);
+    _getDefaultSession().setStatus(status);
   },
 };
 
@@ -279,9 +298,12 @@ export const configureAuthSession = (options: IConfigureAuthSessionOptions): voi
         '[web-auth] configureAuthSession: "key" is required when storage is "local"',
       );
     }
+    // Создаём новый store с localStorage-персистентностью и rehydrate синхронно.
     _sessionRef.current = createAuthSession(localSessionStorage(options.key));
   } else {
-    // 'memory' — сбрасываем к memory (полезно в тестах)
+    // 'memory' — сбрасываем к memory (полезно в тестах).
+    // Даже если лениво ещё не создан — выставляем явно (чтобы тесты, вызывающие
+    // configureAuthSession('memory') в beforeEach, получали чистый store).
     _sessionRef.current = createAuthSession();
   }
 };
