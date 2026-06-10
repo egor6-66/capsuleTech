@@ -1,4 +1,5 @@
 export { DataTable } from './dataTable';
+export { DataTableContract } from './dataTable.contract';
 export type {
   ColumnDef,
   DataTableTemplate,

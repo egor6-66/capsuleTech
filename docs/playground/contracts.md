@@ -29,22 +29,33 @@
 // web-contract — примитивы
 rule.isLeaf()
 rule.accepts(types[])          // структурное, parent-side
-rule.props(zodSchema)
+rule.props(zodSchema)          // zod-совместимая схема (duck-typed safeParse)
 rule.variants([...])
 rule.styleSlots([...])
 rule.data(shape)               // data-bindable
 rule.events([...])             // traceable
 rule.recommend(pred, hint)     // мягкое
+rule.examples([...])           // демо-кейсы для стенда (catalog)
 
-// web-ui/Button — композиция + своё
-export const ButtonContract = defineContract([
-  rule.isLeaf(),
-  rule.props(z.object({ variant: z.enum([...]) })),
-  rule.variants(['default','destructive','outline',...]),
-  rule.styleSlots(['root']),
-  rule.recommend(ctx => !ctx.hasLabel, 'Кнопке желателен лейбл'),
-]);
+// web-ui/Button — база + композиция правил
+export const ButtonContract = defineContract(
+  { name: 'Button', kind: 'primitive' },   // ← БАЗА обязательна (см. ниже)
+  [
+    rule.isLeaf(),
+    rule.props(Zod.object({ variant: Zod.enum([...]) })),  // Zod — глобал shared-zod
+    rule.variants(['default','destructive','outline',...]),
+    rule.styleSlots(['root']),
+    rule.recommend(ctx => !ctx.hasLabel, 'Кнопке желателен лейбл'),
+    rule.examples([{ name: 'default', props: { variant: 'default' } }]),
+  ],
+);
 ```
+
+> 🔑 **База — обязательный первый аргумент** `defineContract(base, rules?)`, не забываемое правило. `base = { name, kind }` — ядро, без которого окружение **не воспринимает** сущность (минимальный контроль для интеропа). Минимальный контракт сторонней либы: `defineContract({ name: 'ForeignButton', kind: 'primitive' })` — без правил, но уже виден палитре. Дальше сущность расширяет контракт правилами под себя.
+>
+> **`kind`** завязан на экосистему: UI-kit тиры (`primitive`/`composition`) + HCA-слои (`view`/`shape`/`widget`/`page`/`controller`/`feature`/`entity`). Щель `string & {}` — под сторонние либы (семантику проектируем позже).
+>
+> Потребление — `collectContracts(source)`: массив, реестр `{ 'ui.Button': ButtonContract }` или одиночный носитель → только сущности с валидной базой.
 
 Правила живут в тематических пакетах: `web-contract` — базовые примитивы, `web-table` — data-правила, `web-auth` — api-правила. Компонент берёт нужные + докидывает свои.
 
