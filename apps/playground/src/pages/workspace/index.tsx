@@ -1,10 +1,11 @@
 /**
  * Workspace shell (`/workspace`) — каркас для всех авторизованных страниц.
  *
- *   header — `Widgets.Header` (nav + меню темы/logout)
+ *   header — `Widgets.Header` (nav: Web Studio · DevOps · Docs)
  *   main   — `<Ui.Outlet/>` под дочерние роуты:
- *              `/workspace/home`    — приветствие (landing после входа)
- *              `/workspace/profile` — placeholder
+ *              `/workspace/web-studio` — дом креатор-кита (designer)
+ *              `/workspace/devops`     — плейсхолдер (devops)
+ *              `/workspace/docs`       — документация (всем)
  *
  * `mode="view"` локирует shell (global edit-toggle не подсветит chrome).
  * Оба слота `resizable: false` — shell не ресайзится.
