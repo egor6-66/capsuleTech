@@ -21,18 +21,32 @@
  *   2. filled  — `bg-muted/40`            subtle tint; driven by per-variant
  *                  data-attribute (differs between native inputs and Kobalte).
  *   3. active  — `bg-background`          "lifts" control + ring; driven by
- *                  `:focus` (Input/Textarea) or `data-[expanded]` (Select).
+ *                  `:focus-visible` (Input/Textarea) or `data-[expanded]` (Select).
  *
- * ## Focus ring
+ * ## Active state lives on the CONTROL, not here
  *
- * Uses a SINGLE clean ring (shadcn canon): `focus:ring-1 focus:ring-ring`.
- * The border is NOT switched to `--ring` on focus — that would produce a
- * heavy doubled purple line. The ring alone gives a clear, tasteful affordance
- * consistent with shadcn/ui style.
+ * The base intentionally does NOT carry the focus ring or the active background.
+ * Those differ by control and are declared per-CVA:
+ *   - Input / Textarea → `focus-visible:ring-1 focus-visible:ring-ring`
+ *                         `focus-visible:bg-background`
+ *     (browsers set `:focus-visible` on editable fields for any focus event, so
+ *     the ring shows on mouse-click as well — desired for text fields.)
+ *   - Select trigger   → `data-[expanded]:ring-1 data-[expanded]:ring-ring`
+ *                         `data-[expanded]:bg-background`  (open-state ONLY)
  *
- * Uses `:focus` (not `:focus-visible`) so the ring appears consistently on
- * both keyboard Tab navigation AND mouse click.  Select mirrors this via
- * `data-[expanded]:ring-1 data-[expanded]:ring-ring` in its own variant file.
+ * Why the split: Kobalte programmatically restores focus to the trigger when the
+ * dropdown closes. On Chromium that restore matches `:focus-visible`, so a
+ * focus-visible ring on the trigger re-lights after a mouse click-away ("ring
+ * goes out → comes back → needs a second click to clear"). Keeping the trigger's
+ * ring on `data-[expanded]` alone removes that false re-light entirely.
+ *
+ * The base keeps `outline-none` unconditionally so the native focus outline never
+ * competes with the control-supplied ring.
+ *
+ * ## Focus ring colour
+ *
+ * A single clean ring (shadcn canon). The border is NOT switched to `--ring` on
+ * focus — that would produce a heavy doubled purple line.
  *
  * Relies on `--ring`, `--border`, `--input` tokens from `@capsuletech/web-style`.
  * Do not work around missing token values here — fix them in web-style themes.
@@ -46,10 +60,8 @@ export const INPUT_FIELD_BASE = [
   'transition-[background-color,border-color,box-shadow] duration-200',
   // Background state 1: empty
   'bg-transparent',
-  // Background state 3: active/focused — wins over filled (declared after)
-  'focus:bg-background',
-  // Focus ring — single clean ring, no border-colour change (avoids doubled purple)
-  'focus:outline-none focus:ring-1 focus:ring-ring',
+  // Suppress native outline; the active ring is supplied per-control
+  'outline-none',
   // Placeholder
   'placeholder:text-muted-foreground',
   // Disabled

@@ -54,15 +54,22 @@ const Value = (props: ISelectValueProps) => {
  * The dropdown panel containing the list of selectable items.
  * Rendered inside a Kobalte Portal (teleported to `document.body`).
  *
- * ## Enter + exit animation
+ * ## Enter + exit animation — auto-height unfold
  * Kobalte natively delays Content removal from the DOM while a closing CSS
- * animation plays — no `forceMount` or motionone needed. The `popover-animate`
- * class (defined in `@capsuletech/web-style/index.css`) attaches:
- *   - enter → `popover-in` keyframe on `[data-expanded]` (opacity 0→1, scale 0.95→1)
- *   - exit  → `popover-out` keyframe on `[data-closed]`  (opacity 1→0, scale 1→0.95)
+ * animation plays — no `forceMount` or motionone needed. The `select-content-animate`
+ * class (defined in `@capsuletech/web-style/index.css`) animates the panel HEIGHT
+ * (grid-rows 0fr→1fr) rather than scaling it, so the attached single-block panel
+ * unfolds downward from the seam without the scale/translate "pinch" flash:
+ *   - enter → `select-unfold` keyframe on `[data-expanded]`
+ *   - exit  → `select-fold`   keyframe on `[data-closed]`
  *
- * Kobalte sets `--kb-select-content-available-width` / `-height` on the Content
- * element; `selectContentCva()` uses those CSS variables for `min-w` / `max-h`.
+ * The grid trick requires the single child to shrink below its content height,
+ * so it is split into two layers:
+ *   - outer wrapper (the grid child) → `overflow-hidden`; it gets squeezed by the
+ *     grid during the unfold and clips silently — NO scrollbar flickers in.
+ *   - inner wrapper → `overflow-auto` + `max-h` (Kobalte's
+ *     `--kb-popper-content-available-height`); the genuine scrollbar for long
+ *     lists, which never appears for short ones.
  *
  * ## Finish effect
  * Activated via the reactive `useFinishMode()` signal (read inside `createFinish`);
@@ -76,11 +83,18 @@ const Content = (props: ISelectContentProps) => {
   return (
     <KobalteSelect.Portal {...(local.portalProps as object)}>
       <KobalteSelect.Content
-        class={cn(selectContentCva(), 'popover-animate', local.class)}
-        style={{ ...(typeof local.style === 'object' ? local.style : {}), ...finish.surfaceStyle() }}
+        class={cn(selectContentCva(), 'select-content-animate', local.class)}
+        style={{
+          ...(typeof local.style === 'object' ? local.style : {}),
+          ...finish.surfaceStyle(),
+        }}
         {...(others as object)}
       >
-        <KobalteSelect.Listbox />
+        <div class="overflow-hidden">
+          <div class="overflow-auto max-h-[var(--kb-popper-content-available-height)]">
+            <KobalteSelect.Listbox />
+          </div>
+        </div>
       </KobalteSelect.Content>
     </KobalteSelect.Portal>
   );
@@ -117,13 +131,18 @@ const Content = (props: ISelectContentProps) => {
  * </Select>
  * ```
  *
- * `gutter` defaults to `2` px — keeps the dropdown visually attached to the
- * trigger for a cohesive input-select appearance while leaving just enough gap
- * for the panel shadow/border not to bleed into the trigger.
- * Pass an explicit `gutter` prop to override.
+ * `gutter` defaults to `0` px — the panel butts directly against the trigger so
+ * the two form a single continuous block (the trigger flattens its bottom corners
+ * and the panel its top; see `variants.ts`). Pass an explicit `gutter` to detach.
  */
 const SelectImpl = (props: ISelectProps) => {
-  const [local, kobalteProps] = splitProps(props, ['options', 'placeholder', 'class', 'children', 'gutter']);
+  const [local, kobalteProps] = splitProps(props, [
+    'options',
+    'placeholder',
+    'class',
+    'children',
+    'gutter',
+  ]);
 
   const optionValues = () => (local.options ?? []).map((o) => o.value);
   const labelMap = () => {
@@ -140,12 +159,13 @@ const SelectImpl = (props: ISelectProps) => {
       options={optionValues()}
       placeholder={local.placeholder}
       optionDisabled={(v) => disabledSet().has(v)}
-      gutter={local.gutter ?? 2}
+      gutter={local.gutter ?? 0}
       itemComponent={(itemProps) => (
         <KobalteSelect.Item item={itemProps.item} class={selectItemCva()}>
           <KobalteSelect.ItemIndicator class={selectItemIndicatorCva()}>
             <Check size={14} aria-hidden="true" />
           </KobalteSelect.ItemIndicator>
+
           <KobalteSelect.ItemLabel>
             {labelMap()[itemProps.item.rawValue] ?? itemProps.item.rawValue}
           </KobalteSelect.ItemLabel>

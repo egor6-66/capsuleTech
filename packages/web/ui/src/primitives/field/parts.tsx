@@ -95,8 +95,7 @@ export function FieldSeparator(props: JSX.HTMLAttributes<HTMLDivElement>) {
       )}
       {...others}
     >
-      <div class="absolute inset-0 top-1/2 border-t border-border" />{' '}
-      {/* Заменил List на простой div для примера */}
+      <div class="absolute inset-0 top-1/2 border-t border-border" />
       <Show when={local.children}>
         <span
           class="bg-background text-muted-foreground relative mx-auto block w-fit px-2"
