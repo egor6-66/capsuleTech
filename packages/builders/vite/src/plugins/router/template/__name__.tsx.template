@@ -1,9 +1,14 @@
 import { lazy } from 'solid-js';
+import { createFileRoute, redirect } from '@tanstack/solid-router';
+import { resolveAccess } from '@capsuletech/web-core';
 
 const <%= componentsName %> = lazy(() => import('@pages/<%= path %>') as Promise<{ default: any }>);
 
-import { createFileRoute } from '@tanstack/solid-router';
-
 export const Route = createFileRoute('/<%= path %>')({
   component: <%= componentsName %>,
+  beforeLoad: async () => {
+    const mod: any = await import('@pages/<%= path %>');
+    const can: string | undefined = mod?.meta?.can;
+    if (can && !resolveAccess(can)) throw redirect({ to: '/workspace' });
+  },
 });

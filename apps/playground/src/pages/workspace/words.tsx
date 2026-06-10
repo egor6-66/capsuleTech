@@ -12,4 +12,6 @@ const Words = Page((Ui) => (
   </Ui.Layout.Flex>
 ));
 
+export const meta = { can: 'words' };
+
 export default Words;

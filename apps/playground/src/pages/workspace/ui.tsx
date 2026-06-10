@@ -66,4 +66,6 @@ const UiSection = Page((Ui) => (
   </Ui.Layout.Flex>
 ));
 
+export const meta = { can: 'ui' };
+
 export default UiSection;
