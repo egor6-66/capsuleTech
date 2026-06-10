@@ -3,6 +3,8 @@ import { Select as KobalteSelect } from '@kobalte/core/select';
 import { Check, ChevronDown } from 'lucide-solid';
 import { splitProps } from 'solid-js';
 
+import { createFinish } from '../../lib/finish';
+
 import type {
   ISelectContentProps,
   ISelectProps,
@@ -61,13 +63,21 @@ const Value = (props: ISelectValueProps) => {
  *
  * Kobalte sets `--kb-select-content-available-width` / `-height` on the Content
  * element; `selectContentCva()` uses those CSS variables for `min-w` / `max-h`.
+ *
+ * ## Finish effect
+ * Activated via the reactive `useFinishMode()` signal (read inside `createFinish`);
+ * no DOM walk / `closest()` / ref needed.
  */
 const Content = (props: ISelectContentProps) => {
-  const [local, others] = splitProps(props, ['class', 'portalProps']);
+  const [local, others] = splitProps(props, ['class', 'style', 'portalProps']);
+
+  const finish = createFinish();
+
   return (
     <KobalteSelect.Portal {...(local.portalProps as object)}>
       <KobalteSelect.Content
         class={cn(selectContentCva(), 'popover-animate', local.class)}
+        style={{ ...(typeof local.style === 'object' ? local.style : {}), ...finish.surfaceStyle() }}
         {...(others as object)}
       >
         <KobalteSelect.Listbox />

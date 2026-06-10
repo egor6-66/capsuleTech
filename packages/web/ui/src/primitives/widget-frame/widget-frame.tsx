@@ -1,6 +1,8 @@
 import { Maximize2, Move } from 'lucide-solid';
 import { Show, splitProps } from 'solid-js';
 
+import { createFinish } from '../../lib/finish';
+
 import type { IWidgetFrameGripProps, IWidgetFrameHandleProps, IWidgetFrameProps } from './interfaces';
 import { getClipPath, gripCornerClasses } from './variants';
 
@@ -15,7 +17,7 @@ export const WidgetFrameHandle = (props: IWidgetFrameHandleProps) => {
 
   // Pick which two sides to draw as the L-bracket for each corner.
   const borderStyle = () => {
-    const acc = 'var(--color-ring)';
+    const acc = 'var(--ring)';
     const none = '0px solid transparent';
     const solid = `${thickness}px solid ${acc}`;
     switch (props.corner) {
@@ -90,6 +92,9 @@ export const WidgetFrame = (props: IWidgetFrameProps) => {
     'style',
   ]);
 
+  // Finish hook — activated via global useFinishMode() signal from web-style.
+  const finish = createFinish();
+
   const resolvedCorner = () => local.gripCorner ?? 'top-right';
   const resolvedGripClass = () => local.gripClass ?? 'cap-widget-grip';
 
@@ -110,12 +115,12 @@ export const WidgetFrame = (props: IWidgetFrameProps) => {
     `absolute z-10 ${gripCornerClasses[resolvedCorner()]} ${resolvedGripClass()}`;
 
   // Active state tokens (CSS custom properties from theme)
-  const rimColor = () => (local.active ? 'var(--color-ring)' : 'var(--color-border)');
+  const rimColor = () => (local.active ? 'var(--ring)' : 'var(--border)');
 
   // Glow filter — only when active
   const glowFilter = () =>
     local.active
-      ? 'drop-shadow(0 0 6px color-mix(in srgb, var(--color-ring) 40%, transparent))'
+      ? 'drop-shadow(0 0 6px color-mix(in srgb, var(--ring) 40%, transparent))'
       : 'none';
 
   // Outer rim layer style (clipped, background = rim color)
@@ -129,13 +134,22 @@ export const WidgetFrame = (props: IWidgetFrameProps) => {
     'pointer-events': 'none' as const,
   });
 
-  // Surface layer style (inset by rim width, same clip, background = card)
+  // Surface layer style (inset by rim width, same clip).
+  //
+  // Base background is set explicitly here so that when finish is OFF (surfaceStyle()
+  // returns {}) the surface still has the correct card colour — it no longer relies
+  // on the hook to supply the fallback background.
+  //
+  //   - finish OFF → {} from hook; base `background` here keeps current appearance.
+  //   - finish ON  → hook's `background` (gradient) overwrites the base via spread.
   const surfaceLayerStyle = () => ({
     position: 'absolute' as const,
     inset: `${RIM_WIDTH}px`,
     'clip-path': clipPath(),
-    background: 'var(--color-card)',
-    overflow: 'hidden',
+    overflow: 'hidden' as const,
+    // Base — always present; finish ON overwrites via spread below.
+    background: 'var(--card)',
+    ...finish.surfaceStyle(),
   });
 
   return (

@@ -1,4 +1,5 @@
 import { DISCOVERED_THEMES, setTheme, useTheme } from '@capsuletech/web-style';
+import { Button } from '@capsuletech/web-ui/button';
 import { Dropdown } from '@capsuletech/web-ui/dropdown';
 import { For, Show, splitProps } from 'solid-js';
 
@@ -57,9 +58,7 @@ export const ThemePicker = (props: IThemePickerProps) => {
   if (mode() === 'standalone') {
     return (
       <Dropdown>
-        <Dropdown.Trigger
-          class={`inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring ${local.class ?? ''}`}
-        >
+        <Dropdown.Trigger as={Button} variant="outline" size="sm" class={local.class}>
           <Show
             when={local.triggerLabel !== undefined}
             fallback={

@@ -20,10 +20,10 @@ export interface IModeDescriptor {
 }
 
 /** Built-in mode keys bound to the web-style switcher store. */
-export type BuiltinMode = 'dark' | 'dnd' | 'resize' | 'settings';
+export type BuiltinMode = 'dark' | 'dnd' | 'resize' | 'settings' | 'finish';
 
 export interface IModeToggleProps {
-  /** A built-in mode key (`'dark' | 'dnd' | 'resize' | 'settings'`) or a custom descriptor. */
+  /** A built-in mode key (`'dark' | 'dnd' | 'resize' | 'settings' | 'finish'`) or a custom descriptor. */
   mode: BuiltinMode | IModeDescriptor;
   /** Override the descriptor's default label. */
   label?: string;

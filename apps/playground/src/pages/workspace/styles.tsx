@@ -1,5 +1,7 @@
 /**
  * /workspace/styles — placeholder секции (контент по мере роста эталона).
+ *
+ * Настройки финиш-мода переехали в меню «Тема» хедера (`Shell.FinishSettings`).
  */
 const Styles = Page((Ui) => (
   <Ui.Layout.Flex class="min-h-full flex-col items-center justify-center gap-cell p-cell">

@@ -5,16 +5,48 @@
  * компоненты переехали туда.
  *
  * Web-style оставляет только:
- *  - Reactive signal stores (`useTheme` / `useDarkMode` / `useResizeMode` / `useDndMode`).
- *  - Setters / togglers + DOM-apply helpers.
+ *  - Reactive signal stores:
+ *      `useTheme` / `useDarkMode` / `useResizeMode` / `useDndMode`
+ *      `useFinishMode` / `useFinishConfig`
+ *      `useAmbientConfig`
+ *  - Setters / togglers:
+ *      `setTheme` / `setDarkMode` / `toggleDarkMode`
+ *      `setResizeMode` / `toggleResizeMode`
+ *      `setDndMode` / `toggleDndMode`
+ *      `setFinishMode` / `toggleFinishMode`
+ *      `setFinishConfig` / `resetFinishConfig`
+ *      `setAmbientGlow` / `addAmbientGlow` / `removeAmbientGlow` / `resetAmbientConfig`
+ *  - DOM-apply helpers: `applyAmbient`.
  *  - `DISCOVERED_THEMES` (eager-glob по themes/).
  */
 
+export {
+  addAmbientGlow,
+  applyAmbient,
+  DEFAULT_AMBIENT_CONFIG,
+  removeAmbientGlow,
+  resetAmbientConfig,
+  setAmbientGlow,
+  useAmbientConfig,
+} from './ambientConfig';
+export type { IAmbientConfig, IAmbientGlow } from './ambientConfig';
 export {
   setDndMode,
   toggleDndMode,
   useDndMode,
 } from './dndMode';
+export {
+  DEFAULT_FINISH_CONFIG,
+  resetFinishConfig,
+  setFinishConfig,
+  useFinishConfig,
+} from './finishConfig';
+export type { IFinishConfig } from './finishConfig';
+export {
+  setFinishMode,
+  toggleFinishMode,
+  useFinishMode,
+} from './finishMode';
 export {
   setResizeMode,
   toggleResizeMode,

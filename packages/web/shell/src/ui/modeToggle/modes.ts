@@ -1,14 +1,16 @@
 import {
   toggleDarkMode,
   toggleDndMode,
+  toggleFinishMode,
   toggleResizeMode,
   toggleSettingsMode,
   useDarkMode,
   useDndMode,
+  useFinishMode,
   useResizeMode,
   useSettingsMode,
 } from '@capsuletech/web-style';
-import { Maximize2, Moon, Move, SlidersHorizontal } from '@capsuletech/web-ui/icons';
+import { Maximize2, Moon, Move, SlidersHorizontal, Sparkles } from '@capsuletech/web-ui/icons';
 
 import type { BuiltinMode, IModeDescriptor } from './interfaces';
 
@@ -44,5 +46,11 @@ export const MODES = {
     toggle: toggleSettingsMode,
     label: 'Widget settings',
     icon: SlidersHorizontal,
+  },
+  finish: {
+    active: useFinishMode(),
+    toggle: toggleFinishMode,
+    label: 'Объём',
+    icon: Sparkles,
   },
 } satisfies Record<BuiltinMode, IModeDescriptor>;

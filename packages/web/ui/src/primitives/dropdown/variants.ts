@@ -9,7 +9,7 @@ import { cva } from '@capsuletech/web-style';
  * `data-[closed]` attributes — applies to both `Content` and `SubContent`.
  */
 export const dropdownContentCva = cva(
-  'z-50 min-w-32 overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md outline-none focus:outline-none focus-visible:outline-none',
+  'z-50 min-w-32 max-h-[var(--kb-popper-content-available-height)] overflow-y-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md outline-none focus:outline-none focus-visible:outline-none',
   {
     variants: {},
     defaultVariants: {},
