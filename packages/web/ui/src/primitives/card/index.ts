@@ -18,3 +18,4 @@ Card.Title = CardTitle;
 
 export type * as ICard from './interfaces';
 export { Card };
+export { CardContract } from './card.contract';

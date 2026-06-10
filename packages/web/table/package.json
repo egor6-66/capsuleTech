@@ -46,6 +46,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@capsuletech/shared-zod": "workspace:*",
+    "@capsuletech/web-contract": "workspace:*",
     "@capsuletech/web-core": "workspace:*",
     "@capsuletech/web-style": "workspace:*",
     "@capsuletech/web-ui": "workspace:*",

@@ -2,7 +2,7 @@
 // Exports DataTable composite, Table primitives, lib hooks, and Provider.
 
 // --- composites ---
-export { DataTable } from './composites/dataTable';
+export { DataTable, DataTableContract } from './composites/dataTable';
 export type {
   ColumnDef,
   DataTableTemplate,

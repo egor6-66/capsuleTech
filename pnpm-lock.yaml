@@ -1278,6 +1278,12 @@ importers:
 
   packages/web/table:
     dependencies:
+      '@capsuletech/shared-zod':
+        specifier: workspace:*
+        version: link:../../shared/zod
+      '@capsuletech/web-contract':
+        specifier: workspace:*
+        version: link:../contract
       '@capsuletech/web-core':
         specifier: workspace:*
         version: link:../core
@@ -1312,6 +1318,12 @@ importers:
 
   packages/web/ui:
     dependencies:
+      '@capsuletech/shared-zod':
+        specifier: workspace:*
+        version: link:../../shared/zod
+      '@capsuletech/web-contract':
+        specifier: workspace:*
+        version: link:../contract
       '@capsuletech/web-style':
         specifier: workspace:*
         version: link:../style

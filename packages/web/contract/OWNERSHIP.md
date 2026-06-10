@@ -2,8 +2,8 @@
 name: "@capsuletech/web-contract"
 owner-agent: главный (стюард — протокол/архитектура, без отдельного owner)
 group: web_base (планируется; пока standalone git-tag)
-status: SKELETON (0.0.0)
-last-updated: 2026-06-09
+status: IMPLEMENTED (0.0.0) — F0 leaf-протокол; компоненты карманят контракты (F1)
+last-updated: 2026-06-10
 ---
 
 # @capsuletech/web-contract
