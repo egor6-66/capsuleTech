@@ -45,9 +45,11 @@ export const sliderThumbCva = cva(
     'block size-4 rounded-full',
     'border-2 border-primary bg-background',
     'shadow-sm',
+    // Pointer affordance — the thumb is grab-draggable
+    'cursor-pointer',
     'transition-[box-shadow] duration-150',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-    'disabled:pointer-events-none',
+    'disabled:pointer-events-none disabled:cursor-not-allowed',
   ].join(' '),
   {
     variants: {},

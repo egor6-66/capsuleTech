@@ -96,6 +96,42 @@ export interface IDropdownItemProps extends DropdownMenuItemProps, IHtmlDataAttr
 }
 
 /**
+ * Canonical icon + label (+ trailing) menu row.
+ *
+ * One layout for all three row shapes in a dropdown so they share padding,
+ * height and the leading-icon column:
+ *   - `variant="item"`   (default) → interactive `DropdownMenu.Item` (onSelect).
+ *   - `variant="sub"`    → `DropdownMenu.SubTrigger` (place inside `Dropdown.Sub`).
+ *   - `variant="static"` → a plain `<div>` that hosts its own interactive control
+ *      (e.g. a trailing `Toggle`) without menu-item keyboard semantics.
+ *
+ * The leading icon doubles as the affordance — submenu rows carry no directional
+ * arrow (the panel may open to either side, so a chevron would mislead).
+ */
+export interface IDropdownRowProps extends IHtmlDataAttrs {
+  /** Which underlying element to render. Defaults to `'item'`. */
+  variant?: 'item' | 'sub' | 'static';
+  /** Leading icon component (e.g. a lucide icon). Rendered muted, `size-4`. */
+  icon?: ValidComponent;
+  /** Primary row text. Alternatively pass `children`. */
+  label?: JSX.Element;
+  /** Right-aligned content (a toggle, a value, a badge). */
+  trailing?: JSX.Element;
+  /** Alternative to `label`. */
+  children?: JSX.Element;
+  /** Extra CSS classes merged with the canonical row styles. */
+  class?: string;
+  /** Inline styles forwarded to the row element. */
+  style?: JSX.CSSProperties | string;
+  /** Disable the row (only meaningful for `item` / `sub`). */
+  disabled?: boolean;
+  /** Keep the menu open after selecting (only for `variant="item"`). */
+  closeOnSelect?: boolean;
+  /** Activation handler (only for `variant="item"`). */
+  onSelect?: (event: Event) => void;
+}
+
+/**
  * A non-interactive visual divider between groups of items.
  * Renders an `<hr>` with appropriate ARIA `role="separator"`.
  */
