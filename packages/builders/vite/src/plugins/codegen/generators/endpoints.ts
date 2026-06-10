@@ -12,13 +12,13 @@
  */
 
 import { dirname, relative, resolve } from 'node:path';
-import { DEFINE_FACTORIES } from '../../constants';
 import {
+  type EndpointLeaf,
   endpointFileToLeaf,
   generateEndpointsRuntime,
   generateEndpointsTypes,
-  type EndpointLeaf,
 } from '../../capsuleRegistry';
+import { DEFINE_FACTORIES } from '../../constants';
 import type { CodegenContext, SubGenerator } from '../interfaces';
 
 const ENDPOINTS_DIR = 'endpoints';
@@ -47,8 +47,7 @@ export const createEndpointsSubGenerator = (): SubGenerator => {
   const getSrcRelFromRegistry = (ctx: CodegenContext): string => {
     if (srcRelFromRegistry !== null) return srcRelFromRegistry;
     const out = resolve(ctx.capsuleRoot, 'registry', 'endpoints.ts');
-    srcRelFromRegistry =
-      relative(dirname(out), ctx.watchDir).split(/[\\/]/).join('/') || '.';
+    srcRelFromRegistry = relative(dirname(out), ctx.watchDir).split(/[\\/]/).join('/') || '.';
     return srcRelFromRegistry;
   };
 
@@ -62,7 +61,7 @@ export const createEndpointsSubGenerator = (): SubGenerator => {
     id: 'endpoints',
     order: 20,
 
-    match(file: string): boolean {
+    match(_file: string): boolean {
       // All files — we filter by ENDPOINTS_DIR in onEvent.
       return true;
     },
@@ -92,10 +91,7 @@ export const createEndpointsSubGenerator = (): SubGenerator => {
         resolve(ctx.capsuleRoot, 'registry', 'endpoints.ts'),
         generateEndpointsRuntime(leaves, getSrcRelFromRegistry(ctx)),
       );
-      ctx.writeOut(
-        resolve(ctx.capsuleRoot, '@types', 'api.d.ts'),
-        generateEndpointsTypes(),
-      );
+      ctx.writeOut(resolve(ctx.capsuleRoot, '@types', 'api.d.ts'), generateEndpointsTypes());
     },
 
     transform(code, id, ctx): { code: string; map: null } | null {

@@ -19,20 +19,19 @@
  */
 
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { parse } from '@babel/parser';
 import { names } from '@nx/devkit';
 import { createJiti } from 'jiti';
 import type { Plugin, UserConfig, ViteDevServer } from 'vite';
 import { walkFiles, watcherManager } from '../../utils';
-import type { AppConfigShape, CodegenContext, SubGenerator } from './interfaces';
-import { createBarrelRegistrySubGenerator } from './generators/barrelRegistry';
-import { createEndpointsSubGenerator } from './generators/endpoints';
-import { createAppConfigSubGenerator } from './generators/appConfig';
-import { createPackagesSubGenerator } from './generators/packages';
-import { createBootstrapSubGenerator } from './generators/bootstrap';
 import { LAYER_INIT_ORDER } from '../capsuleRegistry';
+import { createAppConfigSubGenerator } from './generators/appConfig';
+import { createBarrelRegistrySubGenerator } from './generators/barrelRegistry';
+import { createBootstrapSubGenerator } from './generators/bootstrap';
+import { createEndpointsSubGenerator } from './generators/endpoints';
+import { createPackagesSubGenerator } from './generators/packages';
+import type { AppConfigShape, CodegenContext, SubGenerator } from './interfaces';
 
 // ---------------------------------------------------------------------------
 // CodegenContext factory
@@ -251,10 +250,7 @@ export const createCapsuleRegistryPlugin = (opts: IOrchestratorProps): Plugin =>
       watcherManager.init(server, absWatch);
       watcherManager.subscribe(absWatch, {
         onStructureChange: (event, paths) => {
-          dispatchEvent(
-            event as 'add' | 'unlink' | 'addDir' | 'unlinkDir',
-            paths.file,
-          );
+          dispatchEvent(event as 'add' | 'unlink' | 'addDir' | 'unlinkDir', paths.file);
           flushDirty();
         },
       });
