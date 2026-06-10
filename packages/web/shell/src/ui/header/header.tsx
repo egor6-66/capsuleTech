@@ -1,8 +1,10 @@
+import { filterAllowed } from '@capsuletech/web-access';
 import { cn } from '@capsuletech/web-style';
 import { Button } from '@capsuletech/web-ui/button';
 import { Dropdown } from '@capsuletech/web-ui/dropdown';
 import { Group } from '@capsuletech/web-ui/group';
 import { Menu } from '@capsuletech/web-ui/icons';
+import { createMemo } from 'solid-js';
 
 import type {
   IHeaderCompound,
@@ -10,6 +12,7 @@ import type {
   IHeaderMenuSubProps,
   IHeaderNavigationProps,
   IHeaderProps,
+  INavItem,
 } from './interfaces';
 
 // ---------------------------------------------------------------------------
@@ -38,13 +41,17 @@ function HeaderRoot(props: IHeaderProps) {
 // Header-специфичные дефолты: orientation='horizontal', gap=1.
 // ---------------------------------------------------------------------------
 
-function HeaderNavigation<T = unknown>(props: IHeaderNavigationProps<T>) {
+function HeaderNavigation<T extends INavItem = INavItem>(props: IHeaderNavigationProps<T>) {
+  const allowed = createMemo(() =>
+    props.data ? filterAllowed<T>(props.data) : props.data,
+  );
+
   return (
     <Group<T>
       orientation={props.orientation ?? 'horizontal'}
       gap={props.gap ?? 1}
       variant={props.variant}
-      data={props.data}
+      data={allowed()}
       item={props.item}
       tags={props.tags}
       resizable={props.resizable}

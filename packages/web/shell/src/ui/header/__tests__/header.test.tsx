@@ -85,6 +85,14 @@ vi.mock('@capsuletech/web-ui/icons', () => ({
 }));
 
 // Group stub: wrapper mode passes children, batch mode iterates data via item.use/item.props.
+// filterAllowed stub: passes items without `can`, gates items with `can` through grantedCaps set.
+const grantedCaps = new Set<string>();
+
+vi.mock('@capsuletech/web-access', () => ({
+  filterAllowed: (items: any[]) =>
+    items.filter((i: any) => i.can == null || grantedCaps.has(i.can)),
+}));
+
 vi.mock('@capsuletech/web-ui/group', () => {
   const { Dynamic } = require('solid-js/web');
   const { For } = require('solid-js');
@@ -111,7 +119,11 @@ vi.mock('@capsuletech/web-ui/group', () => {
     );
   };
 
-  return { Group };
+  const GroupSeparator = (props: any) => (
+    <hr data-testid="group-separator" class={props.class} />
+  );
+
+  return { Group, GroupSeparator };
 });
 
 // ---------------------------------------------------------------------------
@@ -124,6 +136,7 @@ let cleanup: (() => void) | undefined;
 beforeEach(() => {
   container = document.createElement('div');
   document.body.appendChild(container);
+  grantedCaps.clear();
 });
 
 afterEach(() => {
@@ -345,6 +358,66 @@ describe('Shell.Header.Menu sub-helpers', () => {
     expect(item?.textContent).toBe('Logout');
     (item as HTMLElement).click();
     expect(handleLogout).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Shell.Header.Navigation — capability filtering', () => {
+  const NavItem = (props: { label: string }) => (
+    <a href="/" data-testid="nav-item">
+      {props.label}
+    </a>
+  );
+
+  it('shows items without can always', () => {
+    const data = [{ label: 'Dashboard' }, { label: 'Reports' }];
+
+    cleanup = render(
+      () => (
+        <Header.Navigation
+          data={data}
+          item={{ use: NavItem, props: (i: any) => ({ label: i.label }) }}
+        />
+      ),
+      container,
+    );
+
+    expect(container.querySelectorAll('[data-testid="nav-item"]')).toHaveLength(2);
+  });
+
+  it('hides item with can when capability not granted', () => {
+    const data = [{ label: 'Dashboard' }, { label: 'Studio', can: 'studio' }];
+
+    cleanup = render(
+      () => (
+        <Header.Navigation
+          data={data}
+          item={{ use: NavItem, props: (i: any) => ({ label: i.label }) }}
+        />
+      ),
+      container,
+    );
+
+    const items = container.querySelectorAll('[data-testid="nav-item"]');
+    expect(items).toHaveLength(1);
+    expect(items[0].textContent).toBe('Dashboard');
+  });
+
+  it('shows item with can when capability is granted', () => {
+    grantedCaps.add('studio');
+    const data = [{ label: 'Dashboard' }, { label: 'Studio', can: 'studio' }];
+
+    cleanup = render(
+      () => (
+        <Header.Navigation
+          data={data}
+          item={{ use: NavItem, props: (i: any) => ({ label: i.label }) }}
+        />
+      ),
+      container,
+    );
+
+    const items = container.querySelectorAll('[data-testid="nav-item"]');
+    expect(items).toHaveLength(2);
   });
 });
 

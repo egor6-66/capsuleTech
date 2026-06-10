@@ -1,3 +1,4 @@
+import type { Capability } from '@capsuletech/web-access';
 import type { IGroupProps } from '@capsuletech/web-ui/group';
 import type { Component, JSX, ParentProps } from 'solid-js';
 
@@ -10,6 +11,18 @@ import type { Component, JSX, ParentProps } from 'solid-js';
 export type IHeaderProps = ParentProps<{
   class?: string;
 }>;
+
+/**
+ * Базовый тип nav-пункта. Расширяется приложением (добавляет `label`, `to`, …).
+ * Поле `can` — необязательная capability-строка: если задана, пункт виден только
+ * когда `can(item.can)` возвращает `true` (реактивно через `filterAllowed`).
+ * Пункты без `can` всегда видны.
+ */
+export interface INavItem {
+  /** Capability-слаг (e.g. `'styles'`). Пункт скрыт, если текущая роль её не имеет. */
+  can?: Capability;
+  [key: string]: unknown;
+}
 
 /**
  * Shell.Header.Navigation — батч-контейнер, Shape-совместимый (тот же контракт,
