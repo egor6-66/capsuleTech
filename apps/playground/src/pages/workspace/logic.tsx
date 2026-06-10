@@ -12,4 +12,6 @@ const Logic = Page((Ui) => (
   </Ui.Layout.Flex>
 ));
 
+export const meta = { can: 'logic' };
+
 export default Logic;

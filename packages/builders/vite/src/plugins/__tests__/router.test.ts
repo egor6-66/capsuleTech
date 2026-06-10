@@ -19,6 +19,7 @@ import {
   buildRouteInfo,
   generateRootRoute,
   ROOT_WITH_APP_TEMPLATE,
+  ROUTE_TEMPLATE,
   resolveAppFeaturePath,
 } from '../router/index';
 
@@ -240,5 +241,65 @@ describe('generateRootRoute — without features/app.tsx (regression)', () => {
 
     const content = await readFile(join(outDir, '__root.tsx'), 'utf-8');
     expect(content).toContain('createRootRouteWithContext');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ROUTE_TEMPLATE — capability guard (beforeLoad + resolveAccess)
+// ---------------------------------------------------------------------------
+
+describe('ROUTE_TEMPLATE — beforeLoad capability guard', () => {
+  const sampleInfo = {
+    routePath: '/workspace/styles',
+    importPath: 'workspace/styles',
+    emitDir: 'workspace',
+    emitName: 'styles',
+  };
+
+  it('imports redirect from @tanstack/solid-router', () => {
+    const out = ROUTE_TEMPLATE(sampleInfo);
+    expect(out).toContain(`import { createFileRoute, redirect } from '@tanstack/solid-router'`);
+  });
+
+  it('imports resolveAccess from @capsuletech/web-core', () => {
+    const out = ROUTE_TEMPLATE(sampleInfo);
+    expect(out).toContain(`import { resolveAccess } from '@capsuletech/web-core'`);
+  });
+
+  it('emits beforeLoad as async function', () => {
+    const out = ROUTE_TEMPLATE(sampleInfo);
+    expect(out).toContain('beforeLoad: async ()');
+  });
+
+  it('beforeLoad reads meta.can from the page module', () => {
+    const out = ROUTE_TEMPLATE(sampleInfo);
+    expect(out).toContain(`await import('@pages/${sampleInfo.importPath}')`);
+    expect(out).toContain('mod?.meta?.can');
+  });
+
+  it('beforeLoad throws redirect to /workspace when can check fails', () => {
+    const out = ROUTE_TEMPLATE(sampleInfo);
+    expect(out).toContain(`!resolveAccess(can)`);
+    expect(out).toContain(`throw redirect({ to: '/workspace' })`);
+  });
+
+  it('route path and import path are correct in generated output', () => {
+    const out = ROUTE_TEMPLATE(sampleInfo);
+    expect(out).toContain(`createFileRoute('${sampleInfo.routePath}')`);
+    expect(out).toContain(`import('@pages/${sampleInfo.importPath}')`);
+  });
+
+  it('still sets component: Component (lazy)', () => {
+    const out = ROUTE_TEMPLATE(sampleInfo);
+    expect(out).toContain('component: Component');
+    expect(out).toContain('lazy(');
+  });
+
+  it('works for root index route (routePath = /)', () => {
+    const rootInfo = { routePath: '/', importPath: 'index', emitDir: '', emitName: 'index' };
+    const out = ROUTE_TEMPLATE(rootInfo);
+    expect(out).toContain(`createFileRoute('/')`);
+    expect(out).toContain(`await import('@pages/index')`);
+    expect(out).toContain('resolveAccess');
   });
 });

@@ -12,4 +12,6 @@ const DevOps = Page((Ui) => (
   </Ui.Layout.Flex>
 ));
 
+export const meta = { can: 'devops' };
+
 export default DevOps;

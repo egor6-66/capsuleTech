@@ -12,4 +12,6 @@ const Builds = Page((Ui) => (
   </Ui.Layout.Flex>
 ));
 
+export const meta = { can: 'builds' };
+
 export default Builds;

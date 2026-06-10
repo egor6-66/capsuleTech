@@ -12,4 +12,6 @@ const Routing = Page((Ui) => (
   </Ui.Layout.Flex>
 ));
 
+export const meta = { can: 'routing' };
+
 export default Routing;

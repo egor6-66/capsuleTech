@@ -14,4 +14,6 @@ const Styles = Page((Ui) => (
   </Ui.Layout.Flex>
 ));
 
+export const meta = { can: 'styles' };
+
 export default Styles;

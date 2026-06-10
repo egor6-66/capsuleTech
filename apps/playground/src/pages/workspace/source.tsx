@@ -12,4 +12,6 @@ const Source = Page((Ui) => (
   </Ui.Layout.Flex>
 ));
 
+export const meta = { can: 'source' };
+
 export default Source;

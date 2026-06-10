@@ -12,4 +12,6 @@ const Apps = Page((Ui) => (
   </Ui.Layout.Flex>
 ));
 
+export const meta = { can: 'apps' };
+
 export default Apps;
