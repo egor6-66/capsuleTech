@@ -1,6 +1,7 @@
 import { resetFinishConfig, setFinishConfig, useFinishConfig } from '@capsuletech/web-style';
 import { Button } from '@capsuletech/web-ui/button';
 import { Dropdown } from '@capsuletech/web-ui/dropdown';
+import { SlidersHorizontal } from '@capsuletech/web-ui/icons';
 import { Slider } from '@capsuletech/web-ui/slider';
 import { Toggle } from '@capsuletech/web-ui/toggle';
 import { onMount, splitProps } from 'solid-js';
@@ -37,8 +38,9 @@ function FinishPanel() {
   onMount(() => {
     // Prevent slider arrow keys / space from leaking into Dropdown keyboard nav.
     panelRef.addEventListener('keydown', (e) => e.stopPropagation());
-    // Prevent pointer events on sliders from triggering item-selection logic.
-    panelRef.addEventListener('pointerdown', (e) => e.stopPropagation());
+    // NB: do NOT stop `pointerdown` here. Solid delegates pointerdown to the
+    // document, so a bubble-phase stop on this ancestor prevents the event from
+    // reaching Solid's delegated listener — which kills Kobalte Slider's drag.
   });
 
   return (
@@ -181,9 +183,10 @@ function FinishPanel() {
  * Toggle (`@capsuletech/web-ui/toggle`) — surface controls that automatically
  * receive the finish treatment when finish-mode is enabled.
  *
- * Keyboard conflict mitigation: the panel root stops `keydown` and `pointerdown`
- * propagation so Kobalte's menu keyboard-navigation does not interfere with
- * slider arrow-key input.
+ * Keyboard conflict mitigation: the panel root stops `keydown` propagation so
+ * Kobalte's menu keyboard-navigation does not interfere with slider arrow-key
+ * input. It deliberately does NOT stop `pointerdown` (Solid delegates that event
+ * to the document; stopping it on this ancestor would break Slider drag-start).
  *
  * @example
  * ```tsx
@@ -200,7 +203,7 @@ function FinishPanel() {
 export const FinishSettings = (props: IFinishSettingsProps) => {
   const [local] = splitProps(props, ['mode', 'triggerLabel', 'class']);
   const mode = () => local.mode ?? 'standalone';
-  const label = () => local.triggerLabel ?? 'Объём';
+  const label = () => local.triggerLabel ?? 'Глэс';
 
   if (mode() === 'standalone') {
     return (
@@ -220,13 +223,7 @@ export const FinishSettings = (props: IFinishSettingsProps) => {
 
   return (
     <Dropdown.Sub>
-      <Dropdown.SubTrigger class={local.class}>
-        <span class="text-muted-foreground">Объём:</span>
-        <span class="ml-1.5">{label()}</span>
-        <span class="ml-auto text-muted-foreground" aria-hidden="true">
-          &#9658;
-        </span>
-      </Dropdown.SubTrigger>
+      <Dropdown.Row variant="sub" icon={SlidersHorizontal} label={label()} class={local.class} />
       <Dropdown.SubContent class="w-72">
         <FinishPanel />
       </Dropdown.SubContent>

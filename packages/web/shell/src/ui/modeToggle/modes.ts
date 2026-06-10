@@ -50,7 +50,7 @@ export const MODES = {
   finish: {
     active: useFinishMode(),
     toggle: toggleFinishMode,
-    label: 'Объём',
+    label: 'Глэс',
     icon: Sparkles,
   },
 } satisfies Record<BuiltinMode, IModeDescriptor>;
