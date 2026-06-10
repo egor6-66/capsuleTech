@@ -740,6 +740,28 @@ importers:
         specifier: ~4.1.0
         version: 4.1.6(@types/node@25.9.0)(@vitest/ui@4.1.6)(jsdom@29.1.1)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
 
+  packages/web/access:
+    dependencies:
+      '@capsuletech/web-auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@capsuletech/web-core':
+        specifier: workspace:*
+        version: link:../core
+      solid-js:
+        specifier: 1.9.12
+        version: 1.9.12
+    devDependencies:
+      '@capsuletech/lib-builder':
+        specifier: workspace:*
+        version: link:../../builders/lib
+      '@capsuletech/vite-builder':
+        specifier: workspace:*
+        version: link:../../builders/vite
+      vite-plugin-solid:
+        specifier: ^2.11.12
+        version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
+
   packages/web/agent:
     dependencies:
       '@capsuletech/shared-zod':
@@ -839,6 +861,22 @@ importers:
         specifier: ^2.11.12
         version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
 
+  packages/web/contract:
+    dependencies:
+      solid-js:
+        specifier: 1.9.12
+        version: 1.9.12
+    devDependencies:
+      '@capsuletech/lib-builder':
+        specifier: workspace:*
+        version: link:../../builders/lib
+      '@capsuletech/vite-builder':
+        specifier: workspace:*
+        version: link:../../builders/vite
+      vite-plugin-solid:
+        specifier: ^2.11.12
+        version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
+
   packages/web/core:
     dependencies:
       '@capsuletech/shared-utils':
@@ -890,6 +928,37 @@ importers:
       jsdom:
         specifier: ~29.1.1
         version: 29.1.1
+      vite-plugin-solid:
+        specifier: ^2.11.12
+        version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
+
+  packages/web/creator:
+    dependencies:
+      '@capsuletech/web-contract':
+        specifier: workspace:*
+        version: link:../contract
+      '@capsuletech/web-core':
+        specifier: workspace:*
+        version: link:../core
+      '@capsuletech/web-renderer':
+        specifier: workspace:*
+        version: link:../renderer
+      '@capsuletech/web-style':
+        specifier: workspace:*
+        version: link:../style
+      '@capsuletech/web-ui':
+        specifier: workspace:*
+        version: link:../ui
+      solid-js:
+        specifier: 1.9.12
+        version: 1.9.12
+    devDependencies:
+      '@capsuletech/lib-builder':
+        specifier: workspace:*
+        version: link:../../builders/lib
+      '@capsuletech/vite-builder':
+        specifier: workspace:*
+        version: link:../../builders/vite
       vite-plugin-solid:
         specifier: ^2.11.12
         version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
