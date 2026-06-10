@@ -182,6 +182,9 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
         '@capsuletech/web-date',
         '@capsuletech/web-ui',
         '@capsuletech/web-table',
+        '@capsuletech/web-contract',
+        '@capsuletech/web-creator',
+        '@capsuletech/web-access',
       ],
     },
     plugins: [
