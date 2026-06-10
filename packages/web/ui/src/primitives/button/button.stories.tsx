@@ -97,3 +97,13 @@ export const IconOnlyOutline: Story = {
 export const IconOnlyGhost: Story = {
   args: { size: 'icon', variant: 'ghost', children: <Plus /> },
 };
+
+export const FullWidth: Story = {
+  name: 'fullWidth — stretches to container',
+  args: { fullWidth: true, children: 'Submit' },
+};
+
+export const FullWidthOutline: Story = {
+  name: 'fullWidth + outline',
+  args: { fullWidth: true, variant: 'outline', children: 'Cancel' },
+};

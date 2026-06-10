@@ -58,6 +58,11 @@ export interface IFlexItem {
  * **Edge case:** если `items` передан, но ни один объект не содержит поля
  * `children` или `resizable` — считается случайным prop-collision с доменными
  * данными. Flex выдаёт `console.warn` (dev) и падает обратно в children-mode.
+ *
+ * **Sizing props** (`h`, `minH`, `maxH`, `w`, `minW`, `maxW`): числовой шаг
+ * spacing-шкалы (1:1 с Tailwind). `minH={6}` ≡ `min-h-6` ≡
+ * `min-height: calc(var(--spacing) * 6)`. Применяются через inline-style.
+ * Явный `minH` переопределяет авто `min-height: var(--size-slot)` пустого контейнера.
  */
 export interface IFlexOwnProps {
   /**
@@ -116,6 +121,27 @@ export interface IFlexOwnProps {
    * Forwarded to corvu ResizableRoot as `onSizesChange`.
    */
   onSizesChange?: (sizes: number[]) => void;
+
+  // ---------------------------------------------------------------------------
+  // Sizing props (CSS-flex mode only)
+  // Числовой шаг spacing-шкалы → inline-style `calc(var(--spacing) * N)`.
+  // Паритет с Tailwind: h={10} ≡ h-10, minH={6} ≡ min-h-6, и т.д.
+  // Явные значения всегда переопределяют авто min-height пустого контейнера.
+  // ---------------------------------------------------------------------------
+
+  /** `height`. `h={10}` → `height: calc(var(--spacing) * 10)`. */
+  h?: number;
+  /** `min-height`. `minH={6}` → `min-height: calc(var(--spacing) * 6)`.
+   *  Переопределяет авто `min-height: var(--size-slot)` пустого контейнера. */
+  minH?: number;
+  /** `max-height`. `maxH={40}` → `max-height: calc(var(--spacing) * 40)`. */
+  maxH?: number;
+  /** `width`. `w={20}` → `width: calc(var(--spacing) * 20)`. */
+  w?: number;
+  /** `min-width`. `minW={10}` → `min-width: calc(var(--spacing) * 10)`. */
+  minW?: number;
+  /** `max-width`. `maxW={80}` → `max-width: calc(var(--spacing) * 80)`. */
+  maxW?: number;
 }
 
 export type IFlexProps<T extends ValidComponent = 'div'> = ISlotProps<T> & IFlexOwnProps;

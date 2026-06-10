@@ -1,0 +1,224 @@
+/* @vitest-environment jsdom */
+
+/**
+ * Typography primitive — presentational props tests.
+ *
+ * Covers: align, tone, size, dim new props.
+ * Existing variant/color CVA contract is stable — only smoke tests here.
+ */
+
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { render } from 'solid-js/web';
+import { Typography } from '../typography';
+
+let container: HTMLDivElement;
+let cleanup: (() => void) | undefined;
+
+beforeEach(() => {
+  container = document.createElement('div');
+  document.body.appendChild(container);
+});
+
+afterEach(() => {
+  cleanup?.();
+  cleanup = undefined;
+  document.body.removeChild(container);
+});
+
+// ---------------------------------------------------------------------------
+// align prop
+// ---------------------------------------------------------------------------
+
+describe('Typography — align prop', () => {
+  it('adds text-left for align="start"', () => {
+    cleanup = render(
+      () => <Typography align="start" data-testid="t">Hello</Typography>,
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).toContain('text-left');
+  });
+
+  it('adds text-center for align="center"', () => {
+    cleanup = render(
+      () => <Typography align="center" data-testid="t">Hello</Typography>,
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).toContain('text-center');
+  });
+
+  it('adds text-right for align="end"', () => {
+    cleanup = render(
+      () => <Typography align="end" data-testid="t">Hello</Typography>,
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).toContain('text-right');
+  });
+
+  it('does not add alignment class when align is not provided', () => {
+    cleanup = render(
+      () => <Typography data-testid="t">Hello</Typography>,
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).not.toContain('text-left');
+    expect(el?.className).not.toContain('text-center');
+    expect(el?.className).not.toContain('text-right');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// tone prop
+// ---------------------------------------------------------------------------
+
+describe('Typography — tone prop', () => {
+  it('adds text-foreground for tone="default"', () => {
+    cleanup = render(
+      () => <Typography tone="default" data-testid="t">Hello</Typography>,
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).toContain('text-foreground');
+  });
+
+  it('adds text-muted-foreground for tone="muted"', () => {
+    cleanup = render(
+      () => <Typography tone="muted" data-testid="t">Hello</Typography>,
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).toContain('text-muted-foreground');
+  });
+
+  it('adds text-destructive for tone="destructive"', () => {
+    cleanup = render(
+      () => <Typography tone="destructive" data-testid="t">Hello</Typography>,
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).toContain('text-destructive');
+  });
+
+  it('adds text-primary for tone="primary"', () => {
+    cleanup = render(
+      () => <Typography tone="primary" data-testid="t">Hello</Typography>,
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).toContain('text-primary');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// size prop
+// ---------------------------------------------------------------------------
+
+describe('Typography — size override prop', () => {
+  it('adds text-xs for size="xs"', () => {
+    cleanup = render(
+      () => <Typography size="xs" data-testid="t">Hello</Typography>,
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).toContain('text-xs');
+  });
+
+  it('adds text-2xl for size="2xl"', () => {
+    cleanup = render(
+      () => <Typography size="2xl" data-testid="t">Hello</Typography>,
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).toContain('text-2xl');
+  });
+
+  it('does not add a size class when size is not provided', () => {
+    cleanup = render(
+      () => <Typography variant="p" data-testid="t">Hello</Typography>,
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    // p variant has text-base in base string, not via size prop
+    // ensure no spurious text-xs/sm/2xl etc from size prop
+    expect(el?.className).not.toContain('text-xs');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// dim prop
+// ---------------------------------------------------------------------------
+
+describe('Typography — dim prop', () => {
+  it('adds opacity-0 when dim=true', () => {
+    cleanup = render(
+      () => <Typography dim data-testid="t">Hello</Typography>,
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).toContain('opacity-0');
+  });
+
+  it('adds opacity-100 when dim=false', () => {
+    cleanup = render(
+      () => <Typography dim={false} data-testid="t">Hello</Typography>,
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).toContain('opacity-100');
+  });
+
+  it('always adds transition-opacity duration-200', () => {
+    cleanup = render(
+      () => <Typography data-testid="t">Hello</Typography>,
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).toContain('transition-opacity');
+    expect(el?.className).toContain('duration-200');
+  });
+
+  it('adds opacity-100 by default (no dim prop)', () => {
+    cleanup = render(
+      () => <Typography data-testid="t">Hello</Typography>,
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).toContain('opacity-100');
+    expect(el?.className).not.toContain('opacity-0');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Backward compatibility smoke
+// ---------------------------------------------------------------------------
+
+describe('Typography — backward compatibility', () => {
+  it('renders a <p> by default', () => {
+    cleanup = render(
+      () => <Typography data-testid="t">Hello</Typography>,
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.tagName.toLowerCase()).toBe('p');
+  });
+
+  it('renders correct tag for variant="h1"', () => {
+    cleanup = render(
+      () => <Typography variant="h1" data-testid="t">Title</Typography>,
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.tagName.toLowerCase()).toBe('h1');
+  });
+
+  it('forwards custom class', () => {
+    cleanup = render(
+      () => <Typography class="custom-class" data-testid="t">Hello</Typography>,
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).toContain('custom-class');
+  });
+});

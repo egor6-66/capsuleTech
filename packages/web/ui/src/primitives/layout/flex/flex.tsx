@@ -200,6 +200,12 @@ export const Flex = <T extends ValidComponent = 'div'>(props: IFlexProps<T>) => 
     'withHandle',
     'handleDisabled',
     'onSizesChange',
+    'h',
+    'minH',
+    'maxH',
+    'w',
+    'minW',
+    'maxW',
   ]);
   const [poly, others] = splitProps(polyAndRest, ['as']);
 
@@ -305,14 +311,27 @@ export const Flex = <T extends ValidComponent = 'div'>(props: IFlexProps<T>) => 
       own.class,
     );
 
+  const toSpacing = (n: number) => `calc(var(--spacing) * ${n})`;
+
   const computed = (): JSX.CSSProperties => {
     const s: JSX.CSSProperties = {};
     if (own.gap !== undefined) s.gap = toGap(own.gap);
     if (own.gapX !== undefined) s['column-gap'] = toGap(own.gapX);
     if (own.gapY !== undefined) s['row-gap'] = toGap(own.gapY);
-    // Empty container → inline min-height via CSS variable so the slot stays
-    // visible/droppable in the editor without depending on Tailwind content-scan.
-    if (isEmpty()) s['min-height'] = 'var(--size-slot)';
+    // Sizing props — spacing-scale via CSS custom property, parity with Tailwind.
+    if (own.h !== undefined) s.height = toSpacing(own.h);
+    if (own.w !== undefined) s.width = toSpacing(own.w);
+    if (own.maxH !== undefined) s['max-height'] = toSpacing(own.maxH);
+    if (own.maxW !== undefined) s['max-width'] = toSpacing(own.maxW);
+    if (own.minW !== undefined) s['min-width'] = toSpacing(own.minW);
+    // minH: explicit prop wins over the auto empty-container fallback.
+    if (own.minH !== undefined) {
+      s['min-height'] = toSpacing(own.minH);
+    } else if (isEmpty()) {
+      // Empty container → inline min-height via CSS variable so the slot stays
+      // visible/droppable in the editor without depending on Tailwind content-scan.
+      s['min-height'] = 'var(--size-slot)';
+    }
     return s;
   };
 
