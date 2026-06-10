@@ -20,7 +20,7 @@ export default defineAppConfig({
   // (capsule.app.ts eval'ится build-time в node).
   access: {
     developer: ['*'],
-    designer: ['styles', 'ui', 'words'],
+    designer: ['studio'],
     devops: ['devops'],
   },
 

@@ -30,15 +30,13 @@ const ShellNavigation = Shape(
       }),
     },
     defaults: [
-      { label: 'Routing', to: '/workspace/routing', can: 'routing' },
-      { label: 'Source', to: '/workspace/source', can: 'source' },
-      { label: 'Builds', to: '/workspace/builds', can: 'builds' },
+      // Web Studio — дом креатор-кита (редакторы/тулзы), роль designer.
+      // Ведёт на дефолтный workspace (design); layout-роут /web-studio оборачивает его.
+      { label: 'Web Studio', to: '/workspace/web-studio/design', can: 'studio' },
+      // DevOps — плейсхолдер, роль devops.
       { label: 'DevOps', to: '/workspace/devops', can: 'devops' },
-      { label: 'Apps', to: '/workspace/apps', can: 'apps' },
-      { label: 'UI', to: '/workspace/ui', can: 'ui' },
-      { label: 'Logic', to: '/workspace/logic', can: 'logic' },
-      { label: 'Styles', to: '/workspace/styles', can: 'styles' },
-      { label: 'Words', to: '/workspace/words', can: 'words' },
+      // Docs — доступна ВСЕМ (без `can`).
+      { label: 'Docs', to: '/workspace/docs' },
     ],
     orientation: 'horizontal',
     variant: 'attached',
