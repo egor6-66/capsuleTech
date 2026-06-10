@@ -50,6 +50,28 @@ import type { Dynamic } from 'solid-js/web';
 /** Meta-теги для идентификации элемента в Controller store. */
 export interface ITagMeta {
   tags?: string[];
+  /**
+   * Capability required to see / interact with this element (gate-axis, access.md).
+   * Evaluated reactively by UiProxy against the registered access resolver.
+   *
+   * - No resolver registered (default) → element is always rendered (allow-all).
+   * - Resolver returns `false` and `denied` is not set → render-null (element disappears).
+   * - Resolver returns `false` and `denied === 'disable'` → element rendered but disabled.
+   *
+   * Capability string: use dot-namespaced slugs (`'workspace.builds'`, `'billing.refund'`).
+   * Short slugs (`'builds'`) are also valid for simple RBAC maps.
+   */
+  can?: string;
+  /**
+   * Controls the denied-behaviour when `can` is set and the resolver returns `false`.
+   *
+   * - `'disable'` → render with `disabled={true}` prop (element visible but inert).
+   * - `undefined` (default) → render-null (element disappears entirely).
+   *
+   * Use `'disable'` for elements inside attached/connected groups where a render-null
+   * hole would break layout (e.g. a button inside a toolbar). See access.md Q3.
+   */
+  denied?: 'disable';
   [k: string]: any;
 }
 

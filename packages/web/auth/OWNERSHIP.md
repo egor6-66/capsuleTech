@@ -46,10 +46,10 @@ config-driven), session + `useAuth()`, Controllers + ИМЕНОВАННЫЕ со
 | `/credentials` | stub | `ICredentialsInput`, `credentialsStrategy` (TODO) |
 | `/oauth2` | stub | `IOAuth2Input`, `oauth2Strategy` (TODO) |
 | `/qr` | stub | `IQrInput`, `qrStrategy` (TODO) |
-| `/session` | **ready** | `createAuthSession`, `useAuth()`, `ITokenStorage`, `memoryStorage`, `localStorageStorage`, `defaultAuthSession` |
+| `/session` | **ready** | `createAuthSession`, `useAuth()`, `configureAuthSession`, `ITokenStorage`, `ISessionStorage`, `IPersistedSession`, `memoryStorage`, `localStorageStorage`, `localSessionStorage`, `defaultAuthSession` |
 | `/controllers` | **ready** | `AuthController` FSM (idle→submitting→authed/error), phantom `__events`, EmitProbe pattern |
 | `/ui` | **ready** | `AuthLoginForm` — web-core `View<IAuthLoginFormProps>` (strategy.fields → Select/Input/Button; Ui от View-wrapper, не проп) |
-| `/capsule` | **ready** | `defineCapsuleModule({ name:'Auth', components:{LoginForm}, controllers:{Auth} })` |
+| `/capsule` | **ready** | `defineCapsuleModule({ name:'Auth', components:{LoginForm}, controllers:{Auth} })` + `registerPackageServices('authApi', { logout, isAuthed, user })` |
 
 ## Моки — `preRequest` + `gen` (НЕ MSW)
 
@@ -112,9 +112,9 @@ config-driven), session + `useAuth()`, Controllers + ИМЕНОВАННЫЕ со
 
 ## Тест-покрытие
 
-52 тестов (vitest jsdom), все green:
+70 тестов (vitest jsdom), все green:
 - `controllers/__tests__/authController.test.tsx` — FSM schema (idle/submitting/authed/error), emit onLogin/onLoginError/onLogout, phantom __events, render/children; error-state: store.update(errorMessage), clear-on-input/onChange, mapAuthError маппинг (401/network/default).
-- `session/__tests__/session.test.ts` — createAuthSession, login/logout/setStatus, useAuth reads, ITokenStorage impls (memory/localStorage).
+- `session/__tests__/session.test.ts` — createAuthSession, login/logout/setStatus, useAuth reads, ITokenStorage impls (memory/localStorage); ISessionStorage (localSessionStorage): persist round-trip, rehydrate-on-init, logout clears; configureAuthSession: storage:'local' rehydrate, login/logout через defaultAuthSession пишут/очищают localStorage, storage:'memory' сброс, ошибка без key.
 - `role/__tests__/roleStrategy.test.ts` — roleStrategy fields/defaults, кастомные роли, zod-схемы (loginRequestSchema/loginResponseSchema).
 
 ## Roadmap

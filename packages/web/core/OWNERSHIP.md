@@ -105,6 +105,27 @@ import { BaseProviders } from '@capsuletech/web-core/providers';
 
 **НЕТ** `./css` — CSS был удалён из этого пакета. Bootstrap-стили теперь живут в `.capsule/styles.css`, который генерится builders scaffold и импортируется в `bootstrap.tsx` приложения.
 
+### Access-resolver injection (additive, non-breaking)
+
+```ts
+import {
+  registerAccessResolver,   // inject / clear the global capability resolver
+  resolveAccess,             // evaluate a capability (internal + tests)
+  hasAccessResolver,         // fast-path check (is a resolver registered?)
+  type AccessResolver,       // (cap: string) => boolean
+} from '@capsuletech/web-core';
+```
+
+`registerAccessResolver(fn)` — called by `@capsuletech/web-access` on package init, before any component that gates on `can` is mounted. `fn` is expected to read reactive state (e.g. `useAuth().role`) so capability checks are reactive in render scopes. Passing `null` clears the resolver (test teardown / SSR). No resolver registered → allow-all (zero behaviour change for apps not using access).
+
+**Enforcement points wired in web-core:**
+- **Shape batch filter (point A):** `getData()` getter in `shape/wrapper.tsx` reactively filters array items that carry `{ can: string }` by calling `resolveAccess(item.can)`.  Items without `can` pass through unchanged. Non-array data is untouched.
+- **UiProxy meta.can (point B):** `wrapComponent` in `engine/ui-proxy.tsx` checks `meta.can` before registration and event-binding. Denied + `meta.denied === 'disable'` → renders with `disabled={true}`. Denied + default → `return null` (render-null).
+
+Both points are no-ops when no resolver is registered (`hasAccessResolver()` fast-path).
+
+`ITagMeta` extended with optional `can?: string` and `denied?: 'disable'` fields (non-breaking — existing code carries `[k: string]: any` spread).
+
 Это **контракт**. Изменение любого из трёх subpath-экспортов или shape ITarget/IHandlerApi — breaking change → bump major + координировать с главным и всеми owner'ами web_base группы.
 
 ## Quirks / gotchas

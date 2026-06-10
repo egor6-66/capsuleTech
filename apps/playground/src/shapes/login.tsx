@@ -16,7 +16,8 @@ const Login = Shape(
     type: props?.type ?? 'role',
     roles: [
       { value: 'developer', label: 'Developer' },
-      { value: 'support', label: 'Support' },
+      { value: 'designer', label: 'Designer' },
+      { value: 'devops', label: 'DevOps' },
     ],
     title: 'Вход',
     submitLabel: 'Войти',

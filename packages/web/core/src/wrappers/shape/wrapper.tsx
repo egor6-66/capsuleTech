@@ -1,6 +1,7 @@
 import { Zod } from '@capsuletech/shared-zod';
 import { mergeProps, splitProps } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
+import { hasAccessResolver, resolveAccess } from '../../engine/access-resolver';
 import { useShapeUi } from './context';
 import type { IShapeComponentProps, IShapeTools, IShapeWrapper } from './types';
 import {
@@ -152,11 +153,27 @@ const shape = (bind: (...args: unknown[]) => unknown, config?: unknown) => {
       rest,
     );
 
-    // data: читаем config-defaults реактивно через геттер в JSX
+    // data: читаем config-defaults реактивно через геттер в JSX.
+    // Enforcement point A — access-gated batch filter.
+    // When a resolver is registered, array items carrying `can` are filtered out
+    // reactively (this getter is called during render, inside a reactive scope,
+    // so resolver reads on reactive signals propagate correctly).
+    // Items without `can` are always kept. Non-array data passes through unchanged.
     const getData = () => {
-      if (hasConsumerData) return ownProps.data;
-      const raw = getRawConfig();
-      return 'defaults' in raw ? raw.defaults : bindDefaults;
+      const raw = hasConsumerData ? ownProps.data : (() => {
+        const cfg = getRawConfig();
+        return 'defaults' in cfg ? cfg.defaults : bindDefaults;
+      })();
+
+      if (!hasAccessResolver() || !Array.isArray(raw)) return raw;
+
+      return raw.filter((item: unknown) => {
+        if (item !== null && typeof item === 'object') {
+          const cap = (item as Record<string, unknown>).can as string | undefined;
+          if (cap) return resolveAccess(cap);
+        }
+        return true;
+      });
     };
 
     return (

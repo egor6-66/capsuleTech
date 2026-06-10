@@ -1,15 +1,22 @@
 /**
- * @capsuletech/web-access — SKELETON (0.0.0).
+ * @capsuletech/web-access — единая gate-ось capsule (A0).
  *
- * Единая gate-ось capsule: authn(login) + RBAC(role) + entitlements(tenant) +
- * feature-toggle/inject (ADR 041) — ОДИН механизм. capability = универсальная
- * валюта; резолвер `can(cap)` + провайдеры; enforcement в точках
- * (build-inject / route-guard / nav-filter / element).
+ * capability — универсальная валюта; резолвер `can(cap)` + провайдеры
+ * (authn/role/entitlement/flag). Enforcement в точках: nav-filter / element /
+ * route-guard / build-inject. См. docs/playground/access.md.
  *
- * Стюард — главный (сквозная архитектура, как web-contract).
- * План: docs/playground/access.md.
- *
- * Срез «ограничить роутинг»: A0 (резолвер + role-провайдер от useAuth +
- * access.json-схема) → usePermissions/<Can>/registerAccessProvider.
+ * A0 (текущее): резолвер + RBAC role-провайдер (читает useAuth().role + policy)
+ * + usePermissions/<Can>/filterAllowed. entitlement/flag/route-guard — далее.
  */
-export {};
+
+export type { AccessPolicy, Capability, IAccessProvider, ICanProps } from './types';
+export {
+  __resetAccess,
+  can,
+  filterAllowed,
+  registerAccessProvider,
+  usePermissions,
+} from './resolver';
+export { roleProvider } from './providers/role';
+export { setupAccess } from './setup';
+export { Can } from './Can';

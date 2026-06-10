@@ -27,7 +27,8 @@
 import { defineCapsuleModule } from '@capsuletech/web-core/module';
 import { registerPackageServices } from '@capsuletech/web-core';
 import { AuthLogin } from './controllers/index';
-import { defaultAuthSession } from './session/index';
+import { defaultAuthSession, useAuth } from './session/index';
+import type { IAuthUser } from './types';
 
 // ─── Module augmentation: типизация services.authApi ─────────────────────────
 
@@ -42,6 +43,17 @@ declare module '@capsuletech/web-core' {
     authApi?: {
       /** Очистить auth-сессию (defaultAuthSession). */
       logout: () => void;
+      /**
+       * Реактивно читает: аутентифицирована ли текущая сессия.
+       * Отражает восстановленную сессию после `configureAuthSession`.
+       * Вызывается внутри Feature-хэндлера (реактивный scope) — корректно.
+       */
+      isAuthed: () => boolean;
+      /**
+       * Реактивно читает текущего пользователя сессии.
+       * `null` если сессия не аутентифицирована.
+       */
+      user: () => IAuthUser | null;
     };
   }
 }
@@ -50,6 +62,8 @@ declare module '@capsuletech/web-core' {
 
 registerPackageServices('authApi', {
   logout: () => defaultAuthSession.logout(),
+  isAuthed: () => useAuth().isAuthed,
+  user: () => useAuth().user,
 });
 
 // ─── Манифест пакета ─────────────────────────────────────────────────────────
