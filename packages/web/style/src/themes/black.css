@@ -75,7 +75,7 @@
   --destructive-foreground: oklch(1 0 0);
   --border: oklch(0.1776 0 0);
   --input: oklch(0.1776 0 0);
-  --ring: oklch(0.1776 0 0);
+  --ring: oklch(0.709 0 0);
   --chart-1: oklch(0.762 0.121 268.8807);
   --chart-2: oklch(0.5429 0.2366 268.4747);
   --chart-3: oklch(0.4787 0.2656 267.596);
@@ -88,7 +88,7 @@
   --sidebar-accent: oklch(0.1776 0 0);
   --sidebar-accent-foreground: oklch(1 0 0);
   --sidebar-border: oklch(0.1776 0 0);
-  --sidebar-ring: oklch(0.1776 0 0);
+  --sidebar-ring: oklch(0.709 0 0);
   --font-sans: "Nunito Variable", Nunito, ui-sans-serif, sans-serif, system-ui;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --font-mono:
