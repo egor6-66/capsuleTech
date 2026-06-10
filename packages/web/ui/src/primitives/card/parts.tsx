@@ -62,7 +62,7 @@ export const CardDescription = (props: ICardDescriptionProps) => {
 export const CardContent = (props: ICardContentProps) => {
   const [local, others] = splitProps(props, ['class', 'style', 'gap', 'padding']);
 
-  // Default: flex flex-col gap-cell px-card pb-card
+  // Default: flex flex-col gap-cell p-card  (symmetric padding, all sides)
   // Override via gap/padding props (spacing-scale) or class= if needed.
   const sizingStyle = () => {
     const s: Record<string, string> = {};
@@ -81,10 +81,10 @@ export const CardContent = (props: ICardContentProps) => {
     <div
       class={cn(
         // Default layout: vertical stack with card spacing
-        // gap-cell and px-card/pb-card are token-based; overridable via gap/padding props
+        // gap-cell and p-card are token-based; overridable via gap/padding props
         local.gap === undefined && local.padding === undefined
-          ? 'flex flex-col gap-cell px-card pb-card'
-          : 'flex flex-col px-card pb-card',
+          ? 'flex flex-col gap-cell p-card'
+          : 'flex flex-col p-card',
         local.class,
       )}
       style={sizingStyle()}

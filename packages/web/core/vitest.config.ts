@@ -33,12 +33,15 @@ export default defineConfig({
     //   imports (Button, Input, Toggle etc.) after the LCP de-lazy in imports.tsx.
     //   Mirror of what web-ui's vitest.config.ts does for the same reason.
     // - solid-prevent-scroll, solid-presence: kobalte peer deps, also ship .jsx
+    // - @corvu/utils: kobalte transitive dep, ships .jsx in dist/reactivity;
+    //   surfaced after web-ui input restructure (select/textarea under input/).
     server: {
       deps: {
         inline: [
           /@tanstack\/solid-router/,
           /@solidjs\/meta/,
           /@kobalte\/core/,
+          /@corvu\//,
           /solid-prevent-scroll/,
           /solid-presence/,
           /lucide-solid/,
