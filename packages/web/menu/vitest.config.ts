@@ -8,6 +8,8 @@ export default defineConfig({
   },
   test: {
     include: ['src/**/__tests__/**/*.test.{ts,tsx}'],
+    // Skeleton (0.0.0) ships no tests yet; the renderer + its tests land next.
+    passWithNoTests: true,
     environment: 'jsdom',
     globals: false,
     setupFiles: ['./vitest.setup.ts', '@testing-library/jest-dom/vitest'],
