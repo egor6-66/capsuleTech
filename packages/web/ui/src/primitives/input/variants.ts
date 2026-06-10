@@ -17,6 +17,8 @@ export const inputCva = cva(
     INPUT_FIELD_BASE,
     // Background state 2: filled (data-filled set by component when value is non-empty)
     'data-[filled]:bg-muted/40',
+    // Active state: editable fields match :focus-visible on any focus (mouse too)
+    'focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-ring',
     // File input reset
     'file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground',
   ].join(' '),

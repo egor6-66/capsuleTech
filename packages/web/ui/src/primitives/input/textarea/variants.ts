@@ -24,6 +24,8 @@ export const textareaCva = cva(
     'min-h-[80px] text-foreground',
     // Background state 2: filled (data-filled set by component when value is non-empty)
     'data-[filled]:bg-muted/40',
+    // Active state: editable fields match :focus-visible on any focus (mouse too)
+    'focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-ring',
   ].join(' '),
   {
     variants,
