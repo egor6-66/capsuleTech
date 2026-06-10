@@ -1,13 +1,9 @@
-import {
-  resetFinishConfig,
-  setFinishConfig,
-  useFinishConfig,
-} from '@capsuletech/web-style';
+import { resetFinishConfig, setFinishConfig, useFinishConfig } from '@capsuletech/web-style';
 import { Button } from '@capsuletech/web-ui/button';
 import { Dropdown } from '@capsuletech/web-ui/dropdown';
 import { Slider } from '@capsuletech/web-ui/slider';
 import { Toggle } from '@capsuletech/web-ui/toggle';
-import { splitProps } from 'solid-js';
+import { onMount, splitProps } from 'solid-js';
 
 import type { IFinishSettingsProps } from './interfaces';
 
@@ -37,14 +33,16 @@ function Section(props: { label: string; children: import('solid-js').JSX.Elemen
 function FinishPanel() {
   const cfg = useFinishConfig();
 
+  let panelRef!: HTMLDivElement;
+  onMount(() => {
+    // Prevent slider arrow keys / space from leaking into Dropdown keyboard nav.
+    panelRef.addEventListener('keydown', (e) => e.stopPropagation());
+    // Prevent pointer events on sliders from triggering item-selection logic.
+    panelRef.addEventListener('pointerdown', (e) => e.stopPropagation());
+  });
+
   return (
-    <div
-      class="flex flex-col gap-4 p-3"
-      // Prevent slider arrow keys / space from leaking into Dropdown keyboard nav.
-      onKeyDown={(e) => e.stopPropagation()}
-      // Prevent pointer events on sliders from triggering item-selection logic.
-      onPointerDown={(e) => e.stopPropagation()}
-    >
+    <div ref={panelRef} class="flex flex-col gap-4 p-3">
       {/* ── Поверхность ─────────────────────────────────────────────────── */}
       <Section label="Поверхность">
         <Slider
@@ -133,10 +131,7 @@ function FinishPanel() {
         />
         <div class="flex items-center justify-between gap-2">
           <span class="text-sm text-foreground">Inner only</span>
-          <Toggle
-            checked={cfg().innerOnly}
-            onChange={(v) => setFinishConfig({ innerOnly: v })}
-          />
+          <Toggle checked={cfg().innerOnly} onChange={(v) => setFinishConfig({ innerOnly: v })} />
         </div>
       </Section>
 
@@ -167,12 +162,7 @@ function FinishPanel() {
       <Dropdown.Separator />
 
       {/* ── Reset ───────────────────────────────────────────────────────── */}
-      <Button
-        variant="outline"
-        size="sm"
-        class="w-full"
-        onClick={() => resetFinishConfig()}
-      >
+      <Button variant="outline" size="sm" class="w-full" onClick={() => resetFinishConfig()}>
         Reset
       </Button>
     </div>

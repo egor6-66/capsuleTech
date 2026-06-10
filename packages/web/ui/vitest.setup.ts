@@ -22,8 +22,7 @@ CSSStyleDeclaration.prototype.setProperty = function patchedSetProperty(
   priority?: string,
 ) {
   if (value != null && String(value).includes('NaN')) return;
-  // biome-ignore lint/style/noArguments: intentional passthrough
-  return _nativeSetProperty.apply(this, arguments as unknown as Parameters<typeof _nativeSetProperty>);
+  return _nativeSetProperty.call(this, property, value, priority);
 };
 class ResizeObserverMock {
   observe() {}
