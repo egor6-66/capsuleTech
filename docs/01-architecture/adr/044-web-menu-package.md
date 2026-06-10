@@ -1,126 +1,120 @@
 ---
-tags: [hca, adr, proposed, web-menu, web-ui, kobalte, package]
+tags: [hca, adr, proposed, web-ui, menu, packages, boundary]
 status: proposed
-date: 2026-06-10
+date: 2026-06-11
 ---
 
 > [!info] Status
-> **Proposed (контракт + направление)** — 2026-06-10. Зафиксировано из дизайн-сессии «3 похожих поповера → один data-driven компонент». Реализация после ревью контракта. Связано: [[033-package-registration|033]] (регистрация `Menus.*`), [[032-package-controllers-and-useemit|032]] (`/controllers` + useEmit), [[036-shape-redesign-and-table-package|036]] (прецедент выноса композита в пакет), [[042-canonical-token-system-and-skin-contract|042]] (канон-токены).
+> **Proposed (ревизия)** — 2026-06-11. Первая редакция (2026-06-10) предлагала меню
+> ОТДЕЛЬНЫМ доменным пакетом `@capsuletech/web-menu`; в дизайн-сессии решение
+> пересмотрено: меню — **лёгкая kit-композиция в web-ui**, а отдельные пакеты
+> остаются для тяжёлых/альтернативных рендереров. Scaffold `@capsuletech/web-menu`
+> свёрнут. Связано: [[033-package-registration|033]] (мердж регистраций для будущих
+> рендереров), [[041-composition-distribution-model|041]] (инъекция/композиция),
+> [[036-shape-redesign-and-table-package|036]] (граница heavy-domain пакетов),
+> [[042-canonical-token-system-and-skin-contract|042]].
 
-# ADR 044 — `@capsuletech/web-menu`: data-driven меню как доменный пакет
+# ADR 044 — Меню как kit-композиция + граница «тяжёлое = пакет / лёгкое = кит»
 
 ## Контекст
 
-1. **Три «выпадайки» выглядят по-разному.** В приложении есть минимум три похожих поповера с пунктами: меню «Оформление» (Dropdown + строки), список тем (Dropdown.Item), редактор «Фон/Подсветки» (Accordion). Под капотом — РАЗНЫЕ компоненты с разной плотностью (`px-2 py-1.5` у строк vs `px-4 py-3` у аккордеона) → нет единой картины, копипаст разметки в каждом потребителе.
+1. **Три «выпадайки» выглядят по-разному** (меню Оформление / список тем / редактор Фон) — разные компоненты под капотом, копипаст разметки, контейнер подстраивался под содержимое. Нужен **один data-driven компонент** «меню», владеющий стилем всех типов пунктов, container-agnostic.
 
-2. **Контейнер не должен знать про содержимое.** Dropdown/Popover/Modal — это дженерик-оболочки. Они не должны подстраиваться под accordion/строки/кнопки. Консистентность достигается не подгонкой контейнера, а **единым data-driven компонентом**, который сам владеет стилем всех типов пунктов и кладётся в любой контейнер.
+2. **Сначала меню хотели вынести отдельным пакетом** (как table/map). Но всплыли зависимостные проблемы:
+   - **кит обязан остаться листом** — `web-ui` ни от каких доменных пакетов не зависит, значит `Input.Select` (в ките) НЕ смог бы юзать меню из пакета;
+   - **mini-app → mini-app = цикл/антипаттерн** — `web-shell` импортил бы `web-menu` (оба tier-2);
+   - **раздувание шелла** доменным пакетом, который может расти.
 
-3. **Пункт меню — это и есть интерактивный элемент.** Не «кнопка внутри пункта», а сам пункт = кнопка/строка. Логаут в эталон-аппе сейчас — `Ui.Button` с meta-тегами внутри меню (скруглён, выбивается); правильно — это просто `action`-айтем данных.
-
-4. **Прецедент.** Сложные доменные композиты выносятся из кита в свои пакеты (ADR 036: `web-table` = `Tables.*`; `web-map` = `Maps.*`), регистрируются глобалом (ADR 033), релизятся в группе `web_base`. Меню (с submenu/toggle/командной-палитрой/контекстным-меню) — такой же домен.
-
-5. **Kobalte принадлежит web-ui.** Как `lucide-solid` («web-ui — единственный владелец, остальные импортируют иконки отсюда»), так и `@kobalte/core` живёт в web-ui. Другие пакеты НЕ тянут Kobalte напрямую — они композируют примитивы кита.
+3. **Ключевой разбор:** меню — это **лёгкая композиция** уже существующих kit-примитивов (строка-канон + popover + toggle + a11y-кирпичи), **без тяжёлых внешних зависимостей**. В отличие от table (tanstack-table+virtual) и map (maplibre) — там тяжёлый движок, поэтому они пакеты.
 
 ## Решение
 
-### 1. Новый пакет `@capsuletech/web-menu`, глобал `Menus.*`
+### 1. Принцип границы (главное)
 
-Data-driven меню: даёшь **данные + экшены** → компонент сам рендерит пункты с единым стилем, контейнер-агностично. Регистрируется как `Menus.*` (ADR 033), релиз в группе `web_base` (fixed, tag `web@{version}`), свой owner-web-menu.
+> **Отдельный пакет** = тяжёлая внешняя зависимость ИЛИ альтернативный движок-рендерер
+> (`web-table`=tanstack, `web-map`=maplibre, будущий 3D=babylon/unity).
+> **Лёгкая композиция существующих kit-примитивов** = живёт **в web-ui**
+> (web-ui = «примитивы И композиции»).
 
-Имя глобала — **`Menus.*`** (множественное, как `Tables.*`/`Maps.*`).
+### 2. Меню = композиция в web-ui (`Ui.Menu`)
 
-### 2. Граница ответственности (web-ui = Kobalte-owner)
+Меню лёгкое → его место **композицией в `@capsuletech/web-ui`**, НЕ отдельным доменным пакетом. Тогда:
+- `Input.Select` юзает `Ui.Menu` свободно (один пакет);
+- `web-shell` — тоже (downward, web-ui — его dep);
+- цикла нет; capability-инъекция («прокачка кита») для меню **не нужна**.
 
-| Пакет | Владеет |
-|---|---|
-| **web-ui** (Kobalte-owner) | Контейнеры-оболочки: `Dropdown` (Root/Trigger/Content), `Popover`, позже `Modal`. Низкоуровневые **a11y-кирпичи** меню: `Item` / `SubTrigger` / `SubContent` (роуминг-фокус, typeahead, submenu-on-hover — всё от Kobalte). Канон-стиль строки (`dropdownRowCva`, экспортируется для шаринга). |
-| **web-menu** (zero-Kobalte) | **Data-driven слой**: модель данных (union типов пункта), рендер, render-слот, варианты, controlled-state, клавиатурная оркестрация поверх китовых кирпичей. **Не импортирует Kobalte вообще** — только web-ui. |
+### 3. API (композиция, нейминг)
 
-Зависимость строго `web-menu → web-ui` (downward, как table/map). Контейнер остаётся дженериком и **не знает про строки**; строки знает web-menu.
+- **`Ui.Menu`** — сам список: `items: MenuItem[]` → канон-строки, **container-agnostic**.
+- **`Ui.Menu.Dropdown`** — готовый дропдаун: `<Ui.Menu.Dropdown trigger={…} items={…}/>`
+  (web-ui Dropdown-контейнер + список). Никакого вложения «дропдаун в дропдаун».
+- **`Ui.Menu.Context` / `Ui.Menu.Command` / …** — варианты (позже).
+- `Dropdown.Row` (введён ранее) становится **внутренним рендерером пункта** `Ui.Menu`.
 
-**a11y — вариант (A):** web-menu рендерит **примитивы кита** (`Item`/`SubTrigger` из web-ui, под капотом Kobalte) внутрь контейнера → Kobalte-a11y бесплатно, без переписывания клавиатуры/фокуса. Вариант (B) (своя a11y поверх дженерик-Popover) отклонён как оверкилл на старте.
+### 4. Контракт `MenuItem` (живёт в web-ui)
 
-### 3. Структура пакета (core + variant со старта)
+Дискриминированный union по `type`:
+- `action` — пункт САМ есть кнопка (`onSelect`/`closeOnSelect`/`meta`);
+- `toggle` — controlled свитч (`checked`/`onChange`);
+- `submenu` — рекурсия (`items[]`), боковая панель;
+- `expandable` — render-слот (`render()`) под богатые тела (Фон/Глэс), controlled `open`;
+- `separator` / `label`.
 
+Свойства:
+- **`icon?: IconName`** — **типизированная строка** (имя из `web-ui/icons`), рендерер
+  резолвит. НЕ компонент, НЕ инлайн-SVG (антипаттерн). → пункт **сериализуем** (JSON),
+  что важно для config-driven / агента / альтернативных рендереров.
+- **Stateless / controlled** — `checked`/`open` из данных, экшены мутируют наружу.
+- **`meta`** (теги) — HCA-проводка: UiProxy биндит активацию → именованное событие во
+  `Features` (ADR 032). Эталон-апп без импортов («Выйти» = `action`-айтем + `meta`, иконка строкой).
+
+Контракт живёт в web-ui. **Вынесем в лист-пакет** (`@capsuletech/web-contract`) ТОЛЬКО когда
+появится внешний рендерер (3D), которому нужен контракт без dep на web-ui. YAGNI.
+
+### 5. Композиция на тире аппа (без цикла)
+
+`web-shell` отдаёт свои appearance-контролы как **ДАННЫЕ**: `appearanceItems(): MenuItem[]`
+(простое = toggle-данные `checked`+`onChange`; богатое = `submenu`/`expandable` с
+connected-под-UI шелла в render-слоте). Апп склеивает:
+
+```tsx
+<Shell.Header>
+  <Shapes.ShellNavigation/>
+  <Ui.Menu.Dropdown
+    trigger={<Ui.Button variant="ghost" size="icon">☰</Ui.Button>}
+    items={[ ...Shell.appearanceItems(),
+             { type:'separator', id:'s' },
+             { type:'action', id:'logout', icon:'log-out', label:'Выйти', meta:{ tags:['logout'] } } ]}
+  />
+</Shell.Header>
 ```
-@capsuletech/web-menu
-  /core         — модель данных + union типов пункта + рендер + render-слот + controlled-state.
-                  Общее ядро для всех режимов меню.
-  /dropdown     — dropdown-вариант: композиция китовых кирпичей (Item/SubTrigger/SubContent),
-                  submenu, клавиатура. Возможны расширения логики именно под dropdown-меню.
-  /controllers  — Controllers.Menu (useEmit, ADR 032) — именованные события пунктов.
-  /capsule      — регистрация Menus.* (ADR 033).
-  (позже) /context, /command, /nav — варианты на том же /core.
-```
 
-Сплит `/core` ↔ `/dropdown` **со старта**: общее ядро + место под расширение логики конкретно dropdown-меню, не ломая будущие режимы.
+Шелл не импортит меню-пакет (его нет); `Shell.Header.Menu` (старая обёртка-дропдаун) уходит — апп кладёт `Ui.Menu.Dropdown` прямо в слот хедера.
 
-### 4. Контракт `/core` — модель данных
+### 6. Renderer-agnostic будущее (когда отдельный пакет ОПРАВДАН)
 
-Пункт меню — **дискриминированный union** (`type`). Компонент сам выбирает рендерер и стиль:
-
-```ts
-type MenuItem =
-  | { type: 'action';    id: string; icon?: Icon; label: JSX.Element; disabled?: boolean;
-      onSelect?: () => void; meta?: Meta }                         // сам пункт = кнопка
-  | { type: 'toggle';    id: string; icon?: Icon; label: JSX.Element; checked: boolean;
-      onChange?: (next: boolean) => void; meta?: Meta }            // трейлинг-свитч (controlled)
-  | { type: 'submenu';   id: string; icon?: Icon; label: JSX.Element;
-      items: MenuItem[] }                                          // боковая панель, РЕКУРСИЯ
-  | { type: 'expandable'; id: string; icon?: Icon; label: JSX.Element; open?: boolean;
-      onOpenChange?: (open: boolean) => void; render: () => JSX.Element }  // render-слот под тело
-  | { type: 'separator'; id: string }
-  | { type: 'label';     id: string; label: JSX.Element };
-
-interface IMenuProps {
-  items: MenuItem[];
-  // контейнер НЕ внутри: <Dropdown.Content><Menus.Dropdown items={...} /></Dropdown.Content>
-}
-```
-
-Ключевые свойства контракта:
-
-- **Controlled-state.** `checked` / `open` приходят из данных, экшены мутируют наружу. Компонент **stateless** → ложится на HCA (в аппе это `Shape`, мутации через `store`/`emit`).
-- **Render-слот** (`expandable.render`) — escape hatch под богатые тела (редактор «Фон», слайдеры «Глэс»): заголовок-строка остаётся каноном, тело произвольное. Так меню остаётся декларативным для 90% и допускает кастом для 10%.
-- **Рекурсия** (`submenu.items`) — submenu несёт свой `items[]`, рендерится тем же ядром в боковой панели (web-ui Popover/SubContent).
-- **`meta`** — HCA-проводка: пункт несёт meta/теги → UiProxy биндит → именованное событие во `Features` (ADR 032/033). Эталон-апп остаётся без импортов; логаут = `action`-айтем с `meta`.
-- **Никаких сырых детей.** В меню не кладут `<Ui.Button>` / сырой `<Accordion>` — всё описывается данными; рендереры внутри web-menu стилизованы под канон строки.
-
-### 5. HCA-интеграция
-
-- `Menus.*` — глобал (ADR 033), `/capsule` регистрирует.
-- `/controllers` (`Controllers.Menu`) — useEmit (ADR 032): пункты эмиттят именованные события; `Features` ловят `Feature<Menus.Events>` (типизированный агрегат событий пакета).
-- В аппе меню = `Shape`, который маппит данные приложения → `items[]` (как Shape→DataTable для таблиц).
-
-## Миграция (без регрессии)
-
-1. Контракт + ADR (этот документ) → ревью.
-2. Скелет `@capsuletech/web-menu` (0.0.0): package.json (multi-entry), tsconfig, alias в `tsconfig.base.json`, project.json, owner-web-menu — **shared-infra, делает главный**.
-3. Реализация `/core` + `/dropdown` (action/toggle/submenu/separator/label) → перевод меню «Оформление» + списка тем + «Выйти» на `Menus`.
-4. `expandable` (render-слот) → перевод «Фон/Глэс» панелей.
-5. **И только потом** — срезать строковый data-композит из web-ui Dropdown (`Dropdown.Row` удаляется; сырые a11y-кирпичи `Item`/`SubTrigger` остаются как Kobalte-владение, канон-CVA шарится).
-
-> **Статус `Dropdown.Row` сейчас:** временный data-композит строки в web-ui (введён в текущей сессии для канон-выравнивания строк меню). С приходом web-menu его логика переезжает в рендерер пункта; web-ui оставляет только сырые a11y-кирпичи + CVA.
-
-## Ортогонально (не часть web-menu)
-
-**Непрозрачность оверлеев.** Оверлеи (Dropdown/Popover/Select Content) должны быть **непрозрачными**, сохраняя glass-стиль. Корень — `createFinish` отдаёт `background` (shorthand), который стирает opaque `bg-popover` панели → контент просвечивает. Фикс: `opaque`-режим в `createFinish` (эмит `background-image` вместо `background` → базовый `bg-popover`/`bg-card` остаётся непрозрачным, градиент/hairline/glow поверх). Это **web-ui/контейнер**, к web-menu отношения не имеет, делается отдельно.
+Один контракт данных `MenuItem` — много рендереров. Базовый рисует DOM (`Ui.Menu.Dropdown`).
+**3D/Unity-меню** = отдельный пакет: рисует те же данные в сцену, зависит от
+**контракта-данных** (тогда — лист) + 3D-движок, **НЕ** от базового меню; регистрирует
+`Menu.3DUnity` в неймспейс `Menu.*` (мердж регистраций, ADR 033). Апп миксует на своём тире.
+Это и есть «прокачка»/Layer-2 — **проектируем мысленно, не строим сейчас**.
 
 ## Последствия
 
 **Плюсы:**
-- Единый стиль всех меню, ноль копипаста; контейнер дженерик.
-- Вариативность (nav / context-menu / command-palette) на одном `/core`.
-- Чистое владение Kobalte (web-ui), правило как с lucide.
-- «Выйти» и любые пункты — данные, а не разметка; эталон-апп без импортов.
+- Меню переиспользуемо везде (Select, shell, апп) без циклов и инверсий.
+- Кит остаётся листом; тяжёлые домены (table/map/3D) — пакеты по чёткому принципу.
+- Данные сериализуемы (icon строкой) → готовность к config-driven / агенту / 3D.
+- Ноль capability-инъекции на старте (нет оверинжиниринга).
 
-**Минусы / риски:**
-- Новый пакет = scaffold + alias + owner-агент + релиз-координация (web_base).
-- owner-web-menu появится только после рестарта сессии ([[new-agent-needs-restart]]).
-- Контракт `MenuItem` придётся держать стабильным (breaking-изменения union → миграция потребителей).
+**Минусы / откат:**
+- Scaffold `@capsuletech/web-menu` + агент `owner-web-menu` **свёрнуты** (были 0.0.0,
+  без реализации) — откат дешёвый, лучше до тяжёлой реализации.
+- web-ui подрастает на одну лёгкую композицию (приемлемо — это «композиции»).
 
 ## Открытые вопросы
 
-- Точный набор полей `meta` на пункте (теги/aliases) — согласовать с UiProxy-конвенцией.
-- Нужен ли `group` как отдельный тип (вложенные `label` + items) или достаточно `label` + плоский список.
-- `expandable` через web-ui Accordion-кирпич или собственный disclosure в web-menu (grid-rows). Скорее кирпич из кита.
+- Точный `IconName` union (полный набор lucide vs курируемый sub-set).
+- Где провязывается item-`meta` → событие (UiProxy на `Ui.Menu` vs внутренний emit).
+- `Shell.appearanceItems()` форма (фабрика-аксессор) + где живёт сборка пунктов
+  (`Shell.Appearance` как convenience-data-провайдер).
