@@ -1,43 +1,44 @@
 import { cva } from '@capsuletech/web-style';
 
+import { INPUT_FIELD_BASE } from '../base';
+
 /**
- * Trigger button — visually matches `Input` in size/border/focus-ring.
- * `data-[expanded]`       — set by Kobalte when the popover is open.
- * `data-[placeholder-shown]` — set by Kobalte when no value is selected.
+ * Trigger button — visually matches `Input` / `Textarea` in size/border/focus-ring.
  *
- * The chevron icon inside `KobalteSelect.Icon` carries its own
- * `data-[expanded]:rotate-180` class for the rotation animation.
+ * The shared INPUT_FIELD_BASE already carries:
+ *   - `px-input`            → shared horizontal padding (py-input removed from base)
+ *   - `focus:ring-1 focus-ring-ring`  → single clean ring, no border-colour flip
+ *
+ * Kobalte data-attributes used for state:
+ *   `data-[expanded]`           — set when the popover is open (any input method).
+ *   `data-[placeholder-shown]`  — set when no value is selected (inverse of filled).
+ *
+ * ## Background state mapping vs Input/Textarea
+ *
+ *   State     | Input/Textarea signal          | Select signal
+ *   --------- | ------------------------------ | --------------------------------
+ *   empty     | no `data-filled`               | `data-[placeholder-shown]` present
+ *   filled    | `data-[filled]`                | no `data-[placeholder-shown]`
+ *   active    | `:focus`                       | `:focus` AND `data-[expanded]`
+ *
+ * The open-state ring mirrors the focus ring (single ring, no border-colour change).
  */
 export const selectTriggerCva = cva(
   [
-    // Layout & sizing — identical to Input
-    'flex h-auto w-full items-center justify-between gap-2 rounded-md',
-    // Border
-    'border border-input px-input py-input',
+    INPUT_FIELD_BASE,
+    // Fixed height — shadcn canon, matches Input (h-9)
+    'h-9',
+    // Trigger-specific layout (aligns chevron icon to the right)
+    'items-center justify-between gap-2',
     // Typography
-    'text-sm font-normal',
-    // Shadow to match Input
-    'shadow-sm',
-    // Background — 3-state fill (mirrors input/textarea data-filled scheme via Kobalte data-attrs)
-    // Kobalte sets data-[placeholder-shown] when no value is selected (inverse of data-filled).
-    // 1. empty  (data-[placeholder-shown]):    transparent — blends with parent bg
-    // 2. filled (no placeholder-shown):        muted/40    — subtle tint signals content
-    // 3. open/focus-visible:                   bg-background — full bg "lifts" the control + ring
-    //    expanded/focus order is after filled so open state always wins specificity.
-    'bg-muted/40',
-    'data-[placeholder-shown]:bg-transparent',
+    'font-normal',
+    // Background state 2: filled — no placeholder-shown means a value is selected
+    '[&:not([data-placeholder-shown])]:bg-muted/40',
+    // Open state — bg + single ring (mirrors :focus from base; no border-colour change)
     'data-[expanded]:bg-background',
-    'focus-visible:bg-background',
-    // Focus ring
-    'focus:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:border-ring',
-    // Open state — border + ring
-    'data-[expanded]:border-ring data-[expanded]:ring-1 data-[expanded]:ring-ring',
-    // Placeholder text color
+    'data-[expanded]:ring-1 data-[expanded]:ring-ring data-[expanded]:outline-none',
+    // Placeholder text colour
     'data-[placeholder-shown]:text-muted-foreground',
-    // Disabled
-    'disabled:cursor-not-allowed disabled:opacity-50',
-    // Smooth transition
-    'transition-[background-color,border-color,box-shadow] duration-200',
   ].join(' '),
   {
     variants: {},

@@ -11,9 +11,9 @@ export const variants = {
     link: 'text-primary underline-offset-4 hover:underline',
   },
   size: {
-    default: 'h-auto px-button py-1.5',
-    sm: 'h-auto rounded-md px-button-sm py-cell-tight text-xs',
-    lg: 'h-auto rounded-md px-button-lg py-button',
+    default: 'h-9 px-button',
+    sm: 'h-8 rounded-md px-button-sm text-xs',
+    lg: 'h-10 rounded-md px-button-lg',
     icon: 'h-9 w-9 p-0',
   },
 };
