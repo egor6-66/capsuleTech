@@ -166,9 +166,9 @@ shellNavigation чинится на **A0+A2** (минимальный срез).
 | **A1** `meta.can` элементов (UiProxy, web-core) | ✅ движок готов, в аппе пока не используется |
 | Authn **persist+rehydrate** (`configureAuthSession`, web-auth) + restore в `Features.App.guest.onInit` | ✅ сделано |
 | Мок role+password (developer/`d1`, designer/`123`, devops/`d2`) | ✅ сделано |
+| **A3** URL-guard (RouterPlugin: `export const meta = { can }` → route `beforeLoad` → `resolveAccess` → `redirect`) | ✅ сделано |
 
 **Осталось:**
-- 🔸 **A3 — URL-guard.** Прямой заход по URL ещё достижим (нав прячет, роут — нет). Нужно: web-router `beforeLoad` читает capability роута → `resolveAccess` (web-core) → `redirect`; роут НЕСЁТ capability через **RouterPlugin (owner-builders) → `Page.meta.can` в route staticData**. (+1 скоуп: builders.)
 - 🔸 **Промоут в декларатив.** Сейчас `setupAccess`/`configureAuthSession` — side-effect в `capsule.app.ts`. Промоут до полей `access:` / `auth:` в `defineAppConfig` (генератор, как `intl`/`api`).
 - 🔸 **entitlement / flag-провайдеры** + multi-tenant + `mode:'any'` слияние — позже.
 - 🔸 `<Can>` + `meta.can` в аппе — по мере надобности (движок готов).
