@@ -367,3 +367,141 @@ describe('Flex — empty container gets inline min-height, non-empty does not', 
     expect(root.classList.contains('min-h-slot')).toBe(false);
   });
 });
+
+// ---------------------------------------------------------------------------
+// 7. Sizing props → inline style calc(var(--spacing) * N)
+// ---------------------------------------------------------------------------
+
+describe('Flex — sizing props apply as inline-style calc(var(--spacing) * N)', () => {
+  it('h prop sets height inline style', () => {
+    cleanup = render(
+      () => (
+        <Flex h={10}>
+          <span>content</span>
+        </Flex>
+      ),
+      container,
+    );
+
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.style.height).toBe('calc(var(--spacing) * 10)');
+  });
+
+  it('w prop sets width inline style', () => {
+    cleanup = render(
+      () => (
+        <Flex w={20}>
+          <span>content</span>
+        </Flex>
+      ),
+      container,
+    );
+
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.style.width).toBe('calc(var(--spacing) * 20)');
+  });
+
+  it('maxH prop sets max-height inline style', () => {
+    cleanup = render(
+      () => (
+        <Flex maxH={40}>
+          <span>content</span>
+        </Flex>
+      ),
+      container,
+    );
+
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.style.maxHeight).toBe('calc(var(--spacing) * 40)');
+  });
+
+  it('maxW prop sets max-width inline style', () => {
+    cleanup = render(
+      () => (
+        <Flex maxW={80}>
+          <span>content</span>
+        </Flex>
+      ),
+      container,
+    );
+
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.style.maxWidth).toBe('calc(var(--spacing) * 80)');
+  });
+
+  it('minW prop sets min-width inline style', () => {
+    cleanup = render(
+      () => (
+        <Flex minW={5}>
+          <span>content</span>
+        </Flex>
+      ),
+      container,
+    );
+
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.style.minWidth).toBe('calc(var(--spacing) * 5)');
+  });
+
+  it('minH prop sets min-height inline style', () => {
+    cleanup = render(
+      () => (
+        <Flex minH={6}>
+          <span>content</span>
+        </Flex>
+      ),
+      container,
+    );
+
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.style.minHeight).toBe('calc(var(--spacing) * 6)');
+  });
+
+  it('explicit minH overrides the auto var(--size-slot) on empty container', () => {
+    cleanup = render(() => <Flex minH={8} />, container);
+
+    const root = container.firstElementChild as HTMLElement;
+    // Must be the spacing formula, NOT the fallback var(--size-slot)
+    expect(root.style.minHeight).toBe('calc(var(--spacing) * 8)');
+    expect(root.style.minHeight).not.toBe('var(--size-slot)');
+  });
+
+  it('all six sizing props can be applied together', () => {
+    cleanup = render(
+      () => (
+        <Flex h={20} minH={6} maxH={40} w={30} minW={5} maxW={80}>
+          <span>content</span>
+        </Flex>
+      ),
+      container,
+    );
+
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.style.height).toBe('calc(var(--spacing) * 20)');
+    expect(root.style.minHeight).toBe('calc(var(--spacing) * 6)');
+    expect(root.style.maxHeight).toBe('calc(var(--spacing) * 40)');
+    expect(root.style.width).toBe('calc(var(--spacing) * 30)');
+    expect(root.style.minWidth).toBe('calc(var(--spacing) * 5)');
+    expect(root.style.maxWidth).toBe('calc(var(--spacing) * 80)');
+  });
+
+  it('sizing props do not affect items-mode (no inline styles leaked)', () => {
+    // items-mode renders ResizableFlex or StaticItemsFlex — sizing props are
+    // only consumed in CSS-flex mode; they must not appear on items-mode roots.
+    const items: IFlexItem[] = [
+      { children: <div>A</div> },
+      { children: <div>B</div> },
+    ];
+
+    cleanup = render(
+      () => <Flex items={items} h={10} w={20} minH={6} />,
+      container,
+    );
+
+    // items-mode root does not carry Flex's computed() styles
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.style.height).toBe('');
+    expect(root.style.width).toBe('');
+    expect(root.style.minHeight).toBe('');
+  });
+});

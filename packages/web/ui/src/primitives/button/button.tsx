@@ -1,4 +1,4 @@
-import { createStyle } from '@capsuletech/web-style';
+import { cn, createStyle } from '@capsuletech/web-style';
 import { Loader2 } from 'lucide-solid';
 import type { ValidComponent } from 'solid-js';
 import { Show, splitProps } from 'solid-js';
@@ -19,19 +19,21 @@ import { buttonCva } from './variants';
  * <Button disabled>Disabled</Button>
  * <Button loading>Sign in</Button>
  * <Button loading={someSignal()}>Submit</Button>
+ * <Button fullWidth>Full Width</Button>
  * ```
  */
 export const Button = <T extends ValidComponent = 'button'>(props: IButtonProps<T>) => {
-  const [local, variants, loadingProps, others] = splitProps(
+  const [local, variants, loadingProps, presentational, others] = splitProps(
     props,
     ['class', 'style'],
     ['variant', 'size'],
     ['loading', 'disabled', 'children'],
+    ['fullWidth'],
   );
 
   const { className, style } = createStyle(buttonCva, {
     ...variants,
-    class: local.class,
+    class: cn(local.class, presentational.fullWidth && 'w-full'),
     style: local.style,
   });
 

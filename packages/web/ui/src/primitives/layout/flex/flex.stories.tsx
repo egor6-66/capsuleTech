@@ -126,6 +126,43 @@ export const ResizableVertical: Story = {
 };
 
 /**
+ * Sizing props: `minH`, `h`, `w` через spacing-шкалу.
+ * `minH={24}` → `min-height: calc(var(--spacing) * 24)` (≡ Tailwind `min-h-24`).
+ * Позволяет задавать размеры без сырых Tailwind-классов снаружи.
+ */
+export const SizingProps: Story = {
+  name: 'sizing props (h / minH / w)',
+  render: () => (
+    <Flex direction="col" gap={4}>
+      <Flex
+        minH={24}
+        align="center"
+        justify="center"
+        class="border border-dashed border-white/20 rounded"
+      >
+        <MockBlock label="minH={24}" tone="b" />
+      </Flex>
+      <Flex
+        h={16}
+        align="center"
+        justify="center"
+        class="border border-dashed border-white/20 rounded"
+      >
+        <MockBlock label="h={16}" tone="c" />
+      </Flex>
+      <Flex
+        w={64}
+        minH={12}
+        align="center"
+        class="border border-dashed border-white/20 rounded"
+      >
+        <MockBlock label="w={64} minH={12}" />
+      </Flex>
+    </Flex>
+  ),
+};
+
+/**
  * Mixed: один panel fixed (resizable: false), два resizable.
  * Handle появляется только между resizable соседями — у right (resizable:false)
  * handle справа нет.

@@ -23,6 +23,8 @@ export interface IButtonOwnProps extends ButtonVariants {
    */
   disabled?: boolean;
   children?: JSX.Element;
+  /** When true: adds `w-full` so the button stretches to its container width. */
+  fullWidth?: boolean;
 }
 
 /**

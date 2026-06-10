@@ -15,7 +15,7 @@
  * Регистрируется в capsule.ts как components.LoginForm.
  */
 
-import { View, useCtx } from '@capsuletech/web-core';
+import { useCtx, View } from '@capsuletech/web-core';
 import type { IAuthFormField, IRoleStrategy } from '../role/index';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -58,26 +58,26 @@ export const AuthLoginForm = View<IAuthLoginFormProps>((Ui, props) => {
   // Внешний layout/фон — ответственность страницы-консьюмера (напр. _public layout).
   // Компонент возвращает только карточку формы без min-h-screen / bg-background.
   return (
-    <Ui.Card class="w-96 shadow-lg">
-      <Ui.Card.Header class="border-b border-border">
-        <Ui.Card.Title class="text-center text-lg font-semibold text-foreground">
+    <Ui.Card w={96} elevation="lg">
+      <Ui.Card.Header divider>
+        <Ui.Card.Title align="center">
           {props.title ?? 'Вход'}
         </Ui.Card.Title>
         <Ui.Flow.Show when={props.subtitle}>
-          <Ui.Card.Description class="text-center text-sm text-muted-foreground">
+          <Ui.Card.Description align="center">
             {props.subtitle}
           </Ui.Card.Description>
         </Ui.Flow.Show>
       </Ui.Card.Header>
 
-      <Ui.Card.Content class="flex flex-col gap-cell p-cell">
+      <Ui.Card.Content>
         <Ui.Flow.For each={props.strategy.fields as IAuthFormField[]}>
           {(field: IAuthFormField) => (
             <Ui.Field>
-              <Ui.Field.Label class="text-sm font-medium text-foreground">
+              <Ui.Field.Label>
                 {field.label}
               </Ui.Field.Label>
-              <Ui.Field.Content class="mt-2">
+              <Ui.Field.Content>
                 <Ui.Flow.Show
                   when={field.type === 'select'}
                   fallback={
@@ -86,7 +86,6 @@ export const AuthLoginForm = View<IAuthLoginFormProps>((Ui, props) => {
                       placeholder={field.placeholder}
                       // biome-ignore lint/suspicious/noExplicitAny: meta.tags — TypeScript JSX-fallback inference quirk
                       meta={{ tags: [field.tag] as any }}
-                      class="w-full"
                     />
                   }
                 >
@@ -102,25 +101,28 @@ export const AuthLoginForm = View<IAuthLoginFormProps>((Ui, props) => {
           )}
         </Ui.Flow.For>
 
-        <Ui.Button meta={{ tags: ['submit'] }} class="mt-cell w-full">
-          {props.submitLabel ?? 'Войти'}
-        </Ui.Button>
-
         {/* Ошибка входа — package-level, из FSM context.data.errorMessage.
-            Показывается только когда текст ненулевой. Стиль: text-destructive
-            (тема-токен web-ui; НЕ инлайн-цвета). */}
-        <Ui.Flow.Show when={errorMessage()}>
+            Слот ВСЕГДА в DOM (minH=6 = 1 строка) — карточка не прыгает.
+            Видимость через dim (opacity) — плавный fade-in/out.
+            tone="destructive" — тема-токен, НЕ инлайн-цвет. */}
+        <Ui.Layout.Flex align="center" justify="center" minH={6}>
           <Ui.Typography
             variant="p"
-            class="text-center text-sm text-destructive"
+            tone="destructive"
+            size="sm"
+            dim={!errorMessage()}
           >
             {errorMessage()}
           </Ui.Typography>
-        </Ui.Flow.Show>
+        </Ui.Layout.Flex>
+
+        <Ui.Button meta={{ tags: ['submit'] }} fullWidth>
+          {props.submitLabel ?? 'Войти'}
+        </Ui.Button>
 
         <Ui.Flow.Show when={props.footerNote}>
-          <Ui.Layout.Flex class="flex-col items-center">
-            <Ui.Typography variant="p" class="text-center text-xs text-muted-foreground">
+          <Ui.Layout.Flex direction="col" align="center">
+            <Ui.Typography variant="p" align="center" size="xs" tone="muted">
               {props.footerNote}
             </Ui.Typography>
           </Ui.Layout.Flex>
