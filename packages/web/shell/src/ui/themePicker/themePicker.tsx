@@ -1,6 +1,7 @@
 import { DISCOVERED_THEMES, setTheme, useTheme } from '@capsuletech/web-style';
 import { Button } from '@capsuletech/web-ui/button';
 import { Dropdown } from '@capsuletech/web-ui/dropdown';
+import { Palette } from '@capsuletech/web-ui/icons';
 import { For, Show, splitProps } from 'solid-js';
 
 import type { IThemePickerProps } from './interfaces';
@@ -81,22 +82,12 @@ export const ThemePicker = (props: IThemePickerProps) => {
 
   return (
     <Dropdown.Sub>
-      <Dropdown.SubTrigger class={local.class}>
-        <Show
-          when={local.triggerLabel !== undefined}
-          fallback={
-            <>
-              <span class="text-muted-foreground">Theme:</span>
-              <span class="ml-1.5">{current()}</span>
-            </>
-          }
-        >
-          {local.triggerLabel}
-        </Show>
-        <span class="ml-auto text-muted-foreground" aria-hidden="true">
-          &#9658;
-        </span>
-      </Dropdown.SubTrigger>
+      <Dropdown.Row
+        variant="sub"
+        icon={Palette}
+        label={local.triggerLabel ?? 'Тема'}
+        class={local.class}
+      />
       <Dropdown.SubContent>{renderItems()}</Dropdown.SubContent>
     </Dropdown.Sub>
   );

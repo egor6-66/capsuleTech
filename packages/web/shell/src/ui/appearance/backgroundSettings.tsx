@@ -6,8 +6,11 @@
  * addAmbientGlow / removeAmbientGlow / resetAmbientConfig).
  *
  * Rendered as a Dropdown.Sub (SubTrigger «Фон ▶» + SubContent with the full
- * editor panel). Each GlowItem stops keydown/pointerdown propagation on its
- * content div so slider arrow-keys don't bleed into Dropdown's keyboard nav.
+ * editor panel). The content div stops `keydown` propagation so slider arrow-keys
+ * don't bleed into Dropdown's keyboard nav (the native range input still handles
+ * the arrows itself). It must NOT stop `pointerdown`: Solid delegates pointerdown
+ * to the document, so a bubble-phase stop here would prevent the event from ever
+ * reaching Solid's delegated listener — killing Kobalte Slider's drag-start.
  */
 
 import {
@@ -20,7 +23,7 @@ import {
 import { Accordion } from '@capsuletech/web-ui/accordion';
 import { Button } from '@capsuletech/web-ui/button';
 import { Dropdown } from '@capsuletech/web-ui/dropdown';
-import { X } from '@capsuletech/web-ui/icons';
+import { Image, X } from '@capsuletech/web-ui/icons';
 import { Slider } from '@capsuletech/web-ui/slider';
 import { Toggle } from '@capsuletech/web-ui/toggle';
 import { Index, onMount } from 'solid-js';
@@ -29,14 +32,19 @@ import { Index, onMount } from 'solid-js';
 // BackgroundPanel — full panel content
 // ---------------------------------------------------------------------------
 
-// Internal wrapper that stops event propagation without JSX interactive-element
-// lint violation. Using addEventListener via onMount avoids the a11y linter rule
-// (noStaticElementInteractions) which fires on JSX-level onKeyDown/onPointerDown.
-function StopPropagationContainer(props: { children: import('solid-js').JSX.Element }) {
+// Internal wrapper that stops keydown propagation (so slider arrow-keys don't
+// drive the Dropdown's keyboard nav) without a JSX interactive-element lint
+// violation. Using addEventListener via onMount avoids the a11y linter rule
+// (noStaticElementInteractions) which fires on JSX-level onKeyDown.
+//
+// IMPORTANT: only `keydown` is stopped. Stopping `pointerdown` here would break
+// the sliders: Solid delegates pointerdown to the document, and a bubble-phase
+// stop on this ancestor prevents the event from reaching Solid's delegated
+// listener, so Kobalte Slider never starts its drag.
+function StopKeydownContainer(props: { children: import('solid-js').JSX.Element }) {
   let ref!: HTMLDivElement;
   onMount(() => {
     ref.addEventListener('keydown', (e) => e.stopPropagation());
-    ref.addEventListener('pointerdown', (e) => e.stopPropagation());
   });
   return (
     <div ref={ref} class="flex flex-col gap-3">
@@ -60,7 +68,7 @@ function BackgroundPanel() {
             <Accordion.Item value={`glow-${i}`}>
               <Accordion.Trigger>Подсветка {i + 1}</Accordion.Trigger>
               <Accordion.Content>
-                <StopPropagationContainer>
+                <StopKeydownContainer>
                   <Button
                     size="sm"
                     variant="ghost"
@@ -132,7 +140,7 @@ function BackgroundPanel() {
                       />
                     </div>
                   </div>
-                </StopPropagationContainer>
+                </StopKeydownContainer>
               </Accordion.Content>
             </Accordion.Item>
           )}
@@ -164,12 +172,7 @@ function BackgroundPanel() {
 export function BackgroundSettings() {
   return (
     <Dropdown.Sub>
-      <Dropdown.SubTrigger>
-        <span class="text-muted-foreground">Фон</span>
-        <span class="ml-auto text-muted-foreground" aria-hidden="true">
-          &#9658;
-        </span>
-      </Dropdown.SubTrigger>
+      <Dropdown.Row variant="sub" icon={Image} label="Фон" />
       <Dropdown.SubContent class="w-72">
         <BackgroundPanel />
       </Dropdown.SubContent>

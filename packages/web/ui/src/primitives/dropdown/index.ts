@@ -3,6 +3,7 @@ export {
   DropdownContent,
   DropdownGroup,
   DropdownItem,
+  DropdownRow,
   DropdownLabel,
   DropdownSeparator,
   DropdownSub,

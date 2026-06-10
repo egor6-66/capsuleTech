@@ -78,7 +78,7 @@ const Value = (props: ISelectValueProps) => {
 const Content = (props: ISelectContentProps) => {
   const [local, others] = splitProps(props, ['class', 'style', 'portalProps']);
 
-  const finish = createFinish();
+  const finish = createFinish({ opaque: true });
 
   return (
     <KobalteSelect.Portal {...(local.portalProps as object)}>

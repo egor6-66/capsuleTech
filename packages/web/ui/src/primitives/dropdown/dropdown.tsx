@@ -1,7 +1,8 @@
 import { cn } from '@capsuletech/web-style';
 import { DropdownMenu as KobalteDropdown } from '@kobalte/core/dropdown-menu';
 import type { ValidComponent } from 'solid-js';
-import { splitProps } from 'solid-js';
+import { Match, Show, splitProps, Switch } from 'solid-js';
+import { Dynamic } from 'solid-js/web';
 
 import { createFinish } from '../../lib/finish';
 
@@ -11,6 +12,7 @@ import type {
   IDropdownItemProps,
   IDropdownLabelProps,
   IDropdownProps,
+  IDropdownRowProps,
   IDropdownSeparatorProps,
   IDropdownSubContentProps,
   IDropdownSubProps,
@@ -21,6 +23,7 @@ import {
   dropdownContentCva,
   dropdownItemCva,
   dropdownLabelCva,
+  dropdownRowCva,
   dropdownSeparatorCva,
 } from './variants';
 
@@ -63,7 +66,7 @@ const Trigger = <T extends ValidComponent = 'button'>(props: IDropdownTriggerPro
 const Content = (props: IDropdownContentProps) => {
   const [local, others] = splitProps(props, ['class', 'style', 'portalProps']);
 
-  const finish = createFinish();
+  const finish = createFinish({ opaque: true });
 
   return (
     <KobalteDropdown.Portal {...local.portalProps}>
@@ -85,6 +88,77 @@ const Item = (props: IDropdownItemProps) => {
   const [local, others] = splitProps(props, ['class']);
   return (
     <KobalteDropdown.Item class={cn(dropdownItemCva(), local.class)} {...(others as object)} />
+  );
+};
+
+/**
+ * Canonical icon + label (+ trailing) menu row — the consistent row shape for a
+ * dropdown. Renders an `Item`, a `SubTrigger`, or a static `<div>` depending on
+ * `variant`, all sharing `dropdownRowCva` (one height/padding). The leading icon
+ * is the only affordance — submenu rows carry no directional arrow.
+ *
+ * @example
+ * ```tsx
+ * <Dropdown.Row icon={LogOut} label="Выйти" onSelect={logout} />
+ *
+ * <Dropdown.Sub>
+ *   <Dropdown.Row variant="sub" icon={Palette} label="Тема" />
+ *   <Dropdown.SubContent>…</Dropdown.SubContent>
+ * </Dropdown.Sub>
+ *
+ * <Dropdown.Row variant="static" icon={Moon} label="Dark mode"
+ *   trailing={<Toggle checked={dark()} onChange={toggleDark} />} />
+ * ```
+ */
+const Row = (props: IDropdownRowProps) => {
+  const [local, others] = splitProps(props, [
+    'class',
+    'icon',
+    'label',
+    'trailing',
+    'children',
+    'variant',
+  ]);
+  const variant = () => local.variant ?? 'item';
+  const cls = () => cn(dropdownRowCva(), local.class);
+
+  const inner = () => (
+    <>
+      <Show when={local.icon}>
+        {(icon) => (
+          <Dynamic
+            component={icon()}
+            class="size-4 shrink-0 text-muted-foreground"
+            aria-hidden="true"
+          />
+        )}
+      </Show>
+      <span class="flex-1 truncate text-left">{local.label ?? local.children}</span>
+      <Show when={local.trailing}>
+        <span class="ml-auto flex shrink-0 items-center">{local.trailing}</span>
+      </Show>
+    </>
+  );
+
+  return (
+    <Switch
+      fallback={
+        <KobalteDropdown.Item class={cls()} {...(others as object)}>
+          {inner()}
+        </KobalteDropdown.Item>
+      }
+    >
+      <Match when={variant() === 'sub'}>
+        <KobalteDropdown.SubTrigger class={cls()} {...(others as object)}>
+          {inner()}
+        </KobalteDropdown.SubTrigger>
+      </Match>
+      <Match when={variant() === 'static'}>
+        <div class={cls()} {...(others as object)}>
+          {inner()}
+        </div>
+      </Match>
+    </Switch>
   );
 };
 
@@ -159,7 +233,7 @@ const SubTrigger = (props: IDropdownSubTriggerProps) => {
 const SubContent = (props: IDropdownSubContentProps) => {
   const [local, others] = splitProps(props, ['class', 'style', 'portalProps']);
 
-  const finish = createFinish();
+  const finish = createFinish({ opaque: true });
 
   return (
     <KobalteDropdown.Portal {...local.portalProps}>
@@ -206,6 +280,7 @@ export const Dropdown = Object.assign(DropdownImpl, {
   Trigger,
   Content,
   Item,
+  Row,
   Separator,
   Group,
   Label,
@@ -221,6 +296,7 @@ export {
   Content as DropdownContent,
   Group as DropdownGroup,
   Item as DropdownItem,
+  Row as DropdownRow,
   Label as DropdownLabel,
   Separator as DropdownSeparator,
   Sub as DropdownSub,

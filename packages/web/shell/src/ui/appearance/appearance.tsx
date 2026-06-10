@@ -19,21 +19,37 @@
 
 import { useFinishMode } from '@capsuletech/web-style';
 import { Dropdown } from '@capsuletech/web-ui/dropdown';
+import { Toggle } from '@capsuletech/web-ui/toggle';
 import { Show } from 'solid-js';
 
 import { FinishSettings } from '../finishSettings';
-import { ModeToggle } from '../modeToggle';
+import { MODES } from '../modeToggle/modes';
 import { ThemePicker } from '../themePicker';
 import { BackgroundSettings } from './backgroundSettings';
 import type { IAppearanceProps } from './interfaces';
 
 /**
- * Thin layout wrapper that mirrors Shell.Header.Menu.Group's horizontal-flex
- * row — used to host inline toggles (dark / finish) that need px-2 py-1.5
- * padding inside the dropdown panel.
+ * Toggle row built on the canonical `Dropdown.Row` so it shares the exact
+ * height / padding / leading-icon column with the sub-menu rows below.
+ * Layout: `[icon] [label] … [switch]` — `variant="static"` because the row hosts
+ * its own interactive control (the Toggle) rather than acting as a menu item.
  */
-function InlineRow(props: { children: import('solid-js').JSX.Element }) {
-  return <div class="flex items-center px-2 py-1.5">{props.children}</div>;
+function ToggleRow(props: { mode: 'dark' | 'finish' }) {
+  const descriptor = () => MODES[props.mode];
+  return (
+    <Dropdown.Row
+      variant="static"
+      icon={descriptor().icon}
+      label={descriptor().label}
+      trailing={
+        <Toggle
+          size="sm"
+          checked={descriptor().active()}
+          onChange={() => descriptor().toggle()}
+        />
+      }
+    />
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -82,16 +98,12 @@ export const Appearance = (props: IAppearanceProps) => {
 
       {/* 1. Dark mode toggle */}
       <Show when={showDark()}>
-        <InlineRow>
-          <ModeToggle mode="dark" />
-        </InlineRow>
+        <ToggleRow mode="dark" />
       </Show>
 
-      {/* 2. Finish (объём) toggle — always visible when the prop is enabled */}
+      {/* 2. Finish (Глэс) toggle — always visible when the prop is enabled */}
       <Show when={showFinish()}>
-        <InlineRow>
-          <ModeToggle mode="finish" />
-        </InlineRow>
+        <ToggleRow mode="finish" />
       </Show>
 
       {/* 3. Theme picker sub-menu — independent of finish mode */}
@@ -99,7 +111,7 @@ export const Appearance = (props: IAppearanceProps) => {
         <ThemePicker mode="sub" />
       </Show>
 
-      {/* 4. Bottom pair: Объём-settings ▶ + Фон ▶ — only when finish mode is on */}
+      {/* 4. Bottom pair: Глэс-settings + Фон — only when finish mode is on */}
       <Show when={finishOn() && showFinishSettings()}>
         <FinishSettings mode="sub" />
       </Show>

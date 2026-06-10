@@ -22,16 +22,32 @@ export type { IFinishConfig } from '@capsuletech/web-style';
  * Default values come from `useFinishConfig()` (also from `@capsuletech/web-style`).
  * Pass a `config` partial to override individual knobs per-instance.
  *
- * @param config  Optional partial override of tuning values.
+ * ## Opaque mode (overlays)
+ * Pass `{ opaque: true }` for surfaces that float **over** other content
+ * (Dropdown / Popover / Select panels, Modal). The finish gradient is then
+ * emitted as `background-image` instead of the `background` shorthand, so the
+ * element's own opaque `bg-popover` / `bg-card` background-COLOUR stays as a
+ * solid base — the glass gradient/hairline/glow style is preserved but nothing
+ * behind the panel bleeds through. Inline content surfaces (Card, widget-frame)
+ * omit it and keep their translucent glass over the ambient.
+ *
+ * @param config  Optional partial override of tuning values, plus the structural
+ *                `opaque` flag.
  *
  * @example
  * ```ts
- * const finish = createFinish();
+ * const finish = createFinish();             // inline surface (translucent)
+ * const finish = createFinish({ opaque: true }); // overlay surface (solid base)
  * // in JSX:
  * <div style={finish.surfaceStyle()} />
  * ```
  */
-export function createFinish(config?: Partial<IFinishConfig>): IFinishContract {
+export function createFinish(
+  config?: Partial<IFinishConfig> & { opaque?: boolean },
+): IFinishContract {
+  // Split the structural `opaque` flag from the tunable config overrides.
+  const { opaque = false, ...overrides } = config ?? {};
+
   // ── isActive ─────────────────────────────────────────────────────────────
   // Pure signal read — no DOM walk, no ref, no timing dependency.
   const isActive = createMemo(() => useFinishMode()());
@@ -43,7 +59,7 @@ export function createFinish(config?: Partial<IFinishConfig>): IFinishContract {
     }
 
     // Merge global store config with per-instance overrides.
-    const cfg: IFinishConfig = { ...useFinishConfig()(), ...config };
+    const cfg: IFinishConfig = { ...useFinishConfig()(), ...overrides };
 
     // ── ON: approved finish effect ────────────────────────────────────────
 
@@ -102,10 +118,13 @@ export function createFinish(config?: Partial<IFinishConfig>): IFinishContract {
 
     const boxShadow = shadowLayers.join(', ');
 
-    return {
-      background,
-      'box-shadow': boxShadow,
-    };
+    // Opaque overlays: emit the gradient as `background-image` so the element's
+    // own opaque `bg-popover` / `bg-card` background-COLOUR stays as a solid base
+    // (the `background` shorthand would reset it to transparent → content bleeds
+    // through). Inline surfaces keep the shorthand for their translucent glass.
+    return opaque
+      ? { 'background-image': background, 'box-shadow': boxShadow }
+      : { background, 'box-shadow': boxShadow };
   });
 
   return { surfaceStyle };
