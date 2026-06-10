@@ -55,78 +55,78 @@ export const AuthLoginForm = View<IAuthLoginFormProps>((Ui, props) => {
   const ctx = useCtx();
   const errorMessage = () => (ctx?.store?.ctx?.data?.errorMessage as string | undefined) ?? '';
 
+  // Внешний layout/фон — ответственность страницы-консьюмера (напр. _public layout).
+  // Компонент возвращает только карточку формы без min-h-screen / bg-background.
   return (
-    <Ui.Layout.Flex class="min-h-screen items-center justify-center bg-background p-cell">
-      <Ui.Card class="w-96 shadow-lg">
-        <Ui.Card.Header class="border-b border-border">
-          <Ui.Card.Title class="text-center text-lg font-semibold text-foreground">
-            {props.title ?? 'Вход'}
-          </Ui.Card.Title>
-          <Ui.Flow.Show when={props.subtitle}>
-            <Ui.Card.Description class="text-center text-sm text-muted-foreground">
-              {props.subtitle}
-            </Ui.Card.Description>
-          </Ui.Flow.Show>
-        </Ui.Card.Header>
+    <Ui.Card class="w-96 shadow-lg">
+      <Ui.Card.Header class="border-b border-border">
+        <Ui.Card.Title class="text-center text-lg font-semibold text-foreground">
+          {props.title ?? 'Вход'}
+        </Ui.Card.Title>
+        <Ui.Flow.Show when={props.subtitle}>
+          <Ui.Card.Description class="text-center text-sm text-muted-foreground">
+            {props.subtitle}
+          </Ui.Card.Description>
+        </Ui.Flow.Show>
+      </Ui.Card.Header>
 
-        <Ui.Card.Content class="flex flex-col gap-cell p-cell">
-          <Ui.Flow.For each={props.strategy.fields as IAuthFormField[]}>
-            {(field: IAuthFormField) => (
-              <Ui.Field>
-                <Ui.Field.Label class="text-sm font-medium text-foreground">
-                  {field.label}
-                </Ui.Field.Label>
-                <Ui.Field.Content class="mt-2">
-                  <Ui.Flow.Show
-                    when={field.type === 'select'}
-                    fallback={
-                      <Ui.Input
-                        type={field.type === 'password' ? 'password' : 'text'}
-                        placeholder={field.placeholder}
-                        // biome-ignore lint/suspicious/noExplicitAny: meta.tags — TypeScript JSX-fallback inference quirk
-                        meta={{ tags: [field.tag] as any }}
-                        class="w-full"
-                      />
-                    }
-                  >
-                    <Ui.Select
-                      options={(field.options ?? []) as Array<{ value: string; label: string }>}
-                      defaultValue={field.defaultValue}
-                      meta={{ tags: [field.tag] }}
-                      placeholder={field.placeholder ?? `Выберите ${field.label.toLowerCase()}…`}
+      <Ui.Card.Content class="flex flex-col gap-cell p-cell">
+        <Ui.Flow.For each={props.strategy.fields as IAuthFormField[]}>
+          {(field: IAuthFormField) => (
+            <Ui.Field>
+              <Ui.Field.Label class="text-sm font-medium text-foreground">
+                {field.label}
+              </Ui.Field.Label>
+              <Ui.Field.Content class="mt-2">
+                <Ui.Flow.Show
+                  when={field.type === 'select'}
+                  fallback={
+                    <Ui.Input
+                      type={field.type === 'password' ? 'password' : 'text'}
+                      placeholder={field.placeholder}
+                      // biome-ignore lint/suspicious/noExplicitAny: meta.tags — TypeScript JSX-fallback inference quirk
+                      meta={{ tags: [field.tag] as any }}
+                      class="w-full"
                     />
-                  </Ui.Flow.Show>
-                </Ui.Field.Content>
-              </Ui.Field>
-            )}
-          </Ui.Flow.For>
+                  }
+                >
+                  <Ui.Select
+                    options={(field.options ?? []) as Array<{ value: string; label: string }>}
+                    defaultValue={field.defaultValue}
+                    meta={{ tags: [field.tag] }}
+                    placeholder={field.placeholder ?? `Выберите ${field.label.toLowerCase()}…`}
+                  />
+                </Ui.Flow.Show>
+              </Ui.Field.Content>
+            </Ui.Field>
+          )}
+        </Ui.Flow.For>
 
-          <Ui.Button meta={{ tags: ['submit'] }} class="mt-cell w-full">
-            {props.submitLabel ?? 'Войти'}
-          </Ui.Button>
+        <Ui.Button meta={{ tags: ['submit'] }} class="mt-cell w-full">
+          {props.submitLabel ?? 'Войти'}
+        </Ui.Button>
 
-          {/* Ошибка входа — package-level, из FSM context.data.errorMessage.
-              Показывается только когда текст ненулевой. Стиль: text-destructive
-              (тема-токен web-ui; НЕ инлайн-цвета). */}
-          <Ui.Flow.Show when={errorMessage()}>
-            <Ui.Typography
-              variant="p"
-              class="text-center text-sm text-destructive"
-            >
-              {errorMessage()}
+        {/* Ошибка входа — package-level, из FSM context.data.errorMessage.
+            Показывается только когда текст ненулевой. Стиль: text-destructive
+            (тема-токен web-ui; НЕ инлайн-цвета). */}
+        <Ui.Flow.Show when={errorMessage()}>
+          <Ui.Typography
+            variant="p"
+            class="text-center text-sm text-destructive"
+          >
+            {errorMessage()}
+          </Ui.Typography>
+        </Ui.Flow.Show>
+
+        <Ui.Flow.Show when={props.footerNote}>
+          <Ui.Layout.Flex class="flex-col items-center">
+            <Ui.Typography variant="p" class="text-center text-xs text-muted-foreground">
+              {props.footerNote}
             </Ui.Typography>
-          </Ui.Flow.Show>
-
-          <Ui.Flow.Show when={props.footerNote}>
-            <Ui.Layout.Flex class="flex-col items-center">
-              <Ui.Typography variant="p" class="text-center text-xs text-muted-foreground">
-                {props.footerNote}
-              </Ui.Typography>
-            </Ui.Layout.Flex>
-          </Ui.Flow.Show>
-        </Ui.Card.Content>
-      </Ui.Card>
-    </Ui.Layout.Flex>
+          </Ui.Layout.Flex>
+        </Ui.Flow.Show>
+      </Ui.Card.Content>
+    </Ui.Card>
   );
 });
 

@@ -82,8 +82,7 @@ const FIELD_NAME_MAP: Record<string, (faker: Faker, refDate: Date) => unknown> =
  * Нормализуем имя поля: убираем нижние черты, дефисы, приводим к lowercase
  * для более широкого поиска в таблице.
  */
-const normalizeFieldName = (name: string): string =>
-  name.toLowerCase().replace(/[_\-\s]/g, '');
+const normalizeFieldName = (name: string): string => name.toLowerCase().replace(/[_\-\s]/g, '');
 
 /**
  * Fallback по имени поля из FIELD_NAME_MAP.
@@ -104,13 +103,23 @@ export const generateByFieldName = (
  * Возвращает kind первого строкового check'а (email/url/uuid/datetime/...).
  */
 const getZodStringFormat = (def: Record<string, unknown>): string | null => {
-  const checks = def['checks'];
+  const checks = def.checks;
   if (!Array.isArray(checks)) return null;
   for (const check of checks) {
     if (check && typeof check === 'object' && 'kind' in check) {
       const kind = String((check as { kind: string }).kind);
       // Пропускаем checks, которые не связаны с форматом (min/max длина)
-      if (kind !== 'min' && kind !== 'max' && kind !== 'length' && kind !== 'startsWith' && kind !== 'endsWith' && kind !== 'includes' && kind !== 'trim' && kind !== 'toLowerCase' && kind !== 'toUpperCase') {
+      if (
+        kind !== 'min' &&
+        kind !== 'max' &&
+        kind !== 'length' &&
+        kind !== 'startsWith' &&
+        kind !== 'endsWith' &&
+        kind !== 'includes' &&
+        kind !== 'trim' &&
+        kind !== 'toLowerCase' &&
+        kind !== 'toUpperCase'
+      ) {
         return kind;
       }
     }
@@ -124,7 +133,7 @@ const getZodStringFormat = (def: Record<string, unknown>): string | null => {
 const getNumberConstraints = (
   def: Record<string, unknown>,
 ): { min: number; max: number; isInt: boolean } => {
-  const checks = (def['checks'] as Array<{ kind: string; value: number }> | undefined) ?? [];
+  const checks = (def.checks as Array<{ kind: string; value: number }> | undefined) ?? [];
   let min = 0;
   let max = 1000;
   let isInt = false;
@@ -159,7 +168,7 @@ export const generateByZodType = (
   },
 ): unknown => {
   const def = schema._def as Record<string, unknown>;
-  const typeName = def['typeName'] as string | undefined;
+  const typeName = def.typeName as string | undefined;
 
   switch (typeName) {
     case 'ZodString': {
@@ -170,11 +179,16 @@ export const generateByZodType = (
       if (format === 'uuid') return ctx.faker.string.uuid();
       if (format === 'cuid' || format === 'cuid2') return ctx.faker.string.alphanumeric(24);
       if (format === 'nanoid') return ctx.faker.string.alphanumeric(21);
-      if (format === 'datetime') return ctx.faker.date.recent({ refDate: ctx.refDate }).toISOString();
+      if (format === 'datetime')
+        return ctx.faker.date.recent({ refDate: ctx.refDate }).toISOString();
       if (format === 'date')
         return ctx.faker.date.recent({ refDate: ctx.refDate }).toISOString().split('T')[0];
       if (format === 'time')
-        return ctx.faker.date.recent({ refDate: ctx.refDate }).toISOString().split('T')[1].split('.')[0];
+        return ctx.faker.date
+          .recent({ refDate: ctx.refDate })
+          .toISOString()
+          .split('T')[1]
+          .split('.')[0];
       if (format === 'ip') return ctx.faker.internet.ip();
       if (format === 'cidr') return `${ctx.faker.internet.ip()}/24`;
       if (format === 'emoji') return ctx.faker.internet.emoji();
@@ -223,15 +237,15 @@ export const generateByZodType = (
       return undefined;
 
     case 'ZodLiteral':
-      return def['value'];
+      return def.value;
 
     case 'ZodEnum': {
-      const values = def['values'] as unknown[];
+      const values = def.values as unknown[];
       return ctx.faker.helpers.arrayElement(values);
     }
 
     case 'ZodNativeEnum': {
-      const enumObj = def['values'] as Record<string, unknown>;
+      const enumObj = def.values as Record<string, unknown>;
       // NativeEnum может содержать числовые ключи (reverse mapping у числовых enum'ов)
       const vals = Object.values(enumObj).filter(
         (v) => typeof v === 'string' || typeof v === 'number',
@@ -245,7 +259,7 @@ export const generateByZodType = (
     }
 
     case 'ZodObject': {
-      const shape = def['shape'] as (() => Record<string, ZodTypeAny>) | Record<string, ZodTypeAny>;
+      const shape = def.shape as (() => Record<string, ZodTypeAny>) | Record<string, ZodTypeAny>;
       const resolvedShape = typeof shape === 'function' ? shape() : shape;
       const result: Record<string, unknown> = {};
       for (const [key, fieldSchema] of Object.entries(resolvedShape)) {
@@ -255,7 +269,7 @@ export const generateByZodType = (
     }
 
     case 'ZodArray': {
-      const innerType = def['type'] as ZodTypeAny;
+      const innerType = def.type as ZodTypeAny;
       // При рекурсии count = 3 (для вложенных массивов)
       const count = 3;
       return Array.from({ length: count }, (_, i) =>
@@ -264,8 +278,8 @@ export const generateByZodType = (
     }
 
     case 'ZodTuple': {
-      const items = def['items'] as ZodTypeAny[];
-      const rest = def['rest'] as ZodTypeAny | null;
+      const items = def.items as ZodTypeAny[];
+      const rest = def.rest as ZodTypeAny | null;
       const tupleResult = items.map((item, i) => ctx.recurse(item, `${ctx.fieldName}[${i}]`));
       if (rest) {
         tupleResult.push(ctx.recurse(rest, `${ctx.fieldName}[rest]`));
@@ -274,7 +288,7 @@ export const generateByZodType = (
     }
 
     case 'ZodRecord': {
-      const valueType = def['valueType'] as ZodTypeAny;
+      const valueType = def.valueType as ZodTypeAny;
       return {
         [ctx.faker.lorem.word()]: ctx.recurse(valueType, 'value'),
         [ctx.faker.lorem.word()]: ctx.recurse(valueType, 'value'),
@@ -282,48 +296,48 @@ export const generateByZodType = (
     }
 
     case 'ZodMap': {
-      const keyType = def['keyType'] as ZodTypeAny;
-      const valueType = def['valueType'] as ZodTypeAny;
+      const keyType = def.keyType as ZodTypeAny;
+      const valueType = def.valueType as ZodTypeAny;
       const map = new Map<unknown, unknown>();
       map.set(ctx.recurse(keyType, 'key'), ctx.recurse(valueType, 'value'));
       return map;
     }
 
     case 'ZodSet': {
-      const valueType = def['valueType'] as ZodTypeAny;
+      const valueType = def.valueType as ZodTypeAny;
       return new Set([ctx.recurse(valueType, 'item')]);
     }
 
     case 'ZodOptional': {
-      const inner = def['innerType'] as ZodTypeAny;
+      const inner = def.innerType as ZodTypeAny;
       // Генерируем значение (не undefined) — данные полезнее
       return ctx.recurse(inner, ctx.fieldName);
     }
 
     case 'ZodNullable': {
-      const inner = def['innerType'] as ZodTypeAny;
+      const inner = def.innerType as ZodTypeAny;
       return ctx.recurse(inner, ctx.fieldName);
     }
 
     case 'ZodDefault': {
-      const inner = def['innerType'] as ZodTypeAny;
+      const inner = def.innerType as ZodTypeAny;
       return ctx.recurse(inner, ctx.fieldName);
     }
 
     case 'ZodCatch': {
-      const inner = def['innerType'] as ZodTypeAny;
+      const inner = def.innerType as ZodTypeAny;
       return ctx.recurse(inner, ctx.fieldName);
     }
 
     case 'ZodUnion': {
-      const options = def['options'] as ZodTypeAny[];
+      const options = def.options as ZodTypeAny[];
       const chosen = ctx.faker.helpers.arrayElement(options);
       return ctx.recurse(chosen, ctx.fieldName);
     }
 
     case 'ZodDiscriminatedUnion': {
-      const optionsMap = def['optionsMap'] as Map<unknown, ZodTypeAny> | undefined;
-      const opts = def['options'] as ZodTypeAny[] | undefined;
+      const optionsMap = def.optionsMap as Map<unknown, ZodTypeAny> | undefined;
+      const opts = def.options as ZodTypeAny[] | undefined;
       if (optionsMap) {
         const values = Array.from(optionsMap.values());
         const chosen = ctx.faker.helpers.arrayElement(values);
@@ -337,16 +351,11 @@ export const generateByZodType = (
     }
 
     case 'ZodIntersection': {
-      const left = def['left'] as ZodTypeAny;
-      const right = def['right'] as ZodTypeAny;
+      const left = def.left as ZodTypeAny;
+      const right = def.right as ZodTypeAny;
       const lVal = ctx.recurse(left, ctx.fieldName);
       const rVal = ctx.recurse(right, ctx.fieldName);
-      if (
-        lVal !== null &&
-        rVal !== null &&
-        typeof lVal === 'object' &&
-        typeof rVal === 'object'
-      ) {
+      if (lVal !== null && rVal !== null && typeof lVal === 'object' && typeof rVal === 'object') {
         return { ...(lVal as object), ...(rVal as object) };
       }
       return lVal;
@@ -354,28 +363,28 @@ export const generateByZodType = (
 
     case 'ZodEffects': {
       // Выгружаем схему-источник (schema или innerType)
-      const inner = (def['schema'] ?? def['innerType']) as ZodTypeAny | undefined;
+      const inner = (def.schema ?? def.innerType) as ZodTypeAny | undefined;
       if (inner) return ctx.recurse(inner, ctx.fieldName);
       return ctx.faker.lorem.word();
     }
 
     case 'ZodBranded': {
-      const inner = def['type'] as ZodTypeAny;
+      const inner = def.type as ZodTypeAny;
       return ctx.recurse(inner, ctx.fieldName);
     }
 
     case 'ZodReadonly': {
-      const inner = def['innerType'] as ZodTypeAny;
+      const inner = def.innerType as ZodTypeAny;
       return ctx.recurse(inner, ctx.fieldName);
     }
 
     case 'ZodLazy': {
-      const getter = def['getter'] as () => ZodTypeAny;
+      const getter = def.getter as () => ZodTypeAny;
       return ctx.recurse(getter(), ctx.fieldName);
     }
 
     case 'ZodPromise': {
-      const inner = def['type'] as ZodTypeAny;
+      const inner = def.type as ZodTypeAny;
       return Promise.resolve(ctx.recurse(inner, ctx.fieldName));
     }
 

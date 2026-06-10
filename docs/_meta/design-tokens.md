@@ -129,6 +129,27 @@ Canonical status tokens live in `index.css :root` (theme-independent defaults). 
 
 `--success-foreground` is near-white (0.985 lightness) for contrast on the dark-ish green base (L≈0.63). `--warning-foreground` is near-black (0.145 lightness) for contrast on the bright amber base (L≈0.77).
 
+---
+
+## Colors — `--color-*` (utilities) vs raw theme-vars (inline styles)
+
+Color tokens exist in **two forms** — use the right one for the context:
+
+| Form | Where defined | Emitted on `:root`? | Use for |
+|---|---|---|---|
+| **Raw theme-vars** `--primary`, `--accent`, `--card`, `--foreground`, `--border`, `--ring`, … | per-theme `[data-theme="…"] { … }` | **always** ✅ | **JS / inline styles / gradient strings** |
+| **Tailwind tokens** `--color-primary`, `--color-accent`, … | `@theme inline` in `index.css` | **NOT guaranteed** ⚠️ | **utility classes** (`bg-card`, `text-accent`, `border-border`) |
+
+> [!warning] `var(--color-X)` is fragile in inline styles
+> Tailwind v4 `@theme inline` emits a `--color-*` var to `:root` **only when it's referenced in scanned content** (usage/tree-shake dependent). Empirically `--color-accent` is **empty** on `:root` while `--color-primary`/`--color-card`/`--color-foreground` resolve. A `var(--color-accent)` in an inline style → empty → invalid `color-mix`/gradient → **the whole declaration is dropped** (e.g. a multi-layer `background` poisoned by one bad layer renders `none`).
+
+**Convention (design-owner decision, ADR 042):**
+- **Utility classes** → `--color-*` (that's their purpose; `bg-accent` inlines the value, works fine).
+- **JS / inline styles / gradients** (e.g. `createFinish` surface style, `applyAmbient` ambient layer, `widget-frame` rim/surface) → reference **raw theme-vars** (`var(--primary)`, `var(--accent)`, `var(--card)`, `var(--foreground)`, `var(--ring)`, `var(--border)`). These are always emitted by `[data-theme]`, independent of Tailwind scanning.
+- **Do NOT** force-emit `--color-*` as `:root` vars (rejected — fights Tailwind, duplicate layer).
+
+Reference impl: `packages/web/ui/src/lib/finish/createFinish.ts`, `packages/web/style/src/switcher/ambientConfig.ts` (`applyAmbient`).
+
 ### `STATUS_VARIABLES` (runtime helper)
 
 `constants.ts` exports `STATUS_VARIABLES: Record<ComponentStatus, Record<string, string>>`. Sets `--current-status` inline style on the wrapper element; `.has-status` class in `index.css` reads it via `background-color`/`border-color`.

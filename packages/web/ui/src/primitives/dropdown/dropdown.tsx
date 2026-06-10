@@ -3,6 +3,8 @@ import { DropdownMenu as KobalteDropdown } from '@kobalte/core/dropdown-menu';
 import type { ValidComponent } from 'solid-js';
 import { splitProps } from 'solid-js';
 
+import { createFinish } from '../../lib/finish';
+
 import type {
   IDropdownContentProps,
   IDropdownGroupProps,
@@ -53,14 +55,21 @@ const Trigger = <T extends ValidComponent = 'button'>(props: IDropdownTriggerPro
  * Enter + exit animations are applied via the `popover-animate` class (from web-style
  * `@keyframes popover-in`/`popover-out`) using Kobalte's native `data-[expanded]` /
  * `data-[closed]` attributes — no forceMount or motionone required.
+ *
+ * ## Finish effect
+ * Activated via the reactive `useFinishMode()` signal (read inside `createFinish`);
+ * no DOM walk / `closest()` / ref needed.
  */
 const Content = (props: IDropdownContentProps) => {
   const [local, others] = splitProps(props, ['class', 'style', 'portalProps']);
+
+  const finish = createFinish();
+
   return (
     <KobalteDropdown.Portal {...local.portalProps}>
       <KobalteDropdown.Content
         class={cn(dropdownContentCva(), 'popover-animate', local.class)}
-        style={local.style}
+        style={{ ...(typeof local.style === 'object' ? local.style : {}), ...finish.surfaceStyle() }}
         {...(others as object)}
       />
     </KobalteDropdown.Portal>
@@ -142,14 +151,21 @@ const SubTrigger = (props: IDropdownSubTriggerProps) => {
  *
  * Inherits the same enter + exit animations via `popover-animate` (`data-[expanded]` /
  * `data-[closed]` Kobalte attributes) — nested submenus animate independently.
+ *
+ * ## Finish effect
+ * Activated via the reactive `useFinishMode()` signal (read inside `createFinish`);
+ * no DOM walk / `closest()` / ref needed.
  */
 const SubContent = (props: IDropdownSubContentProps) => {
   const [local, others] = splitProps(props, ['class', 'style', 'portalProps']);
+
+  const finish = createFinish();
+
   return (
     <KobalteDropdown.Portal {...local.portalProps}>
       <KobalteDropdown.Content
         class={cn(dropdownContentCva(), 'popover-animate', local.class)}
-        style={local.style}
+        style={{ ...(typeof local.style === 'object' ? local.style : {}), ...finish.surfaceStyle() }}
         {...(others as object)}
       />
     </KobalteDropdown.Portal>

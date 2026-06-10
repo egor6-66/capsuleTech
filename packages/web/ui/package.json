@@ -16,6 +16,16 @@
       "import": "./dist/components/icons/index.mjs",
       "default": "./dist/components/icons/index.mjs"
     },
+    "./accordion": {
+      "types": "./dist/components/accordion/index.d.ts",
+      "import": "./dist/components/accordion/index.mjs",
+      "default": "./dist/components/accordion/index.mjs"
+    },
+    "./accordion/*": {
+      "types": "./dist/components/accordion/*.d.ts",
+      "import": "./dist/components/accordion/*.mjs",
+      "default": "./dist/components/accordion/*.mjs"
+    },
     "./button": {
       "types": "./dist/components/button/index.d.ts",
       "import": "./dist/components/button/index.mjs",
@@ -275,6 +285,16 @@
       "types": "./dist/components/select/*.d.ts",
       "import": "./dist/components/select/*.mjs",
       "default": "./dist/components/select/*.mjs"
+    },
+    "./slider": {
+      "types": "./dist/components/slider/index.d.ts",
+      "import": "./dist/components/slider/index.mjs",
+      "default": "./dist/components/slider/index.mjs"
+    },
+    "./slider/*": {
+      "types": "./dist/components/slider/*.d.ts",
+      "import": "./dist/components/slider/*.mjs",
+      "default": "./dist/components/slider/*.mjs"
     },
     "./textarea": {
       "types": "./dist/components/textarea/index.d.ts",

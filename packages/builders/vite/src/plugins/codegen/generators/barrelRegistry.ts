@@ -18,18 +18,16 @@ import { resolve } from 'node:path';
 import {
   generateBarrelRegistry,
   generateLayerTypes,
-  wrapperFileToLeaf,
   type WrapperLeaf,
+  wrapperFileToLeaf,
 } from '../../capsuleRegistry';
-import type { CodegenContext, SubGenerator } from '../interfaces';
 import { LAYER_TO_NAMESPACE } from '../../constants';
+import type { SubGenerator } from '../interfaces';
 
 const LAYER_DIRS = Object.keys(LAYER_TO_NAMESPACE) as Array<keyof typeof LAYER_TO_NAMESPACE>;
 
-const LEGACY_WRAPPERS = (capsuleRoot: string) =>
-  resolve(capsuleRoot, 'registry', 'wrappers.ts');
-const LEGACY_SLOTS = (capsuleRoot: string) =>
-  resolve(capsuleRoot, '@types', 'slots.d.ts');
+const LEGACY_WRAPPERS = (capsuleRoot: string) => resolve(capsuleRoot, 'registry', 'wrappers.ts');
+const LEGACY_SLOTS = (capsuleRoot: string) => resolve(capsuleRoot, '@types', 'slots.d.ts');
 
 export const createBarrelRegistrySubGenerator = (): SubGenerator => {
   const knownWrappers = new Map<string, WrapperLeaf>();
@@ -39,7 +37,7 @@ export const createBarrelRegistrySubGenerator = (): SubGenerator => {
     id: 'barrel-registry',
     order: 10,
 
-    match(file: string): boolean {
+    match(_file: string): boolean {
       // Matches any file under the watched src/ — wrapperFileToLeaf filters by layer dir.
       // We match everything here and let onEvent do the layer filtering.
       return true;

@@ -1,5 +1,5 @@
 import { faker as fakerBase } from '@faker-js/faker';
-import { z as zod, type ZodTypeAny } from 'zod';
+import { type ZodTypeAny, z as zod } from 'zod';
 import { generateByZodType } from './faker-base';
 import { getGlobalGenerators } from './registry';
 import type { GenFieldCtx, GenOptions, ValueGenerator } from './types';
@@ -38,7 +38,7 @@ const makeRefDate = (seed: number): Date => {
   // Диапазон: 2020-01-01 (1577836800000ms) + seed-based offset (до ~5 лет в мс)
   const BASE = 1577836800000;
   const RANGE = 157_680_000_000; // 5 лет в мс
-  return new Date(BASE + (seed * 1_000_003) % RANGE);
+  return new Date(BASE + ((seed * 1_000_003) % RANGE));
 };
 
 // ---------------------------------------------------------------------------
@@ -115,14 +115,14 @@ export const gen = <T extends ZodTypeAny>(
 
   // Определяем, является ли это массивом верхнего уровня — учитываем `count`
   const def = schema._def as Record<string, unknown>;
-  if (def['typeName'] === 'ZodArray') {
-    const innerType = def['type'] as ZodTypeAny;
+  if (def.typeName === 'ZodArray') {
+    const innerType = def.type as ZodTypeAny;
     // Сбрасываем seed непосредственно перед генерацией массива
     fakerBase.seed(seed);
     const recurse = buildRecurse(seed, allGens, refDate);
-    return Array.from({ length: count }, (_, i) =>
-      recurse(innerType, `[${i}]`, []),
-    ) as ReturnType<T['parse']>;
+    return Array.from({ length: count }, (_, i) => recurse(innerType, `[${i}]`, [])) as ReturnType<
+      T['parse']
+    >;
   }
 
   // Seeded faker-инстанс — один на всё дерево для детерминизма

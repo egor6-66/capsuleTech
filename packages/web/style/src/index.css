@@ -512,3 +512,19 @@
 .vt-route-content {
   view-transition-name: capsule-content;
 }
+
+/* =============================================================================
+   Atmosphere — ambient background glow for finish mode.
+   Активируется атрибутом [data-finish] на <html> (стор finishMode).
+   Полноэкранный фиксированный слой ЗА контентом (z-index:-1), тинтуется
+   существующими токенами палитры (--color-primary/--color-accent) → следует теме.
+   Чистый CSS, без компонента — body::before глобален, кроет все страницы.
+   ============================================================================= */
+html[data-finish] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--app-ambient, transparent);
+}

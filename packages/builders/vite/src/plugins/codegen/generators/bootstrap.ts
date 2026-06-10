@@ -23,7 +23,7 @@ import { generateBootstrap } from '../../capsuleRegistry';
 import type { CodegenContext, SubGenerator } from '../interfaces';
 
 export const createBootstrapSubGenerator = (
-  subGenerators: () => readonly SubGenerator[],
+  _subGenerators: () => readonly SubGenerator[],
 ): SubGenerator => {
   let dirty = false;
 

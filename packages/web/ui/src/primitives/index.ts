@@ -1,3 +1,4 @@
+export * from './accordion';
 export * from './button';
 export * from './card';
 export * from './dropdown';
@@ -9,6 +10,7 @@ export * from './layout';
 export * from './list';
 export * from './select';
 export * from './separator';
+export * from './slider';
 export * from './skeleton';
 export * from './slot';
 export * from './spinner';
