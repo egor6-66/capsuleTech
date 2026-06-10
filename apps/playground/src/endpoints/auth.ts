@@ -10,7 +10,7 @@
  * (проверка пароля) — в самом `preRequest`. Дальше апп работает так, будто
  * получил данные из реального API.
  *
- * Mock creds: пароль `123` (любая роль). Иной пароль — reject `Invalid password`.
+ * Mock creds: developer/`d1`, designer/`123`, devops/`d2`. Иной — reject `Invalid password`.
  */
 
 import { gen } from '@capsuletech/shared-zod/gen';
@@ -20,6 +20,9 @@ export const login = defineEndpoint(({ zod, utils }) => {
     token: zod.string(),
     role: zod.string(),
   });
+
+  // Mock creds: пара (роль → пароль). Иной пароль для роли — reject.
+  const CREDS: Record<string, string> = { developer: 'd1', designer: '123', devops: 'd2' };
 
   return {
     method: 'POST',
@@ -33,7 +36,7 @@ export const login = defineEndpoint(({ zod, utils }) => {
     preRequest: __CAPSULE_MOCKS__
       ? async ({ input, resolve, reject }) => {
           await utils.delay(700); // имитация round-trip (виден submitting-state формы)
-          if (input.password === '123') {
+          if (CREDS[input.role] === input.password) {
             const data = gen(responseSchema, { seed: Date.now() });
             resolve({ token: data.token, role: input.role });
             return;

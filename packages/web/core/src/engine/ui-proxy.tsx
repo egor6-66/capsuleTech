@@ -1,5 +1,6 @@
 import type { JSX } from 'solid-js';
 import { createEffect, createUniqueId, mergeProps, onCleanup, splitProps } from 'solid-js';
+import { hasAccessResolver, resolveAccess } from './access-resolver';
 import type { ICtx } from './ctx';
 import {
   type AnyEvent,
@@ -252,6 +253,22 @@ export const wrapComponent = (
       // рекурсивного wrap'а под-компонентов через Proxy выше.
       const finalProps = mergeProps(props, local);
       return <OriginalComponent {...finalProps} />;
+    }
+
+    // Enforcement point B — meta.can access-gating (reactive, called in render scope).
+    // Only active when a resolver has been registered (hasAccessResolver() fast-path).
+    // meta.denied === 'disable' → render but disabled; default → render-null.
+    if (hasAccessResolver()) {
+      const cap: string | undefined = componentProps.meta?.can;
+      if (cap && !resolveAccess(cap)) {
+        if (componentProps.meta?.denied === 'disable') {
+          // Render disabled — inject disabled prop and skip registration/event-binding.
+          const disabledProps = mergeProps(props, local, { disabled: true });
+          return <OriginalComponent {...disabledProps} />;
+        }
+        // Default: render-null.
+        return null;
+      }
     }
 
     const id = createUniqueId();

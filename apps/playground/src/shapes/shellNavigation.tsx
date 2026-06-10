@@ -10,7 +10,9 @@
  */
 const ShellNavigation = Shape(
   (ui, { zod }) => ({
-    schema: zod.array(zod.object({ label: zod.string(), to: zod.string() })),
+    schema: zod.array(
+      zod.object({ label: zod.string(), to: zod.string(), can: zod.string().optional() }),
+    ),
     as: Shell.Header.Navigation,
   }),
   (ui) => ({
@@ -28,15 +30,15 @@ const ShellNavigation = Shape(
       }),
     },
     defaults: [
-      { label: 'Routing', to: '/workspace/routing' },
-      { label: 'Source', to: '/workspace/source' },
-      { label: 'Builds', to: '/workspace/builds' },
-      { label: 'DevOps', to: '/workspace/devops' },
-      { label: 'Apps', to: '/workspace/apps' },
-      { label: 'UI', to: '/workspace/ui' },
-      { label: 'Logic', to: '/workspace/logic' },
-      { label: 'Styles', to: '/workspace/styles' },
-      { label: 'Words', to: '/workspace/words' },
+      { label: 'Routing', to: '/workspace/routing', can: 'routing' },
+      { label: 'Source', to: '/workspace/source', can: 'source' },
+      { label: 'Builds', to: '/workspace/builds', can: 'builds' },
+      { label: 'DevOps', to: '/workspace/devops', can: 'devops' },
+      { label: 'Apps', to: '/workspace/apps', can: 'apps' },
+      { label: 'UI', to: '/workspace/ui', can: 'ui' },
+      { label: 'Logic', to: '/workspace/logic', can: 'logic' },
+      { label: 'Styles', to: '/workspace/styles', can: 'styles' },
+      { label: 'Words', to: '/workspace/words', can: 'words' },
     ],
     orientation: 'horizontal',
     variant: 'attached',

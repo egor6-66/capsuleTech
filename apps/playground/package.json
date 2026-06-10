@@ -22,6 +22,7 @@
     "@capsuletech/web-ui-creator": "workspace:*",
     "@capsuletech/web-auth": "workspace:*",
     "@capsuletech/web-shell": "workspace:*",
+    "@capsuletech/web-access": "workspace:*",
     "@capsuletech/shared-zod": "workspace:*",
     "@capsuletech/shared-utils": "workspace:*",
     "@kobalte/core": "^0.13.0",

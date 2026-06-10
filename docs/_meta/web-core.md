@@ -61,6 +61,14 @@ import {
 
 import { createRoot } from '@capsuletech/web-core/create';
 import { BaseProviders } from '@capsuletech/web-core/providers';
+
+// Access-gating seam (injected resolver, no import of web-access needed):
+import {
+  registerAccessResolver,  // inject/clear global cap-resolver
+  resolveAccess,            // evaluate cap (tests / internal)
+  hasAccessResolver,        // fast-path: is a resolver registered?
+  type AccessResolver,      // (cap: string) => boolean
+} from '@capsuletech/web-core';
 ```
 
 ### Wrapper-сигнатуры (v0.3.0+)
@@ -311,6 +319,8 @@ ControllerProxy резолвит `states[currentState][name]` → top-level → 
 28. **ThemePicker mode='sub' для nested submenus** (PR #177). Стандартный ThemePicker → `mode='standalone'` (own Dropdown root). Для встраивания в существующий Dropdown используй `mode='sub'` (генерирует Dropdown.Sub/SubTrigger/SubContent вместо top-level Dropdown).
 
 29. **Widget loader-колбэк + убран авто-`disabled`** (loader mechanism). `Widget` теперь принимает опциональный **2-й колбэк** — лоадер: `Widget(content, loader?)`, где `content = (Ui, store, props) => JSX` (как было), `loader = (Ui, props) => JSX` (stateless, БЕЗ `store` — только presentation, не зависит от данных). Рантайм в `wrappers/widget.tsx`: `<Show when={!(loader && store.loading)} fallback={loader(Ui, props)}>{content(...)}</Show>` — неактивная ветка `<Show>` **не монтируется**, поэтому тяжёлый контент (MapLibre-карта, виртуал-таблица) не инстанцируется, пока показан лоадер — это и убирает flicker при навигации. Лоадер-`Ui` содержит `Ui.Skeleton` / `Ui.Spinner` (lazy-регистрация в `ui-kit/imports.tsx`, типы в `ViewUiRaw`/`WidgetUiRaw`; сам `Skeleton` в web-ui обёрнут вокруг `@kobalte/core` Skeleton). Логика (Feature/Controller) дёргает ТОЛЬКО `store.setLoading(true/false)` (bracket вокруг async, `false` в `finally`) — про вид лоадера ничего не знает; одна Feature может оборачивать и таблицу, и карту, и каждый Widget подаёт свой скелетон. **Связанный breaking:** авто-`disabled` из `store.loading` **убран** из UiProxy (был «магией» — дизейблил инпуты по глобальному флагу). Теперь `store.loading` это чистый loader-сигнал без скрытых side-effect'ов; блокировка инпутов — explicit и адресно через `store.patch([tags], { disabled: true })`. См. [[widget-loader]], [[ui-proxy]], [[lifecycle]]. Эталон: `apps/ewc` (`features/incidents.ts` + `widgets/tables/incidents.tsx` + `widgets/maps/world.tsx`).
+
+32. **`registerAccessResolver` — access-gating seam (additive, non-breaking).** `engine/access-resolver.ts` хранит module-level slot `AccessResolver | null`. Экспортируется из main barrel. `@capsuletech/web-access` (или любой пакет) вызывает `registerAccessResolver(fn)` при инициализации — до монтирования компонентов с `meta.can`. `fn = (cap: string) => boolean` должна читать реактивный state (например `useAuth().role`) внутри себя; web-core вызывает её внутри реактивных scope (Shape getData, UiProxy render) без мемоизации. `null` очищает резолвер. Без зарегистрированного резолвера `hasAccessResolver()` → false → все `can`-проверки пропускаются (allow-all default). Два enforcement points: (A) Shape `getData()` фильтрует массив items по `item.can` реактивно; (B) `wrapComponent` проверяет `meta.can` перед регистрацией — `denied === 'disable'` → render+disabled, дефолт → render-null. `ITagMeta` дополнен `can?: string` и `denied?: 'disable'` (non-breaking). Источники: `src/engine/access-resolver.ts` (slot), `src/engine/ui-proxy.tsx` (point B), `src/wrappers/shape/wrapper.tsx` (point A), `src/engine/__tests__/access-resolver.test.ts` (18 тестов).
 
 31. **`useEmit` — намеренное исключение из «engine/* не public»** (ADR 032). `src/engine/use-emit.ts` экспортируется в публичный barrel — единственный способ дать внешним пакетам (`web-dnd/controllers`, `web-renderer/controllers`) доступ к dispatch-механизму без дублирования engine-логики. Контракт: только `useEmit` + `normalizeTarget` (последняя нужна для тестов и package entry-points). Если появляется соблазн добавить туда другие engine-exports — остановись и задай вопрос: это симптом, что нужен другой механизм или ADR. `normalizeTarget` не экспортируется из barrel (только из файла), она internal-helper для пакетов, работающих через subpath.
 

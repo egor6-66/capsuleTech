@@ -32,7 +32,14 @@ const App = Feature<Auth.Events, AppCtx>(({ router, utils, authApi }) => ({
 
   states: {
     guest: {
-      onInit: () => {
+      onInit: ({ store, state }) => {
+        // Restore: rehydrated сессия (configureAuthSession в capsule.app.ts) синхронно
+        // восстановлена из localStorage → входим в authed без формы. Нет токена → /login.
+        if (authApi?.isAuthed()) {
+          store.update({ viewer: authApi.user() });
+          state.set('authed');
+          return;
+        }
         router.goTo('/login');
       },
 

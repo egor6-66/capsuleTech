@@ -20,6 +20,8 @@ export interface AppConfigShape {
   meta?: { tags?: readonly string[] };
   aliases?: Record<string, readonly string[]>;
   packages?: ReadonlyArray<string | { use: string; as?: string }>;
+  access?: Record<string, readonly string[]>;
+  auth?: { session?: { storage?: 'local' | 'memory'; key?: string } };
 }
 
 /** Babel AST returned from ctx.parse() */
