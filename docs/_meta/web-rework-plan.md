@@ -536,7 +536,7 @@ A0 (merge 046+047+048+plan) ─→ A1 (USER creates owner-boost-matrix + restart
 | W2 — OWNERSHIP refresh + README per-package | **DONE** | #303 | 23 OWNERSHIP refresh + 11 new README + readme-template; зафиксирован `web-access → web-auth` drift |
 | W3 — L0/L1 gradient + manifest schema | **DONE** | #302 | `docs/_meta/web-ui.md` секция |
 | W4 — Bundle-size + manifest infra (owner-web-ui) | READY | — | После W3 → готов; USER dispatches owner-web-ui |
-| W5 — Cross-import inventory baseline | READY | — | После W2 (web-access drift уже выявлен); main steward, чистая дока |
+| W5 — Cross-import inventory baseline | **DONE** | этот PR | `docs/_meta/web-audit-cross-imports.md` — 23 пакета snapshot; единственный drift `web-access → web-auth` (runtime → domain), закрывается Phase D2 |
 | W6 — Boost-renames `web-*` → `boost-*` (B4-B7 absorbed) | **DONE** | #306 | 4 пакета renamed, tsconfig aliases для grace, lockfile sync, build clean |
 | W7 — Plan-doc update | **DONE** | #302 (initial) + этот PR (post-W6+C1+C2) | live status refresh |
 | B1 — boost-matrix scaffold | BLOCKED | — | Wait A1 (USER restart) |
