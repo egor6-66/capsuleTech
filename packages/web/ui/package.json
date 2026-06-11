@@ -236,6 +236,16 @@
       "import": "./dist/components/dropdownMenu/*.mjs",
       "default": "./dist/components/dropdownMenu/*.mjs"
     },
+    "./menu": {
+      "types": "./dist/components/menu/index.d.ts",
+      "import": "./dist/components/menu/index.mjs",
+      "default": "./dist/components/menu/index.mjs"
+    },
+    "./menu/*": {
+      "types": "./dist/components/menu/*.d.ts",
+      "import": "./dist/components/menu/*.mjs",
+      "default": "./dist/components/menu/*.mjs"
+    },
     "./widgetFrame": {
       "types": "./dist/components/widget-frame/index.d.ts",
       "import": "./dist/components/widget-frame/index.mjs",
@@ -331,7 +341,7 @@
     "@kobalte/core": "^0.13.0",
     "@tanstack/solid-table": "^8.21.3",
     "@tanstack/solid-virtual": "^3.13.24",
-    "solid-js": "^1.9.0"
+    "solid-js": "^1.9.12"
   },
   "devDependencies": {
     "@capsuletech/lib-builder": "workspace:*",

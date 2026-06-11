@@ -24,7 +24,7 @@
     "@capsuletech/web-intl": "workspace:*"
   },
   "peerDependencies": {
-    "solid-js": "^1.9.5",
+    "solid-js": "^1.9.12",
     "@xstate/solid": "^2.0.0",
     "@tanstack/solid-router": "^1.169.0",
     "zod": "^3.23.8"
