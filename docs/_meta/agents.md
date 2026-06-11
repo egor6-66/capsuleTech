@@ -48,7 +48,7 @@ status: documented
 | **`owner-web-query`** | `packages/web/query` | `web_base` (fixed) |
 | **`owner-web-renderer`** | `packages/web/renderer` | `web_base` (fixed) |
 | **`owner-web-profiler`** | `packages/web/profiler` | `web_base` (fixed) |
-| **`owner-web-map`** | `packages/web/map` | independent (iter 0) |
+| **`owner-boost-map`** | `packages/web/map` | independent (iter 0) |
 | **`owner-web-remote`** | `packages/web/remote` | independent (phase 0) |
 | **`owner-tests`** | `packages/cli/e2e/` + capsule-test workflow + Verdaccio / dev / Storybook orchestration | n/a (test infra) |
 | **`owner-git`** | git workflow (branches, commits, PRs, merges, cleanup) | n/a (cross-cutting) |
