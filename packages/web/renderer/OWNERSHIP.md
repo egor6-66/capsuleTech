@@ -1,6 +1,38 @@
+---
+name: "@capsuletech/web-renderer"
+owner-agent: owner-web-renderer
+group: web_base
+zone: runtime
+status: beta
+priority: P1
+last-updated: 2026-06-11
+---
+
 # OWNERSHIP — @capsuletech/web-renderer
 
 Owner-agent: **owner-web-renderer**
+
+## Состояние (читать ПЕРВЫМ)
+
+- **Zone:** `runtime` — чистый runtime для рендера UI по JSON-схеме (`ISchema` → Solid JSX). Stateless; design-time concerns живут в `web-ui-creator`.
+- **Status:** `beta` (0.1.1) — 52 tests, 9-slot backlog closed 2026-05-18.
+- **Priority:** **P1** — основа editor + production-режима с editable pages.
+- **Maturity bar (до stable):**
+  - `controlled` / `static` / `full` (JSON FSM) render modes implemented.
+  - `IInteraction` shape расширен (FSM-config).
+  - `IEditorNode` shape extensions stable across release cycle.
+- **Active blockers:** нет.
+- **Roadmap:**
+  1. `full` mode (JSON FSM-конфиг) impl.
+  2. New `IInteraction` shapes по запросу.
+  3. Performance audit на больших деревьях.
+- **Last activity:** 2026-06-11 (canon refresh).
+
+## Vendor stack (ADR 047 D3)
+
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
+
+Renderer — leaf-пакет zone runtime. Никаких additional vendors (по дизайну: production-safe, без zod/manifests overhead'а).
 
 ## Зона ответственности
 

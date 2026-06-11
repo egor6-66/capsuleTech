@@ -2,13 +2,40 @@
 name: "@capsuletech/web-style"
 owner-agent: owner-web-style
 group: web_base
-status: pre-1.0
-last-updated: 2026-05-22
+zone: runtime
+status: stable
+priority: P0
+last-updated: 2026-06-11
 ---
 
 # @capsuletech/web-style
 
 Styling-слой capsule: 11 design-system theme'ов (CSS-variables), полная система design tokens (spacing, typography, radii, motion), runtime helpers (createStyle, cn, merge), state-stores (useTheme/useDarkMode/useLayoutMode/useSettingsMode). **Не** Tailwind entry-point — entry живёт в app's `.capsule/styles.css` (builders scaffold).
+
+## Состояние (читать ПЕРВЫМ)
+
+- **Zone:** `runtime` — styling-слой + theme state-stores. peerDep всех kit/runtime/boost.
+- **Status:** `stable` (0.1.1) — 11 тем, createStyle CVA-wrap, switcher-state stores работают.
+- **Priority:** **P0** — peerDep для web-ui + всех visual пакетов.
+- **Maturity bar (до 1.0):**
+  - Token set FROZEN per memory (ADR 042 canon + Figma sync).
+  - Phase C3 — `.vt-route-content` enumerate selectors per ADR 046.
+  - ThemeEditor (за prop-флагом, отдельный subpath /editor) finalized.
+- **Active blockers:** Phase C3 ждёт C2 (Ui.Outlet swap).
+- **Roadmap:**
+  1. C3 — enumerate vt-name селекторы (после C2).
+  2. ThemeEditor polish.
+  3. Token set freezing canon docs.
+- **Last activity:** 2026-06-11 (canon refresh; PR #297 cleanup закрыт).
+
+## Vendor stack (ADR 047 D3)
+
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
+- **class-variance-authority** (`^0.7`, dep) — variant API. https://cva.style/
+- **clsx** (dep) — conditional class concatenation. https://github.com/lukeed/clsx
+- **es-toolkit** (`^1`, dep) — utility helpers. https://es-toolkit.dev/
+- **Tailwind v4** (`^4.2`) — utility-CSS + `@theme inline` токены. https://tailwindcss.com/
+- **`@fontsource-variable/*`** (dep) — variable fonts (Bricolage / DM Sans / Geist / Inter / Montserrat / Nunito / Plus Jakarta).
 
 ## Зона ответственности
 

@@ -1,8 +1,43 @@
+---
+name: "@capsuletech/web-ui-creator"
+owner-agent: owner-web-ui-creator
+group: web_base
+zone: design-time
+status: alpha
+priority: P2
+last-updated: 2026-06-11
+---
+
 # OWNERSHIP — @capsuletech/web-ui-creator
 
 **Owner agent:** `owner-web-ui-creator`
 **Package path:** `packages/web/ui-creator/`
 **Release group:** `web_base` (tag `web@{version}`)
+
+## Состояние (читать ПЕРВЫМ)
+
+- **Zone:** `design-time` — будет absorbed в `@capsuletech/web-creator` (→ `studio`) per [[045-web-taxonomy|ADR 045]] #2 + [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] D4 (Phase D4 plan-doc).
+- **Status:** `alpha` (0.1.1) — manifests/state/inspector/generators работают; controllers subpath добавлен.
+- **Priority:** **P2** — будет растворён в studio (D4), активная разработка через web-creator.
+- **Maturity bar (до absorb'а в studio):**
+  - DEPRECATED-flag в README перед Phase D4 (но не сейчас — apps ещё консьюмят).
+  - Migration guide для consumers на studio subpaths.
+  - Subpath'ы /manifests, /state, /inspector, /generators переезжают в `@capsuletech/studio/{...}`.
+- **Active blockers:** Phase D4 (studio rename + absorb) ждёт Phase B+C стабилизации.
+- **Roadmap:**
+  1. Поддержка существующих consumers (sandbox, playground) до D4.
+  2. Absorb в studio (Phase D4).
+  3. npm-deprecate после studio publish.
+- **Last activity:** 2026-06-11 (canon refresh).
+
+## Vendor stack (ADR 047 D3)
+
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
+- **`@capsuletech/web-core`** (workspace, dep) — HCA wrappers; `/controllers` subpath единственный с этой зависимостью (EditorController).
+- **`@capsuletech/web-ui`** (workspace, dep) — chrome редактора.
+- **`@capsuletech/web-dnd`** (workspace, dep) — pointer DnD для палитры/tree.
+- **`@capsuletech/web-renderer`** (workspace, peerDep) — preview JSON-схемы.
+- **`@capsuletech/shared-zod`** (workspace, dep) — schema-validation для manifest'ов.
 
 ## Зона ответственности
 

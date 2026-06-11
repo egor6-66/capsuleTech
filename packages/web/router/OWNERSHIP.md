@@ -1,8 +1,36 @@
+---
+name: "@capsuletech/web-router"
+owner-agent: owner-web-router
+group: web_base
+zone: runtime
+status: stable
+priority: P0
+last-updated: 2026-06-11
+---
+
 # OWNERSHIP — @capsuletech/web-router
 
-## Зона ответственности
+## Состояние (читать ПЕРВЫМ)
 
-Context-based обёртка над `@tanstack/solid-router`. Предоставляет `ICapsuleRouter` API и инжектирует его через Solid Context. Инстанс роутера создаётся в `web-core/BaseProviders` и передаётся в Feature/Controller через `services.router`.
+- **Zone:** `runtime` — Context-based обёртка над `@tanstack/solid-router` (ADR 003). `createRouter` factory + `useRouter` hook + `ICapsuleRouter` контракт + `RouterProvider` re-export.
+- **Status:** `stable` (0.1.1) — `goTo` / `back` / `current` / `raw` API; PR #298 добавил `useRouteDepth` (impl переписывается в Phase C1).
+- **Priority:** **P0** — основа routing-слоя.
+- **Maturity bar (до 1.0):**
+  - **Phase C1** (IN PROGRESS, owner-web-router dispatched) — `CapsuleOutlet` + `DepthContext` + `useRouteDepth` rewrite per [[046-boost-namespace-matrix-evict-vt-owner|ADR 046]] D4.
+  - SSR readiness (current() с search/hash).
+  - Module augmentation для typed routeTree.
+- **Active blockers:** нет (Phase C1 в полёте).
+- **Roadmap:**
+  1. C1 — CapsuleOutlet rewrite (USER dispatched).
+  2. C2 — Ui.Outlet swap координация с web-core.
+  3. ICapsuleRouter SSR-ready.
+- **Last activity:** 2026-06-11 (canon refresh; Phase C1 dispatched).
+
+## Vendor stack (ADR 047 D3)
+
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
+- **`@tanstack/solid-router`** (peerDep) — main router engine. https://tanstack.com/router/
+- **`@tanstack/router-core`** (peerDep) — core router primitives. https://tanstack.com/router/
 
 **В чужие пакеты не лезем.** Изменения в `web-core`, `builders`, `apps/*` — через главного.
 
@@ -21,7 +49,13 @@ createRouter<TRouteTree>({
 
 // Hooks
 useRouter(): ICapsuleRouter        // бросает вне Provider'а
-useRouteDepth(): Accessor<number>  // глубина текущего Outlet'а в иерархии маршрутов (root=0, вложенный layout=1, …) — ADR 045 #3 vt-name
+useRouteDepth(): Accessor<number>  // глубина текущего Outlet'а (root=0, вложенный=1, …) — ADR 046 D4 (impl: useContext(DepthContext))
+
+// Components
+CapsuleOutlet: () => JSX.Element   // wrapper над TanStack <Outlet/> + DepthContext.Provider + DOM с view-transition-name (ADR 046 D4)
+
+// Context
+DepthContext: Context<number>      // per-Outlet depth, sentinel -1 = "над любым Outlet'ом" (ADR 046 D4)
 
 // Types
 ICapsuleRouter<TRouteTree>    // { goTo, back, current, raw }
@@ -52,8 +86,10 @@ notFound                      // re-export @tanstack/solid-router (для throw 
 | `src/service.ts` | `createRouter()` — value-импорт `@tanstack/solid-router`, проводит `notFoundRedirect`, `beforeLoad`, `viewTransition` |
 | `src/context.ts` | `RouterContext` + `useRouter()` hook |
 | `src/index.ts` | barrel + ре-экспорт `redirect`/`notFound` из `@tanstack/solid-router` |
-| `src/useRouteDepth.ts` | `useRouteDepth()` — derives depth via `useMatches({ select })` |
-| `src/__tests__/` | 44 тестов: wrap (14), normalizeBase (8), context (2), notFoundRedirect (5), beforeLoad (6), viewTransition (4), useRouteDepth (5) — node-env без jsdom |
+| `src/useRouteDepth.ts` | `useRouteDepth()` — `useContext(DepthContext)`, normalize sentinel `-1`→`0` (ADR 046 D4) |
+| `src/depthContext.ts` | `DepthContext` — Solid-context для per-Outlet depth (sentinel `-1`) |
+| `src/CapsuleOutlet.tsx` | `CapsuleOutlet` — wrapper над TanStack `<Outlet/>`, владеет `view-transition-name: capsule-content-${depth}` (ADR 046 D4) |
+| `src/__tests__/` | 48 тестов: wrap (14), normalizeBase (8), context (2), notFoundRedirect (5), beforeLoad (6), viewTransition (4), useRouteDepth (5 Provider-based), CapsuleOutlet (4 DOM) — jsdom-env |
 
 ## Ключевые инварианты
 
@@ -76,7 +112,8 @@ notFound                      // re-export @tanstack/solid-router (для throw 
 - ADR 003 — Context-based роутер
 - ADR 014 — `goTo` opts-object + generic `ICapsuleRouterContext`
 - ADR 030 — `notFoundRedirect` + generic `beforeLoad`-хук
-- ADR 045 #3 — depth-scoped `view-transition-name` (`useRouteDepth` foundation)
+- ADR 045 #3 — depth-scoped `view-transition-name` (foundation, реализация заменена)
+- ADR 046 Decision 4 — `CapsuleOutlet` владеет vt-name; `useRouteDepth` impl на `useContext(DepthContext)` (signature сохранён)
 
 ## Release group
 

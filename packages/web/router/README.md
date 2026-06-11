@@ -1,13 +1,43 @@
 # @capsuletech/web-router
 
-Тонкая обёртка над `@tanstack/solid-router` для Capsule: фабрика `createRouter`, Solid-контекст `RouterContext` + хук `useRouter`, ре-экспорт `RouterProvider`. Скрывает детали TanStack за стабильным `ICapsuleRouter` API (`goTo` / `back` / `current` / `raw`).
+Context-based обёртка над `@tanstack/solid-router` для capsule: `createRouter` + `useRouter` + стабильный `ICapsuleRouter` API (`goTo` / `back` / `current` / `raw`) + `CapsuleOutlet` (vt-name owner per ADR 046 D4).  ·  zone: **runtime**  ·  status: **stable (0.1.1)**
 
-Документация — в Obsidian-vault'е:
+## Install
 
-- `docs/09-packages/router.md` — обзор пакета, карта файлов, рецепты.
-- `docs/_meta/web-router.md` — AI-anchor (TL;DR, гочи, lifecycle-flow).
-- `docs/01-architecture/adr/003-router-context-based.md` — почему Context-based (singleton → context).
-- `docs/01-architecture/adr/014-router-api-extension.md` — `goTo` options-объект + generic `ICapsuleRouterContext`.
+```bash
+pnpm add @capsuletech/web-router
+# peer deps:
+pnpm add solid-js @tanstack/solid-router @tanstack/router-core
+```
 
-Сборка: `pnpm nx build @capsuletech/web-router` (Vite через `@capsuletech/lib-builder`).
-Тесты: `pnpm --filter @capsuletech/web-router test` (13 шт., node-env).
+## Minimum usage
+
+```tsx
+import { createRouter, RouterProvider, useRouter } from '@capsuletech/web-router';
+
+// 1. Создание (в bootstrap-стеке web-core/createRoot):
+const router = createRouter({ routeTree, defaultPreload: 'intent' });
+
+// 2. Provider:
+<RouterProvider router={router}>
+  <App />
+</RouterProvider>
+
+// 3. Consume в Feature/Controller через services.router:
+const Login = Feature(({ router }) => ({
+  initial: 'idle',
+  states: {
+    idle: { onSubmit: async () => router.goTo('/dashboard') },
+  },
+}));
+```
+
+В capsule-аппе router инжектится автоматически через `BaseProviders` (web-core). Feature получает `router` в `services` arg.
+
+## Docs
+
+- AI-anchor: [`docs/_meta/web-router.md`](../../../docs/_meta/web-router.md)
+- Zone canon: [`docs/_meta/web-zones/runtime.md`](../../../docs/_meta/web-zones/runtime.md)
+- OWNERSHIP: [`./OWNERSHIP.md`](./OWNERSHIP.md)
+- User guide: [`docs/09-packages/router.md`](../../../docs/09-packages/router.md)
+- ADR 003 (Context-based router), ADR 014 (goTo options), ADR 046 D4 (CapsuleOutlet vt-name).

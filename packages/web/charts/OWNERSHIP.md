@@ -1,6 +1,44 @@
+---
+name: "@capsuletech/web-charts"
+owner-agent: owner-web-charts
+group: web_base
+zone: boost
+status: alpha
+priority: P2
+last-updated: 2026-06-11
+---
+
 # OWNERSHIP — `@capsuletech/web-charts`
 
 Owner: **owner-web-charts** (architect = initial owner). См. ADR 028.
+
+> **NAMING:** будет переименован в `@capsuletech/boost-charts` в Phase W6 ([[web-rework-plan]] / ADR 046 D1). Light-mirror — `Ui.Chart` placeholder (kit, Phase B6-placeholder).
+
+## Состояние (читать ПЕРВЫМ)
+
+- **Zone:** `boost` — heavy domain-mirror `Ui.Chart` light-placeholder'а. Engine: Chart.js через `solid-chartjs`.
+- **Status:** `alpha` (0.1.1) — LineChart / AreaChart / BarChart / Doughnut / Gauge работают.
+- **Priority:** **P2** — dashboards / analytics; опциональный.
+- **Maturity bar (до beta):**
+  - W6 rename `web-charts` → `boost-charts`.
+  - `Ui.Chart` placeholder в `@capsuletech/web-ui` (Phase B6-placeholder).
+  - Capsule manifest регистрирует `Charts.*` global (ADR 033).
+  - Theme integration через CSS-токены web-style.
+  - Re-evaluation Chart.js vs visx/recharts (см. roadmap).
+- **Active blockers:** нет.
+- **Roadmap:**
+  1. W6 rename → `boost-charts`.
+  2. `Ui.Chart` placeholder координация с owner-web-ui.
+  3. Theme tokens integration.
+  4. _(eval)_ Chart.js vs visx vs recharts — Chart.js устаревает; рассмотреть migration в Phase D.
+- **Last activity:** 2026-06-11 (canon refresh).
+
+## Vendor stack (ADR 047 D3)
+
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
+- **Chart.js** (`chart.js` `^4.5.1`, dep) — main engine. https://www.chartjs.org/
+- **solid-chartjs** (`^1.3.11`, dep) — Solid wrapper. https://github.com/solid-chartjs/solid-chartjs
+- **`@capsuletech/web-style`** (workspace, peerDep) — tokens (для theme).
 
 ## Что это
 

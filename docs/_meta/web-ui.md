@@ -357,3 +357,147 @@ Why: `SlotValue = IResizableSlotConfig | JSX.Element` broke TS narrowing — IDE
 Also removed: `declare const __slotConfigBrand: unique symbol` + `readonly [__slotConfigBrand]?: true` from `IResizableSlotConfig` (symbol-brand was invisible in autocomplete and optional — it didn't actually discriminate).
 
 `normalizeSlot` in `utils.ts` is now a simple identity-with-default: no `typeof slot === 'object'` branch needed.
+
+---
+
+## Weight gradient & size manifest (canon, 2026-06-11)
+
+> Канон-источники: [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] (zone canon), [[044-web-menu-package|ADR 044]] (heavy=pkg / light=kit), [[web-zone-kit]] (kit invariants).
+
+### Контекст
+
+`@capsuletech/web-ui` — единственный пакет zone `kit`. Внутри пакета — внутренний **weight-gradient L0/L1**: одни примитивы можно тащить в визитку без bandwidth-цены, другие несут a11y-overhead (floating-ui / focus-trap / keyboard navigation), который оправдан только в формах / меню / диалогах. Гарантия gradient'а — subpath-tree-shake + bundle-size assertions, **не отдельный пакет** (отдельный leaf web-primitives отвергнут: peerDep+treeshake закрывают use-case бесплатно, а второй Button = fragmentation, anti-ADR 047).
+
+L0/L1 — **внутренняя конвенция web-ui**, не публичная классификация (потребитель видит реальные `sizeKB` в studio через manifest, см. ниже). Categorical-tag нужен для:
+1. Доки/landing нарратив («3 уровня прокачки: kit-L0 → kit-L1 → boost»).
+2. Bundle-size assertion: L0-subpath не имеет права тянуть `@kobalte/core/<interactive-set>` в граф.
+3. Studio palette сортировка / фильтрация.
+
+### Критерий L0 / L1
+
+**L0 — presentational + native control:**
+- Никакого floating-ui (Popper/positioner).
+- Никакого focus-trap'а.
+- Никакого keyboard-navigation поверх native focus/tabindex.
+- Никакого portal'а.
+- Featherweight Kobalte (`@kobalte/core/polymorphic`, `@kobalte/core/separator`, `@kobalte/core/skeleton`) допустимо — это разметка с role-атрибутом, не behavior.
+- Bandwidth-cost: единицы kB per primitive (gzip).
+
+**L1 — interactive с pattern overhead:**
+- Floating-ui, popover, focus-trap, keyboard pattern (roving tabindex, arrow-keys), portal.
+- Bandwidth-cost: десятки kB при первом включении (Kobalte interactive base + floating-ui).
+
+### Initial seed list (на момент 2026-06-11)
+
+На основе grep'а `packages/web/ui/src/primitives/` — owner-web-ui уточняет конкретные строчки через bundle-test (W4 plan-doc). Это **seed**, не final.
+
+**L0 (presentational + native + featherweight Kobalte):**
+- `typography`, `card`, `layout`, `list`, `group`, `field`, `widget-frame`
+- `separator` (Kobalte separator — featherweight role-prim)
+- `skeleton`, `spinner` (skeleton — Kobalte skeleton featherweight)
+- `slot` (Kobalte polymorphic — featherweight)
+- `label`, `button`, `input`, `textarea`, `table` (native HTML + CVA classes; никакого floating/focus-trap'а)
+
+**L1 (interactive Kobalte / floating / focus-trap):**
+- `accordion` (Kobalte accordion)
+- `dropdown` (Kobalte dropdown-menu)
+- `select` (Kobalte select / combobox)
+- `slider` (Kobalte slider)
+- `toggle` (Kobalte toggle — state pattern)
+- `tooltip` (Kobalte tooltip — popover+timing)
+
+**Boost-mirror placeholders (light в kit, heavy в boost-zone):**
+- `Ui.Grid` (light, существующий) ↔ `boost-matrix` / `boost-table` (heavy)
+- `Ui.Map` (placeholder, добавляется в Phase B6) ↔ `boost-map`
+- `Ui.Flow` (placeholder, добавляется) ↔ `boost-flow`
+- `Ui.Chart` (placeholder, добавляется) ↔ `boost-charts`
+
+### Manifest schema — для studio
+
+Build-time из web-ui генерится `packages/web/ui/dist/manifest.json` — карта реальных bundle-цен per primitive. Studio palette/inspector читает manifest, рисует бейдж рядом с каждым примитивом.
+
+```ts
+// packages/web/ui/src/manifest/types.ts
+export interface IPrimitiveManifestEntry {
+  /** Primitive name (matches subpath: @capsuletech/web-ui/<name>) */
+  name: string;
+  /** Weight category — для нарратива/фильтра. Реальная цена в sizeKB. */
+  weight: 'L0' | 'L1';
+  /** Subpath import string */
+  subpath: string; // e.g. '@capsuletech/web-ui/button'
+  /** Real gzip-cost (kB) измеренный build-time'ом */
+  sizeKB: number;
+  /** External deps в graph'е этого subpath'а (после tree-shake'а) */
+  externals: string[]; // e.g. ['@kobalte/core/dropdown-menu', 'solid-js']
+  /** Slot tags (для UiProxy meta-routing) */
+  slotTags?: string[];
+  /** Variants (если CVA) — для inspector dropdown'а */
+  variants?: Record<string, string[]>;
+}
+
+export interface IWebUiManifest {
+  version: string;             // semver web-ui
+  generatedAt: string;         // ISO timestamp
+  primitives: IPrimitiveManifestEntry[];
+}
+```
+
+### Bundle-size assertion (W4 — owner-web-ui)
+
+Тест-сюита (vitest) импортит каждый L0-subpath отдельно, измеряет bundle, проверяет:
+
+1. L0-subpath НЕ содержит `@kobalte/core/<interactive-set>` (allowlist: `polymorphic`, `separator`, `skeleton`). Регрессия = test failure.
+2. L0-subpath bundle < N kB (gzip; точный N — owner-web-ui калибрует на seed list'е).
+3. L1-subpath может содержать соответствующий Kobalte interactive — это ок.
+4. Manifest регенерится при build'е (`pnpm --filter @capsuletech/web-ui build:manifest`), CI gates на отсутствие drift'а между manifest.json и actual subpath'ом.
+
+### Studio palette UX
+
+После W4 + manifest:
+
+```
+[Palette]
+─ L0 — presentational ─────────────
+  ◫  Card           0.8 kB
+  Tab  Typography   0.4 kB
+  ▭  Flex (Group)   0.5 kB
+  ─  Separator      0.3 kB
+  …
+
+─ L1 — interactive ───────────────
+  ◯  Dropdown      12.4 kB   ⓘ Kobalte DropdownMenu
+  ⬚  Select        13.1 kB   ⓘ Kobalte Select
+  …
+
+─ Boost ─────────────────────────
+  ▦  Tables.DataTable    62 kB   ⓘ @capsuletech/boost-table
+  🗺  Maps.MapView       180 kB   ⓘ @capsuletech/boost-map
+  …
+```
+
+User видит **реальную цену** при выборе примитива → принимает информированное решение. Это закрывает требование «при сборке в web-studio надо знать размер компонента».
+
+### Migration notes (для будущих PR'ов)
+
+- **W3 (этот раздел)** — convention + schema (это документ). Изменений в коде нет.
+- **W4 — owner-web-ui** — implementation:
+  1. Bundle-size assertion в vitest (`packages/web/ui/test/bundle-size.test.ts`).
+  2. Build-step генерации `manifest.json` (`packages/web/ui/scripts/build-manifest.ts` или плагин Vite-builder'а).
+  3. Subpath audit — какие из текущих subpath'ов соответствуют L0 critery (re-org если нужно).
+  4. Update OWNERSHIP «Состояние» — manifest infra.
+- **Studio consumer** — отдельный PR в `@capsuletech/studio` (после W4), реализует palette badge.
+
+### Что НЕ делаем (отвергнутая альтернатива)
+
+**Отдельный leaf-пакет `@capsuletech/web-primitives` (L0-only, zero Kobalte):**
+- Структурно защитимо: жёсткий barrier между L0 и L1.
+- Цена: +один пакет, риск «двух Button» при росте L0, fragmentation.
+- Сейчас НЕ оправдано — peerDep + subpath-treeshake + bundle-test дают тот же эффект бесплатно. Anti-premature per ADR 047 «делаем максимально правильно, но не делаем чего не нужно сейчас».
+- Если в будущем bundle-test поймает регулярную регрессию L0 → re-evaluate.
+
+### Related
+
+- [[web-zone-kit]] — zone canon (kit invariants).
+- [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] — zones + vendor transparency.
+- [[044-web-menu-package|ADR 044]] — heavy=pkg / light=kit principle.
+- [[web-rework-plan]] — Phase W (W3 — этот раздел, W4 — implementation).

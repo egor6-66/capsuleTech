@@ -1,14 +1,44 @@
 ---
 name: "@capsuletech/web-flow"
-owner-agent: owner-web-flow (planned; currently главный assistant)
+owner-agent: owner-web-flow
 group: web_base
-status: new (alpha dep)
-last-updated: 2026-06-02
+zone: boost
+status: alpha
+priority: P2
+last-updated: 2026-06-11
 ---
 
 # @capsuletech/web-flow
 
 Node-canvas примитив для capsule — обёртка над `@dschz/solid-flow` (Solid-порт React/Svelte Flow на официальном ядре `@xyflow/system`). Свободные позиции нод + рёбра + pan/zoom + NodeResizer. **Композируется** (в т.ч. как content ячейки `Layout.Matrix`), а НЕ режим Matrix (см. [[027-web-flow-node-canvas|ADR 027]]).
+
+> **NAMING:** будет переименован в `@capsuletech/boost-flow` в Phase W6 ([[web-rework-plan]] / ADR 046 D1). Light-mirror — `Ui.Flow` placeholder (kit, Phase B6-placeholder).
+
+## Состояние (читать ПЕРВЫМ)
+
+- **Zone:** `boost` — heavy domain-mirror `Ui.Flow` light-placeholder'а. Engine: `@dschz/solid-flow` (Solid-port XYFlow на `@xyflow/system`).
+- **Status:** `alpha` (0.1.1) — node/edge/pan/zoom/resizer работают.
+- **Priority:** **P2** — графовые редакторы (logic FSM editor, dataflow); опциональный.
+- **Maturity bar (до beta):**
+  - W6 rename `web-flow` → `boost-flow`.
+  - `Ui.Flow` placeholder в `@capsuletech/web-ui` (Phase B6-placeholder).
+  - Capsule manifest регистрирует `Flows.*` global (ADR 033).
+  - Theme integration (CSS-tokens из web-style).
+  - Custom node types API (Solid render для symbol nodes).
+- **Active blockers:** нет.
+- **Roadmap:**
+  1. W6 rename → `boost-flow`.
+  2. `Ui.Flow` placeholder координация с owner-web-ui.
+  3. Theme tokens integration.
+  4. Custom Solid nodes API.
+- **Last activity:** 2026-06-11 (canon refresh).
+
+## Vendor stack (ADR 047 D3)
+
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
+- **`@dschz/solid-flow`** (`^0.1.4`, dep) — main engine (Solid wrapper). https://github.com/dsh-ze/solid-flow
+- **`@xyflow/system`** (transitive через solid-flow) — core node-canvas engine. https://xyflow.com/
+- **`@capsuletech/web-style`** (workspace, peerDep) — tokens (для theme integration).
 
 ## Зона ответственности
 

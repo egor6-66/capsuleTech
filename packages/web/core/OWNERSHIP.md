@@ -2,13 +2,47 @@
 name: "@capsuletech/web-core"
 owner-agent: owner-web-core
 group: web_base
-status: pre-1.0
-last-updated: 2026-05-21
+zone: runtime
+status: stable
+priority: P0
+last-updated: 2026-06-11
 ---
 
 # @capsuletech/web-core
 
 Корневой пакет HCA-фреймворка: шесть wrapper-функций (View/Widget/Page/Controller/Feature/Shape), Proxy-механика (UiProxy + ControllerProxy), провайдеры (BaseProviders), DOM-bootstrap (createRoot) и реестр UI-примитивов (ui-kit/imports).
+
+## Состояние (читать ПЕРВЫМ)
+
+- **Zone:** `runtime` — сердце фреймворка. Включён в каждое capsule-приложение.
+- **Status:** `stable` (0.1.1) — публичный API стабилен; используется всеми apps.
+- **Priority:** **P0** — без web-core capsule-апп не запустится.
+- **Maturity bar (до 1.0):**
+  - Shape v2 (ADR 036) two-phase fully integrated.
+  - 100% type-coverage публичного API (нет `any` в exports).
+  - BaseProviders parametrized — апп может swap'нуть provider stack.
+  - Все breaking changes wrapper'ов + Proxy документированы (ADR'ы).
+- **Active blockers:** нет.
+- **Roadmap:**
+  1. Shape v2 final integration (ADR 036).
+  2. ControllerProxy + UiProxy lifecycle docs refresh.
+  3. `Ui.*` injection API consolidation (`ui-kit/imports.tsx` — Phase C2 swap для Ui.Outlet).
+- **Last activity:** 2026-06-11 (canon refresh).
+
+## Vendor stack (ADR 047 D3)
+
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
+- **XState** (`xstate` через `@xstate/solid` peerDep) — единственный FSM движок (ADR 001 + 008). https://stately.ai/docs
+- **`@tanstack/solid-router`** (peerDep) — router runtime. https://tanstack.com/router/
+- **zod** (peerDep) — schema-validation. https://zod.dev/
+- **`@capsuletech/web-state`** (workspace, dep) — `createState` wrapper.
+- **`@capsuletech/web-router`** (workspace, dep) — `useRouter` / `RouterProvider`.
+- **`@capsuletech/web-query`** (workspace, dep) — api injection.
+- **`@capsuletech/web-style`** (workspace, dep) — token providers.
+- **`@capsuletech/web-ui`** (workspace, dep) — `Ui.*` lazy injection в slot-registry.
+- **`@capsuletech/web-intl`** (workspace, dep) — i18n provider в BaseProviders.
+- **`@capsuletech/web-profiler`** (workspace, dep) — profiler provider в BaseProviders.
+
 
 > **BREAKING (v0.2.0):** `Entity` → `View`, `EntityUi` → `ViewUi`, `IEntityWrapper` → `IViewWrapper`, `IEntityRenderer` → `IViewRenderer`, `IWidgetRenderer` 4-й arg `entities` → `views`, global registry `Entities` (placeholder для domain layer) + новый `Views`. ShapeUiContext поднят в Widget/Page — Shape первоклассный leaf. `Layout` добавлен в `WidgetUi`. Consumer updates требуют отдельных PR (owner-builders, owner-cli, architect для docs).
 >
