@@ -1,6 +1,5 @@
 import { cn } from '@capsuletech/web-style';
 import { mergeProps, splitProps } from 'solid-js';
-
 import type { IUiFlowDiagramProps } from './interfaces';
 import { flowDiagramCva } from './variants';
 

@@ -1,21 +1,24 @@
 import { cn } from '@capsuletech/web-style';
 import { mergeProps, splitProps } from 'solid-js';
-
 import type { IUiMapProps } from './interfaces';
 import { mapCva } from './variants';
 
 /**
- * Ui.Map — light placeholder for `@capsuletech/boost-map` heavy mirror.
+ * Ui.MapView — light placeholder for `@capsuletech/boost-map` heavy mirror.
+ *
+ * Naming `MapView` (NOT `Map`) — `Map` is a built-in JS class; shadowing it
+ * in module scope is flagged by lint (biome `noShadowRestrictedNames`).
+ * `MapView` also mirrors the heavy boost-map root API → migration is rename-free.
  *
  * Zero engine deps. Renders an SVG world-glyph on a frosted-muted rect.
  *
  * @example
- * <Ui.Map size="lg" />
- * <Ui.Map size="full" ariaLabel="Region overview">
+ * <Ui.MapView size="lg" />
+ * <Ui.MapView size="full" ariaLabel="Region overview">
  *   <Button>Load full map</Button>
- * </Ui.Map>
+ * </Ui.MapView>
  */
-export const Map = (props: IUiMapProps) => {
+export const MapView = (props: IUiMapProps) => {
   const merged = mergeProps({ ariaLabel: 'Map placeholder' }, props);
   const [local, others] = splitProps(merged, ['size', 'class', 'children', 'ariaLabel']);
 

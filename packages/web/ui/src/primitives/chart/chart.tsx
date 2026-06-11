@@ -1,6 +1,5 @@
 import { cn } from '@capsuletech/web-style';
-import { Show, mergeProps, splitProps } from 'solid-js';
-
+import { mergeProps, Show, splitProps } from 'solid-js';
 import type { IUiChartProps } from './interfaces';
 import { chartCva } from './variants';
 

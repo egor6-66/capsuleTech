@@ -1,2 +1,2 @@
-export type * from './interfaces';
 export { Chart } from './chart';
+export type * from './interfaces';
