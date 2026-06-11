@@ -2,13 +2,38 @@
 name: "@capsuletech/web-query"
 owner-agent: owner-web-query
 group: web_base
-status: pre-1.0
-last-updated: 2026-05-22
+zone: runtime
+status: stable
+priority: P0
+last-updated: 2026-06-11
 ---
 
 # @capsuletech/web-query
 
 Декларативный API-слой capsule: `defineEndpoint` (zod-typed endpoint factory) + koa-style middleware pipeline между Feature и сетью + typed error hierarchy + `setApiClient/getApiClient` (инжектится в `services.api` в Feature через `web-core/createLogicWrapper`). Vite-плагин (`EndpointsRegistryPlugin`) auto-discover'ит endpoints и генерит `.capsule/@types/api.d.ts` для interface-merging'а в `CapsuleApi`. Subpath `/app-config` экспортит `defineAppConfig` + `IAppConfig` (ADR 011/013).
+
+## Состояние (читать ПЕРВЫМ)
+
+- **Zone:** `runtime` — fetch+middleware-слой между Feature и сетью.
+- **Status:** `stable` (0.1.1) — `defineEndpoint`, `createApi`, `preRequest`, typed error hierarchy используются всеми apps.
+- **Priority:** **P0** — без web-query Feature не делает API-calls.
+- **Maturity bar (до 1.0):**
+  - preRequest hook formalized + полностью документирован.
+  - Mock-system (apps preRequest + shared-zod/gen) канонизирован (НЕ MSW).
+  - DevOnly tree-shake helper docs.
+- **Active blockers:** нет.
+- **Roadmap:**
+  1. preRequest hook docs canon.
+  2. Mock-system canon (без MSW).
+  3. New middleware factories по запросу.
+- **Last activity:** 2026-06-11 (canon refresh).
+
+## Vendor stack (ADR 047 D3)
+
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
+- **zod** (`^4`, peerDep через `@capsuletech/shared-zod`) — schema-validation. https://zod.dev/
+- **`@capsuletech/shared-zod`** (workspace, dep) — z.ts shim + zod re-export.
+- **`@capsuletech/shared-utils`** (workspace, dep) — private utility helpers.
 
 ## Зона ответственности
 

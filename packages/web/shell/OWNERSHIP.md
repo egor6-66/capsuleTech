@@ -1,8 +1,10 @@
 ---
-name: @capsuletech/web-shell
+name: "@capsuletech/web-shell"
 owner-agent: owner-web-shell
 group: web_base
-status: pre-1.0
+zone: domain
+status: alpha
+priority: P0
 last-updated: 2026-06-11
 ---
 
@@ -10,6 +12,43 @@ last-updated: 2026-06-11
 
 Reusable **app-shell blocks** (chrome with logic) shared across capsule apps —
 tier-2 in the two-tier UI model.
+
+## Состояние (читать ПЕРВЫМ)
+
+- **Zone:** `domain` — stateful feature-package, chrome для apps (Header / Layout / ModeToggle / ThemePicker и т.д.).
+- **Status:** `alpha` (0.1.0) — chrome subpath работает; Matrix-subpath будет эвакуирован в `@capsuletech/boost-matrix` per [[046-boost-namespace-matrix-evict-vt-owner|ADR 046]] D2 (Phase B2 plan-doc).
+- **Priority:** **P0** — каждый capsule-апп тянет shell для chrome.
+- **Maturity bar (до beta):**
+  - Phase B2 closed — Matrix evicted to `boost-matrix`; shell = chrome only.
+  - Header block формализован (config-driven, ADR 032 useEmit).
+  - `Controllers.Shell.*` HCA-адаптер.
+  - `IShellCapability` контракт extracted в `web-contract` (если нужно cross-domain).
+- **Active blockers:** Phase B2 (Matrix eviction) ждёт A1 (owner-boost-matrix создан) + B1 (boost-matrix scaffold).
+- **Roadmap:**
+  1. Phase B2 — strip matrix + /matrix + /layout subpaths.
+  2. Header block (config-driven, через Shapes.Shell).
+  3. `Controllers.Shell.*` finalize (ADR 032 useEmit).
+  4. switcher-state coordination с owner-web-style (theme/layout-mode пересечения).
+- **Last activity:** 2026-06-11 (canon refresh; B2 в очереди).
+
+## Vendor stack (ADR 047 D3)
+
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
+- **`@capsuletech/web-core`** (workspace, dep) — HCA wrappers + ControllerProxy.
+- **`@capsuletech/web-ui`** (workspace, dep) — primitives для chrome (Layout/Card/Toggle/...).
+- **`@capsuletech/web-style`** (workspace, dep) — tokens, theme state, layout-mode.
+- **`@capsuletech/web-intl`** (workspace, dep) — для chrome локализации.
+- **`@capsuletech/web-dnd`** (workspace, dep) — pointer DnD (используется Matrix; уйдёт после B2 с Matrix'ом).
+
+## Allowed dependency zones (ADR 047 D2)
+
+Domain-пакеты НЕ импортят друг друга напрямую. web-shell разрешено зависеть на:
+
+- ✅ **kit** (`web-ui`)
+- ✅ **runtime** (`web-core`, `web-style`, `web-intl`, `web-dnd`)
+- ✅ **boost** (после B2 — `boost-matrix` потребляется apps'ами, не shell'ом; shell отдаёт chrome)
+- ✅ **web-contract** (для cross-domain capability — например `IAuthCapability` для `is-authed?` логики в header)
+- ❌ **другой domain** (`web-auth`, `web-agent`) — через контракт в `web-contract`.
 
 ## Two-tier model
 

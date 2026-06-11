@@ -1,14 +1,43 @@
 ---
 name: "@capsuletech/web-map"
 owner-agent: owner-web-map
-group: web-map
-status: pre-1.0
-last-updated: 2026-05-28 (local CARTO JSON styles restored, 3D features opt-in)
+group: web_base
+zone: boost
+status: alpha
+priority: P1
+last-updated: 2026-06-11
 ---
 
 # @capsuletech/web-map
 
 Низкоуровневый Solid-wrapper над MapLibre GL JS: монтирует карту, прокидывает instance через Context, реактивно синхронизирует props. Прямая интеграция с `maplibre-gl` без промежуточных обёрток (solid-map-gl удалён в пользу zero-leak implementation).
+
+> **NAMING:** будет переименован в `@capsuletech/boost-map` в Phase W6 ([[web-rework-plan]] / ADR 046 D1). Light-mirror — `Ui.Map` placeholder (kit, Phase B6-placeholder).
+
+## Состояние (читать ПЕРВЫМ)
+
+- **Zone:** `boost` — heavy domain-mirror `Ui.Map` light-placeholder'а. Engine: MapLibre GL JS (+ опц. THREE для terrain/buildings).
+- **Status:** `alpha` (0.0.1) — Source/Layer/Terrain/Sky + TerrainPreset/BuildingsPreset работают; 126 tests.
+- **Priority:** **P1** — каждый geo-app capsule использует map.
+- **Maturity bar (до beta):**
+  - W6 rename `web-map` → `boost-map`.
+  - `Ui.Map` placeholder в `@capsuletech/web-ui` (Phase B6-placeholder, после W6).
+  - Capsule manifest регистрирует `Maps.*` global (ADR 033).
+  - Markers + clusters + measurement обвесы.
+  - Reactive sync coverage для всех style-changes.
+- **Active blockers:** нет (PR #181 закрыл solid-map-gl leak; PR #183 закрыл 3D layers + theme + setStyle preservation).
+- **Roadmap:**
+  1. W6 rename → `boost-map`.
+  2. `Ui.Map` placeholder координация с owner-web-ui (Phase B6-placeholder).
+  3. Markers + clusters.
+  4. Measurement tool.
+- **Last activity:** 2026-06-11 (canon refresh; PR #183 закрыл 3D + theme).
+
+## Vendor stack (ADR 047 D3)
+
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
+- **maplibre-gl** (`^5.24.0`, dep) — main engine. https://maplibre.org/maplibre-gl-js/docs/
+- **`@capsuletech/web-core`** (workspace, peerDep) — HCA wrappers.
 
 ## Зона ответственности
 

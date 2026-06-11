@@ -1,8 +1,10 @@
 ---
-name: @capsuletech/web-intl
-owner-agent: главный (нет выделенного owner'а — стюардит главный assistant)
+name: "@capsuletech/web-intl"
+owner-agent: главный (стюардит главный assistant)
 group: web_base
-status: pre-1.0
+zone: runtime
+status: alpha
+priority: P2
 last-updated: 2026-06-11
 ---
 
@@ -10,6 +12,28 @@ last-updated: 2026-06-11
 
 i18n-слой capsule: реактивный locale/tenant-стейт + реестр copy-словарей (base и
 per-tenant) + резолвер строк по ключу с подстановкой.
+
+## Состояние (читать ПЕРВЫМ)
+
+- **Zone:** `runtime` — i18n-слой, провайдер маунтится в `BaseProviders` (web-core).
+- **Status:** `alpha` (0.1.0) — реактивный locale state работает; tenant-словари — TBD.
+- **Priority:** **P2** — single-locale apps без него живут; нужен для multilingual.
+- **Maturity bar (до beta):**
+  - per-tenant copy registry stable API.
+  - ICU MessageFormat (или альтернатива) — параметризация строк, plurals.
+  - Lazy locale loading.
+  - Capsule manifest для tenant registration (ADR 033).
+- **Active blockers:** нет выделенного owner'а; стюардит главный.
+- **Roadmap:**
+  1. Tenant-словари API.
+  2. ICU MessageFormat / Polyfill оценка.
+  3. Lazy-loading.
+- **Last activity:** 2026-06-11 (canon refresh).
+
+## Vendor stack (ADR 047 D3)
+
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
+- _(TBD)_ ICU MessageFormat lib (intl-messageformat / format-message) — оценить в Phase D.
 
 ## Зона ответственности
 

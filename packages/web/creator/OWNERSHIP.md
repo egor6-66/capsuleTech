@@ -1,14 +1,46 @@
 ---
 name: "@capsuletech/web-creator"
 owner-agent: owner-web-creator
-group: web_base (планируется; пока standalone git-tag)
-status: SKELETON (0.0.0)
-last-updated: 2026-06-09
+group: web_base
+zone: design-time
+status: scaffold
+priority: P1
+last-updated: 2026-06-11
 ---
 
 # @capsuletech/web-creator
 
-Единый design-time пакет capsule — редакторы + общие тулзы через subpaths. **Поглощает `@capsuletech/web-ui-creator`.**
+Единый design-time пакет capsule — редакторы + общие тулзы через subpaths. **Поглощает `@capsuletech/web-ui-creator`** (ADR 045 #2). Будет переименован в `@capsuletech/studio` per [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] D4 (Phase D4 plan-doc).
+
+## Состояние (читать ПЕРВЫМ)
+
+- **Zone:** `design-time` — tooling для создания capsule-apps; не runtime, не в prod-bundle apps'ов.
+- **Status:** `scaffold` (0.0.0) — структура задана, реализация по founding F2-F4 plan'у ниже.
+- **Priority:** **P1** — критичный для studio-experience, но capsule-апп без него работает.
+- **Maturity bar (до alpha):**
+  - F2 `/catalog` готов (demo-стенд через контракты web-contract).
+  - F3 структурный UI editor (palette+tree+canvas).
+  - F4 procedural UI generator (seeded).
+  - Rename → `@capsuletech/studio` (Phase D4).
+  - Absorb `ui-creator` subpath'ы (`/manifests`, `/state`, `/inspector`, `/generators`).
+- **Active blockers:** ждёт стабилизацию Phase B+C (зона D начинается после).
+- **Roadmap (3-5):**
+  1. F2 catalog (demo-стенд + первый потребитель web-contract).
+  2. F3 UI editor (palette+tree+canvas).
+  3. F4 procedural generator.
+  4. Phase D4 rename + absorb (после B+C).
+  5. Studio palette badge — реальные sizeKB per primitive из web-ui manifest (после W4).
+- **Last activity:** 2026-06-11 (canon refresh).
+
+## Vendor stack (ADR 047 D3)
+
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
+- **`@capsuletech/web-ui`** (workspace, dep) — chrome редактора (хард-деп). См. [[web-zone-design-time]]: design-time использует kit для chrome, юзерский kit инжектится только в канвас.
+- **`@capsuletech/web-renderer`** (workspace, dep) — рендер preview по JSON-схеме внутри канваса.
+- **`@capsuletech/web-contract`** (workspace, dep) — leaf-протоколы; creator collect'ит контракты компонентов.
+- **`@capsuletech/web-style`** (workspace, dep) — tokens + createStyle.
+- _(TBD)_ code editor — CodeMirror или Monaco для `/logic` + `/style` + `/text` (Phase D4 решение).
+- _(TBD)_ canvas isolation transport — WebSocket или MessageChannel для iframe-mode канваса.
 
 ## Subpath-структура (целевая)
 
