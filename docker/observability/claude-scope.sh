@@ -23,6 +23,8 @@ export OTEL_LOGS_EXPORTER=otlp
 export OTEL_EXPORTER_OTLP_PROTOCOL=grpc
 export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
 export OTEL_RESOURCE_ATTRIBUTES="${attrs}"
+# Скоуп для governance-хуков (OTEL_* в subprocess/hooks не пробрасывается).
+export CAPSULE_SCOPE="${scope}"
 export OTEL_METRIC_EXPORT_INTERVAL=10000
 export OTEL_LOGS_EXPORT_INTERVAL=5000
 # Логировать текст промптов и детали тулзов (команды, tool_name) — всё локально.

@@ -21,6 +21,8 @@ $env:OTEL_LOGS_EXPORTER           = "otlp"
 $env:OTEL_EXPORTER_OTLP_PROTOCOL  = "grpc"
 $env:OTEL_EXPORTER_OTLP_ENDPOINT  = "http://localhost:4317"
 $env:OTEL_RESOURCE_ATTRIBUTES     = $attrs
+# Скоуп для governance-хуков (OTEL_* в subprocess/hooks не пробрасывается).
+$env:CAPSULE_SCOPE                = $Scope
 $env:OTEL_METRIC_EXPORT_INTERVAL  = "10000"
 $env:OTEL_LOGS_EXPORT_INTERVAL    = "5000"
 # Логировать текст промптов и детали тулзов (команды, tool_name) — всё локально.
