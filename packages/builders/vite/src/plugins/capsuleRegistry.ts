@@ -799,7 +799,12 @@ export const renderAppTagsTypes = (tags: readonly string[], aliasKeys: readonly 
  *
  * When hasAccess is true, the generator emits:
  *   import { setupAccess } from '@capsuletech/web-access';
- *   if (appConfig.access) { setupAccess(appConfig.access); }
+ *   import { useAuth } from '@capsuletech/web-auth/session';
+ *   if (appConfig.access) { setupAccess(appConfig.access, useAuth()); }
+ *
+ * Per ADR 047 D2 (no horizontal between domain): web-access runtime package
+ * does NOT depend on web-auth domain. The app-level generator wires them via
+ * IAuthCapability contract from web-contract/capabilities.
  *
  * When hasAuthSession is true, the generator emits:
  *   import { configureAuthSession } from '@capsuletech/web-auth/session';
@@ -844,6 +849,12 @@ export const generateAppConfigRuntime = (
 
   if (hasAccess) {
     lines.push("import { setupAccess } from '@capsuletech/web-access';");
+    // useAuth needed as IAuthCapability arg to setupAccess (ADR 047 D2 —
+    // web-access does NOT import web-auth directly; app wires the contract).
+    lines.push("import { useAuth } from '@capsuletech/web-auth/session';");
+  } else if (hasAuthSession) {
+    // hasAccess already imports useAuth via web-auth/session for setupAccess wiring.
+    // hasAuthSession alone gets configureAuthSession import; useAuth not needed.
   }
   if (hasAuthSession) {
     lines.push("import { configureAuthSession } from '@capsuletech/web-auth/session';");
@@ -870,7 +881,7 @@ export const generateAppConfigRuntime = (
     lines.push(
       '',
       'if (appConfig.access) {',
-      '  setupAccess(appConfig.access);',
+      '  setupAccess(appConfig.access, useAuth());',
       '}',
     );
   }

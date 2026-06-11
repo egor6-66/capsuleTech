@@ -63,7 +63,7 @@ design-time → всё кроме apps + другой design-time       + vendor
 | `@capsuletech/web-profiler` | — | — | ✅ |
 | `@capsuletech/web-remote` | — | — | ✅ |
 | `@capsuletech/web-contract` | — | — | ✅ |
-| **`@capsuletech/web-access`** | **`web-auth` _(domain!)_**, `web-core` | — | ❌ **DRIFT** |
+| `@capsuletech/web-access` | `web-contract`, `web-core` | — | ✅ (drift fixed Phase D2 — `IAuthCapability` через web-contract/capabilities) |
 
 **Анализ:**
 
@@ -109,11 +109,13 @@ design-time → всё кроме apps + другой design-time       + vendor
 
 ## Сводка по drifts (что Phase D3 compliance должен ловить)
 
-| # | Drift | Severity | Чинится в |
+| # | Drift | Severity | Status |
 |---|---|---|---|
-| 1 | `@capsuletech/web-access` → `@capsuletech/web-auth` (runtime → domain) | **High** | Phase D2 — extract `IAuthCapability` в `web-contract`; access потребляет контракт, auth реализует через ADR 033. |
+| 1 | `@capsuletech/web-access` → `@capsuletech/web-auth` (runtime → domain) | High | ✅ **CLOSED Phase D2** — `IAuthCapability` extract'ed в `web-contract/capabilities`; access потребляет контракт; vite-builder generator wires `useAuth()` arg в `setupAccess`. |
 
-**Total drifts: 1 of 23 packages.** Архитектура в основном уже соответствует canon-у. ADR 047 D2 (no horizontal between domain) — 100% clean. ADR 047 D1 (zone dependency direction) — 22/23 clean, один drift известен и спланирован к фиксу.
+**Total drifts: 0 of 23 packages** (на момент Phase D2 closure). Архитектура полностью canon-compliant. ADR 047 D2 (no horizontal between domain) — 100% clean. ADR 047 D1 (zone dependency direction) — 23/23 clean.
+
+Phase D3 compliance enforcement сейчас не имеет известных нарушений для baseline'а — новые drifts будут пойманы автоматически при добавлении (если правила реализованы).
 
 ## Compliance rule mapping (для Phase D3 builder'а)
 

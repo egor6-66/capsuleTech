@@ -21,19 +21,18 @@ last-updated: 2026-06-11
   - `can(capability)` resolver.
   - Capability-tagging API (на route / widget / button).
   - Enforcement hooks.
-  - **🚨 Резолвить runtime → domain дрейф** — текущий `package.json` содержит dep на `@capsuletech/web-auth` (domain). Per ADR 047 D2, runtime НЕ зависит на domain. Контракт `IAuthCapability` должен переехать в `web-contract`, web-access потребляет контракт; конкретный web-auth реализует через ADR 033 manifest.
-- **Active blockers:** runtime → domain дрейф (см. выше). Phase D2 закроет (cross-domain contract setup).
+  - ✅ **Runtime → domain дрейф закрыт (Phase D2).** `IAuthCapability` extract'ed в `@capsuletech/web-contract/capabilities`; `web-access` потребляет контракт через `setupAccess(policy, auth)`; vite-builder app-генератор wires `useAuth()` из `web-auth/session` как arg. `web-access/package.json` больше не зависит на `web-auth` (заменён на `web-contract`).
+- **Active blockers:** нет.
 - **Roadmap:**
-  1. Phase D2 — extract `IAuthCapability` в `web-contract`; убрать прямую зависимость на `web-auth`.
-  2. `can(capability)` resolver MVP.
-  3. Capability-tagging API.
-- **Last activity:** 2026-06-11 (canon refresh; зафиксирован дрейф).
+  1. `can(capability)` resolver MVP.
+  2. Capability-tagging API.
+- **Last activity:** 2026-06-12 (D2 drift closed).
 
 ## Vendor stack (ADR 047 D3)
 
 - **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
-- **`@capsuletech/web-core`** (workspace, dep) — HCA-integration.
-- ⚠️ **`@capsuletech/web-auth`** (workspace, dep) — **WRONG DIRECTION** (runtime → domain), будет переписан на контракт в `web-contract` в Phase D2 per [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] D2.
+- **`@capsuletech/web-core`** (workspace, dep) — HCA-integration + `registerAccessResolver` sink.
+- **`@capsuletech/web-contract`** (workspace, dep) — leaf-протоколы; `IAuthCapability` из `/capabilities` subpath (per ADR 047 D2 — runtime потребляет контракт, не direct import domain'а).
 
 ## Ментальная модель
 

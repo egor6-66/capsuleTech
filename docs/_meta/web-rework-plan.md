@@ -548,7 +548,7 @@ A0 (merge 046+047+048+plan) ─→ A1 (USER creates owner-boost-matrix + restart
 | C2 — Ui.Outlet swap | **DONE** | #305 | main steward; `Outlet` injection в Page+Widget wrappers переключён на CapsuleOutlet (alias-import). Apps/playground outlet patch — USER в своей ветке. |
 | C3 — CSS селекторы enumerate | READY | — | После C2 merge (✅) — USER dispatches owner-web-style |
 | D1 — Zone directory layout | BLOCKED | — | Wait W+B+C stable |
-| D2 — Cross-domain contracts (if needed) | BLOCKED | — | Wait D1; зависит от W5 находок |
+| D2 — Cross-domain contracts (web-access drift fix) | **DONE** | этот PR | `IAuthCapability` в `web-contract/capabilities`; web-access потребляет контракт; vite-builder generator wires `useAuth()` arg. W5 known drift закрыт. |
 | D3 — Compliance extension (zone canon + vendor wrapper) | BLOCKED | — | Wait D1 |
 | D4 — studio rename + absorb ui-creator | BLOCKED | — | Wait D1 |
 | D5 — OWNERSHIP Vendor stack audit | BLOCKED → partially in W2 | — | W2 уже расставит секции; D5 — финальный sweep если что упустили |

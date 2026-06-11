@@ -1,21 +1,33 @@
 /**
  * Bootstrap-хелпер web-access.
  *
- * Регистрирует RBAC role-провайдер (policy) И мостит резолвер `can` в
- * web-core enforcement-sink (`registerAccessResolver`). web-core остаётся
- * access-agnostic — резолвер ИНЖЕКТИТСЯ, а не импортится (нет цикла
- * web-core → web-access → web-auth → web-core).
+ * Регистрирует RBAC role-провайдер (policy + auth-capability) И мостит
+ * резолвер `can` в web-core enforcement-sink (`registerAccessResolver`).
+ * web-core остаётся access-agnostic — резолвер ИНЖЕКТИТСЯ, а не импортится.
  *
- * Вызвать один раз на старте аппа (side-effect в `capsule.app.ts`).
- * Промоут → декларативный `access:` в defineAppConfig (генератор) — позже.
+ * **Cross-zone canon (ADR 047 D2):** auth передаётся явно через
+ * `IAuthCapability` контракт (`@capsuletech/web-contract/capabilities`),
+ * НЕ через прямой import. App wires:
+ *
+ * ```ts
+ * // apps/<app>/capsule.app.ts
+ * import { setupAccess } from '@capsuletech/web-access';
+ * import { useAuth } from '@capsuletech/web-auth/session';
+ *
+ * setupAccess(policy, useAuth());
+ * ```
+ *
+ * Вызвать один раз на старте аппа. Промоут → декларативный `access:` в
+ * defineAppConfig (генератор) — позже.
  */
 
 import { registerAccessResolver } from '@capsuletech/web-core';
+import type { IAuthCapability } from '@capsuletech/web-contract/capabilities';
 import { roleProvider } from './providers/role';
 import { can, registerAccessProvider } from './resolver';
 import type { AccessPolicy } from './types';
 
-export const setupAccess = (policy: AccessPolicy): void => {
-  registerAccessProvider(roleProvider(policy));
+export const setupAccess = (policy: AccessPolicy, auth: IAuthCapability): void => {
+  registerAccessProvider(roleProvider(policy, auth));
   registerAccessResolver((cap) => can(cap));
 };
