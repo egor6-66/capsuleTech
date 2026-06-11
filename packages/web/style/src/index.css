@@ -544,41 +544,37 @@
 }
 
 /* Named content region — crossfade only.
-   Depth-enumerated names (capsule-content-0 … capsule-content-3) are set by
-   CapsuleOutlet (ADR 046 D4, Phase C1). Each nesting level gets its own
-   view-transition-name so nested Outlets animate independently.
-   Legacy fallback (capsule-content, no depth suffix) keeps consumers that
-   haven't adopted CapsuleOutlet working as before. */
+   CapsuleOutlet (ADR 046 D4) sets both:
+     - view-transition-name: capsule-content-${depth} (per-level unique name
+       so nested Outlets are independent snapshot regions);
+     - view-transition-class: capsule-route (depth-agnostic CSS hook).
+   CSS targets the class — one selector covers ANY depth (no enumeration,
+   no hardcoded ceiling). Legacy fallback `capsule-content` (no suffix) for
+   manual `.vt-route-content` consumers that don't use CapsuleOutlet.
+   Browser support: view-transition-class — Chromium 125+ / Safari 18+. */
 
-::view-transition-old(capsule-content-0),
-::view-transition-old(capsule-content-1),
-::view-transition-old(capsule-content-2),
-::view-transition-old(capsule-content-3),
+::view-transition-old(.capsule-route),
 ::view-transition-old(capsule-content) {
   animation: 200ms ease-out both vt-fade-out;
 }
 
-::view-transition-new(capsule-content-0),
-::view-transition-new(capsule-content-1),
-::view-transition-new(capsule-content-2),
-::view-transition-new(capsule-content-3),
+::view-transition-new(.capsule-route),
 ::view-transition-new(capsule-content) {
   animation: 220ms ease-in both vt-fade-in;
 }
 
 /* Suppress group morph so geometry changes (login→workspace) don't slide;
    pure crossfade without position/size interpolation. */
-::view-transition-group(capsule-content-0),
-::view-transition-group(capsule-content-1),
-::view-transition-group(capsule-content-2),
-::view-transition-group(capsule-content-3),
+::view-transition-group(.capsule-route),
 ::view-transition-group(capsule-content) {
   animation-duration: 0ms;
 }
 
 /* Utility class — apply to the stable content wrapper around <Outlet />.
-   CapsuleOutlet sets view-transition-name automatically; this class is the
-   legacy/manual opt-in for apps that manage the wrapper themselves. */
+   CapsuleOutlet handles view-transition-name + view-transition-class
+   automatically; this class is the legacy/manual opt-in for apps that
+   manage the wrapper themselves (matches the legacy `capsule-content` name
+   above, NOT the new class-based selectors). */
 .vt-route-content {
   view-transition-name: capsule-content;
 }

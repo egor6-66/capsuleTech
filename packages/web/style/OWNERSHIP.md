@@ -19,11 +19,11 @@ Styling-слой capsule: 11 design-system theme'ов (CSS-variables), полн�
 - **Priority:** **P0** — peerDep для web-ui + всех visual пакетов.
 - **Maturity bar (до 1.0):**
   - Token set FROZEN per memory (ADR 042 canon + Figma sync).
-  - Phase C3 — `.vt-route-content` enumerate selectors per ADR 046.
+  - Phase C3 — depth-agnostic `::view-transition-*(.capsule-route)` селекторы (ADR 046 D4). Раньше делалось через перечисление `capsule-content-{0..3}` (PR #309 — superseded, видел hardcoded потолок depth).
   - ThemeEditor (за prop-флагом, отдельный subpath /editor) finalized.
-- **Active blockers:** нет. Phase C3 закрыта (PR feat/web-style-vt-depth-enumerate).
+- **Active blockers:** нет. Phase C3 закрыта depth-agnostic канон-вариантом.
 - **Roadmap:**
-  1. ~~C3 — enumerate vt-name селекторы (после C2).~~ **Done** (ADR 046 D4, Phase C3).
+  1. ~~C3 — depth-agnostic vt-name селекторы (после C2).~~ **Done** (ADR 046 D4, Phase C3 final).
   2. ThemeEditor polish.
   3. Token set freezing canon docs.
 - **Last activity:** 2026-06-11 (canon refresh; PR #297 cleanup закрыт).

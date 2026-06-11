@@ -13,11 +13,21 @@ import { DepthContext } from './depthContext';
  * триггерит анимацию у родителей (их именованные регионы рендерят
  * одинаковый DOM до/после → фейд visible-нулевой).
  *
+ * **Depth-agnostic CSS targeting через `view-transition-class`.** Раньше
+ * web-style перечислял селекторы `::view-transition-*(capsule-content-{0..3})`
+ * руками, что давало hardcoded потолок глубины (depth 4+ молча терял brand
+ * fade). Теперь все CapsuleOutlet'ы несут класс `capsule-route` —
+ * web-style таргетит `::view-transition-*(.capsule-route)`, селектор
+ * матчит регион любой глубины. Никакого enumeration.
+ *
  * DOM-обёртка:
- *   - класс `vt-route-content` (web-style цепляет per-depth `::view-transition-*`
- *     селекторы по нему — см. `packages/web/style/src/index.css`);
- *   - inline `view-transition-name: capsule-content-${depth}` (фактический
- *     идентификатор именованного региона для браузера);
+ *   - класс `vt-route-content` (legacy backward-compat для consumers, которые
+ *     ещё руками ставят этот класс на свой wrapper — см. `packages/web/style/src/index.css`);
+ *   - inline `view-transition-name: capsule-content-${depth}` (уникальный
+ *     идентификатор именованного региона — нужен чтобы вложенные Outlet'ы
+ *     были разными snapshot-регионами и не схлопывались в один);
+ *   - inline `view-transition-class: capsule-route` (CSS-таргетинг по
+ *     классу через `::view-transition-*(.capsule-route)` — depth-agnostic);
  *   - inline `width/height: 100%` — wrapper должен сохранять размер cell'а
  *     родителя, чтобы Page-Component'ы с `h-full`/`w-full` получили sized
  *     parent (исторический паттерн до PR #264, ныне инкапсулирован).
@@ -25,6 +35,10 @@ import { DepthContext } from './depthContext';
  * **NB: `display: contents` НЕ годится** — view-transition-name требует
  * principal box (CSS view-transitions spec); `display:contents`-элемент
  * не генерирует layout-box → snapshot-регион не создаётся.
+ *
+ * **Browser support:** `view-transition-class` — Chromium 125+ (May 2024)
+ * и Safari 18+. Firefox view-transitions не поддерживает вообще, graceful
+ * degrade (никакого fade, мгновенный swap — приемлемо).
  *
  * Заменяет прямое использование `Outlet` в `Ui.Outlet`-инъекции
  * `@capsuletech/web-core` (см. C2 step plan-doc).
@@ -44,6 +58,7 @@ export const CapsuleOutlet = (): JSX.Element => {
           width: '100%',
           height: '100%',
           'view-transition-name': `capsule-content-${depth}`,
+          'view-transition-class': 'capsule-route',
         }}
       >
         <Outlet />
