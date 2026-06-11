@@ -1,7 +1,37 @@
+---
+name: "@capsuletech/web-date"
+owner-agent: главный (стюардит главный assistant)
+group: web_base
+zone: runtime
+status: alpha
+priority: P3
+last-updated: 2026-06-11
+---
+
 # OWNERSHIP — @capsuletech/web-date
 
 > Date/time utility layer for capsule. Pure logic — converters + filters. No UI
 > (date pickers live in `@capsuletech/web-ui`, wrapping Kobalte), no reactivity yet.
+
+## Состояние (читать ПЕРВЫМ)
+
+- **Zone:** `runtime` — pure date/time utilities; engine — date-fns v4.
+- **Status:** `alpha` (0.1.0) — конвертеры + range-фильтры работают.
+- **Priority:** **P3** — опциональный helper; апп может использовать date-fns напрямую.
+- **Maturity bar (до beta):**
+  - Reactivity layer (Solid-aware date utilities).
+  - Locale-aware formatters.
+  - Tz-aware helpers.
+- **Active blockers:** нет.
+- **Roadmap:**
+  1. Reactivity для активной локали.
+  2. Tz helpers.
+- **Last activity:** 2026-06-11 (canon refresh).
+
+## Vendor stack (ADR 047 D3)
+
+- **date-fns** (`^4`, dep) — main engine. https://date-fns.org/
+- **Solid.js** (для future reactivity) — пока без зависимости.
 
 ## Зона ответственности
 

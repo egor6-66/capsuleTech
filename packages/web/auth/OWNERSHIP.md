@@ -1,3 +1,13 @@
+---
+name: "@capsuletech/web-auth"
+owner-agent: owner-web-auth
+group: web_base
+zone: domain
+status: scaffold
+priority: P1
+last-updated: 2026-06-11
+---
+
 # OWNERSHIP — @capsuletech/web-auth
 
 **Owner agent:** `owner-web-auth`
@@ -5,6 +15,44 @@
 **Release group:** `web_base` (tag `web@{version}`) — **добавить в `nx.json` при первом releasable-контенте** (сейчас skeleton НЕ в группе, прецедент web-agent).
 **Status:** `0.0.0` — skeleton (контракты + TODO). Наполнение блоков — owner.
 **ADR:** [[039-web-auth-package|ADR 039]] (auth domain-пакет)
+
+## Состояние (читать ПЕРВЫМ)
+
+- **Zone:** `domain` — stateful feature-package, «мини-апп как пакет». Параметризуется ОСЬЮ СТРАТЕГИИ ВХОДА через subpath'ы (`/role`, `/credentials`, `/oauth2`, `/qr`).
+- **Status:** `scaffold` (0.0.0) — контракты + TODO; реализация стратегий в процессе.
+- **Priority:** **P1** — критичный для любого capsule-аппа с auth.
+- **Maturity bar (до alpha):**
+  - Реализованы минимум стратегии: role + credentials.
+  - Generic auth FSM (idle → submitting → authed/error) на `createState`.
+  - useEmit named events (onLogin/onLogout/onError) per ADR 032.
+  - Capsule manifest (ADR 033) для capability injection.
+  - Контракт `IAuthCapability` extracted в `web-contract` (ADR 047 D2).
+- **Active blockers:** ADR 047 D2 compliance не активирован, но canon зафиксирован [[web-zone-domain|domain zone canon]].
+- **Roadmap:**
+  1. Реализация role + credentials стратегий.
+  2. Migration playground-прототипа auth на web-auth.
+  3. OAuth2 / QR стратегии.
+  4. `IAuthCapability` контракт в `web-contract` (Phase D2).
+- **Last activity:** 2026-06-11 (canon refresh).
+
+## Vendor stack (ADR 047 D3)
+
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
+- **`@capsuletech/web-core`** (workspace, dep) — HCA wrappers + ControllerProxy.
+- **`@capsuletech/web-state`** (workspace, dep) — `createState` для auth FSM.
+- **`@capsuletech/web-query`** (workspace, dep) — `defineEndpoint` для `/auth/login` (clean contract; моки через app preRequest + shared-zod/gen, НЕ MSW).
+- **`@capsuletech/web-ui`** (workspace, dep) — form-блоки (Field/Input/Button/...).
+- **`@capsuletech/shared-zod`** (workspace, dep) — schema-validation.
+
+## Allowed dependency zones (ADR 047 D2)
+
+Domain-пакеты НЕ импортят друг друга напрямую. web-auth разрешено зависеть на:
+
+- ✅ **kit** (`web-ui`)
+- ✅ **runtime** (`web-core`, `web-state`, `web-query`, `web-style`, `shared-zod`)
+- ✅ **boost** (если форма нуждается, например `boost-table` для списка ролей)
+- ✅ **web-contract** (для cross-domain capability)
+- ❌ **другой domain** (`web-shell`, `web-agent`) — через контракт в `web-contract`.
 
 ## Зона ответственности
 

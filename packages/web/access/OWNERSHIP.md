@@ -1,14 +1,39 @@
 ---
 name: "@capsuletech/web-access"
-owner-agent: главный (стюард — сквозная gate-ось/архитектура, без отдельного owner)
-group: web_base (планируется; пока standalone git-tag)
-status: SKELETON (0.0.0)
-last-updated: 2026-06-09
+owner-agent: главный (стюардит главный assistant — сквозная gate-ось/архитектура)
+group: web_base
+zone: runtime
+status: scaffold
+priority: P2
+last-updated: 2026-06-11
 ---
 
 # @capsuletech/web-access
 
 Единая **gate-ось** capsule. Authn + RBAC + entitlements + feature-toggle/inject — НЕ четыре механизма, а ОДИН.
+
+## Состояние (читать ПЕРВЫМ)
+
+- **Zone:** `runtime` — единая gate-ось.
+- **Status:** `scaffold` (0.0.0) — структура задана, реализация TBD.
+- **Priority:** **P2** — нужен только для apps с правами/feature-toggle.
+- **Maturity bar (до alpha):**
+  - `can(capability)` resolver.
+  - Capability-tagging API (на route / widget / button).
+  - Enforcement hooks.
+  - **🚨 Резолвить runtime → domain дрейф** — текущий `package.json` содержит dep на `@capsuletech/web-auth` (domain). Per ADR 047 D2, runtime НЕ зависит на domain. Контракт `IAuthCapability` должен переехать в `web-contract`, web-access потребляет контракт; конкретный web-auth реализует через ADR 033 manifest.
+- **Active blockers:** runtime → domain дрейф (см. выше). Phase D2 закроет (cross-domain contract setup).
+- **Roadmap:**
+  1. Phase D2 — extract `IAuthCapability` в `web-contract`; убрать прямую зависимость на `web-auth`.
+  2. `can(capability)` resolver MVP.
+  3. Capability-tagging API.
+- **Last activity:** 2026-06-11 (canon refresh; зафиксирован дрейф).
+
+## Vendor stack (ADR 047 D3)
+
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
+- **`@capsuletech/web-core`** (workspace, dep) — HCA-integration.
+- ⚠️ **`@capsuletech/web-auth`** (workspace, dep) — **WRONG DIRECTION** (runtime → domain), будет переписан на контракт в `web-contract` в Phase D2 per [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] D2.
 
 ## Ментальная модель
 

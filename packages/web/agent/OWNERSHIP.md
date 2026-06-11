@@ -1,3 +1,13 @@
+---
+name: "@capsuletech/web-agent"
+owner-agent: owner-web-agent
+group: web_base
+zone: domain
+status: scaffold
+priority: P2
+last-updated: 2026-06-11
+---
+
 # OWNERSHIP — @capsuletech/web-agent
 
 **Owner agent:** `owner-web-agent`
@@ -5,6 +15,45 @@
 **Release group:** `web_base` (tag `web@{version}`)
 **Status:** `0.0.0` — skeleton (контракты + TODO). Наполнение блоков — owner.
 **ADR:** [[035-web-agent-package|ADR 035]] (web-agent package + workspace AI)
+
+## Состояние (читать ПЕРВЫМ)
+
+- **Zone:** `domain` — stateful feature-package, LLM-агент-примитив фронта. Параметризуется тремя осями (транспорт / тулсет / персона) через subpath'ы (`/client`, `/tools`, `/personas`, `/controllers`, `/ui`, `/capsule`).
+- **Status:** `scaffold` (0.0.0) — контракты + TODO; agent-loop в процессе.
+- **Priority:** **P2** — пока опциональный пакет; апп без агента живёт.
+- **Maturity bar (до alpha):**
+  - Agent-loop минимум на одном транспорте (SSE через `backend/scriber`).
+  - Tool-registry scaffold.
+  - Минимум одна персона.
+  - `Controllers.Agent.*` HCA-адаптер (ADR 032 useEmit).
+  - Capsule manifest (ADR 033).
+- **Active blockers:** ждёт стабилизации `backend/scriber` HTTP/SSE контракта.
+- **Roadmap:**
+  1. Agent-loop по существующему `backend/scriber` SSE.
+  2. Tool-registry + native-tools одна штука.
+  3. Editor-ops — НЕ в этой зоне (зона `owner-web-ui-creator`).
+  4. Capsule manifest для capability injection.
+- **Last activity:** 2026-06-11 (canon refresh).
+
+## Vendor stack (ADR 047 D3)
+
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
+- **`@capsuletech/web-core`** (workspace, dep) — HCA wrappers + ControllerProxy.
+- **`@capsuletech/web-query`** (workspace, dep) — `defineEndpoint` для backend/scriber HTTP+SSE.
+- **`@capsuletech/web-ui`** (workspace, dep) — chat UI-блоки.
+- **`@capsuletech/shared-zod`** (workspace, dep) — schema-validation для tool-call'ов.
+- **backend/scriber** (через HTTP+SSE) — Rust LLM-роутер capsule. Не npm-dep, runtime endpoint.
+
+## Allowed dependency zones (ADR 047 D2)
+
+Domain-пакеты НЕ импортят друг друга напрямую. web-agent разрешено зависеть на:
+
+- ✅ **kit** (`web-ui`)
+- ✅ **runtime** (`web-core`, `web-query`, `web-style`, `shared-zod`)
+- ✅ **boost** (если для UI agent'а нужны boost-компоненты)
+- ✅ **web-contract** (для cross-domain capability)
+- ❌ **другой domain** (`web-auth`, `web-shell`) — через контракт в `web-contract`.
+- ❌ **editor-ops** — зона `owner-web-ui-creator`, не моя.
 
 ## Зона ответственности
 

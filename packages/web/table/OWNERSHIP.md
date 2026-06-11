@@ -1,6 +1,48 @@
+---
+name: "@capsuletech/web-table"
+owner-agent: owner-web-table
+group: web_base
+zone: boost
+status: scaffold
+priority: P1
+last-updated: 2026-06-11
+---
+
 # OWNERSHIP — @capsuletech/web-table
 
 Owner-agent: **owner-web-table**
+
+> **NAMING:** будет переименован в `@capsuletech/boost-table` в Phase W6 (one atomic main steward PR per [[web-rework-plan]]). Light-mirror — `Ui.Grid` (kit).
+
+## Состояние (читать ПЕРВЫМ)
+
+- **Zone:** `boost` — heavy domain-mirror `Ui.Grid` light-примитива. Engine: TanStack Table + virtual-scroll.
+- **Status:** `scaffold` (0.0.0) — структура задана (см. [[shape-v2-and-table]]); реализация ждёт shape-v2 + restart owner-web-table.
+- **Priority:** **P1** — каждый dashboard-app capsule использует table.
+- **Maturity bar (до alpha):**
+  - DataTable composite + raw Table primitives + lib (`createInfiniteScroll`/`createPagination`).
+  - HKT-marker для row-generic typing (`IDataTableProps<TRow>` через `Shape<Tmpl>` ADR 036).
+  - Capsule manifest регистрирует `Tables.*` global (ADR 033).
+  - `sideEffects: false` + multi-entry build для tree-shake'а.
+  - Sorting / filter / pinning обвесы (per [[shape-v2-and-table]]).
+- **Active blockers:** virtual-scroll cold-empty quirk ([[shape-v2-and-table]]); shape-v2 redesign.
+- **Roadmap:**
+  1. W6 rename `@capsuletech/web-table` → `@capsuletech/boost-table`.
+  2. Migration table-code из web-ui composites/dataTable → web-table (founding).
+  3. HKT-marker для row-generic Shape typing.
+  4. Fix virtual-scroll cold-empty quirk (или upgrade @tanstack/solid-virtual).
+- **Last activity:** 2026-06-11 (canon refresh).
+
+## Vendor stack (ADR 047 D3)
+
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
+- **`@tanstack/solid-table`** (`^8.21.3`, dep) — headless table engine. https://tanstack.com/table/
+- **`@tanstack/solid-virtual`** (`^3.13.24`, dep) — virtual-scroll для `infinite` mode. https://tanstack.com/virtual/
+- **`@capsuletech/web-core`** (workspace, dep) — HCA wrappers.
+- **`@capsuletech/web-ui`** (workspace, dep) — Card / Layout primitives для chrome.
+- **`@capsuletech/web-style`** (workspace, dep) — createStyle, tokens.
+- **`@capsuletech/web-contract`** (workspace, dep) — leaf-протокол.
+- **`@capsuletech/shared-zod`** (workspace, dep) — schema-validation.
 
 ## Зона ответственности
 

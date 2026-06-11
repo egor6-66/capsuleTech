@@ -1,9 +1,42 @@
+---
+name: "@capsuletech/web-state"
+owner-agent: owner-web-state
+group: web_base
+zone: runtime
+status: stable
+priority: P0
+last-updated: 2026-06-11
+---
+
 # OWNERSHIP — @capsuletech/web-state
 
 Owner agent: **owner-web-state**
 Package path: `packages/web/state/`
 Version: 0.1.1
 Release group: `web_base` (fixed-versioning, tag `web@{version}`)
+
+## Состояние (читать ПЕРВЫМ)
+
+- **Zone:** `runtime` — XState-обвязка для capsule. `createState` (FSM factory с GOTO event injection) + `createBridge` (геттер-обёртка + tag-helpers `pick/omit/match/matchEntry`).
+- **Status:** `stable` (0.1.1) — публичный API используется web-core (createLogicWrapper) + всеми Controllers/Features.
+- **Priority:** **P0** — основа FSM-слоя HCA.
+- **Maturity bar (до 1.0):**
+  - Tag-registry alias canon (`@inputs` → multi-tag expansion, ADR 005).
+  - IBaseStateSchema unification с web-core extending (Phase F).
+  - 100% type-coverage публичного API.
+- **Active blockers:** нет.
+- **Roadmap:**
+  1. Tag-registry alias canonization.
+  2. Bridge API stabilization (`store.update`, `pick/omit/match`).
+  3. Schema type unification (Phase F per memory).
+- **Last activity:** 2026-06-11 (canon refresh).
+
+## Vendor stack (ADR 047 D3)
+
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
+- **XState** (`xstate` `^5`, peerDep) — FSM движок. https://stately.ai/docs
+- **`@xstate/solid`** (transitive через web-core) — Solid adapter.
+- **es-toolkit** (`^1`, dep) — utility helpers. https://es-toolkit.dev/
 
 ## Zone of responsibility
 

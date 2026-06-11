@@ -2,13 +2,44 @@
 name: "@capsuletech/web-ui"
 owner-agent: owner-web-ui
 group: web_base
-status: pre-1.0
-last-updated: 2026-06-03
+zone: kit
+status: stable
+priority: P0
+last-updated: 2026-06-11
 ---
 
 # @capsuletech/web-ui
 
 Stateless UI-kit для capsule: 16 primitives (Button, Input, Card, Field, Toggle, Tooltip, Typography, ...) + layout-namespace (`Layout.Grid`, `Layout.Flex`, `Layout.Matrix`). Polymorphic через Slot (Kobalte), CVA + createStyle (из web-style), themed tokens only.
+
+## Состояние (читать ПЕРВЫМ)
+
+- **Zone:** `kit` — единственный пакет zone'ы; внутренний weight-gradient L0/L1 (см. [[web-ui]] раздел «Weight gradient»).
+- **Status:** `stable` — пользуется во всех capsule-аппах + публикуется в release-group `web_base`.
+- **Priority:** **P0** — критичный путь; любой capsule-апп зависит на web-ui.
+- **Maturity bar (до 1.0):**
+  - L0/L1 gradient формализован bundle-size assertion'ом (W4 — pending).
+  - manifest.json генерится build-time'ом для studio palette badge (W4 — pending).
+  - Все primitives имеют DOM/render unit-test покрытие (сейчас structural-only из-за vitest Solid transform gap).
+  - Visual regression CI (Chromatic / Playwright).
+- **Active blockers:** Vitest Solid transform — `.tsx` файлы не импортируются в jsdom unit'ах (см. План рефакторинга). Не блокирует фичи, блокирует unit coverage.
+- **Roadmap (3-5):**
+  1. W4 — bundle-size assertions + manifest.json (per [[web-rework-plan]] Phase W).
+  2. Ui.Map/Flow/Chart placeholder'ы (после W6 boost-renames).
+  3. Vitest Solid transform → разблокировать DOM-render unit-coverage.
+  4. Visual regression CI.
+- **Last activity:** 2026-06-11 (canon refresh).
+
+## Vendor stack (ADR 047 D3)
+
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
+- **`@kobalte/core`** (`^0.13.0`, peerDep) — a11y-headless. Tree-shakeable per primitive. Используется для interactive primitives (Dropdown/Tooltip/Slider/Accordion/Select) + Polymorphic Slot. https://kobalte.dev/
+- **class-variance-authority** (`^0.7.1`, dep) — variant API. Используется через `web-style/createStyle`. https://cva.style/
+- **`@corvu/resizable`** (`^0.2.5`, dep) — resize-handles внутри Flex/Matrix. https://corvu.dev/
+- **`@tanstack/solid-table`** (`^8.21.3`, peerDep) — head-less table engine для composite `DataTable`. https://tanstack.com/table/
+- **`@tanstack/solid-virtual`** (`^3.13.24`, peerDep) — virtual-scroll для `DataTable infinite`. https://tanstack.com/virtual/
+- **lucide-solid** (`^1.16.0`, dep) — icon-set. Owned in `src/icons/registry.ts` (2026-06-09 — не отдельный пакет).
+- **Tailwind v4** (через web-style peerDep) — token CSS. https://tailwindcss.com/
 
 ## Зона ответственности
 

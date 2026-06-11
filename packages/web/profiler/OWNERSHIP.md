@@ -2,13 +2,37 @@
 name: "@capsuletech/web-profiler"
 owner-agent: owner-web-profiler
 group: web_base
-status: pre-1.0
+zone: runtime
+status: beta
+priority: P2
 last-updated: 2026-06-11
 ---
 
 # @capsuletech/web-profiler
 
 Performance-monitoring package: MetricsBus ring-buffer, 13 built-in collectors, 3 reporters, and ProfilerDashboard widget for Solid.js apps.
+
+## Состояние (читать ПЕРВЫМ)
+
+- **Zone:** `runtime` — collector-pattern profiler, провайдер маунтится в BaseProviders.
+- **Status:** `beta` (0.1.1) — 13 collectors + 3 reporters + ProfilerDashboard (kobalte Tabs + sparklines), 29 tests. Legacy `VitalsMonitoringProvider` shim — deprecated.
+- **Priority:** **P2** — обсервабилити, опциональный.
+- **Maturity bar (до stable):**
+  - Legacy `VitalsMonitoringProvider` shim удалён.
+  - Custom collector API стабилизирован.
+  - Reporter middleware-pipeline (batching / debounce).
+- **Active blockers:** нет.
+- **Roadmap:**
+  1. Legacy shim removal.
+  2. Custom metric API canon.
+  3. Reporter pipeline.
+- **Last activity:** 2026-06-11 (canon refresh).
+
+## Vendor stack (ADR 047 D3)
+
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
+- **`@kobalte/core`** (peerDep) — Tabs / Dialog для ProfilerDashboard. https://kobalte.dev/
+- **web-vitals** (`dep`) — Web Vitals collector (CLS/FCP/LCP/INP/TTFB). https://github.com/GoogleChrome/web-vitals
 
 ## Зона ответственности
 

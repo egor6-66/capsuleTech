@@ -2,13 +2,37 @@
 name: "@capsuletech/web-dnd"
 owner-agent: owner-web-dnd
 group: web_base
+zone: runtime
 status: stable
-last-updated: 2026-06-04
+priority: P1
+last-updated: 2026-06-11
 ---
 
 # @capsuletech/web-dnd
 
 Pointer-based drag-and-drop для Solid.js. Лёгкий (без HTML5 native-флэйков), поддерживает mouse + touch, работает с window-level listeners (нет setPointerCapture).
+
+## Состояние (читать ПЕРВЫМ)
+
+- **Zone:** `runtime` — pointer DnD; используется boost-matrix + web-ui-creator + apps.
+- **Status:** `stable` (0.1.1) — `DnDProvider` + `createDraggable`/`createDroppable`/`createSortable` + `DragOverlay` + `useDnD` стабильны.
+- **Priority:** **P1** — основа DnD для shell/matrix + editor.
+- **Maturity bar (до 1.0):**
+  - autoScroll edge-cases (sticky headers).
+  - Touch-specific behavior расширение.
+  - DragOverlay rich-scenarios (skeleton previews).
+- **Active blockers:** нет.
+- **Roadmap:**
+  1. autoScroll improvements (sticky headers).
+  2. Touch UX.
+  3. Multi-DragOverlay scenarios.
+- **Last activity:** 2026-06-11 (canon refresh).
+
+## Vendor stack (ADR 047 D3)
+
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
+
+Leaf-пакет zone runtime. Никаких vendor'ов кроме Solid — реализация на чистом pointer-event API.
 
 ## Зона ответственности
 

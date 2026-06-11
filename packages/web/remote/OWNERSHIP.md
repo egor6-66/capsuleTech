@@ -2,13 +2,38 @@
 name: "@capsuletech/web-remote"
 owner-agent: owner-web-remote
 group: web_base
-status: pre-1.0
+zone: runtime
+status: scaffold
+priority: P3
 last-updated: 2026-06-11
 ---
 
 # @capsuletech/web-remote
 
 Динамическая загрузка независимо собранных удалённых модулей в host-приложение — собственный runtime (без `@module-federation/*`), pluggable transport-слой, reactive registry.
+
+## Состояние (читать ПЕРВЫМ)
+
+- **Zone:** `runtime` — module federation alternative.
+- **Status:** `scaffold` (0.0.0) — Phase 0: type contracts, runtime пуст.
+- **Priority:** **P3** — нужен только для micro-frontend сценариев.
+- **Maturity bar (до alpha):**
+  - Provider / useRemote / `<Remote>` impl.
+  - Transports: local + BroadcastChannel + postMessage + socket.
+  - RemoteManifestPlugin.
+  - openInWindow integration.
+- **Active blockers:** ждёт окончательного канона + потребности у apps.
+- **Roadmap:**
+  1. Provider + useRemote + `<Remote>` MVP.
+  2. local transport.
+  3. BroadcastChannel transport.
+- **Last activity:** 2026-06-11 (canon refresh).
+
+## Vendor stack (ADR 047 D3)
+
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
+
+Leaf-пакет zone runtime. Контракт в ADR 015. Никаких external module-federation вендоров — собственный runtime.
 
 ## Зона ответственности
 
