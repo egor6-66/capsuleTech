@@ -96,6 +96,24 @@ export const Select = Object.assign(SelectBase, {
 // Textarea — multiline text input, mirrors Input in styling conventions
 export const Textarea = createLazy(() => import('@capsuletech/web-ui/textarea'), 'Textarea');
 
+// ---------------------------------------------------------------------------
+// Light placeholders for heavy boost-* mirrors.
+// Zero-engine-dep visuals shipped via web-ui (kit) per ADR 044 / 046 D3.
+// Apps without boost-{map,flow,charts} in their bundle can still render these
+// as preview / pre-mount skeletons. Heavy mirrors override at the global
+// registry level (Maps.* / Flows.* / Charts.*) via ADR 033 manifests.
+//
+// NB: `Ui.FlowDiagram` (NOT `Ui.Flow`) — `Ui.Flow.*` namespace is reserved for
+// Solid control-flow primitives (For/Show/Switch/Match/Index/Dynamic) defined
+// further below.
+// ---------------------------------------------------------------------------
+export const Map = createLazy(() => import('@capsuletech/web-ui/map'), 'Map');
+export const FlowDiagram = createLazy(
+  () => import('@capsuletech/web-ui/flow-diagram'),
+  'FlowDiagram',
+);
+export const Chart = createLazy(() => import('@capsuletech/web-ui/chart'), 'Chart');
+
 // NB: connected mode-toggles + theme picker moved to `@capsuletech/web-shell`
 // (tier-2, ADR 032). They hold web-style state, so they are no longer part of
 // the stateless `Ui` namespace — apps import them from `@capsuletech/web-shell/ui`.
