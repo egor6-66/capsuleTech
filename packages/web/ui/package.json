@@ -322,6 +322,7 @@
   ],
   "scripts": {
     "build": "vite build",
+    "build:manifest": "node --experimental-strip-types scripts/build-manifest.ts",
     "dev": "vite build --watch",
     "test": "vitest run",
     "test:browser": "vitest --config vitest.browser.config.ts run",
@@ -352,6 +353,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@vitest/browser": "4.1.6",
     "@vitest/browser-playwright": "4.1.6",
+    "esbuild": "0.27.7",
     "jsdom": "~29.1.1",
     "playwright": "^1.52.0",
     "storybook": "^10",
