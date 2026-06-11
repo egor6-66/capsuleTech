@@ -1,4 +1,10 @@
-import { Outlet } from '@tanstack/solid-router';
+// Outlet — capsule-обёртка над TanStack <Outlet/> через @capsuletech/web-router.
+// CapsuleOutlet владеет view-transition-name: capsule-content-${depth} через
+// DepthContext.Provider (ADR 046 Decision 4). Каждый Outlet-уровень получает
+// уникальный vt-name → нативный View Transitions API анимирует сегменты
+// независимо: смена под-роута на глубине N не триггерит анимацию у родителей.
+// Имя `Ui.Outlet` для consumer'ов сохраняется (re-export через alias).
+import { CapsuleOutlet as Outlet } from '@capsuletech/web-router';
 import { useCtx } from '../engine/ctx';
 import { UiProxy } from '../engine/ui-proxy';
 import { Ui as BaseUi } from '../ui-kit';
