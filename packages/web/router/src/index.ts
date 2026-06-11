@@ -20,6 +20,7 @@ export type { AnyRoute } from '@tanstack/router-core';
  */
 export { notFound, RouterProvider, redirect } from '@tanstack/solid-router';
 export { RouterContext, useRouter } from './context';
+export { useRouteDepth } from './useRouteDepth';
 export type {
   IBeforeLoadContext,
   ICapsuleRouter,

@@ -19,8 +19,9 @@ createRouter<TRouteTree>({
   viewTransition?,    // нативный View Transitions API (TanStack defaultViewTransition); дефолт false
 }): { raw: TanStackRouter<TRouteTree>; capsuleRouter: ICapsuleRouter<TRouteTree> }
 
-// Hook
-useRouter(): ICapsuleRouter   // бросает вне Provider'а
+// Hooks
+useRouter(): ICapsuleRouter        // бросает вне Provider'а
+useRouteDepth(): Accessor<number>  // глубина текущего Outlet'а в иерархии маршрутов (root=0, вложенный layout=1, …) — ADR 045 #3 vt-name
 
 // Types
 ICapsuleRouter<TRouteTree>    // { goTo, back, current, raw }
@@ -51,7 +52,8 @@ notFound                      // re-export @tanstack/solid-router (для throw 
 | `src/service.ts` | `createRouter()` — value-импорт `@tanstack/solid-router`, проводит `notFoundRedirect`, `beforeLoad`, `viewTransition` |
 | `src/context.ts` | `RouterContext` + `useRouter()` hook |
 | `src/index.ts` | barrel + ре-экспорт `redirect`/`notFound` из `@tanstack/solid-router` |
-| `src/__tests__/` | 39 тестов: wrap (14), normalizeBase (8), context (2), notFoundRedirect (5), beforeLoad (6), viewTransition (4) — node-env без jsdom |
+| `src/useRouteDepth.ts` | `useRouteDepth()` — derives depth via `useMatches({ select })` |
+| `src/__tests__/` | 44 тестов: wrap (14), normalizeBase (8), context (2), notFoundRedirect (5), beforeLoad (6), viewTransition (4), useRouteDepth (5) — node-env без jsdom |
 
 ## Ключевые инварианты
 
@@ -74,6 +76,7 @@ notFound                      // re-export @tanstack/solid-router (для throw 
 - ADR 003 — Context-based роутер
 - ADR 014 — `goTo` opts-object + generic `ICapsuleRouterContext`
 - ADR 030 — `notFoundRedirect` + generic `beforeLoad`-хук
+- ADR 045 #3 — depth-scoped `view-transition-name` (`useRouteDepth` foundation)
 
 ## Release group
 
