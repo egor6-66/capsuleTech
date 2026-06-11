@@ -302,7 +302,7 @@ describe('MapView — dark theme defaults', () => {
 describe('useMap — context guard', () => {
   it('throws when called outside MapView', () => {
     expect(() => useMap()).toThrow(
-      '[@capsuletech/web-map] useMap() must be called inside <MapView>',
+      '[@capsuletech/boost-map] useMap() must be called inside <MapView>',
     );
   });
 });

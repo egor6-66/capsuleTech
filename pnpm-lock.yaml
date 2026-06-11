@@ -114,6 +114,9 @@ importers:
 
   apps/ewc:
     dependencies:
+      '@capsuletech/boost-table':
+        specifier: workspace:*
+        version: link:../../packages/web/table
       '@capsuletech/shared-zod':
         specifier: workspace:*
         version: link:../../packages/shared/zod
@@ -141,9 +144,6 @@ importers:
       '@capsuletech/web-style':
         specifier: workspace:*
         version: link:../../packages/web/style
-      '@capsuletech/web-table':
-        specifier: workspace:*
-        version: link:../../packages/web/table
       '@capsuletech/web-ui':
         specifier: workspace:*
         version: link:../../packages/web/ui
@@ -239,21 +239,21 @@ importers:
 
   apps/nexus:
     dependencies:
+      '@capsuletech/boost-charts':
+        specifier: workspace:*
+        version: link:../../packages/web/charts
+      '@capsuletech/boost-flow':
+        specifier: workspace:*
+        version: link:../../packages/web/flow
       '@capsuletech/desktop':
         specifier: workspace:*
         version: link:../../packages/desktop
       '@capsuletech/shared-zod':
         specifier: workspace:*
         version: link:../../packages/shared/zod
-      '@capsuletech/web-charts':
-        specifier: workspace:*
-        version: link:../../packages/web/charts
       '@capsuletech/web-core':
         specifier: workspace:*
         version: link:../../packages/web/core
-      '@capsuletech/web-flow':
-        specifier: workspace:*
-        version: link:../../packages/web/flow
       '@capsuletech/web-profiler':
         specifier: workspace:*
         version: link:../../packages/web/profiler

@@ -1,5 +1,5 @@
 // Re-export the solid-flow building blocks consumers need to define custom
-// nodes, edges and state — so everything is imported from @capsuletech/web-flow
+// nodes, edges and state — so everything is imported from @capsuletech/boost-flow
 // and consumers never touch @dschz/solid-flow directly (insulates from its
 // alpha API churn — ADR 027).
 export {

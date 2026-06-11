@@ -6,11 +6,11 @@ import {
   type Node,
   type NodeProps,
   NodeResizer,
-} from '@capsuletech/web-flow';
+} from '@capsuletech/boost-flow';
 import { GripVertical } from 'lucide-solid';
 
 /**
- * Canvas — top-level widget: нод-канвас дашборда на `@capsuletech/web-flow`.
+ * Canvas — top-level widget: нод-канвас дашборда на `@capsuletech/boost-flow`.
  * Кастом-нода = NodeResizer + Handle-рёбра + grip-бэйдж + `Widgets.NodeBody`.
  * ДнД — только за grip-бэйдж (`node.dragHandle = '.cap-widget-grip'`), чтобы
  * интерактив внутри виджета (пилюли/ползунки) не таскал ноду. `createNode`

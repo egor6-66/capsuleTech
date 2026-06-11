@@ -1,5 +1,5 @@
 {
-  "name": "@capsuletech/web-flow",
+  "name": "@capsuletech/boost-flow",
   "version": "0.1.1",
   "type": "module",
   "main": "./dist/index.mjs",

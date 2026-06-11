@@ -1,5 +1,5 @@
 {
-  "name": "@capsuletech/web-charts",
+  "name": "@capsuletech/boost-charts",
   "version": "0.1.1",
   "type": "module",
   "main": "./dist/index.mjs",

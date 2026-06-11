@@ -1,4 +1,4 @@
-// @capsuletech/web-table — main barrel.
+// @capsuletech/boost-table — main barrel.
 // Exports DataTable composite, Table primitives, lib hooks, and Provider.
 
 // --- composites ---

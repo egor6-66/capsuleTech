@@ -838,11 +838,11 @@ describe('generatePackagesRuntime — empty list', () => {
 });
 
 describe('generatePackagesRuntime — single package', () => {
-  const entries = [pkgEntry('@capsuletech/web-map', 'Maps')];
+  const entries = [pkgEntry('@capsuletech/boost-map', 'Maps')];
 
   it('imports <Name>_mod from the /capsule subpath', () => {
     const out = generatePackagesRuntime(entries);
-    expect(out).toContain("import Maps_mod from '@capsuletech/web-map/capsule';");
+    expect(out).toContain("import Maps_mod from '@capsuletech/boost-map/capsule';");
   });
 
   it('exports const <Name> = <Name>_mod.components', () => {
@@ -865,13 +865,13 @@ describe('generatePackagesRuntime — single package', () => {
 
 describe('generatePackagesRuntime — two packages', () => {
   const entries = [
-    pkgEntry('@capsuletech/web-map', 'Maps'),
+    pkgEntry('@capsuletech/boost-map', 'Maps'),
     pkgEntry('@capsuletech/web-renderer', 'Render'),
   ];
 
   it('emits imports for both packages', () => {
     const out = generatePackagesRuntime(entries);
-    expect(out).toContain("import Maps_mod from '@capsuletech/web-map/capsule';");
+    expect(out).toContain("import Maps_mod from '@capsuletech/boost-map/capsule';");
     expect(out).toContain("import Render_mod from '@capsuletech/web-renderer/capsule';");
   });
 
@@ -906,7 +906,7 @@ describe('generatePackagesTypes — empty list', () => {
 });
 
 describe('generatePackagesTypes — single package', () => {
-  const entries = [pkgEntry('@capsuletech/web-map', 'Maps')];
+  const entries = [pkgEntry('@capsuletech/boost-map', 'Maps')];
 
   it('emits declare global block', () => {
     const out = generatePackagesTypes(entries);
@@ -917,7 +917,7 @@ describe('generatePackagesTypes — single package', () => {
   it('declares const <Name> typed via typeof import /capsule .components', () => {
     const out = generatePackagesTypes(entries);
     expect(out).toContain(
-      "const Maps: typeof import('@capsuletech/web-map/capsule')['default']['components'];",
+      "const Maps: typeof import('@capsuletech/boost-map/capsule')['default']['components'];",
     );
   });
 
@@ -938,14 +938,14 @@ describe('generatePackagesTypes — single package', () => {
 
 describe('generatePackagesTypes — two packages', () => {
   const entries = [
-    pkgEntry('@capsuletech/web-map', 'Maps'),
+    pkgEntry('@capsuletech/boost-map', 'Maps'),
     pkgEntry('@capsuletech/web-renderer', 'Render'),
   ];
 
   it('declares const for each package', () => {
     const out = generatePackagesTypes(entries);
     expect(out).toContain(
-      "const Maps: typeof import('@capsuletech/web-map/capsule')['default']['components'];",
+      "const Maps: typeof import('@capsuletech/boost-map/capsule')['default']['components'];",
     );
     expect(out).toContain(
       "const Render: typeof import('@capsuletech/web-renderer/capsule')['default']['components'];",
@@ -1061,7 +1061,7 @@ describe('generatePackagesRuntime — package with multiple controllerKeys', () 
 
 describe('generatePackagesRuntime — two packages, one with controllers one without', () => {
   const entries = [
-    pkgEntry('@capsuletech/web-map', 'Maps'),
+    pkgEntry('@capsuletech/boost-map', 'Maps'),
     pkgEntry('@capsuletech/web-dnd', 'Dnd', ['Editor']),
   ];
 
@@ -1078,7 +1078,7 @@ describe('generatePackagesRuntime — two packages, one with controllers one wit
 });
 
 describe('generatePackagesRuntime — package without controllers (no regression)', () => {
-  const entries = [pkgEntry('@capsuletech/web-map', 'Maps')];
+  const entries = [pkgEntry('@capsuletech/boost-map', 'Maps')];
 
   it('does NOT emit any Controllers augmentation', () => {
     const out = generatePackagesRuntime(entries);
@@ -1088,7 +1088,7 @@ describe('generatePackagesRuntime — package without controllers (no regression
 
   it('structure is identical to pre-controllers behavior', () => {
     const out = generatePackagesRuntime(entries);
-    expect(out).toContain("import Maps_mod from '@capsuletech/web-map/capsule';");
+    expect(out).toContain("import Maps_mod from '@capsuletech/boost-map/capsule';");
     expect(out).toContain('export const Maps = Maps_mod.components;');
     expect(out).toContain('Object.assign(globalThis, { Maps });');
   });
@@ -1157,14 +1157,14 @@ describe('generatePackagesTypes — package with multiple controllerKeys', () =>
 
 describe('generatePackagesTypes — two packages, one with controllers one without', () => {
   const entries = [
-    pkgEntry('@capsuletech/web-map', 'Maps'),
+    pkgEntry('@capsuletech/boost-map', 'Maps'),
     pkgEntry('@capsuletech/web-dnd', 'Dnd', ['Editor']),
   ];
 
   it('emits const for both component namespaces', () => {
     const out = generatePackagesTypes(entries);
     expect(out).toContain(
-      "const Maps: typeof import('@capsuletech/web-map/capsule')['default']['components'];",
+      "const Maps: typeof import('@capsuletech/boost-map/capsule')['default']['components'];",
     );
     expect(out).toContain(
       "const Dnd: typeof import('@capsuletech/web-dnd/capsule')['default']['components'];",
@@ -1175,7 +1175,7 @@ describe('generatePackagesTypes — two packages, one with controllers one witho
     const out = generatePackagesTypes(entries);
     expect(out).toContain('interface Controllers {');
     expect(out).toContain("'@capsuletech/web-dnd/capsule'");
-    expect(out).not.toContain("'@capsuletech/web-map/capsule'['default']['controllers']");
+    expect(out).not.toContain("'@capsuletech/boost-map/capsule'['default']['controllers']");
   });
 
   it('exactly one interface Controllers block is emitted', () => {
@@ -1186,7 +1186,7 @@ describe('generatePackagesTypes — two packages, one with controllers one witho
 });
 
 describe('generatePackagesTypes — package without controllers (no regression)', () => {
-  const entries = [pkgEntry('@capsuletech/web-map', 'Maps')];
+  const entries = [pkgEntry('@capsuletech/boost-map', 'Maps')];
 
   it('does NOT emit Controllers interface augmentation', () => {
     const out = generatePackagesTypes(entries);
@@ -1427,13 +1427,13 @@ describe('resolvePackageEntries — package without controllers (web-map style)'
     const parsed = parseManifestSource(MOCK_CAPSULE_MJS_NO_CONTROLLERS, 'capsule.mjs');
     const entries: ResolvedPackageEntry[] = [
       {
-        pkg: '@capsuletech/web-map',
+        pkg: '@capsuletech/boost-map',
         globalName: parsed!.name,
         controllerKeys: undefined,
       },
     ];
     const runtime = generatePackagesRuntime(entries);
-    expect(runtime).toContain("import Maps_mod from '@capsuletech/web-map/capsule';");
+    expect(runtime).toContain("import Maps_mod from '@capsuletech/boost-map/capsule';");
     expect(runtime).toContain('export const Maps = Maps_mod.components;');
     expect(runtime).not.toContain('Controllers');
     expect(runtime).toContain('Object.assign(globalThis, { Maps });');
@@ -1443,7 +1443,7 @@ describe('resolvePackageEntries — package without controllers (web-map style)'
     const parsed = parseManifestSource(MOCK_CAPSULE_MJS_NO_CONTROLLERS, 'capsule.mjs');
     const entries: ResolvedPackageEntry[] = [
       {
-        pkg: '@capsuletech/web-map',
+        pkg: '@capsuletech/boost-map',
         globalName: parsed!.name,
         controllerKeys: undefined,
       },
@@ -1451,7 +1451,7 @@ describe('resolvePackageEntries — package without controllers (web-map style)'
     const types = generatePackagesTypes(entries);
     expect(types).not.toContain('interface Controllers');
     expect(types).toContain(
-      "const Maps: typeof import('@capsuletech/web-map/capsule')['default']['components'];",
+      "const Maps: typeof import('@capsuletech/boost-map/capsule')['default']['components'];",
     );
   });
 });
@@ -1460,10 +1460,10 @@ describe('resolvePackageEntries — { use, as } override form', () => {
   it('parseManifestSource + as-override yields overridden globalName', () => {
     const globalName = 'MyMap'; // entry.as override
     const entries: ResolvedPackageEntry[] = [
-      { pkg: '@capsuletech/web-map', globalName, controllerKeys: undefined },
+      { pkg: '@capsuletech/boost-map', globalName, controllerKeys: undefined },
     ];
     const runtime = generatePackagesRuntime(entries);
-    expect(runtime).toContain("import MyMap_mod from '@capsuletech/web-map/capsule';");
+    expect(runtime).toContain("import MyMap_mod from '@capsuletech/boost-map/capsule';");
     expect(runtime).toContain('export const MyMap = MyMap_mod.components;');
     expect(runtime).toContain('Object.assign(globalThis, { MyMap });');
   });
@@ -1747,12 +1747,12 @@ describe('generateLayerTypes — import path uses single quotes', () => {
 // ---------------------------------------------------------------------------
 
 describe('generatePackagesTypes — package with componentKeys emits Events namespace', () => {
-  const entries = [pkgEntry('@capsuletech/web-table', 'Tables', undefined, ['DataTable'])];
+  const entries = [pkgEntry('@capsuletech/boost-table', 'Tables', undefined, ['DataTable'])];
 
   it('emits const Tables declaration', () => {
     const out = generatePackagesTypes(entries);
     expect(out).toContain(
-      "const Tables: typeof import('@capsuletech/web-table/capsule')['default']['components'];",
+      "const Tables: typeof import('@capsuletech/boost-table/capsule')['default']['components'];",
     );
   });
 
@@ -1761,7 +1761,7 @@ describe('generatePackagesTypes — package with componentKeys emits Events name
     expect(out).toContain('namespace Tables {');
     expect(out).toContain('namespace DataTable {');
     expect(out).toContain(
-      "type Events = (typeof import('@capsuletech/web-table/capsule')['default']['components'])[\"DataTable\"] extends { __events?: infer E } ? NonNullable<E> : never;",
+      "type Events = (typeof import('@capsuletech/boost-table/capsule')['default']['components'])[\"DataTable\"] extends { __events?: infer E } ? NonNullable<E> : never;",
     );
   });
 
@@ -1789,7 +1789,7 @@ describe('generatePackagesTypes — package with componentKeys emits Events name
 
 describe('generatePackagesTypes — package with multiple componentKeys', () => {
   const entries = [
-    pkgEntry('@capsuletech/web-table', 'Tables', undefined, ['DataTable', 'VirtualTable']),
+    pkgEntry('@capsuletech/boost-table', 'Tables', undefined, ['DataTable', 'VirtualTable']),
   ];
 
   it('emits namespace for each component key', () => {
@@ -1834,7 +1834,7 @@ describe('generatePackagesTypes — package with both controllerKeys and compone
 });
 
 describe('generatePackagesTypes — package without componentKeys (no regression)', () => {
-  const entries = [pkgEntry('@capsuletech/web-map', 'Maps')];
+  const entries = [pkgEntry('@capsuletech/boost-map', 'Maps')];
 
   it('does NOT emit any namespace block (no componentKeys)', () => {
     const out = generatePackagesTypes(entries);
@@ -1847,7 +1847,7 @@ describe('generatePackagesTypes — Events type uses __events infer pattern (web
   it('Events = never for component without __events (the infer pattern handles it)', () => {
     // The generated type correctly uses conditional inference:
     // if component has no __events?, the conditional resolves to `never`
-    const entries = [pkgEntry('@capsuletech/web-table', 'Tables', undefined, ['DataTable'])];
+    const entries = [pkgEntry('@capsuletech/boost-table', 'Tables', undefined, ['DataTable'])];
     const out = generatePackagesTypes(entries);
     expect(out).toContain('__events?: infer E');
     expect(out).toContain('NonNullable<E>');
@@ -1997,7 +1997,7 @@ describe('generatePackagesTypes — package-level Events aggregate comment', () 
 
 describe('generatePackagesTypes — package without componentKeys has no Events aggregate (no regression)', () => {
   it('does NOT emit package-level type Events when no componentKeys', () => {
-    const entries = [pkgEntry('@capsuletech/web-map', 'Maps')];
+    const entries = [pkgEntry('@capsuletech/boost-map', 'Maps')];
     const out = generatePackagesTypes(entries);
     expect(out).not.toContain('type Events');
     expect(out).not.toContain('namespace Maps');

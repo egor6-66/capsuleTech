@@ -136,7 +136,7 @@ describe('IAppConfig.packages — type-level', () => {
 
   it('packages accepts an array of strings', () => {
     const config: IAppConfig = {
-      packages: ['@capsuletech/web-map', '@capsuletech/web-charts'],
+      packages: ['@capsuletech/boost-map', '@capsuletech/boost-charts'],
     };
     expectTypeOf(config).toMatchTypeOf<IAppConfig>();
   });
@@ -145,7 +145,7 @@ describe('IAppConfig.packages — type-level', () => {
     const config: IAppConfig = {
       packages: [
         { use: '@capsuletech/web-renderer', as: 'Render' },
-        { use: '@capsuletech/web-map' }, // as is optional
+        { use: '@capsuletech/boost-map' }, // as is optional
       ],
     };
     expectTypeOf(config).toMatchTypeOf<IAppConfig>();
@@ -153,7 +153,7 @@ describe('IAppConfig.packages — type-level', () => {
 
   it('packages accepts mixed array (strings + objects)', () => {
     const config: IAppConfig = {
-      packages: ['@capsuletech/web-map', { use: '@capsuletech/web-renderer', as: 'Render' }],
+      packages: ['@capsuletech/boost-map', { use: '@capsuletech/web-renderer', as: 'Render' }],
     };
     expectTypeOf(config).toMatchTypeOf<IAppConfig>();
   });
@@ -171,19 +171,19 @@ describe('IAppConfig.packages — type-level', () => {
 describe('defineAppConfig — packages field', () => {
   it('defineAppConfig returns config with packages field', () => {
     const config = defineAppConfig({
-      packages: ['@capsuletech/web-map'],
+      packages: ['@capsuletech/boost-map'],
     });
 
-    expect(config.packages).toEqual(['@capsuletech/web-map']);
+    expect(config.packages).toEqual(['@capsuletech/boost-map']);
   });
 
   it('defineAppConfig with mixed packages preserves structure', () => {
     const config = defineAppConfig({
-      packages: ['@capsuletech/web-map', { use: '@capsuletech/web-renderer', as: 'Render' }],
+      packages: ['@capsuletech/boost-map', { use: '@capsuletech/web-renderer', as: 'Render' }],
     });
 
     expect(config.packages).toHaveLength(2);
-    expect(config.packages?.[0]).toBe('@capsuletech/web-map');
+    expect(config.packages?.[0]).toBe('@capsuletech/boost-map');
     expect(config.packages?.[1]).toEqual({ use: '@capsuletech/web-renderer', as: 'Render' });
   });
 });

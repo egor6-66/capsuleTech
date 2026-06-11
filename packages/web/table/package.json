@@ -1,5 +1,5 @@
 {
-  "name": "@capsuletech/web-table",
+  "name": "@capsuletech/boost-table",
   "version": "0.0.0",
   "type": "module",
   "main": "./dist/index.mjs",

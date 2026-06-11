@@ -20,7 +20,7 @@
     "@capsuletech/web-query": "workspace:*",
     "@capsuletech/web-renderer": "workspace:*",
     "@capsuletech/web-shell": "workspace:*",
-    "@capsuletech/web-table": "workspace:*",
+    "@capsuletech/boost-table": "workspace:*",
     "@capsuletech/web-ui-creator": "workspace:*",
     "@capsuletech/shared-zod": "workspace:*",
     "@kobalte/core": "^0.13.0",

@@ -1,7 +1,7 @@
 /**
- * @capsuletech/web-table/capsule — registration manifest (ADR 033).
+ * @capsuletech/boost-table/capsule — registration manifest (ADR 033).
  *
- * App mounts via `capsule.app.ts: packages: ['@capsuletech/web-table']` → global
+ * App mounts via `capsule.app.ts: packages: ['@capsuletech/boost-table']` → global
  * `Tables.*` (mirror of Shell.Matrix / Maps.View extraction). DataTable and Table
  * are registered here; app code accesses them as `Tables.DataTable` / `Tables.Table`.
  */

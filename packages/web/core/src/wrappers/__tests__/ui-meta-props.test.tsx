@@ -159,7 +159,7 @@ describe('WidgetUi — Card compound: sub-components preserved with meta', () =>
 
 // ---------------------------------------------------------------------------
 // NOTE (ADR 033): Table и DataTable удалены из ViewUi/WidgetUi.
-// Таблица переехала в @capsuletech/web-table (глобал Tables.*).
+// Таблица переехала в @capsuletech/boost-table (глобал Tables.*).
 // Тесты Table/DataTable meta-props ниже удалены — тип больше не в Ui-namespace.
 // ---------------------------------------------------------------------------
 

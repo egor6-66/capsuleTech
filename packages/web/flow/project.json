@@ -1,5 +1,5 @@
 {
-  "name": "@capsuletech/web-flow",
+  "name": "@capsuletech/boost-flow",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "packages/web/flow/src",
   "projectType": "library",

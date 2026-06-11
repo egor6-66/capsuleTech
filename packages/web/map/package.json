@@ -1,5 +1,5 @@
 {
-  "name": "@capsuletech/web-map",
+  "name": "@capsuletech/boost-map",
   "version": "0.0.1",
   "type": "module",
   "main": "./dist/index.mjs",
