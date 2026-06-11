@@ -12,7 +12,11 @@ audience: claude
 
 ## TL;DR
 
-Context-based (ADR 003) обёртка над `@tanstack/solid-router`. Factory `createRouter({ routeTree, context? })` возвращает `{ raw, capsuleRouter }`. Hook `useRouter()` достаёт `ICapsuleRouter` из Context. Реактивное API: `goTo(path, opts?) / back() / current()`, где `opts = { params, search, hash, replace }` — прямой проброс в `raw.navigate`. Инжектится в Feature/Controller через `services.router`. `ICapsuleRouterContext<TUser>` — generic, app расширяет под свой shape (ADR 014). Тесты в node-env благодаря `wrap()` в типах, не в сервисе.
+Context-based (ADR 003) обёртка над `@tanstack/solid-router`. Factory `createRouter({ routeTree, context? })` возвращает `{ raw, capsuleRouter }`. Hook `useRouter()` достаёт `ICapsuleRouter` из Context. Реактивное API: `goTo(path, opts?) / back() / current()`, где `opts = { params, search, hash, replace }` — прямой проброс в `raw.navigate`. Инжектится в Feature/Controller через `services.router`. `ICapsuleRouterContext<TUser>` — generic, app расширяет под свой shape (ADR 014).
+
+**Routing-animation (ADR 046 Decision 4):** `CapsuleOutlet` — capsule-обёртка над TanStack `<Outlet/>` — владеет `view-transition-name: capsule-content-${depth}` через `DepthContext.Provider value={parent+1}`. Каждый Outlet-уровень получает уникальный vt-name → нативный View Transitions API анимирует сегменты независимо (родители не триггерятся, их именованные регионы рендерят одинаковый DOM до/после). `useRouteDepth()` — публичный hook на `useContext(DepthContext)`, sentinel `-1` нормализуется в `0`. **Импортируется в `Ui.Outlet` (web-core ui-kit injection)** — apps дёргают через глобал `<Ui.Outlet/>`, не из web-router напрямую.
+
+Тесты — jsdom-env с `vite-plugin-solid` (нужен для `CapsuleOutlet.test.tsx`). До ADR 046 пакет был node-only.
 
 ## Где что лежит
 
@@ -22,7 +26,10 @@ Context-based (ADR 003) обёртка над `@tanstack/solid-router`. Factory 
 | `packages/web/router/src/service.ts` | `createRouter<TRouteTree>({ routeTree, context?, notFoundRedirect?, beforeLoad? })` — фабрика, value-импорт TanStack |
 | `packages/web/router/src/types.ts` | `wrap()` + типы (`ICapsuleRouter`, `ICreateRouterOpts`, `ICapsuleRouterContext`, `IBeforeLoadContext`) |
 | `packages/web/router/src/context.ts` | `RouterContext` (Solid Context) + `useRouter()` hook с throw'ом вне Provider'а |
-| `packages/web/router/src/__tests__/` | node-env: `wrap` + `normalizeBase` (22), `useRouter` (2), `notFoundRedirect` (5), `beforeLoad` (6) — без jsdom |
+| `packages/web/router/src/depthContext.ts` | `DepthContext` — per-Outlet depth (sentinel `-1`) для view-transition-name (ADR 046 D4) |
+| `packages/web/router/src/CapsuleOutlet.tsx` | `CapsuleOutlet` — wrapper над TanStack `<Outlet/>` + `DepthContext.Provider value={parent+1}` + DOM с `view-transition-name: capsule-content-${depth}` |
+| `packages/web/router/src/useRouteDepth.ts` | `useRouteDepth()` — `useContext(DepthContext)` + `Math.max(0, depth)`-нормализация sentinel'а |
+| `packages/web/router/src/__tests__/` | jsdom-env (CapsuleOutlet рендер): wrap+normalizeBase (22), useRouter (2), notFoundRedirect (5), beforeLoad (6), viewTransition (4), useRouteDepth (5 Provider-based), CapsuleOutlet (4 DOM) — 48 тестов |
 
 ## Public API
 
