@@ -1,0 +1,44 @@
+# OTEL Collector — приём телеметрии Claude Code и веер в Prometheus + Loki.
+#
+# Поток:
+#   CC-инстанс (scope=web-ui) ──OTLP gRPC :4317──▶ collector
+#                                                    ├─ metrics ─▶ prometheus (scrape :8889)
+#                                                    └─ logs/events ─▶ loki (OTLP /otlp)
+#
+# resource_to_telemetry_conversion поднимает resource-атрибуты (scope, package)
+# в метки метрик — без этого `scope` не будет фильтруемым в Grafana.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch: {}
+
+exporters:
+  # Метрики: collector держит /metrics на :8889, Prometheus его скрейпит.
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    resource_to_telemetry_conversion:
+      enabled: true
+    enable_open_metrics: true
+  # События/логи: нативный OTLP-ingest Loki 3.x (эндпоинт сам добавит /v1/logs).
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
+  # Дублируем в stdout collector'а для smoke-отладки (docker logs capsule-otel-collector).
+  debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus, debug]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/loki, debug]
