@@ -1,28 +1,34 @@
-import type { Accessor } from 'solid-js';
-import { useMatches } from '@tanstack/solid-router';
+import { type Accessor, useContext } from 'solid-js';
+import { DepthContext } from './depthContext';
 
 /**
  * Returns the depth of the current Outlet in the route hierarchy.
  * Root layout = 0; nested layout = 1; its child = 2; ...
  *
- * Used by Shell.Matrix to scope view-transition-name per Outlet level
- * so independent layouts don't share a transition group (ADR 045 #3).
+ * Реализация — `useContext(DepthContext)`: значение приходит от
+ * ближайшего `<CapsuleOutlet/>` родителя через `DepthContext.Provider`.
+ * Sentinel `-1` (нет Provider'а в дереве) нормализуется в `0`,
+ * чтобы pre-router-consumers получали безопасный default.
  *
- * Implementation: derives depth from TanStack `useMatches()` — a reactive
- * `Accessor<RouteMatch[]>` over all currently active route matches.
- * Each active match corresponds to one layout level in the route tree.
- * Root match counts as depth 0, so depth = matches.length - 1.
+ * **Контракт сохранён** относительно PR #298 (`Accessor<number>`),
+ * impl переписан под per-Outlet context per ADR 046 Decision 4.
+ * Прежняя реализация через `useMatches({ select: m => m.length - 1 })`
+ * возвращала ГЛОБАЛЬНУЮ глубину самого глубокого active match'а —
+ * это давало одно и то же число всем уровням вложенных Outlet'ов и
+ * не решало vt-name коллизию (см. ADR 046, Problem 4).
  *
- * `select` collapses the memo to `Accessor<number>` in a single reactive
- * dependency — no wrapping createMemo needed.
+ * Использование:
  *
- * Heuristic note: the depth returned is the TOTAL number of currently active
- * matches minus 1. This equals the nesting level of the deepest rendered
- * Outlet, which is what Shell.Matrix needs. If called from a layout component
- * at an intermediate level, the value will still reflect the deepest match
- * (i.e. TanStack loads all matching routes up-front). For per-layout depth
- * precision a <CapsuleOutlet> wrapper with an incrementing context would be
- * needed — deferred per task spec.
+ * ```tsx
+ * const depth = useRouteDepth();
+ * <div style={{ 'view-transition-name': `region-${depth()}` }}>...</div>
+ * ```
+ *
+ * Внутри `CapsuleOutlet` используется неявно — apps обычно дёргают
+ * этот hook только если рисуют свой собственный vt-region рядом с
+ * router-slot'ом.
  */
-export const useRouteDepth = (): Accessor<number> =>
-  useMatches({ select: (matches) => Math.max(0, matches.length - 1) });
+export const useRouteDepth = (): Accessor<number> => {
+  const depth = useContext(DepthContext);
+  return () => Math.max(0, depth);
+};

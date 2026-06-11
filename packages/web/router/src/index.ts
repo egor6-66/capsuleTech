@@ -19,7 +19,9 @@ export type { AnyRoute } from '@tanstack/router-core';
  * ```
  */
 export { notFound, RouterProvider, redirect } from '@tanstack/solid-router';
+export { CapsuleOutlet } from './CapsuleOutlet';
 export { RouterContext, useRouter } from './context';
+export { DepthContext } from './depthContext';
 export { useRouteDepth } from './useRouteDepth';
 export type {
   IBeforeLoadContext,
