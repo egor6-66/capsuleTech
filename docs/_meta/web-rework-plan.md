@@ -2,7 +2,7 @@
 title: web-rework-plan
 description: Live execution plan для rework'а triada ADR 046 + 047 + 048. Обновляется по мере мерджа PR'ов.
 status: live
-last_updated: 2026-06-11
+last_updated: 2026-06-11 (Phase W inserted — web-space canon + README template + boost-renames absorbed)
 ---
 
 # web-rework execution plan (per ADR 046 + 047 + 048)
@@ -104,6 +104,108 @@ last_updated: 2026-06-11
 
 ---
 
+## Phase W — Web-space canon (main steward; pure docs + mechanical renames)
+
+> Цель: zone canon зафиксирован документально, OWNERSHIP всех 23 пакетов обновлён по новому template'у (Состояние + Vendor stack), README per-package на едином template'е, L0/L1 gradient + manifest schema задокументирована, boost-* renames выполнены **одним atomic-PR'ом** (mechanical, без functional touch).
+>
+> **Rationale:** USER указал что web-space сейчас на main steward (canon + порядок, не функционал). Renames B4-B7 mechanical → переносятся сюда (один PR vs четыре per-owner), boost-renames приземляются в задокументированный canon (W1+W3 first).
+>
+> Phase W **параллельна Phase C** (vt-rework, owner-web-router) и не блокирует A1+B1 (boost-matrix scaffold).
+
+### W1 — Zone canon docs
+
+- **Owner:** main steward.
+- **Files:** `docs/_meta/web-zones/{kit,runtime,domain,boost,design-time}.md` + `index.md`.
+- **Содержание per zone:** Purpose / Packages / Import rules / Canonical shape / Vendor stack / Non-goals / New package checklist.
+- **PR:** `docs(web-zones): zone canon docs + L0/L1 gradient + Phase W plan-doc (adr 047 D1)`.
+- **Blocks:** ничего (это canon-only, не gates функциональные шаги).
+- **Status:** **DONE** (2026-06-11 — этот PR-bundle).
+
+### W2 — OWNERSHIP refresh + README per-package
+
+- **Owner:** main steward.
+- **Steps:**
+  1. Пройти по 23 пакетам `packages/web/*/OWNERSHIP.md` — добавить/обновить **Состояние** (zone / status / priority / maturity / blockers / roadmap / last activity) per [[OWNERSHIP-template]] и **Vendor stack** (главные вендоры + ссылки upstream) per ADR 047 D3.
+  2. Создать README.md для 11 пакетов которые без него (access, agent, auth, charts, contract, creator, date, flow, intl, shell, table) + апдейт 12 существующих под единый README template:
+     ```
+     # @capsuletech/<name>
+     <one-line>  · zone: <kit|runtime|domain|boost|design-time>  · status: ...
+     ## Install
+     pnpm add @capsuletech/<name>
+     ## Minimum usage
+     <5-10 строк кода>
+     ## Subpath exports  (если есть)
+     ## Docs
+     - AI-anchor: docs/_meta/<name>.md
+     - OWNERSHIP: ./OWNERSHIP.md
+     ```
+  3. Создать `docs/_meta/readme-template.md` (правила + skeleton).
+- **PR:** `docs(packages): OWNERSHIP state+vendor stack + README per-package (adr 047 D3 / W2)`. Один coordinator-PR (parallel WIP не трогаем).
+- **CI:** OWNERSHIP canon gate должен пропустить (новые секции — расширение, не nullification старых).
+- **Blocks:** ничего критичного.
+- **Status:** PENDING (после W1, параллельно с W6).
+
+### W3 — L0/L1 gradient + manifest schema
+
+- **Owner:** main steward.
+- **Files:** `docs/_meta/web-ui.md` — секция «Weight gradient & size manifest».
+- **Содержание:** критерий L0/L1, initial seed list, manifest.json schema для studio, bundle-size assertion spec для W4, rejected alternative (отдельный `web-primitives` пакет).
+- **PR:** включён в W1 PR `docs(web-zones): zone canon docs + L0/L1 gradient + Phase W plan-doc`.
+- **Blocks:** W4 (implementation).
+- **Status:** **DONE** (2026-06-11 — этот PR-bundle).
+
+### W4 — Bundle-size + manifest infra (owner-web-ui)
+
+- **Owner:** `owner-web-ui` (functional code touch, делегируется).
+- **Steps:**
+  1. `packages/web/ui/test/bundle-size.test.ts` — vitest assertions per L0-subpath: < N kB gzip + НЕ содержит `@kobalte/core/<interactive-set>` (allowlist: polymorphic / separator / skeleton). Owner-web-ui калибрует N на seed list'е.
+  2. `packages/web/ui/scripts/build-manifest.ts` (или Vite plugin) — генерит `dist/manifest.json` per IWebUiManifest shape ([[web-ui]] раздел manifest).
+  3. CI drift-guard: manifest.json регенерится → diff в CI = failure (forces commit manifest).
+  4. OWNERSHIP «Состояние» — отметить manifest infra ready.
+- **PR:** `feat(web-ui): bundle-size assertions + manifest.json for studio (W4 / adr 047)`.
+- **Blocks:** Studio palette badge (Phase E4 enhancement post D4).
+- **Status:** PENDING (после W3 — DONE → готов к dispatch'у).
+
+### W5 — Cross-package import inventory (baseline для domain-isolation)
+
+- **Owner:** main steward.
+- **Steps:**
+  1. Snapshot `pnpm why @capsuletech/web-{auth,shell,agent}` + grep cross-domain imports в текущем дереве.
+  2. Документировать в `docs/_meta/web-audit-cross-imports.md` — baseline для ADR 047 D2 enforcement (если есть cross-domain — flag'аем, либо extract в contract на Phase D2).
+- **PR:** включить в W2 PR-bundle или отдельный мелкий `docs(web-audit): cross-domain import baseline (adr 047 D2 / W5)`.
+- **Blocks:** Phase D2 (contract setup только если W5 показал нужду).
+- **Status:** PENDING (после W2).
+
+### W6 — Boost-renames `@capsuletech/web-{table,map,flow,charts}` → `@capsuletech/boost-*`
+
+- **Owner:** main steward (один atomic PR; пакеты mechanical-touch).
+- **Steps:**
+  1. `packages/web/{table,map,flow,charts}/package.json` — `name` → `@capsuletech/boost-*` (4 файла).
+  2. `tsconfig.base.json` paths — добавить `@capsuletech/boost-*`, оставить `@capsuletech/web-*` aliases для grace period (один минор).
+  3. `packages/builders/vite/src/defines/capsuleConfig.ts` — `optimizeDeps.exclude` обновить.
+  4. `scripts/release-local.mjs` — release groups обновить.
+  5. `apps/*` + `packages/*` consumers — replace `@capsuletech/web-{table,map,flow,charts}` → `boost-*`. ESLint codemod или ручной sed.
+  6. `docs/_meta/{web-table,web-map,web-flow,web-charts}.md` — title + содержимое apdate (или rename на `boost-*.md` с redirect-shim'ом — обсудим).
+  7. AI-anchor `OWNERSHIP.md` каждого: `name:` frontmatter обновить.
+  8. Lockfile sync.
+- **PR:** `chore(boost-*): rename web-{table,map,flow,charts} → @capsuletech/boost-* (adr 046 D1 / W6)`. Один atomic PR.
+- **CI:** standard build/typecheck/test + e2e smoke.
+- **Параллельность:** идёт параллельно W2 (разные файлы) + параллельно Phase C (vt-rework, разные пакеты).
+- **Не делает:**
+  - НЕ переименовывает agent-файлы `.claude/agents/owner-web-{table,map,flow,charts}.md` → `owner-boost-*` — это **отдельный PR** после W6 merge'а + restart-нот ([[new-agent-needs-restart]]). Главный assistant подготовит отдельный agent-rename PR.
+  - НЕ трогает функциональность пакетов — `import { DataTable } from '@capsuletech/boost-table'` ровно так же работает как раньше из `web-table`.
+- **Blocks:** A2 (rename owner-agents) если делаем — после W6.
+- **Status:** PENDING (после W1 для canon-готовности).
+
+### W7 — Plan-doc update (этот шаг)
+
+- **Owner:** main steward.
+- **Files:** этот документ — Phase W вставлен, B4-B7 помечены absorbed→W6, live status таблица обновлена.
+- **PR:** включён в W1 PR-bundle.
+- **Status:** **DONE** (2026-06-11).
+
+---
+
 ## Phase B — Booster sweep (parallel-friendly)
 
 > Цель: Matrix эвакуирована в boost-matrix; renames web-{table,map,flow,charts} → boost-X завершены; placeholder'ы Ui.Map/Flow/Chart в web-ui.
@@ -148,39 +250,11 @@ last_updated: 2026-06-11
 - **Blocks:** ничего критичного (B4+ независимы); закрывает migration.
 - **Status:** PENDING.
 
-### B4 — Rename `@capsuletech/web-table` → `@capsuletech/boost-table`
+### B4 — B7 — Boost-renames
 
-- **Owner:** `owner-web-table` (или owner-boost-table после rename).
-- **Steps:**
-  1. `packages/web/table/package.json` — `name` → `@capsuletech/boost-table`.
-  2. `tsconfig.base.json` paths — добавить `@capsuletech/boost-table`, оставить `@capsuletech/web-table` alias или удалить (по политике bump).
-  3. `nx.json` workspaces — путь не меняется (`packages/web/table/` — директория остаётся), только package-name.
-  4. apps/* + packages/* импорты — заменить (либо в этом PR, либо micro-PR per consumer).
-  5. OWNERSHIP.md — обновить frontmatter `name`.
-- **Параллельность:** B4 / B5 / B6 / B7 идут полностью параллельно. Каждый owner-X работает в своей ветке.
-- **PR:** `chore(boost-table): rename from @capsuletech/web-table (adr 046)`.
-- **Status:** PENDING.
-
-### B5 — Rename web-map → boost-map (+ Ui.Map placeholder)
-
-- **Owners:** `owner-web-map` (rename) + `owner-web-ui` (Ui.Map placeholder).
-- **Может разделиться на 2 PR:**
-  - B5a: web-ui добавляет `Ui.Map` placeholder (skeleton DOM, role=img, aria-label, data-state="placeholder", props API compatible с boost-map shape).
-  - B5b: web-map → boost-map rename.
-- **Параллельность:** B5a и B5b могут идти параллельно (разные пакеты).
-- **Status:** PENDING.
-
-### B6 — Rename web-flow → boost-flow (+ Ui.Flow placeholder)
-
-- **Owners:** `owner-web-flow` + `owner-web-ui`.
-- Аналогично B5.
-- **Status:** PENDING.
-
-### B7 — Rename web-charts → boost-charts (+ Ui.Chart placeholder)
-
-- **Owners:** `owner-web-charts` + `owner-web-ui`.
-- Аналогично B5.
-- **Status:** PENDING.
+> **Поглощены в W6** (2026-06-11). Renames `@capsuletech/web-{table,map,flow,charts}` → `@capsuletech/boost-*` выполняются ОДНИМ atomic-PR'ом main steward'а в Phase W6 (mechanical, не per-owner). Ui.Map/Flow/Chart placeholder'ы — отдельный PR owner-web-ui (Phase B6-placeholder, инициируется после W6 merge).
+>
+> **Status:** ABSORBED → W6.
 
 ---
 
@@ -392,83 +466,92 @@ Phase E **параллельна** Phase D (разные зоны кода).
 
 ---
 
-## Phase B / C / D / E parallelism map
+## Phase W / B / C / D / E parallelism map
 
 ```
 A0 (merge 046+047+048+plan) ─→ A1 (USER creates owner-boost-matrix + restart) ─┐
                                                                                 │
               ┌─────────────────────────────────────────────────────────────────┘
               │
-              ▼
-┌────────────────────────────────┐   ┌────────────────────────────────┐
-│ Phase B (boost sweep)          │ ║ │ Phase C (vt-rework)            │
-│ B1 boost-matrix scaffold       │ ║ │ C1 CapsuleOutlet+DepthCtx      │
-│ B2 web-shell strip             │ ║ │ C2 Ui.Outlet swap + playground │
-│ B3 apps imports                │ ║ │ C3 CSS selectors enumerate     │
-│ B4 boost-table rename          │ ║ │                                │
-│ B5 boost-map+Ui.Map            │ ║ │                                │
-│ B6 boost-flow+Ui.Flow          │ ║ │                                │
-│ B7 boost-charts+Ui.Chart       │ ║ │                                │
-└────────────────────────────────┘   └────────────────────────────────┘
-              │
-              ▼ (after B+C stabilize)
-┌────────────────────────────────┐   ┌────────────────────────────────┐
-│ Phase D (zone migration)       │ ║ │ Phase E (docs infra)           │
-│ D1 directory layout            │ ║ │ E1 extract.mjs + pnpm docs:build│
-│ D2 contracts setup (if needed) │ ║ │ E2 section-id inventory        │
-│ D3 compliance extension        │ ║ │ E3 audience-tagging (ongoing)  │
-│ D4 studio rename + absorb      │ ║ │ E4 studio/docs consumer        │
-│ D5 OWNERSHIP Vendor stack      │ ║ │ E5 apps consume                │
-│                                │ ║ │ E6 CI drift-guards             │
-└────────────────────────────────┘   └────────────────────────────────┘
+              ├─────────────────────────────┬───────────────────────────────┐
+              ▼                             ▼                               ▼
+┌────────────────────────────┐ ┌──────────────────────────┐  ┌────────────────────────────┐
+│ Phase W (web-space canon)  │ │ Phase B (boost sweep)    │  │ Phase C (vt-rework)        │
+│ W1 zone canon docs ✅      │ │ B1 boost-matrix scaffold │  │ C1 CapsuleOutlet+DepthCtx  │
+│ W2 OWNERSHIP+README        │ │ B2 web-shell strip       │  │ C2 Ui.Outlet swap          │
+│ W3 L0/L1 gradient ✅       │ │ B3 apps imports          │  │ C3 CSS enumerate           │
+│ W4 manifest infra (owner)  │ │ B4-B7 → absorbed in W6   │  │                            │
+│ W5 cross-import baseline   │ │   B6-placeholder Ui.*    │  │                            │
+│ W6 boost-* renames         │ │     (owner-web-ui, after │  │                            │
+│ W7 plan-doc update ✅      │ │      W6 merge)           │  │                            │
+└────────────────────────────┘ └──────────────────────────┘  └────────────────────────────┘
+                                          │
+                                          ▼ (after W+B+C stabilize)
+              ┌────────────────────────────────┐   ┌────────────────────────────────┐
+              │ Phase D (zone migration)       │ ║ │ Phase E (docs infra)           │
+              │ D1 directory layout            │ ║ │ E1 extract.mjs + pnpm docs:build│
+              │ D2 contracts setup (if needed) │ ║ │ E2 section-id inventory        │
+              │ D3 compliance extension        │ ║ │ E3 audience-tagging (ongoing)  │
+              │ D4 studio rename + absorb      │ ║ │ E4 studio/docs consumer        │
+              │ D5 OWNERSHIP Vendor stack      │ ║ │ E5 apps consume                │
+              │                                │ ║ │ E6 CI drift-guards             │
+              └────────────────────────────────┘   └────────────────────────────────┘
 ```
 
 - **A0 → A1** sequential (ADR merge first; agent setup after).
-- **Phase B ‖ Phase C** parallel — разные пакеты, разные owners.
+- **Phase W ‖ Phase B ‖ Phase C** parallel — main steward (W) + boost-matrix track (B1-B3) + router track (C). Разные пакеты, разные owners.
+- **B4-B7 absorbed → W6** (mechanical renames в одном atomic PR'е main steward'а; Ui.* placeholder'ы — отдельный PR owner-web-ui).
+- **Phase W+B+C → D/E** sequential (D перемещает пакеты; делать пока W/B/C ещё в полёте = moving target).
 - **Phase D ‖ Phase E** parallel — D трогает packages/web/* layout, E трогает docs/ + build pipeline. Не пересекаются.
-- **Phase B/C → D/E** sequential (D перемещает пакеты; делать пока B/C ещё в полёте = moving target).
 
 ## Dispatch sequence — какого owner'а когда вызывать
 
 | Шаг | Что | Кому | Как |
 |---|---|---|---|
-| 1 | A0 — ADR 046+047+048 + plan-doc merge | main steward пишет, USER review + dispatches owner-git | Один scope-PR `docs: 3-adr triada + rework plan` |
-| 2 | A1 — owner-boost-matrix .claude/agents/ file | USER | Создаёт файл вручную (main steward drafts skeleton), **restart session** |
-| 3 | B1 — boost-matrix scaffold | main steward | Делает init, не делегирует |
-| 4a | B2 — web-shell strip | owner-web-shell | Foreground, скоординировать с B1 |
-| 4b | C1 — CapsuleOutlet | owner-web-router | Foreground, параллельно с B2 |
-| 5a | B3 — apps imports (Matrix) | main steward / page-агенты | Один или несколько scope-PR'ов |
-| 5b | C2 — Ui.Outlet swap | main steward | Cross-package PR (web-core + playground) |
-| 5c | B4 — boost-table rename | owner-web-table | Параллельно |
-| 5d | B5a — Ui.Map placeholder | owner-web-ui | Параллельно |
-| 5e | B5b — boost-map rename | owner-web-map | После B5a (или параллельно если placeholder API готов) |
-| 5f | B6 — boost-flow + Ui.Flow | owner-web-flow + owner-web-ui | Параллельно |
-| 5g | B7 — boost-charts + Ui.Chart | owner-web-charts + owner-web-ui | Параллельно |
-| 6 | C3 — CSS селекторы | owner-web-style | После C2 (или sequenced ad-hoc) |
-| 7 | Cleanup | main steward | Verify, update plan-doc status |
+| 1 | A0 — ADR 046+047+048 + plan-doc merge | main steward пишет, USER review + dispatches owner-git | Один scope-PR `docs: 3-adr triada + rework plan` (**DONE** #300) |
+| 2 | A1 — owner-boost-matrix .claude/agents/ file | USER | Создаёт файл вручную (main steward drafts skeleton), **restart session** (USER в процессе) |
+| 3 | W1+W3+W7 — zone canon docs + L0/L1 + plan-doc update | main steward | Один docs-PR, **DONE** 2026-06-11 (этот PR-bundle) |
+| 4a | W2 — OWNERSHIP refresh + README per-package | main steward | Один coordinator-PR, после W1 |
+| 4b | W5 — cross-import inventory baseline | main steward | Либо в W2 PR-bundle, либо отдельный |
+| 4c | W6 — boost-* renames (B4-B7 absorbed) | main steward | Один atomic PR, mechanical, параллельно W2 |
+| 4d | C1 — CapsuleOutlet | owner-web-router | Foreground (USER dispatches per brief), параллельно W |
+| 5a | B1 — boost-matrix scaffold | main steward | После A1 + W1 готовности canon'а; не делегирует |
+| 5b | C2 — Ui.Outlet swap + playground patch | main steward | После C1; cross-package PR (web-core + playground) |
+| 6a | B2 — web-shell strip | owner-web-shell | После B1; coordinated с owner-boost-matrix |
+| 6b | C3 — CSS селекторы | owner-web-style | После C2 |
+| 6c | W4 — bundle-size + manifest infra | owner-web-ui | После W3 → готов; параллельно с B/C |
+| 6d | B6-placeholder — Ui.Map/Flow/Chart placeholders | owner-web-ui | После W6 merge (boost-* renames первыми) |
+| 7 | B3 — apps imports (Matrix) | main steward / page-агенты | После B2 |
+| 8 | A2 — rename owner-web-{table,map,flow,charts} → owner-boost-* (опц.) | main steward + USER restart | После W6 merge; отдельный PR; **OPTIONAL** |
+| 9 | Cleanup | main steward | Verify, update plan-doc status |
 
 ## Live status
 
 | Phase | Status | PR | Notes |
 |---|---|---|---|
-| A0 — ADR 046+047+048 + plan-doc merge | PENDING | — | Один docs-PR; main steward drafts, owner-git merges |
-| A1 — owner-boost-matrix agent + restart | PENDING | — | USER, after A0; main steward provides skeleton |
-| A2 — rename owner-web-* → owner-boost-* (опц.) | OPTIONAL | — | После A1 если делается |
-| B1 — boost-matrix scaffold | BLOCKED | — | Wait A1 |
+| A0 — ADR 046+047+048 + plan-doc merge | **DONE** | #300 (c151c32) | Triada merged 2026-06-11 |
+| A1 — owner-boost-matrix agent + restart | IN PROGRESS (USER) | — | `.draft → .md` rename + session restart на стороне USER'а |
+| A2 — rename owner-web-{table,map,flow,charts} → owner-boost-* | OPTIONAL | — | После W6 merge если делаем; main steward готовит отдельный PR + restart-нот |
+| W1 — Zone canon docs (kit/runtime/domain/boost/design-time + index) | **DONE** | этот bundle | `docs/_meta/web-zones/*.md` |
+| W2 — OWNERSHIP refresh + README per-package | PENDING | — | После W1 → готов к старту; параллельно с W6 |
+| W3 — L0/L1 gradient + manifest schema | **DONE** | этот bundle | `docs/_meta/web-ui.md` секция |
+| W4 — Bundle-size + manifest infra (owner-web-ui) | PENDING | — | После W3 → готов; USER dispatches owner-web-ui |
+| W5 — Cross-import inventory baseline | PENDING | — | После W2 |
+| W6 — Boost-renames `web-*` → `boost-*` (B4-B7 absorbed) | PENDING | — | После W1 → готов; main steward, один atomic PR |
+| W7 — Plan-doc update | **DONE** | этот bundle | этот документ |
+| B1 — boost-matrix scaffold | BLOCKED | — | Wait A1 (USER restart) + W1 canon |
 | B2 — web-shell strip Matrix | BLOCKED | — | Wait B1 |
 | B3 — apps imports → boost-matrix | BLOCKED | — | Wait B2 |
-| B4 — boost-table rename | BLOCKED | — | Wait A0 |
-| B5 — boost-map + Ui.Map placeholder | BLOCKED | — | Wait A0 |
-| B6 — boost-flow + Ui.Flow placeholder | BLOCKED | — | Wait A0 |
-| B7 — boost-charts + Ui.Chart placeholder | BLOCKED | — | Wait A0 |
-| C1 — CapsuleOutlet + DepthContext | BLOCKED | — | Wait A0 |
+| B4-B7 — boost-* renames | **ABSORBED** → W6 | — | — |
+| B6-placeholder — Ui.Map/Flow/Chart light placeholders в web-ui | BLOCKED | — | После W6 merge (canon `Ui.X` names) |
+| C1 — CapsuleOutlet + DepthContext | IN PROGRESS | — | USER dispatched owner-web-router 2026-06-11 |
 | C2 — Ui.Outlet swap + playground patch | BLOCKED | — | Wait C1 |
 | C3 — CSS селекторы enumerate | BLOCKED | — | Wait C2 |
-| D1 — Zone directory layout | BLOCKED | — | Wait B+C stable |
-| D2 — Cross-domain contracts (if needed) | BLOCKED | — | Wait D1 |
+| D1 — Zone directory layout | BLOCKED | — | Wait W+B+C stable |
+| D2 — Cross-domain contracts (if needed) | BLOCKED | — | Wait D1; зависит от W5 находок |
 | D3 — Compliance extension (zone canon + vendor wrapper) | BLOCKED | — | Wait D1 |
 | D4 — studio rename + absorb ui-creator | BLOCKED | — | Wait D1 |
-| D5 — OWNERSHIP Vendor stack audit | BLOCKED | — | Wait D1; ongoing thereafter |
+| D5 — OWNERSHIP Vendor stack audit | BLOCKED → partially in W2 | — | W2 уже расставит секции; D5 — финальный sweep если что упустили |
 | E1 — docs:build extract pipeline | BLOCKED | — | Can start parallel to D |
 | E2 — section-id inventory pass | BLOCKED | — | Wait E1 |
 | E3 — audience-tagging | ONGOING | — | Touch-when-touch, no PR-driven |
@@ -493,3 +576,4 @@ A0 (merge 046+047+048+plan) ─→ A1 (USER creates owner-boost-matrix + restart
 ## История изменений
 
 - 2026-06-11 — создан, status pending.
+- 2026-06-11 (late) — **Phase W вставлена** (web-space canon на main steward'е): W1 zone canon docs + W3 L0/L1 gradient + W7 plan-doc update — все DONE этим PR-bundle'ом. B4-B7 boost-renames absorbed в W6 (mechanical, один atomic PR vs четыре per-owner). W2 OWNERSHIP+README, W4 manifest infra (owner-web-ui), W5 cross-import baseline, W6 renames — PENDING. Workflow rationale: USER указал «web-space на тебя — canon+порядок, не функционал; renames в одном стиле»; параллелизм с C1 (owner-web-router уже dispatched).
