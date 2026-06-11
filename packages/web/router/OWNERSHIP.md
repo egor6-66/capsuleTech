@@ -52,7 +52,7 @@ useRouter(): ICapsuleRouter        // бросает вне Provider'а
 useRouteDepth(): Accessor<number>  // глубина текущего Outlet'а (root=0, вложенный=1, …) — ADR 046 D4 (impl: useContext(DepthContext))
 
 // Components
-CapsuleOutlet: () => JSX.Element   // wrapper над TanStack <Outlet/> + DepthContext.Provider + DOM с view-transition-name (ADR 046 D4)
+CapsuleOutlet: () => JSX.Element   // wrapper над TanStack <Outlet/> + DepthContext.Provider + DOM с view-transition-name (per-depth уникальное имя) + view-transition-class: capsule-route (depth-agnostic CSS-таргетинг, ADR 046 D4)
 
 // Context
 DepthContext: Context<number>      // per-Outlet depth, sentinel -1 = "над любым Outlet'ом" (ADR 046 D4)
@@ -88,7 +88,7 @@ notFound                      // re-export @tanstack/solid-router (для throw 
 | `src/index.ts` | barrel + ре-экспорт `redirect`/`notFound` из `@tanstack/solid-router` |
 | `src/useRouteDepth.ts` | `useRouteDepth()` — `useContext(DepthContext)`, normalize sentinel `-1`→`0` (ADR 046 D4) |
 | `src/depthContext.ts` | `DepthContext` — Solid-context для per-Outlet depth (sentinel `-1`) |
-| `src/CapsuleOutlet.tsx` | `CapsuleOutlet` — wrapper над TanStack `<Outlet/>`, владеет `view-transition-name: capsule-content-${depth}` (ADR 046 D4) |
+| `src/CapsuleOutlet.tsx` | `CapsuleOutlet` — wrapper над TanStack `<Outlet/>`, владеет `view-transition-name: capsule-content-${depth}` (per-depth, для разделения регионов) + `view-transition-class: capsule-route` (depth-agnostic CSS-таргетинг — `::view-transition-*(.capsule-route)` матчит любую глубину, никакого hardcoded потолка) (ADR 046 D4) |
 | `src/__tests__/` | 48 тестов: wrap (14), normalizeBase (8), context (2), notFoundRedirect (5), beforeLoad (6), viewTransition (4), useRouteDepth (5 Provider-based), CapsuleOutlet (4 DOM) — jsdom-env |
 
 ## Ключевые инварианты

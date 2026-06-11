@@ -14,7 +14,16 @@ audience: claude
 
 Context-based (ADR 003) обёртка над `@tanstack/solid-router`. Factory `createRouter({ routeTree, context? })` возвращает `{ raw, capsuleRouter }`. Hook `useRouter()` достаёт `ICapsuleRouter` из Context. Реактивное API: `goTo(path, opts?) / back() / current()`, где `opts = { params, search, hash, replace }` — прямой проброс в `raw.navigate`. Инжектится в Feature/Controller через `services.router`. `ICapsuleRouterContext<TUser>` — generic, app расширяет под свой shape (ADR 014).
 
-**Routing-animation (ADR 046 Decision 4):** `CapsuleOutlet` — capsule-обёртка над TanStack `<Outlet/>` — владеет `view-transition-name: capsule-content-${depth}` через `DepthContext.Provider value={parent+1}`. Каждый Outlet-уровень получает уникальный vt-name → нативный View Transitions API анимирует сегменты независимо (родители не триггерятся, их именованные регионы рендерят одинаковый DOM до/после). `useRouteDepth()` — публичный hook на `useContext(DepthContext)`, sentinel `-1` нормализуется в `0`. **Импортируется в `Ui.Outlet` (web-core ui-kit injection)** — apps дёргают через глобал `<Ui.Outlet/>`, не из web-router напрямую.
+**Routing-animation (ADR 046 Decision 4):** `CapsuleOutlet` — capsule-обёртка над TanStack `<Outlet/>` — владеет двумя view-transition-проперти:
+
+- `view-transition-name: capsule-content-${depth}` (per-Outlet уникальное имя через `DepthContext.Provider value={parent+1}` — нужно чтобы вложенные Outlet'ы были РАЗНЫМИ snapshot-регионами; если бы имя было одинаковым, родители триггерились бы при свопе любого вложенного роута);
+- `view-transition-class: capsule-route` (depth-agnostic CSS-таргетинг — web-style использует `::view-transition-*(.capsule-route)`, один селектор покрывает любую глубину без hardcoded потолка).
+
+Эффект: каждый Outlet-уровень анимируется независимо, родители не триггерятся (их регионы рендерят одинаковый DOM до/после), CSS работает на любой глубине вложенности.
+
+`useRouteDepth()` — публичный hook на `useContext(DepthContext)`, sentinel `-1` нормализуется в `0`. **Импортируется в `Ui.Outlet` (web-core ui-kit injection)** — apps дёргают через глобал `<Ui.Outlet/>`, не из web-router напрямую.
+
+**Browser support:** `view-transition-class` — Chromium 125+ / Safari 18+. Firefox view-transitions не поддерживает, graceful degrade.
 
 Тесты — jsdom-env с `vite-plugin-solid` (нужен для `CapsuleOutlet.test.tsx`). До ADR 046 пакет был node-only.
 

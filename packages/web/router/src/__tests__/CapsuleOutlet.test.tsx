@@ -33,7 +33,7 @@ afterEach(() => {
 });
 
 describe('CapsuleOutlet — DOM + depth propagation', () => {
-  it('корневой Outlet (нет parent Provider) → wrapper с vt-name capsule-content-0', () => {
+  it('корневой Outlet (нет parent Provider) → wrapper с vt-name capsule-content-0 + vt-class', () => {
     const container = document.createElement('div');
     const dispose = render(() => <CapsuleOutlet />, container);
     const wrapper = container.querySelector('.vt-route-content') as HTMLElement | null;
@@ -41,11 +41,14 @@ describe('CapsuleOutlet — DOM + depth propagation', () => {
     expect(wrapper?.style.viewTransitionName).toBe('capsule-content-0');
     expect(wrapper?.style.width).toBe('100%');
     expect(wrapper?.style.height).toBe('100%');
+    // view-transition-class — depth-agnostic CSS-таргетинг
+    // (web-style использует ::view-transition-*(.capsule-route)).
+    expect(wrapper?.style.getPropertyValue('view-transition-class')).toBe('capsule-route');
     expect(outletDepth).toBe(0);
     dispose();
   });
 
-  it('Outlet внутри DepthContext.Provider value=0 → vt-name capsule-content-1', () => {
+  it('Outlet внутри DepthContext.Provider value=0 → vt-name capsule-content-1 + vt-class', () => {
     const container = document.createElement('div');
     const dispose = render(
       () => (
@@ -57,6 +60,8 @@ describe('CapsuleOutlet — DOM + depth propagation', () => {
     );
     const wrapper = container.querySelector('.vt-route-content') as HTMLElement | null;
     expect(wrapper?.style.viewTransitionName).toBe('capsule-content-1');
+    // Класс одинаков на всех уровнях — depth-agnostic.
+    expect(wrapper?.style.getPropertyValue('view-transition-class')).toBe('capsule-route');
     expect(outletDepth).toBe(1);
     dispose();
   });
@@ -111,6 +116,11 @@ describe('CapsuleOutlet — DOM + depth propagation', () => {
     );
     // Outlet-стаб ДОЛЖЕН видеть depth=3 (parent 2 + 1).
     expect(outletDepth).toBe(3);
+    // depth-agnostic CSS class присутствует и на глубоких уровнях — это
+    // главное архитектурное свойство: один CSS-селектор покрывает любую глубину.
+    const wrapper = container.querySelector('.vt-route-content') as HTMLElement | null;
+    expect(wrapper?.style.viewTransitionName).toBe('capsule-content-3');
+    expect(wrapper?.style.getPropertyValue('view-transition-class')).toBe('capsule-route');
     dispose();
     // NestedProbe — лишний для этого кейса, но проверим что cleanup не упал.
     void nestedDepth;
