@@ -2,7 +2,7 @@
 title: web-rework-plan
 description: Live execution plan для rework'а triada ADR 046 + 047 + 048. Обновляется по мере мерджа PR'ов.
 status: live
-last_updated: 2026-06-11 (Phase W inserted — web-space canon + README template + boost-renames absorbed)
+last_updated: 2026-06-11 (W1+W2+W3+W6+W7 DONE; C1+C2 DONE; next — C3 owner-web-style, W4 owner-web-ui, B1 boost-matrix scaffold)
 ---
 
 # web-rework execution plan (per ADR 046 + 047 + 048)
@@ -477,13 +477,13 @@ A0 (merge 046+047+048+plan) ─→ A1 (USER creates owner-boost-matrix + restart
               ▼                             ▼                               ▼
 ┌────────────────────────────┐ ┌──────────────────────────┐  ┌────────────────────────────┐
 │ Phase W (web-space canon)  │ │ Phase B (boost sweep)    │  │ Phase C (vt-rework)        │
-│ W1 zone canon docs ✅      │ │ B1 boost-matrix scaffold │  │ C1 CapsuleOutlet+DepthCtx  │
-│ W2 OWNERSHIP+README        │ │ B2 web-shell strip       │  │ C2 Ui.Outlet swap          │
-│ W3 L0/L1 gradient ✅       │ │ B3 apps imports          │  │ C3 CSS enumerate           │
-│ W4 manifest infra (owner)  │ │ B4-B7 → absorbed in W6   │  │                            │
-│ W5 cross-import baseline   │ │   B6-placeholder Ui.*    │  │                            │
-│ W6 boost-* renames         │ │     (owner-web-ui, after │  │                            │
-│ W7 plan-doc update ✅      │ │      W6 merge)           │  │                            │
+│ W1 zone canon docs ✅      │ │ B1 boost-matrix scaffold │  │ C1 CapsuleOutlet+DepthCtx ✅│
+│ W2 OWNERSHIP+README ✅     │ │ B2 web-shell strip       │  │ C2 Ui.Outlet swap ✅       │
+│ W3 L0/L1 gradient ✅       │ │ B3 apps imports          │  │ C3 CSS enumerate ← READY   │
+│ W4 manifest infra ← READY  │ │ B4-B7 → ABSORBED W6 ✅   │  │                            │
+│ W5 cross-import ← READY    │ │ B6-placeholder ← READY   │  │                            │
+│ W6 boost-* renames ✅      │ │                          │  │                            │
+│ W7 plan-doc update ✅      │ │                          │  │                            │
 └────────────────────────────┘ └──────────────────────────┘  └────────────────────────────┘
                                           │
                                           ▼ (after W+B+C stabilize)
@@ -529,24 +529,24 @@ A0 (merge 046+047+048+plan) ─→ A1 (USER creates owner-boost-matrix + restart
 
 | Phase | Status | PR | Notes |
 |---|---|---|---|
-| A0 — ADR 046+047+048 + plan-doc merge | **DONE** | #300 (c151c32) | Triada merged 2026-06-11 |
+| A0 — ADR 046+047+048 + plan-doc merge | **DONE** | #300 | Triada merged 2026-06-11 |
 | A1 — owner-boost-matrix agent + restart | IN PROGRESS (USER) | — | `.draft → .md` rename + session restart на стороне USER'а |
-| A2 — rename owner-web-{table,map,flow,charts} → owner-boost-* | OPTIONAL | — | После W6 merge если делаем; main steward готовит отдельный PR + restart-нот |
-| W1 — Zone canon docs (kit/runtime/domain/boost/design-time + index) | **DONE** | этот bundle | `docs/_meta/web-zones/*.md` |
-| W2 — OWNERSHIP refresh + README per-package | PENDING | — | После W1 → готов к старту; параллельно с W6 |
-| W3 — L0/L1 gradient + manifest schema | **DONE** | этот bundle | `docs/_meta/web-ui.md` секция |
-| W4 — Bundle-size + manifest infra (owner-web-ui) | PENDING | — | После W3 → готов; USER dispatches owner-web-ui |
-| W5 — Cross-import inventory baseline | PENDING | — | После W2 |
-| W6 — Boost-renames `web-*` → `boost-*` (B4-B7 absorbed) | PENDING | — | После W1 → готов; main steward, один atomic PR |
-| W7 — Plan-doc update | **DONE** | этот bundle | этот документ |
-| B1 — boost-matrix scaffold | BLOCKED | — | Wait A1 (USER restart) + W1 canon |
+| A2 — rename owner-web-{table,map,flow,charts} → owner-boost-* | READY | — | После W6 merge (✅) — отдельный PR + restart-нот; main steward готовит когда USER решит |
+| W1 — Zone canon docs (kit/runtime/domain/boost/design-time + index) | **DONE** | #302 | `docs/_meta/web-zones/*.md` |
+| W2 — OWNERSHIP refresh + README per-package | **DONE** | #303 | 23 OWNERSHIP refresh + 11 new README + readme-template; зафиксирован `web-access → web-auth` drift |
+| W3 — L0/L1 gradient + manifest schema | **DONE** | #302 | `docs/_meta/web-ui.md` секция |
+| W4 — Bundle-size + manifest infra (owner-web-ui) | READY | — | После W3 → готов; USER dispatches owner-web-ui |
+| W5 — Cross-import inventory baseline | READY | — | После W2 (web-access drift уже выявлен); main steward, чистая дока |
+| W6 — Boost-renames `web-*` → `boost-*` (B4-B7 absorbed) | **DONE** | #306 | 4 пакета renamed, tsconfig aliases для grace, lockfile sync, build clean |
+| W7 — Plan-doc update | **DONE** | #302 (initial) + этот PR (post-W6+C1+C2) | live status refresh |
+| B1 — boost-matrix scaffold | BLOCKED | — | Wait A1 (USER restart) |
 | B2 — web-shell strip Matrix | BLOCKED | — | Wait B1 |
 | B3 — apps imports → boost-matrix | BLOCKED | — | Wait B2 |
-| B4-B7 — boost-* renames | **ABSORBED** → W6 | — | — |
-| B6-placeholder — Ui.Map/Flow/Chart light placeholders в web-ui | BLOCKED | — | После W6 merge (canon `Ui.X` names) |
-| C1 — CapsuleOutlet + DepthContext | IN PROGRESS | — | USER dispatched owner-web-router 2026-06-11 |
-| C2 — Ui.Outlet swap + playground patch | BLOCKED | — | Wait C1 |
-| C3 — CSS селекторы enumerate | BLOCKED | — | Wait C2 |
+| B4-B7 — boost-* renames | **ABSORBED** → W6 (#306) | — | — |
+| B6-placeholder — Ui.Map/Flow/Chart light placeholders в web-ui | READY | — | После W6 merge (✅) — USER dispatches owner-web-ui |
+| C1 — CapsuleOutlet + DepthContext | **DONE** | #304 | owner-web-router; 9 файлов; 9+4 tests jsdom; vt-name per-depth |
+| C2 — Ui.Outlet swap | **DONE** | #305 | main steward; `Outlet` injection в Page+Widget wrappers переключён на CapsuleOutlet (alias-import). Apps/playground outlet patch — USER в своей ветке. |
+| C3 — CSS селекторы enumerate | READY | — | После C2 merge (✅) — USER dispatches owner-web-style |
 | D1 — Zone directory layout | BLOCKED | — | Wait W+B+C stable |
 | D2 — Cross-domain contracts (if needed) | BLOCKED | — | Wait D1; зависит от W5 находок |
 | D3 — Compliance extension (zone canon + vendor wrapper) | BLOCKED | — | Wait D1 |
@@ -577,3 +577,10 @@ A0 (merge 046+047+048+plan) ─→ A1 (USER creates owner-boost-matrix + restart
 
 - 2026-06-11 — создан, status pending.
 - 2026-06-11 (late) — **Phase W вставлена** (web-space canon на main steward'е): W1 zone canon docs + W3 L0/L1 gradient + W7 plan-doc update — все DONE этим PR-bundle'ом. B4-B7 boost-renames absorbed в W6 (mechanical, один atomic PR vs четыре per-owner). W2 OWNERSHIP+README, W4 manifest infra (owner-web-ui), W5 cross-import baseline, W6 renames — PENDING. Workflow rationale: USER указал «web-space на тебя — canon+порядок, не функционал; renames в одном стиле»; параллелизм с C1 (owner-web-router уже dispatched).
+- 2026-06-11 (night) — **5 PR'ов merged каскадом** в main:
+  - #302 (`46d349e`) — W1+W3+W7 zone canon + L0/L1 + plan-doc.
+  - #303 (`6972e3b`) — W2 OWNERSHIP+README sweep (23 пакета + 11 new README + template); зафиксирован `web-access → web-auth` runtime→domain drift (закрывается в Phase D2).
+  - #304 (`a2b93f0`) — C1 CapsuleOutlet + DepthContext + useRouteDepth rewrite (owner-web-router work).
+  - #305 (`2959f05`) — C2 `Ui.Outlet` swap в Page+Widget wrappers через CapsuleOutlet alias.
+  - #306 (`60ec8b1`) — W6 boost-* renames atomic (4 пакета + 28 файлов + tsconfig aliases для grace).
+  Phase W полностью завершена (W1-W7 DONE кроме W4/W5 которые ждут dispatch'а). Phase C1+C2 DONE. **Готовы к dispatch'у:** owner-web-style (C3), owner-web-ui (W4 manifest + B6-placeholder), opt. main steward (W5 baseline) и (A2 agent renames).
