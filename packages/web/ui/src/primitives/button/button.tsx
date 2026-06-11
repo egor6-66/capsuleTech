@@ -1,9 +1,9 @@
 import { cn, createStyle } from '@capsuletech/web-style';
-import { Loader2 } from 'lucide-solid';
 import type { ValidComponent } from 'solid-js';
 import { Show, splitProps } from 'solid-js';
 
 import { Slot } from '../slot';
+import { Spinner } from '../spinner';
 import type { IButtonProps } from './interfaces';
 import { buttonCva } from './variants';
 
@@ -66,7 +66,7 @@ export const Button = <T extends ValidComponent = 'button'>(props: IButtonProps<
       {...(domProps as any)}
     >
       <Show when={loadingProps.loading} fallback={loadingProps.children}>
-        <Loader2 class="animate-spin" />
+        <Spinner />
       </Show>
     </Slot>
   );

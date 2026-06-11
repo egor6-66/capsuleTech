@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * build-manifest.ts
+ * build-manifest.mjs
  *
  * Generates dist/manifest.json — a build-time artifact describing the real
  * bundle cost (gzip kB) and external dependency graph per @capsuletech/web-ui
@@ -11,14 +11,15 @@
  *
  * Schema: src/manifest/types.ts → IWebUiManifest / IPrimitiveManifestEntry
  * Canon:  docs/_meta/web-ui.md section "Weight gradient & size manifest"
+ *
+ * Plain .mjs (no TypeScript) so it runs on Node 20+ without `--experimental-strip-types`.
  */
 
-import { createRequire } from 'node:module';
-import { createGzip } from 'node:zlib';
-import { Writable } from 'node:stream';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { Writable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
+import { createGzip } from 'node:zlib';
 import * as esbuild from 'esbuild';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -31,10 +32,7 @@ const componentsDir = resolve(distDir, 'components');
 // ---------------------------------------------------------------------------
 
 const pkgPath = resolve(packageRoot, 'package.json');
-const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
-  version: string;
-  exports: Record<string, unknown>;
-};
+const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
 
 // ---------------------------------------------------------------------------
 // Weight classification per subpath name — canonical L0/L1 assignment.
@@ -42,7 +40,7 @@ const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
 // If adding a new subpath, add it here too.
 // ---------------------------------------------------------------------------
 
-const WEIGHT_MAP: Record<string, 'L0' | 'L1'> = {
+const WEIGHT_MAP = {
   // L0 — presentational + native controls
   typography: 'L0',
   card: 'L0',
@@ -81,18 +79,20 @@ const WEIGHT_MAP: Record<string, 'L0' | 'L1'> = {
 };
 
 // ---------------------------------------------------------------------------
-// External deps — all peer deps + known singletons.
-// These are excluded from the bundle when measuring size.
+// External deps — package names + wildcard patterns. esbuild does NOT accept
+// regex here. Earlier version used RegExp instances which silently broke
+// matching → workspace deps and Kobalte/TanStack subpaths got bundled inline,
+// inflating sizes (input 47kB / button 24kB phase 1 were NOT real).
 // ---------------------------------------------------------------------------
 
 const EXTERNALS = [
   'solid-js',
-  'solid-js/web',
-  'solid-js/store',
-  /^@capsuletech\//,
-  /^@kobalte\//,
-  /^@tanstack\//,
-  /^@motionone\//,
+  'solid-js/*',
+  '@capsuletech/*',
+  '@kobalte/*',
+  '@tanstack/*',
+  '@motionone/*',
+  '@corvu/*',
   'lucide-solid',
   'class-variance-authority',
   'clsx',
@@ -104,20 +104,20 @@ const EXTERNALS = [
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Gzip a string/Buffer and return byte count. */
-async function gzipSize(source: string | Uint8Array): Promise<number> {
-  return new Promise((resolve, reject) => {
+/** Gzip a string and return byte count. */
+function gzipSize(source) {
+  return new Promise((resolveFn, rejectFn) => {
     let size = 0;
     const gz = createGzip({ level: 9 });
     const sink = new Writable({
-      write(chunk: Buffer, _enc: string, cb: () => void) {
+      write(chunk, _enc, cb) {
         size += chunk.length;
         cb();
       },
     });
-    gz.on('error', reject);
-    sink.on('error', reject);
-    sink.on('finish', () => resolve(size));
+    gz.on('error', rejectFn);
+    sink.on('error', rejectFn);
+    sink.on('finish', () => resolveFn(size));
     gz.pipe(sink);
     gz.write(source);
     gz.end();
@@ -128,7 +128,7 @@ async function gzipSize(source: string | Uint8Array): Promise<number> {
  * Returns the canonical subpath name from a package.json exports key.
  * e.g. './button' → 'button', '.' → 'index', './widgetFrame' → 'widgetFrame'
  */
-function subpathName(key: string): string {
+function subpathName(key) {
   if (key === '.') return 'index';
   return key.replace(/^\.\//, '');
 }
@@ -137,7 +137,7 @@ function subpathName(key: string): string {
  * Maps a subpath name to the dist component directory name.
  * Accounts for 'widgetFrame' → 'widget-frame' fs alias.
  */
-function distComponentName(name: string): string {
+function distComponentName(name) {
   if (name === 'widgetFrame') return 'widget-frame';
   return name;
 }
@@ -147,8 +147,8 @@ function distComponentName(name: string): string {
  * We consider an import "external" if it was not resolved from the local fs
  * (esbuild marks them with external: true in the metafile).
  */
-function extractExternals(metafile: esbuild.Metafile): string[] {
-  const seen = new Set<string>();
+function extractExternals(metafile) {
+  const seen = new Set();
   for (const output of Object.values(metafile.outputs)) {
     for (const imp of output.imports) {
       if (imp.external) {
@@ -171,13 +171,7 @@ async function main() {
     process.exit(1);
   }
 
-  const results: Array<{
-    name: string;
-    weight: 'L0' | 'L1';
-    subpath: string;
-    sizeKB: number;
-    externals: string[];
-  }> = [];
+  const results = [];
 
   // Iterate all subpath exports (skip '.' barrel and './package.json')
   const exportKeys = Object.keys(pkg.exports).filter(
@@ -194,9 +188,9 @@ async function main() {
       continue;
     }
 
-    let buildResult: esbuild.BuildResult & { metafile: esbuild.Metafile };
+    let buildResult;
     try {
-      buildResult = (await esbuild.build({
+      buildResult = await esbuild.build({
         entryPoints: [entryFile],
         bundle: true,
         write: false,
@@ -204,28 +198,29 @@ async function main() {
         minify: false, // measure raw size for consistency; gzip covers real cost
         format: 'esm',
         platform: 'browser',
-        external: EXTERNALS.map((e) => (e instanceof RegExp ? String(e).slice(1, -1) : e)),
+        external: EXTERNALS,
         // Tell esbuild to resolve relative imports within dist/
         absWorkingDir: distDir,
         logLevel: 'silent',
-      })) as esbuild.BuildResult & { metafile: esbuild.Metafile };
+      });
     } catch (err) {
       console.warn(`[build-manifest] SKIP ${name}: esbuild error`, err);
       continue;
     }
 
     // Collect all output text
-    const totalBytes = buildResult.outputFiles.reduce((sum, f) => sum + f.text.length, 0);
     const allText = buildResult.outputFiles.map((f) => f.text).join('');
     const gzBytes = await gzipSize(allText);
     const sizeKB = Math.round((gzBytes / 1024) * 100) / 100;
 
     const externals = extractExternals(buildResult.metafile);
-    const weight: 'L0' | 'L1' = WEIGHT_MAP[name] ?? 'L1';
+    const weight = WEIGHT_MAP[name] ?? 'L1';
     const subpath = `@capsuletech/web-ui/${name}`;
 
     results.push({ name, weight, subpath, sizeKB, externals });
-    console.log(`  [${weight}] ${name.padEnd(20)} ${sizeKB.toFixed(2)} kB  (${externals.length} externals)`);
+    console.log(
+      `  [${weight}] ${name.padEnd(20)} ${sizeKB.toFixed(2)} kB  (${externals.length} externals)`,
+    );
   }
 
   // Sort: L0 first, then L1; alphabetically within each group
