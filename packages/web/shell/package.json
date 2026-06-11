@@ -29,6 +29,16 @@
       "types": "./dist/matrix/index.d.ts",
       "import": "./dist/matrix.mjs",
       "default": "./dist/matrix.mjs"
+    },
+    "./layout": {
+      "types": "./dist/layout/index.d.ts",
+      "import": "./dist/layout.mjs",
+      "default": "./dist/layout.mjs"
+    },
+    "./chrome": {
+      "types": "./dist/chrome/index.d.ts",
+      "import": "./dist/chrome.mjs",
+      "default": "./dist/chrome.mjs"
     }
   },
   "files": [
