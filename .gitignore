@@ -22,6 +22,8 @@ storybook-static
 # Local Claude Code state — local-only.
 .claude/worktrees
 .claude/settings.local.json
+# Per-instance settings inside any nested .claude/ (e.g. docker/observability/.claude/).
+**/.claude/settings.local.json
 # NOTE: .claude/agents/ is TRACKED — shared agent prompts for the team.
 
 # Local test/playground apps inside monorepo — workspace-mode framework dev,
