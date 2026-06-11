@@ -1,4 +1,7 @@
-import { Outlet } from '@tanstack/solid-router';
+// Outlet — capsule-обёртка над TanStack <Outlet/> через @capsuletech/web-router.
+// CapsuleOutlet владеет view-transition-name через DepthContext (ADR 046 D4).
+// Имя `Ui.Outlet` для consumer'ов сохраняется (re-export через alias).
+import { CapsuleOutlet as Outlet } from '@capsuletech/web-router';
 import { useSettingsMode } from '@capsuletech/web-style';
 import { For, Show } from 'solid-js';
 import { useCtx } from '../engine/ctx';
