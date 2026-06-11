@@ -4,18 +4,26 @@
  * Verifies that the main slot (cell.id='main') carries the `vt-route-content`
  * CSS class in all render paths, and that non-main cells do NOT carry it.
  *
- * `vt-route-content` maps to `view-transition-name: capsule-content` defined
- * in @capsuletech/web-style/index.css. It must be present on exactly ONE
- * element at a time — the main content region — so the native View Transitions
- * API can animate it while leaving chrome (header/sidebar/footer) static.
+ * Also verifies depth-scoped view-transition-name per ADR 045 #3:
+ * main-cell inline style must be `capsule-content-${depth}` where depth comes
+ * from useRouteDepth() (web-router). web-style 5c will update the CSS selector
+ * to match `capsule-content-*` pattern.
  *
- * The class is inert when View Transitions are disabled (no-op CSS property),
- * so applying it by default is safe.
+ * `vt-route-content` CSS class is kept for backwards-compat with the existing
+ * web-style selector during the gap between 5b and 5c merge.
  */
 /* @vitest-environment jsdom */
 import { render } from 'solid-js/web';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Matrix } from '../matrix';
+
+// ---------------------------------------------------------------------------
+// Mock useRouteDepth (default depth = 0, root app-shell level)
+// ---------------------------------------------------------------------------
+
+vi.mock('@capsuletech/web-router', () => ({
+  useRouteDepth: () => () => 0,
+}));
 
 let container: HTMLDivElement;
 let cleanup: (() => void) | undefined;
@@ -215,5 +223,77 @@ describe('vt-route-content — raw rows with cell id=main', () => {
     expect(container.querySelector('[data-testid="raw-content"]')).not.toBeNull();
     const vtEls = container.querySelectorAll('.vt-route-content');
     expect(vtEls.length).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ADR 045 #3 — depth-scoped view-transition-name
+//
+// useRouteDepth() is mocked to () => 0 at module level (root depth).
+// Tests verify inline style `view-transition-name: capsule-content-${depth}`.
+// ---------------------------------------------------------------------------
+
+describe('depth-scoped vt-name — centroid path (depth=0)', () => {
+  it('main cell inline style carries capsule-content-0 at root depth', () => {
+    cleanup = render(
+      () => (
+        <Matrix
+          preset="app-shell"
+          slots={{
+            main: <div data-testid="depth-main-centroid">Main</div>,
+          }}
+        />
+      ),
+      container,
+    );
+
+    const content = container.querySelector('[data-testid="depth-main-centroid"]');
+    expect(content).not.toBeNull();
+
+    const vtEl = content?.closest('.vt-route-content') as HTMLElement | null;
+    expect(vtEl).not.toBeNull();
+    expect(vtEl?.style.getPropertyValue('view-transition-name')).toBe('capsule-content-0');
+  });
+});
+
+describe('depth-scoped vt-name — multi-cell renderCell path (depth=0)', () => {
+  it('main cell in resizable row carries capsule-content-0', () => {
+    cleanup = render(
+      () => (
+        <Matrix
+          rows={[
+            {
+              resizable: true,
+              cells: [
+                {
+                  id: 'sidebar',
+                  tag: 'aside',
+                  children: <div data-testid="depth-sidebar">Sidebar</div>,
+                  width: 0.25,
+                  resizable: true,
+                },
+                {
+                  id: 'main',
+                  tag: 'main',
+                  children: <div data-testid="depth-main-resize">Main</div>,
+                  width: 0.75,
+                  resizable: true,
+                },
+              ],
+            },
+          ]}
+        />
+      ),
+      container,
+    );
+
+    const mainEl = container.querySelector('main') as HTMLElement | null;
+    expect(mainEl).not.toBeNull();
+    expect(mainEl?.classList.contains('vt-route-content')).toBe(true);
+    expect(mainEl?.style.getPropertyValue('view-transition-name')).toBe('capsule-content-0');
+
+    // Non-main cell must not carry the style
+    const asideEl = container.querySelector('aside') as HTMLElement | null;
+    expect(asideEl?.style.getPropertyValue('view-transition-name')).toBeFalsy();
   });
 });

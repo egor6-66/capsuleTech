@@ -4,6 +4,7 @@
 import type { Accessor, JSX } from 'solid-js';
 import { Show, Suspense } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
+import { useRouteDepth } from '@capsuletech/web-router';
 import { DragBadge } from './dnd/drag-badge';
 import type { ICell } from './interfaces';
 import { matrixSlots } from './variants';
@@ -99,16 +100,18 @@ export const renderCell = (
     // Scroll is delegated entirely to the inner div (innerClass above); the outer
     // stays a clean `relative` container so DragBadge's z-30 wins globally.
     //
-    // vt-route-content: marks this element as the named View Transition region
-    // "capsule-content" (defined in @capsuletech/web-style/index.css).
-    // Applied only to cell.id='main' — the single content region per shell —
-    // ensuring view-transition-name uniqueness as required by the native API.
-    // The class is inert when View Transitions are disabled (no-op CSS property).
+    // vt-route-content: CSS class kept for backwards-compat with web-style selector
+    // (capsule-content). Inline style view-transition-name is depth-scoped per
+    // ADR 045 #3: capsule-content-${depth} so nested Matrix instances get independent
+    // animation groups. web-style 5c will update CSS selector to match the pattern.
+    // Applied only to cell.id='main' — ensures uniqueness of view-transition-name.
+    const depth = isMain ? useRouteDepth() : undefined;
     return (
       <Dynamic
         component={tag}
         ref={cellRef}
         class={`h-full w-full relative${isMain ? ' vt-route-content' : ''}`}
+        style={isMain && depth !== undefined ? { 'view-transition-name': `capsule-content-${depth()}` } : undefined}
       >
         {/* Inner scroll wrapper; pointer-events-none during drag prevents hover leaking
             into cell content (table row hover, map hover, etc.).
@@ -138,13 +141,16 @@ export const renderCell = (
   }
 
   const isMain = cell.id === 'main';
-  // vt-route-content: named View Transition region "capsule-content" (web-style/index.css).
-  // Applied only to the main cell — ensures uniqueness of view-transition-name in the DOM.
+  // vt-route-content: CSS class kept for backwards-compat with web-style selector.
+  // Inline style carries depth-scoped view-transition-name per ADR 045 #3.
+  // Applied only to the main cell — ensures uniqueness in the DOM.
+  const depthNoDnd = isMain ? useRouteDepth() : undefined;
   return (
     <Dynamic
       component={tag}
       ref={cellRef}
       class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative${isMain ? ' vt-route-content' : ''}`}
+      style={isMain && depthNoDnd !== undefined ? { 'view-transition-name': `capsule-content-${depthNoDnd()}` } : undefined}
     >
       <div class="absolute inset-0 overflow-auto">
         <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>

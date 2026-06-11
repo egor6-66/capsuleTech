@@ -5,6 +5,7 @@
  */
 import type { ISortableZone } from '@capsuletech/web-dnd';
 import { useDnD } from '@capsuletech/web-dnd';
+import { useRouteDepth } from '@capsuletech/web-router';
 import { Flex, type IFlex } from '@capsuletech/web-ui';
 import type { Accessor, JSX } from 'solid-js';
 import { createMemo, createSignal, For, Show, Suspense } from 'solid-js';
@@ -216,15 +217,18 @@ export const MatrixContent = (props: IMatrixContentProps) => {
         const cellRef =
           cell.draggable !== false && swapBind ? swapBind(cell, rows[0].id) : NOOP_REF;
         const dndState = cellDndState ? cellDndState(cell) : undefined;
-        // vt-route-content: named View Transition region "capsule-content" (web-style/index.css).
-        // Applied when cell.id='main' so the main content animates on routing while
-        // chrome (header/sidebar/footer) stays static. Ensures uniqueness — only
-        // one cell carries view-transition-name at a time.
+        // vt-route-content: CSS class kept for backwards-compat with web-style selector.
+        // Inline style carries depth-scoped view-transition-name per ADR 045 #3:
+        // capsule-content-${depth} so nested Matrix instances get independent
+        // animation groups. web-style 5c will update CSS selector to match the pattern.
+        // Applied only when cell.id='main' — ensures uniqueness in the DOM.
         const isMainCell = cell.id === 'main';
+        const centroidDepth = isMainCell ? useRouteDepth() : undefined;
         return (
           <div
             ref={cellRef}
             class={`relative flex h-full w-full items-center justify-center${isMainCell ? ' vt-route-content' : ''}`}
+            style={isMainCell && centroidDepth !== undefined ? { 'view-transition-name': `capsule-content-${centroidDepth()}` } : undefined}
           >
             <div
               class="absolute inset-0 overflow-auto flex items-center justify-center"

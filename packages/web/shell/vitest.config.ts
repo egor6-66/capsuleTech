@@ -11,7 +11,9 @@ export default defineConfig({
     environment: 'jsdom',
     globals: false,
     // vitest.setup.ts installs ResizeObserver + matchMedia mocks (jsdom does not ship them).
-    setupFiles: ['./vitest.setup.ts'],
+    // vitest.setup.router-mock.ts stubs @capsuletech/web-router so Matrix render tests
+    // do not require a live RouterProvider (useRouteDepth → useMatches needs one).
+    setupFiles: ['./vitest.setup.ts', './vitest.setup.router-mock.ts'],
     // Several deps ship .jsx/.tsx source files in dev conditions.
     // Node natively cannot process JSX — inline these deps so Vite transforms them.
     // - @capsuletech/web-dnd: imported by matrix.tsx and drag-badge.tsx
@@ -20,6 +22,7 @@ export default defineConfig({
       deps: {
         inline: [
           /@capsuletech\/web-dnd/,
+          /@capsuletech\/web-router/,
           /@capsuletech\/web-ui/,
           /@tanstack\/solid-router/,
           /@solidjs\/meta/,

@@ -54,10 +54,12 @@
     "@capsuletech/web-core": "workspace:*",
     "@capsuletech/web-dnd": "workspace:*",
     "@capsuletech/web-intl": "workspace:*",
+    "@capsuletech/web-router": "workspace:*",
     "@capsuletech/web-style": "workspace:*",
     "@capsuletech/web-ui": "workspace:*"
   },
   "peerDependencies": {
+    "@capsuletech/web-router": "workspace:*",
     "solid-js": "^1.9.12"
   },
   "devDependencies": {
