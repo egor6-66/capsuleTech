@@ -17,13 +17,33 @@ last-updated: 2026-05-20
 name: @capsuletech/<pkg-name>
 owner-agent: owner-<short>
 group: <cli|web_base|canvas|other>
-status: <pre-1.0|stable|deprecated>
+zone: <kit|runtime|domain|boost|design-time>
+status: <scaffold|alpha|beta|stable|deprecated>
+priority: <P0|P1|P2|P3>
 last-updated: <YYYY-MM-DD>
 ---
 
 # @capsuletech/<pkg-name>
 
 Однопредложение — что делает пакет.
+
+## Состояние (читать ПЕРВЫМ)
+
+> ⭐ Эта секция обязательна. Любой контрибьютор / агент / user должен **за 30 секунд** понять «брать этот пакет или нет, в каком он состоянии».
+
+- **Zone:** `<kit|runtime|domain|boost|design-time>` (per ADR 047 D1).
+- **Status:** `<scaffold|alpha|beta|stable|deprecated>` — реальное состояние, не декларативное.
+- **Priority:** `<P0|P1|P2|P3>` — насколько важен в общей картине (P0 = критичный путь, P3 = nice-to-have).
+- **Maturity bar:** что нужно чтобы перейти в следующий status (3-5 буллетов).
+- **Active blockers:** что мешает прямо сейчас (или «нет»).
+- **Roadmap (3-5 пунктов):** ближайшие 2-3 sprint'а / месяца.
+- **Last activity:** дата последнего значимого PR.
+
+## Vendor stack (ADR 047 D3)
+
+Обязательная секция — список главных вендоров + одна строка про каждый + upstream-ссылка. Контрибьютор открывает → понимает с чем работает.
+
+- **<vendor>** (`<npm-pkg>` `^<version>`) — назначение. https://upstream-docs/
 
 ## Зона ответственности
 
