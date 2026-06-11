@@ -543,23 +543,42 @@
   animation: none;
 }
 
-/* Named content region — crossfade only */
+/* Named content region — crossfade only.
+   Depth-enumerated names (capsule-content-0 … capsule-content-3) are set by
+   CapsuleOutlet (ADR 046 D4, Phase C1). Each nesting level gets its own
+   view-transition-name so nested Outlets animate independently.
+   Legacy fallback (capsule-content, no depth suffix) keeps consumers that
+   haven't adopted CapsuleOutlet working as before. */
+
+::view-transition-old(capsule-content-0),
+::view-transition-old(capsule-content-1),
+::view-transition-old(capsule-content-2),
+::view-transition-old(capsule-content-3),
 ::view-transition-old(capsule-content) {
   animation: 200ms ease-out both vt-fade-out;
 }
 
+::view-transition-new(capsule-content-0),
+::view-transition-new(capsule-content-1),
+::view-transition-new(capsule-content-2),
+::view-transition-new(capsule-content-3),
 ::view-transition-new(capsule-content) {
   animation: 220ms ease-in both vt-fade-in;
 }
 
 /* Suppress group morph so geometry changes (login→workspace) don't slide;
    pure crossfade without position/size interpolation. */
+::view-transition-group(capsule-content-0),
+::view-transition-group(capsule-content-1),
+::view-transition-group(capsule-content-2),
+::view-transition-group(capsule-content-3),
 ::view-transition-group(capsule-content) {
   animation-duration: 0ms;
 }
 
 /* Utility class — apply to the stable content wrapper around <Outlet />.
-   Exactly ONE element with this class must exist in the DOM at any moment. */
+   CapsuleOutlet sets view-transition-name automatically; this class is the
+   legacy/manual opt-in for apps that manage the wrapper themselves. */
 .vt-route-content {
   view-transition-name: capsule-content;
 }
