@@ -126,6 +126,26 @@
       "import": "./dist/components/layout/*.mjs",
       "default": "./dist/components/layout/*.mjs"
     },
+    "./map": {
+      "types": "./dist/components/map/index.d.ts",
+      "import": "./dist/components/map/index.mjs",
+      "default": "./dist/components/map/index.mjs"
+    },
+    "./flow-diagram": {
+      "types": "./dist/components/flow-diagram/index.d.ts",
+      "import": "./dist/components/flow-diagram/index.mjs",
+      "default": "./dist/components/flow-diagram/index.mjs"
+    },
+    "./flowDiagram": {
+      "types": "./dist/components/flow-diagram/index.d.ts",
+      "import": "./dist/components/flow-diagram/index.mjs",
+      "default": "./dist/components/flow-diagram/index.mjs"
+    },
+    "./chart": {
+      "types": "./dist/components/chart/index.d.ts",
+      "import": "./dist/components/chart/index.mjs",
+      "default": "./dist/components/chart/index.mjs"
+    },
     "./list": {
       "types": "./dist/components/list/index.d.ts",
       "import": "./dist/components/list/index.mjs",

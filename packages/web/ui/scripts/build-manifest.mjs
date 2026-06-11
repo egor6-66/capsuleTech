@@ -61,6 +61,11 @@ const WEIGHT_MAP = {
   input: 'L0',
   textarea: 'L0',
   table: 'L0',
+  // Boost-mirror light placeholders (L0 — zero-engine-dep)
+  map: 'L0',
+  'flow-diagram': 'L0',
+  flowDiagram: 'L0',
+  chart: 'L0',
   // L1 — interactive Kobalte / floating / focus-trap
   accordion: 'L1',
   dropdown: 'L1',
@@ -139,6 +144,7 @@ function subpathName(key) {
  */
 function distComponentName(name) {
   if (name === 'widgetFrame') return 'widget-frame';
+  if (name === 'flowDiagram') return 'flow-diagram';
   return name;
 }
 
