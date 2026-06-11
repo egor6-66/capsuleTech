@@ -3,7 +3,7 @@ name: @capsuletech/web-shell
 owner-agent: owner-web-shell
 group: web_base
 status: pre-1.0
-last-updated: 2026-06-05
+last-updated: 2026-06-11
 ---
 
 # @capsuletech/web-shell
@@ -38,12 +38,17 @@ presentation and emits → tier 1 in web-ui.**
 
 ## Публичный API
 
-- `.` — convenience barrel, re-exports `./ui`.
-- `./ui` — connected blocks: `ModeToggle`, `MODES`, `ThemePicker`, `LocalePicker` + their types.
-  Stays free of `@capsuletech/web-core` so it tree-shakes independently.
-- `./controllers` — HCA Controllers (ADR 032, `useEmit`). Empty until Header lands.
-- `./capsule` — registration manifest (`defineCapsuleModule`, ADR 033). Depends on
-  web-core; consumed once the package-registration runtime (ADR 033 phase 3) ships.
+Per ADR 045 the package exposes two tiers as dedicated subpaths:
+
+| Subpath | Tier | What | Notes |
+|---|---|---|---|
+| `./layout` | tier-1 stateless | `Matrix`, `Region`, `Cell`, `appShellResolver`, `resolvePreset` | No stores, no `useEmit`, no DOM side-effects |
+| `./chrome` | tier-2 connected | `Header`, `ModeToggle`, `Appearance`, `FinishSettings`, `ThemePicker`, `LocalePicker` + `Controllers.Shell` | Wired to `@capsuletech/web-style` / `@capsuletech/web-auth` stores; `useEmit` |
+| `./matrix` | **deprecated alias** | Same surface as `./layout` | Soft-deprecated; consumers migrate to `./layout` on next touch. Will be removed in a future major version. |
+| `./ui` | (legacy) | Connected blocks only (no controllers) | Pre-ADR 045 subpath; still works, prefer `./chrome` for new consumers. |
+| `./controllers` | (legacy) | `MatrixController`, `IMatrixEvents` | Pre-ADR 045 subpath; still works, prefer `./chrome` for new consumers. |
+| `.` | convenience barrel | Re-exports `./ui` | |
+| `./capsule` | pkg manifest | `defineCapsuleModule` (ADR 033) | Depends on `@capsuletech/web-core`; runtime pending (phase 3). |
 
 Изменение публичного API = breaking → coordinate с главным.
 
