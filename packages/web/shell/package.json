@@ -58,7 +58,7 @@
     "@capsuletech/web-ui": "workspace:*"
   },
   "peerDependencies": {
-    "solid-js": "^1.9.0"
+    "solid-js": "^1.9.12"
   },
   "devDependencies": {
     "@capsuletech/lib-builder": "workspace:*",
