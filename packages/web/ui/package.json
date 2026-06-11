@@ -323,7 +323,7 @@
   "sideEffects": false,
   "scripts": {
     "build": "vite build",
-    "build:manifest": "node --experimental-strip-types scripts/build-manifest.ts",
+    "build:manifest": "node scripts/build-manifest.mjs",
     "dev": "vite build --watch",
     "test": "vitest run",
     "test:browser": "vitest --config vitest.browser.config.ts run",
