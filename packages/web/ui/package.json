@@ -320,6 +320,7 @@
   "files": [
     "dist"
   ],
+  "sideEffects": false,
   "scripts": {
     "build": "vite build",
     "build:manifest": "node --experimental-strip-types scripts/build-manifest.ts",

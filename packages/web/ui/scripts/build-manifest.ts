@@ -85,14 +85,18 @@ const WEIGHT_MAP: Record<string, 'L0' | 'L1'> = {
 // These are excluded from the bundle when measuring size.
 // ---------------------------------------------------------------------------
 
+// esbuild `external` accepts package names + wildcard patterns like `@scope/*`,
+// NOT regex. Earlier version used RegExp instances which silently got converted
+// to invalid pattern strings → workspace deps (@capsuletech/*) and Kobalte/
+// TanStack subpaths got bundled inline, inflating sizes.
 const EXTERNALS = [
   'solid-js',
-  'solid-js/web',
-  'solid-js/store',
-  /^@capsuletech\//,
-  /^@kobalte\//,
-  /^@tanstack\//,
-  /^@motionone\//,
+  'solid-js/*',
+  '@capsuletech/*',
+  '@kobalte/*',
+  '@tanstack/*',
+  '@motionone/*',
+  '@corvu/*',
   'lucide-solid',
   'class-variance-authority',
   'clsx',
@@ -204,7 +208,7 @@ async function main() {
         minify: false, // measure raw size for consistency; gzip covers real cost
         format: 'esm',
         platform: 'browser',
-        external: EXTERNALS.map((e) => (e instanceof RegExp ? String(e).slice(1, -1) : e)),
+        external: EXTERNALS,
         // Tell esbuild to resolve relative imports within dist/
         absWorkingDir: distDir,
         logLevel: 'silent',
