@@ -1,4 +1,4 @@
-import { FLOW_NODE_MIME } from '@capsuletech/web-flow';
+import { FLOW_NODE_MIME } from '@capsuletech/boost-flow';
 import type { Component } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 

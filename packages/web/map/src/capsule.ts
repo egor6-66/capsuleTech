@@ -1,11 +1,11 @@
 /**
- * @capsuletech/web-map/capsule
+ * @capsuletech/boost-map/capsule
  *
  * Манифест пакета для механизма регистрации опциональных пакетов (ADR 033).
  *
  * Позволяет подключить web-map одной строкой в `capsule.app.ts`:
  * ```ts
- * packages: ['@capsuletech/web-map']
+ * packages: ['@capsuletech/boost-map']
  * ```
  * После этого глобал `Maps.*` доступен во всех слоях без явных импортов.
  *

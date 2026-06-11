@@ -42,7 +42,7 @@ export interface IAppConfig {
    * Каждый элемент — либо строка (имя npm-пакета), либо объект `{ use, as }`.
    *
    * Строка: пакет самоназывается через свой `/capsule` манифест (`defaultName`).
-   * Например, `'@capsuletech/web-map'` → манифест объявляет `name: 'Maps'` →
+   * Например, `'@capsuletech/boost-map'` → манифест объявляет `name: 'Maps'` →
    * глобал `Maps.*` с `Maps.View`, `Maps.Layer` и т.д.
    *
    * Объект `{ use, as }`: явный override имени глобала. Нужен для разрешения

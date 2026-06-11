@@ -15,7 +15,7 @@ export const MapContext = createContext<IMapContext>();
 export const useMap = (): IMapContext => {
   const ctx = useContext(MapContext);
   if (!ctx) {
-    throw new Error('[@capsuletech/web-map] useMap() must be called inside <MapView>');
+    throw new Error('[@capsuletech/boost-map] useMap() must be called inside <MapView>');
   }
   return ctx;
 };

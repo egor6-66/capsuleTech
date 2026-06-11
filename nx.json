@@ -107,8 +107,8 @@
         "projects": [
           "@capsuletech/web-core",
           "@capsuletech/web-dnd",
-          "@capsuletech/web-charts",
-          "@capsuletech/web-map",
+          "@capsuletech/boost-charts",
+          "@capsuletech/boost-map",
           "@capsuletech/web-ui-creator",
           "@capsuletech/web-profiler",
           "@capsuletech/web-query",
@@ -119,7 +119,7 @@
           "@capsuletech/web-ui",
           "@capsuletech/web-intl",
           "@capsuletech/web-shell",
-          "@capsuletech/web-table",
+          "@capsuletech/boost-table",
           "@capsuletech/web-auth",
           "@capsuletech/shared-zod",
           "@capsuletech/shared-utils"

@@ -11,7 +11,7 @@
  * типы), чтобы subpath `/capsule` пакетов (web-map и т.д.) тянул минимум.
  *
  * @example
- * // @capsuletech/web-map/capsule
+ * // @capsuletech/boost-map/capsule
  * import { defineCapsuleModule } from '@capsuletech/web-core/module';
  * import { MapView, Source, Layer, Marker } from '../index';
  *

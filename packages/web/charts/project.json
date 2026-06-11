@@ -1,5 +1,5 @@
 {
-  "name": "@capsuletech/web-charts",
+  "name": "@capsuletech/boost-charts",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "packages/web/charts/src",
   "projectType": "library",

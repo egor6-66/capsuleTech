@@ -53,7 +53,7 @@ type Expect<T extends true> = T;
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 // ---------------------------------------------------------------------------
-// Mock table side (как придёт из @capsuletech/web-table)
+// Mock table side (как придёт из @capsuletech/boost-table)
 // ---------------------------------------------------------------------------
 
 interface IColumnDef<TRow> {

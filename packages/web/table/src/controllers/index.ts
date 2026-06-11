@@ -1,5 +1,5 @@
 /**
- * @capsuletech/web-table/controllers — HCA integration layer (ADR 032).
+ * @capsuletech/boost-table/controllers — HCA integration layer (ADR 032).
  *
  * Единственный subpath, который зависит от `@capsuletech/web-core`.
  * Содержит emit-проводку событий строк DataTable через `useEmit`.

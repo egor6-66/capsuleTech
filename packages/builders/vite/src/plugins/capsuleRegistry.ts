@@ -44,7 +44,7 @@ const traverse = (
 
 /** Normalized form of a packages[] entry after parsing AppConfigShape. */
 export interface PackageEntry {
-  /** npm package name, e.g. '@capsuletech/web-map' */
+  /** npm package name, e.g. '@capsuletech/boost-map' */
   pkg: string;
   /** Global name override from { use, as }, if provided */
   as?: string;

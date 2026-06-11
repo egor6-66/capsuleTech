@@ -1,4 +1,4 @@
-// @capsuletech/web-charts — themed Chart.js primitives (ADR 028).
+// @capsuletech/boost-charts — themed Chart.js primitives (ADR 028).
 //
 // Wraps `solid-chartjs` + `chart.js` under `@capsuletech/web-style` tokens.
 // Canvas-based: give every chart container a height (the primitives only pass
