@@ -7,6 +7,8 @@ export default libConfig({
     controllers: 'src/controllers/index.ts',
     capsule: 'src/capsule.ts',
     matrix: 'src/matrix/index.ts',
+    layout: 'src/layout/index.ts',
+    chrome: 'src/chrome/index.ts',
   },
   name: 'CapsuleShell',
 });
