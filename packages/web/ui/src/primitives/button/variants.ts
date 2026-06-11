@@ -11,15 +11,30 @@ export const variants = {
     link: 'text-primary underline-offset-4 hover:underline',
   },
   size: {
-    default: 'h-9 px-button',
-    sm: 'h-8 rounded-md px-button-sm text-xs',
-    lg: 'h-10 rounded-md px-button-lg',
-    icon: 'h-9 w-9 p-0',
+    default: 'h-9 px-button has-[>svg]:px-[calc(var(--spacing-button)-0.25rem)]',
+    sm: 'h-8 px-button-sm text-xs has-[>svg]:px-[calc(var(--spacing-button-sm)-0.125rem)]',
+    lg: 'h-10 px-button-lg has-[>svg]:px-[calc(var(--spacing-button-lg)-0.5rem)]',
+    icon: 'size-9 p-0',
   },
 };
 
 export const buttonCva = cva(
-  'cursor-pointer inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+  [
+    // layout
+    'inline-flex items-center justify-center gap-2 whitespace-nowrap',
+    // semantics
+    'rounded-md text-sm font-medium cursor-pointer',
+    // transition — узкий (только цвета, не transition-all)
+    'transition-colors duration-200',
+    // focus — двухслойный (shadcn canon)
+    'outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50',
+    // disabled
+    'disabled:pointer-events-none disabled:opacity-50',
+    // aria-invalid (форма-валидация)
+    'aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40',
+    // svg-children (адаптер для иконок)
+    '[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*=size-])]:size-4',
+  ].join(' '),
   {
     variants,
     defaultVariants: {

@@ -1,0 +1,2 @@
+# Vitest browser-mode per-run attachments (screenshots, traces)
+.vitest-attachments/

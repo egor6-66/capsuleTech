@@ -23,7 +23,7 @@ import { buttonCva } from './variants';
  * ```
  */
 export const Button = <T extends ValidComponent = 'button'>(props: IButtonProps<T>) => {
-  const [local, variants, loadingProps, presentational, others] = splitProps(
+  const [local, variantProps, loadingProps, presentational, others] = splitProps(
     props,
     ['class', 'style'],
     ['variant', 'size'],
@@ -32,19 +32,37 @@ export const Button = <T extends ValidComponent = 'button'>(props: IButtonProps<
   );
 
   const { className, style } = createStyle(buttonCva, {
-    ...variants,
+    ...variantProps,
     class: cn(local.class, presentational.fullWidth && 'w-full'),
     style: local.style,
   });
 
   const [polyProps, domProps] = splitProps(others, ['as']);
 
+  const isDisabled = () => !!(loadingProps.loading || loadingProps.disabled);
+
+  // Resolve the element tag so we can apply type/data-disabled conditionally.
+  const resolvedAs = () => (polyProps.as as ValidComponent | undefined) ?? 'button';
+  const isButton = () => resolvedAs() === 'button';
+
   return (
     <Slot
-      as={(polyProps.as as T) ?? ('button' as T)}
+      as={(resolvedAs() as T)}
       class={className()}
       style={style()}
-      disabled={loadingProps.loading || loadingProps.disabled}
+      disabled={isDisabled()}
+      // type="button" — prevent accidental form submission (only for native <button>)
+      type={isButton() ? 'button' : undefined}
+      // data-slot — universal selector hook (test/inspector/canvas-overlay)
+      data-slot="button"
+      // data-variant / data-size — test matcher + Figma-sync hooks
+      data-variant={variantProps.variant ?? 'default'}
+      data-size={variantProps.size ?? 'default'}
+      // data-disabled — Kobalte-convention attr for CSS-targeting; mirrors native disabled
+      data-disabled={isDisabled() ? '' : undefined}
+      // aria-busy + data-busy — loading state (a11y + CSS-targeting)
+      aria-busy={loadingProps.loading ? 'true' : undefined}
+      data-busy={loadingProps.loading ? '' : undefined}
       {...(domProps as any)}
     >
       <Show when={loadingProps.loading} fallback={loadingProps.children}>

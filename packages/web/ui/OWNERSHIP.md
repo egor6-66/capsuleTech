@@ -192,6 +192,39 @@ Stateless composite for rendering one data object as an ordered list of label + 
 - Продолжает работать для маленьких датасетов когда `infinite` не задан.
 - Для больших датасетов предпочитать `infinite`.
 
+## Browser tests (Vitest browser-mode)
+
+**Config:** `packages/web/ui/vitest.browser.config.ts` (отдельный от `vitest.config.ts` jsdom-конфига).
+
+**Запуск:**
+```bash
+# Первый раз — установить Chromium:
+npx playwright install chromium
+
+# Запускать:
+pnpm --filter @capsuletech/web-ui test:browser
+```
+
+**Где лежат тесты:** `src/**/__browser__/**/*.browser.test.{ts,tsx}`
+Пример: `src/primitives/button/__browser__/button.browser.test.tsx`
+
+**Что сюда писать (browser-only checks):**
+- `getComputedStyle` против дизайн-токенов — высота/padding/radius/цвет (матрица variant × size)
+- `:focus-visible` ring — невозможно проверить в jsdom (не матчит `:focus-visible`); только реальный Chromium
+- Реальные keyboard-события (Space / Enter → onClick)
+- Polymorphic-rendering в живом DOM (`<Button as="a">` → реальный `<a>`)
+- `aria-busy`, `data-slot`, `data-variant`, `data-size` после task 5 canon drift-fixes
+
+**Что НЕ писать сюда:**
+- Структурные ассерты (наличие классов, tagName) → jsdom `__tests__/`
+- CVA-строки → jsdom `__tests__/`
+- Контрактные проверки (types, interfaces) → jsdom `__tests__/`
+
+**Провайдер:** `@vitest/browser-playwright` (именованный `playwright` factory), Chromium headless.
+Vitest version lock: `@vitest/browser@4.1.6` + `@vitest/browser-playwright@4.1.6` синхронизированы с `vitest@4.1.6` монорепы.
+
+**Ссылки:** `docs/_meta/canon-button.md` — browser-test чеклист (variant×size / focus-ring / keyboard / a11y).
+
 ## Quirks / gotchas
 
 - **Matrix v2 corvu shrinking-array guard** — when Panel unmounts during swap, corvu fires onSizesChange with decreasing array length. `MatrixContent.saveSizes()` rejects updates where `sizes.length < prev.length` to avoid overwriting valid state with partial data. See `matrix.tsx:343-349`.

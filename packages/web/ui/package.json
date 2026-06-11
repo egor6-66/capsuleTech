@@ -314,6 +314,7 @@
     "build": "vite build",
     "dev": "vite build --watch",
     "test": "vitest run",
+    "test:browser": "vitest --config vitest.browser.config.ts run",
     "test:watch": "vitest",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build"
@@ -339,7 +340,10 @@
     "@tailwindcss/vite": "^4.2.4",
     "@tanstack/solid-table": "^8.21.3",
     "@testing-library/jest-dom": "^6.9.1",
+    "@vitest/browser": "4.1.6",
+    "@vitest/browser-playwright": "4.1.6",
     "jsdom": "~29.1.1",
+    "playwright": "^1.52.0",
     "storybook": "^10",
     "storybook-solidjs-vite": "^10",
     "vite": "^8.0.13",
