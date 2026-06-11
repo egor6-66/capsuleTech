@@ -10,11 +10,6 @@
       "import": "./dist/index.mjs",
       "default": "./dist/index.mjs"
     },
-    "./editor": {
-      "types": "./dist/editor/index.d.ts",
-      "import": "./dist/editor.mjs",
-      "default": "./dist/editor.mjs"
-    },
     "./css": "./dist/index.css",
     "./themes": "./dist/themes/index.css",
     "./themes/*": "./dist/themes/*.css"
@@ -39,7 +34,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "es-toolkit": "^1.46.0",
-    "lucide-solid": "^1.16.0",
     "tailwind-merge": "^3.5.0"
   },
   "peerDependencies": {
