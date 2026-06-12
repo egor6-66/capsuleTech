@@ -137,7 +137,7 @@ Allowlist для known-good исключений (типа `web-core → web-ui`
 - **Internal package layer rules** (HCA — Entity/Widget/Page и т.д.) — уже enforced через `@capsuletech/compliance` Vite-плагин на app-уровне.
 - **Cycle detection** между runtime-пакетами — сейчас вручную проверено clean. Phase D3 добавит автоматическую проверку.
 
-## Related
+## Related {#related}
 
 - [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] D1 + D2 + D3.
 - [[web-zones-index]] + [[web-zone-runtime]] + [[web-zone-domain]] + [[web-zone-boost]] + [[web-zone-kit]] + [[web-zone-studio]].

@@ -304,7 +304,7 @@ function MyDashboard() {
 
 Все коллекторы и reporters внутри проверяют `isBrowser` / `hasPO` / `supportsEntryType` и no-op'ят в node-окружении. `ProfilerProvider` запускается через `onMount` — на сервере collectors не стартуют. Тем не менее: если делаешь явную предсборку — оборачивай в `<Show when={isClient}>` или используй `useProfilerSafe()`.
 
-## Тесты
+## Тесты {#tests}
 
 В `src/__tests__/` — 29 vitest-тестов (`environment: 'node'`):
 - `bus.test.ts` (9) — write/read/history/meta/snapshot/subscribers
@@ -315,7 +315,7 @@ function MyDashboard() {
 
 `pnpm --filter @capsuletech/web-profiler test`. Все зелёные.
 
-## Roadmap
+## Roadmap {#roadmap}
 
 - **Phase 1 ✅** docs + AI-anchor
 - **Phase 2a ✅** core + 5 collectors
@@ -325,7 +325,7 @@ function MyDashboard() {
 
 Подробности — [[../_meta/profiler#Roadmap]].
 
-## Связанное
+## Связанное {#related}
 
 - [[core|@capsuletech/web-core]] — `BaseProviders.vitals` подключает legacy провайдер.
 - [[../_meta/profiler|profiler — AI anchor]] — для агентов: контракты, gotchas, чек-листы.

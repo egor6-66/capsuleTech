@@ -11,7 +11,7 @@ last_updated: 2026-06-11
 >
 > Канон-источники: [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] D1 (zones) + D2 (no horizontal between domain) + D3 (vendor transparency).
 
-## Purpose
+## Purpose {#purpose}
 
 **Framework-сервисы и инфраструктура, включаемые в каждое capsule-приложение под капотом.** То, без чего capsule-апп не запустится: HCA-wrapper'ы, FSM-обвязка, router, fetch-стек, styling-слой, registry, profiler.
 
@@ -21,7 +21,7 @@ Runtime-пакет обязан удовлетворять трём инвари
 2. **Reusable across all apps.** Никакой domain-специфики. Если функциональность нужна только `web-auth` — это domain, не runtime.
 3. **HCA-aware where relevant.** `web-core` — единственный пакет, который реализует HCA-wrapper'ы; остальные runtime-пакеты могут быть consumed внутри HCA-слоёв (controllers/features) через `services.*` injection.
 
-## Packages
+## Packages {#packages}
 
 | Package | npm | Status | One-line |
 |---|---|---|---|
@@ -39,7 +39,7 @@ Runtime-пакет обязан удовлетворять трём инвари
 | `web-contract` | `@capsuletech/web-contract` | scaffold | Leaf-протоколы для domain↔domain coordination (ADR 047 D2). Контракты, без impl. |
 | `web-access` | `@capsuletech/web-access` | scaffold | RBAC/permissions — abilities, guards. |
 
-## Import rules
+## Import rules {#import-rules}
 
 ```
 runtime → kit (можно)
@@ -65,7 +65,7 @@ runtime ↛ studio/*
 
 Compliance enforces: runtime → domain/boost/studio = wrong layer (warning).
 
-## Canonical shape
+## Canonical shape {#canonical-shape}
 
 Типичный runtime-пакет экспортит **Provider + hook + (опц.) singleton/factory** под HCA-канон.
 
@@ -102,7 +102,7 @@ export interface ICapsuleRouter {
 - Wrapper-комментарий с reason (ADR 047 D3 vendor transparency).
 - HCA-injection: provider маунтится в `BaseProviders` (`@capsuletech/web-core`), сервис инжектится в Controllers/Features через `services.*`.
 
-## Vendor stack
+## Vendor stack {#vendor-stack}
 
 Главные вендоры зоны (per-package детали — в OWNERSHIP.md каждого):
 
@@ -120,7 +120,7 @@ export interface ICapsuleRouter {
 - Solid → https://solidjs.com/
 - Zod → https://zod.dev/
 
-## Non-goals
+## Non-goals {#non-goals}
 
 Runtime **не делает**:
 
@@ -130,7 +130,7 @@ Runtime **не делает**:
 - ❌ App-specific bootstrap. Конкретный `App.tsx` живёт в `apps/<app>/src/`, не в runtime.
 - ❌ HCA-wrappers вне `web-core`. Только `web-core` реализует `Entity/Widget/Page/Controller/Feature/Shape`; остальные runtime-пакеты consume их.
 
-## New package — checklist
+## New package — checklist {#new-package-checklist}
 
 1. Решить: точно runtime, не другая zone?
    - Это **сервис нужный КАЖДОМУ capsule-аппу**? → runtime.
@@ -153,7 +153,7 @@ Runtime **не делает**:
    - Provider маунтится в `BaseProviders` (web-core) — координация с owner-web-core.
    - Сервис экспортируется в `Feature` через `services.<name>` — типы в `web-core/wrappers/interfaces.ts`.
 
-## Related
+## Related {#related}
 
 - [[web-core]], [[web-state]], [[web-router]], [[web-query]], [[web-style]], [[web-renderer]], [[web-dnd]], [[web-profiler]] — per-package AI-anchors.
 - [[web-zone-kit]] — kit зависит ТОЛЬКО на web-style оттуда; runtime ИМЕЕТ право импортить kit.

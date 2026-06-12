@@ -62,7 +62,7 @@ Per [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] «Принципы�
 
 Каждый пакет имеет `packages/<scope>/<name>/README.md` по [[readme-template]]: один-line purpose + zone badge + install + minimum usage (5-10 строк) + subpath exports + links. **Open folder → know how to use.**
 
-## Related
+## Related {#related}
 
 - [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] — крыша (zones + cycle canon + vendor transparency + studio rename + D6 zone flatten).
 - [[046-boost-namespace-matrix-evict-vt-owner|ADR 046]] — boost-* namespace + Matrix evict.

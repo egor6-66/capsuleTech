@@ -10,11 +10,11 @@ audience: claude
 > [!ai]
 > Шпаргалка для Claude-инстансов. Юзеру читать не обязательно — для них [[cli|cli.md]] и [packages/cli/README.md](../../packages/cli/README.md).
 
-## TL;DR
+## TL;DR {#tldr}
 
 `@capsuletech/cli` — бинарь `capsule` с двумя режимами: **TUI на ink** (без аргументов, scope-фильтр по контексту) и **commander** (с аргументами, CI-friendly). Оба читают один массив `staticCommands` ([src/commands/index.ts](../../packages/cli/src/commands/index.ts)). Контракт `Command` → action в `src/actions/`. Контекст определяется по `nx.json` вверх по дереву. Mode (dev/prod) auto-detect по наличию `packages/builders/vite/`.
 
-## Где что лежит
+## Где что лежит {#layout}
 
 | Файл/папка | Что |
 |---|---|
@@ -90,7 +90,7 @@ kit.chalk                                    ← chalk re-export
 
 Если нажат esc/ctrl+c в ink-промпте → `kit.ui.cancel()` → `process.exit(0)`. **Action не получит null** — он просто не выполнится.
 
-## Известные грабли
+## Известные грабли {#gotchas}
 
 1. **Иконки = только RGI Emoji_Presentation, без VS16.** `string-width` для default-text эмодзи (`🕸️ ▶️ ⬆️ 🎛️`) врёт, разделители в TUI едут. См. `cli/tui/icons.ts` комментарий — список разрешённых там же. При добавлении новой иконки **проверять в [emoji-data.txt](https://unicode.org/Public/emoji/15.0/emoji-data.txt) поле `Emoji_Presentation=Yes`**.
 
@@ -134,7 +134,7 @@ kit.chalk                                    ← chalk re-export
 
 В dev jiti подхватит сразу. В prod — `pnpm --filter @capsuletech/cli build`.
 
-## Что менять когда
+## Что менять когда {#changes-guide}
 
 | Хочу… | Куда лезть |
 |---|---|
@@ -164,7 +164,7 @@ node packages/cli/bin/capsule.mjs workspace info
 
 В TUI-режиме (без аргументов) — потребуется TTY. JetBrains-консоль обманывается через `JETBRAINS_IDE` env-флаг в `bin/capsule.mjs`.
 
-## Cross-links
+## Cross-links {#cross-links}
 
 - User-doc для людей: [[08-system/cli|docs/08-system/cli.md]]
 - README пакета: [packages/cli/README.md](../../packages/cli/README.md)

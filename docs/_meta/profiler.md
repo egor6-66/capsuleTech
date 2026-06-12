@@ -10,7 +10,7 @@ audience: claude
 > [!ai]
 > Шпаргалка для Claude-инстансов. Без воды. Юзеру — [[../09-packages/profiler|profiler.md]].
 
-## TL;DR
+## TL;DR {#tldr}
 
 `@capsuletech/web-profiler` — performance-мониторинг для Solid-приложений на collector-pattern. Типизированный `MetricsBus` собирает данные из подключённых коллекторов и раздаёт их (а) виджет-Dashboard'у (kobalte Tabs, draggable, sparklines), (б) reporters'ам (console / sendBeacon / callback), (в) user-коду через `useProfiler()` / `usePerf()`.
 
@@ -18,7 +18,7 @@ audience: claude
 
 Контракт «снаружи»: `<ProfilerProvider collectors="all-except-deep" reporters={[...]} showDashboard>` оборачивает app → метрики капают в bus → `useProfiler()` отдаёт типизированный bus → `usePerf()` — обёртка с `mark/measure/count/gauge/time`. Legacy `<VitalsMonitoringProvider>` остаётся как deprecated shim. Ноль breaking changes для существующих consumers.
 
-## Где что лежит
+## Где что лежит {#layout}
 
 После Phase 2b (2026-05-18) внутри пакета — типизированный `MetricsBus`, 13 collector'ов, 3 reporters, новый `ProfilerProvider` + public `useProfiler()`/`usePerf()` API. Legacy `VitalsMonitoringProvider` теперь thin deprecated shim над `<ProfilerProvider collectors="legacy">`. Снаружи (BaseProviders.vitals) — ноль breaking changes.
 
@@ -243,7 +243,7 @@ Provider использует `onMount` (с Phase 2a, до этого был `cr
 
 `getRating(key, val).color` определяет цвет числа; `getRating(...).label` — подпись (`'GOOD'`/`'NEEDS_IMPROVEMENT'`/`'POOR'`/`'INFO'`). `isFloat` определяется через `.includes('CLS' | 'Load' | 'Bundle')` — формат `toFixed(2)` vs `toFixed(0)`.
 
-## Gotchas
+## Gotchas {#gotchas}
 
 ### Закрыто в Phase 2a (2026-05-18)
 - ✅ **`MetricId` теперь типизированный union.** `getRating` — lookup table по `IBuiltinMetricId`, не `.includes()`. Custom-метрики живут под `'custom.${name}'`.
@@ -274,7 +274,7 @@ Provider использует `onMount` (с Phase 2a, до этого был `cr
 - **Sparkline без axis-labels** — minimalist, только полилиния. Кнопка zoom/timewindow — на будущее.
 - **`ProfilerWindow` drag clamp'ает на viewport-resize**, но не на initial mount если localStorage хранит `x/y` за пределами текущего viewport. Edge-case, минорно.
 
-## Roadmap
+## Roadmap {#roadmap}
 
 Пакет под мою ownership ([[../../memory/project_profiler_ownership]]).
 
@@ -319,7 +319,7 @@ Provider использует `onMount` (с Phase 2a, до этого был `cr
 - [ ] Покажи и канонический путь (`BaseProviders vitals`), и прямой (`VitalsMonitoringProvider`).
 - [ ] Раздел «Known issues» — обязателен пока пакет в активной доработке.
 
-## Связанное
+## Связанное {#related}
 
 - [[core|@capsuletech/web-core]] — `BaseProviders.vitals` подключает провайдер.
 - [[../09-packages/profiler|profiler]] — user-doc.

@@ -506,7 +506,7 @@ function useLocation(opts) {
 3. **Boundaries — не для красоты.** owner-* пишут код, ты — архитектуру. Нарушение = двойная работа.
 4. **Документируй провалы**, а не только успехи. Antipattern catalog растёт.
 
-## Связанные документы
+## Связанные документы {#related}
 
 - `CLAUDE.md` — POLICY.
 - `docs/_meta/architect-routing.md` — куда делегировать.

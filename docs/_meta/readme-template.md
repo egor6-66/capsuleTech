@@ -80,7 +80,7 @@ import { Foo } from '@capsuletech/<name>';
 
 Для **новых** пакетов и пакетов с nx-default / 7-строчным README — пиши с нуля по template'у.
 
-## Связанные документы
+## Связанные документы {#related}
 
 - [[OWNERSHIP-template]] — шаблон для OWNERSHIP.md (owner-agent contract + status + vendor stack).
 - [[web-zones-index]] — определение `zone:` badge'а.

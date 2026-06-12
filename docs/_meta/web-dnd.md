@@ -9,7 +9,7 @@ audience: claude
 
 > Шпаргалка для Claude-инстансов, работающих с `packages/web/dnd/`. Без воды.
 
-## TL;DR
+## TL;DR {#tldr}
 
 Pointer-based DnD для Solid.js (mouse + touch, нет HTML5 native). Два export-entry:
 - `.` — generic-ядро (framework-agnostic, нет web-core dep)
@@ -133,7 +133,7 @@ Reactive `createEffect` в `onDragOver` срабатывает при каждо
 ### Isolated dependency
 `@capsuletech/web-core` добавлен как package-level dependency (npm не поддерживает per-entry deps). Но только `src/controllers/**` его импортирует — tree-shaking гарантирует что `dist/index.mjs` не тянет `dist/controllers.mjs`.
 
-## Что менять когда
+## Что менять когда {#changes-guide}
 
 | Хочу... | Куда |
 |---|---|
@@ -167,7 +167,7 @@ libConfig({
 }
 ```
 
-## Тесты
+## Тесты {#tests}
 
 Запуск: `pnpm --filter @capsuletech/web-dnd test`
 
@@ -180,7 +180,7 @@ libConfig({
 
 Итого: **101 тест**.
 
-## Release group
+## Release group {#release-group}
 
 `web_base` (fixed). Coordinating release → главный assistant.
 

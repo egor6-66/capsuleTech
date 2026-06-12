@@ -394,7 +394,7 @@ a2.abort(); // ❌ p2 продолжает ждать, т.к. p1 уже in-fligh
 
 Файл: [`client.ts:110`](../../packages/web/query/src/client.ts). Known, fix через `AbortSignal.any([s1, s2])` запланирован (P3 #12).
 
-## Roadmap
+## Roadmap {#roadmap}
 
 Полный список — `docs/_meta/cleanup-plan.md` > секция «Web-query review» (19 findings, приоритизировано P1/P2/P3).
 
@@ -442,7 +442,7 @@ a2.abort(); // ❌ p2 продолжает ждать, т.к. p1 уже in-fligh
 
 **`endpoints.ts` пустой** — папка `src/endpoints/` не создана или плагин не успел отсканить. Перезапустить dev-сервер.
 
-## Связанное
+## Связанное {#related}
 
 - [[state]] — FSM в Feature.
 - [[controller-proxy]] — как Feature инжектится middleware.

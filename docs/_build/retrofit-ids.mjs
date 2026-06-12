@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
- * docs E2.1 — Section-ID inventory pass (H2 reserved IDs in ADRs)
+ * docs E2 — Section-ID inventory pass
  *
- * Reads all docs/01-architecture/adr/*.md, retrofits {#id} postfix on H2
- * headings that match reserved-ID patterns (canon §1.4).
+ * Retrofits {#id} postfix on H2 + H3 headings per canon §1.4.
  *
- * H3-level retrofit (D-decisions etc.) — separate pass.
- * Non-ADR docs (_meta canon, 09-packages guides) — separate pass.
+ * Phases:
+ *   E2.1 (closed PR #337): docs/01-architecture/adr/*.md
+ *   E2.2 (this run):       docs/_meta/web-zones/*.md, docs/_meta/<ai-anchor>.md,
+ *                          docs/09-packages/*.md
  *
  * Idempotent: headings that already have {#id} are skipped.
  *
@@ -18,12 +19,20 @@ import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const ADR_DIR = join(ROOT, 'docs/01-architecture/adr');
 const DRY_RUN = process.argv.includes('--dry-run');
+
+// Target directories. Order: ADRs first (E2.1), then canon docs (E2.2).
+const TARGET_DIRS = [
+  'docs/01-architecture/adr',
+  'docs/_meta/web-zones',
+  'docs/_meta',           // root-level _meta canon + AI-anchors (non-recursive)
+  'docs/09-packages',
+];
 
 // H2-heading text (trimmed) → reserved {#id}.
 // Russian + English variants both map to canonical IDs per canon §1.4.
 const H2_RESERVED = new Map([
+  // ─── ADR canon (E2.1) ────────────────────────────────────────────
   ['Контекст', 'context'],
   ['Проблема', 'problem'],          // separate from context when both present
   ['Среда / ограничения', 'constraints'],
@@ -41,6 +50,47 @@ const H2_RESERVED = new Map([
   ['Roll-out', 'rollout'],
   ['Open questions', 'open-questions'],
   ['Открытые вопросы', 'open-questions'],
+  // ─── Web-zones canon (E2.2) ──────────────────────────────────────
+  ['Purpose', 'purpose'],
+  ['Packages', 'packages'],
+  ['Import rules', 'import-rules'],
+  ['Canonical shape', 'canonical-shape'],
+  ['Vendor stack', 'vendor-stack'],
+  ['Non-goals', 'non-goals'],
+  ['New package — checklist', 'new-package-checklist'],
+  ['New subpath — checklist', 'new-subpath-checklist'],
+  ['Related', 'related'],
+  // ─── AI-anchor canon (E2.2) ──────────────────────────────────────
+  ['TL;DR', 'tldr'],
+  ['Где что лежит', 'layout'],
+  ['Что менять когда', 'changes-guide'],
+  ['Cross-links', 'cross-links'],
+  ['Cross-package dependencies', 'cross-package-deps'],
+  ['Известные грабли', 'gotchas'],
+  ['Gotchas', 'gotchas'],
+  ['Связанные документы', 'related'],
+  ['Public API', 'public-api'],
+  ['Public API контракт', 'public-api'],
+  ['Тесты', 'tests'],
+  ['Test coverage', 'tests'],
+  ['Тест-покрытие', 'tests'],
+  ['Subpath exports', 'subpath-exports'],
+  ['Release group', 'release-group'],
+  ['Owner prompt', 'owner-prompt'],
+  ['Lifecycle flow', 'lifecycle'],
+  ['Архитектура', 'architecture'],
+  ['Roadmap', 'roadmap'],
+  // ─── OWNERSHIP/README templates (E2.2) ───────────────────────────
+  ['Состояние', 'state'],
+  ['Зона ответственности', 'ownership-scope'],
+  ['Известные ограничения', 'known-limits'],
+  ['Известные ограничения / quirks', 'known-limits'],
+  ['Что НЕ делает', 'non-goals'],
+  ['Install', 'install'],
+  ['Minimum usage', 'minimum-usage'],
+  ['Build', 'build'],
+  ['Docs', 'docs'],
+  ['Зачем', 'why'],
 ]);
 
 // Non-goals — separate canon id (not in reserved list yet, but consistent across ADRs).
@@ -143,15 +193,31 @@ const processAdr = async (file) => {
   return changed;
 };
 
+const collectFiles = async (relDir) => {
+  const abs = join(ROOT, relDir);
+  let entries;
+  try {
+    entries = await readdir(abs, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+  return entries
+    .filter((e) => e.isFile() && e.name.endsWith('.md'))
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((e) => join(abs, e.name));
+};
+
 const main = async () => {
-  const entries = await readdir(ADR_DIR);
-  const adrs = entries.filter((f) => f.endsWith('.md')).sort().map((f) => join(ADR_DIR, f));
+  const files = [];
+  for (const dir of TARGET_DIRS) {
+    files.push(...(await collectFiles(dir)));
+  }
   const changedFiles = [];
-  for (const f of adrs) {
+  for (const f of files) {
     const changed = await processAdr(f);
     if (changed) changedFiles.push(f.replace(ROOT + '/', '').replace(/\\/g, '/'));
   }
-  console.log(`retrofit-ids: ${stats.files} ADRs scanned`);
+  console.log(`retrofit-ids: ${stats.files} docs scanned`);
   console.log(`retrofit-ids: ${stats.retrofittedH2} H2 + ${stats.retrofittedH3} H3 headings retrofitted`);
   console.log(`retrofit-ids: ${stats.skipped} skipped (already have {#id})`);
   if (stats.collisions.length > 0) {

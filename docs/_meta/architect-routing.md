@@ -140,7 +140,7 @@ User: "<запрос>"
 
 Не делегируй "based on findings, fix the bug". Это твоя архитектура — синтез делаешь ты, owner-* выполняет конкретику.
 
-## Связанные документы
+## Связанные документы {#related}
 
 - `CLAUDE.md` — POLICY (корневой).
 - `docs/_meta/agents.md` — ownership matrix (полная).

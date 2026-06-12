@@ -11,7 +11,7 @@ last_updated: 2026-06-11
 >
 > Канон-источники: [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] D1 (zones), [[044-web-menu-package|ADR 044]] (heavy=pkg / light=kit-композиция), [[042-design-tokens|ADR 042]] (token canon).
 
-## Purpose
+## Purpose {#purpose}
 
 **Stateless презентационные и интерактивные примитивы без тяжёлого движка.** Базовый словарь UI, на котором собирается всё остальное (runtime providers, domain widgets, boost mirror-ы, studio chrome). Kit — это «алфавит» capsule-приложения.
 
@@ -21,7 +21,7 @@ Kit-пакет обязан удовлетворять трём инвариан
 2. **No heavy engine.** Нет dependency на runtime-tier библиотеки (XState / TanStack Query / MapLibre / Babylon / ...). Kobalte (a11y-headless) разрешён, потому что tree-shakeable per primitive.
 3. **Vendor-transparent.** Wrapper'ы над вендорами без подмены API (см. ADR 047 D3). Senior FE открывает kit-исходник → узнаёт CVA + Kobalte + Tailwind v4 за 5 минут.
 
-## Packages
+## Packages {#packages}
 
 | Package | npm | Status | One-line |
 |---|---|---|---|
@@ -29,7 +29,7 @@ Kit-пакет обязан удовлетворять трём инвариан
 
 > Канон 2026-06-11: kit — **одна-пакетная зона** (`web-ui`). Внутри zone'ы — **внутренний weight-gradient L0/L1** (см. [[web-ui]] раздел «Weight gradient»). Леgalность L0-only консьюмеров обеспечивается subpath-export'ами + bundle-size assertion'ами, не отдельным пакетом.
 
-## Import rules
+## Import rules {#import-rules}
 
 ```
 kit → (только) runtime/web-style + vendors
@@ -56,7 +56,7 @@ kit ↛ studio/*
 
 Compliance enforces: kit-пакет с импортом из runtime/domain/boost — это **wrong layer** (warning).
 
-## Canonical shape
+## Canonical shape {#canonical-shape}
 
 Типичный kit-компонент:
 
@@ -96,7 +96,7 @@ export const Button = (props: IButtonProps) => (
 - Никакого state, никакого signal'а, никакого provider'а.
 - Props-only API — consumer конфигурирует через props, не через прокидывание classNames.
 
-## Vendor stack
+## Vendor stack {#vendor-stack}
 
 - **Solid.js** (`^1.9.12`, peerDep) — реактивный фреймворк. Все компоненты — Solid JSX.
 - **`@kobalte/core`** (`^0.13`, peerDep) — a11y-headless библиотека. Tree-shakeable per primitive (subpath import `@kobalte/core/dialog` тянет ТОЛЬКО dialog). Используется для interactive-примитивов (L1: Dropdown/Dialog/Combobox/Toggle/...) и для Polymorphic Slot.
@@ -109,7 +109,7 @@ export const Button = (props: IButtonProps) => (
 - CVA → https://cva.style/
 - Tailwind v4 → https://tailwindcss.com/
 
-## Non-goals
+## Non-goals {#non-goals}
 
 Kit **не делает**:
 
@@ -121,7 +121,7 @@ Kit **не делает**:
 - ❌ Editor-функциональность (inspector, palette, canvas). Эти живут в studio (`studio`).
 - ❌ Свои паттерны поверх вендорских. Если Kobalte даёт `<Dialog.Root>` — мы экспортим Kobalte API, не создаём `<MyDialog>` с тем же поведением.
 
-## New package — checklist
+## New package — checklist {#new-package-checklist}
 
 Добавление нового kit-пакета — **исключительная ситуация** (kit = одна зона `web-ui` по канону). Перед PR'ом:
 
@@ -137,7 +137,7 @@ Kit **не делает**:
    - Создать owner-агент `.claude/agents/owner-<name>.md` (см. [[owner-agent-canon]]).
 3. ADR не нужен (kit не структурно меняется); анонс в `docs/_meta/web-rework-plan.md` если идёт rework.
 
-## Related
+## Related {#related}
 
 - [[web-ui]] — AI-anchor для `@capsuletech/web-ui`.
 - [[web-zone-runtime]] — соседняя zone, kit зависит ТОЛЬКО на `web-style` оттуда.
