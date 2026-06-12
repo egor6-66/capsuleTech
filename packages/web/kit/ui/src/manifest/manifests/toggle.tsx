@@ -1,5 +1,5 @@
 import { z } from '@capsuletech/shared-zod';
-import { ToggleLeft } from '@capsuletech/web-ui/icons';
+import { ToggleLeft } from '../../icons';
 import type { IComponentManifest } from '../types';
 
 export const ToggleManifest: IComponentManifest = {

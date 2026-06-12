@@ -6,7 +6,7 @@ import {
   Heading1,
   PanelBottom,
   Type,
-} from '@capsuletech/web-ui/icons';
+} from '../../icons';
 import type { IComponentManifest } from '../types';
 
 const CARD_DIRECT_CHILDREN = new Set([

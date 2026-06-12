@@ -188,6 +188,9 @@ export default libConfig({
     // (remapPrimitivesDtsPlugin does not touch 'icons/' because it only merges
     // primitives/ and composites/; we emit directly under 'components/icons/').
     'components/icons/index': 'src/icons/index.ts',
+    // manifest subpath: per-primitive registry (hand-authored + bundle-cost).
+    // Consumed by @capsuletech/studio palette + DnD + inspector post-S2 audit.
+    'manifest/index': 'src/manifest/index.ts',
     ...componentEntries,
   },
   name: 'CapsuleUi',

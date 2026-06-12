@@ -1,5 +1,5 @@
 import { z } from '@capsuletech/shared-zod';
-import { MousePointerClick } from '@capsuletech/web-ui/icons';
+import { MousePointerClick } from '../../icons';
 import type { IComponentManifest } from '../types';
 
 export const ButtonManifest: IComponentManifest = {

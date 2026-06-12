@@ -1,5 +1,5 @@
 import { z } from '@capsuletech/shared-zod';
-import { Type } from '@capsuletech/web-ui/icons';
+import { Type } from '../../icons';
 import type { IComponentManifest } from '../types';
 
 export const TypographyManifest: IComponentManifest = {

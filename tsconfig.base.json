@@ -91,6 +91,7 @@
       "@capsuletech/web-style/themes/*": ["packages/web/runtime/style/src/themes/*"],
       "@capsuletech/web-ui": ["packages/web/kit/ui/src/index.ts"],
       "@capsuletech/web-ui/icons": ["packages/web/kit/ui/src/icons/index.ts"],
+      "@capsuletech/web-ui/manifest": ["packages/web/kit/ui/src/manifest/index.ts"],
       "@capsuletech/web-ui/accordion": ["packages/web/kit/ui/src/primitives/accordion/index.ts"],
       "@capsuletech/web-ui/button": ["packages/web/kit/ui/src/primitives/button/index.ts"],
       "@capsuletech/web-ui/card": ["packages/web/kit/ui/src/primitives/card/index.ts"],
