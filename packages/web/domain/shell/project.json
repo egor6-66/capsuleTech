@@ -1,7 +1,7 @@
 {
-  "name": "@capsuletech/web-agent",
-  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/web/agent/src",
+  "name": "@capsuletech/web-shell",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/web/domain/shell/src",
   "projectType": "library",
   "tags": [],
   "targets": {},
