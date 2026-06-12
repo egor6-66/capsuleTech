@@ -31,4 +31,9 @@ import { MatrixController } from './controllers/matrixController';
 export default defineCapsuleModule({
   name: 'Layouts',
   components: { Matrix: MatrixController },
+  // Per ADR 046 D5 — codegen ALSO mutates Ui.Layout at app boot so consumers
+  // can write `<Ui.Layout.Matrix/>` alongside kit `<Ui.Layout.Flex/>` /
+  // `<Ui.Layout.Grid/>`. `Layouts.Matrix` (programmatic axis above) stays as
+  // the canonical reference for Controller/Feature consumers.
+  augments: 'Ui.Layout',
 });

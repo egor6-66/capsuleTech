@@ -66,6 +66,11 @@ export interface ResolvedPackageEntry {
    * Used to generate `namespace <Global> { namespace <Comp> { type Events } }` in packages.d.ts.
    */
   componentKeys?: string[];
+  /**
+   * Kit Ui-namespace path from manifest.augments (per ADR 046 D5).
+   * e.g. `'Ui.Layout'` — codegen emits Object.assign at app boot.
+   */
+  augments?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -336,6 +341,11 @@ interface ResolvedManifestInfo {
   controllerKeys: string[];
   /** Keys from manifest.components (empty array if absent). */
   componentKeys: string[];
+  /**
+   * Kit namespace path from `manifest.augments` (e.g. `'Ui.Layout'`), if present.
+   * Triggers augmentation Object.assign in codegen per ADR 046 D5.
+   */
+  augments: string | null;
 }
 
 /**
@@ -352,7 +362,12 @@ interface ResolvedManifestInfo {
 export const parseManifestSource = (
   source: string,
   fileName: string,
-): { name: string; controllerKeys: string[]; componentKeys: string[] } | null => {
+): {
+  name: string;
+  controllerKeys: string[];
+  componentKeys: string[];
+  augments: string | null;
+} | null => {
   const isTs = /\.[mc]?ts$/.test(fileName);
   const ast = parse(source, {
     sourceType: 'module',
@@ -362,6 +377,7 @@ export const parseManifestSource = (
   let foundName: string | null = null;
   let foundControllerKeys: string[] = [];
   let foundComponentKeys: string[] = [];
+  let foundAugments: string | null = null;
 
   traverse(ast, {
     ObjectExpression(path) {
@@ -371,6 +387,7 @@ export const parseManifestSource = (
       let localName: string | null = null;
       let localControllerKeys: string[] | null = null;
       let localComponentKeys: string[] | null = null;
+      let localAugments: string | null = null;
 
       for (const prop of path.node.properties) {
         // Only ObjectProperty (not SpreadElement / RestElement)
@@ -416,6 +433,12 @@ export const parseManifestSource = (
               if (compKey !== null) localComponentKeys.push(compKey);
             }
           }
+        } else if (keyName === 'augments') {
+          // Per ADR 046 D5 — string literal naming a kit Ui-namespace path
+          // (e.g. 'Ui.Layout'). Codegen emits Object.assign at app boot.
+          if (prop.value.type === 'StringLiteral') {
+            localAugments = prop.value.value;
+          }
         }
       }
 
@@ -424,13 +447,19 @@ export const parseManifestSource = (
         foundName = localName;
         foundControllerKeys = localControllerKeys ?? [];
         foundComponentKeys = localComponentKeys ?? [];
+        foundAugments = localAugments;
         path.stop();
       }
     },
   });
 
   if (foundName === null) return null;
-  return { name: foundName, controllerKeys: foundControllerKeys, componentKeys: foundComponentKeys };
+  return {
+    name: foundName,
+    controllerKeys: foundControllerKeys,
+    componentKeys: foundComponentKeys,
+    augments: foundAugments,
+  };
 };
 
 /**
@@ -493,6 +522,7 @@ const resolveManifestInfo = (
     name: resolvedName,
     controllerKeys: parsed?.controllerKeys ?? [],
     componentKeys: parsed?.componentKeys ?? [],
+    augments: parsed?.augments ?? null,
   };
 };
 
@@ -515,6 +545,7 @@ export const resolvePackageEntries = (
         globalName: info.name,
         controllerKeys: info.controllerKeys.length > 0 ? info.controllerKeys : undefined,
         componentKeys: info.componentKeys.length > 0 ? info.componentKeys : undefined,
+        augments: info.augments ?? undefined,
       });
     }
   }
@@ -564,6 +595,25 @@ export const generatePackagesRuntime = (entries: ResolvedPackageEntry[]): string
           `(globalThis.Controllers ??= {})[${JSON.stringify(key)}] = ${globalName}_mod.controllers[${JSON.stringify(key)}];`,
         );
       }
+    }
+    lines.push('');
+  }
+
+  // Ui-namespace augmentation block (per ADR 046 D5 — augmentation pattern).
+  // Manifest with `augments: 'Ui.Layout'` mutates Ui.Layout at app boot so
+  // consumers can write `<Ui.Layout.Matrix/>` regardless of whether the variant
+  // came from kit (Flex/Grid) or boost (Matrix). Tree-shake guarantee: app
+  // without the boost in `packages: [...]` never imports the augmentation —
+  // no member appears, no code shipped.
+  const augmentsEntries = entries.filter((e) => e.augments);
+  if (augmentsEntries.length > 0) {
+    lines.push(`import { Ui as _Ui } from '@capsuletech/web-core/ui-kit';`);
+    lines.push('');
+    for (const { globalName, augments } of augmentsEntries) {
+      // augments is a string like 'Ui.Layout'. Replace 'Ui' prefix with '_Ui'
+      // (the codegen-local alias) and emit a direct Object.assign.
+      const path = augments!.replace(/^Ui\b/, '_Ui');
+      lines.push(`Object.assign(${path}, ${globalName}_mod.components);`);
     }
     lines.push('');
   }
@@ -656,6 +706,40 @@ export const generatePackagesTypes = (entries: ResolvedPackageEntry[]): string =
   }
 
   lines.push('}');
+
+  // Ui-namespace augmentation (per ADR 046 D5). Per-package with `augments`,
+  // emit module-augmentation of '@capsuletech/web-ui/<path>' so that
+  // `Ui.<X>.<Member>` is type-checked in app TS without per-package .d.ts wiring.
+  //
+  // The kit module exports `interface ILayoutNamespace` (and equivalents for
+  // map/chart/flow-diagram going forward) — we augment those interfaces with
+  // the boost manifest's component keys.
+  //
+  // Mapping path → kit subpath + interface:
+  //   'Ui.Layout'       → '@capsuletech/web-ui/layout' / ILayoutNamespace
+  //   'Ui.Map'          → '@capsuletech/web-ui/map' / IMapNamespace             (when added)
+  //   'Ui.Chart'        → '@capsuletech/web-ui/chart' / IChartNamespace         (when added)
+  //   'Ui.FlowDiagram'  → '@capsuletech/web-ui/flow-diagram' / IFlowDiagramNamespace (when added)
+  const augmentsEntries = entries.filter((e) => e.augments && e.componentKeys?.length);
+  if (augmentsEntries.length > 0) {
+    const augmentMap: Record<string, { subpath: string; iface: string } | undefined> = {
+      'Ui.Layout': { subpath: '@capsuletech/web-ui/layout', iface: 'ILayoutNamespace' },
+    };
+    for (const { pkg, augments, componentKeys } of augmentsEntries) {
+      const target = augmentMap[augments!];
+      if (!target) continue;
+      lines.push(`declare module '${target.subpath}' {`);
+      lines.push(`  interface ${target.iface} {`);
+      for (const key of componentKeys!) {
+        lines.push(
+          `    ${key}: (typeof import('${pkg}/capsule')['default']['components'])[${JSON.stringify(key)}];`,
+        );
+      }
+      lines.push('  }');
+      lines.push('}');
+    }
+  }
+
   lines.push('export {};');
   lines.push('');
   return lines.join('\n');
