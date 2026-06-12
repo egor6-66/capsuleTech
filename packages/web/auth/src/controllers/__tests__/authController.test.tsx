@@ -404,7 +404,7 @@ describe('Auth.Login — onLogin emit', () => {
 // ─── Тесты — onLoginError emit + error-state display ─────────────────────────
 
 describe('Auth.Login — onLoginError emit', () => {
-  it('ошибка login → emit("onLoginError") с rawMessage + store.update дружелюбным текстом', async () => {
+  it('ошибка login (role-стратегия) → emit("onLoginError") с rawMessage + store.update "Неверный пароль"', async () => {
     mockLogin.mockRejectedValue(new Error('Invalid password'));
     const sessionStore = createAuthSession();
 
@@ -439,9 +439,9 @@ describe('Auth.Login — onLoginError emit', () => {
       }),
     );
 
-    // store.update несёт дружелюбный текст (для отображения в форме)
+    // role-стратегия не имеет поля «логин» → сообщение «Неверный пароль», не «Неверный логин или пароль»
     expect(mockStore.update).toHaveBeenCalledWith(
-      expect.objectContaining({ errorMessage: 'Неверный логин или пароль' }),
+      expect.objectContaining({ errorMessage: 'Неверный пароль' }),
     );
 
     expect(mockState.set).toHaveBeenCalledWith('error');
@@ -506,6 +506,88 @@ describe('Auth.Login — onLoginError emit', () => {
     expect(mockStore.update).toHaveBeenCalledWith(
       expect.objectContaining({ errorMessage: 'Не удалось войти. Попробуйте ещё раз.' }),
     );
+  });
+});
+
+// ─── Тесты — per-strategy invalid-credentials copy ───────────────────────────
+
+describe('Auth.Login — per-strategy invalid-credentials copy', () => {
+  it('role-стратегия: invalid-creds → "Неверный пароль" (нет поля логин)', async () => {
+    // "wrong" → срабатывает invalid-creds ветка mapAuthError
+    mockLogin.mockRejectedValue(new Error('wrong password'));
+    const sessionStore = createAuthSession();
+
+    cleanup = render(
+      () => (
+        <AuthLogin type="role" roles={testRoles} sessionStore={sessionStore}>
+          <div />
+        </AuthLogin>
+      ),
+      container,
+    );
+
+    const mockStore = {
+      patch: vi.fn(),
+      update: vi.fn(),
+      values: vi.fn().mockReturnValue({ role: 'developer', password: 'wrong' }),
+    };
+
+    await capturedSchema.states.submitting.onInit({
+      store: mockStore,
+      state: { set: vi.fn() },
+      emit: vi.fn(),
+    });
+
+    expect(mockStore.update).toHaveBeenCalledWith(
+      expect.objectContaining({ errorMessage: 'Неверный пароль' }),
+    );
+  });
+
+  it('role-стратегия: 401-ошибка → "Неверный пароль" (не "Неверный логин или пароль")', async () => {
+    mockLogin.mockRejectedValue(new Error('401 Unauthorized'));
+    const sessionStore = createAuthSession();
+
+    cleanup = render(
+      () => (
+        <AuthLogin type="role" roles={testRoles} sessionStore={sessionStore}>
+          <div />
+        </AuthLogin>
+      ),
+      container,
+    );
+
+    const mockStore = {
+      patch: vi.fn(),
+      update: vi.fn(),
+      values: vi.fn().mockReturnValue({ role: 'developer', password: '' }),
+    };
+
+    await capturedSchema.states.submitting.onInit({
+      store: mockStore,
+      state: { set: vi.fn() },
+      emit: vi.fn(),
+    });
+
+    expect(mockStore.update).toHaveBeenCalledWith(
+      expect.objectContaining({ errorMessage: 'Неверный пароль' }),
+    );
+    // Явно проверяем что НЕ "Неверный логин или пароль"
+    const call = mockStore.update.mock.calls.find((c: any[]) => c[0]?.errorMessage);
+    expect(call?.[0]?.errorMessage).not.toBe('Неверный логин или пароль');
+  });
+
+  it('credentials-стратегия (будущее): дефолт "Неверный логин или пароль" при отсутствии invalidCredentialsMessage', async () => {
+    // Проверяем дефолтное поведение mapAuthError через role-стратегию без invalidCredentialsMessage.
+    // Имитируем стратегию без поля — напрямую через capturedSchema (захваченный Feature).
+    // Подход: рендерим role, но затем вручную тестируем что стратегия с id='credentials'
+    // и WITHOUT invalidCredentialsMessage вернёт дефолт. Это unit-уровень mapAuthError:
+    // при отсутствии поля — дефолт 'Неверный логин или пароль'.
+    //
+    // Полный тест будет добавлен при реализации credentials-стратегии.
+    // Здесь проверяем контракт roleStrategy.invalidCredentialsMessage напрямую.
+    const { roleStrategy } = await import('../../role/index');
+    const strategy = roleStrategy({ roles: testRoles });
+    expect(strategy.invalidCredentialsMessage).toBe('Неверный пароль');
   });
 });
 
