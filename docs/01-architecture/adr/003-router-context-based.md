@@ -6,7 +6,7 @@ date: 2026-05-10
 
 # ADR 003 — Роутер: Context-based вместо singleton
 
-## Контекст
+## Контекст {#context}
 
 Старая реализация (`packages/router/src/service.ts`):
 
@@ -29,7 +29,7 @@ export { routerService };
 4. **Хардкод `isAuthenticated: true`** в initial-context. Это значение должно решаться приложением, не библиотекой.
 5. **`routerService` инжектится напрямую в `services.router` Controller'а через прямой импорт** в `createLogicWrapper.tsx`. Тесная связь Controller-слоя с глобальной переменной.
 
-## Решение
+## Решение {#decisions}
 
 Перевести роутер на **Context-based** модель.
 
@@ -88,7 +88,7 @@ const Auth = Feature(({ router }) => ({
 - Хардкод `isAuthenticated: true` — убран. Если приложению нужен initial-context для guards, передаёт через `<Providers.Base routerContext={...} />`.
 - `router: any` → строгий тип `ICapsuleRouter`.
 
-## Альтернативы
+## Альтернативы {#alternatives}
 
 ### A. Оставить singleton
 Отвергнуто — проблемы выше.
@@ -99,7 +99,7 @@ const Auth = Feature(({ router }) => ({
 ### C. Прокидывать роутер через каждый wrapper-prop
 Без контекста, по-простому. Многословно, нарушает HCA — Controller получает «лишний» prop, не относящийся к его роли. Отвергнуто.
 
-## Последствия
+## Последствия {#consequences}
 
 ### Положительные
 - Тестируемость: каждый тест может создать свой роутер.
@@ -111,7 +111,7 @@ const Auth = Feature(({ router }) => ({
 - `useRouter()` бросает, если используется вне `<Providers.Base>`. Это сознательный trade-off: silent-undefined хуже явной ошибки.
 - Один лишний слой Context. Минимальная цена за гибкость.
 
-## Связанное
+## Связанное {#related}
 
 - [[router|@capsuletech/router]]
 - [[controller-proxy]]

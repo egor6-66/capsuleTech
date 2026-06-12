@@ -9,7 +9,7 @@ date: 2026-05-19
 > [!warning] Status: proposed
 > Фиксирует контракт для нового пакета `@capsuletech/web-remote`. Имплементация — отдельный этап (см. roadmap в конце).
 
-## Контекст
+## Контекст {#context}
 
 Появилась задача: подгружать в host-приложение независимо собранные **remote-модули** (пример: модуль карты, развёрнутый на отдельном поддомене). Требования заказчика:
 
@@ -32,7 +32,7 @@ Reference-реализация (PROTEI: `@reacttools/module-federation` + `modul
 4. **Типизация remote-модулей через `.d.ts` download.** В рефе есть `downloadDtsPlugin` — тянет `.d.ts` отдельно, что хрупко (несовпадение версий, network в build). У них этот плагин в README указан с URL'ом на mp3 (заглушка). Решение не доделано.
 5. **`openInNewWindow` через голый `window.open` + query-string.** Standalone-окно после refresh теряет `opener`, deep-link недружелюбен, URL уродский.
 
-## Решение
+## Решение {#decisions}
 
 ### 1. Новый пакет `@capsuletech/web-remote`
 
@@ -178,7 +178,7 @@ URL красивый (`/remote/geo?session=...&instance=left`), refresh-safe, de
 - **Shared dependencies.** MF умеет «singleton react». У нас Solid — теоретически тоже могут быть проблемы со сторонними либами (две копии xstate в host и remote). В v1 — ничего, каждый модуль везёт свои deps. Optimization-плагин — потом.
 - **Slot-style композиция в Widget.** Альтернативный API — Widget получает remote'ы позиционным аргументом как сейчас entity/controller: `Widget((ui, features, controllers, entities, remotes) => ...)`. Решение отложено до прототипа — посмотрим что удобнее в реальных Widget'ах.
 
-## Альтернативы
+## Альтернативы {#alternatives}
 
 ### A. Обернуть `@module-federation/vite` 1-в-1 (как PROTEI)
 
@@ -222,7 +222,7 @@ Reference-подход PROTEI. Простая ментальная модель,
 
 Отвергнуто — задача уже есть.
 
-## Последствия
+## Последствия {#consequences}
 
 ### Положительные
 
@@ -273,7 +273,7 @@ Reference-подход PROTEI. Простая ментальная модель,
 
 Каждая phase — отдельный PR. ADR переходит в `status: implemented` только после Phase 5.
 
-## Связанное
+## Связанное {#related}
 
 - [[003-router-context-based|ADR 003]] — Router (будет расширен методом `openInWindow`)
 - [[004-compliance-linter|ADR 004]] — Линтер (будет расширен правилом про remote)

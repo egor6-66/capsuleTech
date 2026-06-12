@@ -9,7 +9,7 @@ date: 2026-06-04
 
 # ADR 032 — Package-integration слой (`/controllers` subpath) + `useEmit` канонический event-канал
 
-## Контекст
+## Контекст {#context}
 
 HCA-event сейчас: meta-узел → `UiProxy` авто-биндит **6 захардкоженных** DOM-событий (`EVENT_HANDLERS`, ADR 009) → собирает `target` → `controller[name](target)` → `ControllerProxy` (`states[cur][name]` → top-level → `next()`). Важно: **ControllerProxy резолвит handler по ЛЮБОМУ имени** — захардкожен только DOM-авто-биндинг UiProxy.
 
@@ -17,7 +17,7 @@ Bespoke-интеракции из пакетов (`web-dnd` drop/drag, `web-rend
 
 **Принцип:** канон аппа (HCA) фиксирован, **пакеты подстраиваются под архитектуру, а не наоборот**. При этом generic-ядро каждого пакета обязано оставаться framework-agnostic (standalone Solid-пакет, ноль зависимости на web-core — продаётся вне фреймворка). Но capsule — один продукт, подавляющее большинство юзеров используют пакеты ВНУТРИ фреймворка, поэтому пакет может поставлять opt-in HCA-прослойку (вплоть до готовых Controller'ов), сокращая логику в аппе.
 
-## Решение
+## Решение {#decisions}
 
 ### 1. Конвенция subpath `@capsuletech/<pkg>/controllers`
 
@@ -55,7 +55,7 @@ Integration-subpath'ы → web-core (одно направление). web-core 
 - `@capsuletech/web-renderer/controllers` → editOverlay, эмитящий `onSelect`.
 - `apps/ui-creator/src/editor/` **удаляется**; app = тонкие виджеты + Page, композящие `Controllers.Editor`, читающие `store.ctx` через `useCtx`.
 
-## Последствия
+## Последствия {#consequences}
 
 - **+** Любая package-интеракция = first-class HCA-событие; ноль escape-hatch в аппах.
 - **+** Generic-ядра остаются standalone (работают вне фреймворка как обычный Solid-пакет).

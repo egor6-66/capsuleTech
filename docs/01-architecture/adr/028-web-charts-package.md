@@ -9,7 +9,7 @@ date: 2026-06-02
 > [!info] Status: accepted
 > Новый пакет **`@capsuletech/web-charts`** — обёртка над `solid-chartjs` (Solid-биндинг к Chart.js). Тематизированные графики (`LineChart`/`AreaChart`/`BarChart`/`Doughnut`/`Gauge`) под токены `@capsuletech/web-style`. Первый консумер — виджет мониторинга системы в `apps/nexus` (наглядный host-monitor по образцу crypto-dashboard). Реализует — главный (initial owner; будущий owner-web-charts).
 
-## Контекст
+## Контекст {#context}
 
 `apps/nexus` (desktop-хаб) должен показывать **наглядный мониторинг системы** — CPU/GPU/RAM/диски/сеть/температуры — по образцу dashboard'а: stat-карточки, area-спарклайны с градиентом, радиальные/donut-гейджи, групповые бары, легенды, переключатель тайминга. Backend готов ([[023-desktop-system-metrics|ADR 023]]: Rust-команды `get_system_snapshot`/`start_monitoring`/`stop_monitoring` + событие `system://metrics` с полным `SystemSnapshot`), типы готовы (`@capsuletech/desktop/metrics`). Не хватает **графиков** — в `@capsuletech/web-ui` нет ни одного chart/gauge/sparkline-примитива.
 
@@ -17,7 +17,7 @@ date: 2026-06-02
 
 Выбор библиотеки: **`solid-chartjs`** (Solid-биндинг к **Chart.js**). Canvas-рендер, зрелое ядро Chart.js покрывает все типы из образца одним движком: line/area (спарклайны с градиентной заливкой), bar (групповые — per-core CPU, диски, сеть rx/tx), doughnut с `cutout` (радиальный гейдж утилизации). `solid-chartjs` — ~8k загрузок (живой биндинг), против ~200 у `@dschz/solid-uplot` / прочих самопалов. «Prefer existing libs».
 
-## Решение
+## Решение {#decisions}
 
 Новый пакет **`@capsuletech/web-charts`** — обёртка над `solid-chartjs` + `chart.js`.
 
@@ -50,7 +50,7 @@ date: 2026-06-02
 - Релиз в группе **web_base** (fixed, tag `web@{version}`).
 - `solid-chartjs` + `chart.js` — runtime-deps пакета (не peer): обёртка владеет версией.
 
-## Альтернативы
+## Альтернативы {#alternatives}
 
 | Вариант | Почему отвергнут |
 |---|---|
@@ -60,7 +60,7 @@ date: 2026-06-02
 | **Голый `solid-chartjs` в `apps/nexus`** | Без theme-bridge каждый консумер хардкодит цвета и регистрацию Chart.js; графики не переиспользуются. Обёртка снимает это. |
 | **ECharts / Recharts-порт** | ECharts тяжелее и со своей моделью; Recharts — React. Chart.js + solid-chartjs ближе к Solid-идиоме и легче. |
 
-## Последствия
+## Последствия {#consequences}
 
 **Плюсы:** переиспользуемый chart-слой (Nexus + любые дашборды); тема интегрирована (light/dark автоматом); зависимость изолирована от UI-kit; обёртка прячет регистрацию Chart.js и alpha-эргономику solid-chartjs; один движок на все типы образца.
 
@@ -74,7 +74,7 @@ date: 2026-06-02
 4. **`Segmented`** time-range toggle в `@capsuletech/web-ui` (обёртка kobalte `ToggleGroup`, single-select pills) — для переключателя тайминга.
 5. **Виджет `SystemMonitor` в `apps/nexus`** — Feature (rolling-буфер 1м/5м/15м/1ч + `start_monitoring`/`stop_monitoring` через onInit/onDispose) + View (stat-карточки + графики web-charts + Segmented) + Widget; впаять в `'monitor'`-ноду `flowCanvas`.
 
-## Связанное
+## Связанное {#related}
 
 - [[023-desktop-system-metrics|ADR 023]] — backend host-метрик (источник данных для Nexus-монитора)
 - [[027-web-flow-node-canvas|ADR 027]] — sibling-паттерн (новый web-пакет-обёртка с theme-bridge); Flow хостит ноду-монитор

@@ -9,7 +9,7 @@ date: 2026-06-02
 
 # ADR 029 — Widget frame: кастомный chrome ноды/виджета
 
-## Контекст
+## Контекст {#context}
 
 Виджеты на нод-канвасе (`@capsuletech/web-flow`, ADR 027) сейчас носят **дефолтный chrome xyflow**: синяя outline-рамка на `selected`, стандартные resize-хэндлы. Хочется:
 
@@ -20,7 +20,7 @@ date: 2026-06-02
 
 Ограничение слоёв: **`@capsuletech/web-core` — это движок HCA** (wrapper'ы, UiProxy, контекст). Он **не должен знать про canvas/xyflow** — иначе инверсия слоёв (web-flow зависит от web-core, не наоборот). Значит chrome нельзя класть в `web-core/src/wrappers`, и нельзя «вшивать» его в `Widget`-wrapper (chrome context-specific: канвас = xyflow-drag/resize, Matrix = corvu-resize, Page = никакого).
 
-## Решение
+## Решение {#decisions}
 
 Разделяем **визуал** и **поведение** на три зоны:
 
@@ -72,7 +72,7 @@ export interface IWidgetFrameProps {
 - **Клик вне ноды** (pane) → xyflow deselect → `active=false` → хэндлы прячутся (замена синей рамки).
 - Тело виджета — полный интерактив, без конфликта с навигацией флоу.
 
-## Альтернативы
+## Альтернативы {#alternatives}
 
 | Вариант | Почему нет |
 |---|---|
@@ -80,7 +80,7 @@ export interface IWidgetFrameProps {
 | Вшить chrome в `Widget`-wrapper | Chrome context-specific (канвас/Matrix/Page разные). Wrapper навешивал бы лишнее на виджеты вне канваса. |
 | Только в web-flow (без web-ui примитива) | Не переиспользовать визуал в `Layout.Matrix`. Разделение visual/behavior даёт обе зоны. |
 
-## Последствия
+## Последствия {#consequences}
 
 - Чистые слои: визуал (web-ui) ⟂ поведение (web-flow) ⟂ движок (web-core).
 - `Ui.WidgetFrame` переиспользуется: канвас сейчас, `Layout.Matrix` позже (своя обвязка corvu-resize вокруг того же визуала).
@@ -96,7 +96,7 @@ export interface IWidgetFrameProps {
 4. **nexus** — `canvas.tsx` на нод-фрейм; вставить пользовательские SVG в слоты.
 5. **Позже** — `Layout.Matrix` использует `Ui.WidgetFrame`.
 
-## Связанное
+## Связанное {#related}
 
 - [[027-web-flow-node-canvas]] — нод-канвас.
 - [[026]] — Layout.Matrix (будущий потребитель).

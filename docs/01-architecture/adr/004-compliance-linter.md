@@ -9,7 +9,7 @@ date: 2026-05-10
 > [!success] Реализовано
 > Пакет `@capsuletech/compliance` + Vite-плагин `CompliancePlugin` подключены в `packages/core/src/builder/config.ts`. Дефолтный режим — `warn`. Описание API и rules — [[compliance|@capsuletech/compliance]].
 
-## Контекст
+## Контекст {#context}
 
 [[golden-rules]] запрещает upward и horizontal импорты, но **никакая автоматика** этого не проверяет. Сейчас единственная защита — ручной ревью. На проекте размером с sandbox это терпимо, при росте регламент размоется.
 
@@ -19,7 +19,7 @@ date: 2026-05-10
 3. Controller делает `fetch` (должно быть только во Feature).
 4. Widget содержит бизнес-логику (`if`/`fetch`).
 
-## Решение
+## Решение {#decisions}
 
 Реализовать **`@capsuletech/compliance`** — двухсоставной чек:
 
@@ -132,13 +132,13 @@ node packages/cli/bin/capsule.mjs check --fix    # (опционально) ав
 3. **Этап 2.** Добавить CLI-команду + GitHub Action.
 4. **Этап 3.** (опционально) Автофикс через ts-morph: предложение «вынеси этот импорт в Widget».
 
-## Альтернативы
+## Альтернативы {#alternatives}
 
 - **ESLint + `eslint-plugin-boundaries`** — рабочий вариант, но добавляет ESLint как вторую build-зависимость (Biome уже стоит). Отвергнуто.
 - **Biome custom rules** — ограничены в Biome 1.x. Отвергнуто.
 - **`madge --circular` + grep по импортам** — слишком грубо, не различает слои внутри `apps/`. Отвергнуто.
 
-## Последствия
+## Последствия {#consequences}
 
 ### Положительные
 - Регламент превращается из договорённости в инвариант.
@@ -150,14 +150,14 @@ node packages/cli/bin/capsule.mjs check --fix    # (опционально) ав
 - Babel-парсинг каждого файла в `transform` стоит времени; для крупных проектов — заметно. Mitigation: кэширование по hash, скип `node_modules`.
 - Точная таблица allowlist'ов потребует подгонки под реальные нужды (например, разрешить ли `lodash-es` во всех слоях?).
 
-## Open questions
+## Open questions {#open-questions}
 
 > [!question]
 > 1. Включаем ли первый rollout сразу как `error`, или сначала `warn`?
 > 2. Список разрешённых внешних библиотек по слоям — фиксировать ли в коде, или вынести в `capsule.config.ts`?
 > 3. Что делать с тестовыми файлами (`*.spec.ts`) — ослабленный режим?
 
-## Связанное
+## Связанное {#related}
 
 - [[golden-rules]]
 - [[layers]]

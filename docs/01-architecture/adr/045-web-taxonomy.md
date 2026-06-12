@@ -9,7 +9,7 @@ date: 2026-06-11
 
 # ADR 045 — Таксономия `packages/web/*`: layout vs chrome, design-time консолидация, depth-scoped vt-name
 
-## Контекст
+## Контекст {#context}
 
 Группа `packages/web/*` развивалась рывками — несколько эталонных решений (web-core/state/ui) + черновые накопления вокруг них. Перед физической чисткой (Phase 0) нужно **зафиксировать модель словами**, чтобы:
 
@@ -23,7 +23,7 @@ date: 2026-06-11
 - **design-time распылён** между `web-creator` (planned: subpath-редакторы ui/style/text/logic + общие тулзы palette/tree/inspector/canvas/data/monitor/catalog) и `web-ui-creator` (manifests + state + inspector + generators). По `docs/playground/` уже решено, что это **один пакет с subpath'ами**, но кодом ещё два пакета — нужна каноничная фиксация в ADR.
 - **Routing view-transition** держит **глобальный** `view-transition-name: capsule-content` на main-cell `Shell.Matrix` ([PR #264](https://github.com/egor6-66/capsuletech/pull/264)). На вложенных layout'ах (workspace внутри app-shell, sub-page внутри workspace) это даёт **groupping-конфликт**: одна и та же группа склеивает анимации разных Outlet'ов между собой → анимация всегда одна, прыжки на под-навигации.
 
-## Решение
+## Решение {#decisions}
 
 ### 1. `web-shell` → расщепить на `layout` + `chrome` (subpath'ы внутри ОДНОГО пакета)
 
@@ -74,14 +74,14 @@ Subpath'ы — **два рода**:
 
 **Что НЕ делаем сейчас:** конфигурируемый duration/variant per-depth (отдельная задача, низкий приоритет). depth=0/1/2 со стандартным fade — достаточно для эталона.
 
-## Что НЕ решает этот ADR (явно)
+## Что НЕ решает этот ADR (явно) {#non-goals}
 
 - Какие **именно файлы** переезжают из `web-ui-creator` куда — это founding-миграция owner-web-creator (отдельным PR'ом, после Phase 0 audit'а).
 - Какие kit-composites переедут из app/web-shell в web-ui — это canon-проход по примитивам (Button → Card → Input...), задача #3 в Phase 0.
 - Полный список subpath'ов `web-shell/chrome` (помимо Header/ModeToggle/Appearance) — растёт по мере касаний; ADR фиксирует **принцип** разделения, не roster.
 - `web-access` / unified router guard — это [[037-playground-capability-and-codegen-subgenerators|037]] / playground access-док, не таксономия.
 
-## Последствия
+## Последствия {#consequences}
 
 **+** Аудит читается через одни границы (layout vs chrome separately; design-time = один subpath-куст, не два пакета; routing-анимация ожидаемо depth-scoped).
 **+** owner-агенты разговаривают на одном языке; новые блоки знают свой subpath сразу.
@@ -89,7 +89,7 @@ Subpath'ы — **два рода**:
 **−** Часть документации (агенты owner-web-shell / owner-web-ui-creator, AI-anchor'ы в `docs/_meta/`) станет неточной до touch'ев — фиксируется по мере проходов, не bulk-update'ом.
 **−** depth-scoped vt-name требует поддержки браузером CSS-pattern'а `::view-transition-group(name-*)` (Chromium 126+); на старых ядрах — деградация в fade без depth-морфа (приемлемо).
 
-## Roll-out
+## Roll-out {#rollout}
 
 ADR — **на бумаге**, без code-churn'а:
 1. **Сейчас:** merge ADR'а → язык фиксирован.
@@ -97,7 +97,7 @@ ADR — **на бумаге**, без code-churn'а:
 3. **Phase 0 шаг 3+ (canon-пилот Button):** идёт параллельно rename'ам — canon-axis (owner-web-ui) ‖ rename-axis (owner-web-shell, owner-web-creator), touch-once.
 4. Depth-scoped vt-name — owner-web-shell + owner-web-router (контракт: router отдаёт depth, shell его читает), отдельным PR'ом ближе к Phase 0 завершению.
 
-## Альтернативы (rejected)
+## Альтернативы (rejected) {#alternatives}
 
 - **`web-shell` → два пакета (`web-layout` + `web-chrome`):** избыточная pkg-граница; layout/chrome связаны живо (chrome вкладывается в layout-регионы); внутренний tier'ный enforcement (compliance) достаточен.
 - **`web-creator` и `web-ui-creator` — оба пакета, дублируем тулзы:** прямой дрейф (две `palette`/два `inspector`); ровно то, от чего уходим. Уже решено в `docs/playground/`, ADR кодифицирует.

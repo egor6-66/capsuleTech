@@ -9,7 +9,7 @@ date: 2026-05-27
 > [!success] Status: implemented (2026-05-27)
 > PR #166 (`0832ad5`) — новый event `UPDATE_COMPONENT`, bridge-метод `updateComponent()`, разделение register/update семантики. UiProxy переведена на узкие writes.
 
-## Контекст
+## Контекст {#context}
 
 Раньше UiProxy на каждом `onInput` писал **весь target** через `store.update` (SET_DATA):
 
@@ -30,7 +30,7 @@ store.update({
 
 **Note:** Никаких ADR/design docs для текущего flow не найдено — это был дефолтный паттерн времени, когда `store` был single catch-all.
 
-## Решение
+## Решение {#decisions}
 
 ### 1. Новый event UPDATE_COMPONENT
 
@@ -104,7 +104,7 @@ const formData = store.values(['@inputs'])
 | `UPDATE_COMPONENT` | Runtime (на Input/Change/…) | Мержит patch в `components[id]` | ✅ (merge) |
 | `UNREGISTER_COMPONENT` | Unmount | Удаляет из `components[id]` | ✅ |
 
-## Последствия
+## Последствия {#consequences}
 
 ### ✅ Плюсы
 
@@ -122,12 +122,12 @@ const formData = store.values(['@inputs'])
 
 Однако **уникальный компонент-id** (из `createUniqueId()`) имеет формат типа `components_2`, очень узнаваем. Риск ошибки низкий.
 
-## Альтернативы
+## Альтернативы {#alternatives}
 
 1. **Оставить всё как было** — не решает confusing DX и drift.
 2. **Отдельный namespace `ui`** (`store.ui[id]` вместо `store.ctx[id]`) — тоже решает, но UPDATE_COMPONENT менее гибкий для расширения (новый event vs новый namespace).
 
-## Связанное
+## Связанное {#related}
 
 - PR #166 (`0832ad5`) — реализация.
 - [[019-autoimport-dirs-drop|ADR 019]] — одновременный рефакторинг cycle-break.

@@ -9,7 +9,7 @@ date: 2026-06-02
 > [!info] Status: accepted
 > Новый пакет **`@capsuletech/web-flow`** — обёртка над `@dschz/solid-flow` (Solid-порт React/Svelte Flow на официальном ядре `@xyflow/system`). Самостоятельный нод-канвас (свободные позиции + рёбра + pan/zoom + NodeResizer), **композируемый**, а НЕ режим `Layout.Matrix`. Спайк в `apps/nexus` подтверждён пользователем. Реализует — главный (initial owner; будущий owner-web-flow).
 
-## Контекст
+## Контекст {#context}
 
 [[026-matrix-grid-canvas|ADR 026]] добавил grid-канвас в Matrix. Реальное использование (`apps/nexus` dashboard) показало, что нужная модель — **нод-граф**, а не tile-grid:
 
@@ -18,7 +18,7 @@ date: 2026-06-02
 
 Спайк `@dschz/solid-flow` в nexus (кастомные ноды рендерят реальные виджеты + NodeResizer + Handle-рёбра + minimap/controls, тема под `--xy-*`) — пользователь подтвердил: «то что надо». `@dschz/solid-flow`: MIT, `solid-js >=1.8`, построен на **`@xyflow/system`** (официальное ядро xyflow — тот же движок под React/Svelte Flow), есть NodeResizer/MiniMap/Zoom/colorMode. Версия alpha v0.1.4 — риск API-дрейфа гасится нашей обёрткой.
 
-## Решение
+## Решение {#decisions}
 
 Новый пакет **`@capsuletech/web-flow`** — обёртка над `@dschz/solid-flow`.
 
@@ -41,7 +41,7 @@ date: 2026-06-02
 - Релиз в группе **web_base** (fixed, tag `web@{version}`).
 - `@dschz/solid-flow` — runtime-dep пакета (не peer): обёртка владеет версией.
 
-## Альтернативы
+## Альтернативы {#alternatives}
 
 | Вариант | Почему отвергнут |
 |---|---|
@@ -51,7 +51,7 @@ date: 2026-06-02
 | **Свой нод-граф с нуля** | xyflow — зрелое ядро; «prefer existing libs». Самопал = месяцы на pan/zoom/edge-routing. |
 | **Оставить грид для Nexus** | Ступенчато + нет рёбер. Грид остаётся capability в Matrix для tile-дашбордов без связей (ADR 026 не отменяется). |
 
-## Последствия
+## Последствия {#consequences}
 
 **Плюсы:** переиспользуемый нод-канвас (Nexus + где угодно); чистое разделение Matrix(layout) / Flow(graph); тема интегрирована; зависимость изолирована; обёртка гасит alpha-дрейф solid-flow.
 
@@ -66,7 +66,7 @@ date: 2026-06-02
 5. **Перепроводка `apps/nexus`** на `@capsuletech/web-flow`.
 6. **(параллельно)** grid-полиш — оставить Matrix grid рабочей capability ([[026-matrix-grid-canvas|ADR 026]]).
 
-## Связанное
+## Связанное {#related}
 
 - [[026-matrix-grid-canvas|ADR 026]] — grid-канвас (sibling-capability для tile-дашбордов; не отменяется)
 - [[025-geometric-live-sortable|ADR 025]] — insert-DnD каркас Matrix

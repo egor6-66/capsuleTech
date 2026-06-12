@@ -9,7 +9,7 @@ date: 2026-06-05
 
 # ADR 034 — Гранулярность code-splitting: module-backed registry вместо globalThis-объекта
 
-## Контекст
+## Контекст {#context}
 
 [`CapsuleRegistryPlugin`](packages/builders/vite/src/plugins/capsuleRegistry.ts) генерит `.capsule/registry/wrappers.ts` — **один модуль**, собирающий все слои в вложенные объекты и публикующий их через `Object.assign(globalThis, { Widgets, Views, ... })`. App-код обращается к ним как к ambient-глобалам (`Widgets.Forms.Auth.Login`), без импортов — ядро HCA-DX.
 
@@ -21,7 +21,7 @@ date: 2026-06-05
 
 **Тупиковый эксперимент (proto-B, отброшен).** Сделать все слои eager (расширить `EAGER_IMPORT_LAYERS`) убирает waterfall (44→26 чанков), НО затягивает ВСЕ слои в `index` (грузится на каждом роуте). Это **не масштабируется**: на app с 10 000 виджетов login-страница тянула бы весь app в инишл-бандл. Негативный результат — подтвердил, что лечить надо не lazy/eager-флаг, а сам способ публикации реестра.
 
-## Решение
+## Решение {#decisions}
 
 **Заменить runtime-`globalThis`-объект на module-backed registry (barrel-тень папок) + auto-import namespaces. Route-scoping отдать бандлеру нативно.**
 
@@ -77,14 +77,14 @@ Tree-shake'ит ли **Rolldown** глубокий доступ `Widgets.Forms.A
 - **Да** → сохраняем dot-вложенность (`export * as`).
 - **Нет/флаки** → fallback на **flat named-export** (`export { Login, Register, ... }` плоско): bulletproof tree-shake, но теряем вложенный синтаксис (`Widgets.AuthLogin` вместо `Widgets.Forms.Auth.Login`). Решаем по результату.
 
-## Альтернативы
+## Альтернативы {#alternatives}
 
 - **A. Оставить per-layer `lazy()` (baseline).** Масштабируется (on-demand), но per-layer waterfall + флэш. Отвергнут — исходная боль.
 - **B. Все слои eager в одном объекте (proto-B).** Waterfall убирает, но тянет всё в `index` → не масштабируется (10k виджетов на login). Отвергнут эмпирикой.
 - **C. Reference-граф в кодгене** (сохранить `globalThis`, кодген строит граф «роут→слои» и генерит per-route scope-модули). Работает и сохраняет DX, но **переизобретает в кодгене то, что бандлер делает сам** для статических импортов. Отвергнут как лишняя сложность против решения (module-barrel + auto-import даёт то же нативно).
 - **D. Module-barrel БЕЗ auto-import** (app-код сам `import { Widgets }`). Бандлер сплитит, но теряется «ноль импортов» DX. Отвергнут — auto-import (п.2) сохраняет DX бесплатно.
 
-## Последствия
+## Последствия {#consequences}
 
 ### Положительные
 - Route-scoping **нативный** (tree-shake + route-lazy) — без reference-графа; кодген только генерит барелы (тень папок), проще object-сборки.
@@ -106,7 +106,7 @@ Tree-shake'ит ли **Rolldown** глубокий доступ `Widgets.Forms.A
 3. **app (ewc) + owner-tests — верификация.** Re-build, chunk-граф, рантайм-network в браузере (нет водопада, route-scoped), smoke.
 4. **Cleanup**: убрать legacy object-`wrappers.ts` путь; обновить slot-`@types`-кодген если типы теперь текут из барелов.
 
-## Связанное
+## Связанное {#related}
 
 - [[033-package-registration|ADR 033]] — тот же кодген-плагин, Vite 8 / Rolldown.
 - [[019-autoimport-dirs-drop|ADR 019]] — история реестра/кодгена слоёв.
