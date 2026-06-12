@@ -3,7 +3,9 @@
  * for JSON-UI-tree across renderer/studio/apps. Studio re-exports here for
  * backwards-compatibility of internal imports.
  */
-export type { IEditorNode, IEditorTree, NodeId } from '@capsuletech/data-gen';
+import type { IEditorNode, IEditorTree, NodeId } from '@capsuletech/data-gen';
+
+export type { IEditorNode, IEditorTree, NodeId };
 
 /**
  * Полный контекст редактора. Кроме дерева — UI-state (выбранная нода).
