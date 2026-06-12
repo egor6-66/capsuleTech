@@ -5,8 +5,39 @@
  *
  * Гейт: роль designer (developer видит всё).
  */
-const WebStudio = Page(() => <Widgets.Studio.Frame />);
 
+const WebStudio = Page((Ui) => (
+  <Shell.Matrix
+    mode="view"
+    preset="app-shell"
+    slots={{
+      header: {
+        children: <div>wdad</div>,
+        swapGroup: 'widgets',
+        initialSize: 0.05,
+      },
+      sidebar: {
+        children: <div>wdad</div>,
+        swapGroup: 'widgets',
+        initialSize: 0.25,
+      },
+      main: {
+        children: <div>wdad</div>,
+        swapGroup: 'widgets',
+      },
+      rightBar: {
+        children: <div>wdad</div>,
+        swapGroup: 'widgets',
+        initialSize: 0.25,
+      },
+      footer: {
+        children: <div>wdad</div>,
+        swapGroup: 'widgets',
+        initialSize: 0.25,
+      },
+    }}
+  />
+));
 export const meta = { can: 'studio' };
 
 export default WebStudio;
