@@ -1,5 +1,5 @@
 import { z } from '@capsuletech/shared-zod';
-import { Tag } from '@capsuletech/web-ui/icons';
+import { Tag } from '../../icons';
 import type { IComponentManifest } from '../types';
 
 export const LabelManifest: IComponentManifest = {

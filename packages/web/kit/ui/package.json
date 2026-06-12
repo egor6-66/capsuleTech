@@ -16,6 +16,11 @@
       "import": "./dist/components/icons/index.mjs",
       "default": "./dist/components/icons/index.mjs"
     },
+    "./manifest": {
+      "types": "./dist/manifest/index.d.ts",
+      "import": "./dist/manifest/index.mjs",
+      "default": "./dist/manifest/index.mjs"
+    },
     "./accordion": {
       "types": "./dist/components/accordion/index.d.ts",
       "import": "./dist/components/accordion/index.mjs",

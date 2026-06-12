@@ -1,5 +1,5 @@
 import { z } from '@capsuletech/shared-zod';
-import { TextCursorInput } from '@capsuletech/web-ui/icons';
+import { TextCursorInput } from '../../icons';
 import type { IComponentManifest } from '../types';
 
 export const InputManifest: IComponentManifest = {

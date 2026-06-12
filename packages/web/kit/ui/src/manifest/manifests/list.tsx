@@ -1,5 +1,5 @@
 import { z } from '@capsuletech/shared-zod';
-import { List } from '@capsuletech/web-ui/icons';
+import { List } from '../../icons';
 import type { IComponentManifest } from '../types';
 
 export const ListManifest: IComponentManifest = {

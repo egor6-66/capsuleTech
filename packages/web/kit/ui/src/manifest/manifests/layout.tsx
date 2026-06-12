@@ -1,5 +1,5 @@
 import { z } from '@capsuletech/shared-zod';
-import { LayoutGrid, Rows3 } from '@capsuletech/web-ui/icons';
+import { LayoutGrid, Rows3 } from '../../icons';
 import type { IComponentManifest } from '../types';
 
 export const GridManifest: IComponentManifest = {

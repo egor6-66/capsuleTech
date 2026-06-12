@@ -1,5 +1,5 @@
 import { z } from '@capsuletech/shared-zod';
-import { Sparkles } from '@capsuletech/web-ui/icons';
+import { Sparkles } from '../../icons';
 import type { IComponentManifest } from '../types';
 
 export const AnimateManifest: IComponentManifest = {
