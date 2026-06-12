@@ -1,7 +1,7 @@
 {
   "name": "@capsuletech/web-ui-creator",
-  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/web/ui-creator/src",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/web/design-time/ui-creator/src",
   "projectType": "library",
   "tags": [],
   "targets": {},
