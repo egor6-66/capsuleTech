@@ -30,6 +30,7 @@
     "lint:fix": "biome check --apply  --unsafe .",
     "format": "biome format --write .",
     "audit:exports": "node scripts/audit-exports.mjs",
+    "docs:build": "node docs/_build/extract.mjs",
     "test": "pnpm -r --filter \"./packages/**\" --workspace-concurrency=1 test",
     "test:e2e:cli": "node packages/cli/e2e/smoke.mjs",
     "dev:builders": "pnpm -r --parallel --filter \"./packages/builders/**\" run dev",
