@@ -117,7 +117,7 @@ last_updated: 2026-06-12 (D1 5/5 DONE; ADR 046 amended — augmentation pattern 
 ### W1 — Zone canon docs
 
 - **Owner:** main steward.
-- **Files:** `docs/_meta/web-zones/{kit,runtime,domain,boost,design-time}.md` + `index.md`.
+- **Files:** `docs/_meta/web-zones/{kit,runtime,domain,boost,studio}.md` + `index.md` (post-D6 zone rename).
 - **Содержание per zone:** Purpose / Packages / Import rules / Canonical shape / Vendor stack / Non-goals / New package checklist.
 - **PR:** `docs(web-zones): zone canon docs + L0/L1 gradient + Phase W plan-doc (adr 047 D1)`.
 - **Blocks:** ничего (это canon-only, не gates функциональные шаги).
@@ -131,7 +131,7 @@ last_updated: 2026-06-12 (D1 5/5 DONE; ADR 046 amended — augmentation pattern 
   2. Создать README.md для 11 пакетов которые без него (access, agent, auth, charts, contract, creator, date, flow, intl, shell, table) + апдейт 12 существующих под единый README template:
      ```
      # @capsuletech/<name>
-     <one-line>  · zone: <kit|runtime|domain|boost|design-time>  · status: ...
+     <one-line>  · zone: <kit|runtime|domain|boost|studio>  · status: ...
      ## Install
      pnpm add @capsuletech/<name>
      ## Minimum usage
@@ -376,7 +376,7 @@ last_updated: 2026-06-12 (D1 5/5 DONE; ADR 046 amended — augmentation pattern 
 
 ## Phase D — Zone migration (per ADR 047)
 
-> Цель: `packages/web/*` физически разбит на 5 директорий-зон (kit / runtime / domain / boost / design-time); domain-isolation compliance включён; vendor stack секции в OWNERSHIP; studio rename из web-creator.
+> Цель: `packages/web/*` физически разбит на 5 директорий-зон (kit / runtime / domain / boost / studio); domain-isolation compliance включён; vendor stack секции в OWNERSHIP; studio rename из web-creator. Post-D6: `design-time` zone retired в пользу top-level `studio/`.
 
 ⚠️ **Перед началом Phase D** — стабилизировать Phase B + C (мерджи приземлены, дерево чистое от переездов). Перемещение moving target = dirty.
 
@@ -384,7 +384,7 @@ last_updated: 2026-06-12 (D1 5/5 DONE; ADR 046 amended — augmentation pattern 
 
 - **Owner:** main steward (один большой coordinator-PR).
 - **Steps:**
-  1. Создать поддиректории: `packages/web/kit/`, `packages/web/runtime/`, `packages/web/domain/`, `packages/web/boost/`, `packages/web/design-time/`.
+  1. Создать поддиректории: `packages/web/kit/`, `packages/web/runtime/`, `packages/web/domain/`, `packages/web/boost/`, `packages/web/studio/` (post-D6 — без `design-time/` parent).
   2. Move (git mv) каждого пакета в свою зону per [[047]] D1 table.
   3. `tsconfig.base.json` paths — обновить под новые директории; npm-имена сохраняются (`@capsuletech/web-ui` остаётся, путь меняется).
   4. `nx.json` — обновить `workspaceLayout` если нужно (вряд ли — `packages/**` уже покрывает рекурсивно).
@@ -420,7 +420,7 @@ last_updated: 2026-06-12 (D1 5/5 DONE; ADR 046 amended — augmentation pattern 
 
 - **Owners:** owner-web-creator (rename), owner-web-ui-creator (absorb), main steward (coordinator).
 - **Steps:**
-  1. `packages/web/web-creator/` → `packages/web/design-time/studio/` (move).
+  1. `packages/web/web-creator/` → `packages/web/studio/` (move; D6 collapsed `design-time/` parent).
   2. `package.json` name `@capsuletech/web-creator` → `@capsuletech/studio`.
   3. `tsconfig.base.json` paths — `@capsuletech/studio` + alias-period `@capsuletech/web-creator` (опционально).
   4. Поглощение `web-ui-creator` — move кода в `studio/src/{manifests, state, inspector, generators}/` под subpath'ы.
@@ -477,7 +477,7 @@ Phase E **параллельна** Phase D (разные зоны кода).
 
 - **Owner:** owner-studio (post D4 rename).
 - **Steps:**
-  1. `packages/web/design-time/studio/src/docs/` subpath: экспорт `DocSection`, `DocPage`, `useDoc` (per ADR 048 D5).
+  1. `packages/web/studio/src/docs/` subpath: экспорт `DocSection`, `DocPage`, `useDoc` (per ADR 048 D5).
   2. Registry консумируется через статический import или динамический lazy-loader.
   3. Style — через web-style; рендеринг — через web-renderer (если markdown-rehype-render готов) или прямой rehype-stringify → Solid.
 - **PR:** `feat(studio,docs): DocSection/DocPage consumer components (adr 048 D5)`.
@@ -566,7 +566,8 @@ A0 (merge 046+047+048+plan) ─→ A1 (USER creates owner-boost-matrix + restart
 | A0 — ADR 046+047+048 + plan-doc merge | **DONE** | #300 | Triada merged 2026-06-11 |
 | A1 — owner-boost-matrix agent + restart | IN PROGRESS (USER) | — | `.draft → .md` rename + session restart на стороне USER'а |
 | A2 — rename owner-web-{table,map,flow,charts} → owner-boost-* | **DONE** | этот PR | rename 2 existing agent files (table+map; flow+charts не существовали) + sed internal refs в docs/_meta + agent name fields. **Restart required** для активации в registry |
-| W1 — Zone canon docs (kit/runtime/domain/boost/design-time + index) | **DONE** | #302 | `docs/_meta/web-zones/*.md` |
+| W1 — Zone canon docs (kit/runtime/domain/boost/studio + index) | **DONE** | #302 + this PR | `docs/_meta/web-zones/*.md` (post-D6 zone rename) |
+| D6 — Studio zone flatten (`design-time/studio` → top-level `studio/`) | **DONE** | this PR | folder + tsconfig + compliance + docs + agent rename context. Reason: `design-time` зона имела sole inhabitant и читалась как «UI/styling stuff»; studio = host/composer top-level зона. ADR 047 amend D6. |
 | W2 — OWNERSHIP refresh + README per-package | **DONE** | #303 | 23 OWNERSHIP refresh + 11 new README + readme-template; зафиксирован `web-access → web-auth` drift |
 | W3 — L0/L1 gradient + manifest schema | **DONE** | #302 | `docs/_meta/web-ui.md` секция |
 | W4 — Bundle-size + manifest infra (owner-web-ui) | READY | — | После W3 → готов; USER dispatches owner-web-ui |
@@ -610,6 +611,7 @@ A0 (merge 046+047+048+plan) ─→ A1 (USER creates owner-boost-matrix + restart
 
 ## История изменений
 
+- 2026-06-12 — **D6 DONE** (this PR): `design-time` zone retired, replaced by top-level `studio/` (5-я zone, host/composer). `git mv` preserved code history. tsconfig/compliance/zone-canon docs/agent context — all updated. ADR 047 amend D6. Reason: zone name «design-time» misleading (читалось как «UI/styling»), studio sole inhabitant — collapse в top-level zone.
 - 2026-06-12 — **D1 5/5 DONE** (PR #323-#327, kit/design-time/boost/domain/runtime) → `packages/web/` = 5 zone-папок per ADR 047 D1.
 - 2026-06-12 — **ADR 046 amended**: augmentation pattern (Decision 5 added). Renames: `boost-matrix` → `boost-layout`, `boost-charts` → `boost-chart`. Kit placeholder'ы реструктурируются под namespace-form (`Ui.Map.View` instead of `Ui.MapView`). Reason: разные «уровни tier'а» одной фичи (light kit + heavy boost) должны делить один user-facing API path (`Ui.<Element>.*`), а не два параллельных namespace'а (`Ui.Map` + `Maps.*`). Rationale — это и есть «booster»: boost конкретного kit-элемента.
 - 2026-06-11 — создан, status pending.

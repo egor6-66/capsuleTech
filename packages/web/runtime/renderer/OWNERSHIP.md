@@ -14,7 +14,7 @@ Owner-agent: **owner-web-renderer**
 
 ## Состояние (читать ПЕРВЫМ)
 
-- **Zone:** `runtime` — чистый runtime для рендера UI по JSON-схеме (`ISchema` → Solid JSX). Stateless; design-time concerns живут в `web-ui-creator`.
+- **Zone:** `runtime` — чистый runtime для рендера UI по JSON-схеме (`ISchema` → Solid JSX). Stateless; design-time concerns живут в `studio`.
 - **Status:** `beta` (0.1.1) — 52 tests, 9-slot backlog closed 2026-05-18.
 - **Priority:** **P1** — основа editor + production-режима с editable pages.
 - **Maturity bar (до stable):**
@@ -113,7 +113,7 @@ Coverage:
 
 ## Известные грабли
 
-1. **`IEditorNode` дублируется** между web-renderer и web-ui-creator. Source-of-truth у редактора — `web-ui-creator/state/types.ts`. ADR-кандидат: `shared-renderer-types` пакет.
+1. **`IEditorNode` дублируется** между web-renderer и studio. Source-of-truth у редактора — `studio/state/types.ts`. ADR-кандидат: `shared-renderer-types` пакет.
 2. **`resolvePath` не бросает при missing path** — fallback (DevWarn + null). Custom fallback через `Renderer.fallback`. Не делай throw.
 3. **`VOID_NODE_TYPES`** — hard-coded Set в `renderer.tsx`. При добавлении нового void-примитива в `web-ui` — добавить сюда.
 4. **`display:block; position:relative` на span** (void-обёртка): `display:contents` явно не используется — он не создаёт own box, поэтому `position:relative` на нём браузером игнорируется (overlay уходил бы к ближайшему настоящему containing block, т.е. к родителю, а не к самому инпуту). Jsdom этот баг не ловит — только реальный браузер.
@@ -122,14 +122,14 @@ Coverage:
 
 ## Cross-package boundaries
 
-- **web-ui-creator** — design-time side того же JSON-tree. IEditorNode ДОЛЖЕН совпадать.
+- **studio** — design-time side того же JSON-tree. IEditorNode ДОЛЖЕН совпадать.
 - **web-ui** — поставляет компоненты в registry (не прямой dep).
 - **web-core** — НЕ depends on web-renderer (alternative, сосуществует).
 - **VOID_NODE_TYPES** — список типов, которые рендерит web-ui (ui.Input, ui.Separator, ui.Image и т.п.).
 
 ## Roadmap
 
-- [ ] Унифицировать `IEditorNode` shape с web-ui-creator (shared types, ADR)
+- [ ] Унифицировать `IEditorNode` shape с studio (shared types, ADR)
 - [ ] Реализовать `full` RenderMode (JSON FSM) — нужен ADR + согласование с owner-web-state
 - [ ] Renderer prerender для SSR (сейчас CSR-only)
 - [ ] Streaming render для больших trees

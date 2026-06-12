@@ -9,7 +9,7 @@ import {
 } from '../zones';
 
 /**
- * Phase D3 — zone-canon compliance per ADR 047 D1/D2.
+ * Phase D3 — zone-canon compliance per ADR 047 D1/D2 + D6 (studio zone, 2026-06-12).
  *
  * Tests group around:
  *   1. classifyZone — path → Zone.
@@ -41,8 +41,8 @@ describe('classifyZone — basic path classification', () => {
     expect(classifyZone('/repo/packages/web/boost/layout/src/matrix/matrix.tsx')).toBe('boost');
   });
 
-  it('classifies design-time zone', () => {
-    expect(classifyZone('/repo/packages/web/design-time/creator/src/index.ts')).toBe('design-time');
+  it('classifies studio zone', () => {
+    expect(classifyZone('/repo/packages/web/studio/src/index.ts')).toBe('studio');
   });
 
   it('returns null for paths outside packages/web/', () => {
@@ -74,6 +74,9 @@ describe('extractZonePackage — package directory extraction', () => {
     expect(
       extractZonePackage('/repo/packages/web/domain/auth/src/x.ts', 'domain'),
     ).toBe('auth');
+    expect(
+      extractZonePackage('/repo/packages/web/studio/src/x.ts', 'studio'),
+    ).toBe('studio');
   });
 
   it('returns null when zone is null', () => {
@@ -102,8 +105,8 @@ describe('PACKAGE_TO_ZONE — canon coverage', () => {
     expect(PACKAGE_TO_ZONE['@capsuletech/boost-layout']).toBe('boost');
   });
 
-  it('lists studio in design-time', () => {
-    expect(PACKAGE_TO_ZONE['@capsuletech/studio']).toBe('design-time');
+  it('lists studio in studio zone', () => {
+    expect(PACKAGE_TO_ZONE['@capsuletech/studio']).toBe('studio');
   });
 
   it('omits shared-infra packages (allowed everywhere)', () => {
@@ -172,10 +175,10 @@ describe('isZoneImportAllowed — canon rules', () => {
     ).toBe(false);
   });
 
-  it('allows design-time → anything', () => {
+  it('allows studio → anything', () => {
     expect(
       isZoneImportAllowed(
-        'design-time',
+        'studio',
         '@capsuletech/studio',
         'kit',
         '@capsuletech/web-ui',
@@ -183,7 +186,7 @@ describe('isZoneImportAllowed — canon rules', () => {
     ).toBe(true);
     expect(
       isZoneImportAllowed(
-        'design-time',
+        'studio',
         '@capsuletech/studio',
         'domain',
         '@capsuletech/web-auth',
@@ -198,30 +201,30 @@ describe('isZoneImportAllowed — canon rules', () => {
 
 describe('ZONE_ALLOWED_DEPS — table shape', () => {
   it('each zone allows itself', () => {
-    for (const zone of ['kit', 'runtime', 'boost', 'domain', 'design-time'] as const) {
+    for (const zone of ['kit', 'runtime', 'boost', 'domain', 'studio'] as const) {
       expect(ZONE_ALLOWED_DEPS[zone].has(zone)).toBe(true);
     }
   });
 
-  it('kit forbids boost and domain', () => {
+  it('kit forbids boost / domain / studio', () => {
     expect(ZONE_ALLOWED_DEPS.kit.has('boost')).toBe(false);
     expect(ZONE_ALLOWED_DEPS.kit.has('domain')).toBe(false);
-    expect(ZONE_ALLOWED_DEPS.kit.has('design-time')).toBe(false);
+    expect(ZONE_ALLOWED_DEPS.kit.has('studio')).toBe(false);
   });
 
-  it('runtime forbids boost / domain / design-time', () => {
+  it('runtime forbids boost / domain / studio', () => {
     expect(ZONE_ALLOWED_DEPS.runtime.has('boost')).toBe(false);
     expect(ZONE_ALLOWED_DEPS.runtime.has('domain')).toBe(false);
-    expect(ZONE_ALLOWED_DEPS.runtime.has('design-time')).toBe(false);
+    expect(ZONE_ALLOWED_DEPS.runtime.has('studio')).toBe(false);
   });
 
-  it('boost forbids domain and design-time', () => {
+  it('boost forbids domain and studio', () => {
     expect(ZONE_ALLOWED_DEPS.boost.has('domain')).toBe(false);
-    expect(ZONE_ALLOWED_DEPS.boost.has('design-time')).toBe(false);
+    expect(ZONE_ALLOWED_DEPS.boost.has('studio')).toBe(false);
   });
 
-  it('domain forbids design-time', () => {
-    expect(ZONE_ALLOWED_DEPS.domain.has('design-time')).toBe(false);
+  it('domain forbids studio', () => {
+    expect(ZONE_ALLOWED_DEPS.domain.has('studio')).toBe(false);
   });
 });
 
@@ -234,7 +237,7 @@ const RUNTIME_PATH = '/repo/packages/web/runtime/core/src/wrappers/widget.tsx';
 const BOOST_PATH = '/repo/packages/web/boost/layout/src/matrix/matrix.tsx';
 const DOMAIN_AUTH_PATH = '/repo/packages/web/domain/auth/src/role/index.ts';
 const DOMAIN_SHELL_PATH = '/repo/packages/web/domain/shell/src/ui/header/header.tsx';
-const DESIGN_TIME_PATH = '/repo/packages/web/design-time/creator/src/index.ts';
+const STUDIO_PATH = '/repo/packages/web/studio/src/index.ts';
 
 describe('check — zone canon enforcement', () => {
   it('kit importing kit subpath → allowed', () => {
@@ -331,10 +334,10 @@ import { Matrix } from '@capsuletech/boost-layout';
     ).toEqual([]);
   });
 
-  it('design-time importing anything → allowed', () => {
+  it('studio importing anything → allowed', () => {
     expect(
       check(
-        DESIGN_TIME_PATH,
+        STUDIO_PATH,
         `
 import { Button } from '@capsuletech/web-ui';
 import { useAuth } from '@capsuletech/web-auth';

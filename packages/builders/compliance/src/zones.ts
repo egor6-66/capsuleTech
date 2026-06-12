@@ -1,8 +1,8 @@
 /**
- * Zone-canon compliance per ADR 047 D1 / D2 (Phase D3).
+ * Zone-canon compliance per ADR 047 D1 / D2 (Phase D3) + D6 (Phase D6, 2026-06-12).
  *
  * `packages/web/<zone>/<pkg>/` files are classified by their physical zone
- * (kit / runtime / domain / boost / design-time). Imports across `@capsuletech/web-*`
+ * (kit / runtime / domain / boost / studio). Imports across `@capsuletech/web-*`
  * and `@capsuletech/boost-*` are validated against `ZONE_ALLOWED_DEPS` —
  * forbidden directions emit a `cross-zone-import` violation.
  *
@@ -13,14 +13,14 @@
  * `compliance`, `cli`) are allowed everywhere as shared infrastructure.
  */
 
-export type Zone = 'kit' | 'runtime' | 'domain' | 'boost' | 'design-time';
+export type Zone = 'kit' | 'runtime' | 'domain' | 'boost' | 'studio';
 
 const ZONE_RX: Array<[Zone, RegExp]> = [
   ['kit', /[\\/]packages[\\/]web[\\/]kit[\\/]/],
   ['runtime', /[\\/]packages[\\/]web[\\/]runtime[\\/]/],
   ['domain', /[\\/]packages[\\/]web[\\/]domain[\\/]/],
   ['boost', /[\\/]packages[\\/]web[\\/]boost[\\/]/],
-  ['design-time', /[\\/]packages[\\/]web[\\/]design-time[\\/]/],
+  ['studio', /[\\/]packages[\\/]web[\\/]studio[\\/]/],
 ];
 
 /**
@@ -42,10 +42,15 @@ export const classifyZone = (absPath: string): Zone | null => {
  *
  * `packages/web/runtime/core/src/...` → 'core'
  *
+ * Sole-inhabitant zones (post-D6 `studio`) have NO `<pkg>` subdir — the zone IS
+ * the package. For these, returns the zone name directly.
+ *
  * Returns null if path is not zone-classified.
  */
 export const extractZonePackage = (absPath: string, zone: Zone | null): string | null => {
   if (!zone) return null;
+  // Sole-inhabitant zone — package dir == zone name (e.g. studio).
+  if (zone === 'studio') return 'studio';
   const rx = new RegExp(`[\\\\/]packages[\\\\/]web[\\\\/]${zone}[\\\\/]([^\\\\/]+)[\\\\/]`);
   const m = absPath.match(rx);
   return m ? m[1] : null;
@@ -92,19 +97,19 @@ export const PACKAGE_TO_ZONE: Record<string, Zone> = {
   '@capsuletech/boost-chart': 'boost',
   '@capsuletech/boost-layout': 'boost',
 
-  // design-time
-  '@capsuletech/studio': 'design-time',
+  // studio (host/composer; per ADR 047 D6 retired `design-time` parent zone)
+  '@capsuletech/studio': 'studio',
 };
 
 /**
  * Zone X can import from any zone in `ZONE_ALLOWED_DEPS[X]`.
  *
- * Per ADR 047 D1:
- * - **kit** — only kit + runtime/web-style (peer). NO boost/domain/design-time.
+ * Per ADR 047 D1 + D6:
+ * - **kit** — only kit + runtime/web-style (peer). NO boost/domain/studio.
  * - **runtime** — runtime + kit. No cycles.
  * - **boost** — kit + runtime. NOT domain. NOT another boost.
  * - **domain** — kit + runtime + boost. NOT another domain (use web-contract).
- * - **design-time** — anything except apps.
+ * - **studio** — host/composer; can consume everything else (apps excluded).
  *
  * Same-zone imports are always allowed.
  */
@@ -113,8 +118,8 @@ export const ZONE_ALLOWED_DEPS: Record<Zone, ReadonlySet<Zone>> = {
   runtime: new Set<Zone>(['runtime', 'kit']),
   boost: new Set<Zone>(['boost', 'kit', 'runtime']),
   domain: new Set<Zone>(['domain', 'kit', 'runtime', 'boost']),
-  // Design-time can use everything else; same-domain merges allowed.
-  'design-time': new Set<Zone>(['design-time', 'kit', 'runtime', 'boost', 'domain']),
+  // Studio is the host/composer — pulls from everything else (apps excluded).
+  studio: new Set<Zone>(['studio', 'kit', 'runtime', 'boost', 'domain']),
 };
 
 /**

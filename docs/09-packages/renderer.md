@@ -7,7 +7,7 @@ type: guide
 # 🖥️ @capsuletech/web-renderer
 
 > [!info]
-> Чистый runtime для рендера UI по JSON-схеме. Принимает дерево узлов + `registry` с компонентами по dot-path'у и эмиттит Solid JSX. Без deps на zod/manifests — design-time концерны живут в [[ui-creator|@capsuletech/web-ui-creator]].
+> Чистый runtime для рендера UI по JSON-схеме. Принимает дерево узлов + `registry` с компонентами по dot-path'у и эмиттит Solid JSX. Без deps на zod/manifests — authoring концерны живут в [[studio|@capsuletech/studio]].
 >
 > Шпаргалка для Claude — [[_meta/renderer|_meta/renderer.md]].
 
@@ -15,7 +15,7 @@ type: guide
 
 Renderer — это «обобщённый Widget» в форме библиотеки. Везде, где нужно превратить **сериализованное дерево** в живой UI, ходит этот пакет:
 
-- **Editor preview** — `@capsuletech/web-ui-creator` рендерит то же дерево, что юзер редактирует.
+- **Editor preview** — `@capsuletech/studio` рендерит то же дерево, что юзер редактирует.
 - **Production CMS-runtime** — host-app получает JSON по сети (от бэка, БД, S3) и рендерит без редакторского overhead'а.
 - **Storybook / docs / превью шаблонов** — отображение «эталонных» layout'ов без хардкода в коде.
 - **Тестовый стенд для Controllers/Features** — собрал маленький JSON, навесил Controller — увидел поведение.
@@ -197,7 +197,7 @@ interactions: [
 
 ### 3. Editor preview
 
-`@capsuletech/web-ui-creator` хранит дерево в `IEditorTree` (см. `ui-creator/src/state/types.ts`). Поля идентичны `ISchema.components.nodes[id]`, так что renderer консьюмит его без конверсии:
+`@capsuletech/studio` хранит дерево в `IEditorTree` (см. `studio/src/state/types.ts`). Поля идентичны `ISchema.components.nodes[id]`, так что renderer консьюмит его без конверсии:
 
 ```tsx
 const editor = createEditor(); // ваш wrapper над editor-state
@@ -262,7 +262,7 @@ const [schema] = createResource(() => fetch('/api/pages/home').then((r) => r.jso
 
 ## Связанное
 
-- [[ui-creator|@capsuletech/web-ui-creator]] — design-time: manifests (zod), state (операции над деревом), inspector (UI редактирования), generators (procedural UI). Runtime отделён специально — прод-апп консьюмит renderer без overhead'а редактора.
+- [[studio|@capsuletech/studio]] — authoring host: manifests (zod), state (операции над деревом), inspector (UI редактирования), generators (procedural UI). Runtime отделён специально — прод-апп консьюмит renderer без overhead'а редактора.
 - [[core|@capsuletech/web-core]] — `Entities`/`Widgets`/`Controllers`/`Features`, которые обычно скармливаются в `registry`.
 - [[ui-proxy|UiProxy]] — что происходит внутри отрендеренного Controller'а с дочерними Entity (perpetual hand-off, не задача renderer'а — он лишь гарантирует правильный Context-порядок).
 - [[shape|Shape]] — фабрика data-форм. Похож по идее (декларативное описание → runtime), но Shape про данные, renderer — про UI-дерево.

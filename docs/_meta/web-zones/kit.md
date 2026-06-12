@@ -13,7 +13,7 @@ last_updated: 2026-06-11
 
 ## Purpose
 
-**Stateless презентационные и интерактивные примитивы без тяжёлого движка.** Базовый словарь UI, на котором собирается всё остальное (runtime providers, domain widgets, boost mirror-ы, design-time chrome). Kit — это «алфавит» capsule-приложения.
+**Stateless презентационные и интерактивные примитивы без тяжёлого движка.** Базовый словарь UI, на котором собирается всё остальное (runtime providers, domain widgets, boost mirror-ы, studio chrome). Kit — это «алфавит» capsule-приложения.
 
 Kit-пакет обязан удовлетворять трём инвариантам:
 
@@ -36,7 +36,7 @@ kit → (только) runtime/web-style + vendors
 kit ↛ runtime/* (кроме web-style как peerDep)
 kit ↛ domain/*
 kit ↛ boost/*
-kit ↛ design-time/*
+kit ↛ studio/*
 ```
 
 **Что kit-пакет может импортить:**
@@ -52,7 +52,7 @@ kit ↛ design-time/*
 - `@capsuletech/web-core` — uses HCA wrappers — это runtime, не kit.
 - `@capsuletech/web-state` — XState — это runtime.
 - `@capsuletech/web-router`, `@capsuletech/web-query`, и т.д. — runtime сервисы.
-- Любой domain/boost/design-time пакет.
+- Любой domain/boost/studio пакет.
 
 Compliance enforces: kit-пакет с импортом из runtime/domain/boost — это **wrong layer** (warning).
 
@@ -118,7 +118,7 @@ Kit **не делает**:
 - ❌ HCA wrappers (Entity/Widget/Page/Controller/Feature). Эти живут в runtime (`web-core`).
 - ❌ Тяжёлые движки (virtual-scroll engine, map-engine, graph-engine). Если нужен → boost zone (mirror в kit как light placeholder).
 - ❌ Domain-логика (auth-форма, agent-chat, shell-header). Эти живут в domain (`web-auth`, `web-shell`, `web-agent`).
-- ❌ Editor-функциональность (inspector, palette, canvas). Эти живут в design-time (`studio`).
+- ❌ Editor-функциональность (inspector, palette, canvas). Эти живут в studio (`studio`).
 - ❌ Свои паттерны поверх вендорских. Если Kobalte даёт `<Dialog.Root>` — мы экспортим Kobalte API, не создаём `<MyDialog>` с тем же поведением.
 
 ## New package — checklist

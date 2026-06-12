@@ -46,7 +46,7 @@ runtime → kit (можно)
 runtime → runtime (можно, без циклов — compliance ловит)
 runtime ↛ domain/*
 runtime ↛ boost/*
-runtime ↛ design-time/*
+runtime ↛ studio/*
 ```
 
 **Что runtime-пакет может импортить:**
@@ -61,9 +61,9 @@ runtime ↛ design-time/*
 
 - `@capsuletech/web-auth`, `web-shell`, `web-agent` — domain.
 - `@capsuletech/boost-*` — boost.
-- `@capsuletech/studio` (и его subpath'ы) — design-time.
+- `@capsuletech/studio` (и его subpath'ы) — studio.
 
-Compliance enforces: runtime → domain/boost/design-time = wrong layer (warning).
+Compliance enforces: runtime → domain/boost/studio = wrong layer (warning).
 
 ## Canonical shape
 
@@ -126,7 +126,7 @@ Runtime **не делает**:
 
 - ❌ Domain-логику. Auth-flow, shell-chrome, agent-chat — это domain.
 - ❌ Heavy domain-mirror'ы. Если нужен virtualized table — это boost (`boost-table`), не runtime.
-- ❌ Design-time tooling. Editor, palette, inspector — это design-time (`studio`).
+- ❌ Design-time tooling. Editor, palette, inspector — это studio (`studio`).
 - ❌ App-specific bootstrap. Конкретный `App.tsx` живёт в `apps/<app>/src/`, не в runtime.
 - ❌ HCA-wrappers вне `web-core`. Только `web-core` реализует `Entity/Widget/Page/Controller/Feature/Shape`; остальные runtime-пакеты consume их.
 
@@ -136,7 +136,7 @@ Runtime **не делает**:
    - Это **сервис нужный КАЖДОМУ capsule-аппу**? → runtime.
    - Только одному типу аппа → domain.
    - Heavy движок mirror'ит kit-примитив → boost.
-   - Design-time-only → design-time.
+   - Design-time-only → studio.
 2. Path config:
    - `tsconfig.base.json` paths (`@capsuletech/web-<name>` → `packages/web/runtime/<name>/src/index.ts`).
    - `optimizeDeps.exclude` в `vite-builder/src/defines/capsuleConfig.ts`.
