@@ -15,6 +15,44 @@
 
 ---
 
+## 🖥️ Раскладка редактора (референс — UMG Unreal)
+
+Ориентир — **Designer-режим UMG Unreal** (palette + hierarchy слева, canvas по центру, details справа, timeline/results снизу). Наша архитектура его уже зеркалит — берём раскладку, **подбиваем под наши цели**.
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ ТОП-БАР:  Save · [ Designer | Graph ] · Play/Preview       │  ← mode-switch + действия
+├──────────┬─────────────────────────────────┬──────────────┤
+│ Palette  │  CANVAS (тулбар: zoom / device / │  Inspector   │
+│ ──────── │  screen-size) — 1:1 прод-рендер  │  (Details —  │
+│ Tree     │  + non-layout overlays           │  из контракта)│
+│ ──────── │                                  │              │
+│ (Anim)   │                                  │              │
+├──────────┴─────────────────────────────────┴──────────────┤
+│ НИЖНИЙ ДОК:  Monitor/Timeline · Results · Cmd               │  ← события/трейс · валидации · консоль
+└──────────────────────────────────────────────────────────┘
+```
+
+| UMG Unreal | → | Наш `web-creator` | Подбили под наши цели |
+|---|---|---|---|
+| Palette (Button/Image/Border…) | `/palette` | из **контрактов** (`collectContracts`) — любые пакеты (web-ui/table/map), не хардкод-список |
+| Hierarchy (дерево виджетов) | `/tree` | JSON-дерево инстансов → `tree.json` (портативный, не `.uasset`) |
+| Canvas (device-frame, zoom) | `/canvas` | **1:1 прод-рендер** (web-renderer) + non-layout overlays; **flow-layout (Flex/Grid), НЕ absolute Canvas-Panel** |
+| Details (Slot/Anchors/Position/Size) | `/inspector` | контролы **из контракта** (props-схема), не фикс-панель; единицы **Flex/gap/align**, не Position X/Y; + skin/style |
+| Animations + Timeline | `/monitor` | поток событий/трейс; анимации = motion-токены web-style; flow-граф позже |
+| Compiler Results | валидации | inline-ошибки/подсказки из контрактов (constraint/recommendation) + compliance |
+| Content Drawer / Cmd | `web-code` / cmd-k | |
+| **Designer ↔ Graph** (тогл) | **mode ui ↔ logic** | Designer = ui-редактор, **Graph = logic-редактор (FSM через flow)** — прямая аналогия |
+
+**Ключевые отличия (наши цели):**
+- 🧩 **Контракт-driven** палитра/инспектор — не хардкод per-widget, а из контрактов компонентов.
+- 📐 **Flow-layout, не absolute.** UMG = Canvas Panel + Position X/Y + Anchors. Мы = web/HCA flow (Flex/Grid), как Figma Auto Layout. Инспектор правит gap/align/justify, не координаты.
+- 🔀 **Designer↔Graph = ui↔logic** — рефенс валидирует наш dual-mode (см. [роадмап](roadmap.md)).
+- 🧾 **Headless + портативный JSON** на выходе (не бинарный ассет).
+- 🎚️ **Shell получает 4 зоны + топ-бар:** left (palette/tree) · center (canvas + тулбар) · right (inspector) · **bottom dock** (monitor/results/console). Matrix app-shell это хостит слотами.
+
+---
+
 ## 🧩 Тулзы (subpaths, shared)
 
 | Subpath | Роль |
