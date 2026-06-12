@@ -1,0 +1,15 @@
+{
+  "name": "@capsuletech/boost-layout",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/web/boost/layout/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {},
+  "release": {
+    "version": {
+      "manifestRootsToUpdate": ["{projectRoot}"],
+      "currentVersionResolver": "git-tag",
+      "fallbackCurrentVersionResolver": "disk"
+    }
+  }
+}
