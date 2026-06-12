@@ -9,13 +9,13 @@ date: 2026-06-07
 
 # ADR 040 — Генератор данных `shared-zod/gen` (faker-база + injectable generators); моки через `preRequest`
 
-## Контекст
+## Контекст {#context}
 
 Нужен мощный генератор рандом-данных для сценариев (моки, превью, тесты), **без дубля и без мусора в слоях**. Сейчас рандомайзер **дублируется**: ручной mulberry32 + словари в `@capsuletech/web-ui-creator/src/generators` (`rng.ts`/`fuzzer.ts`/`wordbank.ts`), ручной RNG+словари в Entity-моках (`apps/ewc/src/entities/incident.tsx`), а MSW-подход ([[038-msw-mock-system|ADR 038]]) добавил бы третий. По нашему флоу ([[compose-and-inject]]) — это ОДИН примитив, а не три.
 
 Также: для API-моков **уже есть `preRequest`** hook в `defineEndpoint` (web-query) — сетевой перехват MSW избыточен.
 
-## Решение
+## Решение {#decisions}
 
 ### 1. Один генератор `@capsuletech/shared-zod/gen`
 
@@ -46,7 +46,7 @@ gen(Zod.array(schema), { seed: 42, count: 200 })   // список
 
 API-мок: `preRequest` короткозамыкает endpoint, отдаёт `gen(responseSchema)`-данные. Сценарии (пусто/ошибка/медленно) — config-driven через `capsule.app.ts` (единая точка внешней настройки), не через bespoke control-surface. **Слои чистые** (`Entity`=schema, `endpoint`=контракт; данные — из `gen`, моки — в `preRequest`).
 
-## Последствия
+## Последствия {#consequences}
 
 - **owner-shared:** реализует `@capsuletech/shared-zod/gen` (multi-entry/subpath build) — faker-база + injection-реестр + Zod-резолв. faker (+ опц. zod-mock) dep.
 - **главный (shared infra):** добавить `@faker-js/faker` в lockfile/нужный package.json; nx (subpath build остаётся в web_base группе).
@@ -54,7 +54,7 @@ API-мок: `preRequest` короткозамыкает endpoint, отдаёт `
 - **Миграция моков:** Entity-генераторы + endpoint-`preRequest` (ewc/playground) → на `gen`; убрать `__CAPSULE_MOCKS__` ручные словари.
 - **ADR 038 (MSW) → superseded** этим ADR.
 
-## Альтернативы (отклонены)
+## Альтернативы (отклонены) {#alternatives}
 
 - **MSW (ADR 038)** — отдельная мок-система/перехват; `preRequest` + `gen` легче и без нового пакета. Отклонён → superseded.
 - **Свой генератор/словари в каждом пакете** — дубль (ровно проблема ADR). → один `gen`.

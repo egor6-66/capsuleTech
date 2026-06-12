@@ -9,7 +9,7 @@ date: 2026-06-06
 
 # ADR 036 — Редизайн Shape (типизированный presentation-recipe) + вынос таблицы в пакет
 
-## Контекст
+## Контекст {#context}
 
 Слои HCA имеют чёткие зоны: Entity декларирует сущность, View собирает UI, Widget дирижирует данными, Feature — бизнес-логика, Controller — поведение. **Shape был размазан** — концепция «стек данных + компонент» понятна, но:
 
@@ -19,7 +19,7 @@ date: 2026-06-06
 
 Цель — сделать Shape **максимально мощным, но не раздутым**, с типизацией из коробки, и дать таблице свой дом.
 
-## Решение
+## Решение {#decisions}
 
 ### 1. Идентичность Shape — типизированный presentation-recipe
 
@@ -81,14 +81,14 @@ zod живёт в `@capsuletech/shared-zod`. Вместо инжекта `z` в 
 - **Row-generic** `IDataTableProps<TRow>` + phantom-маркер `__tpl` для Shape-типизации; codegen отдаёт dotted-тип `Tables.DataTable`.
 - **Под-компоненты + Provider («super-shape»).** Пакет дробится на саб-компоненты (DataTable не монолит). App может раскидать саб-компоненты по разным виджетам, а общие данные держит Provider/super-shape. Точный механизм shared-data Provider — проектирует owner-web-table (см. обсуждение); принцип: одна сущность → несколько саб-презентаций, общие данные через провайдер, у каждого саб-компонента свои локальные данные.
 
-## Последствия
+## Последствия {#consequences}
 
 - **Миграция всех Shape** на двухфазную форму + `Zod`-глобал (ewc: `incidentsTable`, `incidentPreview`, `shellNavigation`; ui-creator: `navigation`).
 - **Entity:** `z`-инжект → `Zod`-глобал.
 - **Кросс-пакетная реализация (по owner'ам):** web-core (Shape-редизайн `Shape(bind, config)` + HKT-биндинг), web-table (вынос + row-generic + `__tpl` + controller-слой + Provider/саб-компоненты), shared-zod (`Zod`-глобал), builders (codegen `Tables.DataTable` generic-тип + инжект `Zod`-глобала).
 - owner-web-table вызываем **после рестарта** сессии (new-agent constraint).
 
-## Альтернативы (отклонены)
+## Альтернативы (отклонены) {#alternatives}
 
 - **Один объект-конфиг (вариант B, auto-derive row из schema в том же литерале)** — `columns` получают `row: unknown` (sibling-limit). Отклонён.
 - **Явный generic `Shape<Tables.DataTable<Row>>` (вариант A)** — работает, но row пишется дважды (schema + generic). Оставлен как фолбэк, не основной.

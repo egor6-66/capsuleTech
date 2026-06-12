@@ -9,7 +9,7 @@ date: 2026-05-27
 > [!success] Status: implemented (2026-05-27)
 > PR #165 (`1859c58`) — dropped `dirs:` from AutoImport config. TDZ-ошибка в `createApi` исчезла, цикл разорван.
 
-## Контекст
+## Контекст {#context}
 
 AutoImport в `capsuleConfig.ts` (`packages/builders/vite/src/defines/capsuleConfig.ts`) имел конфиг:
 
@@ -52,7 +52,7 @@ auth.ts  ← ЦИКЛ
 
 `defineEndpoint` в `auth.ts` попадает в **TDZ (Temporal Dead Zone)** — на момент парсинга `registry/endpoints` ещё инициализирует `endpoints`, но `auth.ts` уже в графе, что создаёт deadlock.
 
-## Решение
+## Решение {#decisions}
 
 **Убрать `dirs:` из AutoImport.**
 
@@ -69,7 +69,7 @@ Runtime-регистры (`Widgets`, `Views`, `Controllers`, `Features`, `Entiti
 - `.capsule/registry/endpoints.ts` больше не инжектится автоматически.
 - `EndpointsRegistryPlugin` остаётся — он **pre-inject'ит** сборку в vite-дерево как отдельный модуль, не через AutoImport.
 
-## Последствия
+## Последствия {#consequences}
 
 ### ✅ Плюсы
 
@@ -81,13 +81,13 @@ Runtime-регистры (`Widgets`, `Views`, `Controllers`, `Features`, `Entiti
 
 - **Паттерн «глобал из directory-scan» больше недоступен** для новых реестров. Если когда-то захочется создать, например, `globalVars` registry с auto-export в globals — нужно писать dedicate Vite-плагин, не полагаться на `dirs:`.
 
-## Альтернативы
+## Альтернативы {#alternatives}
 
 1. **Переименовать параметр в createApi** (`endpoints` → `importedEndpoints`) — хак, не решает: AutoImport всё равно инжектит для других файлов, где может быть переменная `endpoints`.
 2. **Отключить AutoImport для @capsuletech/web-query** — помогает, но тогда фреймворк-пакет нужен будет инжектить вручную везде, где используется. Худше для DX.
 3. **Сделать `dirs:` более «умным»** (exclude patterns, scope-aware) — слишком сложно, unplugin-auto-import не поддерживает.
 
-## Связанное
+## Связанное {#related}
 
 - PR #165 (`1859c58`) — реализация.
 - [[020-component-data-flow-split|ADR 020]] — одновременный рефакторинг data-flow.

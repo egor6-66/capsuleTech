@@ -9,7 +9,7 @@ date: 2026-06-01
 > [!info] Status: accepted
 > Контракт для эволюции `dndMode="insert"` в `Layout.Matrix` (`@capsuletech/web-ui`). Продолжает [[016-matrix-v2-rows-engine|ADR 016]], закрывает часть его секции «Не делаем сейчас». Имплементация — owner-web-ui.
 
-## Контекст
+## Контекст {#context}
 
 [[016-matrix-v2-rows-engine|ADR 016]] ввёл Matrix rows-engine + swap/insert DnD, но в **«Не делаем сейчас»** отложил freeform/packing, per-row dndMode, nesting — «только если появится конкретный кейс» (Phase 4).
 
@@ -20,7 +20,7 @@ date: 2026-06-01
 3. **Нет per-zone orientation и wrap-политики.** rightbar должен быть вертикальной колонкой; main — горизонтальный wrap-грид (виджет может занять всю ширину линии, либо несколько в линию, если позволяет minW).
 4. **`swapGroup` есть только для swap.** Для insert нет ограничения «какие виджеты в какую зону можно ронять».
 
-## Решение
+## Решение {#decisions}
 
 Insert-mode эволюционирует в **packing-zones**. Остаёмся в модели rows-of-cells (НЕ freeform x/y/w/h, НЕ collision detection), но зона умеет пакинг + reflow + ориентацию + constraints. **Все новые свойства — аддитивные опциональные**; ряд без них рендерится как сейчас (corvu fractional). swap-mode и preset `app-shell` не трогаем.
 
@@ -101,13 +101,13 @@ Insert-mode эволюционирует в **packing-zones**. Остаёмся 
 - Отдельный built-in `dashboard-grid` preset — опционально потом; nexus пока на raw rows + новые props.
 - **True 2D-вложенность (зона внутри зоны)** — не делаем. `direction` реализует только одноосевой top-level split (main | rightbar). Для вложенных direction-контейнеров нужен отдельный ADR с полноценным 2D-движком.
 
-## Альтернативы
+## Альтернативы {#alternatives}
 
 - **Отдельный `Layout.DashboardGrid`.** Отклонено: дублирование движка (ADR 016, alt A); пользователь явно отверг — «нам не нужен DashboardGrid, insert просто недоделан».
 - **Натянуть packing на corvu fractional.** Костыль: corvu = fixed-count fractional panels, не min-size wrap. Отдельный packing render-path чище (POLICY: без костылей).
 - **Per-row `dndMode`.** Не требуется — insert остаётся глобальным режимом; зоны различаются `orientation`/`wrap`/`accepts`, не режимом DnD.
 
-## Последствия
+## Последствия {#consequences}
 
 **Положительные**
 - Один движок (Matrix insert) покрывает dashboard-кейсы (main-wrap-grid + vertical rightbar + dockable palette через raw rows).
@@ -131,7 +131,7 @@ Insert-mode эволюционирует в **packing-zones**. Остаёмся 
 2. **Architect** (я): подключить в `apps/nexus` dashboard (`orientation`/`wrap`/`minW`/`minH`/`group`/`accepts` на зонах main/palette/rightbar), верифицировать в preview/desktop.
 3. **owner-tests / release** — позже, вне этой итерации (сейчас workspace-dev, не публикуем).
 
-## Связанное
+## Связанное {#related}
 
 - [[016-matrix-v2-rows-engine|ADR 016]] — базовый rows-engine + insert; этот ADR продолжает его insert-ветку и закрывает часть «Не делаем сейчас».
 - `packages/web/ui/src/primitives/layout/matrix/` — реализация (`matrix.tsx`, `dnd/insert.tsx`, `interfaces.ts`).

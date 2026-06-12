@@ -9,11 +9,11 @@ date: 2026-06-07
 
 # ADR 039 — Auth как domain-пакет `@capsuletech/web-auth`
 
-## Контекст
+## Контекст {#context}
 
 Авторизация сейчас живёт в аппе (ewc + playground-прототип: `features/auth` + `endpoints/auth` + form-View/Widget/Page). Но входов будет **много стратегий**: по роли, по логину/паролю, OAuth 2.0, по QR-коду и т.д. Каждый апп переписывал бы это заново. По экосистемному паттерну (Matrix→web-shell, DataTable→web-table, MapView→web-map; ADR 033) — выносим домен «auth» в пакет с самого старта.
 
-## Решение
+## Решение {#decisions}
 
 ### 1. `@capsuletech/web-auth` — domain-пакет, глобал `Auth.*`
 
@@ -50,7 +50,7 @@ Opt-in через `capsule.app.ts: packages: ['@capsuletech/web-auth']` (ADR 033
 
 **Поток:** `Page → Auth.Role.LoginForm (config) → Auth-FSM → services.api.auth.login() → (dev) MSW → {token, role} → session + событие onLogin → app-Feature (routing + rights)`. Полностью как ручная HCA-сборка, но через пакет + конфиг.
 
-## Последствия
+## Последствия {#consequences}
 
 - **Новый пакет** `packages/web/auth/` + **owner-web-auth** агент. ⚠️ Новый агент подхватывается только **после рестарта сессии** → порядок: скаффолд пакета + завести агента → рестарт → реализация/миграция.
 - **Релиз:** группа `web_base` (fixed, tag `web@{version}`) — добавить в `nx.json` (зона главного).
@@ -58,7 +58,7 @@ Opt-in через `capsule.app.ts: packages: ['@capsuletech/web-auth']` (ADR 033
 - **Зависит от:** ADR 033 (регистрация), ADR 032 (события), ADR 038 (MSW-моки), web-ui (form-блоки), web-query (контракт endpoint), web-state (session-FSM).
 - **Старт:** одна стратегия `/role` (по playground-прототипу); `/credentials`/`/oauth2`/`/qr` — итерациями.
 
-## Альтернативы (отклонены)
+## Альтернативы (отклонены) {#alternatives}
 
 - **Оставить auth в аппе** — дублирование в каждом аппе, не масштабируется на стратегии. Отклонён (причина ADR).
 - **Auth внутри web-shell** — другой домен (shell = chrome/layout); auth самостоятелен. Отклонён.

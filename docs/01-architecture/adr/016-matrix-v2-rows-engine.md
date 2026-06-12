@@ -9,7 +9,7 @@ date: 2026-05-23
 > [!info] Status: accepted
 > Контракт для refactor'а `Layout.Matrix` в `@capsuletech/web-ui`. Имплементация — в PR #132, #135.
 
-## Контекст
+## Контекст {#context}
 
 Текущий `Layout.Matrix` (`packages/web/ui/src/primitives/layout/matrix/`) предоставляет 5 жёстких именованных слотов: `header`, `sidebar`, `main`, `rightBar`, `footer`. Каждый слот имеет свою геометрию (header/footer — горизонтальные полосы, sidebar/rightBar — вертикальные колонки, main — центр). Резайз через corvu Flex/Panel. DnD отсутствует.
 
@@ -26,7 +26,7 @@ date: 2026-05-23
 />
 ```
 
-## Проблема
+## Проблема {#problem}
 
 **1. Жёсткие 5 слотов не покрывают реальные кейсы.** Пользователь хочет:
 - N виджетов в произвольной расстановке: «2 в ряд, потом 1 во всю ширину, потом 3 в ряд».
@@ -37,7 +37,7 @@ date: 2026-05-23
 
 **3. Нет переиспользования удачных layout'ов.** Каждая страница повторяет одну и ту же структуру с copy-paste. Если хочется единый «application-shell» — нужно либо обёртка-Widget, либо повторять `slots`-объект.
 
-## Решение
+## Решение {#decisions}
 
 ### 1. Matrix становится rows-движком, имя сохраняется
 
@@ -220,7 +220,7 @@ onLayoutChange?: (event: LayoutChangeEvent) => void;
 - **Per-row `dndMode`.**
 - **Matrix-inside-Matrix nesting** — технически работает, но без гарантий v1.
 
-## Альтернативы, которые мы НЕ взяли
+## Альтернативы, которые мы НЕ взяли {#alternatives}
 
 ### A. Отдельный `Layout.Dashboard` — Matrix не трогаем
 Дублирование примитивов. Engine один — лучше один компонент с разными режимами.
@@ -237,7 +237,7 @@ Boilerplate. Прессет даёт friendly API + типизацию + reuse.
 ### E. Freeform grid-layout
 Слишком большой scope для v1. Rows-engine покрывает 90% реальных кейсов.
 
-## Последствия
+## Последствия {#consequences}
 
 ### Положительные
 
@@ -267,7 +267,7 @@ Boilerplate. Прессет даёт friendly API + типизацию + reuse.
 
 ADR переходит в `status: implemented` после Phase 1.
 
-## Связанное
+## Связанное {#related}
 
 - [[004-compliance-linter|ADR 004]] — Compliance (Matrix не нарушает HCA-rules, View-слой stateless через event-emission)
 - [[013-explicit-define-app-config|ADR 013]] — `defineAppConfig` (Phase 2 — расширение IAppConfig для user-defined presets)

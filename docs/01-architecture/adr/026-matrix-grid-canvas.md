@@ -9,7 +9,7 @@ date: 2026-06-02
 > [!info] Status: accepted
 > Вводит **grid-режим зоны** в `Layout.Matrix` (`@capsuletech/web-ui`) для `dndMode:'insert'`: ячейка несёт grid-координаты `{x,y,w,h}`, свободно позиционируется, ресайзится по **обеим** осям, соседи раздвигаются по collision (а не сама ячейка). Pure grid-математика — в `@capsuletech/web-dnd` (Phase 1, owner-web-dnd); render/handles/проводка — в Matrix (Phase 2, owner-web-ui). **Аддитивно** к [[022-matrix-insert-packing-zones|ADR 022]] / [[025-geometric-live-sortable|ADR 025]]: swap, resize, flow-packing, preset `app-shell` — не трогаются.
 
-## Контекст
+## Контекст {#context}
 
 [[025-geometric-live-sortable|ADR 025]] починил insert-DnD (кросс-зонный rail↔main перенос, геометрический индекс) — пользователь подтвердил в браузере, что DnD работает чётко. Но `main`-зона остаётся **flow-packing** (CSS `flex-wrap`, [[022-matrix-insert-packing-zones|ADR 022]]). На реальном дашборде (`apps/nexus`) всплыли два ограничения, которые `flex-wrap` снять не может:
 
@@ -18,7 +18,7 @@ date: 2026-06-02
 
 **Первопричина — модель.** `flex-wrap` это **flow**: позиция выводится из порядка + размеров, а не *авторится*. «Произвольная позиция» и «перенос только при вытеснении» в flow структурно невыразимы; wrap-on-self-resize — симптом использования flow там, где нужен free-form канвас. Референс пользователя (Power BI / EFY-dashboard скрины) — классический **grid-дашборд**: виджет несёт `{x,y,w,h}` на сетке, drag двигает, угловые ручки ресайзят, collision раздвигает/компактит соседей (семантика react-grid-layout / gridstack).
 
-## Решение
+## Решение {#decisions}
 
 Зона **опционально** становится **grid-канвасом** (по умолчанию — текущий flow-packing).
 
@@ -117,7 +117,7 @@ export function placeItem(
 - **Перед** рефактором matrix owner-web-ui кладёт **characterization-тесты** на swap (`createSwapEngine`, DragBadge, swap-highlight) и на существующий resize (corvu-handle'ы + packing px-resize), фиксируя текущее поведение. Регресс ловится сразу.
 - Grid **чисто аддитивен:** зона без `row.grid` ведёт себя ровно как сегодня. swap-движок не трогается (grid только под insert). corvu-resize и packing-resize остаются для flow/swap/view-зон — отдельный путь, без пересечения с grid-resize.
 
-## Альтернативы
+## Альтернативы {#alternatives}
 
 | Вариант | Почему отвергнут |
 |---|---|
@@ -126,7 +126,7 @@ export function placeItem(
 | **react-grid-layout** | React-only, неприменимо к Solid. |
 | **Свободный пиксельный канвас (Figma-like, absolute px)** | «Перенос только при вытеснении» = collision/compaction = снапнутая сетка, а не свободный пиксель. Сетка проще, детерминированнее, сериализуема в юнитах. |
 
-## Последствия
+## Последствия {#consequences}
 
 **Плюсы:** free-form дашборды (цель пользователя — rail↔grid, любой размер/позиция); **проблема 1 растворяется** (нет flex-wrap; ресайз выдавливает соседей, не себя); grid-математика переиспользуема (канбан, deck-builder); swap/resize/flow/preset не тронуты (аддитивно); сериализуемая раскладка в grid-юнитах.
 
@@ -140,7 +140,7 @@ export function placeItem(
 4. **Phase 2c (owner-web-ui):** grid-resize (угловые ручки, обе оси, выдавливание соседей, snap).
 5. **Phase 3 (главный + верификация):** проводка `apps/nexus` dashboard (`main.grid`, `defaultGrid` на нодах) + реальный браузер; обновить OWNERSHIP обоих пакетов; статус ADR → implemented.
 
-## Связанное
+## Связанное {#related}
 
 - [[025-geometric-live-sortable|ADR 025]] — геометрический insert-DnD (каркас createSortableGroup сохраняется; grid-зона = ещё один тип зоны)
 - [[022-matrix-insert-packing-zones|ADR 022]] — packing-zones (flow-путь, остаётся default'ом)

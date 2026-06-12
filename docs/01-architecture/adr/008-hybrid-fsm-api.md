@@ -8,13 +8,13 @@ date: 2026-05-09
 
 > Под-решение [[001-xstate-as-canonical-fsm|ADR 001]]. Фиксирует **API-стиль** и **точку стыковки** XState ↔ HCA.
 
-## Контекст
+## Контекст {#context}
 
 [[001-xstate-as-canonical-fsm|ADR 001]] зафиксировал: XState — единственный движок локальной FSM. Открытый вопрос: как пользовательский `IDefineStateSchema` отображается на XState и как реализуется `next()`.
 
 После анализа [[ui-proxy]] и [[controller-proxy]] стало ясно: текущий императивный API схемы (`states.idle.onClick(api) => ...`) близок к замыслу, и UiProxy уже спроектирован вокруг прямого вызова `ctx.controller.onClick(...)`, а не event-bus.
 
-## Решение
+## Решение {#decisions}
 
 **Гибрид (стиль 2 из [[001-xstate-as-canonical-fsm|ADR 001]]).** Два независимых канала:
 
@@ -202,12 +202,12 @@ function ControllerProxy({ schema, actor, store, parent, overrides }) {
 3. **`getTargetData` JSON.parse.** Чинится попутно: `typeof meta === 'string' ? JSON.parse(meta) : finalProps.meta`.
 4. **UiProxy не `await`-ит и не `.catch`-ит.** Оборачиваем: `Promise.resolve(...).catch(reportError)`.
 
-## Альтернативы
+## Альтернативы {#alternatives}
 
 - **Полная декларация (стиль 1/3).** Каноничнее XState, но переписывание всего sandbox-кода. Отвергнуто — текущий стиль уже близок к рабочему.
 - **`next()` через `sendParent`.** Async-return требует id-correlation или invoke-через-promise. Гимор. Отвергнуто — см. [[001-xstate-as-canonical-fsm|ADR 001]].
 
-## Последствия
+## Последствия {#consequences}
 
 ### Положительные
 - API схемы остаётся узнаваемым для текущего sandbox-кода.
@@ -221,7 +221,7 @@ function ControllerProxy({ schema, actor, store, parent, overrides }) {
 - Компилятор схемы — отдельный модуль, который надо поддерживать.
 - DevTools не увидят `onClick`/`onInput`-вызовов как ивентов (они идут не через XState). Это сознательный trade-off.
 
-## Связанное
+## Связанное {#related}
 
 - [[001-xstate-as-canonical-fsm|ADR 001]] — основа решения
 - [[007-uiproxy-cleanup|ADR 007]] — cleanup-фикс, без него `pick/omit/match` не отражают реальность

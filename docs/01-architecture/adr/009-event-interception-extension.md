@@ -6,7 +6,7 @@ date: 2026-05-09
 
 # ADR 009 — Расширение перехватов UI-событий
 
-## Контекст
+## Контекст {#context}
 
 UiProxy сейчас перехватывает только **`onClick`** и **`onInput`** (`packages/core/src/wrappers/ui/ui-kit/proxy.tsx:40-50`). Этого хватает для прототипа, но не покрывает базовые UX-кейсы:
 
@@ -20,7 +20,7 @@ UiProxy сейчас перехватывает только **`onClick`** и **
 
 Без них Controller вынужден лезть в Entity или нарушать [[golden-rules|stateless]]. Это противоречит философии [[philosophy|UI is a Shadow]].
 
-## Решение
+## Решение {#decisions}
 
 Расширить фиксированный набор перехватываемых событий до:
 
@@ -97,7 +97,7 @@ const dynamicProps = {
 
 Базовые компоненты `@capsuletech/ui` должны прокидывать все семь событий в DOM-узел. Сейчас `Button` (`packages/ui/src/components/button/button.tsx`) использует `splitProps` и через `{...others}` пробрасывает всё, что не Local/Variants — ✅ работает. Аналогично для Input. Проверить остальные при имплементации; добавить acceptance-test.
 
-## Альтернативы
+## Альтернативы {#alternatives}
 
 ### A. Pluggable — пользовательский набор событий
 Регистрация через `registerEvent(name, options)`. Гибче, но усложняет API и компиляцию схемы. Отложено: не видно сценария, где фиксированного набора не хватает на ближайшие итерации.
@@ -108,7 +108,7 @@ const dynamicProps = {
 ### C. Capture phase
 Сейчас все обработчики идут на bubble phase. Capture (`onClickCapture`) можно добавить, но без конкретного use-case — лишний размах. Отложено.
 
-## Последствия
+## Последствия {#consequences}
 
 ### Положительные
 - Form-флоу работают целиком из Controller (Enter-to-submit, blur-валидация, autocomplete-focus).
@@ -119,13 +119,13 @@ const dynamicProps = {
 - В DOM навешивается 7 listener'ов на каждый UI-элемент. На простых страницах — копейки, на больших списках — нужно следить (event delegation как opt-in — задел на B).
 - Расширять набор без break — нельзя, это явный контракт. Любое расширение в будущем = новый ADR.
 
-## Open questions
+## Open questions {#open-questions}
 
 > [!question]
 > 1. Нужна ли сейчас `onSubmit` поверх `<form>`-узла? UI-kit пока не имеет компонента `Form` — добавим попутно?
 > 2. Для `onKeyDown` хочется ли сразу high-level алиасы (`onEnter`, `onEscape`)? Или Controller сам разбирает `target.key`?
 
-## Связанное
+## Связанное {#related}
 
 - [[008-hybrid-fsm-api|ADR 008]] — единый рефакторинг proxy
 - [[ui-proxy]]

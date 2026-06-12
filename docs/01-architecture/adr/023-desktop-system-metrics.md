@@ -9,7 +9,7 @@ date: 2026-06-01
 > [!note] Status: proposed (2026-06-01)
 > Phase A — host-метрики через `sysinfo` (CPU/RAM/диски/сеть/процессы/температуры) + GPU-провайдер NVIDIA (`nvml-wrapper`). Provider-абстракция заложена под AMD/Intel/WMI (Phase B). Реализация — `owner-desktop` в `packages/desktop/`; фронт-потребление — отдельным заходом app-агентом по handoff-инструкции.
 
-## Контекст
+## Контекст {#context}
 
 `@capsuletech/desktop` (ADR 017) — Tauri-shell host. Сейчас `native/` — **pure shell**: `tauri::Builder::default().plugin(tauri_plugin_dialog::init())` без собственных команд (`packages/desktop/native/src/lib.rs`). Capability — `core:default` + `dialog:default`.
 
@@ -20,7 +20,7 @@ ADR 017 это предусмотрел как точку расширения:
 
 Это **первый конкретный запрос** на расширение native API surface встроенной capability (не user-custom Rust — то Phase 4 ADR 017 escape hatch).
 
-## Проблема
+## Проблема {#problem}
 
 **1. Webview не имеет доступа к host-метрикам.** Внутри webview только browser-API: `performance.memory` (JS-heap самого webapp, не RAM хоста), нет CPU/GPU/диск/сеть хоста. `@capsuletech/web-profiler` мониторит **сам webapp** (Web Vitals, FPS, long tasks) — это другой слой, хост он не видит. Доступ к ОС есть только у Rust-стороны Tauri.
 
@@ -32,7 +32,7 @@ ADR 017 это предусмотрел как точку расширения:
 
 **5. Куда отдать типы фронту — не очевидно.** `@capsuletech/desktop` спозиционирован как **build-time library** (node-процесс, спавнит Tauri); у него нет webview-runtime (OWNERSHIP.md: JS-биндинги плагинов живут в webview-контексте consuming app, не в этом пакете). Тащить webview-обёртку с `@tauri-apps/api` в build-time пакет = смешение concern'ов + новые runtime-deps.
 
-## Решение
+## Решение {#decisions}
 
 ### 1. Унифицированный контракт `SystemSnapshot`
 
@@ -240,7 +240,7 @@ sysinfo 0.3x разнёс домены по структурам: `System` (cpu/
 ### E. WMI/PDH cross-vendor GPU сразу (вместо NVML)
 Отклонено для Phase A: WMI `GPU Engine` counters шумные, агрегируются нетривиально, Windows-only. NVML — точный, прямой, под наличное железо (NVIDIA). WMI — кандидат в Phase B как fallback для non-NVIDIA на Windows.
 
-## Последствия
+## Последствия {#consequences}
 
 ### Положительные
 - Host-метрики доступны desktop-приложениям capsule через чистый push/pull контракт.
@@ -263,7 +263,7 @@ sysinfo 0.3x разнёс домены по структурам: `System` (cpu/
 
 `status: proposed` → `accepted` после ревью пользователем, → `implemented` после merge Phase A PR.
 
-## Связанное
+## Связанное {#related}
 
 - [[017-desktop-package|ADR 017]] — extraction `@capsuletech/desktop`, точка расширения native features
 - [[../../packages/desktop/OWNERSHIP|@capsuletech/desktop OWNERSHIP.md]] — зона owner-desktop (обновляется в Phase A)

@@ -9,7 +9,7 @@ date: 2026-05-17
 > [!success] Реализовано
 > 4 пакета перенесены в `packages/builders/` (см. коммит `9f13e28`): `lib`, `vite`, `biome`, `compliance`. `lib-builder` остаётся **zero-deps leaf**, чтобы разорвать цикл сборки. Аудит — `pnpm audit:exports`.
 
-## Контекст
+## Контекст {#context}
 
 Раньше build-time инфраструктура жила в `packages/shared/` рядом с runtime-пакетами:
 
@@ -30,7 +30,7 @@ packages/shared/
 2. **Непонятная топология.** `lib-config` (тонкий пакет с `libConfig()`) и `vite` (тяжёлый пакет с плагинами) казались разделёнными случайно. Регулярно поднимался вопрос «может объединить».
 3. **Имена не отражают роль.** `shared-lib-config` звучит как «общий конфиг для библиотек», что неинформативно. Это **builder** для библиотек.
 
-## Решение
+## Решение {#decisions}
 
 ### 1. Выделить group `packages/builders/`
 
@@ -82,7 +82,7 @@ import { libConfig } from '@capsuletech/vite-builder';
 | `@capsuletech/biome-config` | корневой `biome.json` (extends) | shared lint-config |
 | `@capsuletech/compliance` | `vite-builder/plugins/compliance.ts` (runtime) | HCA-линтер (см. [[004-compliance-linter\|ADR 004]]) |
 
-## Последствия
+## Последствия {#consequences}
 
 ### + Положительные
 - Семантическая группировка → новый разработчик/агент сразу понимает, что в `packages/builders/` тулинг, а в `packages/shared/` — runtime.
@@ -107,7 +107,7 @@ import { libConfig } from '@capsuletech/vite-builder';
 
 `compliance` всё равно зависел бы от **всего пакета**, а пакет (через `vite-builder` часть) — от compliance. nx-граф увидел бы цикл независимо от sub-entry.
 
-## Связано
+## Связано {#related}
 
 - [[004-compliance-linter|ADR 004]] — `@capsuletech/compliance`, который мы переносим.
 - [[../../09-packages/core|@capsuletech/web-core]] — главный потребитель `vite-builder` через `capsule.config.ts`.

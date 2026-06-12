@@ -6,7 +6,7 @@ date: 2026-05-09
 
 # ADR 007 — Cleanup в UiProxy: жизненный цикл регистрации компонентов
 
-## Контекст
+## Контекст {#context}
 
 `packages/core/src/wrappers/ui/ui-kit/proxy.tsx:30`:
 
@@ -28,7 +28,7 @@ const ComponentWrapper = (componentProps) => {
 
 Последствие для tag-системы: `store.pick(['@inputs'])` возвращает не «смонтированные сейчас», а **все когда-либо отрендеренные** инпуты. Пока sandbox маленький — не видно. На реальной форме с reactive-полями станет catastrophic.
 
-## Решение
+## Решение {#decisions}
 
 1. **Стабильный id через `createUniqueId`** (Solid SSR-safe) вместо `crypto.randomUUID()`.
 2. **Регистрация в `createEffect`** — id и текущие props пишутся в стор на mount, обновляются на изменении props.
@@ -90,13 +90,13 @@ const ComponentWrapper = (componentProps) => {
 
 `createEffect` пересчитывает запись при изменении любого reactive-доступа в теле — это ровно то, что нужно для зеркала «store ↔ DOM».
 
-## Альтернативы
+## Альтернативы {#alternatives}
 
 - **Не очищать вообще** — оставить «лог всех когда-либо отрендеренных». Отвергнуто: ломает семантику tag-операций.
 - **Очищать по таймеру / weak-id** — слишком хитро, нет реальной выгоды.
 - **`onMount` + ручной re-register при изменении meta** — требует дополнительного `createEffect(on(...))` с явным списком зависимостей, проще сразу `createEffect`.
 
-## Последствия
+## Последствия {#consequences}
 
 ### Положительные
 - `store.pick / omit / match` начинают честно отражать смонтированный набор компонентов.
@@ -106,7 +106,7 @@ const ComponentWrapper = (componentProps) => {
 ### Отрицательные
 - `createEffect` запускает re-register на каждое изменение reactive-props — небольшая накладка. Mitigation: `createMemo` поверх «идентичности» props, если станет узким местом (профилировать прежде).
 
-## Связанное
+## Связанное {#related}
 
 - [[ui-proxy]]
 - [[008-hybrid-fsm-api|ADR 008]] — фиксы бандлятся в один рефакторинг
