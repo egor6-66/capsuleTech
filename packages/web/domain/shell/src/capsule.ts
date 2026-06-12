@@ -2,23 +2,18 @@
  * @capsuletech/web-shell/capsule — registration manifest (ADR 033).
  *
  * Declares the package's HCA surface so an app can mount it via
- * `capsule.app.ts: packages:` and get `Shell.*` components (and, later,
- * `Controllers.Shell`) on the global registry without per-app wiring.
+ * `capsule.app.ts: packages:` and get `Shell.*` components on the global
+ * registry without per-app wiring.
  *
- * Until ADR 033 phase 3 lands (the package-registration runtime), apps consume
- * these blocks through a direct import from `@capsuletech/web-shell/ui`. The
- * manifest is kept in place so the contract is stable once the runtime ships.
- *
- * Shell.Matrix — Controller-обёрнутая версия (из /controllers), не raw /matrix.
- * Несёт phantom __events: IMatrixEvents → EventsOf<typeof Shell.Matrix> работает
- * в Feature<Shell.Matrix.Events>(...) (ADR 032).
+ * Matrix is no longer part of Shell — relocated to `@capsuletech/boost-layout`
+ * per ADR 046 (amended 2026-06-12). Consumers now register boost-layout
+ * separately and use `Layouts.Matrix` / `Ui.Layout.Matrix`.
  */
 import { defineCapsuleModule } from '@capsuletech/web-core/module';
 
-import { MatrixController } from './controllers/matrixController';
 import { Appearance, FinishSettings, Header, LocalePicker, ModeToggle, ThemePicker } from './ui';
 
 export default defineCapsuleModule({
   name: 'Shell',
-  components: { Appearance, FinishSettings, Header, LocalePicker, ModeToggle, ThemePicker, Matrix: MatrixController },
+  components: { Appearance, FinishSettings, Header, LocalePicker, ModeToggle, ThemePicker },
 });

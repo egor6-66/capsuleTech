@@ -15,30 +15,26 @@ Heavy Layout booster — augments kit `Ui.Layout` namespace with resize/DnD/pers
 ## Состояние (читать ПЕРВЫМ)
 
 - **Zone:** `boost` (per ADR 047 D1).
-- **Status:** `scaffold` — пакет создан с пустыми exports (B1, PR-C). Matrix-код переезжает из `web-shell` в Phase B2 (отдельный coordinate-PR с owner-web-shell).
-- **Priority:** P1 — нужен apps/playground+ewc для замены `Ui.Layout.Grid` на `Ui.Layout.Matrix` (resize/DnD/persist).
-- **Maturity bar (scaffold → alpha):**
-  - Matrix-код перевезён из web-shell (B2).
-  - `Ui.Layout` augmentation runtime реализован (B2 / D5 implementation).
-  - `apps/*` потребители обновлены под `<Ui.Layout.Matrix/>` (B3).
-  - Unit-тесты переехавшего Matrix-кода зелёные.
-- **Active blockers:**
-  - Phase D5 augmentation runtime hook (Object.assign Ui.Layout) ещё не реализован в `web-core` — пока работаем через `Layouts.*` ADR 033 registry.
-  - B2 ждёт coordination с owner-web-shell (strip Matrix из shell).
+- **Status:** `alpha` — Matrix-код перевезён из web-shell (B2 closed 2026-06-12). Apps работают через `Layouts.Matrix` (ADR 033 namespace).
+- **Priority:** P1 — каждое apps/playground+ewc+nexus подключает для resize/DnD/persist layouts.
+- **Maturity bar (alpha → beta):**
+  - `Ui.Layout.Matrix` augmentation runtime реализован в `web-core` (D5 implementation pending).
+  - TS module augmentation `Ui.Layout` shape добавлен.
+  - Documented presets API (`app-shell`, `studio`, `dashboard`).
+  - Test coverage расширен (новые heavy variants).
+- **Active blockers:** D5 augmentation runtime hook (Object.assign Ui.Layout) ещё не реализован в `web-core` — UI consumers пишут `<Layouts.Matrix/>` (programmatic axis), `<Ui.Layout.Matrix/>` появится после D5.
 - **Roadmap:**
-  - B2 — relocate Matrix code (cooperate PR с web-shell).
-  - B3 — apps consumer-update.
-  - Presets API (`app-shell`, `studio`, `dashboard`).
+  - D5 augmentation runtime hook (web-core coordination).
   - Future heavy variants: Bento, Dock, Masonry (TBD).
-- **Last activity:** 2026-06-12 — B1 scaffold (this PR).
+- **Last activity:** 2026-06-12 — B2 Matrix relocation from web-shell.
 
 ## Vendor stack (ADR 047 D3)
 
-- **corvu** (`@corvu/resizable` `^...`) — resizable-panel primitive. https://corvu.dev/
-- **@capsuletech/web-dnd** (workspace) — pointer-based DnD для region-swap (per ADR 040).
-- **Solid.js** (`^1.9.12`) — реактивный движок.
-
-Versions будут зафиксированы при B2 (когда Matrix-код реально приедет с deps).
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный движок.
+- **`@capsuletech/web-core`** (workspace, dep) — HCA wrappers + ControllerProxy для MatrixController.
+- **`@capsuletech/web-ui`** (workspace, dep) — primitives (`Flex`, `WidgetFrameGrip`) для cell/row rendering.
+- **`@capsuletech/web-style`** (workspace, dep) — `createStyle`, `cva`, `useDndMode`, `useResizeMode`.
+- **`@capsuletech/web-dnd`** (workspace, dep) — pointer-based DnD для region swap/insert/sort.
 
 ## Зона ответственности
 
@@ -56,13 +52,9 @@ Versions будут зафиксированы при B2 (когда Matrix-ко
 
 ## Публичный API
 
-После B2:
-- `.` (main) — barrel re-export Matrix + presets + persistence stores + types.
-- `./capsule` — ADR 033 manifest (`defineCapsuleModule({ name: 'Layouts', components: { Matrix } })`).
-
-Сейчас (B1 scaffold):
-- `.` — пустой barrel (`export {}`).
-- `./capsule` — `defineCapsuleModule({ name: 'Layouts', components: {} })` placeholder.
+- `.` (main) — `Matrix` component + `IMatrixProps` / `IMatrixEvents` / `LayoutChangeEvent` types + preset helpers (`appShellResolver`, `resolvePreset`) + `normalizeSlotValue`.
+- `./controllers` — `MatrixController` (HCA Controller-обёртка ADR 032) + `IMatrixEvents` re-export.
+- `./capsule` — ADR 033 manifest (`defineCapsuleModule({ name: 'Layouts', components: { Matrix: MatrixController } })`).
 
 ## Quirks / gotchas
 
@@ -71,9 +63,10 @@ Versions будут зафиксированы при B2 (когда Matrix-ко
 
 ## План рефакторинга / оптимизаций
 
-- [ ] **B2: Matrix relocation** — cooperate PR с owner-web-shell. Move `packages/web/domain/shell/src/matrix/**` → `packages/web/boost/layout/src/`. Strip `/matrix` + `/layout` subpaths из web-shell. Tests переезжают вместе с кодом. (priority: P1)
-- [ ] **B3: apps consumer-update** — replace `@capsuletech/web-shell/matrix` imports → `<Ui.Layout.Matrix/>` via boost-layout. (priority: P1)
-- [ ] **Presets** — `app-shell`, `studio`, `dashboard` (мигрируют из shell вместе с Matrix). (priority: P1)
-- [ ] **Augmentation runtime hook** — coordinate с owner-web-core: `Object.assign(Ui.Layout, contributions)` на app boot. (priority: P0 — blocks Ui.Layout.Matrix consumer API)
-- [ ] **TS module augmentation** — `declare module '@capsuletech/web-ui/layout' { interface ILayoutNamespace { Matrix: typeof Matrix } }`. (priority: P1)
+- [x] **B2: Matrix relocation** — 2026-06-12. Matrix code moved from web-shell. Tests переехали вместе с кодом.
+- [x] **B3: apps consumer-update** — 2026-06-12. Apps switch `Shell.Matrix` → `Layouts.Matrix` (this PR).
+- [x] **Presets** — `appShellResolver`, `resolvePreset` мигрированы из shell (this PR).
+- [ ] **Augmentation runtime hook** — coordinate с owner-web-core: `Object.assign(Ui.Layout, contributions)` на app boot. (priority: P0 — blocks Ui.Layout.Matrix UI consumer API)
+- [ ] **TS module augmentation** — `declare module '@capsuletech/web-ui/layout' { interface ILayoutNamespace { Matrix: typeof Matrix } }`. (priority: P1, needs D5 runtime first)
 - [ ] **Future heavy variants** — Bento, Dock, Masonry (TBD после Matrix stable). (priority: P3)
+- [ ] **AI-anchor** `docs/_meta/boost-layout.md` — углублённая архитектура. (priority: P2)

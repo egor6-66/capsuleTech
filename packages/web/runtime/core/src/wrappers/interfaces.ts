@@ -581,7 +581,7 @@ export interface ITarget<TPayload = unknown> {
    * Выставляется пакетными контроллерами через `useEmit` с явным `source` в partial.
    * Опционально — не заполняется при DOM-dispatch'е через UiProxy.
    *
-   * Пример: `emit('onLayoutChange', { source: '@capsuletech/web-shell/matrix', payload: {...} })`
+   * Пример: `emit('onLayoutChange', { source: '@capsuletech/boost-layout', payload: {...} })`
    */
   source?: string;
 }

@@ -25,16 +25,6 @@
       "import": "./dist/capsule.mjs",
       "default": "./dist/capsule.mjs"
     },
-    "./matrix": {
-      "types": "./dist/matrix/index.d.ts",
-      "import": "./dist/matrix.mjs",
-      "default": "./dist/matrix.mjs"
-    },
-    "./layout": {
-      "types": "./dist/layout/index.d.ts",
-      "import": "./dist/layout.mjs",
-      "default": "./dist/layout.mjs"
-    },
     "./chrome": {
       "types": "./dist/chrome/index.d.ts",
       "import": "./dist/chrome.mjs",
@@ -52,7 +42,6 @@
   },
   "dependencies": {
     "@capsuletech/web-core": "workspace:*",
-    "@capsuletech/web-dnd": "workspace:*",
     "@capsuletech/web-intl": "workspace:*",
     "@capsuletech/web-style": "workspace:*",
     "@capsuletech/web-ui": "workspace:*"

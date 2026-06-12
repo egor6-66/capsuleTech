@@ -23,11 +23,11 @@
  * Page лишь расставляет виджеты по слотам Matrix (children + DnD-параметры).
  */
 const Dashboard = Page(() => (
-  // Features.Shell (снаружи) ловит всплывшие события Shell.Matrix (onLayoutChange →
+  // Features.Shell (снаружи) ловит всплывшие события Layouts.Matrix (onLayoutChange →
   // persist раскладки). Features.Incidents (ближе к виджетам) даёт им items-store.
   <Features.Shell>
     <Features.Incidents>
-      <Shell.Matrix
+      <Layouts.Matrix
         preset="app-shell"
         slots={{
           main: {

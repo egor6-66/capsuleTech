@@ -2,23 +2,13 @@
  * @capsuletech/web-shell/controllers — HCA integration layer (ADR 032).
  *
  * Единственный subpath, который может зависеть от `@capsuletech/web-core`.
- * Содержит Controller-обёртки package-level блоков, транслирующие
+ * Содержит Controller-обёртки package-level chrome-блоков, транслирующие
  * нативные callback'ы в HCA event-pipeline через `useEmit`.
  *
- * Текущие блоки:
- *  - MatrixController — Controller-обёртка Shell.Matrix (ADR 032):
- *    `onLayoutChange` → emit → auto-next() → родительская Feature аппа.
- *
- * Пример подключения:
- * ```ts
- * const LayoutSync = Feature<Shell.Matrix.Events>((services) => ({
- *   context: { saving: false },
- *   onLayoutChange: ({ target }) => {
- *     services.api.saveLayout(target.payload);
- *   },
- * }));
- * ```
+ * Matrix Controller переехал в `@capsuletech/boost-layout/controllers` per
+ * ADR 046 (amended 2026-06-12) — see `MatrixController` and `IMatrixEvents`
+ * exports there. Apps now register `@capsuletech/boost-layout` and use
+ * `Feature<Layouts.Matrix.Events>(...)`.
  */
 
-export type { IMatrixEvents } from '../matrix/interfaces';
-export { MatrixController } from './matrixController';
+export {};

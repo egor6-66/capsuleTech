@@ -1,12 +1,14 @@
 // @capsuletech/boost-layout — heavy Layout booster per ADR 046 (amended 2026-06-12).
 //
-// Augments the kit Ui.Layout namespace (which kit ships as { Flex, Grid }) with
-// heavy layout variants (Matrix first; future: Bento, Dock, Masonry, …).
+// Augments the kit Ui.Layout namespace (kit ships { Flex, Grid }) with heavy
+// layout variants. Matrix arrived in Phase B2; future: Bento, Dock, Masonry, …
 //
-// Currently SCAFFOLD (Phase B1). Matrix code arrives in Phase B2 from
-// packages/web/domain/shell/src/matrix/ (see web-rework-plan.md).
-//
-// Programmatic axis (parallel to UI augmentation) — `Layouts.*` namespace
-// via capsule.ts ADR 033 registration, for controller/feature use.
+// Programmatic axis — `Layouts.*` namespace via ADR 033 capsule.ts registration,
+// for controller/feature consumers (e.g. `Layouts.Matrix` HCA component).
 
-export {};
+export type * as IMatrix from './matrix/interfaces';
+export type { IMatrixEvents } from './matrix/interfaces';
+export { Matrix } from './matrix/matrix';
+export { appShellResolver, resolvePreset } from './matrix/presets';
+export type { INormalizedSlot } from './matrix/utils';
+export { normalizeSlotValue } from './matrix/utils';

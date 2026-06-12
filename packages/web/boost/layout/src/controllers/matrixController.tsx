@@ -11,31 +11,31 @@
  * - `useEmit()` нацелен на ближайший существующий Controller/Feature аппа.
  *
  * Архитектурный поток:
- *   Features.Incidents → <Shell.Matrix slots={{ main: <Widgets.Tables.Incidents/> }} />
+ *   Features.Incidents → <Layouts.Matrix slots={{ main: <Widgets.Tables.Incidents/> }} />
  *     Matrix.onLayoutChange(e) → useEmit → emit('onLayoutChange', { source, payload: e })
  *       → ctx.controller.onLayoutChange → Features.Incidents (или auto-next() наверх)
  *
  * Слот-контент (напр. Widgets.Tables.Incidents) читает store Features.Incidents ✓
  *
  * Standalone guard:
- *   Если Shell.Matrix рендерится вне любого Controller/Feature, useEmit() бросит.
+ *   Если Layouts.Matrix рендерится вне любого Controller/Feature, useEmit() бросит.
  *   Защита через useCtx(): если контекста нет — emit не вызывается, Matrix работает
  *   как pure-UI (layout-only без HCA-проводки).
  *
  * Phantom-поле `__events?: IMatrixEvents` позволяет:
- *   `Feature<EventsOf<typeof Shell.Matrix>>` → `target.payload` типизируется как
+ *   `Feature<EventsOf<typeof Layouts.Matrix>>` → `target.payload` типизируется как
  *   `LayoutChangeEvent | undefined` без per-handler аннотации.
  *
  * Пример app-DX:
  * ```ts
- * const LayoutSync = Feature<Shell.Matrix.Events>((services) => ({
+ * const LayoutSync = Feature<Layouts.Matrix.Events>((services) => ({
  *   context: { saving: false },
  *   onLayoutChange: ({ target }) => {
  *     services.api.saveLayout(target.payload);  // payload: LayoutChangeEvent | undefined
  *   },
  * }));
  * // <Features.LayoutSync>
- * //   <Shell.Matrix preset="app-shell" slots={{ main: <Widgets.Tables.Incidents/> }} />
+ * //   <Layouts.Matrix preset="app-shell" slots={{ main: <Widgets.Tables.Incidents/> }} />
  * // </Features.LayoutSync>
  * ```
  */
@@ -70,7 +70,7 @@ const MatrixControllerComponent = (props: IMatrixProps) => {
     local.onLayoutChange?.(e);
     // HCA emit — только если внутри Controller/Feature-scope.
     emit?.('onLayoutChange', {
-      source: 'Shell.Matrix',
+      source: 'Layouts.Matrix',
       payload: e,
     });
   };
@@ -79,14 +79,14 @@ const MatrixControllerComponent = (props: IMatrixProps) => {
 };
 
 /**
- * Shell.Matrix — прозрачная emit-проводка поверх raw Matrix.
+ * Layouts.Matrix — прозрачная emit-проводка поверх raw Matrix.
  *
  * НЕ создаёт Controller-scope: слот-контент видит родительский HCA-контекст.
- * Несёт phantom `__events?: IMatrixEvents` для `EventsOf<typeof Shell.Matrix>`.
+ * Несёт phantom `__events?: IMatrixEvents` для `EventsOf<typeof Layouts.Matrix>`.
  * Регистрируется в manifest (src/capsule.ts) вместо raw Matrix.
  */
 export const MatrixController: ((props: IMatrixProps) => any) & {
   readonly __events?: IMatrixEvents;
 } = MatrixControllerComponent;
 
-// Namespace-merge `Shell.Matrix.Events` генерится codegen аппа из phantom __events.
+// Namespace-merge `Layouts.Matrix.Events` генерится codegen аппа из phantom __events.
