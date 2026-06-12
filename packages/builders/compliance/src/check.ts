@@ -8,19 +8,36 @@ const traverse: typeof _traverse = (_traverse as any).default ?? _traverse;
 import * as t from '@babel/types';
 import { classify, extractGroup, type Layer } from './classify';
 import { CROSS_LAYER_ALLOWED, LAYER_PREFIXES, RUNTIME_ALLOWED } from './rules';
+import {
+  classifyZone,
+  extractZonePackage,
+  isZoneImportAllowed,
+  PACKAGE_TO_ZONE,
+  type Zone,
+} from './zones';
 
 export interface IViolation {
   file: string;
   line: number;
   column: number;
   source: string;
+  /**
+   * HCA layer for apps/* files. `'system'` for `packages/*` zone-checked files.
+   * `'test'` for test files (suppressed checks).
+   */
   layer: Exclude<Layer, null>;
+  /**
+   * Zone for `packages/web/*` files, when classified. Set on `cross-zone-import`
+   * violations only.
+   */
+  zone?: Zone;
   kind:
     | 'disallowed-import' // import не из allowlist данного слоя
     | 'upward-import' // нижний слой тащит верхний
     | 'horizontal-import' // сосед по слою (другая группа)
     | 'side-effect-fetch' // fetch/axios в не-feature
-    | 'unknown-alias'; // @-литерал в meta.tags не зарегистрирован в capsule.app.ts
+    | 'unknown-alias' // @-литерал в meta.tags не зарегистрирован в capsule.app.ts
+    | 'cross-zone-import'; // packages/web/<zone> импортит запрещённую zone (ADR 047 D1/D2)
   message: string;
   hint?: string;
 }
@@ -40,7 +57,14 @@ export interface ICheckOptions {
 /** Проверить файл — вернуть список нарушений (может быть пустым). */
 export const check = (absPath: string, code: string, opts: ICheckOptions = {}): IViolation[] => {
   const layer = classify(absPath);
-  if (!layer || layer === 'system' || layer === 'test') return [];
+  if (layer === 'test') return [];
+
+  // Zone-canon check for packages/web/<zone>/<pkg> per ADR 047 D1/D2 (Phase D3).
+  // Apps (layer != null && layer != 'system') run HCA-layer check below.
+  if (layer === 'system') {
+    return runZoneCheck(absPath, code);
+  }
+  if (!layer) return [];
 
   const violations: IViolation[] = [];
 
@@ -219,3 +243,103 @@ const LAYER_ORDER: Record<Exclude<Layer, null | 'system' | 'test'>, number> = {
   widget: 3,
   page: 4,
 };
+
+/**
+ * Zone-canon check for `packages/web/<zone>/<pkg>/` files (Phase D3).
+ *
+ * Reads `@capsuletech/web-*` and `@capsuletech/boost-*` imports and validates
+ * against `ZONE_ALLOWED_DEPS` per ADR 047 D1 + cross-domain canon (D2).
+ *
+ * Vendor packages (`shared-zod`, `shared-utils`, `vite-builder`, etc.) and
+ * non-capsule imports are skipped — only the @capsuletech zone-classified
+ * surface is checked.
+ *
+ * Type-only imports are skipped (no runtime coupling).
+ */
+const runZoneCheck = (absPath: string, code: string): IViolation[] => {
+  const fromZone = classifyZone(absPath);
+  if (!fromZone) return [];
+  const fromPkgDir = extractZonePackage(absPath, fromZone);
+  if (!fromPkgDir) return [];
+  // Reconstruct npm package name from <zone>/<pkg-dir>:
+  //   kit/ui              → @capsuletech/web-ui
+  //   runtime/core        → @capsuletech/web-core
+  //   boost/layout        → @capsuletech/boost-layout
+  //   domain/auth         → @capsuletech/web-auth
+  //   design-time/creator → @capsuletech/web-creator
+  const prefix = fromZone === 'boost' ? 'boost' : 'web';
+  const fromPkg = `@capsuletech/${prefix}-${fromPkgDir}`;
+
+  const violations: IViolation[] = [];
+
+  let ast: t.File;
+  try {
+    ast = parse(code, {
+      sourceType: 'module',
+      plugins: ['jsx', 'typescript'],
+      errorRecovery: true,
+    });
+  } catch {
+    return [];
+  }
+
+  const checkSource = (source: string, isTypeOnly: boolean, line: number, column: number) => {
+    if (isTypeOnly) return;
+    if (!source.startsWith('@capsuletech/')) return;
+
+    // Strip subpath: '@capsuletech/web-auth/session' → '@capsuletech/web-auth'
+    const npmName = source.split('/').slice(0, 2).join('/');
+    const targetZone = PACKAGE_TO_ZONE[npmName];
+    // Unknown @capsuletech package (shared-zod, vite-builder, cli, …) — shared
+    // infrastructure, allowed everywhere.
+    if (!targetZone) return;
+    if (npmName === fromPkg) return; // self-import via npm alias — ok
+
+    if (isZoneImportAllowed(fromZone, fromPkg, targetZone, npmName)) return;
+
+    const isCrossDomain =
+      fromZone === 'domain' && targetZone === 'domain' && npmName !== fromPkg;
+    violations.push({
+      file: absPath,
+      line,
+      column,
+      source,
+      layer: 'system',
+      zone: fromZone,
+      kind: 'cross-zone-import',
+      message: isCrossDomain
+        ? `Cross-domain import: ${fromPkg} (domain) → ${npmName} (domain). Direct domain↔domain imports запрещены (ADR 047 D2).`
+        : `Cross-zone import: ${fromPkg} (${fromZone}) → ${npmName} (${targetZone}). Zone ${fromZone} не может зависеть на ${targetZone} (ADR 047 D1).`,
+      hint: isCrossDomain
+        ? 'Extract capability в @capsuletech/web-contract/capabilities, consumer тянет контракт, target реализует через ADR 033 manifest.'
+        : `Zone ${fromZone} разрешает: ${[...(ZONE_ALLOWED_DEPS_PUBLIC[fromZone] ?? [])].join(', ')}. Если связь нужна — поднять обсуждение архитектуры.`,
+    });
+  };
+
+  traverse(ast, {
+    ImportDeclaration(path) {
+      const node = path.node;
+      const isTypeOnly = node.importKind === 'type';
+      const source = node.source.value;
+      const loc = node.loc?.start;
+      checkSource(source, isTypeOnly, loc?.line ?? 0, loc?.column ?? 0);
+    },
+    CallExpression(path) {
+      const node = path.node;
+      if (
+        t.isImport(node.callee) &&
+        node.arguments.length > 0 &&
+        t.isStringLiteral(node.arguments[0])
+      ) {
+        const source = node.arguments[0].value;
+        const loc = node.loc?.start;
+        checkSource(source, false, loc?.line ?? 0, loc?.column ?? 0);
+      }
+    },
+  });
+
+  return violations;
+};
+
+// Re-export of zones table referenced in error hints. Avoids a circular import.
+import { ZONE_ALLOWED_DEPS as ZONE_ALLOWED_DEPS_PUBLIC } from './zones';

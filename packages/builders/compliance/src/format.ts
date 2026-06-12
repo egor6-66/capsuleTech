@@ -6,6 +6,7 @@ const ICONS: Record<IViolation['kind'], string> = {
   'horizontal-import': '↔️',
   'side-effect-fetch': '🌐',
   'unknown-alias': '🏷️',
+  'cross-zone-import': '🧭',
 };
 
 /** Форматирование одного нарушения для лога/ошибки. */
