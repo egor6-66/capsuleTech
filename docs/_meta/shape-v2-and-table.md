@@ -107,4 +107,4 @@ export const DataTable: (<TRow>(p: IDataTableProps<TRow>) => JSX.Element) & { re
 
 ## 8. Открыто — таблица (мод A)
 
-`IColumn<TRow>` в web-table сейчас = сырой tanstack `ColumnDef` (union) → `accessorFn`-row не типизируется (§4.4). **Следующий шаг:** owner-web-table меняет `IColumn` на чистый одиночный интерфейс + маппинг в tanstack при рендере. После этого `incidentsTable.columns` row-типизируется, как nav/preview.
+`IColumn<TRow>` в web-table сейчас = сырой tanstack `ColumnDef` (union) → `accessorFn`-row не типизируется (§4.4). **Следующий шаг:** owner-boost-table меняет `IColumn` на чистый одиночный интерфейс + маппинг в tanstack при рендере. После этого `incidentsTable.columns` row-типизируется, как nav/preview.
