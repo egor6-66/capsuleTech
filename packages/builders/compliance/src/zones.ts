@@ -57,6 +57,17 @@ export const extractZonePackage = (absPath: string, zone: Zone | null): string |
 };
 
 /**
+ * Package-dir names that map to npm packages WITHOUT `web-` / `boost-` prefix.
+ *
+ * Exceptions to the «<zone-prefix>-<pkg-dir>» rule. Currently:
+ *   - `data-gen` (runtime/data-gen → @capsuletech/data-gen) — package-scoped
+ *     util, no `web-` prefix to keep the name short for app consumers.
+ *
+ * `studio` is handled separately (whole zone) — see check.ts path-reconstruction.
+ */
+export const NO_PREFIX_PKG_DIRS = new Set<string>(['data-gen']);
+
+/**
  * Maps `@capsuletech/<pkg>` names to their zone per ADR 047 D1.
  *
  * Stable since Phase D1 (closed 2026-06-12). New packages registered here
@@ -84,6 +95,7 @@ export const PACKAGE_TO_ZONE: Record<string, Zone> = {
   '@capsuletech/web-remote': 'runtime',
   '@capsuletech/web-contract': 'runtime',
   '@capsuletech/web-access': 'runtime',
+  '@capsuletech/data-gen': 'runtime',
 
   // domain
   '@capsuletech/web-auth': 'domain',

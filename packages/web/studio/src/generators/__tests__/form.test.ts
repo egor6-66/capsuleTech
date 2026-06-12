@@ -1,13 +1,13 @@
-import { describe, expect, it } from 'vitest';
-import { canAcceptChild } from '../../manifests/registry';
-import { generate } from '../engine';
-import { FORM_PRESET } from '../presets/form';
 import {
   BUTTON_PRIMARY_TEXTS,
   BUTTON_SECONDARY_TEXTS,
   CARD_TITLES,
   FIELD_LABELS,
-} from '../wordbank';
+  FORM_PRESET,
+  generate,
+} from '@capsuletech/data-gen';
+import { describe, expect, it } from 'vitest';
+import { canAcceptChild, getManifest } from '../../manifests/registry';
 
 describe('FORM_PRESET', () => {
   it('root is always ui.Card', () => {

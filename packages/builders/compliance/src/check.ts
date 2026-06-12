@@ -12,6 +12,7 @@ import {
   classifyZone,
   extractZonePackage,
   isZoneImportAllowed,
+  NO_PREFIX_PKG_DIRS,
   PACKAGE_TO_ZONE,
   type Zone,
 } from './zones';
@@ -262,13 +263,16 @@ const runZoneCheck = (absPath: string, code: string): IViolation[] => {
   const fromPkgDir = extractZonePackage(absPath, fromZone);
   if (!fromPkgDir) return [];
   // Reconstruct npm package name from <zone>/<pkg-dir>:
-  //   kit/ui         → @capsuletech/web-ui
-  //   runtime/core   → @capsuletech/web-core
-  //   boost/layout   → @capsuletech/boost-layout
-  //   domain/auth    → @capsuletech/web-auth
-  //   studio/studio  → @capsuletech/studio  (plain — no prefix; sole inhabitant of zone)
+  //   kit/ui              → @capsuletech/web-ui
+  //   runtime/core        → @capsuletech/web-core
+  //   runtime/data-gen    → @capsuletech/data-gen   (no prefix; package-scoped util)
+  //   boost/layout        → @capsuletech/boost-layout
+  //   domain/auth         → @capsuletech/web-auth
+  //   studio/studio       → @capsuletech/studio     (no prefix; sole inhabitant of zone)
   let fromPkg: string;
   if (fromZone === 'studio') {
+    fromPkg = `@capsuletech/${fromPkgDir}`;
+  } else if (NO_PREFIX_PKG_DIRS.has(fromPkgDir)) {
     fromPkg = `@capsuletech/${fromPkgDir}`;
   } else {
     const prefix = fromZone === 'boost' ? 'boost' : 'web';

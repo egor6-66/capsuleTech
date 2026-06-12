@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildTemplate, getAllTemplates, listTemplatesFor } from '../templates';
+import '../../manifests/registry'; // ensures registry initialization for variant assertions
 
 describe('getAllTemplates', () => {
   it('возвращает непустой массив', () => {

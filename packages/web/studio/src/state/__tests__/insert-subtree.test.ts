@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generate } from '../../generators/engine';
-import { FORM_PRESET } from '../../generators/presets/form';
-import { LAYOUT_2COL_PRESET } from '../../generators/presets/layout-2col';
+import { FORM_PRESET, generate, LAYOUT_2COL_PRESET } from '@capsuletech/data-gen';
 import { createEmptyTree, EditorOpError, insertSubtree } from '../operations';
 
 // Вспомогательная функция: дерево с одним Grid-root (принимает любых детей кроме Card-parts)
