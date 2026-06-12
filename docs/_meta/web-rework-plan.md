@@ -599,6 +599,18 @@ A0 (merge 046+047+048+plan) ─→ A1 (USER creates owner-boost-matrix + restart
 | E5 — apps consume DocSection | BLOCKED | — | Wait E4; low priority |
 | E6 — CI drift-guards | **DONE** | #339 | Standalone `Docs build (ADR 048 E6)` job in `.github/workflows/ci.yml`. Zero-dep (no pnpm install), runs `node docs/_build/extract.mjs`. Fails on errors, passes on warnings. Will escalate to strict mode post-E2.4. |
 
+## Studio internal audit (post-D5, 2026-06-13)
+
+> User-approved CP outcomes (2026-06-13): A (`packages/web/runtime/data-gen/`) + B3 (unified `IPrimitiveManifestEntry` in web-ui kit) + S1-first sequencing. Composition rule canon applied: studio = host/composer, raw engines + manifests live where they functionally belong.
+
+| Phase | Status | PR | Notes |
+|---|---|---|---|
+| S1 — Extract `/generators` to `@capsuletech/data-gen` | **DONE** | #342 | New runtime package (no `web-` prefix). Tree shape (`IEditorTree`/`IEditorNode`/`NodeId`) owned in data-gen (single source of truth). Engine decoupled from studio via optional `IManifestResolver`. Templates stay in studio (composition product-block). Compliance NO_PREFIX_PKG_DIRS set added. 39 tests in data-gen + 187 in studio. |
+| S2 — Consolidate `/manifests` in web-ui kit | **DONE** | #343 | 14 hand-authored manifests moved studio → web-ui (git-rename detected). Schema `IPrimitiveManifestEntry` extended to cover identity + UI + inspector + DnD + bundle-cost. New subpath `@capsuletech/web-ui/manifest`. Studio's `/manifests` subpath thin re-export + studio-specific `rules.ts` stays. `ComponentCategory` moved to web-ui. `IComponentManifest` retained as `@deprecated` alias. |
+| S2 follow-up — W4 part 2 (build-manifest merge) | PENDING | — | `scripts/build-manifest.mjs` extends to merge hand-authored data with auto-gen bundle-cost into single `dist/manifest.json`. Today: auto-gen-only; hand-authored fields read directly from subpath. |
+| S3 — `/state` rename to `/tree` (optional) | DEFERRED | — | Cosmetic — better signal but more churn |
+| S4 — `/inspector` rename to `/inspector-panel` (optional) | DEFERRED | — | Composition rule canon — subpath = product name. Cosmetic. |
+
 ## Constraints / гарды
 
 - Parallel WIP в working tree сохраняется (29 files). Каждый owner-агент брифится по своему пути; никогда `git add -A` / `git restore`.
@@ -615,7 +627,14 @@ A0 (merge 046+047+048+plan) ─→ A1 (USER creates owner-boost-matrix + restart
 
 ## История изменений
 
-- 2026-06-12 — **D6 DONE** (this PR): `design-time` zone retired, replaced by top-level `studio/` (5-я zone, host/composer). `git mv` preserved code history. tsconfig/compliance/zone-canon docs/agent context — all updated. ADR 047 amend D6. Reason: zone name «design-time» misleading (читалось как «UI/styling»), studio sole inhabitant — collapse в top-level zone.
+- 2026-06-13 — **Studio audit S1+S2 DONE**: (S1) `@capsuletech/data-gen` extracted from studio (engine + presets + RNG + fuzzer + tree types as single source); (S2) per-primitive manifests unified in `@capsuletech/web-ui` kit via subpath `/manifest` — `IPrimitiveManifestEntry` covers identity + UI + inspector + DnD + bundle-cost. Studio remains thin host/composer. PRs #342, #343.
+- 2026-06-13 — **E3 DONE** (#341): status enum normalization (57 docs rewritten to canon enum) + 2 transient deletions (routing-anim-findings + finish-review-notes — author-intent-to-delete satisfied).
+- 2026-06-13 — **D5 DONE + plan-doc refresh** (#340): W2 OWNERSHIP audit verified — all 23 packages have populated vendor stack. Live status table refreshed for session.
+- 2026-06-13 — **E6 DONE** (#339): standalone CI job `Docs build (ADR 048 E6)` — zero-dep, ~30s, fails on errors.
+- 2026-06-13 — **E2.2 DONE** (#338): section-id retrofit canon docs + AI-anchors + 09-packages (159 retrofits).
+- 2026-06-13 — **E2.1 DONE** (#337): section-id retrofit ADR series (246 retrofits — 225 H2 + 21 H3).
+- 2026-06-13 — **E1 DONE** (#336): docs-as-data extract pipeline + canon (170 docs / 2027 sections / 0 errors).
+- 2026-06-12 — **D6 DONE** (#335): `design-time` zone retired, replaced by top-level `studio/` (5-я zone, host/composer). `git mv` preserved code history. tsconfig/compliance/zone-canon docs/agent context — all updated. ADR 047 amend D6. Reason: zone name «design-time» misleading (читалось как «UI/styling»), studio sole inhabitant — collapse в top-level zone.
 - 2026-06-12 — **D1 5/5 DONE** (PR #323-#327, kit/design-time/boost/domain/runtime) → `packages/web/` = 5 zone-папок per ADR 047 D1.
 - 2026-06-12 — **ADR 046 amended**: augmentation pattern (Decision 5 added). Renames: `boost-matrix` → `boost-layout`, `boost-charts` → `boost-chart`. Kit placeholder'ы реструктурируются под namespace-form (`Ui.Map.View` instead of `Ui.MapView`). Reason: разные «уровни tier'а» одной фичи (light kit + heavy boost) должны делить один user-facing API path (`Ui.<Element>.*`), а не два параллельных namespace'а (`Ui.Map` + `Maps.*`). Rationale — это и есть «booster»: boost конкретного kit-элемента.
 - 2026-06-11 — создан, status pending.
