@@ -51,7 +51,22 @@ import { AuthLoginForm } from '../ui/loginForm';
 // Сообщение показывается В ФОРМЕ (package-level). emit('onLoginError') несёт
 // оригинальный rawMessage для app-уровня.
 
-const mapAuthError = (rawMessage: string): string => {
+const DEFAULT_INVALID_CREDENTIALS_MESSAGE = 'Неверный логин или пароль';
+
+/**
+ * Маппинг HTTP/сетевых ошибок в дружелюбный текст.
+ *
+ * `invalidCredentialsMessage` — стратегия-специфичный текст для invalid-creds.
+ * Например, /role не имеет поля «логин» → «Неверный пароль».
+ * /credentials (логин+пароль) → дефолт «Неверный логин или пароль».
+ *
+ * Сетевые ошибки (fetch/network) → «Не удалось подключиться к серверу».
+ * Остальное → «Не удалось войти. Попробуйте ещё раз.»
+ */
+const mapAuthError = (
+  rawMessage: string,
+  invalidCredentialsMessage: string = DEFAULT_INVALID_CREDENTIALS_MESSAGE,
+): string => {
   const msg = rawMessage.toLowerCase();
   if (
     msg.includes('401') ||
@@ -63,7 +78,7 @@ const mapAuthError = (rawMessage: string): string => {
     msg.includes('пароль') ||
     msg.includes('неверн')
   ) {
-    return 'Неверный логин или пароль';
+    return invalidCredentialsMessage;
   }
   if (
     msg.includes('network') ||
@@ -148,7 +163,7 @@ const buildAuthFeature = (
             emit('onLogin', { payload: { token: result.token, user } });
           } catch (err) {
             const rawMessage = err instanceof Error ? err.message : '';
-            const errorMessage = mapAuthError(rawMessage);
+            const errorMessage = mapAuthError(rawMessage, strategy.invalidCredentialsMessage);
             sessionStore.setStatus('error');
             state.set('error');
             store.update({ errorMessage });

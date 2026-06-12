@@ -90,6 +90,13 @@ export interface IAuthStrategy<TInput = Record<string, unknown>> {
   fields?: unknown;
   /** Дефолтные значения input. */
   defaults?: Partial<TInput>;
+  /**
+   * Текст ошибки для invalid-credentials (401 / "invalid" / "wrong" / …).
+   * Стратегия задаёт свой вариант — например, /role не имеет поля «логин»,
+   * поэтому использует «Неверный пароль» вместо «Неверный логин или пароль».
+   * @default 'Неверный логин или пароль'
+   */
+  invalidCredentialsMessage?: string;
 }
 
 // ─── События (ADR 032) ────────────────────────────────────────────────────────

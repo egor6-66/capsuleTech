@@ -111,6 +111,9 @@ export interface IRoleStrategy extends IAuthStrategy<IRoleInput> {
  */
 export const roleStrategy = (config: IRoleStrategyConfig): IRoleStrategy => ({
   id: 'role',
+  // Стратегия по роли не имеет поля «логин» — только роль + пароль.
+  // Поэтому invalid-credentials сообщение = «Неверный пароль», не «Неверный логин или пароль».
+  invalidCredentialsMessage: 'Неверный пароль',
   defaults: {
     role: config.roles[0]?.value ?? '',
     password: '',

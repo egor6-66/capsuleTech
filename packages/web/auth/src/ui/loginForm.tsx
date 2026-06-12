@@ -60,13 +60,9 @@ export const AuthLoginForm = View<IAuthLoginFormProps>((Ui, props) => {
   return (
     <Ui.Card w={96} elevation="lg">
       <Ui.Card.Header divider>
-        <Ui.Card.Title align="center">
-          {props.title ?? 'Вход'}
-        </Ui.Card.Title>
+        <Ui.Card.Title align="center">{props.title ?? 'Вход'}</Ui.Card.Title>
         <Ui.Flow.Show when={props.subtitle}>
-          <Ui.Card.Description align="center">
-            {props.subtitle}
-          </Ui.Card.Description>
+          <Ui.Card.Description align="center">{props.subtitle}</Ui.Card.Description>
         </Ui.Flow.Show>
       </Ui.Card.Header>
 
@@ -74,9 +70,7 @@ export const AuthLoginForm = View<IAuthLoginFormProps>((Ui, props) => {
         <Ui.Flow.For each={props.strategy.fields as IAuthFormField[]}>
           {(field: IAuthFormField) => (
             <Ui.Field>
-              <Ui.Field.Label>
-                {field.label}
-              </Ui.Field.Label>
+              <Ui.Field.Label>{field.label}</Ui.Field.Label>
               <Ui.Field.Content>
                 <Ui.Flow.Show
                   when={field.type === 'select'}
@@ -100,26 +94,18 @@ export const AuthLoginForm = View<IAuthLoginFormProps>((Ui, props) => {
             </Ui.Field>
           )}
         </Ui.Flow.For>
-
         {/* Ошибка входа — package-level, из FSM context.data.errorMessage.
             Слот ВСЕГДА в DOM (minH=6 = 1 строка) — карточка не прыгает.
             Видимость через dim (opacity) — плавный fade-in/out.
             tone="destructive" — тема-токен, НЕ инлайн-цвет. */}
         <Ui.Layout.Flex align="center" justify="center" minH={6}>
-          <Ui.Typography
-            variant="p"
-            tone="destructive"
-            size="sm"
-            dim={!errorMessage()}
-          >
+          <Ui.Typography variant="p" tone="destructive" size="sm" dim={!errorMessage()}>
             {errorMessage()}
           </Ui.Typography>
         </Ui.Layout.Flex>
-
         <Ui.Button meta={{ tags: ['submit'] }} fullWidth>
           {props.submitLabel ?? 'Войти'}
         </Ui.Button>
-
         <Ui.Flow.Show when={props.footerNote}>
           <Ui.Layout.Flex direction="col" align="center">
             <Ui.Typography variant="p" align="center" size="xs" tone="muted">
