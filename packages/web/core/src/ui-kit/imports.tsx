@@ -63,6 +63,13 @@ export const DropdownMenu = createLazy(
   'DropdownMenu',
 );
 
+// Menu — data-driven menu composite (canonical rows + Menu.Dropdown), kobalte-heavy.
+// Base 'Menu' is the container-agnostic list; '.Dropdown' is the ready dropdown.
+const MenuBase = createLazy(() => import('@capsuletech/web-ui/menu'), 'Menu');
+export const Menu = Object.assign(MenuBase, {
+  Dropdown: createLazy(() => import('@capsuletech/web-ui/menu'), 'MenuDropdown'),
+});
+
 // Dropdown — 126KB, kobalte-heavy, only used where explicit dropdown menus appear
 const DropdownBase = createLazy(() => import('@capsuletech/web-ui/dropdown'), 'Dropdown');
 export const Dropdown = Object.assign(DropdownBase, {
@@ -98,18 +105,14 @@ export const Textarea = createLazy(() => import('@capsuletech/web-ui/textarea'),
 
 // ---------------------------------------------------------------------------
 // Light placeholders for heavy boost-* mirrors.
-// Zero-engine-dep visuals shipped via web-ui (kit) per ADR 044 / 046 D3.
+// These are zero-engine-dep visuals shipped via web-ui (kit) per ADR 044 / 046 D3.
 // Apps without boost-{map,flow,charts} in their bundle can still render these
 // as preview / pre-mount skeletons. Heavy mirrors override at the global
-// registry level (Maps.* / Flows.* / Charts.*) via ADR 033 manifests.
+// registry level (Maps.* / Flows.* / Charts.*).
 //
-// Naming notes:
-//   - `Ui.MapView` (NOT `Ui.Map`) — `Map` is a built-in JS class; shadowing
-//     it is flagged by lint. `MapView` also mirrors heavy boost-map root.
-//   - `Ui.FlowDiagram` (NOT `Ui.Flow`) — `Ui.Flow.*` namespace is reserved
-//     for Solid control-flow (For/Show/Switch/Match/Index/Dynamic) defined
-//     further below.
-//   - `Ui.Chart` — no naming conflict (no built-in Chart class).
+// NB: `Ui.FlowDiagram` (NOT `Ui.Flow`) — `Ui.Flow.*` namespace is reserved for
+// Solid control-flow primitives (For/Show/Switch/Match/Index/Dynamic) defined
+// further below.
 // ---------------------------------------------------------------------------
 export const MapView = createLazy(() => import('@capsuletech/web-ui/map'), 'MapView');
 export const FlowDiagram = createLazy(
