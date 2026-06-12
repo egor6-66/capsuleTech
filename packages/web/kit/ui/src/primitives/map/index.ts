@@ -8,8 +8,11 @@
 
 import { MapView } from './map';
 
-export const Map = {
+// Local name avoids shadowing built-in `Map` (biome noShadowRestrictedNames);
+// re-exported as `Map` for the canonical Ui.Map.* namespace.
+const MapNs = {
   View: MapView,
 };
 
 export type * from './interfaces';
+export { MapNs as Map };

@@ -121,9 +121,13 @@ export const Textarea = createLazy(() => import('@capsuletech/web-ui/textarea'),
 // Solid control-flow primitives (For/Show/Switch/Match/Index/Dynamic) defined
 // further below.
 // ---------------------------------------------------------------------------
-export const Map = {
+// Local name avoids shadowing built-in `Map` (biome noShadowRestrictedNames);
+// re-exported as `Map` for the canonical Ui.Map.* namespace.
+const MapNs = {
   View: createLazy(() => import('@capsuletech/web-ui/map'), 'MapView'),
 };
+
+export { MapNs as Map };
 export const FlowDiagram = {
   Static: createLazy(() => import('@capsuletech/web-ui/flow-diagram'), 'FlowDiagram'),
 };
