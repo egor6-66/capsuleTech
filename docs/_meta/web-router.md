@@ -10,7 +10,7 @@ audience: claude
 > [!ai]
 > Шпаргалка для Claude-инстансов. Без воды. Юзеру — [[router|router.md]].
 
-## TL;DR
+## TL;DR {#tldr}
 
 Context-based (ADR 003) обёртка над `@tanstack/solid-router`. Factory `createRouter({ routeTree, context? })` возвращает `{ raw, capsuleRouter }`. Hook `useRouter()` достаёт `ICapsuleRouter` из Context. Реактивное API: `goTo(path, opts?) / back() / current()`, где `opts = { params, search, hash, replace }` — прямой проброс в `raw.navigate`. Инжектится в Feature/Controller через `services.router`. `ICapsuleRouterContext<TUser>` — generic, app расширяет под свой shape (ADR 014).
 
@@ -27,7 +27,7 @@ Context-based (ADR 003) обёртка над `@tanstack/solid-router`. Factory 
 
 Тесты — jsdom-env с `vite-plugin-solid` (нужен для `CapsuleOutlet.test.tsx`). До ADR 046 пакет был node-only.
 
-## Где что лежит
+## Где что лежит {#layout}
 
 | Файл | Что |
 |---|---|
@@ -40,7 +40,7 @@ Context-based (ADR 003) обёртка над `@tanstack/solid-router`. Factory 
 | `packages/web/router/src/useRouteDepth.ts` | `useRouteDepth()` — `useContext(DepthContext)` + `Math.max(0, depth)`-нормализация sentinel'а |
 | `packages/web/router/src/__tests__/` | jsdom-env (CapsuleOutlet рендер): wrap+normalizeBase (22), useRouter (2), notFoundRedirect (5), beforeLoad (6), viewTransition (4), useRouteDepth (5 Provider-based), CapsuleOutlet (4 DOM) — 48 тестов |
 
-## Public API
+## Public API {#public-api}
 
 ```ts
 // Фабрика
@@ -74,7 +74,7 @@ normalizeBase                          // pure helper: нормализует ba
 | `current` | `() => string` | `raw.state.location.pathname` — реактивно через Solid-store TanStack |
 | `raw` | property | Escape hatch; типизирован если `BaseProviders` параметризован `routeTree` |
 
-## Lifecycle flow
+## Lifecycle flow {#lifecycle}
 
 ```
 apps/<app>/bootstrap.tsx
@@ -89,7 +89,7 @@ apps/<app>/bootstrap.tsx
                            handler({ ..., services }) → router.goTo('/path')
 ```
 
-## Известные грабли
+## Известные грабли {#gotchas}
 
 1. **`useRouter()` бросает вне Provider'а** — явная ошибка вместо silent-null. Для soft-dep (Storybook, unit-тесты, переиспользуемые компоненты) используй `useContext(RouterContext)` напрямую + null-check. Живой пример: `packages/web/ui/src/primitives/layout/switch.tsx:48`.
 
@@ -131,7 +131,7 @@ apps/<app>/bootstrap.tsx
 
 Precedent: page-transition attempt in ewc 2026-05-28; `<Animate keyed={location().pathname}>` didn't work (likely mix of factors), `useRouterState({select})` fixed reactivity at least on that level.
 
-## Что менять когда
+## Что менять когда {#changes-guide}
 
 | Хочу… | Куда лезть |
 |---|---|
@@ -146,7 +146,7 @@ Precedent: page-transition attempt in ewc 2026-05-28; `<Animate keyed={location(
 | Пробросить `beforeLoad` из `BaseProviders` в web-core | Задача `owner-web-core` — добавить `beforeLoad?` проп в `BaseProviders` и передать в `createRouter`. Та же цепочка что `notFoundRedirect`. |
 | Добавить глобальный guard (auth, roles, maintenance) | `ICreateRouterOpts.beforeLoad` — колбэк `(ctx: IBeforeLoadContext) => void`. Бросает `redirect(...)` / `notFound()` из `@capsuletech/web-router`. Применяется на root-route через `routeTree.options.beforeLoad`. |
 
-## Cross-links
+## Cross-links {#cross-links}
 
 - User-doc: [[router]]
 - ADRs: [[003-router-context-based]], [[014-router-api-extension]]

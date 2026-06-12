@@ -11,7 +11,7 @@ type: guide
 >
 > Шпаргалка для Claude — [[_meta/renderer|_meta/renderer.md]].
 
-## Зачем
+## Зачем {#why}
 
 Renderer — это «обобщённый Widget» в форме библиотеки. Везде, где нужно превратить **сериализованное дерево** в живой UI, ходит этот пакет:
 
@@ -252,7 +252,7 @@ const [schema] = createResource(() => fetch('/api/pages/home').then((r) => r.jso
 - **SSR без гидрации.** Не пробовали; XState-машинки от Controller'ов внутри могут хотеть `window`. Если идёте в SSR — сначала проверьте на пустой схеме.
 - **Если структура «всегда плоская и без поведения».** Простой `<For each={items}>{(item) => <Card {...item} />}</For>` уделает renderer по простоте.
 
-## Roadmap
+## Roadmap {#roadmap}
 
 | Версия | Что |
 |---|---|
@@ -260,7 +260,7 @@ const [schema] = createResource(() => fetch('/api/pages/home').then((r) => r.jso
 | v1.1 | Backlog в [[project-renderer-ownership]]: тесты, ErrorBoundary, дедуп warn'ов, memoization в `resolvePath`, валидация схемы. |
 | v1.2 | `full`-mode (JSON FSM в `interactions.inline`). Требует `createControllerFromConfig` в `@capsuletech/web-core`. |
 
-## Связанное
+## Связанное {#related}
 
 - [[studio|@capsuletech/studio]] — authoring host: manifests (zod), state (операции над деревом), inspector (UI редактирования), generators (procedural UI). Runtime отделён специально — прод-апп консьюмит renderer без overhead'а редактора.
 - [[core|@capsuletech/web-core]] — `Entities`/`Widgets`/`Controllers`/`Features`, которые обычно скармливаются в `registry`.

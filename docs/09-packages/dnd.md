@@ -94,7 +94,7 @@ Render-prop, рендерящий visual-preview под курсором. Пол
 
 Когда **НЕ** использовать: web-page-wide native browser drag (файлы из ОС, перетаскивание между окнами) — там нужны HTML5 DnD events. Этот пакет про in-app DnD.
 
-## Связанное
+## Связанное {#related}
 
 - Используется демо-виджетами в `apps/sandbox/src/widgets/demos/dnd.tsx`.
 - В связке с [[ui-creator|@capsuletech/web-ui-creator]] — для редактора UI-дерева.

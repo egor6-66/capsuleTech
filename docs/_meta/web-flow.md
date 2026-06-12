@@ -11,11 +11,11 @@ updated: 2026-06-02
 > [!ai]
 > Шпаргалка для Claude-инстансов. Без воды. Юзеру — [[flow|flow.md]].
 
-## TL;DR
+## TL;DR {#tldr}
 
 Node-canvas примитив (`Flow`+`FlowPalette`) — обёртка над `@dschz/solid-flow` (alpha v0.1.x на ядре `@xyflow/system`). Модель: `nodes[] + edges[] + pan/zoom`, композируется в Widget/Matrix. Theme-bridge: `colorMode` ← `useDarkMode()`, палитра ← `flow.css` → `--xy-*` токены. Ре-экспорт solid-flow блоков (Handle/NodeResizer/createNodeStore/...) изолирует от alpha-дрейфа.
 
-## Где что лежит
+## Где что лежит {#layout}
 
 | Файл | Что |
 |---|---|
@@ -93,7 +93,7 @@ const MyNode = (props: NodeProps) => (
 
 Примечание: imperative `createNodeStore`/`addNodes` не ложится на HCA Feature (которая декларативна). Узлы живут в local state (Widget/Matrix), `createNode` — это композиция glue (mapping palette item → solid-flow Node).
 
-## Gotchas
+## Gotchas {#gotchas}
 
 1. **Alpha dep (`@dschz/solid-flow` v0.1.x)** — API может двигаться. Трекаем релизы; обёртка изолирует.
 2. **Peer singleton `@capsuletech/web-style`** — lib-build externalize'ит; если web-style попадёт в dist, Flow не синкается с тоглом приложения.
@@ -102,7 +102,7 @@ const MyNode = (props: NodeProps) => (
 5. **`fitViewOptions.maxZoom: 1` cap** — без капа одна мелкая нода зумит во весь вьюпорт. Overridable.
 6. **Center-on-drop math** — `-w/2, -h/2` offset; если `node.width/height` undefined, offset = 0.
 
-## Что менять когда
+## Что менять когда {#changes-guide}
 
 | Хочу… | Куда лезть |
 |---|---|
@@ -120,7 +120,7 @@ const MyNode = (props: NodeProps) => (
 - Добавить в `nx.json` `web_base` fixed release group (зона главного)
 - README.md (этой папки)
 
-## Cross-links
+## Cross-links {#cross-links}
 
 - User-doc: [[flow]]
 - ADR: [[027-web-flow-node-canvas]]

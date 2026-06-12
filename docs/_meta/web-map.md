@@ -9,13 +9,13 @@ audience: claude
 
 > Шпаргалка для Claude-инстансов. Без воды.
 
-## TL;DR
+## TL;DR {#tldr}
 
 Низкоуровневый Solid-wrapper над `maplibre-gl`. Монтирует карту на `<div>`, управляет lifecycle, прокидывает instance через Solid Context. Прямая интеграция с `maplibre-gl` (без solid-map-gl, который течёт ~5 MB/цикл из-за orphaned matchMedia listener, owner-less effects и неполного onCleanup).
 
 Child components (`Source`, `Layer`, `Terrain`, `Sky`) полностью реактивны и автоматически пере-применяют себя после `map.setStyle()` через `'styledata'` event.
 
-## Где что лежит
+## Где что лежит {#layout}
 
 | Файл | Что |
 |---|---|
@@ -42,7 +42,7 @@ Child components (`Source`, `Layer`, `Terrain`, `Sky`) полностью реа
 | `packages/web/map/src/__tests__/reactive-sky.test.tsx` | spec reactive (5 тестов) |
 | `packages/web/map/src/__tests__/marker.test.tsx` | lifecycle, reactive lng/lat, anchor recreate, click handler, multiple markers (16 тестов) |
 
-## Public API
+## Public API {#public-api}
 
 ```ts
 import {

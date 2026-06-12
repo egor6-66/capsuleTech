@@ -241,7 +241,7 @@ export const NavLink = (props: { to: string; children: JSX.Element }) => {
 - Guards (`beforeLoad`, `loader`) — пишутся в TanStack-роутах напрямую (`.capsule/routes/__pages/...`).
 - Sync с XState-стейтом контроллера — отдельная фича, если понадобится.
 
-## Связанное
+## Связанное {#related}
 
 - [[003-router-context-based|ADR 003]] — Context-based вместо singleton
 - [[014-router-api-extension|ADR 014]] — `goTo` options-объект + generic `ICapsuleRouterContext`

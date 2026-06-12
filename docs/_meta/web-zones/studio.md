@@ -13,7 +13,7 @@ last_updated: 2026-06-12
 >
 > **Composition rule (canon):** studio exports product-blocks (`logic-editor`, `component-builder`, …), НЕ raw functionality. Universal engines (generators, manifest registry, JSON-tree ops) при необходимости живут отдельными пакетами и юзаются и в studio, и в apps. См. memory `feedback_studio_composition_rule`.
 
-## Purpose
+## Purpose {#purpose}
 
 **Host/composer для авторства capsule-приложений: единый интерфейс для UI-construction, FSM-визуализации, docs-навигации, monitoring, build.** Это **не runtime** — studio-пакет грузится только при работе в editor-mode (через `<EditorRoot>` или dedicated studio-app), не попадает в production-bundle target-app'а.
 
@@ -23,7 +23,7 @@ Studio обязан удовлетворять трём инвариантам:
 2. **Reads-всё-кроме-apps.** Studio может анализировать структуру kit/runtime/boost/domain/contract'ов (inspector для props, palette из manifest'ов). Не зависит на конкретный app.
 3. **Composes existing packages.** Studio пишет минимум сама — основной функционал собирается из reusable пакетов (kit/runtime/boost/domain). Universal engines живут в своих пакетах, не embedded в studio.
 
-## Packages
+## Packages {#packages}
 
 | Package | npm | Status | One-line |
 |---|---|---|---|
@@ -56,7 +56,7 @@ Studio обязан удовлетворять трём инвариантам:
 - `/controllers` — `EditorController` + `EditorOverlay` — studio-specific HCA-adapter (остаётся в studio, правильно).
 - `/capsule` — registration entry (ADR 033) — studio-specific (остаётся).
 
-## Import rules
+## Import rules {#import-rules}
 
 ```
 studio → kit (можно)
@@ -70,7 +70,7 @@ apps ↛ studio в prod (вне editor-shell) — must be tree-shaken / lazy-loa
 
 **Apps consume studio ТОЛЬКО через editor-shell** (`<EditorRoot>`). Если app-код напрямую импортит из `@capsuletech/studio/inspector` — компилятор/lint должен это ловить (опц. build-time check).
 
-## Canonical shape
+## Canonical shape {#canonical-shape}
 
 ```
 packages/web/studio/
@@ -101,7 +101,7 @@ packages/web/studio/
 - **Canvas isolated** — inline для simple-режима, iframe+WebSocket для full-isolation с реальным runtime'ом target-app'а.
 - **Docs consumer** — `<DocSection slug="adr/047#D6"/>` читает `docs/.generated/registry.ts` (ADR 048).
 
-## Vendor stack
+## Vendor stack {#vendor-stack}
 
 Главные вендоры:
 
@@ -114,7 +114,7 @@ packages/web/studio/
 
 Документация upstream — в OWNERSHIP.md (vendor stack section).
 
-## Non-goals
+## Non-goals {#non-goals}
 
 Studio **не делает**:
 
@@ -126,7 +126,7 @@ Studio **не делает**:
 - ❌ Свой docs-сорсинг. Single source markdown в `docs/`, studio только consume через `/docs` per ADR 048.
 - ❌ Hosting raw-engines как public surface. Universal engines (generators, manifest registry) extract'ятся в свои пакеты.
 
-## New subpath — checklist
+## New subpath — checklist {#new-subpath-checklist}
 
 Добавление subpath'а в studio (это норм; новый пакет в zone — **не норм**):
 
@@ -139,7 +139,7 @@ Studio **не делает**:
    - Tests + bundle-size assertion (subpath изолирован, tree-shake works).
 4. ADR не нужен (расширение в рамках zone-канона).
 
-## Related
+## Related {#related}
 
 - [[web-zone-kit]], [[web-zone-runtime]], [[web-zone-boost]], [[web-zone-domain]] — studio может читать любую из этих zone.
 - [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] D4 + D6 — studio rename + absorb + zone flatten.

@@ -11,13 +11,13 @@ last-verified: 2026-05-27
 > [!ai]
 > Шпаргалка для Claude-инстансов. Без воды. Юзеру — `docs/09-packages/state.md`.
 
-## TL;DR
+## TL;DR {#tldr}
 
 XState-обвязка фреймворка. **`createState(schema)`** превращает HCA-схему в XState-машину с инжектированными universal events (SET_DATA, SET_LOADING, REGISTER_COMPONENT и ещё 5) и автоматическими `__GOTO_*` переходами. **`createBridge(state, send)`** — реактивный API поверх XState-snapshot: геттеры (ctx/loading/styles/errors/components/props), мутации (update/registerComponent/updateComponent/…) и tag-операции (pick/omit/match/matchEntry/patch/values). **Tag-registry** хранит алиасы (`@inputs` → `[email, password, …]`), раскрывает их рекурсивно на query-стороне.
 
 `IBaseStateSchema` — **единственное место** в репо, где живёт engine-shape (Phase F unification). `web-core` расширяет этот тип, не наоборот.
 
-## Где что лежит
+## Где что лежит {#layout}
 
 | Файл | Что |
 |---|---|
@@ -31,7 +31,7 @@ XState-обвязка фреймворка. **`createState(schema)`** превр
 | `packages/web/state/src/__tests__/helpers.test.ts` | Unit: pickByTags/omitByTags/matchByTags/matchEntryByTags, edge cases |
 | `packages/web/state/src/__tests__/tag-registry.test.ts` | Unit: registerAliases accumulation, expandTags recursive, clearAliases reset |
 
-## Public API
+## Public API {#public-api}
 
 ```ts
 import {
@@ -196,7 +196,7 @@ BFS с `seen`-множеством: каждый тег обрабатывает
 
 **Принципиально:** алиасы — **query-side зонтик**. В JSX компоненты несут raw tags (`meta={{ tags: ['email'] }}`). Алиас раскрывается при вызове `pick`/`omit`/`match`/`values`, а не при регистрации. Не пиши `@inputs` в `meta.tags` на JSX-узле.
 
-## Известные грабли
+## Известные грабли {#gotchas}
 
 1. **`context.data` — ТОЛЬКО user state.** `update({ foo: 'bar' })` пишет в `context.data` через SET_DATA. UiProxy **не пишет** в `data` — он пишет в `context.components` (REGISTER/UPDATE_COMPONENT). До PR #166 был смешанный подход; после — строгое разделение. Если видишь component-данные в `context.data` — это регрессия.
 
@@ -216,7 +216,7 @@ BFS с `seen`-множеством: каждый тег обрабатывает
 
 9. **Геттеры Bridge'а реактивны через Solid.** Присваивание `const comps = bridge.components` вне реактивного контекста ломает отслеживание. Используй внутри `createMemo`/`createEffect`/JSX или через `bridge.ctx.components` в handler'е (там реактивность не нужна — handler вызывается при событии, не при render'е).
 
-## Что менять когда
+## Что менять когда {#changes-guide}
 
 | Хочу… | Куда лезть |
 |---|---|
@@ -230,7 +230,7 @@ BFS с `seen`-множеством: каждый тег обрабатывает
 | SSR-aware изоляция registry | Нужен ADR. Переход от module-level переменной к Provider-scope injection. |
 | Расширить `IBaseStateSchema` | Только engine-level поля. Controller/Feature-specific (`services`, `overrides`) → в web-core через `extends`. |
 
-## Cross-links
+## Cross-links {#cross-links}
 
 - OWNERSHIP: `packages/web/state/OWNERSHIP.md` (нет — создать после первого нетривиального изменения)
 - ADRs: [[001-xstate-only-fsm]], [[005-tag-aliases-registry]], [[008-hybrid-fsm-api]], [[020-bridge-untangling]]

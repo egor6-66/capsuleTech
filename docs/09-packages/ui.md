@@ -203,7 +203,7 @@ pnpm storybook
 - Состояние формы — это `store.ctx.data`.
 - API-вызовы или XState-логика — UI-kit изолирован от HCA-слоёв.
 
-## Связанное
+## Связанное {#related}
 
 - [[ui-proxy|UiProxy — перехват UI-событий]]
 - [[style|@capsuletech/web-style — стилизация и темы]]

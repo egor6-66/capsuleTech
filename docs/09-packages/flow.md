@@ -263,7 +263,7 @@ const Dashboard = () => {
 />
 ```
 
-## Связанное
+## Связанное {#related}
 
 - [[027-web-flow-node-canvas]] — ADR (решение, альтернативы)
 - [[ui]] — Layout.Matrix (как компоновать Flow в grid)

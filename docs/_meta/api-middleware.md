@@ -10,11 +10,11 @@ audience: claude
 > [!ai]
 > Шпаргалка для Claude-инстансов. Без воды. Юзеру — [[api-middleware|api-middleware.md]].
 
-## TL;DR
+## TL;DR {#tldr}
 
 Декларативные endpoints (`defineEndpoint((z) => ...)`) + koa-style middleware-pipeline между Feature и сетью. Feature никогда не видит `Response`/JSON/статусов — только `Promise<DomainObject>` либо typed-исключение. Endpoints автоматически обнаруживаются Vite-плагином, конфиг middleware живёт в `capsule.app.ts`. HTTP only пока (WS/GraphQL — на будущее).
 
-## Где что лежит
+## Где что лежит {#layout}
 
 | Файл | Что |
 |---|---|
@@ -136,7 +136,7 @@ Vite-плагин `EndpointsRegistryPlugin` следит за `apps/*/src/endpoi
    - `if (appConfig.api) setApiClient(createApi(appConfig.api, endpoints))` — собирает proxy.
 3. `getApiClient()` дёргается из `createLogicWrapper` при создании каждой Feature.
 
-## Известные грабли
+## Известные грабли {#gotchas}
 
 ### Bootstrap / build
 
@@ -178,7 +178,7 @@ Vite-плагин `EndpointsRegistryPlugin` следит за `apps/*/src/endpoi
 | Headers case-insensitivity не нормализована при merge | [client.ts:68](../../packages/web/query/src/client.ts) | Known (P3 #15) |
 | Нет canonical `createMockApi(...)` для тестов Feature | — | Will fix (P3 #16) |
 
-## Что менять когда
+## Что менять когда {#changes-guide}
 
 | Хочу… | Куда лезть |
 |---|---|
@@ -190,7 +190,7 @@ Vite-плагин `EndpointsRegistryPlugin` следит за `apps/*/src/endpoi
 | Добавить новый typed error | `packages/web/query/src/errors.ts` (extends `ApiError`) + маппинг в `statusMapper` |
 | Изменить inject в Feature | `packages/web/core/src/engine/logic-wrapper.tsx > services` |
 
-## Cross-links
+## Cross-links {#cross-links}
 
 - User-doc: [[api-middleware]]
 - Related: [[state]], [[router]], [[controller-proxy]], [[golden-rules]]

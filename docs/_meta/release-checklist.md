@@ -10,7 +10,7 @@ audience: claude
 > [!ai]
 > Шпаргалка для owner-агентов перед публикацией пакета. Referenced from [[POLICY.md]] и каждого `owner-*.md`. Применима к любому пакету в `packages/`.
 
-## TL;DR
+## TL;DR {#tldr}
 
 Owner отвечает за release своих пакетов. Перед публикацией: green CI + bundler-✅ exports + CHANGELOG + docs in sync с кодом. Major-bump deps — отдельный PR с явным smoke-test.
 
@@ -96,7 +96,7 @@ Workflow делает:
 - [ ] Smoke install в `capsule-test` workspace (или новом directory): `pnpm install @capsuletech/<pkg>@latest`
 - [ ] Закрыть issues / PRs с label `target-release` если такие есть
 
-## Известные грабли
+## Известные грабли {#gotchas}
 
 1. **`pnpm publish` requires NODE_AUTH_TOKEN.** CI workflow прокидывает через secret. Локально (`release:local`) использует Verdaccio (`http://localhost:4873`) — никакого реального npm push.
 
@@ -135,7 +135,7 @@ Workflow делает:
 
 Avoid hotfix-ы для не-critical bugs. Лучше дождаться следующего регулярного release.
 
-## Связанное
+## Связанное {#related}
 
 - [[POLICY.md]] — общая политика (release p.4)
 - [[releases]] — user-facing release guide

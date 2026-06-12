@@ -10,7 +10,7 @@ audience: claude
 
 Quick orientation for Claude instances working in `packages/web/ui/`.
 
-## Owner prompt
+## Owner prompt {#owner-prompt}
 
 Full context: `.claude/agents/owner-web-ui.md` (system prompt of owner agent).
 Conventions canon: `docs/09-packages/ui/conventions.md`.
