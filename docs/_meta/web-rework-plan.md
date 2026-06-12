@@ -436,7 +436,7 @@ last_updated: 2026-06-12 (D1 5/5 DONE; ADR 046 amended — augmentation pattern 
   1. Каждый owner-X добавляет секцию «Vendor stack» в OWNERSHIP.md своего пакета (per ADR 047 D3 шаблон).
   2. Ownership canon gate (CI) — расширяется требованием секции.
 - **PR(s):** per-package PR'ы либо bulk-sweep one-PR (главный coordinator).
-- **Status:** PENDING.
+- **Status:** **DONE** (closed 2026-06-13 via W2 #303 bulk sweep + D5 audit pass). All 23 packages have populated `## Vendor stack (ADR 047 D3)` section with real content (vendor names + version pins + peerDep/dep flags + upstream URLs). Leaf packages (renderer, contract, dnd, remote) explicitly state "no additional vendors by design". Scaffold packages (intl) mark TBD with rationale (e.g. ICU lib selection pending). No no-content placeholders remaining.
 
 ---
 
@@ -586,14 +586,18 @@ A0 (merge 046+047+048+plan) ─→ A1 (USER creates owner-boost-matrix + restart
 | D1 — Zone directory layout | BLOCKED | — | Wait W+B+C stable |
 | D2 — Cross-domain contracts (web-access drift fix) | **DONE** | этот PR | `IAuthCapability` в `web-contract/capabilities`; web-access потребляет контракт; vite-builder generator wires `useAuth()` arg. W5 known drift закрыт. |
 | D3 — Compliance extension (zone canon enforcement) | **DONE** | этот PR | `zones.ts` + `runZoneCheck` + `cross-zone-import` violation kind. 44 new tests. Sanity sweep 557 web/* files = 0 violations. Vendor-wrapper-comment rule deferred (separate ADR if needed). |
-| D4 — studio rename + absorb ui-creator | **DONE** | этот PR | `git mv ui-creator → studio` (preserves code history), npm `web-ui-creator` → `studio`, drop empty creator skeleton, 6 apps + tsconfig + nx + vite-builder + compliance + CLI templates updated, `owner-web-ui-creator` agent renamed to `owner-studio`. Restart required for agent. |
-| D5 — OWNERSHIP Vendor stack audit | BLOCKED → partially in W2 | — | W2 уже расставит секции; D5 — финальный sweep если что упустили |
-| E1 — docs:build extract pipeline | BLOCKED | — | Can start parallel to D |
-| E2 — section-id inventory pass | BLOCKED | — | Wait E1 |
-| E3 — audience-tagging | ONGOING | — | Touch-when-touch, no PR-driven |
-| E4 — studio/docs consumer | BLOCKED | — | Wait E1 + D4 |
+| D4 — studio rename + absorb ui-creator | **DONE** | #334 | `git mv ui-creator → studio` (preserves code history), npm `web-ui-creator` → `studio`, drop empty creator skeleton, 6 apps + tsconfig + nx + vite-builder + compliance + CLI templates updated, `owner-web-ui-creator` agent renamed to `owner-studio`. Restart required for agent. |
+| D5 — OWNERSHIP Vendor stack audit | **DONE** | this PR | Closed via W2 #303 thorough bulk sweep + 2026-06-13 audit pass. All 23 packages have populated `## Vendor stack` section with vendor names + version pins + flags + upstream URLs. Leaf packages explicitly note "no additional vendors". Scaffold packages mark TBD with rationale. No content gaps. |
+| D6 — Studio zone flatten (`design-time/studio` → top-level `studio/`) | **DONE** | #335 | ADR 047 amendment D6. `git mv` preserves history. compliance/tsconfig/zone-canon docs/agent context all updated. Reason: `design-time` name misleading + sole-inhabitant collapse. |
+| E1 — docs:build extract pipeline | **DONE** | #336 | `docs/_meta/docs-system.md` canon + `docs/_build/extract.mjs` (zero-dep line-based parser, code-fence + inline-code aware) + `pnpm docs:build` + `docs/.generated/` ignored. 170 docs / 2027 sections / ~125ms. CP1 contract agreed with user upfront. |
+| E2.1 — section-id pass on ADRs | **DONE** | #337 | `docs/_build/retrofit-ids.mjs` idempotent script. 246 retrofits (225 H2 + 21 H3) across 46 of 47 ADRs. 0 collisions. Warnings: 2419 → 2173 (-246). |
+| E2.2 — section-id pass on canon docs + AI-anchors + 09-packages | **DONE** | #338 | Extended script with web-zones + AI-anchor + OWNERSHIP/README template H2 mappings. 159 retrofits across 46 files. Warnings: 2173 → 2014 (-159). Cumulative: -405 / -16.7%. |
+| E2.3 — emoji-prefixed headings in briefs/anti-patterns | PENDING (low priority) | — | Touch-when-touch; wild structure |
+| E2.4 — document-specific non-canonical headings | PENDING (touch-when-touch) | — | Per-doc decisions |
+| E3 — Status enum normalization + audience tagging | PARTIAL (audience ongoing; status pending) | — | 81 docs use non-canon status (accepted/implemented/living/snapshot). Needs mapping decision: `accepted/implemented → canon`, `planned/draft → proposed`, `living/snapshot/live → documented`. Audience-tagging touch-when-touch (no PR-driven). |
+| E4 — studio/docs consumer | PENDING | — | Can start; needs `<DocSection>` shape design proposal |
 | E5 — apps consume DocSection | BLOCKED | — | Wait E4; low priority |
-| E6 — CI drift-guards | BLOCKED | — | Wait E1 |
+| E6 — CI drift-guards | **DONE** | #339 | Standalone `Docs build (ADR 048 E6)` job in `.github/workflows/ci.yml`. Zero-dep (no pnpm install), runs `node docs/_build/extract.mjs`. Fails on errors, passes on warnings. Will escalate to strict mode post-E2.4. |
 
 ## Constraints / гарды
 
