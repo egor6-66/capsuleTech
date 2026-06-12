@@ -76,6 +76,30 @@ export interface ICapsuleModule {
    * с `Controllers.X` namespace. Сейчас зарезервировано.
    */
   controllers?: Record<string, any>;
+  /**
+   * Опционально (ADR 046 Decision 5 — augmentation pattern).
+   *
+   * Если указано — codegen при регистрации пакета **дополнительно** мерджит
+   * `components` в указанный Ui-namespace через `Object.assign(<path>, components)`.
+   *
+   * Поддерживаемые пути: `'Ui.Layout' | 'Ui.Map' | 'Ui.Chart' | 'Ui.FlowDiagram' | 'Ui.Table'`
+   * (соответствуют kit-namespace'ам, расширяемым boost-* пакетами).
+   *
+   * Зачем: даёт consumer'у user-facing API `<Ui.<X>.<Variant>/>` независимо от
+   * того, light это вариант (kit) или heavy (boost). Один namespace, разные tier'ы.
+   *
+   * Программная ось (`<Name>.*` глобал) сохраняется параллельно для
+   * controller/feature consumer'ов.
+   *
+   * @example
+   * // @capsuletech/boost-layout/capsule
+   * export default defineCapsuleModule({
+   *   name: 'Layouts',           // global namespace (programmatic axis)
+   *   components: { Matrix },
+   *   augments: 'Ui.Layout',     // also augments Ui.Layout for UI consumers
+   * });
+   */
+  augments?: string;
 }
 
 /**

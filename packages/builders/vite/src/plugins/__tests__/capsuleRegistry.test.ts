@@ -2037,3 +2037,106 @@ export { c as default };
     expect(result!.componentKeys).toEqual(['DataTable']);
   });
 });
+
+// ---------------------------------------------------------------------------
+// parseManifestSource — augments extraction (ADR 046 D5)
+// ---------------------------------------------------------------------------
+
+describe('parseManifestSource — augments extraction (ADR 046 D5)', () => {
+  it('extracts augments StringLiteral when present', () => {
+    const source = `
+var c = s({ name: "Layouts", components: { Matrix: m }, augments: "Ui.Layout" });
+export { c as default };
+`;
+    const result = parseManifestSource(source, 'capsule.mjs');
+    expect(result).not.toBeNull();
+    expect(result!.augments).toBe('Ui.Layout');
+  });
+
+  it('returns augments=null when property absent', () => {
+    const source = `
+var c = s({ name: "Maps", components: { View: v } });
+export { c as default };
+`;
+    const result = parseManifestSource(source, 'capsule.mjs');
+    expect(result).not.toBeNull();
+    expect(result!.augments).toBeNull();
+  });
+
+  it('ignores non-StringLiteral augments values (silently null)', () => {
+    const source = `
+var path = "Ui.Layout";
+var c = s({ name: "Layouts", components: { Matrix: m }, augments: path });
+export { c as default };
+`;
+    const result = parseManifestSource(source, 'capsule.mjs');
+    expect(result).not.toBeNull();
+    expect(result!.augments).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generatePackagesRuntime — augments block (ADR 046 D5)
+// ---------------------------------------------------------------------------
+
+describe('generatePackagesRuntime — augments block', () => {
+  const entryWithAugments: ResolvedPackageEntry = {
+    pkg: '@capsuletech/boost-layout',
+    globalName: 'Layouts',
+    componentKeys: ['Matrix'],
+    augments: 'Ui.Layout',
+  };
+
+  it('imports Ui from @capsuletech/web-core/ui-kit when any entry augments', () => {
+    const out = generatePackagesRuntime([entryWithAugments]);
+    expect(out).toContain("import { Ui as _Ui } from '@capsuletech/web-core/ui-kit';");
+  });
+
+  it('emits Object.assign(_Ui.Layout, Layouts_mod.components)', () => {
+    const out = generatePackagesRuntime([entryWithAugments]);
+    expect(out).toContain('Object.assign(_Ui.Layout, Layouts_mod.components);');
+  });
+
+  it('keeps the existing globalThis Object.assign — augmentation is additive', () => {
+    const out = generatePackagesRuntime([entryWithAugments]);
+    expect(out).toContain('Object.assign(globalThis, { Layouts });');
+  });
+
+  it('does NOT import Ui when no entry has augments', () => {
+    const out = generatePackagesRuntime([pkgEntry('@capsuletech/boost-map', 'Maps')]);
+    expect(out).not.toContain('@capsuletech/web-core/ui-kit');
+    expect(out).not.toContain('_Ui');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generatePackagesTypes — augments module-augmentation (ADR 046 D5)
+// ---------------------------------------------------------------------------
+
+describe('generatePackagesTypes — augments module-augmentation', () => {
+  const entryWithAugments: ResolvedPackageEntry = {
+    pkg: '@capsuletech/boost-layout',
+    globalName: 'Layouts',
+    componentKeys: ['Matrix'],
+    augments: 'Ui.Layout',
+  };
+
+  it('emits declare module @capsuletech/web-ui/layout block', () => {
+    const out = generatePackagesTypes([entryWithAugments]);
+    expect(out).toContain("declare module '@capsuletech/web-ui/layout' {");
+    expect(out).toContain('interface ILayoutNamespace {');
+  });
+
+  it('declares the augmented member with import-typeof of the package', () => {
+    const out = generatePackagesTypes([entryWithAugments]);
+    expect(out).toContain(
+      `Matrix: (typeof import('@capsuletech/boost-layout/capsule')['default']['components'])["Matrix"];`,
+    );
+  });
+
+  it('does NOT emit declare module block when no entry has augments', () => {
+    const out = generatePackagesTypes([pkgEntry('@capsuletech/boost-map', 'Maps')]);
+    expect(out).not.toContain('declare module');
+    expect(out).not.toContain('ILayoutNamespace');
+  });
+});

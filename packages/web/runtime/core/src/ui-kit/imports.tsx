@@ -9,6 +9,7 @@ import { Card } from '@capsuletech/web-ui/card';
 import { Field } from '@capsuletech/web-ui/field';
 import { Flex } from '@capsuletech/web-ui/flex';
 import { Grid } from '@capsuletech/web-ui/grid';
+import type { ILayoutNamespace } from '@capsuletech/web-ui/layout';
 import { Group as GroupBase, GroupSeparator } from '@capsuletech/web-ui/group';
 import { Input } from '@capsuletech/web-ui/input';
 import { Label } from '@capsuletech/web-ui/label';
@@ -24,8 +25,10 @@ import { Dynamic } from 'solid-js/web';
 // Re-export static critical-path primitives
 export { Button, Input, Label, Separator, Toggle, Typography };
 
-// Layout namespace: Grid + Flex (static). Matrix переехал в @capsuletech/web-shell.
-export const Layout = { Grid, Flex };
+// Layout namespace: Grid + Flex (static). Heavy variants (Matrix etc.) live
+// in @capsuletech/boost-layout and augment this object at app boot via ADR 033
+// capsule.ts manifests (per ADR 046 D5).
+export const Layout: ILayoutNamespace = { Grid, Flex };
 
 // List, Skeleton, Spinner (static)
 export { List, Skeleton, Spinner };

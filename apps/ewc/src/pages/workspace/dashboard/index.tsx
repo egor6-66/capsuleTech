@@ -22,12 +22,16 @@
  *     web-core рисует их в settings-strip при включённом settingsMode.
  * Page лишь расставляет виджеты по слотам Matrix (children + DnD-параметры).
  */
-const Dashboard = Page(() => (
+const Dashboard = Page((Ui) => (
   // Features.Shell (снаружи) ловит всплывшие события Layouts.Matrix (onLayoutChange →
   // persist раскладки). Features.Incidents (ближе к виджетам) даёт им items-store.
   <Features.Shell>
     <Features.Incidents>
-      <Layouts.Matrix
+      {/* Ui.Layout.Matrix — augmentation pattern per ADR 046 D5: same component as
+       * Layouts.Matrix above (programmatic axis), but consumed through the kit
+       * namespace Ui.Layout.* (UI-facing). Both work; this demonstrates the
+       * canonical UI consumer API. */}
+      <Ui.Layout.Matrix
         preset="app-shell"
         slots={{
           main: {
