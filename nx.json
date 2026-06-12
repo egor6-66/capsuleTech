@@ -107,7 +107,7 @@
         "projects": [
           "@capsuletech/web-core",
           "@capsuletech/web-dnd",
-          "@capsuletech/boost-charts",
+          "@capsuletech/boost-chart",
           "@capsuletech/boost-map",
           "@capsuletech/web-ui-creator",
           "@capsuletech/web-profiler",

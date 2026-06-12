@@ -13,7 +13,7 @@
   "dependencies": {
     "@capsuletech/desktop": "workspace:*",
     "@capsuletech/shared-zod": "workspace:*",
-    "@capsuletech/boost-charts": "workspace:*",
+    "@capsuletech/boost-chart": "workspace:*",
     "@capsuletech/web-core": "workspace:*",
     "@capsuletech/boost-flow": "workspace:*",
     "@capsuletech/web-profiler": "workspace:*",

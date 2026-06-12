@@ -4,7 +4,7 @@ Themed Chart.js wrapper для capsule: `LineChart` / `AreaChart` / `BarChart` /
 
 Под капотом `solid-chartjs` + `chart.js`. Тематизируется через CSS-токены `@capsuletech/web-style`. Light-mirror — `Ui.Chart` placeholder в kit (после Phase B6-placeholder).
 
-> **Будет переименован в `@capsuletech/boost-charts`** в Phase W6 ([[web-rework-plan]] / ADR 046 D1).
+> **Будет переименован в `@capsuletech/boost-chart`** в Phase W6 ([[web-rework-plan]] / ADR 046 D1).
 
 ## Install
 

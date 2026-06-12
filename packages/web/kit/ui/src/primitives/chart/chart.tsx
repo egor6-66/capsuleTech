@@ -4,7 +4,7 @@ import type { IUiChartProps } from './interfaces';
 import { chartCva } from './variants';
 
 /**
- * Ui.Chart — light placeholder for `@capsuletech/boost-charts` heavy mirror.
+ * Ui.Chart — light placeholder for `@capsuletech/boost-chart` heavy mirror.
  *
  * Zero engine deps. Renders a static bar-chart or line-chart glyph.
  *
