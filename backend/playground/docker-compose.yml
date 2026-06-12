@@ -1,0 +1,38 @@
+# Локальная dev-инфра для capsule-playground: Postgres + Redis.
+#
+#   docker compose up -d           — поднять БД и кэш
+#   cargo run -p capsule-playground — сам сервер (пока нативно, не в контейнере)
+#
+# Порты сдвинуты (5433/6380), чтобы не конфликтовать с возможным локальным
+# Postgres/Redis на дефолтных 5432/6379.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: capsule-pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: capsule
+      POSTGRES_PASSWORD: capsule
+      POSTGRES_DB: capsule_playground
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U capsule -d capsule_playground"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: capsule-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis-data:/data
+
+volumes:
+  pg-data:
+  redis-data:

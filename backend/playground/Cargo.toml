@@ -1,0 +1,22 @@
+[package]
+name = "capsule-playground"
+edition.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "capsule-playground"
+path = "src/main.rs"
+
+[dependencies]
+axum = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tower-http = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+sqlx = { workspace = true }
+# Загрузка ENV из .env при локальном `cargo run` (в проде — реальное окружение).
+dotenvy = "0.15"
