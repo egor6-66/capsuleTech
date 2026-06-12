@@ -1,7 +1,7 @@
 {
   "name": "@capsuletech/web-ui",
-  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/web/ui/src",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/web/kit/ui/src",
   "projectType": "library",
   "tags": [],
   "targets": {},
