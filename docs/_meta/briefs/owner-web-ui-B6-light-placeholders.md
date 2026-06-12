@@ -1,7 +1,7 @@
 ---
 title: owner-web-ui — Phase B6-placeholder brief
 description: Light placeholder'ы Ui.Map / Ui.Flow / Ui.Chart в kit. Зеркала boost-* пакетов для landing/preview use-cases.
-status: ready
+status: documented
 last_updated: 2026-06-11
 ---
 

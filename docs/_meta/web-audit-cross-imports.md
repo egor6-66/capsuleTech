@@ -1,7 +1,7 @@
 ---
 title: web-audit-cross-imports
 description: Snapshot cross-package npm-зависимостей `@capsuletech/*` для всех 23 пакетов packages/web/*. Baseline для compliance Phase D3 enforcement (ADR 047 D2 + D1).
-status: snapshot
+status: documented
 last_updated: 2026-06-11
 ---
 

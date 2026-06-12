@@ -1,6 +1,6 @@
 ---
 tags: [hca, adr, accepted, codegen, playground, devtools]
-status: accepted
+status: canon
 date: 2026-06-07
 ---
 

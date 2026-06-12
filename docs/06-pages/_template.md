@@ -1,6 +1,6 @@
 ---
 tags: [hca, page, registry]
-status: index
+status: documented
 ---
 
 # 🟥 Pages — реестр

@@ -1,6 +1,6 @@
 ---
 tags: [hca, adr, accepted, architecture, distribution, hub]
-status: accepted
+status: canon
 date: 2026-06-07
 ---
 

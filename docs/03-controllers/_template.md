@@ -1,6 +1,6 @@
 ---
 tags: [hca, controller, registry]
-status: index
+status: documented
 ---
 
 # 🟩 Controllers — реестр

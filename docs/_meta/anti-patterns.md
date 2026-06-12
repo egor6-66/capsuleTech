@@ -1,6 +1,6 @@
 ---
 title: Anti-patterns Catalog — quick-fix vs proper-fix
-status: living
+status: documented
 last-updated: 2026-05-31
 ---
 

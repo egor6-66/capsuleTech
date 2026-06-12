@@ -1,6 +1,6 @@
 ---
 tags: [meta, cleanup]
-status: living-doc
+status: documented
 ---
 
 # Cleanup plan

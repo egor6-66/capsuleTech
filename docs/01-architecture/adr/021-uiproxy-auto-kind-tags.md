@@ -1,6 +1,6 @@
 ---
 tags: [hca, adr, implemented]
-status: implemented
+status: canon
 date: 2026-05-27
 ---
 

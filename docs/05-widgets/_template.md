@@ -1,6 +1,6 @@
 ---
 tags: [hca, widget, registry]
-status: index
+status: documented
 ---
 
 # 🟪 Widgets — реестр

@@ -2,7 +2,7 @@
 tags: [meta, creator, editor, ux, tz, shell, hca]
 updated: 2026-06-09
 owner: design (design-owner)
-status: draft-for-review
+status: proposed
 ---
 
 # ТЗ: UX-шелл редактора (web-studio) — канон HCA + «design-IDE»

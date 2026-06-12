@@ -1,6 +1,6 @@
 ---
 tags: [hca, adr, accepted, architecture, design-system, tokens, tailwind, figma]
-status: accepted
+status: canon
 date: 2026-06-09
 ---
 

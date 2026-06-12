@@ -2,7 +2,7 @@
 tags: [meta, design-system, tz, finish, atmosphere]
 updated: 2026-06-09
 owner: design (главный/design-owner)
-status: ready-for-agents
+status: canon
 ---
 
 # ТЗ: «Finish» — эффект-мод поверхностей (хук в web-ui/lib, на существующих токенах)

@@ -1,6 +1,6 @@
 ---
 tags: [hca, architecture, adr, moc]
-status: index
+status: documented
 ---
 
 # 🧠 ADR — Architecture Decision Records

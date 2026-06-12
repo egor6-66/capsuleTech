@@ -1,7 +1,7 @@
 ---
 title: owner-web-ui — Phase W4 part 2 brief
 description: Bundle-size assertion tests + CI manifest drift-guard + WEIGHT_MAP recalibration по findings из phase 1.
-status: ready
+status: documented
 last_updated: 2026-06-12
 ---
 
