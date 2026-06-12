@@ -499,7 +499,12 @@ const resolveManifestInfo = (
   }
 
   // Step 3: parse via pure AST function
-  let parsed: { name: string; controllerKeys: string[]; componentKeys: string[] } | null;
+  let parsed: {
+    name: string;
+    controllerKeys: string[];
+    componentKeys: string[];
+    augments: string | null;
+  } | null;
   try {
     parsed = parseManifestSource(source, manifestFile);
   } catch (e) {
