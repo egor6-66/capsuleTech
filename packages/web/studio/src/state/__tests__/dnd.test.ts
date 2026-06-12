@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generate } from '../../generators/engine';
-import { FORM_PRESET } from '../../generators/presets/form';
-import { LAYOUT_2COL_PRESET } from '../../generators/presets/layout-2col';
+import { FORM_PRESET, generate, LAYOUT_2COL_PRESET } from '@capsuletech/data-gen';
 import type { DragSpec, DropIntent } from '../dnd';
 import { applyDrop, canBeside, canInto, canvasIntent, dragSpec, treeIntent } from '../dnd';
 import { addNode, createEmptyTree } from '../operations';

@@ -1,28 +1,9 @@
-export type NodeId = string;
-
 /**
- * Узел дерева редактора. Полностью описывает один JSX-узел в формате,
- * совместимом с `@capsuletech/renderer` (`ISchema.components.nodes[id]`).
- *
- * Никакого UI-state'а (selected/expanded/etc.) — это отдельный концерн
- * редактора и хранится вне дерева.
+ * Tree shape is owned by `@capsuletech/data-gen` — single source of truth
+ * for JSON-UI-tree across renderer/studio/apps. Studio re-exports here for
+ * backwards-compatibility of internal imports.
  */
-export interface IEditorNode {
-  id: NodeId;
-  /** Dot-path в registry, напр. `'ui.Button'`. */
-  type: string;
-  parentId: NodeId | null;
-  /** Порядок имеет значение — массив, а не Set. */
-  children: NodeId[];
-  props: Record<string, unknown>;
-  meta: Record<string, unknown>;
-  styles: Record<string, string>;
-}
-
-export interface IEditorTree {
-  root: NodeId;
-  nodes: Record<NodeId, IEditorNode>;
-}
+export type { IEditorNode, IEditorTree, NodeId } from '@capsuletech/data-gen';
 
 /**
  * Полный контекст редактора. Кроме дерева — UI-state (выбранная нода).

@@ -1,8 +1,14 @@
-import { getManifest } from '../manifests/registry';
-import type { IEditorNode, IEditorTree, NodeId } from '../state/types';
 import { fuzzProps } from './fuzzer';
 import { coin, createRng, pickWeighted, type Rng, randomInt, seededId } from './rng';
-import type { IGenerateOptions, IPreset, ISlotPick, ISlotRule } from './types';
+import type {
+  IEditorNode,
+  IEditorTree,
+  IGenerateOptions,
+  IPreset,
+  ISlotPick,
+  ISlotRule,
+  NodeId,
+} from './types';
 
 /**
  * Procedurally генерит `IEditorTree` (формат-совместим с `ISchema.components`
@@ -16,18 +22,18 @@ import type { IGenerateOptions, IPreset, ISlotPick, ISlotRule } from './types';
  *      - randomInt(countRange) — сколько детей вставить.
  *      - для каждого ребёнка — pickWeighted(rule.pick) → рекурсия.
  *   3. Каждый узел получает id через seededId(rng) (тот же seed → тот же id).
- *   4. Props заполняются через fuzzProps(manifest.propsSchema, manifest.defaultProps).
+ *   4. Props заполняются через `options.resolveManifest?.(type)` → fuzz'инг
+ *      на основе propsSchema + defaultProps. Если resolver не задан или
+ *      manifest не найден — узел создаётся с пустыми props.
  *   5. После fuzz'инга — `pick.refineProps?.(props)` для зависимых полей.
- *
- * Если manifest для type не найден — узел создаётся с пустыми props (renderer
- * упадёт на fallback).
  */
 export const generate = (preset: IPreset, options: IGenerateOptions = {}): IEditorTree => {
   const rng: Rng = options.rng ?? createRng(options.seed ?? Date.now());
+  const resolve = options.resolveManifest;
 
   const rootPick = pickRootPick(rng, preset);
   const nodes: Record<NodeId, IEditorNode> = {};
-  const rootId = buildNode(rng, rootPick, null, nodes);
+  const rootId = buildNode(rng, rootPick, null, nodes, resolve);
 
   return { root: rootId, nodes };
 };
@@ -45,12 +51,13 @@ const buildNode = (
   spec: ISlotPick,
   parentId: NodeId | null,
   nodes: Record<NodeId, IEditorNode>,
+  resolve: IGenerateOptions['resolveManifest'],
 ): NodeId => {
   const id = seededId(rng);
-  const manifest = getManifest(spec.type);
+  const manifest = resolve?.(spec.type);
 
-  let props: Record<string, unknown> = manifest
-    ? fuzzProps(rng, manifest.propsSchema, manifest.defaultProps)
+  let props: Record<string, unknown> = manifest?.propsSchema
+    ? fuzzProps(rng, manifest.propsSchema, manifest.defaultProps ?? {})
     : {};
   if (spec.refineProps) props = spec.refineProps(props);
 
@@ -67,7 +74,7 @@ const buildNode = (
 
   if (spec.slots) {
     for (const slot of spec.slots) {
-      const ids = buildSlotChildren(rng, slot, id, nodes);
+      const ids = buildSlotChildren(rng, slot, id, nodes, resolve);
       node.children.push(...ids);
     }
   }
@@ -80,6 +87,7 @@ const buildSlotChildren = (
   slot: ISlotRule,
   parentId: NodeId,
   nodes: Record<NodeId, IEditorNode>,
+  resolve: IGenerateOptions['resolveManifest'],
 ): NodeId[] => {
   const probability = slot.probability ?? 1;
   if (!coin(rng, probability)) return [];
@@ -94,7 +102,7 @@ const buildSlotChildren = (
   const ids: NodeId[] = [];
   for (let i = 0; i < count; i++) {
     const spec = pickWeighted(rng, slot.pick, weights);
-    ids.push(buildNode(rng, spec, parentId, nodes));
+    ids.push(buildNode(rng, spec, parentId, nodes, resolve));
   }
   return ids;
 };

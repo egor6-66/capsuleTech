@@ -78,6 +78,7 @@
       "@capsuletech/web-auth/controllers": ["packages/web/domain/auth/src/controllers/index.ts"],
       "@capsuletech/web-auth/ui": ["packages/web/domain/auth/src/ui/index.ts"],
       "@capsuletech/web-auth/capsule": ["packages/web/domain/auth/src/capsule.ts"],
+      "@capsuletech/data-gen": ["packages/web/runtime/data-gen/src/index.ts"],
       "@capsuletech/web-profiler": ["packages/web/runtime/profiler/src/index.ts"],
       "@capsuletech/web-query": ["packages/web/runtime/query/src/index.ts"],
       "@capsuletech/web-query/stream": ["packages/web/runtime/query/src/stream/index.ts"],

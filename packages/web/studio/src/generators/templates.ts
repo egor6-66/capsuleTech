@@ -1,11 +1,17 @@
+import {
+  BUTTON_OUTLINE_PRESET,
+  BUTTON_PRIMARY_PRESET,
+  CARD_PRODUCT_PRESET,
+  FORM_PRESET,
+  generate,
+  type IEditorTree,
+  type IPreset,
+  LAYOUT_2COL_PRESET,
+  TYPOGRAPHY_H1_PRESET,
+  TYPOGRAPHY_PARAGRAPH_PRESET,
+} from '@capsuletech/data-gen';
+import { getManifest } from '../manifests/registry';
 import type { ComponentCategory } from '../manifests/types';
-import { generate } from './engine';
-import { BUTTON_OUTLINE_PRESET, BUTTON_PRIMARY_PRESET } from './presets/button-primary';
-import { CARD_PRODUCT_PRESET } from './presets/card-product';
-import { FORM_PRESET } from './presets/form';
-import { LAYOUT_2COL_PRESET } from './presets/layout-2col';
-import { TYPOGRAPHY_H1_PRESET, TYPOGRAPHY_PARAGRAPH_PRESET } from './presets/typography';
-import type { IEditorTree, IPreset } from './types';
 
 /**
  * Описание одного темплейта. Темплейт = именованный preset + метаданные для
@@ -116,6 +122,13 @@ export const listTemplatesFor = (forType: string): ITemplate[] =>
 /**
  * Материализовать темплейт в фрагмент дерева редактора.
  * Если `seed` не задан — используется `t.previewSeed` (стабильный превью).
+ *
+ * Studio инжектит `getManifest` как `resolveManifest` чтобы fuzzer engine'а
+ * мог читать `propsSchema` и `defaultProps` (data-gen остаётся pure — без
+ * прямой зависимости на studio'шный реестр).
  */
 export const buildTemplate = (t: ITemplate, seed?: number): IEditorTree =>
-  generate(t.preset, { seed: seed ?? t.previewSeed });
+  generate(t.preset, {
+    seed: seed ?? t.previewSeed,
+    resolveManifest: getManifest,
+  });
