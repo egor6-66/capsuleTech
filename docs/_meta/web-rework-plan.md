@@ -2,7 +2,7 @@
 title: web-rework-plan
 description: Live execution plan для rework'а triada ADR 046 + 047 + 048. Обновляется по мере мерджа PR'ов.
 status: live
-last_updated: 2026-06-11 (W1+W2+W3+W6+W7 DONE; C1+C2 DONE; next — C3 owner-web-style, W4 owner-web-ui, B1 boost-matrix scaffold)
+last_updated: 2026-06-12 (D1 5/5 DONE; ADR 046 amended — augmentation pattern + boost-matrix→boost-layout + boost-charts→boost-chart; B-фаза перенумерована)
 ---
 
 # web-rework execution plan (per ADR 046 + 047 + 048)
@@ -58,9 +58,11 @@ last_updated: 2026-06-11 (W1+W2+W3+W6+W7 DONE; C1+C2 DONE; next — C3 owner-web
 
 | Agent | Зона | Создаётся когда |
 |---|---|---|
-| `owner-boost-matrix` | `packages/web/boost-matrix/` (новый пакет) | Phase A2 — перед Phase B1 |
+| `owner-boost-layout` ⚠ | `packages/web/boost/layout/` (новый пакет per ADR 047 D1) | Phase A2 — перед Phase B1 |
 
-При rename'е web-X → boost-X логично переименовать и owner-агенты (`owner-boost-table` → `owner-boost-table`, и т.д.) — единое чтение скоупа.
+⚠ **Amendment 2026-06-12**: agent изначально планировался как `owner-boost-matrix`, переименован в `owner-boost-layout` per ADR 046 Decision 1 amend (Matrix — это implementation detail внутри boost-layout, не отдельный booster).
+
+При rename'е web-X → boost-X логично переименовать и owner-агенты — единое чтение скоупа.
 
 ### Main steward (главный assistant, я)
 
@@ -208,53 +210,85 @@ last_updated: 2026-06-11 (W1+W2+W3+W6+W7 DONE; C1+C2 DONE; next — C3 owner-web
 
 ## Phase B — Booster sweep (parallel-friendly)
 
-> Цель: Matrix эвакуирована в boost-matrix; renames web-{table,map,flow,charts} → boost-X завершены; placeholder'ы Ui.Map/Flow/Chart в web-ui.
+> Цель: Matrix эвакуирована в boost-layout; renames web-{table,map,flow,charts} → boost-X (singular) завершены; kit-namespace'ы `Ui.{Map,Flow,Chart}.*` готовы под augmentation pattern (ADR 046 Decision 5).
+>
+> ⚠ **Amendment 2026-06-12** (после Phase D1):
+> - `boost-matrix` → `boost-layout` (расширяет `Ui.Layout`, не отдельный namespace).
+> - `boost-charts` → `boost-chart` (singular, консистентность с `Ui.Chart`).
+> - B6 placeholder'ы реструктурируются: `Ui.MapView` → `Ui.Map.View`, `Ui.FlowDiagram` → `Ui.Flow.Diagram`, `Ui.Chart` → `Ui.Chart.<basic>` (namespace-form для augmentation).
 
-### B1 — `@capsuletech/boost-matrix` scaffold
+### B1 — `@capsuletech/boost-layout` scaffold
 
-- **Owner:** main steward (initial scaffold) → handoff `owner-boost-matrix`.
+- **Owner:** main steward (initial scaffold) → handoff `owner-boost-layout`.
 - **Steps:**
-  1. Создать `packages/web/boost-matrix/` директорию через CLI: `nx g @nx/js:library --name=@capsuletech/boost-matrix --directory=packages/web/boost-matrix --importPath=@capsuletech/boost-matrix --publishable --buildable`.
-  2. `tsconfig.base.json` paths — добавить алиас `@capsuletech/boost-matrix`.
+  1. Создать `packages/web/boost/layout/` директорию через CLI: `nx g @nx/js:library --name=@capsuletech/boost-layout --directory=packages/web/boost/layout --importPath=@capsuletech/boost-layout --publishable --buildable`.
+  2. `tsconfig.base.json` paths — добавить алиас `@capsuletech/boost-layout` + `/capsule` subpath.
   3. `vite-builder` `optimizeDeps.exclude` — добавить.
-  4. OWNERSHIP.md per template.
-  5. Empty src/index.ts + минимальный capsule.ts (ADR 033 manifest).
-  6. Handoff: после scaffold-merge — `owner-boost-matrix` берёт пакет.
-- **PR:** `feat(boost-matrix): scaffold new package`.
+  4. OWNERSHIP.md per template (zone: boost; augments: Ui.Layout).
+  5. Empty `src/index.ts` + `src/capsule.ts` (ADR 033 manifest: `augments: 'Ui.Layout', contributions: {}` initially empty — Matrix добавляется в B2).
+  6. TS module augmentation stub (`src/types.d.ts`): `declare module '@capsuletech/web-ui/layout' { interface ILayoutNamespace { Matrix?: ... } }` — initially commented or empty.
+  7. Handoff: после scaffold-merge — `owner-boost-layout` берёт пакет.
+- **PR:** `feat(boost-layout): scaffold new package (adr 046)`.
 - **Blocks:** B2.
-- **Status:** PENDING (после A0+A1 готовы).
+- **Status:** PENDING (после A0+A1+D1 готовы; D1 closed 2026-06-12).
 
-### B2 — Move Matrix code из web-shell в boost-matrix
+### B2 — Move Matrix code из web-shell в boost-layout
 
-- **Owner:** `owner-boost-matrix` (приёмная сторона) + `owner-web-shell` (donor — strip).
-- Координация: либо ОДИН PR (boost-matrix принимает + web-shell strip в одном PR, два owner'а cooperate), либо два последовательных (boost-matrix пустой entry + alias на web-shell старый → потом strip). Рекомендация — **один cooperate PR** через main steward координацию.
-- **Files moving:** `packages/web/shell/src/matrix/**` → `packages/web/boost-matrix/src/**` (точная топология — owner-boost-matrix решает: matrix/, presets/, dnd/, persistence/, etc).
+- **Owner:** `owner-boost-layout` (приёмная сторона) + `owner-web-shell` (donor — strip).
+- Координация: либо ОДИН PR (boost-layout принимает + web-shell strip в одном PR, два owner'а cooperate), либо два последовательных. Рекомендация — **один cooperate PR** через main steward координацию.
+- **Files moving:** `packages/web/domain/shell/src/matrix/**` → `packages/web/boost/layout/src/matrix/**`.
 - **Files updated in shell:**
-  - `packages/web/shell/src/layout/index.ts` (re-export matrix) — **удалить**.
-  - `packages/web/shell/src/chrome/index.ts` — оставить.
-  - `packages/web/shell/package.json` exports — удалить `./matrix`, `./layout`. Оставить `./chrome` и root.
+  - `packages/web/domain/shell/src/layout/index.ts` (re-export matrix) — **удалить**.
+  - `packages/web/domain/shell/src/chrome/index.ts` — оставить.
+  - `packages/web/domain/shell/package.json` exports — удалить `./matrix`, `./layout`. Оставить `./chrome` и root.
   - `vite.config.mts` — убрать matrix-entry.
   - `OWNERSHIP.md` — секция «Публичный API» очистить от matrix; пометить Decision 2 ADR 046.
+- **Augmentation:** `boost-layout/src/capsule.ts` обновляется — `contributions: { Matrix }`. TS module augmentation активируется.
 - **Tests:** matrix-тесты переезжают вместе с кодом.
-- **PR:** `feat(boost-matrix,web-shell): relocate matrix into dedicated booster package (adr 046)`.
-- **CI:** требует boost-matrix dist (B1 merged); требует обновлений lockfile.
+- **PR:** `feat(boost-layout,web-shell): relocate matrix into dedicated booster package (adr 046)`.
+- **CI:** требует boost-layout dist (B1 merged); требует обновлений lockfile.
 - **Blocks:** B3.
 - **Status:** PENDING.
 
-### B3 — Apps imports update под `boost-matrix`
+### B3 — Apps imports update под `boost-layout`
 
-- **Owner:** main steward ИЛИ per-app page-агенты (`page` агент в каждом appе).
-- **Steps:** найти все `@capsuletech/web-shell/matrix` импорты в `apps/*` (+ возможно `packages/web/*` тестовые) → заменить на `@capsuletech/boost-matrix`. Обновить `app/package.json` deps (drop web-shell если он был только ради matrix; добавить boost-matrix). Lockfile sync.
-- **PR(s):** per-app `chore(playground): switch matrix import to @capsuletech/boost-matrix (adr 046)`. Идентичные PR'ы для ewc / nexus / monitoring / sandbox.
+- **Owner:** main steward ИЛИ per-app page-агенты.
+- **Steps:** найти все `@capsuletech/web-shell/matrix` импорты в `apps/*` → заменить на `Ui.Layout.Matrix` (через capsule.config.ts подключение boost-layout). Обновить `app/package.json` deps. Lockfile sync.
+- **PR(s):** per-app `chore(<app>): switch Matrix consumption to Ui.Layout.Matrix via boost-layout (adr 046)`.
 - **CI:** требует B2 merged.
-- **Blocks:** ничего критичного (B4+ независимы); закрывает migration.
 - **Status:** PENDING.
 
-### B4 — B7 — Boost-renames
+### B4 — B5 (renames) — ABSORBED → W6
 
-> **Поглощены в W6** (2026-06-11). Renames `@capsuletech/web-{table,map,flow,charts}` → `@capsuletech/boost-*` выполняются ОДНИМ atomic-PR'ом main steward'а в Phase W6 (mechanical, не per-owner). Ui.Map/Flow/Chart placeholder'ы — отдельный PR owner-web-ui (Phase B6-placeholder, инициируется после W6 merge).
+> Renames `@capsuletech/web-{table,map,flow}` → `@capsuletech/boost-{table,map,flow}` выполнены атомарно в Phase W6 (PR #306).
 >
 > **Status:** ABSORBED → W6.
+
+### B5b — `boost-charts` → `boost-chart` rename ⚠ amend
+
+- **Owner:** main steward.
+- **Steps:**
+  1. `packages/web/boost/charts/package.json` — `name: @capsuletech/boost-charts` → `@capsuletech/boost-chart`.
+  2. `git mv packages/web/boost/charts → packages/web/boost/chart`.
+  3. `tsconfig.base.json` paths — `@capsuletech/boost-chart` (+ grace alias `@capsuletech/boost-charts`).
+  4. `nx.json` release group — обновить (`boost-charts` → `boost-chart`).
+  5. Apps consumers (если есть) — replace.
+- **PR:** `refactor(boost-chart): rename from boost-charts singular (adr 046 amend)`.
+- **Bundle:** идёт в одном PR с agent rename + B6 namespace restructure (PR-B этой волны).
+- **Status:** PENDING.
+
+### B6-placeholder — Ui.{Map,Flow,Chart} restructure под augmentation namespace
+
+- **Owner:** main steward (PR-B этой волны) — mechanical rename.
+- **Steps:**
+  1. `packages/web/kit/ui/src/primitives/map/` — restructure `Ui.MapView` flat → `Ui.Map.View` namespace.
+  2. `packages/web/kit/ui/src/primitives/flow-diagram/` → `flow/` (или оставить, поменять exports) — `Ui.FlowDiagram` → `Ui.Flow.Diagram`.
+  3. `packages/web/kit/ui/src/primitives/chart/` — `Ui.Chart` single → `Ui.Chart.<basic>` namespace-form (TBD имя basic варианта: `Basic`/`Static`/`Placeholder`).
+  4. `packages/web/runtime/core/src/ui-kit/imports.tsx` — обновить инжекции: `MapView` → `Map.View`, `FlowDiagram` → `Flow.Diagram`, `Chart` → `Chart.<basic>`.
+  5. `tsconfig.base.json` paths — обновить subpath'ы web-ui (`map/flow-diagram/chart` exports).
+  6. Apps consumers (если уже использовали placeholder'ы) — replace.
+- **PR:** Bundle с B5b + agent rename.
+- **Status:** PENDING.
 
 ---
 
@@ -539,11 +573,12 @@ A0 (merge 046+047+048+plan) ─→ A1 (USER creates owner-boost-matrix + restart
 | W5 — Cross-import inventory baseline | **DONE** | этот PR | `docs/_meta/web-audit-cross-imports.md` — 23 пакета snapshot; единственный drift `web-access → web-auth` (runtime → domain), закрывается Phase D2 |
 | W6 — Boost-renames `web-*` → `boost-*` (B4-B7 absorbed) | **DONE** | #306 | 4 пакета renamed, tsconfig aliases для grace, lockfile sync, build clean |
 | W7 — Plan-doc update | **DONE** | #302 (initial) + этот PR (post-W6+C1+C2) | live status refresh |
-| B1 — boost-matrix scaffold | BLOCKED | — | Wait A1 (USER restart) |
-| B2 — web-shell strip Matrix | BLOCKED | — | Wait B1 |
-| B3 — apps imports → boost-matrix | BLOCKED | — | Wait B2 |
-| B4-B7 — boost-* renames | **ABSORBED** → W6 (#306) | — | — |
-| B6-placeholder — Ui.Map/Flow/Chart light placeholders в web-ui | READY | — | После W6 merge (✅) — USER dispatches owner-web-ui |
+| B1 — boost-layout scaffold ⚠ amend | READY | — | После D1 ✅ + ADR 046 amend merge; main steward executes |
+| B2 — web-shell strip Matrix → boost-layout | BLOCKED | — | Wait B1 |
+| B3 — apps imports → Ui.Layout.Matrix | BLOCKED | — | Wait B2 |
+| B4-B5 — boost-* renames (table/map/flow) | **ABSORBED** → W6 (#306) | — | — |
+| B5b — boost-charts → boost-chart singular ⚠ amend | PENDING | — | Bundle с PR-B (rename + B6 namespace) |
+| B6-placeholder — Ui.MapView/FlowDiagram/Chart restructure → namespace form ⚠ amend | PENDING | — | Bundle с PR-B (renames + agent rename) |
 | C1 — CapsuleOutlet + DepthContext | **DONE** | #304 | owner-web-router; 9 файлов; 9+4 tests jsdom; vt-name per-depth |
 | C2 — Ui.Outlet swap | **DONE** | #305 | main steward; `Outlet` injection в Page+Widget wrappers переключён на CapsuleOutlet (alias-import). Apps/playground outlet patch — USER в своей ветке. |
 | C3 — CSS селекторы enumerate | READY | — | После C2 merge (✅) — USER dispatches owner-web-style |
@@ -575,6 +610,8 @@ A0 (merge 046+047+048+plan) ─→ A1 (USER creates owner-boost-matrix + restart
 
 ## История изменений
 
+- 2026-06-12 — **D1 5/5 DONE** (PR #323-#327, kit/design-time/boost/domain/runtime) → `packages/web/` = 5 zone-папок per ADR 047 D1.
+- 2026-06-12 — **ADR 046 amended**: augmentation pattern (Decision 5 added). Renames: `boost-matrix` → `boost-layout`, `boost-charts` → `boost-chart`. Kit placeholder'ы реструктурируются под namespace-form (`Ui.Map.View` instead of `Ui.MapView`). Reason: разные «уровни tier'а» одной фичи (light kit + heavy boost) должны делить один user-facing API path (`Ui.<Element>.*`), а не два параллельных namespace'а (`Ui.Map` + `Maps.*`). Rationale — это и есть «booster»: boost конкретного kit-элемента.
 - 2026-06-11 — создан, status pending.
 - 2026-06-11 (late) — **Phase W вставлена** (web-space canon на main steward'е): W1 zone canon docs + W3 L0/L1 gradient + W7 plan-doc update — все DONE этим PR-bundle'ом. B4-B7 boost-renames absorbed в W6 (mechanical, один atomic PR vs четыре per-owner). W2 OWNERSHIP+README, W4 manifest infra (owner-web-ui), W5 cross-import baseline, W6 renames — PENDING. Workflow rationale: USER указал «web-space на тебя — canon+порядок, не функционал; renames в одном стиле»; параллелизм с C1 (owner-web-router уже dispatched).
 - 2026-06-11 (night) — **5 PR'ов merged каскадом** в main:
