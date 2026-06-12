@@ -18,7 +18,7 @@ README — **первое что увидит human** (контрибьютор 
 ```markdown
 # @capsuletech/<name>
 
-<one-line purpose>  ·  zone: <kit|runtime|domain|boost|design-time>  ·  status: <scaffold|alpha|beta|stable>
+<one-line purpose>  ·  zone: <kit|runtime|domain|boost|studio>  ·  status: <scaffold|alpha|beta|stable>
 
 [Краткий context-блок (опц., 1-3 строки): что отличает от вендора, ключевая фишка.]
 

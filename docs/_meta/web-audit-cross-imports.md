@@ -18,23 +18,23 @@ last_updated: 2026-06-11
 ## Zone canon (per ADR 047 D1)
 
 ```
-kit:         web-ui
-runtime:     web-core, web-state, web-router, web-query, web-style,
-             web-renderer, web-dnd, web-intl, web-date, web-profiler,
-             web-remote, web-contract, web-access
-domain:      web-auth, web-shell, web-agent
-boost:       boost-table, boost-map, boost-flow, boost-charts
-design-time: web-creator, web-ui-creator
+kit:     web-ui
+runtime: web-core, web-state, web-router, web-query, web-style,
+         web-renderer, web-dnd, web-intl, web-date, web-profiler,
+         web-remote, web-contract, web-access
+domain:  web-auth, web-shell, web-agent
+boost:   boost-table, boost-map, boost-flow, boost-chart, boost-layout
+studio:  studio
 ```
 
 **Правила зависимостей:**
 
 ```
-kit       → runtime/web-style (peer)                    + vendors
-runtime   → runtime (no cycles) + kit                   + vendors
-boost     → kit + runtime                               + vendors
-domain    → kit + runtime + boost  ↛ другой domain      + vendors
-design-time → всё кроме apps + другой design-time       + vendors
+kit     → runtime/web-style (peer)                       + vendors
+runtime → runtime (no cycles) + kit                      + vendors
+boost   → kit + runtime                                  + vendors
+domain  → kit + runtime + boost  ↛ другой domain         + vendors
+studio  → всё кроме apps (host/composer; single-package) + vendors
 ```
 
 ## Snapshot (2026-06-11)
@@ -45,7 +45,7 @@ design-time → всё кроме apps + другой design-time       + vendor
 |---|---|---|---|
 | `@capsuletech/web-ui` | `shared-zod`, `web-contract` | `web-style` | ✅ |
 
-**Анализ:** `web-contract` — runtime (leaf-протокол), `shared-zod` — shared workspace util, `web-style` peer — runtime. Импортов в boost/domain/design-time нет. **Canon compliant.**
+**Анализ:** `web-contract` — runtime (leaf-протокол), `shared-zod` — shared workspace util, `web-style` peer — runtime. Импортов в boost/domain/studio нет. **Canon compliant.**
 
 ### runtime zone
 
@@ -96,16 +96,13 @@ design-time → всё кроме apps + другой design-time       + vendor
 
 **Замечание:** `boost-map/flow/charts` имеют МЕНЬШЕ deps чем `boost-table` — это потому что они scaffold/alpha и пока не полностью integrated с capsule registry/HCA. По мере наполнения скорее всего добавят `web-core` peer как минимум.
 
-### design-time zone
+### studio zone
 
 | Package | npm deps | npm peers | Compliance |
 |---|---|---|---|
-| `@capsuletech/web-creator` | `web-contract`, `web-core`, `web-renderer`, `web-style`, `web-ui` | — | ✅ |
-| `@capsuletech/web-ui-creator` | `shared-zod`, `web-core`, `web-dnd`, `web-ui` | `web-renderer` | ✅ |
+| `@capsuletech/studio` | `shared-zod`, `web-contract`, `web-core`, `web-dnd`, `web-ui` | `web-renderer` | ✅ |
 
-**Анализ:** Design-time может зависеть на всё кроме apps + другой design-time. Оба пакета зависят на kit + runtime. На domain или boost — нет (пока). **Canon compliant.**
-
-**Замечание:** При финализации Phase D4 (rename `web-creator` → `studio` + absorb ui-creator) deps будут консолидированы в один пакет с subpath'ами.
+**Анализ:** Studio = host/composer; может зависеть на всё кроме apps. Sole inhabitant of zone (post-D4 absorb + D6 flatten). Зависит на kit + runtime + shared. На domain или boost — нет (пока). **Canon compliant.**
 
 ## Сводка по drifts (что Phase D3 compliance должен ловить)
 
@@ -143,7 +140,7 @@ Allowlist для known-good исключений (типа `web-core → web-ui`
 ## Related
 
 - [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] D1 + D2 + D3.
-- [[web-zones-index]] + [[web-zone-runtime]] + [[web-zone-domain]] + [[web-zone-boost]] + [[web-zone-kit]] + [[web-zone-design-time]].
+- [[web-zones-index]] + [[web-zone-runtime]] + [[web-zone-domain]] + [[web-zone-boost]] + [[web-zone-kit]] + [[web-zone-studio]].
 - [[web-rework-plan]] → Phase D2 (cross-domain contracts) + Phase D3 (compliance extension).
 - `packages/web/access/OWNERSHIP.md` — drift документирован в «Состояние» секции (W2 PR #303).
 - [[004-compliance-golden-rules|ADR 004]] — текущий compliance package (intra-app HCA), расширяется на пакет-уровень в D3.

@@ -1,7 +1,7 @@
 {
   "name": "@capsuletech/studio",
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/web/design-time/studio/src",
+  "sourceRoot": "packages/web/studio/src",
   "projectType": "library",
   "tags": [],
   "targets": {},

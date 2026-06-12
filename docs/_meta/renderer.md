@@ -182,7 +182,7 @@ Cтруктура свободная; конвенция выше — то, чт
 
 ## Связь с другими пакетами
 
-- **[[ui-creator|@capsuletech/web-ui-creator]]** — design-time. `ui-creator/state/operations.ts` производит `IEditorTree`, совместимый с `ISchema.components` 1-в-1. `ui-creator/manifests` описывают компоненты на edit-time (zod-схемы, defaults, drop-валидации), renderer этого ничего не видит. `ui-creator/generators` строит схемы procedurally (то же дерево, что и manual editor).
+- **[[studio|@capsuletech/studio]]** — authoring side. `studio/state/operations.ts` производит `IEditorTree`, совместимый с `ISchema.components` 1-в-1. `studio/manifests` описывают компоненты на edit-time (zod-схемы, defaults, drop-валидации), renderer этого ничего не видит. `studio/generators` строит схемы procedurally (то же дерево, что и manual editor).
 - **[[core|@capsuletech/web-core]]** — `Entities`/`Widgets`/`Controllers`/`Features` обычно скармливаются в `registry`. Используется через `.capsule/registry/wrappers.ts` (генерится `ExportGeneratorPlugin`).
 - **`UiProxy` ([[ui-proxy]])** — внутри отрендеренного Controller'а Entity автоматически проксируется. Renderer не делает ничего особенного — просто следит, чтобы Context.Provider встал ДО рендера Entity (см. thunk-chain выше).
 

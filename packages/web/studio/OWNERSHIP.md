@@ -2,33 +2,29 @@
 name: "@capsuletech/studio"
 owner-agent: owner-studio
 group: web_base
-zone: design-time
+zone: studio
 status: alpha
-priority: P2
-last-updated: 2026-06-11
+priority: P1
+last-updated: 2026-06-12
 ---
 
 # OWNERSHIP — @capsuletech/studio
 
 **Owner agent:** `owner-studio`
-**Package path:** `packages/web/ui-creator/`
+**Package path:** `packages/web/studio/`
 **Release group:** `web_base` (tag `web@{version}`)
 
 ## Состояние (читать ПЕРВЫМ)
 
-- **Zone:** `design-time` — будет absorbed в `@capsuletech/studio` (→ `studio`) per [[045-web-taxonomy|ADR 045]] #2 + [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] D4 (Phase D4 plan-doc).
+- **Zone:** `studio` (5-я zone, host/composer per ADR 047 D6, 2026-06-12). Studio — единственный пакет в зоне; зона существует как top-level slot для host/composer-инструмента.
 - **Status:** `alpha` (0.1.1) — manifests/state/inspector/generators работают; controllers subpath добавлен.
-- **Priority:** **P2** — будет растворён в studio (D4), активная разработка через studio.
-- **Maturity bar (до absorb'а в studio):**
-  - DEPRECATED-flag в README перед Phase D4 (но не сейчас — apps ещё консьюмят).
-  - Migration guide для consumers на studio subpaths.
-  - Subpath'ы /manifests, /state, /inspector, /generators переезжают в `@capsuletech/studio/{...}`.
-- **Active blockers:** Phase D4 (studio rename + absorb) ждёт Phase B+C стабилизации.
-- **Roadmap:**
-  1. Поддержка существующих consumers (sandbox, playground) до D4.
-  2. Absorb в studio (Phase D4).
-  3. npm-deprecate после studio publish.
-- **Last activity:** 2026-06-11 (canon refresh).
+- **Priority:** **P1** — единственный design-time host; активная разработка ожидается на следующих этапах.
+- **Composition rule (canon):** Studio exports **product-blocks** (`logic-editor`, `component-builder`, `inspector-panel`, …), НЕ raw functionality. Raw engines (universal generators, manifest registry, JSON-tree ops) при необходимости extract'ятся в свои пакеты и юзаются и в studio, и в apps. См. [[studio-composition-rule]].
+- **Audit-backlog (текущий внутренний layout — quick-and-dirty, ожидает rework):**
+  - `/generators` — universal data-gen engine, должен быть extract'нут в свой пакет (нужен также apps и test-стендам).
+  - `/manifests` — дублирует manifests в `@capsuletech/web-ui` (kit). Consolidate в kit как single source.
+  - `/state`, `/inspector` — TBD при аудите (product-block vs raw extract).
+- **Last activity:** 2026-06-12 (zone-flatten + canon refresh).
 
 ## Vendor stack (ADR 047 D3)
 
@@ -41,7 +37,7 @@ last-updated: 2026-06-11
 
 ## Зона ответственности
 
-Design-time toolkit для построения JSON-деревьев UI:
+Studio = host/composer (5-я zone). Текущий внутренний toolkit для построения JSON-деревьев UI:
 - **Манифесты** компонентов (спецификации, DnD-правила);
 - **State-операции** над editing tree (pure functions, immutable);
 - **DnD resolver'ы** (drag-spec, intent, applyDrop — framework-agnostic);
@@ -120,7 +116,7 @@ Design-time toolkit для построения JSON-деревьев UI:
 
 ### `@capsuletech/studio/inspector`
 
-`Inspector`, `type InspectorProps` — design-time UI-form. Тянет web-style/web-ui; НЕ для prod-bundles.
+`Inspector`, `type InspectorProps` — studio-only UI-form (тулинг авторства). Тянет web-style/web-ui; НЕ для prod-bundles.
 
 ### `@capsuletech/studio/generators`
 

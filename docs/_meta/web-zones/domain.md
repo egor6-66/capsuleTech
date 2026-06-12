@@ -37,7 +37,7 @@ domain → kit (можно)
 domain → runtime (можно)
 domain → boost (можно — domain widget может использовать boost-table и т.д.)
 domain ↛ domain (FORBIDDEN — это canon, см. ADR 047 D2)
-domain ↛ design-time
+domain ↛ studio
 ```
 
 **Domain ↔ domain — НИКОГДА.** Это canon. Если `web-shell` нужен `is-authed?` от `web-auth`:
@@ -121,7 +121,7 @@ Domain **не делает**:
 - ❌ Глобальное состояние без provider'а. Domain-state живёт за provider'ом домена.
 - ❌ Hardcode конкретного app'а. Domain должен быть consumable любым capsule-аппом — параметризация через ADR 041 services / props.
 - ❌ Heavy движок mirror'а. Если домену нужен virtualized table — он импортит `boost-table` (downward), не реализует свой.
-- ❌ Editor-функциональность. Domain даёт `<LoginForm>`; редактор формы — это design-time (`studio`).
+- ❌ Editor-функциональность. Domain даёт `<LoginForm>`; редактор формы — это studio (`studio`).
 - ❌ Прямой fetch. Все API-calls через `web-query` (runtime); endpoint'ы декларируются через `defineEndpoint`.
 
 ## New package — checklist

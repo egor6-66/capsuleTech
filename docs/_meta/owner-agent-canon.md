@@ -14,7 +14,7 @@ last_updated: 2026-06-11
 1. **`CLAUDE.md`** — POLICY (никаких костылей, две роли framework-developer/user-test-zone, релиз-пайплайн, триаж, OWNERSHIP & TESTING).
 2. **`docs/01-architecture/adr/`** — все ADR'ы. Особенно актуальные:
    - **ADR 046** — boost-* namespace + Matrix evict + CapsuleOutlet vt-name.
-   - **ADR 047** — package zones (kit/runtime/domain/boost/design-time) + cycle canon + vendor transparency + colocation discipline + studio rename.
+   - **ADR 047** — package zones (kit/runtime/domain/boost/studio) + cycle canon + vendor transparency + colocation discipline + studio rename.
    - **ADR 048** — docs as data (markdown source + audience-projection registry).
    - **ADR 033** — package registration (`defineCapsuleModule` manifest).
    - **ADR 041** — capability injection.
@@ -99,15 +99,15 @@ USER гоняет dev-сервер playground'а на **:3050** (HMR). У теб
          boost   domain
                     ⊗  ← domain ↛ domain (forbidden, через contract'ы)
        
-       design-time ← всё кроме apps
+       studio ← всё кроме apps
        apps ← всё
 ```
 
-- kit (`web-ui`): zero heavy deps; никогда не зависит на boost/domain/design-time.
+- kit (`web-ui`): zero heavy deps; никогда не зависит на boost/domain/studio.
 - runtime: между собой OK без циклов; внешне peerDep.
 - boost (`@capsuletech/boost-*`): зависит на kit (light-mirror) + runtime сервисов + heavy vendor.
 - domain (`web-auth`, `web-shell`, `web-agent`): зависит на kit/runtime/boost. **НЕ на другой domain.** Через контракт в `web-contract`.
-- design-time (`@capsuletech/studio`): читает структуру всех; не зависит на apps.
+- studio (`@capsuletech/studio`): читает структуру всех; не зависит на apps.
 
 ## Vendor stack рулe (ADR 047 D3)
 

@@ -41,7 +41,7 @@ boost → kit (можно — для mirror'а Ui.X)
 boost → runtime (можно — нужны web-state/web-query/web-style)
 boost ↛ domain (FORBIDDEN — boost не знает про domain)
 boost ↛ boost (FORBIDDEN — no cross-boost)
-boost ↛ design-time
+boost ↛ studio
 ```
 
 **Boost ↛ domain — почему:** boost — это «фичевый примитив». Domain — это «мини-апп». Если boost начнёт зависеть на domain (например `boost-map` тянет `web-auth`), он перестанет быть переиспользуемым в других domain'ах.
@@ -105,7 +105,7 @@ Boost **не делает**:
 - ❌ Зависимость на другой boost.
 - ❌ Зависимость на domain.
 - ❌ Композицию с domain-логикой. `boost-table` не знает про auth-роли — это widget-уровень.
-- ❌ Editor-функциональность. Inspector / palette / canvas — design-time (`studio`), не boost.
+- ❌ Editor-функциональность. Inspector / palette / canvas — studio (`studio`), не boost.
 - ❌ Глобальный provider в каждом app'е. Boost регистрируется через `defineCapsuleModule` — apps opt-in.
 
 ## New package — checklist

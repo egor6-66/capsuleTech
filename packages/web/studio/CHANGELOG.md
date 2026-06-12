@@ -1,3 +1,7 @@
+## Unreleased (D6 — 2026-06-12)
+
+Directory relocated `packages/web/design-time/studio/` → `packages/web/studio/`. Zone `design-time` retired per ADR 047 D6 — replaced by `studio` as 5-th top-level zone (host/composer canon). npm package name unchanged (`@capsuletech/studio`); no consumer changes required.
+
 ## 0.0.0 (D4 — 2026-06-12)
 
 **BREAKING:** Package renamed `@capsuletech/web-ui-creator` → `@capsuletech/studio` per ADR 047 D4. Directory `packages/web/design-time/ui-creator/` → `packages/web/design-time/studio/`. Empty `@capsuletech/web-creator` skeleton dropped; its design-time-orchestrator role consolidated into `@capsuletech/studio`. Update imports: `from '@capsuletech/web-ui-creator/...'` → `from '@capsuletech/studio/...'`. Six subpaths preserved (`/manifests | /state | /inspector | /generators | /controllers | /capsule`).
