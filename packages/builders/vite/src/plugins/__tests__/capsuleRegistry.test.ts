@@ -459,11 +459,13 @@ describe('generateAppConfigRuntime', () => {
     expect(out).not.toContain('configureAuthSession(');
   });
 
-  it('emits setupAccess import and guarded call when hasAccess is true', () => {
+  it('emits setupAccess + useAuth imports and guarded call when hasAccess is true', () => {
     const out = generateAppConfigRuntime({}, { hasAccess: true });
     expect(out).toContain("import { setupAccess } from '@capsuletech/web-access';");
+    // useAuth is needed as IAuthCapability arg per ADR 047 D2.
+    expect(out).toContain("import { useAuth } from '@capsuletech/web-auth/session';");
     expect(out).toContain('if (appConfig.access) {');
-    expect(out).toContain('  setupAccess(appConfig.access);');
+    expect(out).toContain('  setupAccess(appConfig.access, useAuth());');
   });
 
   it('emits configureAuthSession import and guarded call when hasAuthSession is true', () => {

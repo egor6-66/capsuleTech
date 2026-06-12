@@ -745,9 +745,9 @@ importers:
 
   packages/web/access:
     dependencies:
-      '@capsuletech/web-auth':
+      '@capsuletech/web-contract':
         specifier: workspace:*
-        version: link:../auth
+        version: link:../contract
       '@capsuletech/web-core':
         specifier: workspace:*
         version: link:../core

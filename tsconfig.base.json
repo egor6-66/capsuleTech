@@ -26,6 +26,7 @@
       "@capsuletech/web-state": ["packages/web/state/src/index.ts"],
       "@capsuletech/web-renderer": ["packages/web/renderer/src/index.ts"],
       "@capsuletech/web-contract": ["packages/web/contract/src/index.ts"],
+      "@capsuletech/web-contract/capabilities": ["packages/web/contract/src/capabilities/index.ts"],
       "@capsuletech/web-creator": ["packages/web/creator/src/index.ts"],
       "@capsuletech/web-access": ["packages/web/access/src/index.ts"],
       "@capsuletech/web-dnd": ["packages/web/dnd/src/index.ts"],

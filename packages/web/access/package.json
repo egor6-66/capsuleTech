@@ -21,7 +21,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@capsuletech/web-auth": "workspace:*",
+    "@capsuletech/web-contract": "workspace:*",
     "@capsuletech/web-core": "workspace:*"
   },
   "peerDependencies": {
