@@ -585,7 +585,7 @@ A0 (merge 046+047+048+plan) ─→ A1 (USER creates owner-boost-matrix + restart
 | D1 — Zone directory layout | BLOCKED | — | Wait W+B+C stable |
 | D2 — Cross-domain contracts (web-access drift fix) | **DONE** | этот PR | `IAuthCapability` в `web-contract/capabilities`; web-access потребляет контракт; vite-builder generator wires `useAuth()` arg. W5 known drift закрыт. |
 | D3 — Compliance extension (zone canon enforcement) | **DONE** | этот PR | `zones.ts` + `runZoneCheck` + `cross-zone-import` violation kind. 44 new tests. Sanity sweep 557 web/* files = 0 violations. Vendor-wrapper-comment rule deferred (separate ADR if needed). |
-| D4 — studio rename + absorb ui-creator | BLOCKED | — | Wait D1 |
+| D4 — studio rename + absorb ui-creator | **DONE** | этот PR | `git mv ui-creator → studio` (preserves code history), npm `web-ui-creator` → `studio`, drop empty creator skeleton, 6 apps + tsconfig + nx + vite-builder + compliance + CLI templates updated, `owner-web-ui-creator` agent renamed to `owner-studio`. Restart required for agent. |
 | D5 — OWNERSHIP Vendor stack audit | BLOCKED → partially in W2 | — | W2 уже расставит секции; D5 — финальный sweep если что упустили |
 | E1 — docs:build extract pipeline | BLOCKED | — | Can start parallel to D |
 | E2 — section-id inventory pass | BLOCKED | — | Wait E1 |

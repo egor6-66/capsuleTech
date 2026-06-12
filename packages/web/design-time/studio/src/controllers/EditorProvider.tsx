@@ -42,7 +42,7 @@
  * ```
  *
  * `Controllers.Editor` — глобал, инжектируется через capsule-registry
- * (@capsuletech/web-ui-creator/capsule → defineCapsuleModule).
+ * (@capsuletech/studio/capsule → defineCapsuleModule).
  * Provider не импортирует Controllers напрямую — читает из globalThis
  * как и любой Widget в приложении.
  */

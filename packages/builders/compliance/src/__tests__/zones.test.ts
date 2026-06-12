@@ -102,8 +102,8 @@ describe('PACKAGE_TO_ZONE — canon coverage', () => {
     expect(PACKAGE_TO_ZONE['@capsuletech/boost-layout']).toBe('boost');
   });
 
-  it('lists web-creator in design-time', () => {
-    expect(PACKAGE_TO_ZONE['@capsuletech/web-creator']).toBe('design-time');
+  it('lists studio in design-time', () => {
+    expect(PACKAGE_TO_ZONE['@capsuletech/studio']).toBe('design-time');
   });
 
   it('omits shared-infra packages (allowed everywhere)', () => {
@@ -176,7 +176,7 @@ describe('isZoneImportAllowed — canon rules', () => {
     expect(
       isZoneImportAllowed(
         'design-time',
-        '@capsuletech/web-creator',
+        '@capsuletech/studio',
         'kit',
         '@capsuletech/web-ui',
       ),
@@ -184,7 +184,7 @@ describe('isZoneImportAllowed — canon rules', () => {
     expect(
       isZoneImportAllowed(
         'design-time',
-        '@capsuletech/web-creator',
+        '@capsuletech/studio',
         'domain',
         '@capsuletech/web-auth',
       ),

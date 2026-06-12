@@ -1,6 +1,6 @@
 {
-  "name": "@capsuletech/web-ui-creator",
-  "version": "0.1.1",
+  "name": "@capsuletech/studio",
+  "version": "0.0.0",
   "type": "module",
   "main": "./dist/index.mjs",
   "types": "./dist/index.d.ts",

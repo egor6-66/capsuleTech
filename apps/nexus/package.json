@@ -23,7 +23,7 @@
     "@capsuletech/web-state": "workspace:*",
     "@capsuletech/web-style": "workspace:*",
     "@capsuletech/web-ui": "workspace:*",
-    "@capsuletech/web-ui-creator": "workspace:*",
+    "@capsuletech/studio": "workspace:*",
     "@kobalte/core": "^0.13.0",
     "@tanstack/router-core": "^1.169.0",
     "@tanstack/solid-router": "^1.169.0",
