@@ -1,7 +1,7 @@
 {
   "name": "@capsuletech/web-creator",
-  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/web/creator/src",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/web/design-time/creator/src",
   "projectType": "library",
   "tags": [],
   "targets": {},
