@@ -47,10 +47,10 @@ last_updated: 2026-06-11 (W1+W2+W3+W6+W7 DONE; C1+C2 DONE; next — C3 owner-web
 | `owner-web-router` | `packages/web/router/` | Phase C1: CapsuleOutlet + DepthContext + useRouteDepth rewrite |
 | `owner-web-style` | `packages/web/style/` | Phase C3: enumerate CSS селекторы |
 | `owner-web-ui` | `packages/web/ui/` | Phase B6: Ui.Map/Flow/Chart placeholders |
-| `owner-web-table` | `packages/web/table/` | Phase B4: rename → `boost-table` |
-| `owner-web-map` | `packages/web/map/` | Phase B5: rename → `boost-map` |
-| `owner-web-flow` | `packages/web/flow/` | Phase B5: rename → `boost-flow` |
-| `owner-web-charts` | `packages/web/charts/` | Phase B5: rename → `boost-charts` |
+| `owner-boost-table` | `packages/web/table/` | Phase B4: rename → `boost-table` |
+| `owner-boost-map` | `packages/web/map/` | Phase B5: rename → `boost-map` |
+| `owner-boost-flow` | `packages/web/flow/` | Phase B5: rename → `boost-flow` |
+| `owner-boost-charts` | `packages/web/charts/` | Phase B5: rename → `boost-charts` |
 
 ⚠️ Для rename'ов: ИЛИ rename'им owner-* (изменив агент-файл .claude/agents/owner-web-X.md), ИЛИ оставляем имя owner-web-X но скоуп указывает `@capsuletech/boost-X`. Рекомендация — переименовать агентов, чтобы registry читался прямо (требует restart, см. ниже).
 
@@ -60,7 +60,7 @@ last_updated: 2026-06-11 (W1+W2+W3+W6+W7 DONE; C1+C2 DONE; next — C3 owner-web
 |---|---|---|
 | `owner-boost-matrix` | `packages/web/boost-matrix/` (новый пакет) | Phase A2 — перед Phase B1 |
 
-При rename'е web-X → boost-X логично переименовать и owner-агенты (`owner-web-table` → `owner-boost-table`, и т.д.) — единое чтение скоупа.
+При rename'е web-X → boost-X логично переименовать и owner-агенты (`owner-boost-table` → `owner-boost-table`, и т.д.) — единое чтение скоупа.
 
 ### Main steward (главный assistant, я)
 
@@ -531,7 +531,7 @@ A0 (merge 046+047+048+plan) ─→ A1 (USER creates owner-boost-matrix + restart
 |---|---|---|---|
 | A0 — ADR 046+047+048 + plan-doc merge | **DONE** | #300 | Triada merged 2026-06-11 |
 | A1 — owner-boost-matrix agent + restart | IN PROGRESS (USER) | — | `.draft → .md` rename + session restart на стороне USER'а |
-| A2 — rename owner-web-{table,map,flow,charts} → owner-boost-* | READY | — | После W6 merge (✅) — отдельный PR + restart-нот; main steward готовит когда USER решит |
+| A2 — rename owner-web-{table,map,flow,charts} → owner-boost-* | **DONE** | этот PR | rename 2 existing agent files (table+map; flow+charts не существовали) + sed internal refs в docs/_meta + agent name fields. **Restart required** для активации в registry |
 | W1 — Zone canon docs (kit/runtime/domain/boost/design-time + index) | **DONE** | #302 | `docs/_meta/web-zones/*.md` |
 | W2 — OWNERSHIP refresh + README per-package | **DONE** | #303 | 23 OWNERSHIP refresh + 11 new README + readme-template; зафиксирован `web-access → web-auth` drift |
 | W3 — L0/L1 gradient + manifest schema | **DONE** | #302 | `docs/_meta/web-ui.md` секция |
