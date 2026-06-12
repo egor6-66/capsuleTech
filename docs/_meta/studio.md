@@ -9,7 +9,7 @@ audience: claude
 
 > Шпаргалка для Claude-инстансов. Без воды. Юзеру — `docs/09-packages/ui-creator.md`.
 
-## TL;DR
+## TL;DR {#tldr}
 
 Host/composer для авторства capsule UI: всё нужное чтобы СОЗДАТЬ JSON-дерево UI. Runtime-рендер — в `@capsuletech/web-renderer` (отдельный пакет, без deps на zod/manifests). Пакет framework-agnostic (ноль зависимости на web-core) — кроме `/controllers` (HCA-integration, ADR 032) и `/inspector` (Solid-UI, studio-only). Sole inhabitant of `studio` zone (5-я top-level zone per ADR 047 D6, 2026-06-12). Composition rule: studio exports product-blocks, raw engines живут в своих пакетах (см. [[feedback_studio_composition_rule]]).
 
@@ -29,7 +29,7 @@ Host/composer для авторства capsule UI: всё нужное чтоб
 
 **Правило:** `useEditorKit()` — только для рендера пользовательского контента. Chrome → `@capsuletech/web-ui` напрямую.
 
-## Где что лежит
+## Где что лежит {#layout}
 
 | Путь | Что |
 |---|---|
@@ -53,7 +53,7 @@ Host/composer для авторства capsule UI: всё нужное чтоб
 | `src/controllers/index.ts` | Barrel `/controllers` subpath |
 | `src/capsule.ts` | `/capsule` манифест — `defineCapsuleModule` (ADR 033) |
 
-## Subpath exports
+## Subpath exports {#subpath-exports}
 
 ```ts
 // @capsuletech/studio/manifests — спецификации + правила
@@ -134,7 +134,7 @@ marks: Record<NodeId, string>
 
 **`/capsule` манифест:** `defineCapsuleModule({ name: 'Editor', components: { Overlay }, controllers: { Editor } })`.
 
-## Известные ограничения
+## Известные ограничения {#known-limits}
 
 1. **Multi-entry vite build** — `vite.config.mts`: `index + manifests + state + inspector + generators + controllers + capsule`. Все subpaths обязаны присутствовать в `dist/`.
 2. **`/inspector` тянет web-style/web-ui** — только editor-app, не prod.
@@ -144,7 +144,7 @@ marks: Record<NodeId, string>
 6. **Tree shape ≠ Solid VNode** — `IEditorTree` это JSON-сериализуемая схема. `web-renderer` парсит в JSX.
 7. **Inspector Select/Textarea — нативный fallback** — `@capsuletech/web-ui` пока не экспортирует Select/Textarea. Свапнем на web-ui компоненты отдельной задачей когда owner-web-ui добавит их. Fallback не трогать до этого момента.
 
-## Gotchas
+## Gotchas {#gotchas}
 
 1. **composite vs composition** — `composition` = Card/Field (составной компонент-семейство), `composite` = Card.Header/Field.Label (части-слоты). `canDropInto` применяет строгость только к `composite`.
 2. **`canAcceptChild` pass-through для неизвестных типов** — если parentType не в реестре → возвращает `true`. `canDropInto` наследует это поведение, но composite-check всё равно работает через childType.
@@ -158,7 +158,7 @@ marks: Record<NodeId, string>
 - ADR 032 — Package /controllers + useEmit; фаза 5 часть 1: `dnd.ts`+`rules.ts` → пакет; часть 2: EditorController + EditorOverlay + /controllers + /capsule
 - ADR 033 — механизм регистрации пакетов; `/capsule` манифест реализован
 
-## Тест-покрытие
+## Тест-покрытие {#tests}
 
 | Suite | Тестов | Что |
 |---|---|---|

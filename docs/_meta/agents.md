@@ -182,7 +182,7 @@ pnpm report:all                 # все фичи в reports/
 - **Шаблон устаревает** (например, изменили `IHandlerApi`) — правим .md-файл агента, не код. «Обновился один файл — все будущие генерации правильные».
 - **Канон пакета меняется** — owner правит свой `docs/_meta/<pkg>.md`, не агента-prompt. Owner-prompt ссылается на anchor; obnov anchor → следующая инвокация owner'а видит свежий.
 
-## Связанное
+## Связанное {#related}
 
 - [[POLICY.md]] — cross-cutting policy для всех агентов
 - [[release-checklist]] — что делает owner перед релизом пакета

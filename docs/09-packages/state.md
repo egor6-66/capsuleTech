@@ -132,7 +132,7 @@ const inputs = pickByTags(componentsMap, ['@inputs']);
 - [[ui-proxy|UiProxy]] зовёт `store.registerComponent({ [id]: ... })` / `unregisterComponent(id)` через bridge на mount/unmount компонента.
 - Хэндлеры Controller/Feature получают `store` в [[controller-proxy|IHandlerApi]] и используют `pick/omit/match` для адресации компонентов по тегам.
 
-## Связанное
+## Связанное {#related}
 
 - [[controller-proxy]]
 - [[ui-proxy]]

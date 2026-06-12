@@ -11,13 +11,13 @@ last-verified: 2026-05-27
 > [!ai]
 > Шпаргалка для Claude-инстансов. Без воды. Юзеру — [[core|core.md]] (когда появится).
 
-## TL;DR
+## TL;DR {#tldr}
 
 Корневой пакет HCA-фреймворка. **Семь** wrapper-функций: `View`, `Widget`, `Page`, `Shape`, `Controller`, `Feature` (UI/logic слои) + `Entity` (domain data layer — plain config, не компонент). Поверх двух Proxy-движков: **UiProxy** (per-instance event-binding + meta-registration) и **ControllerProxy** (FSM-aware dispatch с auto-bubbling через `next()`). `createRoot()` — DOM-bootstrap (`render` + theme-injection). `BaseProviders` — composition корневых providers (RouterProvider + VitalsMonitoring). `Ui` — namespace lazy-импортов всех web-ui примитивов через `createLazy()`.
 
 **Семантика wrapper-args (v0.3.0+)**: `(Ui, props?)` для UI-слоёв, `(services)` для logic-слоёв. Всё остальное — глобалы через `Object.assign(globalThis, _registry)` в bootstrap. См. ADR 002 + commit 477b0fb.
 
-## Где что лежит
+## Где что лежит {#layout}
 
 | Файл | Что |
 |---|---|
@@ -42,7 +42,7 @@ last-verified: 2026-05-27
 | `packages/web/core/src/create/createRoot.ts` | DOM bootstrap: `render(Bootstrap, container)` + theme `data-theme` |
 | `packages/web/core/src/wrappers/__tests__/view-props.test.tsx` | 7 характеризационных тестов нового `(Ui, props)` контракта |
 
-## Public API
+## Public API {#public-api}
 
 ```ts
 import {
@@ -121,7 +121,7 @@ Feature((services: IServices) => IDefineStateSchema): Component
 - `Views` / `Widgets` / `Shapes` / `Controllers` / `Features` — через `Object.assign(globalThis, _registry)` в bootstrap.
 - `Ui` — единственное что приходит **параметром**, потому что per-instance (UiProxy под текущий ControllerContext).
 
-## Lifecycle flow
+## Lifecycle flow {#lifecycle}
 
 ```
 apps/<app>/src/pages/welcome.tsx                  ← Page((Ui) => <Ui.Layout.Matrix slots={...}>)
@@ -258,7 +258,7 @@ ControllerProxy резолвит `states[currentState][name]` → top-level → 
 - `state.set(name)` — `__GOTO_<name>__` в XState; `state.matches(name|name[])` — сверка.
 - `next(payload)` — **прямой вызов** `parent.controller[name]`, не XState event-bus. Опционально ремапит имя через `overrides` prop на Controller-обёртке.
 
-## Известные грабли
+## Известные грабли {#gotchas}
 
 19. **`Entity` — единственный wrapper без Solid-компонента.** Все остальные wrappers (`View`, `Widget`, `Page`, `Controller`, `Feature`, `Shape`) возвращают `Component<P>`. `Entity` возвращает **frozen plain object** `{ schema, defaults? }`. HMRWrappingPlugin не трогает `entities/` файлы (нет `const X = Wrapper(...)` component pattern). UiProxy и ControllerProxy к Entity не применяются — это pure data layer. AutoImport делает `Entity` глобальным через `WRAPPER_NAMES` (owner-builders добавляет). Codegen `Entities.*` — через `ExportGeneratorPlugin` scan `entities/` (owner-builders добавляет). **Контракт factory:** `Entity(({ zod }) => ({ schema: zod.object({...}) }))` — инструменты передаются объектом, деструктурируй `zod`. Глобал `Zod` из auto-import тоже работает, но инжект предпочтителен. `$infer` и `RowOf` не зависят от формы factory-аргументов — типизация сохранена.
 
@@ -324,7 +324,7 @@ ControllerProxy резолвит `states[currentState][name]` → top-level → 
 
 31. **`useEmit` — намеренное исключение из «engine/* не public»** (ADR 032). `src/engine/use-emit.ts` экспортируется в публичный barrel — единственный способ дать внешним пакетам (`web-dnd/controllers`, `web-renderer/controllers`) доступ к dispatch-механизму без дублирования engine-логики. Контракт: только `useEmit` + `normalizeTarget` (последняя нужна для тестов и package entry-points). Если появляется соблазн добавить туда другие engine-exports — остановись и задай вопрос: это симптом, что нужен другой механизм или ADR. `normalizeTarget` не экспортируется из barrel (только из файла), она internal-helper для пакетов, работающих через subpath.
 
-## Что менять когда
+## Что менять когда {#changes-guide}
 
 | Хочу… | Куда лезть |
 |---|---|
@@ -344,7 +344,7 @@ ControllerProxy резолвит `states[currentState][name]` → top-level → 
 | Devtools-integration | Exporter для `@capsuletech/web-profiler` — backlog P3. |
 | TypingProvider для services | Generic-context для типизации `services` через app-level config. Backlog P3. |
 
-## Cross-links
+## Cross-links {#cross-links}
 
 - OWNERSHIP: [packages/web/core/OWNERSHIP.md](../../packages/web/core/OWNERSHIP.md)
 - ADRs: [[001-xstate-only-fsm]], [[002-logic-wrapper-unification]], [[007-uiproxy-cleanup]], [[008-hybrid-fsm-with-direct-next]], [[009-event-handlers-hardcoded]], [[019-autoimport-dirs-drop]], [[020-component-data-flow-split]], [[021-uiproxy-auto-kind-tags]]

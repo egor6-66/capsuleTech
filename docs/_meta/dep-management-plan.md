@@ -67,7 +67,7 @@ last-updated: 2026-05-20
 
 - [ ] Миграция оверрайдов на `pnpm.packageExtensions` где причина — отсутствующий peer в upstream (unplugin-dts → @vue/language-core кейс). Чище чем глобальные overrides.
 
-## Связанные документы
+## Связанные документы {#related}
 
 - [[release-checklist]] — текущий процесс публикации (обновить после Phase 1).
 - ADR-XXX — добавить ADR про "declare-what-you-import" rule после Phase 2 (когда правило enforced linter'ом).

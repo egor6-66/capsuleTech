@@ -10,11 +10,11 @@ audience: claude
 > [!ai]
 > Шпаргалка для Claude-инстансов. Без воды. Юзеру — [[query|query.md]] (если будет).
 
-## TL;DR
+## TL;DR {#tldr}
 
 Декларативный API-слой capsule. `defineEndpoint(({ zod, utils }) => config)` фабрика создаёт endpoint с zod-схемами `request`/`response` и опциональным `map(dto) → domain`. Factory получает объект инструментов `{ zod: CapsuleZ, utils: Utils }` — унифицированная конвенция capsule (аналогично Entity `({ zod })`, Controller/Feature `services`). `createApi(config, registry)` собирает typed-proxy `(input) => Promise<domain>` за каждый endpoint. Внутри — koa-style middleware pipeline (`compose`) с фиксированным порядком: `validateInput → preRequestHook → buildRequest → ...globalMw → httpTransport → validateResponse → mapDomain → ...endpointMw`. **`preRequest`** — typed-сахар для per-endpoint mock'инга / input-трансформации / business-rule-аборта (между validateInput и buildRequest). **`devOnly()`** — wrapper для tree-shake'a в prod-build (`import.meta.env.DEV`-based). `setApiClient(api)` публикует proxy в module-singleton, `getApiClient()` достаёт из `services.api` Feature'а. Subpath `/app-config` — `defineAppConfig`/`IAppConfig`.
 
-## Где что лежит
+## Где что лежит {#layout}
 
 | Файл | Что |
 |---|---|
@@ -33,7 +33,7 @@ audience: claude
 | `packages/web/query/src/devOnly.ts` | tree-shake helper `devOnly<T>(value): T \| undefined` |
 | `packages/web/query/src/__tests__/` | 11 unit-test files, 179 tests (node-env, без jsdom) |
 
-## Архитектура
+## Архитектура {#architecture}
 
 ```
 apps/<app>/api/<namespace>/<endpoint>.ts
@@ -245,7 +245,7 @@ catch (e) {
 
 15. **`HttpError.bodyText` читается единожды в `defaultFetcher`.** `Response.body` — stream, читается один раз. `response.text()` / `.json()` после throw'а вернут пустую строку. Если consumer (error-interceptor, Sentry) хочет body — берёт из `error.bodyText`, НЕ из `error.response`.
 
-## Что менять когда
+## Что менять когда {#changes-guide}
 
 | Хочу… | Куда лезть |
 |---|---|
@@ -268,7 +268,7 @@ catch (e) {
 - **`builders/vite > AppConfigPlugin`** парсит `capsule.app.ts`, генерит tag/alias-registry runtime-binding. owner-builders при изменении `IAppConfig`.
 - **Все Features (apps)** дёргают `services.api.<namespace>.<endpoint>({...})`. Breaking change в return-type / signature `wrapEndpoint` — массовый impact.
 
-## Cross-links
+## Cross-links {#cross-links}
 
 - User-doc: [[query]] (TBD)
 - ADRs: [[011-define-app-config]] (если есть), [[013-app-config-subpath]] (если есть)

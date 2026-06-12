@@ -10,11 +10,11 @@ audience: claude
 > [!ai]
 > Шпаргалка для Claude-инстансов и owner-desktop. Без воды. Юзеру — [[09-backend/desktop|desktop.md]].
 
-## TL;DR
+## TL;DR {#tldr}
 
 `@capsuletech/desktop` — library (не CLI binary) для Tauri-shell — публичный API `runDev(opts)` / `runBuild(opts)` + pre-built бинарь в `dist/bin/capsule-desktop[.exe]`. Scaffolding override `.tauri.<app>.json` + child-process orchestration (spawn `tauri dev|build`). Rust crate в `native/` standalone (не workspace-member backend/). Дёргается из `@capsuletech/cli` команда `capsule desktop dev|build <app>`. Fixed version group с CLI (PR 6).
 
-## Где что лежит
+## Где что лежит {#layout}
 
 | Файл | Что |
 |---|---|
@@ -182,7 +182,7 @@ CI (`pnpm nx run-many -t build`) runs only `pnpm build` (no cargo). `pnpm build:
 - Triggered by: SIGINT, SIGTERM, uncaughtException, normal exit
 - All hooks converge to single `cleanupOverride()` — must be idempotent to prevent double-unlink
 
-## Известные грабли
+## Известные грабли {#gotchas}
 
 1. **Override-файл cleanup идемпотентный.** `cleanupOverride()` с флагом + existsSync + try/catch. SIGINT/SIGTERM/exit/uncaughtException все сходятся — без идемпотентности бросит.
 
@@ -221,7 +221,7 @@ CI (`pnpm nx run-many -t build`) runs only `pnpm build` (no cargo). `pnpm build:
 
 **Distribution (Phase 2, отдельный ADR):** Matrix CI build per platform, optional deps per platform (`@capsuletech/desktop-{darwin-arm64,darwin-x64,linux-x64,win32-x64}`), runtime resolution через `require.resolve('@capsuletech/desktop-${platform}')`.
 
-## Test coverage
+## Test coverage {#tests}
 
 | Тип | Где | Что |
 |---|---|---|
@@ -230,7 +230,7 @@ CI (`pnpm nx run-many -t build`) runs only `pnpm build` (no cargo). `pnpm build:
 | Smoke (Rust) | CI | `cargo check --manifest-path packages/desktop/native/Cargo.toml` |
 | E2E | `packages/cli/e2e/` (после PR 6) | `cd apps/sandbox && capsule desktop dev` → Tauri окно + devUrl connects |
 
-## Что менять когда
+## Что менять когда {#changes-guide}
 
 | Хочу… | Куда лезть |
 |---|---|
@@ -245,7 +245,7 @@ CI (`pnpm nx run-many -t build`) runs only `pnpm build` (no cargo). `pnpm build:
 | Изменить `SystemSnapshot` контракт | `native/src/metrics.rs` serde struct + `src/metrics.ts` TS type (оба вручную!) + обновить тест `metrics.test.ts` — это breaking change для app-фронта |
 | Изменить интервал/топ-процессов мониторинга | `start_monitoring(intervalMs, topProcesses)` — параметры runtime, не compile-time |
 
-## Cross-package dependencies
+## Cross-package dependencies {#cross-package-deps}
 
 | Пакет | Как | Owner |
 |---|---|---|
@@ -267,7 +267,7 @@ CI (`pnpm nx run-many -t build`) runs only `pnpm build` (no cargo). `pnpm build:
 
 ADR переходит в `status: implemented` после Phase 1 (PR 8 merged).
 
-## Связанное
+## Связанное {#related}
 
 - [[017-desktop-package|ADR 017]] — design rationale + alternatives
 - [[../../packages/desktop/OWNERSHIP|@capsuletech/desktop OWNERSHIP.md]] — зона owner-desktop

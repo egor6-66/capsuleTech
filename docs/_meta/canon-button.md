@@ -207,7 +207,7 @@ expect(cs.borderColor).toBe(TOKEN.DESTRUCTIVE);
 - Извлечение rule-engine. Сначала Button + 1–2 других примитива на ad-hoc матчерах → потом выделяем повторяющееся в `@capsuletech/rules` (см. `MEMORY.md → playground-этал`).
 - Сторибук теперь = `web-creator/catalog`. Старый Storybook продолжает жить, но НЕ берём его как референс — миграция Button-stories в catalog = отдельная задача после стабилизации канона.
 
-## Ссылки
+## Ссылки {#related}
 
 - `packages/web/ui/OWNERSHIP.md` — зона owner-web-ui (Button — `primitives/`).
 - ADR 042 — design tokens canon (тут источник `--button-padding-*`).

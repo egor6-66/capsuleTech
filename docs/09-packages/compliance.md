@@ -132,7 +132,7 @@ plugins.CompliancePlugin({
 - `*.spec.ts(x)`, `*.test.ts(x)` (test mode — full pass)
 - Файлы вне известных слоёв (system, скрипты, tooling)
 
-## Связанное
+## Связанное {#related}
 
 - [[golden-rules]]
 - [[layers]]

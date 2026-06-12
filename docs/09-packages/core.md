@@ -218,7 +218,7 @@ interface IDefineStateSchema<TCtx> {
 - Темизация — `@capsuletech/web-style`.
 - Vite-плагины / builder — `@capsuletech/vite-builder`.
 
-## Связанное
+## Связанное {#related}
 
 - [[layers]]
 - [[ui-proxy]] · [[controller-proxy]] · [[shape]]

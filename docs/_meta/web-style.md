@@ -7,7 +7,7 @@ updated: 2026-05-22
 
 Quick orientation for Claude instances working in `packages/web/style/`.
 
-## Owner prompt
+## Owner prompt {#owner-prompt}
 
 Full context: `.claude/agents/owner-web-style.md` (system prompt of owner agent).
 

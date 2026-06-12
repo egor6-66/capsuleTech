@@ -259,7 +259,7 @@ import { ThemeSwitcher } from '@capsuletech/web-style/switcher';
 
 Алтернатива: используй CSS-переменные напрямую в компоненте (`style={{ backgroundColor: 'var(--my-token)' }}`), но это не даст autocomplete в Tailwind-классах.
 
-## Связанное
+## Связанное {#related}
 
 - [[ui|@capsuletech/web-ui — UI-kit primitives]]
 - [[theming|Темовая система: как устроена, как добавить]]

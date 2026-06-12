@@ -11,7 +11,7 @@ last_updated: 2026-06-11
 >
 > Канон-источники: [[046-boost-namespace-matrix-evict-vt-owner|ADR 046]] (boost-* namespace + Matrix evict), [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] D1, [[044-web-menu-package|ADR 044]] (heavy=pkg / light=kit principle).
 
-## Purpose
+## Purpose {#purpose}
 
 **Heavy domain-mirror kit-примитива.** Тяжёлый движок (virtual-scroll engine, map-engine, graph-engine, WebGL/WebGPU), зеркалирующий light-примитив из kit, но дающий full-power возможности.
 
@@ -22,7 +22,7 @@ Boost-пакет обязан удовлетворять четырём инва
 3. **Registered through ADR 033.** Boost регистрируется как global (`Tables.*`, `Maps.*`, `Flows.*`, `Charts.*`, `Matrices.*`) через `defineCapsuleModule`, не через прямой импорт в каждом widget'е.
 4. **No cross-boost coupling.** `boost-table` не знает про `boost-map`. Composition — на уровне app/widget'а.
 
-## Packages
+## Packages {#packages}
 
 > **Naming canon (post-ADR 046):** все boost-пакеты используют префикс `@capsuletech/boost-*` (НЕ `@capsuletech/web-*`). Это явно сигналит «бустер light-примитива». Rename из `web-*` → `boost-*` выполняется в Phase W6 plan-doc.
 
@@ -34,7 +34,7 @@ Boost-пакет обязан удовлетворять четырём инва
 | `boost-charts` | `@capsuletech/boost-charts` | `Ui.Chart` (placeholder) | scaffold | Charts library (TBD vendor: Visx/Recharts/D3-based). |
 | `boost-matrix` | `@capsuletech/boost-matrix` | `Ui.Grid` | scaffold | Heavy Matrix grid: corvu/resizable + capsule web-dnd + persistence + presets (app-shell / studio / dashboard). Эвакуация из web-shell per ADR 046 D2. |
 
-## Import rules
+## Import rules {#import-rules}
 
 ```
 boost → kit (можно — для mirror'а Ui.X)
@@ -50,7 +50,7 @@ boost ↛ studio
 
 Compliance enforces: boost → domain/другой boost = warning.
 
-## Canonical shape
+## Canonical shape {#canonical-shape}
 
 Структура типичного boost-пакета:
 
@@ -85,7 +85,7 @@ export default Widget((Ui, props) => {
 });
 ```
 
-## Vendor stack
+## Vendor stack {#vendor-stack}
 
 Per-boost (детали в OWNERSHIP.md каждого):
 
@@ -97,7 +97,7 @@ Per-boost (детали в OWNERSHIP.md каждого):
 
 Документация upstream — per-package.
 
-## Non-goals
+## Non-goals {#non-goals}
 
 Boost **не делает**:
 
@@ -108,7 +108,7 @@ Boost **не делает**:
 - ❌ Editor-функциональность. Inspector / palette / canvas — studio (`studio`), не boost.
 - ❌ Глобальный provider в каждом app'е. Boost регистрируется через `defineCapsuleModule` — apps opt-in.
 
-## New package — checklist
+## New package — checklist {#new-package-checklist}
 
 Добавление boost-пакета — **архитектурное решение**. Перед PR'ом:
 
@@ -129,7 +129,7 @@ Boost **не делает**:
 4. Owner-агент `.claude/agents/owner-boost-<name>.md` ([[owner-agent-canon]]).
 5. Release-group `web_base` в `scripts/release-local.mjs`.
 
-## Related
+## Related {#related}
 
 - [[web-table]] (→ переименование `boost-table`), [[web-map]] (→ `boost-map`), [[web-flow]] (→ `boost-flow`), [[web-charts]] (→ `boost-charts`) — per-package AI-anchors.
 - [[web-zone-kit]] — у каждого boost'а есть light-mirror в kit'е.

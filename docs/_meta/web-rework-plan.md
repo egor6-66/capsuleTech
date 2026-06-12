@@ -380,7 +380,7 @@ last_updated: 2026-06-12 (D1 5/5 DONE; ADR 046 amended — augmentation pattern 
 
 ⚠️ **Перед началом Phase D** — стабилизировать Phase B + C (мерджи приземлены, дерево чистое от переездов). Перемещение moving target = dirty.
 
-### D1 — Physical directory layout
+### D1 — Physical directory layout {#D1}
 
 - **Owner:** main steward (один большой coordinator-PR).
 - **Steps:**
@@ -395,7 +395,7 @@ last_updated: 2026-06-12 (D1 5/5 DONE; ADR 046 amended — augmentation pattern 
 - **CI:** standard; build/typecheck/test green как до перемещения.
 - **Status:** PENDING.
 
-### D2 — Domain isolation contracts setup
+### D2 — Domain isolation contracts setup {#D2}
 
 - **Owner:** main steward + owner-web-contract.
 - **Steps:**
@@ -406,7 +406,7 @@ last_updated: 2026-06-12 (D1 5/5 DONE; ADR 046 amended — augmentation pattern 
 - **PR:** `feat(web-contract): cross-domain capability contracts (adr 047 D2)` (если нужен).
 - **Status:** PENDING (зависит от реальной потребности).
 
-### D3 — Compliance extension: domain-isolation + vendor-wrapper-comment
+### D3 — Compliance extension: domain-isolation + vendor-wrapper-comment {#D3}
 
 - **Owner:** owner-builders (за `packages/builders/compliance/`).
 - **Steps:**
@@ -416,7 +416,7 @@ last_updated: 2026-06-12 (D1 5/5 DONE; ADR 046 amended — augmentation pattern 
 - **PR:** `feat(compliance): zone-canon + vendor-wrapper rules (adr 047 D2/D3)`.
 - **Status:** PENDING.
 
-### D4 — `web-creator` → `studio` rename + ui-creator absorb
+### D4 — `web-creator` → `studio` rename + ui-creator absorb {#D4}
 
 - **Owners:** owner-web-creator (rename), owner-web-ui-creator (absorb), main steward (coordinator).
 - **Steps:**
@@ -429,7 +429,7 @@ last_updated: 2026-06-12 (D1 5/5 DONE; ADR 046 amended — augmentation pattern 
 - **PR(s):** `refactor(studio): rename from web-creator + absorb web-ui-creator (adr 045 #2, adr 047 D4)`.
 - **Status:** PENDING.
 
-### D5 — OWNERSHIP «Vendor stack» секция (audit pass)
+### D5 — OWNERSHIP «Vendor stack» секция (audit pass) {#D5}
 
 - **Owners:** все owner-агенты + main steward координация.
 - **Steps:**
@@ -602,7 +602,7 @@ A0 (merge 046+047+048+plan) ─→ A1 (USER creates owner-boost-matrix + restart
 - view-transition CSS обратной совместимости: пока C3 не merge'нут, после C1+C2 routing-animation **может** degrade'нуть для несконсолидированных консьюмеров (fallback `capsule-content` без depth). C3 закрывает.
 - `Ui.Matrix` в web-ui НЕ добавляется — landing case покрывается `Ui.Grid`. Если позже понадобится lighter-than-Grid Matrix-shape — отдельный ADR.
 
-## Открытые вопросы
+## Открытые вопросы {#open-questions}
 
 - **B2 cooperate-PR** ИЛИ два последовательных? Решение — main steward на момент B1 готовности (по диффу).
 - **A2 rename агентов** — делать или нет? Решение — user, после A0.
