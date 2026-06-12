@@ -1,7 +1,7 @@
 {
-  "name": "@capsuletech/boost-table",
-  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/web/table/src",
+  "name": "@capsuletech/boost-map",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/web/boost/map/src",
   "projectType": "library",
   "tags": [],
   "targets": {},

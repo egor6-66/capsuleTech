@@ -1,7 +1,7 @@
 {
-  "name": "@capsuletech/boost-charts",
-  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/web/charts/src",
+  "name": "@capsuletech/boost-flow",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/web/boost/flow/src",
   "projectType": "library",
   "tags": [],
   "targets": {},
