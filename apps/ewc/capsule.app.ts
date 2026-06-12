@@ -4,7 +4,7 @@ export default defineAppConfig({
     '@input': ['input'],
     '@submit': ['submit'],
   },
-  packages: ['@capsuletech/web-shell', '@capsuletech/boost-table'],
+  packages: ['@capsuletech/web-shell', '@capsuletech/boost-table', '@capsuletech/boost-layout'],
   api: () => ({
     bases: { default: '/api' },
   }),

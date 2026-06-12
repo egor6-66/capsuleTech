@@ -19,7 +19,7 @@
  * `capsule.app.ts`, без правок этого файла.
  */
 const Workspace = Page((Ui) => (
-  <Shell.Matrix
+  <Layouts.Matrix
     mode="view"
     preset="app-shell"
     slots={{

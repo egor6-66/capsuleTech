@@ -15,21 +15,19 @@ tier-2 in the two-tier UI model.
 
 ## Состояние (читать ПЕРВЫМ)
 
-- **Zone:** `domain` — stateful feature-package, chrome для apps (Header / Layout / ModeToggle / ThemePicker и т.д.).
-- **Status:** `alpha` (0.1.0) — chrome subpath работает; Matrix-subpath будет эвакуирован в `@capsuletech/boost-matrix` per [[046-boost-namespace-matrix-evict-vt-owner|ADR 046]] D2 (Phase B2 plan-doc).
+- **Zone:** `domain` — stateful feature-package, chrome для apps (Header / ModeToggle / ThemePicker / Appearance / FinishSettings / LocalePicker).
+- **Status:** `alpha` (0.1.0) — chrome subpath работает; Matrix эвакуирована в `@capsuletech/boost-layout` (Phase B2 closed 2026-06-12 per ADR 046 D2 amend).
 - **Priority:** **P0** — каждый capsule-апп тянет shell для chrome.
 - **Maturity bar (до beta):**
-  - Phase B2 closed — Matrix evicted to `boost-matrix`; shell = chrome only.
   - Header block формализован (config-driven, ADR 032 useEmit).
   - `Controllers.Shell.*` HCA-адаптер.
   - `IShellCapability` контракт extracted в `web-contract` (если нужно cross-domain).
-- **Active blockers:** Phase B2 (Matrix eviction) ждёт A1 (owner-boost-matrix создан) + B1 (boost-matrix scaffold).
+- **Active blockers:** нет.
 - **Roadmap:**
-  1. Phase B2 — strip matrix + /matrix + /layout subpaths.
-  2. Header block (config-driven, через Shapes.Shell).
-  3. `Controllers.Shell.*` finalize (ADR 032 useEmit).
-  4. switcher-state coordination с owner-web-style (theme/layout-mode пересечения).
-- **Last activity:** 2026-06-11 (canon refresh; B2 в очереди).
+  1. Header block (config-driven, через Shapes.Shell).
+  2. `Controllers.Shell.*` finalize (ADR 032 useEmit).
+  3. switcher-state coordination с owner-web-style (theme/layout-mode пересечения).
+- **Last activity:** 2026-06-12 (Phase B2 — Matrix moved out to boost-layout).
 
 ## Vendor stack (ADR 047 D3)
 
@@ -38,15 +36,14 @@ tier-2 in the two-tier UI model.
 - **`@capsuletech/web-ui`** (workspace, dep) — primitives для chrome (Layout/Card/Toggle/...).
 - **`@capsuletech/web-style`** (workspace, dep) — tokens, theme state, layout-mode.
 - **`@capsuletech/web-intl`** (workspace, dep) — для chrome локализации.
-- **`@capsuletech/web-dnd`** (workspace, dep) — pointer DnD (используется Matrix; уйдёт после B2 с Matrix'ом).
 
 ## Allowed dependency zones (ADR 047 D2)
 
 Domain-пакеты НЕ импортят друг друга напрямую. web-shell разрешено зависеть на:
 
 - ✅ **kit** (`web-ui`)
-- ✅ **runtime** (`web-core`, `web-style`, `web-intl`, `web-dnd`)
-- ✅ **boost** (после B2 — `boost-matrix` потребляется apps'ами, не shell'ом; shell отдаёт chrome)
+- ✅ **runtime** (`web-core`, `web-style`, `web-intl`)
+- ✅ **boost** (`boost-layout` потребляется apps'ами, не shell'ом; shell отдаёт chrome)
 - ✅ **web-contract** (для cross-domain capability — например `IAuthCapability` для `is-authed?` логики в header)
 - ❌ **другой domain** (`web-auth`, `web-agent`) — через контракт в `web-contract`.
 
@@ -81,13 +78,11 @@ Per ADR 045 the package exposes two tiers as dedicated subpaths:
 
 | Subpath | Tier | What | Notes |
 |---|---|---|---|
-| `./layout` | tier-1 stateless | `Matrix`, `Region`, `Cell`, `appShellResolver`, `resolvePreset` | No stores, no `useEmit`, no DOM side-effects |
-| `./chrome` | tier-2 connected | `Header`, `ModeToggle`, `Appearance`, `FinishSettings`, `ThemePicker`, `LocalePicker` + `Controllers.Shell` | Wired to `@capsuletech/web-style` / `@capsuletech/web-auth` stores; `useEmit` |
-| `./matrix` | **deprecated alias** | Same surface as `./layout` | Soft-deprecated; consumers migrate to `./layout` on next touch. Will be removed in a future major version. |
+| `./chrome` | tier-2 connected | `Header`, `ModeToggle`, `Appearance`, `FinishSettings`, `ThemePicker`, `LocalePicker` | Wired to `@capsuletech/web-style` / `@capsuletech/web-auth` stores; `useEmit` |
 | `./ui` | (legacy) | Connected blocks only (no controllers) | Pre-ADR 045 subpath; still works, prefer `./chrome` for new consumers. |
-| `./controllers` | (legacy) | `MatrixController`, `IMatrixEvents` | Pre-ADR 045 subpath; still works, prefer `./chrome` for new consumers. |
+| `./controllers` | empty barrel | (placeholder for future Controllers.Shell.*) | Matrix Controller moved to `@capsuletech/boost-layout/controllers` per ADR 046 D2 (Phase B2). |
 | `.` | convenience barrel | Re-exports `./ui` | |
-| `./capsule` | pkg manifest | `defineCapsuleModule` (ADR 033) | Depends on `@capsuletech/web-core`; runtime pending (phase 3). |
+| `./capsule` | pkg manifest | `defineCapsuleModule` (ADR 033) — `Shell` namespace (chrome only) | Depends on `@capsuletech/web-core`; runtime pending (phase 3). |
 
 Изменение публичного API = breaking → coordinate с главным.
 

@@ -177,7 +177,7 @@ type _OpenIndexSigAssert = Expect<Equal<_OpenIndexSigCheck, true>>;
 // ---------------------------------------------------------------------------
 
 const _sourcePartial: Partial<ITarget> = {
-  source: '@capsuletech/web-shell/matrix',
+  source: '@capsuletech/boost-layout',
   payload: { id: 'cell-1' },
 };
 // Silence unused variable warning
@@ -193,7 +193,7 @@ describe('typed-events — type contracts (ADR 032 Track #3)', () => {
   it('ITarget has source field (string | undefined)', () => {
     const t: ITarget = {};
     // source is optional string — assign and access without error
-    t.source = '@capsuletech/web-shell/matrix';
+    t.source = '@capsuletech/boost-layout';
     // no runtime assertion needed — type check above covers this
   });
 

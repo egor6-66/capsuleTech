@@ -11,7 +11,7 @@
  * Оба слота `resizable: false` — shell не ресайзится.
  */
 const Workspace = Page((Ui) => (
-  <Shell.Matrix
+  <Layouts.Matrix
     mode="view"
     preset="app-shell"
     slots={{

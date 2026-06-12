@@ -7,7 +7,7 @@
  */
 
 const WebStudio = Page((Ui) => (
-  <Shell.Matrix
+  <Layouts.Matrix
     mode="view"
     preset="app-shell"
     slots={{

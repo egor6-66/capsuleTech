@@ -6,7 +6,7 @@ export default defineAppConfig({
     '@input': ['input'],
     '@submit': ['submit'],
   },
-  packages: ['@capsuletech/web-auth', '@capsuletech/web-shell'],
+  packages: ['@capsuletech/web-auth', '@capsuletech/web-shell', '@capsuletech/boost-layout'],
   api: () => ({
     bases: { default: '/api' },
   }),

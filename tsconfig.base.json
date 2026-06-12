@@ -34,6 +34,9 @@
       "@capsuletech/boost-flow": ["packages/web/boost/flow/src/index.ts"],
       "@capsuletech/boost-layout": ["packages/web/boost/layout/src/index.ts"],
       "@capsuletech/boost-layout/capsule": ["packages/web/boost/layout/src/capsule.ts"],
+      "@capsuletech/boost-layout/controllers": [
+        "packages/web/boost/layout/src/controllers/index.ts"
+      ],
       "@capsuletech/boost-chart": ["packages/web/boost/chart/src/index.ts"],
       "@capsuletech/boost-charts": ["packages/web/boost/chart/src/index.ts"],
       "@capsuletech/boost-table": ["packages/web/boost/table/src/index.ts"],
@@ -128,7 +131,6 @@
       "@capsuletech/web-shell/ui": ["packages/web/domain/shell/src/ui/index.ts"],
       "@capsuletech/web-shell/controllers": ["packages/web/domain/shell/src/controllers/index.ts"],
       "@capsuletech/web-shell/capsule": ["packages/web/domain/shell/src/capsule.ts"],
-      "@capsuletech/web-shell/matrix": ["packages/web/domain/shell/src/matrix/index.ts"],
       "@capsuletech/cli": ["packages/cli/src/index.ts"],
       "@capsuletech/cli/*": ["packages/cli/*"],
       "@capsuletech/compliance": ["packages/builders/compliance/src/index.ts"],
