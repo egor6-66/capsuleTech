@@ -1,7 +1,7 @@
 ---
 title: owner-web-style — Phase C3 brief
 description: CSS селекторы enumerate для depth-scoped view-transition (ADR 046 D4). Финализирует C-track плана.
-status: ready
+status: documented
 last_updated: 2026-06-11
 ---
 

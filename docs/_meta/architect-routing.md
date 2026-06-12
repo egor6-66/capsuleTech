@@ -1,6 +1,6 @@
 ---
 title: Architect Routing — symptom → agent
-status: living
+status: documented
 last-updated: 2026-05-20
 ---
 

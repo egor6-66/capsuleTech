@@ -1,6 +1,6 @@
 ---
 title: Dependency Management Plan
-status: planned
+status: proposed
 last-updated: 2026-05-20
 ---
 

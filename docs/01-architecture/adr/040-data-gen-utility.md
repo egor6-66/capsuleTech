@@ -1,6 +1,6 @@
 ---
 tags: [hca, adr, accepted, data-gen, faker, mocks]
-status: accepted
+status: canon
 date: 2026-06-07
 ---
 

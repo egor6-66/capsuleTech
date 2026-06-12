@@ -1,6 +1,6 @@
 ---
 tags: [hca, entity, registry]
-status: index
+status: documented
 ---
 
 # 🟦 Entities — реестр

@@ -1,7 +1,7 @@
 ---
 title: brief — owner-web-router — CapsuleOutlet + DepthContext + useRouteDepth rewrite
 audience: owner-web-router
-status: ready-to-dispatch
+status: canon
 created: 2026-06-11
 phase: C1
 ---

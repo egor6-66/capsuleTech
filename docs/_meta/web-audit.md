@@ -1,7 +1,7 @@
 ---
 title: web-audit
 description: Снимок состояния packages/web/* для Phase 0 чистки. Факты + сигналы, прочитанные через таксономию ADR 045.
-status: snapshot
+status: documented
 date: 2026-06-11
 ---
 

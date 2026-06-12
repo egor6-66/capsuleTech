@@ -1,6 +1,6 @@
 ---
 title: README.md Template
-status: living
+status: documented
 last-updated: 2026-06-11
 ---
 

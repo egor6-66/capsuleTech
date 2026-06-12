@@ -1,6 +1,6 @@
 ---
 tags: [hca, feature, registry]
-status: index
+status: documented
 ---
 
 # 🟨 Features — реестр

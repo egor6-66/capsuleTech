@@ -1,6 +1,6 @@
 ---
 tags: [hca, adr, accepted, auth, package]
-status: accepted
+status: canon
 date: 2026-06-07
 ---
 

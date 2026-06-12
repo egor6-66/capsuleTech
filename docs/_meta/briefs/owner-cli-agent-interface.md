@@ -1,7 +1,7 @@
 ---
 title: brief — owner-cli — agent interface
 audience: owner-cli
-status: ready-to-dispatch
+status: canon
 created: 2026-06-11
 ---
 
