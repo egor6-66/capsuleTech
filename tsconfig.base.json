@@ -28,7 +28,21 @@
       "@capsuletech/web-renderer": ["packages/web/runtime/renderer/src/index.ts"],
       "@capsuletech/web-contract": ["packages/web/runtime/contract/src/index.ts"],
       "@capsuletech/web-contract/capabilities": ["packages/web/runtime/contract/src/capabilities/index.ts"],
-      "@capsuletech/web-creator": ["packages/web/design-time/creator/src/index.ts"],
+      "@capsuletech/studio": ["packages/web/design-time/studio/src/index.ts"],
+      "@capsuletech/studio/manifests": [
+        "packages/web/design-time/studio/src/manifests/index.ts"
+      ],
+      "@capsuletech/studio/state": ["packages/web/design-time/studio/src/state/index.ts"],
+      "@capsuletech/studio/inspector": [
+        "packages/web/design-time/studio/src/inspector/index.ts"
+      ],
+      "@capsuletech/studio/generators": [
+        "packages/web/design-time/studio/src/generators/index.ts"
+      ],
+      "@capsuletech/studio/controllers": [
+        "packages/web/design-time/studio/src/controllers/index.ts"
+      ],
+      "@capsuletech/studio/capsule": ["packages/web/design-time/studio/src/capsule.ts"],
       "@capsuletech/web-access": ["packages/web/runtime/access/src/index.ts"],
       "@capsuletech/web-dnd": ["packages/web/runtime/dnd/src/index.ts"],
       "@capsuletech/web-dnd/controllers": ["packages/web/runtime/dnd/src/controllers/index.ts"],
@@ -72,15 +86,6 @@
       "@capsuletech/web-auth/controllers": ["packages/web/domain/auth/src/controllers/index.ts"],
       "@capsuletech/web-auth/ui": ["packages/web/domain/auth/src/ui/index.ts"],
       "@capsuletech/web-auth/capsule": ["packages/web/domain/auth/src/capsule.ts"],
-      "@capsuletech/web-ui-creator": ["packages/web/design-time/ui-creator/src/index.ts"],
-      "@capsuletech/web-ui-creator/manifests": ["packages/web/design-time/ui-creator/src/manifests/index.ts"],
-      "@capsuletech/web-ui-creator/state": ["packages/web/design-time/ui-creator/src/state/index.ts"],
-      "@capsuletech/web-ui-creator/inspector": ["packages/web/design-time/ui-creator/src/inspector/index.ts"],
-      "@capsuletech/web-ui-creator/generators": ["packages/web/design-time/ui-creator/src/generators/index.ts"],
-      "@capsuletech/web-ui-creator/controllers": [
-        "packages/web/design-time/ui-creator/src/controllers/index.ts"
-      ],
-      "@capsuletech/web-ui-creator/capsule": ["packages/web/design-time/ui-creator/src/capsule.ts"],
       "@capsuletech/web-profiler": ["packages/web/runtime/profiler/src/index.ts"],
       "@capsuletech/web-query": ["packages/web/runtime/query/src/index.ts"],
       "@capsuletech/web-query/stream": ["packages/web/runtime/query/src/stream/index.ts"],

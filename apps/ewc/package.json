@@ -22,7 +22,7 @@
     "@capsuletech/web-shell": "workspace:*",
     "@capsuletech/boost-layout": "workspace:*",
     "@capsuletech/boost-table": "workspace:*",
-    "@capsuletech/web-ui-creator": "workspace:*",
+    "@capsuletech/studio": "workspace:*",
     "@capsuletech/shared-zod": "workspace:*",
     "@kobalte/core": "^0.13.0",
     "@tanstack/router-core": "^1.169.0",

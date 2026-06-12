@@ -123,6 +123,9 @@ importers:
       '@capsuletech/shared-zod':
         specifier: workspace:*
         version: link:../../packages/shared/zod
+      '@capsuletech/studio':
+        specifier: workspace:*
+        version: link:../../packages/web/design-time/studio
       '@capsuletech/web-core':
         specifier: workspace:*
         version: link:../../packages/web/runtime/core
@@ -150,9 +153,6 @@ importers:
       '@capsuletech/web-ui':
         specifier: workspace:*
         version: link:../../packages/web/kit/ui
-      '@capsuletech/web-ui-creator':
-        specifier: workspace:*
-        version: link:../../packages/web/design-time/ui-creator
       '@kobalte/core':
         specifier: ^0.13.0
         version: 0.13.11(solid-js@1.9.12)
@@ -187,6 +187,9 @@ importers:
       '@capsuletech/shared-zod':
         specifier: workspace:*
         version: link:../../packages/shared/zod
+      '@capsuletech/studio':
+        specifier: workspace:*
+        version: link:../../packages/web/design-time/studio
       '@capsuletech/web-core':
         specifier: workspace:*
         version: link:../../packages/web/runtime/core
@@ -211,9 +214,6 @@ importers:
       '@capsuletech/web-ui':
         specifier: workspace:*
         version: link:../../packages/web/kit/ui
-      '@capsuletech/web-ui-creator':
-        specifier: workspace:*
-        version: link:../../packages/web/design-time/ui-creator
       '@kobalte/core':
         specifier: ^0.13.0
         version: 0.13.11(solid-js@1.9.12)
@@ -254,6 +254,9 @@ importers:
       '@capsuletech/shared-zod':
         specifier: workspace:*
         version: link:../../packages/shared/zod
+      '@capsuletech/studio':
+        specifier: workspace:*
+        version: link:../../packages/web/design-time/studio
       '@capsuletech/web-core':
         specifier: workspace:*
         version: link:../../packages/web/runtime/core
@@ -278,9 +281,6 @@ importers:
       '@capsuletech/web-ui':
         specifier: workspace:*
         version: link:../../packages/web/kit/ui
-      '@capsuletech/web-ui-creator':
-        specifier: workspace:*
-        version: link:../../packages/web/design-time/ui-creator
       '@kobalte/core':
         specifier: ^0.13.0
         version: 0.13.11(solid-js@1.9.12)
@@ -330,6 +330,9 @@ importers:
       '@capsuletech/shared-zod':
         specifier: workspace:*
         version: link:../../packages/shared/zod
+      '@capsuletech/studio':
+        specifier: workspace:*
+        version: link:../../packages/web/design-time/studio
       '@capsuletech/web-access':
         specifier: workspace:*
         version: link:../../packages/web/runtime/access
@@ -363,9 +366,6 @@ importers:
       '@capsuletech/web-ui':
         specifier: workspace:*
         version: link:../../packages/web/kit/ui
-      '@capsuletech/web-ui-creator':
-        specifier: workspace:*
-        version: link:../../packages/web/design-time/ui-creator
       '@kobalte/core':
         specifier: ^0.13.0
         version: 0.13.11(solid-js@1.9.12)
@@ -397,6 +397,9 @@ importers:
       '@capsuletech/shared-zod':
         specifier: workspace:*
         version: link:../../packages/shared/zod
+      '@capsuletech/studio':
+        specifier: workspace:*
+        version: link:../../packages/web/design-time/studio
       '@capsuletech/web-core':
         specifier: workspace:*
         version: link:../../packages/web/runtime/core
@@ -421,9 +424,6 @@ importers:
       '@capsuletech/web-ui':
         specifier: workspace:*
         version: link:../../packages/web/kit/ui
-      '@capsuletech/web-ui-creator':
-        specifier: workspace:*
-        version: link:../../packages/web/design-time/ui-creator
       '@kobalte/core':
         specifier: ^0.13.0
         version: 0.13.11(solid-js@1.9.12)
@@ -458,6 +458,9 @@ importers:
       '@capsuletech/shared-zod':
         specifier: workspace:*
         version: link:../../packages/shared/zod
+      '@capsuletech/studio':
+        specifier: workspace:*
+        version: link:../../packages/web/design-time/studio
       '@capsuletech/web-core':
         specifier: workspace:*
         version: link:../../packages/web/runtime/core
@@ -482,9 +485,6 @@ importers:
       '@capsuletech/web-ui':
         specifier: workspace:*
         version: link:../../packages/web/kit/ui
-      '@capsuletech/web-ui-creator':
-        specifier: workspace:*
-        version: link:../../packages/web/design-time/ui-creator
       '@kobalte/core':
         specifier: ^0.13.0
         version: 0.13.11(solid-js@1.9.12)
@@ -904,38 +904,7 @@ importers:
         specifier: ^2.11.12
         version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
 
-  packages/web/design-time/creator:
-    dependencies:
-      '@capsuletech/web-contract':
-        specifier: workspace:*
-        version: link:../../runtime/contract
-      '@capsuletech/web-core':
-        specifier: workspace:*
-        version: link:../../runtime/core
-      '@capsuletech/web-renderer':
-        specifier: workspace:*
-        version: link:../../runtime/renderer
-      '@capsuletech/web-style':
-        specifier: workspace:*
-        version: link:../../runtime/style
-      '@capsuletech/web-ui':
-        specifier: workspace:*
-        version: link:../../kit/ui
-      solid-js:
-        specifier: 1.9.12
-        version: 1.9.12
-    devDependencies:
-      '@capsuletech/lib-builder':
-        specifier: workspace:*
-        version: link:../../../builders/lib
-      '@capsuletech/vite-builder':
-        specifier: workspace:*
-        version: link:../../../builders/vite
-      vite-plugin-solid:
-        specifier: ^2.11.12
-        version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
-
-  packages/web/design-time/ui-creator:
+  packages/web/design-time/studio:
     dependencies:
       '@capsuletech/shared-zod':
         specifier: workspace:*

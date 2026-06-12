@@ -1,10 +1,10 @@
 /**
- * @capsuletech/web-ui-creator/capsule
+ * @capsuletech/studio/capsule
  *
  * Манифест пакета для механизма регистрации (ADR 033).
  *
  * App подключает пакет в capsule.app.ts:
- *   packages: ['@capsuletech/web-ui-creator']
+ *   packages: ['@capsuletech/studio']
  *
  * Вите-плагин (CapsuleRegistryPlugin) читает этот файл через jiti и генерирует
  * глобалы:

@@ -1375,26 +1375,26 @@ describe('resolvePackageEntries — single string entry with controllers (mocked
     const parsed = parseManifestSource(MOCK_CAPSULE_MJS_WITH_CONTROLLERS, 'capsule.mjs');
     expect(parsed).not.toBeNull();
     const simulatedEntry: ResolvedPackageEntry = {
-      pkg: '@capsuletech/web-ui-creator',
+      pkg: '@capsuletech/studio',
       globalName: parsed!.name,
       controllerKeys: parsed!.controllerKeys.length > 0 ? parsed!.controllerKeys : undefined,
     };
     expect(simulatedEntry.globalName).toBe('Editor');
     expect(simulatedEntry.controllerKeys).toEqual(['Editor']);
-    expect(simulatedEntry.pkg).toBe('@capsuletech/web-ui-creator');
+    expect(simulatedEntry.pkg).toBe('@capsuletech/studio');
   });
 
   it('generatePackagesRuntime from resolved ui-creator entry matches real packages.ts format', () => {
     const parsed = parseManifestSource(MOCK_CAPSULE_MJS_WITH_CONTROLLERS, 'capsule.mjs');
     const entries: ResolvedPackageEntry[] = [
       {
-        pkg: '@capsuletech/web-ui-creator',
+        pkg: '@capsuletech/studio',
         globalName: parsed!.name,
         controllerKeys: parsed!.controllerKeys.length > 0 ? parsed!.controllerKeys : undefined,
       },
     ];
     const runtime = generatePackagesRuntime(entries);
-    expect(runtime).toContain("import Editor_mod from '@capsuletech/web-ui-creator/capsule';");
+    expect(runtime).toContain("import Editor_mod from '@capsuletech/studio/capsule';");
     expect(runtime).toContain('export const Editor = Editor_mod.components;');
     expect(runtime).toContain(
       '(globalThis.Controllers ??= {})["Editor"] = Editor_mod.controllers["Editor"];',
@@ -1406,7 +1406,7 @@ describe('resolvePackageEntries — single string entry with controllers (mocked
     const parsed = parseManifestSource(MOCK_CAPSULE_MJS_WITH_CONTROLLERS, 'capsule.mjs');
     const entries: ResolvedPackageEntry[] = [
       {
-        pkg: '@capsuletech/web-ui-creator',
+        pkg: '@capsuletech/studio',
         globalName: parsed!.name,
         controllerKeys: parsed!.controllerKeys.length > 0 ? parsed!.controllerKeys : undefined,
       },
@@ -1414,11 +1414,11 @@ describe('resolvePackageEntries — single string entry with controllers (mocked
     const types = generatePackagesTypes(entries);
     expect(types).toContain('declare global {');
     expect(types).toContain(
-      "const Editor: typeof import('@capsuletech/web-ui-creator/capsule')['default']['components'];",
+      "const Editor: typeof import('@capsuletech/studio/capsule')['default']['components'];",
     );
     expect(types).toContain('interface Controllers {');
     expect(types).toContain(
-      "Editor: typeof import('@capsuletech/web-ui-creator/capsule')['default']['controllers'][\"Editor\"];",
+      "Editor: typeof import('@capsuletech/studio/capsule')['default']['controllers'][\"Editor\"];",
     );
     expect(types).toContain('export {};');
   });

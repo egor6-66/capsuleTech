@@ -262,13 +262,18 @@ const runZoneCheck = (absPath: string, code: string): IViolation[] => {
   const fromPkgDir = extractZonePackage(absPath, fromZone);
   if (!fromPkgDir) return [];
   // Reconstruct npm package name from <zone>/<pkg-dir>:
-  //   kit/ui              → @capsuletech/web-ui
-  //   runtime/core        → @capsuletech/web-core
-  //   boost/layout        → @capsuletech/boost-layout
-  //   domain/auth         → @capsuletech/web-auth
-  //   design-time/creator → @capsuletech/web-creator
-  const prefix = fromZone === 'boost' ? 'boost' : 'web';
-  const fromPkg = `@capsuletech/${prefix}-${fromPkgDir}`;
+  //   kit/ui            → @capsuletech/web-ui
+  //   runtime/core      → @capsuletech/web-core
+  //   boost/layout      → @capsuletech/boost-layout
+  //   domain/auth       → @capsuletech/web-auth
+  //   design-time/studio → @capsuletech/studio  (plain — no prefix)
+  let fromPkg: string;
+  if (fromZone === 'design-time') {
+    fromPkg = `@capsuletech/${fromPkgDir}`;
+  } else {
+    const prefix = fromZone === 'boost' ? 'boost' : 'web';
+    fromPkg = `@capsuletech/${prefix}-${fromPkgDir}`;
+  }
 
   const violations: IViolation[] = [];
 

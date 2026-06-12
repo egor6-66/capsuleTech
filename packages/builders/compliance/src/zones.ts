@@ -93,8 +93,7 @@ export const PACKAGE_TO_ZONE: Record<string, Zone> = {
   '@capsuletech/boost-layout': 'boost',
 
   // design-time
-  '@capsuletech/web-creator': 'design-time',
-  '@capsuletech/web-ui-creator': 'design-time',
+  '@capsuletech/studio': 'design-time',
 };
 
 /**

@@ -1,6 +1,6 @@
 ---
-name: "@capsuletech/web-ui-creator"
-owner-agent: owner-web-ui-creator
+name: "@capsuletech/studio"
+owner-agent: owner-studio
 group: web_base
 zone: design-time
 status: alpha
@@ -8,17 +8,17 @@ priority: P2
 last-updated: 2026-06-11
 ---
 
-# OWNERSHIP — @capsuletech/web-ui-creator
+# OWNERSHIP — @capsuletech/studio
 
-**Owner agent:** `owner-web-ui-creator`
+**Owner agent:** `owner-studio`
 **Package path:** `packages/web/ui-creator/`
 **Release group:** `web_base` (tag `web@{version}`)
 
 ## Состояние (читать ПЕРВЫМ)
 
-- **Zone:** `design-time` — будет absorbed в `@capsuletech/web-creator` (→ `studio`) per [[045-web-taxonomy|ADR 045]] #2 + [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] D4 (Phase D4 plan-doc).
+- **Zone:** `design-time` — будет absorbed в `@capsuletech/studio` (→ `studio`) per [[045-web-taxonomy|ADR 045]] #2 + [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] D4 (Phase D4 plan-doc).
 - **Status:** `alpha` (0.1.1) — manifests/state/inspector/generators работают; controllers subpath добавлен.
-- **Priority:** **P2** — будет растворён в studio (D4), активная разработка через web-creator.
+- **Priority:** **P2** — будет растворён в studio (D4), активная разработка через studio.
 - **Maturity bar (до absorb'а в studio):**
   - DEPRECATED-flag в README перед Phase D4 (но не сейчас — apps ещё консьюмят).
   - Migration guide для consumers на studio subpaths.
@@ -73,7 +73,7 @@ Design-time toolkit для построения JSON-деревьев UI:
 
 ## Публичный API (subpaths)
 
-### `@capsuletech/web-ui-creator/manifests`
+### `@capsuletech/studio/manifests`
 
 | Экспорт | Описание |
 |---|---|
@@ -91,7 +91,7 @@ Design-time toolkit для построения JSON-деревьев UI:
 | `type IComponentManifest` | Спецификация компонента |
 | `type IManifestSummary` | Лёгкая сводка |
 
-### `@capsuletech/web-ui-creator/state`
+### `@capsuletech/studio/state`
 
 | Экспорт | Описание |
 |---|---|
@@ -118,15 +118,15 @@ Design-time toolkit для построения JSON-деревьев UI:
 | `type TreeZone` | Зона строки дерева: before / after / inside |
 | (+ все payload-типы) | IAddNodePayload, IMoveNodePayload, … |
 
-### `@capsuletech/web-ui-creator/inspector`
+### `@capsuletech/studio/inspector`
 
 `Inspector`, `type InspectorProps` — design-time UI-form. Тянет web-style/web-ui; НЕ для prod-bundles.
 
-### `@capsuletech/web-ui-creator/generators`
+### `@capsuletech/studio/generators`
 
 `generate`, `FORM_PRESET`, `CARD_PRODUCT_PRESET`, `LAYOUT_2COL_PRESET`, `BUTTON_PRIMARY_PRESET`, `TYPOGRAPHY_PRESET`, `createRng`, `buildTemplate`, `type IPreset`, `type IGeneratorOptions`.
 
-### `@capsuletech/web-ui-creator/controllers` (ADR 032, фаза 5)
+### `@capsuletech/studio/controllers` (ADR 032, фаза 5)
 
 HCA-integration subpath. Зависит на `@capsuletech/web-core`.
 
@@ -155,11 +155,11 @@ HCA-integration subpath. Зависит на `@capsuletech/web-core`.
 
 **Различение canvas vs tree surface:** разные handler-имена (`onCanvasDragOver` / `onTreeDragOver`). App-виджеты — тонкие (только emit с payload), resolver-логика в Controller.
 
-### `@capsuletech/web-ui-creator/capsule` (ADR 033)
+### `@capsuletech/studio/capsule` (ADR 033)
 
 `defineCapsuleModule({ name: 'Editor', components: { Overlay: EditorOverlay }, controllers: { Editor: EditorController } })`
 
-Регистрация в app: `packages: ['@capsuletech/web-ui-creator']` в `capsule.app.ts`.
+Регистрация в app: `packages: ['@capsuletech/studio']` в `capsule.app.ts`.
 После регистрации доступны: `Editor.Overlay` (компонент), `Controllers.Editor` (HCA-Controller).
 
 ## Известные ограничения / quirks
@@ -183,7 +183,7 @@ HCA-integration subpath. Зависит на `@capsuletech/web-core`.
 
 ## Roadmap
 
-- [x] `docs/_meta/web-ui-creator.md` AI-anchor
+- [x] `docs/_meta/studio.md` AI-anchor
 - [x] `/controllers` subpath → `EditorController` (ADR 032 фаза 5, часть 2)
 - [x] `/capsule` манифест (ADR 033)
 - [ ] App-миграция: удалить `apps/ui-creator/src/editor/`, переписать виджеты на `Controllers.Editor` + `useCtx` (ADR 032 фаза 6)

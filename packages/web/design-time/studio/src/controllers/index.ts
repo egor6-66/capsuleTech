@@ -1,5 +1,5 @@
 /**
- * @capsuletech/web-ui-creator/controllers
+ * @capsuletech/studio/controllers
  *
  * HCA-integration subpath (ADR 032, фаза 5-6). Зависит на @capsuletech/web-core —
  * изолировано в этом subpath'е, generic-ядро пакета (src/index.ts) web-core
@@ -13,7 +13,7 @@
  *  - useEditor        — типизированный хук (плоские getter'ы без кастов)
  *  - useEditorKit     — читает kit из EditorProvider context
  *
- * Регистрация в app: через @capsuletech/web-ui-creator/capsule (ADR 033).
+ * Регистрация в app: через @capsuletech/studio/capsule (ADR 033).
  * Прямой импорт: для кастомных сценариев или unit-тестов.
  */
 
