@@ -104,22 +104,36 @@ export const Select = Object.assign(SelectBase, {
 export const Textarea = createLazy(() => import('@capsuletech/web-ui/textarea'), 'Textarea');
 
 // ---------------------------------------------------------------------------
-// Light placeholders for heavy boost-* mirrors.
-// These are zero-engine-dep visuals shipped via web-ui (kit) per ADR 044 / 046 D3.
-// Apps without boost-{map,flow,charts} in their bundle can still render these
-// as preview / pre-mount skeletons. Heavy mirrors override at the global
-// registry level (Maps.* / Flows.* / Charts.*).
+// Augmentation-ready namespaces for boost-* extensions (per ADR 046 D5).
+// Kit ships a basic member in each namespace as a light placeholder; boost-*
+// packages augment the same namespace with heavy variants at app boot via
+// ADR 033 capsule.ts. Single user-facing API path Ui.<Element>.* for both.
+//
+// Examples:
+//   <Ui.Map.View />         (kit basic)
+//   <Ui.Map.3D />           (boost-map augmentation — requires @capsuletech/boost-map)
+//   <Ui.Chart.Basic />      (kit basic)
+//   <Ui.Chart.Line />       (boost-chart augmentation)
+//   <Ui.FlowDiagram.Static />     (kit basic)
+//   <Ui.FlowDiagram.Reactive />   (boost-flow augmentation)
 //
 // NB: `Ui.FlowDiagram` (NOT `Ui.Flow`) — `Ui.Flow.*` namespace is reserved for
 // Solid control-flow primitives (For/Show/Switch/Match/Index/Dynamic) defined
 // further below.
 // ---------------------------------------------------------------------------
-export const MapView = createLazy(() => import('@capsuletech/web-ui/map'), 'MapView');
-export const FlowDiagram = createLazy(
-  () => import('@capsuletech/web-ui/flow-diagram'),
-  'FlowDiagram',
-);
-export const Chart = createLazy(() => import('@capsuletech/web-ui/chart'), 'Chart');
+// Local name avoids shadowing built-in `Map` (biome noShadowRestrictedNames);
+// re-exported as `Map` for the canonical Ui.Map.* namespace.
+const MapNs = {
+  View: createLazy(() => import('@capsuletech/web-ui/map'), 'MapView'),
+};
+
+export { MapNs as Map };
+export const FlowDiagram = {
+  Static: createLazy(() => import('@capsuletech/web-ui/flow-diagram'), 'FlowDiagram'),
+};
+export const Chart = {
+  Basic: createLazy(() => import('@capsuletech/web-ui/chart'), 'Chart'),
+};
 
 // NB: connected mode-toggles + theme picker moved to `@capsuletech/web-shell`
 // (tier-2, ADR 032). They hold web-style state, so they are no longer part of

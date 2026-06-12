@@ -12,7 +12,7 @@ last-updated: 2026-06-11
 
 Owner: **owner-web-charts** (architect = initial owner). См. ADR 028.
 
-> **NAMING:** будет переименован в `@capsuletech/boost-charts` в Phase W6 ([[web-rework-plan]] / ADR 046 D1). Light-mirror — `Ui.Chart` placeholder (kit, Phase B6-placeholder).
+> **NAMING:** будет переименован в `@capsuletech/boost-chart` в Phase W6 ([[web-rework-plan]] / ADR 046 D1). Light-mirror — `Ui.Chart` placeholder (kit, Phase B6-placeholder).
 
 ## Состояние (читать ПЕРВЫМ)
 
@@ -20,14 +20,14 @@ Owner: **owner-web-charts** (architect = initial owner). См. ADR 028.
 - **Status:** `alpha` (0.1.1) — LineChart / AreaChart / BarChart / Doughnut / Gauge работают.
 - **Priority:** **P2** — dashboards / analytics; опциональный.
 - **Maturity bar (до beta):**
-  - W6 rename `web-charts` → `boost-charts`.
+  - W6 rename `web-charts` → `boost-chart`.
   - `Ui.Chart` placeholder в `@capsuletech/web-ui` (Phase B6-placeholder).
   - Capsule manifest регистрирует `Charts.*` global (ADR 033).
   - Theme integration через CSS-токены web-style.
   - Re-evaluation Chart.js vs visx/recharts (см. roadmap).
 - **Active blockers:** нет.
 - **Roadmap:**
-  1. W6 rename → `boost-charts`.
+  1. W6 rename → `boost-chart`.
   2. `Ui.Chart` placeholder координация с owner-web-ui.
   3. Theme tokens integration.
   4. _(eval)_ Chart.js vs visx vs recharts — Chart.js устаревает; рассмотреть migration в Phase D.

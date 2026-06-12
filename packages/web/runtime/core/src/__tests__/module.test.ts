@@ -136,7 +136,7 @@ describe('IAppConfig.packages — type-level', () => {
 
   it('packages accepts an array of strings', () => {
     const config: IAppConfig = {
-      packages: ['@capsuletech/boost-map', '@capsuletech/boost-charts'],
+      packages: ['@capsuletech/boost-map', '@capsuletech/boost-chart'],
     };
     expectTypeOf(config).toMatchTypeOf<IAppConfig>();
   });
