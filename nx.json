@@ -108,6 +108,7 @@
           "@capsuletech/web-core",
           "@capsuletech/web-dnd",
           "@capsuletech/boost-chart",
+          "@capsuletech/boost-layout",
           "@capsuletech/boost-map",
           "@capsuletech/web-ui-creator",
           "@capsuletech/web-profiler",

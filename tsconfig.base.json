@@ -32,6 +32,8 @@
       "@capsuletech/web-dnd": ["packages/web/runtime/dnd/src/index.ts"],
       "@capsuletech/web-dnd/controllers": ["packages/web/runtime/dnd/src/controllers/index.ts"],
       "@capsuletech/boost-flow": ["packages/web/boost/flow/src/index.ts"],
+      "@capsuletech/boost-layout": ["packages/web/boost/layout/src/index.ts"],
+      "@capsuletech/boost-layout/capsule": ["packages/web/boost/layout/src/capsule.ts"],
       "@capsuletech/boost-chart": ["packages/web/boost/chart/src/index.ts"],
       "@capsuletech/boost-charts": ["packages/web/boost/chart/src/index.ts"],
       "@capsuletech/boost-table": ["packages/web/boost/table/src/index.ts"],

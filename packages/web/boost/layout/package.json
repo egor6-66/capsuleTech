@@ -1,0 +1,46 @@
+{
+  "name": "@capsuletech/boost-layout",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    },
+    "./capsule": {
+      "types": "./dist/capsule.d.ts",
+      "import": "./dist/capsule.mjs",
+      "default": "./dist/capsule.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "peerDependencies": {
+    "solid-js": "^1.9.12",
+    "@capsuletech/web-core": "workspace:*",
+    "@capsuletech/web-ui": "workspace:*"
+  },
+  "devDependencies": {
+    "@capsuletech/lib-builder": "workspace:*",
+    "@capsuletech/vite-builder": "workspace:*",
+    "@capsuletech/web-core": "workspace:*",
+    "@capsuletech/web-ui": "workspace:*",
+    "jsdom": "~29.1.1",
+    "solid-js": "^1.9.0",
+    "vite-plugin-solid": "^2.11.12"
+  },
+  "publishConfig": {
+    "access": "public",
+    "packageManager": "pnpm"
+  }
+}

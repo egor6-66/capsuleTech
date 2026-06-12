@@ -167,6 +167,7 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
         '@capsuletech/web-core',
         '@capsuletech/web-dnd',
         '@capsuletech/boost-flow',
+        '@capsuletech/boost-layout',
         '@capsuletech/boost-chart',
         '@capsuletech/web-ui-creator',
         '@capsuletech/boost-map',
