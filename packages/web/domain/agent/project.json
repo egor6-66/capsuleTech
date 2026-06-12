@@ -1,7 +1,7 @@
 {
-  "name": "@capsuletech/web-auth",
-  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/web/auth/src",
+  "name": "@capsuletech/web-agent",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/web/domain/agent/src",
   "projectType": "library",
   "tags": [],
   "targets": {},
