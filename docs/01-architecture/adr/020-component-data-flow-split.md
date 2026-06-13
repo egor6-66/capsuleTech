@@ -2,6 +2,7 @@
 tags: [hca, adr, implemented]
 status: canon
 date: 2026-05-27
+last_updated: 2026-06-13
 ---
 
 # ADR 020 — Component-data flow: register on mount, updateComponent on runtime

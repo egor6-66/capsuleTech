@@ -2,6 +2,7 @@
 tags: [hca, adr, desktop, proposed]
 status: proposed
 date: 2026-06-01
+last_updated: 2026-06-12
 ---
 
 # ADR 023 — Desktop system metrics (`@capsuletech/desktop`)

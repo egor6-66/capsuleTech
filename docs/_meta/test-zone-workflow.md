@@ -3,6 +3,8 @@ title: Test Zone Workflow
 description: Live-режим работы над верстаткой в capsule-test через owner-tests + visual agent owners + Storybook.
 status: documented
 last-verified: 2026-05-21
+last_updated: 2026-06-13
+tags: [meta, testing]
 ---
 
 # Test Zone Workflow

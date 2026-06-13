@@ -1,6 +1,7 @@
 ---
 tags: [ui, primitive, button]
 status: documented
+last_updated: 2026-05-28
 ---
 
 # Button

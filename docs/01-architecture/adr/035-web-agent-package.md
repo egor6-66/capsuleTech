@@ -2,6 +2,7 @@
 tags: [hca, adr, agent, llm, web-agent, scriber, workspace, proposed]
 status: proposed
 date: 2026-06-05
+last_updated: 2026-06-12
 ---
 
 # ADR 035 — `@capsuletech/web-agent` + workspace AI-воркеры

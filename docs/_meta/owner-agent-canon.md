@@ -3,6 +3,7 @@ title: owner-agent-canon
 description: Общие правила для всех owner-* агентов capsule. Single source of truth — обновления распространяются на всех owner'ов автоматически.
 status: canon
 last_updated: 2026-06-11
+tags: [meta, agents, canon]
 ---
 
 # Owner-agent canon — общие правила для всех owner-*

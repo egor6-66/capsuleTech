@@ -1,6 +1,7 @@
 ---
 tags: [hca, feature, registry]
 status: documented
+last_updated: 2026-06-13
 ---
 
 # 🟨 Features — реестр

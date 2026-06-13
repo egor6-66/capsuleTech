@@ -1,6 +1,7 @@
 ---
 tags: [meta, cleanup]
 status: documented
+last_updated: 2026-06-13
 ---
 
 # Cleanup plan

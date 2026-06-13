@@ -3,6 +3,7 @@ tags: [meta, release, ai-context]
 status: documented
 type: ai-anchor
 audience: claude
+last_updated: 2026-06-13
 ---
 
 # 🚀 Release checklist — что делает owner перед релизом

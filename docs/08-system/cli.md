@@ -2,6 +2,7 @@
 tags: [hca, system, cli]
 status: documented
 type: guide
+last_updated: 2026-06-13
 ---
 
 # 💻 CLI

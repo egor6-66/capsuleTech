@@ -2,6 +2,7 @@
 tags: [hca, adr, implemented]
 status: canon
 date: 2026-05-23
+last_updated: 2026-06-13
 ---
 
 # ADR 017 — Desktop package extraction (`@capsuletech/desktop`)

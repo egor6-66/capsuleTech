@@ -1,6 +1,7 @@
 ---
 tags: [hca, system, desktop, tauri]
 status: documented
+last_updated: 2026-06-13
 ---
 
 # 🖥️ Desktop (Tauri 2)

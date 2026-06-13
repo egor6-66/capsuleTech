@@ -2,6 +2,7 @@
 tags: [hca, adr, implemented]
 status: canon
 date: 2026-05-27
+last_updated: 2026-06-13
 ---
 
 # ADR 021 — UiProxy auto-injects kind-tag into meta.tags for whitelist primitives

@@ -3,6 +3,7 @@ title: web-zone-runtime
 description: Canon для zone `runtime` — framework-сервисы, включённые в каждое capsule-приложение под капотом (HCA wrappers, state, router, query, styling, ...). Source of truth о scope, импорт-правилах, vendor-stack.
 status: canon
 last_updated: 2026-06-11
+tags: [meta, web-zones, runtime]
 ---
 
 # Zone: runtime

@@ -1,6 +1,7 @@
 ---
 tags: [hca, binding, proxy, ui]
 status: documented
+last_updated: 2026-06-13
 ---
 
 # 🪞 UiProxy — перехват UI-событий

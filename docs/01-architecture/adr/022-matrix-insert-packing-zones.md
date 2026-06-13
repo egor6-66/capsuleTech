@@ -2,6 +2,7 @@
 tags: [hca, adr, accepted]
 status: canon
 date: 2026-06-01
+last_updated: 2026-06-13
 ---
 
 # ADR 022 — Matrix insert-mode v2: packing-zones (min-size reflow + orientation + drop-constraints)

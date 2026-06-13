@@ -1,6 +1,7 @@
 ---
 tags: [hca, meta, agents]
 status: documented
+last_updated: 2026-06-13
 ---
 
 # 🤖 Субагенты для рутинной работы

@@ -1,6 +1,7 @@
 ---
 tags: [hca, architecture, layers]
 status: documented
+last_updated: 2026-06-01
 ---
 
 # 🪜 Слои HCA

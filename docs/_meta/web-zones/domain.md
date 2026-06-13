@@ -3,6 +3,7 @@ title: web-zone-domain
 description: Canon для zone `domain` — stateful feature-packages ("мини-апп как пакет"). Source of truth о scope, no-horizontal canon, contract pattern, vendor-stack.
 status: canon
 last_updated: 2026-06-11
+tags: [meta, web-zones, domain]
 ---
 
 # Zone: domain

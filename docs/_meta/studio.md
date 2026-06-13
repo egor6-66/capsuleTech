@@ -3,6 +3,7 @@ tags: [meta, studio, ai-context]
 status: documented
 type: ai-anchor
 audience: claude
+last_updated: 2026-06-13
 ---
 
 # @capsuletech/studio — AI context anchor

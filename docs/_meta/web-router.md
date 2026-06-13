@@ -3,6 +3,7 @@ tags: [meta, web-router, ai-context]
 status: documented
 type: ai-anchor
 audience: claude
+last_updated: 2026-06-13
 ---
 
 # 🤖 Web Router — AI context anchor

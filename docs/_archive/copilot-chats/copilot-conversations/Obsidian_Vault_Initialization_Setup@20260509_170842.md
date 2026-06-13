@@ -7,6 +7,8 @@ topic: "Obsidian Vault Initialization Setup"
 
 tags:
   - copilot-conversation
+last_updated: 2026-05-15
+status: deprecated
 ---
 
 **user**: You are HCA Architect-Curator. Philosophy: "UI is a Shadow".

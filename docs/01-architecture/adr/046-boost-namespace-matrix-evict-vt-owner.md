@@ -4,6 +4,7 @@ status: proposed
 date: 2026-06-11
 amended: 2026-06-12
 supersedes_partial: 045
+last_updated: 2026-06-12
 ---
 
 > [!info] Status
