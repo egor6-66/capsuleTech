@@ -131,7 +131,7 @@ ui.Navigation.Item  // → path = ['Navigation', 'Item']
 - **Не загружает данные** — data-external. Widget кормит store'ом.
 - **Не композирует другие Shape'ы**. Композиция — в Widget.
 
-## Связанное
+## Связанное {#related}
 
 - [[036-shape-redesign-and-table-package|ADR 036]] — design rationale + HKT-доказательство
 - [[shape-v2-and-table|docs/_meta/shape-v2-and-table.md]] — реализационный reference

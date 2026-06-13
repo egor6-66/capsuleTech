@@ -10,7 +10,7 @@ status: documented
 
 Тонкая обёртка над TanStack Solid Router: factory + Solid-context + публичный type-safe API. Реализация по [[003-router-context-based|ADR 003]].
 
-## Файловая карта
+## Файловая карта {#file-map}
 
 ```
 packages/web/router/src/

@@ -10,7 +10,7 @@ status: documented
 
 Тонкая обёртка над XState для интеграции с Solid + helpers для tag-операций.
 
-## API
+## API {#api}
 
 ```ts
 import {
@@ -126,7 +126,7 @@ const inputs = pickByTags(componentsMap, ['@inputs']);
 
 Отличие от методов bridge: эти принимают `data: ComponentsList` первым аргументом и `lookDynamic: boolean` третьим (без объекта-опций).
 
-## Где используется
+## Где используется {#where-used}
 
 - [[controller-proxy|createLogicWrapper]] создаёт по одной машине на каждый Controller/Feature.
 - [[ui-proxy|UiProxy]] зовёт `store.registerComponent({ [id]: ... })` / `unregisterComponent(id)` через bridge на mount/unmount компонента.

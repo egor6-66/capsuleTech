@@ -192,7 +192,7 @@ pnpm storybook
 
 Подробнее: [[storybook]].
 
-## Темы и стили
+## Темы и стили {#themes}
 
 Все primitive'ы реактивны к переключению тем через `data-theme` на `<html>`. Темовая система, list тем, и как добавить новую: [[style|@capsuletech/web-style]] → [[theming]].
 

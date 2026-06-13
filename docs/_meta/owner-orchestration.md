@@ -92,7 +92,7 @@ owner-web-creator (packages/web/creator)  ‖  owner-cli (packages/cli)  ‖  г
 - `git add -A` на общем дереве → подмешивание чужого → только явные пути.
 - Полагаться на память длинной сессии вместо `OWNERSHIP.md` → потеря контекста при форке/рестарте.
 
-## 🔗 Связано
+## 🔗 Связано {#related}
 - [`parallel-dev-flow.md`](parallel-dev-flow.md) — git-правила (trunk, path-scoped, scope-тег, push сериализованно).
 - `packages/<pkg>/OWNERSHIP.md` — зона + контракт + quirks + план каждого пакета.
 - [`architect-routing.md`](architect-routing.md) — symptom → agent (куда делегировать).

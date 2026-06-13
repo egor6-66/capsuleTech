@@ -7,20 +7,20 @@ created: 2026-06-11
 
 # Brief — owner-cli — Agent interface + minimal plan management
 
-## Цель
+## Цель {#goal}
 
 Расширить `@capsuletech/cli` командами для **agent-management** и **минимального управления rework-планом**. CLI становится единым диспетчерским pultом для USER'а: «что у нас за фазы, какие агенты есть, что в работе, какой brief дёрнуть».
 
 **Принцип:** максимальное переиспользование уже существующих капсул-либ. CLI — Node-based ink TUI, но мы достаём `@capsuletech/shared-zod` для валидации, `@capsuletech/shared-file-manager` для template-генерации, XState через `@capsuletech/web-state` паттерн (или прямой xstate если Solid-зависимости тянуть нецелесообразно). Думай как build'еру, а не как изобретателю.
 
-## READ FIRST
+## READ FIRST {#read-first}
 
 - `docs/_meta/owner-agent-canon.md` — общие правила (workflow, git-scope, namespace discipline).
 - `docs/_meta/cli.md` — AI-anchor CLI (layout, Command contract, gotchas).
 - `docs/_meta/web-rework-plan.md` — реальный live plan (твой CLI должен его уметь читать).
 - `docs/01-architecture/adr/047-frontend-architecture-zones-cycle-vendor.md` D5 (colocation) + namespace discipline в canon.
 
-## Контекст
+## Контекст {#context}
 
 USER дирижирует распределёнными owner-агентами в нескольких сессиях Claude Code. Сейчас:
 - Plan живёт в `docs/_meta/web-rework-plan.md` (markdown, читается глазами).
@@ -35,7 +35,7 @@ USER нужно CLI для:
 - **Audit-проверки**: `capsule audit ownership` (пакеты без OWNERSHIP.md или с invalid frontmatter), `capsule audit zones` (per ADR 047 D1 нарушения — пакет не в правильной zone-директории).
 - В перспективе — **dashboard** через `@capsuletech/web-ui` (отдельный subpath / sub-команда `capsule panel`, поднимает локальный Solid app на localhost'е, отображает то же что и TUI, но визуально). Это **stretch goal**, не обязательно в этой PR.
 
-## Scope
+## Scope {#scope}
 
 ### Команды (новые, в `capsule` namespace)
 
@@ -111,7 +111,7 @@ capsule panel              # localhost:5174 (или подобное) с Solid d
 
 Если в эту PR не успеваешь — оставь roadmap stub в OWNERSHIP.md / cli AI-anchor → отдельная PR следом.
 
-## Test plan
+## Test plan {#test-plan}
 
 - Unit tests для `lib/plan/parser.ts` — corner cases markdown (empty, broken frontmatter, mixed status).
 - Unit tests для `lib/agents/registry.ts` — registry walk.
@@ -129,7 +129,7 @@ capsule panel              # localhost:5174 (или подобное) с Solid d
 
 USER может дописывать в playground / docs / другие места параллельно. Joint-work rule per canon: при finalize PR'е забери в commit **всё что относится к scope этой задачи** (твой cli code + USER'ские правки если он сказал «возьми с собой»). Spar/раздельные WIP — оставь.
 
-## Deliverable
+## Deliverable {#deliverable}
 
 PR `feat(cli): agent management + plan inspection + audit suite (+ panel stretch)` — branch `feat/cli-agent-interface`. CI all-green. Описание в PR body — список команд, what was reused vs new, what stretch was/wasn't done.
 

@@ -187,7 +187,7 @@ watcherManager.subscribe(watchPath, {
 > [!warning]
 > Алиасы здесь и в `tsconfig.base.json` дублируются. Если добавляешь пакет — обнови **обе точки**.
 
-## Связанное
+## Связанное {#related}
 
 - [[auto-import]]
 - [[cli]]

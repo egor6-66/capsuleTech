@@ -47,7 +47,7 @@ return (await parent.controller[targetMethod]?.(enrichedTarget, context)) ?? nul
 - Overrides действуют только на цепочку `next()`. Имя локального метода (внутри `states`) не переименовывается.
 - Невозможно «расщепить» один метод на несколько (`onClick` → `validate` + `submit`). Для этого нужна композиция Controller'ов в Widget.
 
-## Связанное
+## Связанное {#related}
 
 - [[controller-proxy]]
 - [[layers]]

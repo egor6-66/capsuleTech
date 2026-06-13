@@ -626,7 +626,7 @@ A0 (merge 046+047+048+plan) ─→ A1 (USER creates owner-boost-matrix + restart
 - **boost-* публикация** — Verdaccio test-publish'и нужны? Если да — Phase B6/B7 включают release-local rehearsal. Если нет — отложено до релиза.
 - **TanStack Outlet + DepthContext lifetime** — CapsuleOutlet рисует Outlet внутри Provider. DepthContext Solid-store, реактивно корректен. Возможно edge-case если TanStack remounts Outlet — owner-web-router проверит при импле C1.
 
-## История изменений
+## История изменений {#changelog}
 
 - 2026-06-13 — **Studio audit S1+S2 DONE**: (S1) `@capsuletech/data-gen` extracted from studio (engine + presets + RNG + fuzzer + tree types as single source); (S2) per-primitive manifests unified in `@capsuletech/web-ui` kit via subpath `/manifest` — `IPrimitiveManifestEntry` covers identity + UI + inspector + DnD + bundle-cost. Studio remains thin host/composer. PRs #342, #343.
 - 2026-06-13 — **E3 DONE** (#341): status enum normalization (57 docs rewritten to canon enum) + 2 transient deletions (routing-anim-findings + finish-review-notes — author-intent-to-delete satisfied).

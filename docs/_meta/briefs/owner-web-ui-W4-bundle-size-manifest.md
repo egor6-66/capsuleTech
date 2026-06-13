@@ -11,7 +11,7 @@ last_updated: 2026-06-11
 > **Plan-doc:** `docs/_meta/web-rework-plan.md` → W4.
 > **Canon:** `docs/_meta/web-ui.md` секция «Weight gradient & size manifest» (полная schema там).
 
-## Цель
+## Цель {#goal}
 
 Реализовать infra L0/L1 weight-gradient'а, документированного в W3 (`docs/_meta/web-ui.md`). Две части:
 
@@ -20,7 +20,7 @@ last_updated: 2026-06-11
 
 Это закрывает требование USER'а: «при сборке в web-studio надо знать размер компонента, юзер должен наглядно видеть цену за любой обвес».
 
-## Что делать
+## Что делать {#action}
 
 ### 1. Bundle-size test
 
@@ -75,7 +75,7 @@ export interface IWebUiManifest {
 - `packages/web/ui/OWNERSHIP.md` — секция «Состояние» / «План рефакторинга»: пометить W4 manifest infra реализованной, обновить blockers (был activeblocker).
 - `docs/_meta/web-ui.md` — финализировать пороги (N kB) в Weight Gradient секции после калибровки.
 
-## PR
+## PR {#pr}
 
 Возможны два сценария:
 
@@ -90,14 +90,14 @@ export interface IWebUiManifest {
 
 Выбор за тобой. Если решишь split — coordinate.
 
-## Constraints
+## Constraints {#constraints}
 
 - **Zone:** `packages/web/ui/`. Не трогать web-core / web-creator / apps/*.
 - **Lockfile:** если добавишь dev-dep (esbuild, rolldown, что-то для measurement) — `pnpm install` локально перед commit'ом.
 - **Vite-builder rebuild:** если поменяешь export'ы web-ui — пересобери `@capsuletech/vite-builder` (см. CLAUDE.md Aliasing грабли).
 - **Parallel WIP:** ui-kit/imports.tsx + ui/composites/index.ts + ui/icons/* в working tree — НЕ моё, НЕ коммитить. Только мои target файлы.
 
-## Refs
+## Refs {#refs}
 
 - W3 canon: `docs/_meta/web-ui.md` — раздел «Weight gradient & size manifest» (полная schema).
 - W3 zone canon: `docs/_meta/web-zones/kit.md`.
@@ -105,6 +105,6 @@ export interface IWebUiManifest {
 - PR #302 — W3 canon docs где впервые появилась схема.
 - Studio palette consumer (будущее): `@capsuletech/web-creator` / `studio` — после Phase D4 будет читать manifest.
 
-## Что НЕ делает этот brief
+## Что НЕ делает этот brief {#non-goals}
 
 - **B6-placeholder** (Ui.Map / Ui.Flow / Ui.Chart light placeholders в kit) — это **отдельная задача**, отдельный brief, делается после W4 либо параллельной сессией. См. `docs/_meta/briefs/owner-web-ui-B6-light-placeholders.md`.

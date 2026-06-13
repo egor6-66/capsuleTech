@@ -58,7 +58,7 @@ file: apps/<app>/src/entities/<group>/<name>.tsx
 - [[03-controllers/_template|Controllers, которые работают с этой Entity]]
 ```
 
-## Связанное
+## Связанное {#related}
 
 - [[layers#🟦 Entity — Stateless UI|Слои → Entity]]
 - [[golden-rules]]

@@ -232,7 +232,7 @@ const finalProps = mergeProps(
 
 Это закрывает старую дыру — `unhandledrejection` от падений в Controller'е больше не теряются.
 
-## Связанное
+## Связанное {#related}
 
 - [[controller-proxy]] · [[shape]]
 - [[lifecycle]] · [[tagging-system]]
