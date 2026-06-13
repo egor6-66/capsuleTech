@@ -9,6 +9,7 @@ export default libConfig({
     generators: 'src/generators/index.ts',
     controllers: 'src/controllers/index.ts',
     capsule: 'src/capsule.ts',
+    docs: 'src/docs/index.ts',
   },
   name: 'CapsuleUiCreator',
 });
