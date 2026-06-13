@@ -10,7 +10,7 @@ last-updated: 2026-05-20
 
 Это **single source of truth** про то что владеет agent. Не дублируется в agent prompt'е — там только ссылка.
 
-## Структура
+## Структура {#structure}
 
 ```markdown
 ---

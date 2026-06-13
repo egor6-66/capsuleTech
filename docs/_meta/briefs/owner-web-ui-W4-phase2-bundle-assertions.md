@@ -11,7 +11,7 @@ last_updated: 2026-06-12
 > **Predecessor:** W4 phase 1 (PR #311 merged) — manifest infra `src/manifest/types.ts` + `scripts/build-manifest.ts` + `pnpm build:manifest` script.
 > **Canon:** `docs/_meta/web-ui.md` секция «Weight gradient & size manifest».
 
-## Цель
+## Цель {#goal}
 
 Закрыть W4-трек двумя задачами:
 1. **vitest bundle-size assertion test** — лимит на размер L0-subpath'ов + assert что L0 НЕ содержит interactive-Kobalte в графе. Регрессия (увеличение size, добавление heavy dep) ловится автоматически.
@@ -64,7 +64,7 @@ last_updated: 2026-06-12
 
 **Рекомендация:** начни с (c) — `cat dist/manifest.json | jq '.primitives[] | select(.name == "input") | .externals'` — что внутри. По результату решай: re-classify L1 или dig deeper. Обсуди со мной.
 
-## Что делать
+## Что делать {#action}
 
 ### 1. Recalibrate WEIGHT_MAP
 
@@ -113,12 +113,12 @@ last_updated: 2026-06-12
 - `pnpm --filter @capsuletech/web-ui build && pnpm --filter @capsuletech/web-ui build:manifest` — clean run.
 - `cat dist/manifest.json | jq '.primitives[] | {name, weight, sizeKB}'` — sanity check sizes.
 
-## Что НЕ делает
+## Что НЕ делает {#non-goals}
 
 - **B6-placeholder (Ui.Map/Flow/Chart)** — отдельный brief в `docs/_meta/briefs/owner-web-ui-B6-light-placeholders.md`.
 - **Button/input api refactor full breaking** — если выбран вариант (a) (drop icon-prop) — это **отдельный PR** через main steward, поскольку breaking. В этом PR — phase 2 фокус на test + recalibration. Button/input drift фиксируется ИЛИ через простой re-classification ИЛИ через TODO/note в test'е + brief для отдельного PR.
 
-## Refs
+## Refs {#refs}
 
 - W3 canon: `docs/_meta/web-ui.md` секция «Weight gradient & size manifest» — обновить финальные числа.
 - W4 phase 1: PR #311 — manifest infra базовая.

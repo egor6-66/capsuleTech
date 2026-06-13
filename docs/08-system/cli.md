@@ -289,7 +289,7 @@ while (true) {
 - [`getViteEntry`](../../packages/cli/src/utils/vite-entry.ts) — dev импортит исходный `dist/index.mjs` vite-builder из монорепы, prod резолвит через `require.resolve('@capsuletech/vite-builder')`.
 - [`scaffoldEntity`](../../packages/cli/src/actions/_scaffold.ts) — dev подставляет в скаффолд `workspace:*` для `@capsuletech/*`-deps, prod ставит `latest`.
 
-## Gotchas
+## Gotchas {#gotchas}
 
 ### Иконки: только RGI Emoji_Presentation, без VS16
 
@@ -326,7 +326,7 @@ while (true) {
 - TUI не сохраняет позицию tab/item между итерациями — после команды tab сбрасывается на 0. Минор UX.
 - `bin/*.mjs` не покрыт tsconfig — JS без `checkJs`. Если хочется усиления — добавить `bin/` в `include` и `checkJs: true`.
 
-## Связанное
+## Связанное {#related}
 
 - [[git|capsule git — workflow]] — гайд по git-команде
 - [[releases|capsule release — релизы]] — релизный флоу

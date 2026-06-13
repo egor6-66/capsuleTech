@@ -92,7 +92,7 @@ export const Controllers = {
 - **Имя файла = имя в namespace.** `widgets/forms/auth.tsx` → `Widgets.Forms.Auth`. Это `names(...).className` из `@nx/devkit` (PascalCase).
 - **Default export не обязателен.** Генератор берёт `module.default || первая function-экспорт`. См. [[vite-plugins#HMRWrappingPlugin|HMRWrappingPlugin]] — он сам добавляет `export default`.
 
-## Связанное
+## Связанное {#related}
 
 - [[vite-plugins]]
 - [[layers]]

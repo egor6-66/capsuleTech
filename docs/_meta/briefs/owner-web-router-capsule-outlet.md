@@ -14,7 +14,7 @@ Routing-анимация на vt-name становится корректной 
 
 Контракт `useRouteDepth(): Accessor<number>` **сохраняется** (PR #298 контракт остаётся), impl меняется полностью.
 
-## READ FIRST
+## READ FIRST {#read-first}
 
 - `docs/_meta/owner-agent-canon.md` — общие правила (workflow, git-scope joint-work, namespace discipline).
 - `docs/_meta/router.md` — AI-anchor web-router (если есть; иначе изучи `packages/web/router/src/`).
@@ -29,7 +29,7 @@ Routing-анимация на vt-name становится корректной 
 - PR #295 web-shell `/layout` + `/chrome` subpaths — partial superseded ADR 045 #1 (Matrix всё ещё в shell на момент C1; эвакуируется в Phase B per ADR 046 D2).
 - main HEAD = `c151c32` (PR #300 triada ADR).
 
-## Scope
+## Scope {#scope}
 
 ### 1. New file `src/CapsuleOutlet.tsx`
 
@@ -130,7 +130,7 @@ USER может параллельно дорабатывать playground / web
 - После реализации — твой scope = `packages/web/router/**`. Stage **только это** в свою feature-ветку.
 - Если USER явно скажет «возьми с собой apps/playground/...» — забираешь. По default — нет.
 
-## Deliverable
+## Deliverable {#deliverable}
 
 PR `refactor(web-router): CapsuleOutlet + DepthContext owns vt-name (adr 046 D4 / Phase C1)`.
 

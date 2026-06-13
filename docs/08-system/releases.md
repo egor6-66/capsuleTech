@@ -9,7 +9,7 @@ type: guide
 > [!info]
 > Релизы Capsule управляются **Nx Release**. Версии бьются по conventional-commits, теги ставятся в git, публикация — в npm / verdaccio / nexus на выбор. Все команды — pnpm-скрипты в корне.
 
-## Концепция
+## Концепция {#concept}
 
 Пакеты разбиты на **группы**. Группа — это набор пакетов, которые релизятся вместе одной командой.
 
@@ -168,7 +168,7 @@ pnpm release:web:nexus
 "release:node:nexus": "node scripts/release.mjs --group=node_server --registry=nexus"
 ```
 
-## Troubleshooting
+## Troubleshooting {#troubleshooting}
 
 **`No git tags matching pattern`** — нет baseline-тега. Запусти с `--first-release`.
 
@@ -191,7 +191,7 @@ pnpm release:web:nexus
 
 **Хочу откатить релиз** — `git reset --hard HEAD~1 && git tag -d web@x.y.z`. В registry удалять отдельно (`npm unpublish` — только в первые 72 часа на npmjs).
 
-## Связанное
+## Связанное {#related}
 
 - [[cli|@capsuletech/cli]] — отдельная независимая группа, релизится своей командой.
 - [[vite-plugins]] — vite-плагины из `@capsuletech/vite-builder` ходят в составе web_base.

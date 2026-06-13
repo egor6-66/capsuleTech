@@ -157,7 +157,7 @@ XState `assign({components: ...})` создаёт новый ref на кажды
 | `controller.store` | возвращает bridge напрямую |
 | `controller.destroy` | no-op (зарезервировано для будущей очистки) |
 
-## Связанное
+## Связанное {#related}
 
 - [[ui-proxy]] · [[shape]]
 - [[lifecycle]] · [[overrides]]

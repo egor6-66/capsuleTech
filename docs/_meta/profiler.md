@@ -94,7 +94,7 @@ audience: claude
 | `package.json` | Subpath exports: `.`, `./providers`, `./components`, `./core`, `./collectors`, `./reporters`, `./api`. Dep: `web-vitals ^5.2.0`. PeerDep: `solid-js ^1.9.0`. |
 | `packages/web/core/src/providers/base.tsx` | `BaseProviders.vitals?: boolean` — без изменений. Под капотом `VitalsMonitoringProvider` теперь shim над `ProfilerProvider`. |
 
-## Точки входа
+## Точки входа {#entrypoints}
 
 ```jsonc
 {

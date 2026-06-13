@@ -10,7 +10,7 @@ last_updated: 2026-06-11
 > **READ FIRST:** `docs/_meta/owner-agent-canon.md`.
 > **Plan-doc:** `docs/_meta/web-rework-plan.md` → B6-placeholder.
 
-## Цель
+## Цель {#goal}
 
 Добавить **light placeholder'ы** для трёх боустеров в `@capsuletech/web-ui`:
 
@@ -20,7 +20,7 @@ last_updated: 2026-06-11
 
 Принцип per [[044-web-menu-package|ADR 044]] D / [[046-boost-namespace-matrix-evict-vt-owner|ADR 046]] D3: **light версия всегда живёт в web-ui** (zero-cost), heavy engine — в boost-*. Apps без boost-* в bundle'е могут рендерить placeholder в landing'ах, preview'ах, skeleton-режимах.
 
-## Что делать
+## Что делать {#action}
 
 ### 1. Создать light-primitive в каждом из 3 subpath'ов
 
@@ -128,26 +128,26 @@ export const Chart = createLazy(() => import('@capsuletech/web-ui/chart'), 'Char
 - Минимум один structural unit-test на каждый placeholder (role / aria-label / data-state).
 - Storybook story с разными `size` вариантами.
 
-## PR
+## PR {#pr}
 
 - **Title:** `feat(web-ui): light placeholders Ui.Map + Ui.Flow + Ui.Chart (B6-placeholder / adr 046 D3)`
 - **Не uppercase / digit / `@` в subject** ([[pr-title-pattern]]).
 - **Coordinate** с owner-web-core по `imports.tsx` — может быть отдельный sequential PR от owner-web-core ИЛИ один cooperate PR через главного. **Обсуди со мной до push'а.**
 
-## Constraints
+## Constraints {#constraints}
 
 - **Zone:** `packages/web/ui/`. + один файл `packages/web/core/src/ui-kit/imports.tsx` cooperatively.
 - **Никакого heavy engine deps в placeholder'ах** — zero `maplibre-gl` / `chart.js` / `@dschz/solid-flow` имports. Это инвариант kit zone'ы.
 - **Lockfile:** только если что-то добавлено в deps (вряд ли).
 - **Parallel WIP:** не трогать playground / auth / menu / backend.
 
-## Refs
+## Refs {#refs}
 
 - [[044-web-menu-package|ADR 044]] D — heavy=pkg / light=kit canon.
 - [[046-boost-namespace-matrix-evict-vt-owner|ADR 046]] D3 — light always exists in web-ui.
 - `docs/_meta/web-zones/kit.md` — kit invariants.
 - `docs/_meta/web-zones/boost.md` — boost mirror canon (что boost-table/map/flow/charts отзеркаливают).
 
-## Что НЕ делает этот brief
+## Что НЕ делает этот brief {#non-goals}
 
 - **W4 manifest infra** — отдельный brief (`docs/_meta/briefs/owner-web-ui-W4-bundle-size-manifest.md`). После B6 placeholder'ы попадут в manifest естественно (они L0).

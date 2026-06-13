@@ -52,7 +52,7 @@ packages/web/core/src/
 > `wrappers/{ui, logic}/...` с дублированием интерфейсов и шаппы внутри
 > `wrappers/logic/shape/`.
 
-## Точки входа
+## Точки входа {#entrypoints}
 
 `package.json` экспортирует три подпути:
 
