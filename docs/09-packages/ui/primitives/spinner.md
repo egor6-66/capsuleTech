@@ -1,6 +1,7 @@
 ---
 tags: [ui, primitive, spinner]
 status: documented
+last_updated: 2026-06-01
 ---
 
 # Spinner

@@ -3,6 +3,7 @@ tags: [meta, profiler, ai-context]
 status: documented
 type: ai-anchor
 audience: claude
+last_updated: 2026-06-13
 ---
 
 # 🤖 web-profiler — AI context anchor

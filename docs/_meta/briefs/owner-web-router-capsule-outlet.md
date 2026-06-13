@@ -4,6 +4,8 @@ audience: owner-web-router
 status: canon
 created: 2026-06-11
 phase: C1
+last_updated: 2026-06-13
+tags: [brief, owner-web-router, C1]
 ---
 
 # Brief — owner-web-router — `<CapsuleOutlet/>` + `DepthContext` + `useRouteDepth` rewrite

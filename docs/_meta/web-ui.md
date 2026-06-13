@@ -4,6 +4,7 @@ updated: 2026-05-23
 status: documented
 type: ai-anchor
 audience: claude
+last_updated: 2026-06-13
 ---
 
 # web-ui AI anchor

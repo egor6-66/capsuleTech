@@ -2,6 +2,7 @@
 tags: [hca, adr, proposed, web-ui, menu, packages, boundary]
 status: proposed
 date: 2026-06-11
+last_updated: 2026-06-12
 ---
 
 > [!info] Status

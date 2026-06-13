@@ -1,6 +1,7 @@
 ---
 tags: [hca, architecture, compliance]
 status: documented
+last_updated: 2026-06-01
 ---
 
 # 📜 Золотой регламент (Compliance)

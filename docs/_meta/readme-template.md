@@ -2,6 +2,7 @@
 title: README.md Template
 status: documented
 last-updated: 2026-06-11
+tags: [meta, template]
 ---
 
 # README.md — шаблон для пакетов `@capsuletech/*`

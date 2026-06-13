@@ -2,6 +2,7 @@
 tags: [hca, adr, accepted]
 status: canon
 date: 2026-06-01
+last_updated: 2026-06-13
 ---
 
 # ADR 025 — Geometric live multi-zone sortable (insert-mode DnD engine)

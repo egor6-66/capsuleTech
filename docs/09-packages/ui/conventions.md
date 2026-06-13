@@ -1,6 +1,7 @@
 ---
 tags: [ui, conventions]
 status: documented
+last_updated: 2026-05-19
 ---
 
 # UI-kit канон: primitives

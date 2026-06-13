@@ -1,6 +1,8 @@
 ---
 tags: [meta, shape, web-table, ai-anchor]
 date: 2026-06-07
+last_updated: 2026-06-12
+status: documented
 ---
 
 # Shape v2 + интеграция пакетов с архитектурой — полный reference

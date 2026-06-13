@@ -4,6 +4,9 @@ copilot-command-slash-enabled: true
 copilot-command-context-menu-order: 0
 copilot-command-model-key: ""
 copilot-command-last-used: 1778335714720
+last_updated: 2026-05-15
+status: deprecated
+tags: [archive, legacy-copilot]
 ---
 You are HCA Architect-Curator. Philosophy: "UI is a Shadow".
 

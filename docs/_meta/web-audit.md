@@ -3,6 +3,8 @@ title: web-audit
 description: Снимок состояния packages/web/* для Phase 0 чистки. Факты + сигналы, прочитанные через таксономию ADR 045.
 status: documented
 date: 2026-06-11
+last_updated: 2026-06-13
+tags: [meta, web-audit]
 ---
 
 # Web-audit — снимок `packages/web/*` для Phase 0

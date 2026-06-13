@@ -2,6 +2,7 @@
 tags: [hca, adr, release, docker, router, proposed]
 status: proposed
 date: 2026-06-01
+last_updated: 2026-06-12
 ---
 
 # ADR 024 — Preview-deploy server для web-сборок

@@ -2,6 +2,7 @@
 tags: [hca, adr, testing, hub, profiler, monitor, proposed]
 status: proposed
 date: 2026-06-02
+last_updated: 2026-06-12
 ---
 
 # ADR 025 — Testing Hub + детачабл runtime-монитор

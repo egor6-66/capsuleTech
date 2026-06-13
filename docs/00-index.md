@@ -2,6 +2,7 @@
 tags: [hca, moc]
 status: documented
 type: index
+last_updated: 2026-06-01
 ---
 
 # 🧭 Capsule Framework — Map of Content

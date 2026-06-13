@@ -1,6 +1,7 @@
 ---
 tags: [hca, binding, shape]
 status: documented
+last_updated: 2026-06-13
 ---
 
 # Shape — типизированный presentation-recipe (v2, ADR 036)

@@ -1,6 +1,7 @@
 ---
 tags: [hca, binding, logic]
 status: documented
+last_updated: 2026-06-13
 ---
 
 # 🔁 Overrides — ремап имён методов

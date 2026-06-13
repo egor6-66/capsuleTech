@@ -2,6 +2,7 @@
 title: Dependency Management Plan
 status: proposed
 last-updated: 2026-05-20
+tags: [meta, deps]
 ---
 
 # Dependency Management Plan
