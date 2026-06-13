@@ -7,6 +7,10 @@ const ICONS: Record<IViolation['kind'], string> = {
   'side-effect-fetch': '🌐',
   'unknown-alias': '🏷️',
   'cross-zone-import': '🧭',
+  'native-jsx': '🧱',
+  'native-js': '🪓',
+  'raw-class': '🎨',
+  'app-package-import': '📦',
 };
 
 /** Форматирование одного нарушения для лога/ошибки. */
