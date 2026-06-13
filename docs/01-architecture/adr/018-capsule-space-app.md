@@ -2,6 +2,7 @@
 tags: [hca, adr, proposed]
 status: proposed
 date: 2026-05-23
+last_updated: 2026-06-12
 ---
 
 # ADR 018 — apps/capsule-space (workspace shell + agent management)

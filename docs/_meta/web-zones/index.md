@@ -3,6 +3,7 @@ title: web-zones-index
 description: Index 5 zone canon docs для packages/web/* per ADR 047 D1 + D6. Точка входа для контрибьютора / агента / user'а.
 status: canon
 last_updated: 2026-06-12
+tags: [meta, web-zones]
 ---
 
 # Web zones — index

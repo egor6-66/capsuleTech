@@ -1,6 +1,7 @@
 ---
 tags: [hca, entity, registry]
 status: documented
+last_updated: 2026-06-13
 ---
 
 # 🟦 Entities — реестр

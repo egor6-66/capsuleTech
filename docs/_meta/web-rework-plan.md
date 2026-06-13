@@ -3,6 +3,7 @@ title: web-rework-plan
 description: Live execution plan для rework'а triada ADR 046 + 047 + 048. Обновляется по мере мерджа PR'ов.
 status: documented
 last_updated: 2026-06-12 (D1 5/5 DONE; ADR 046 amended — augmentation pattern + boost-matrix→boost-layout + boost-charts→boost-chart; B-фаза перенумерована)
+tags: [meta, web-rework, plan]
 ---
 
 # web-rework execution plan (per ADR 046 + 047 + 048)

@@ -2,6 +2,7 @@
 tags: [hca, adr, accepted]
 status: canon
 date: 2026-05-09
+last_updated: 2026-06-13
 ---
 
 # ADR 008 — Гибридная FSM-схема: XState локально, `next()` отдельно

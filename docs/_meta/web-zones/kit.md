@@ -3,6 +3,7 @@ title: web-zone-kit
 description: Canon для zone `kit` — stateless light primitives + light композиции. Source of truth о scope, импорт-правилах, vendor-stack и non-goals зоны.
 status: canon
 last_updated: 2026-06-11
+tags: [meta, web-zones, kit]
 ---
 
 # Zone: kit

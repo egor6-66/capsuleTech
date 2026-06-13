@@ -2,6 +2,7 @@
 tags: [hca, adr, proposed, docs, infrastructure, projection]
 status: proposed
 date: 2026-06-11
+last_updated: 2026-06-12
 ---
 
 > [!info] Status

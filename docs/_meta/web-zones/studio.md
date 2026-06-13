@@ -3,6 +3,7 @@ title: web-zone-studio
 description: Canon для zone `studio` — host/composer пакет для авторства capsule-приложений (редактор, palette, inspector, generators, docs consumer). Source of truth о scope, import-правилах, vendor-stack.
 status: canon
 last_updated: 2026-06-12
+tags: [meta, web-zones, studio]
 ---
 
 # Zone: studio

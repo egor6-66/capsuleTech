@@ -4,6 +4,7 @@ status: documented
 type: ai-anchor
 audience: claude
 last-verified: 2026-05-27
+last_updated: 2026-06-13
 ---
 
 # 🤖 Web State — AI context anchor

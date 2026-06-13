@@ -3,6 +3,7 @@ tags: [meta, builders, ai-context]
 status: documented
 type: ai-anchor
 audience: claude
+last_updated: 2026-06-13
 ---
 
 # 🤖 @capsuletech/builders — AI context anchor

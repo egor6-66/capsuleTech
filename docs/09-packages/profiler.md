@@ -2,6 +2,7 @@
 tags: [09-packages, profiler]
 status: documented
 type: guide
+last_updated: 2026-06-13
 ---
 
 # 📊 @capsuletech/web-profiler

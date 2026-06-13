@@ -2,6 +2,7 @@
 title: Architect Routing — symptom → agent
 status: documented
 last-updated: 2026-05-20
+tags: [meta, routing]
 ---
 
 # Architect Routing

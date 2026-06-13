@@ -2,6 +2,7 @@
 title: OWNERSHIP.md Template
 status: documented
 last-updated: 2026-05-20
+tags: [meta, template]
 ---
 
 # OWNERSHIP.md — шаблон для owner-agent'ов

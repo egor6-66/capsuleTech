@@ -3,6 +3,7 @@ tags: [meta, renderer, ai-context]
 status: documented
 type: ai-anchor
 audience: claude
+last_updated: 2026-06-13
 ---
 
 # 🤖 @capsuletech/web-renderer — AI context anchor

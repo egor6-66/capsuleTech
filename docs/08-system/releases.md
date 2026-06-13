@@ -2,6 +2,7 @@
 tags: [system, releases]
 status: documented
 type: guide
+last_updated: 2026-06-13
 ---
 
 # 📦 Releases

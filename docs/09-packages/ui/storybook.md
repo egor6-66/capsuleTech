@@ -1,6 +1,7 @@
 ---
 tags: [ui, storybook]
 status: documented
+last_updated: 2026-05-19
 ---
 
 # Storybook: как писать stories для web-ui

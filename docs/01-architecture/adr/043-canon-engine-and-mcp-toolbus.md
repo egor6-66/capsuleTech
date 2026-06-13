@@ -2,6 +2,7 @@
 tags: [hca, adr, proposed, mcp, codegen, agents, cli]
 status: proposed
 date: 2026-06-09
+last_updated: 2026-06-12
 ---
 
 > [!info] Status

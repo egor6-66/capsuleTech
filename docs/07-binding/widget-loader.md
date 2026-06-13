@@ -1,6 +1,7 @@
 ---
 tags: [hca, binding, widget, loader]
 status: documented
+last_updated: 2026-06-13
 ---
 
 # Widget loader — fallback при загрузке

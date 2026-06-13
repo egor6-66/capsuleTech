@@ -3,6 +3,7 @@ tags: [meta, web-map, ai-context]
 status: documented
 type: ai-anchor
 audience: claude
+last_updated: 2026-06-13
 ---
 
 # @capsuletech/web-map — AI context anchor

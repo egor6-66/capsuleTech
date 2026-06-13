@@ -2,6 +2,7 @@
 tags: [hca, adr, accepted]
 status: canon
 date: 2026-05-23
+last_updated: 2026-06-13
 ---
 
 # ADR 016 — Matrix v2: rows-engine + presets + DnD (swap/insert)

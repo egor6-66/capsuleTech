@@ -1,6 +1,7 @@
 ---
 tags: [hca, architecture, adr, moc]
 status: documented
+last_updated: 2026-06-13
 ---
 
 # 🧠 ADR — Architecture Decision Records

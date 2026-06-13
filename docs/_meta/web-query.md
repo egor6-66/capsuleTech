@@ -3,6 +3,7 @@ tags: [meta, web-query, ai-context]
 status: documented
 type: ai-anchor
 audience: claude
+last_updated: 2026-06-13
 ---
 
 # Web Query — AI context anchor

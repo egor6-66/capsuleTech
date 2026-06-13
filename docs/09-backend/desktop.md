@@ -2,6 +2,7 @@
 tags: [user-guide, backend, desktop]
 audience: external consumer
 status: documented
+last_updated: 2026-06-13
 ---
 
 # Desktop: запуск приложения в Tauri-окне

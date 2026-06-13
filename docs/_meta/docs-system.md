@@ -6,6 +6,7 @@ type: canon
 last_updated: 2026-06-12
 date: 2026-06-12
 audience: [agent, dev]
+tags: [meta, docs-as-data, canon]
 ---
 
 # Docs system canon
