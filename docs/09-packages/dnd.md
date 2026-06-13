@@ -13,7 +13,7 @@ type: guide
 > или dedicated lib). Текущая API-форма — стабильный контракт; меняйте только
 > если переписывается ВСЁ.
 
-## Структура
+## Структура {#structure}
 
 ```
 packages/web/dnd/src/
@@ -27,7 +27,7 @@ packages/web/dnd/src/
 └── types.ts        IDraggable* / IDroppable* / IDropInfo / IDragEndResult / DragData / IPoint
 ```
 
-## API
+## API {#api}
 
 ```tsx
 import { DnDProvider, createDraggable, createDroppable, DragOverlay } from '@capsuletech/web-dnd';

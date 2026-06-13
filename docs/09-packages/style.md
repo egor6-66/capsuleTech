@@ -72,7 +72,7 @@ DENSITY_PRESETS;
 
 **Why module-level:** Applying theme on import (before first render) prevents flash of unstyled content. No Provider needed — signals are global to the app.
 
-## API
+## API {#api}
 
 ### `cn(...inputs): string`
 
@@ -206,7 +206,7 @@ toggleDarkMode();
 />
 ```
 
-## Темовая система
+## Темовая система {#themes}
 
 12 встроенных тем: `black`, `damon`, `deepPurple`, `lightGreen`, `minimalNeutral`, `openprofile`, `pasteelement`, `shopifyRed`, `tiesen`, `vescrow`, `zen`. Каждая — набор CSS-переменных под селектором `[data-theme="<name>"]`.
 
@@ -242,7 +242,7 @@ import { ThemeSwitcher } from '@capsuletech/web-style/switcher';
 
 Для текущего проекта детальная дока редактора — отдельная задача.
 
-## Где используется
+## Где используется {#where-used}
 
 1. **@capsuletech/web-ui** — все primitives используют `createStyle` и CVA.
 2. **@capsuletech/web-core/ui-kit** — lazy-импорты UI компонентов для Entity.

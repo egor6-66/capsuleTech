@@ -46,7 +46,7 @@ status: documented
 > - 🗑️ **deprecated** — отменено более новым ADR
 > - 🔄 **superseded by NNN** — заменено NNN
 
-## Шаблон
+## Шаблон {#template}
 
 ```markdown
 ---

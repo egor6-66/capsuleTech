@@ -10,13 +10,13 @@ last_updated: 2026-06-11
 > **READ FIRST:** `docs/_meta/owner-agent-canon.md` — общие правила для owner-* агентов.
 > **Plan-doc:** `docs/_meta/web-rework-plan.md` → Phase C3.
 
-## Цель
+## Цель {#goal}
 
 Закрыть C-трек depth-scoped routing-animation. C1 (`CapsuleOutlet` + `DepthContext`) и C2 (`Ui.Outlet` swap в Page+Widget wrappers через CapsuleOutlet alias) уже в main (#304, #305). Каждый Outlet-уровень эмитит `view-transition-name: capsule-content-${depth}`. CSS-движок должен **уметь анимировать каждое имя независимо**.
 
 Сейчас `packages/web/style/src/index.css` содержит селекторы только для `capsule-content` (без depth). После C1+C2 они НЕ срабатывают на новые depth-имена → degraded animation для consumer'ов.
 
-## Что делать
+## Что делать {#action}
 
 ### 1. Расширить блок `.vt-route-content` в `packages/web/style/src/index.css`
 
@@ -64,21 +64,21 @@ last_updated: 2026-06-11
 
 CSS-only изменение, jsdom его не валидирует. Manual smoke после merge'а в любом capsule-аппе с вложенными роутами (например `apps/playground/workspace/web-studio/*`) — но это USER зона (parallel WIP в этих роутах).
 
-## PR
+## PR {#pr}
 
 - **Title:** `feat(web-style): enumerate vt-name selectors for capsule-content-{0..3} (adr 046 D4 / Phase C3)`
 - **Не начинать subject с uppercase / digit / `@`** ([[pr-title-pattern]]).
 - **Base:** main.
 - **CI:** Lint + Typecheck + Build (+ Test если конфиг есть). Ownership canon должен пройти если OWNERSHIP правильно обновлён.
 
-## Constraints
+## Constraints {#constraints}
 
 - **Zone:** `packages/web/style/`. Не трогать web-router (#304 закрыл) / web-core (#305 закрыл) / apps/*.
 - **Никогда `git add -A` / `git restore`** ([[no-blanket-restore]]). Explicit paths.
 - **Parallel WIP в дереве** (playground / auth / menu / backend) — не моя зона, не коммитить.
 - **Lockfile** не трогать (CSS-only).
 
-## Refs
+## Refs {#refs}
 
 - [[046-boost-namespace-matrix-evict-vt-owner|ADR 046]] D4 — CapsuleOutlet vt-name canon.
 - PR #304 — C1 CapsuleOutlet + DepthContext.

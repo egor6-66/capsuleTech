@@ -118,7 +118,7 @@ backend/target/release/bundle/
 - Tauri-API surface для frontend (commands, events) — добавится когда появится первая фича, которая в браузере не работает;
 - macOS/Linux bundle target'ы в CI (workflow только `windows-latest`).
 
-## Связанное
+## Связанное {#related}
 
 - [[cli|💻 CLI]] — команды `desktopDev`/`desktopBuild` живут в `packages/cli/src/{actions,commands}/desktop.ts`.
 - [[releases|🚀 Releases]] — npm-релизы пакетов, **не** desktop. Desktop-релизы → `.github/workflows/desktop-release.yml`.

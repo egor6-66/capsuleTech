@@ -10,7 +10,7 @@ status: documented
 
 Реализация решения [[005-tag-aliases-registry|ADR 005]].
 
-## Зачем
+## Зачем {#why}
 
 Алиас — это «зонтик», группа конкретных тегов. Без реестра запрос `pick(['@inputs'])` находил бы только элементы с буквальным `@inputs`. С реестром — раскрывается до `[email, password, phone, ...]` и матчится со всеми инпутами.
 
@@ -97,7 +97,7 @@ store.pick(['@inputs'], { expandAliases: false });
 - **Без вложенных `@`**: алиас `@@foo` — undefined behaviour.
 - **Domain-prefix** при коллизиях: `@cart:checkout`, `@auth:flow`.
 
-## Связанное
+## Связанное {#related}
 
 - [[tagging-system|🏷️ Система мета-тегов]]
 - [[ui-proxy]]

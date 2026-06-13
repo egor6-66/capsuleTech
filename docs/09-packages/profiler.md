@@ -12,7 +12,7 @@ type: guide
 > [!ai]
 > Для агентов и Claude-инстансов — полный AI-anchor с контрактами и gotchas: [[../_meta/profiler|docs/_meta/profiler.md]]. Если правишь пакет — читай его.
 
-## Структура
+## Структура {#structure}
 
 ```
 packages/web/profiler/src/
@@ -51,7 +51,7 @@ packages/web/profiler/src/
 └── utils.ts                 @deprecated helpers (legacy)
 ```
 
-## Точки входа
+## Точки входа {#entrypoints}
 
 ```jsonc
 {

@@ -9,11 +9,11 @@ type: guide
 > [!info]
 > Декларативная система для определения HTTP endpoints и middleware-цепочек. Feature получает типизированный API-клиент и работает только с доменными объектами, не видя HTTP-деталей.
 
-## Концепция
+## Концепция {#concept}
 
 Вместо того чтобы раскидывать `fetch`-вызовы по Feature-логике, в Capsule endpoints объявляются декларативно в `src/endpoints/` с Zod-схемами для валидации. Middleware-pipeline между Feature и сетью обрабатывает: аутентификацию, кэш, переводы ошибок HTTP в типизированные исключения, маппинг DTO → Domain Object. Feature видит чистый API: `services.api.user.get({ id: '1' })` → Promise<User>, либо typed error (UnauthorizedError, ValidationError и т.д.). Конфиг middleware живёт в центральном `capsule.app.ts` — легко менять поведение всех запросов сразу.
 
-## Команды / Использование
+## Команды / Использование {#usage}
 
 ### Создание нового endpoint
 
@@ -425,7 +425,7 @@ a2.abort(); // ❌ p2 продолжает ждать, т.к. p1 уже in-fligh
 - SSE / WebSocket transport (`createStreamApi`) — P3 #17.
 - Payload serialization safety — P3 #18.
 
-## Troubleshooting
+## Troubleshooting {#troubleshooting}
 
 **`Cannot find module '@capsuletech/web-query'`** — если используешь функции вне auto-import (редко), добавь в `apps/<app>/package.json`:
 ```json

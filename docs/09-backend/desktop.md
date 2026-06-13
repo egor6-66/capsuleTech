@@ -9,7 +9,7 @@ status: documented
 > [!info]
 > Добавьте Tauri shell к своему Capsule приложению. Результат — native desktop app с web-frontend (макOS/Windows/Linux). Работает через `@capsuletech/desktop` пакет.
 
-## Концепция
+## Концепция {#concept}
 
 Capsule framework изначально создан для web, но веб-интерфейс можно завернуть в desktop shell используя Tauri 2. Это работает благодаря `@capsuletech/desktop` — библиотеке, которая управляет жизненным циклом Tauri приложения. Параметризация — через простую конфигурацию в `capsule.config.ts`. Никаких CLI-флагов или скриптов; фреймворк справляется сам.
 
@@ -129,7 +129,7 @@ pnpm capsule desktop build
 
 Бинарные файлы готовы к дистрибуции.
 
-## Troubleshooting
+## Troubleshooting {#troubleshooting}
 
 ### ❌ "Секция `desktop` отсутствует в `capsule.config.ts`"
 
@@ -221,13 +221,13 @@ pnpm --filter @capsuletech/desktop build:native
 - ✅ Без code signing — фаза 3 и позже
 - ✅ Без custom Tauri commands/plugins — shell зафиксирован (requests → Phase 2+)
 
-## Roadmap
+## Roadmap {#roadmap}
 
 - **Phase 2:** Multi-platform distribution (матрица бинарей для macOS/Windows/Linux)
 - **Phase 3:** Custom installer'ы (`.msi`, `.dmg`, `.AppImage`), code signing для дистрибуции
 - **Phase 4 (optional):** Escape hatch для custom Rust кода (`capsule desktop eject`)
 
-## Связанное
+## Связанное {#related}
 
 - [[017-desktop-package|ADR 017]] — дизайнерские решения и альтернативы
 - [[desktop|desktop AI-anchor]] — для контрибьюторов (внутреннее устройство пакета)

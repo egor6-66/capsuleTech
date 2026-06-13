@@ -11,7 +11,7 @@ type: guide
 
 Runtime-рендер по JSON-схеме — в отдельном пакете [[renderer|@capsuletech/web-renderer]] (там нет zod/lucide-deps, подходит для прода без overhead'а редактора).
 
-## Структура
+## Структура {#structure}
 
 ```
 packages/web/ui-creator/src/
@@ -44,7 +44,7 @@ packages/web/ui-creator/src/
         └── form.ts         FORM_PRESET — grammar для form-like UI
 ```
 
-## Точки входа
+## Точки входа {#entrypoints}
 
 `package.json` экспортирует подпути:
 

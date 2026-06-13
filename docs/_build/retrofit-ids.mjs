@@ -26,7 +26,18 @@ const TARGET_DIRS = [
   'docs/01-architecture/adr',
   'docs/_meta/web-zones',
   'docs/_meta',           // root-level _meta canon + AI-anchors (non-recursive)
+  'docs/_meta/briefs',
   'docs/09-packages',
+  'docs/playground',
+  'docs/figma-handoff',
+  'docs/02-entities',
+  'docs/03-controllers',
+  'docs/04-features',
+  'docs/05-widgets',
+  'docs/06-pages',
+  'docs/07-binding',
+  'docs/08-system',
+  'docs/09-backend',
 ];
 
 // H2-heading text (trimmed) → reserved {#id}.
@@ -91,6 +102,48 @@ const H2_RESERVED = new Map([
   ['Build', 'build'],
   ['Docs', 'docs'],
   ['Зачем', 'why'],
+  // ─── Brief canon (E2.3) ──────────────────────────────────────────
+  ['Цель', 'goal'],
+  ['Что делать', 'action'],
+  ['Что не делать', 'non-action'],
+  ['Что НЕ делает этот brief', 'non-goals'],
+  ['Refs', 'refs'],
+  ['Constraints', 'constraints'],
+  ['Test plan', 'test-plan'],
+  ['Scope', 'scope'],
+  ['READ FIRST', 'read-first'],
+  ['Deliverable', 'deliverable'],
+  ['PR', 'pr'],
+  ['Plan', 'plan'],
+  ['Файловая карта', 'file-map'],
+  // ─── 09-packages canon (E2.3) ────────────────────────────────────
+  ['API', 'api'],
+  ['Точки входа', 'entrypoints'],
+  ['Структура', 'structure'],
+  ['Концепция', 'concept'],
+  ['Команды / Использование', 'usage'],
+  ['Где используется', 'where-used'],
+  ['Troubleshooting', 'troubleshooting'],
+  ['Темы и стили', 'themes'],
+  ['Темовая система', 'themes'],
+  ['Что ловит', 'what-catches'],
+  // ─── Playground / figma-handoff (E2.3) ───────────────────────────
+  ['Принципы', 'principles'],
+  ['Принципы (контекст для всех zone)', 'principles'],
+  ['Ментальная модель', 'mental-model'],
+  ['Фазы', 'phases'],
+  ['Шаги', 'steps'],
+  // ─── 02-08 layer docs (E2.3) ─────────────────────────────────────
+  ['Канон', 'canon'],
+  ['Канон structure', 'canon'],
+  ['Per-package OWNERSHIP', 'per-package-ownership'],
+  ['Per-package README', 'per-package-readme'],
+  ['Канон зависимостей', 'dep-canon'],
+  ['5 zone', 'five-zones'],
+  ['Сводка', 'summary'],
+  ['История изменений', 'changelog'],
+  ['Шаблон', 'template'],
+  // ─── docs-system canon already has explicit IDs ──────────────────
 ]);
 
 // Non-goals — separate canon id (not in reserved list yet, but consistent across ADRs).
@@ -99,6 +152,13 @@ const NON_GOALS_RX = /^Что (НЕ|не) решает /;
 // H3 patterns — extract `D<N>` decisions and `Pain <N>` items.
 const H3_DECISION_RX = /^D(\d+)\s*[—-]\s+/;       // "D1 — Boost namespace"
 const H3_PAIN_RX = /^Pain\s+(\d+)\s*[—-]\s+/;     // "Pain 3 — Wikilinks не валидируются"
+
+/**
+ * Strip leading emoji + whitespace from a heading text before mapping lookup.
+ * Catches patterns like "## 🪜 Фазы" → match key "Фазы".
+ * Pattern: any non-letter/digit/control prefix + optional spaces.
+ */
+const stripLeadingEmoji = (text) => text.replace(/^[\p{Emoji}\s‍️]+/u, '').trim();
 
 const stats = { files: 0, retrofittedH2: 0, retrofittedH3: 0, skipped: 0, collisions: [] };
 
@@ -136,8 +196,10 @@ const processAdr = async (file) => {
         continue;
       }
       let id = null;
+      const stripped = stripLeadingEmoji(text);
       if (H2_RESERVED.has(text)) id = H2_RESERVED.get(text);
-      else if (NON_GOALS_RX.test(text)) id = 'non-goals';
+      else if (H2_RESERVED.has(stripped)) id = H2_RESERVED.get(stripped);
+      else if (NON_GOALS_RX.test(text) || NON_GOALS_RX.test(stripped)) id = 'non-goals';
       if (!id) { out.push(line); continue; }
       if (usedIds.has(id)) {
         stats.collisions.push(`${file}: H2 would re-use id "${id}" for "${text}"`);
