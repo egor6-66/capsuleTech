@@ -15,7 +15,7 @@
  */
 
 import { readdir, readFile, writeFile } from 'node:fs/promises';
-import { join, dirname, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -25,7 +25,7 @@ const DRY_RUN = process.argv.includes('--dry-run');
 const TARGET_DIRS = [
   'docs/01-architecture/adr',
   'docs/_meta/web-zones',
-  'docs/_meta',           // root-level _meta canon + AI-anchors (non-recursive)
+  'docs/_meta', // root-level _meta canon + AI-anchors (non-recursive)
   'docs/_meta/briefs',
   'docs/09-packages',
   'docs/playground',
@@ -45,7 +45,7 @@ const TARGET_DIRS = [
 const H2_RESERVED = new Map([
   // ─── ADR canon (E2.1) ────────────────────────────────────────────
   ['Контекст', 'context'],
-  ['Проблема', 'problem'],          // separate from context when both present
+  ['Проблема', 'problem'], // separate from context when both present
   ['Среда / ограничения', 'constraints'],
   ['Решение', 'decisions'],
   ['Решения', 'decisions'],
@@ -150,15 +150,17 @@ const H2_RESERVED = new Map([
 const NON_GOALS_RX = /^Что (НЕ|не) решает /;
 
 // H3 patterns — extract `D<N>` decisions and `Pain <N>` items.
-const H3_DECISION_RX = /^D(\d+)\s*[—-]\s+/;       // "D1 — Boost namespace"
-const H3_PAIN_RX = /^Pain\s+(\d+)\s*[—-]\s+/;     // "Pain 3 — Wikilinks не валидируются"
+const H3_DECISION_RX = /^D(\d+)\s*[—-]\s+/; // "D1 — Boost namespace"
+const H3_PAIN_RX = /^Pain\s+(\d+)\s*[—-]\s+/; // "Pain 3 — Wikilinks не валидируются"
 
 /**
- * Strip leading emoji + whitespace from a heading text before mapping lookup.
- * Catches patterns like "## 🪜 Фазы" → match key "Фазы".
- * Pattern: any non-letter/digit/control prefix + optional spaces.
+ * Strip leading emoji + whitespace + variation/joiner from a heading
+ * before mapping lookup. Catches patterns like "## 🪜 Фазы" → key "Фазы".
+ * Alternation is used (not a character class) because joined emoji
+ * sequences (ZWJ ‍ / VS-16 ️) can't sit inside a character
+ * class per ES spec (biome `noCharacterClassMatchingJoinedSequence`).
  */
-const stripLeadingEmoji = (text) => text.replace(/^[\p{Emoji}\s‍️]+/u, '').trim();
+const stripLeadingEmoji = (text) => text.replace(/^(?:\p{Emoji}|\s|‍|️)+/u, '').trim();
 
 const stats = { files: 0, retrofittedH2: 0, retrofittedH3: 0, skipped: 0, collisions: [] };
 
@@ -177,12 +179,20 @@ const processAdr = async (file) => {
     const fenceMatch = line.match(/^(\s{0,3})(```+|~~~+)/);
     if (fenceMatch) {
       const m = fenceMatch[2][0];
-      if (!inFence) { inFence = true; fenceMarker = m; }
-      else if (fenceMarker === m) { inFence = false; fenceMarker = null; }
+      if (!inFence) {
+        inFence = true;
+        fenceMarker = m;
+      } else if (fenceMarker === m) {
+        inFence = false;
+        fenceMarker = null;
+      }
       out.push(line);
       continue;
     }
-    if (inFence) { out.push(line); continue; }
+    if (inFence) {
+      out.push(line);
+      continue;
+    }
 
     // H2
     const h2 = line.match(/^## (.+?)\s*$/);
@@ -200,7 +210,10 @@ const processAdr = async (file) => {
       if (H2_RESERVED.has(text)) id = H2_RESERVED.get(text);
       else if (H2_RESERVED.has(stripped)) id = H2_RESERVED.get(stripped);
       else if (NON_GOALS_RX.test(text) || NON_GOALS_RX.test(stripped)) id = 'non-goals';
-      if (!id) { out.push(line); continue; }
+      if (!id) {
+        out.push(line);
+        continue;
+      }
       if (usedIds.has(id)) {
         stats.collisions.push(`${file}: H2 would re-use id "${id}" for "${text}"`);
         out.push(line);
@@ -229,7 +242,10 @@ const processAdr = async (file) => {
       const painMatch = text.match(H3_PAIN_RX);
       if (dMatch) id = `D${dMatch[1]}`;
       else if (painMatch) id = `pain${painMatch[1]}`;
-      if (!id) { out.push(line); continue; }
+      if (!id) {
+        out.push(line);
+        continue;
+      }
       if (usedIds.has(id)) {
         stats.collisions.push(`${file}: H3 would re-use id "${id}" for "${text}"`);
         out.push(line);
@@ -280,13 +296,22 @@ const main = async () => {
     if (changed) changedFiles.push(f.replace(ROOT + '/', '').replace(/\\/g, '/'));
   }
   console.log(`retrofit-ids: ${stats.files} docs scanned`);
-  console.log(`retrofit-ids: ${stats.retrofittedH2} H2 + ${stats.retrofittedH3} H3 headings retrofitted`);
+  console.log(
+    `retrofit-ids: ${stats.retrofittedH2} H2 + ${stats.retrofittedH3} H3 headings retrofitted`,
+  );
   console.log(`retrofit-ids: ${stats.skipped} skipped (already have {#id})`);
   if (stats.collisions.length > 0) {
-    console.log(`retrofit-ids: ${stats.collisions.length} collisions (skipped, manual review needed):`);
+    console.log(
+      `retrofit-ids: ${stats.collisions.length} collisions (skipped, manual review needed):`,
+    );
     for (const c of stats.collisions) console.log(`  ⚠ ${c}`);
   }
-  console.log(`retrofit-ids: ${changedFiles.length} files changed${DRY_RUN ? ' (dry-run, not written)' : ''}`);
+  console.log(
+    `retrofit-ids: ${changedFiles.length} files changed${DRY_RUN ? ' (dry-run, not written)' : ''}`,
+  );
 };
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
