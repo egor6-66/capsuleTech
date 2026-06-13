@@ -36,6 +36,7 @@
       "@capsuletech/studio/controllers": ["packages/web/studio/src/controllers/index.ts"],
       "@capsuletech/studio/capsule": ["packages/web/studio/src/capsule.ts"],
       "@capsuletech/studio/docs": ["packages/web/studio/src/docs/index.ts"],
+      "@capsule/docs-registry": ["docs/.generated/registry.ts"],
       "@capsuletech/web-access": ["packages/web/runtime/access/src/index.ts"],
       "@capsuletech/web-dnd": ["packages/web/runtime/dnd/src/index.ts"],
       "@capsuletech/web-dnd/controllers": ["packages/web/runtime/dnd/src/controllers/index.ts"],

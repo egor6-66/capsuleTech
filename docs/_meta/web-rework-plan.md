@@ -574,16 +574,16 @@ A0 (merge 046+047+048+plan) ─→ A1 (USER creates owner-boost-matrix + restart
 | W5 — Cross-import inventory baseline | **DONE** | этот PR | `docs/_meta/web-audit-cross-imports.md` — 23 пакета snapshot; единственный drift `web-access → web-auth` (runtime → domain), закрывается Phase D2 |
 | W6 — Boost-renames `web-*` → `boost-*` (B4-B7 absorbed) | **DONE** | #306 | 4 пакета renamed, tsconfig aliases для grace, lockfile sync, build clean |
 | W7 — Plan-doc update | **DONE** | #302 (initial) + этот PR (post-W6+C1+C2) | live status refresh |
-| B1 — boost-layout scaffold ⚠ amend | READY | — | После D1 ✅ + ADR 046 amend merge; main steward executes |
-| B2 — web-shell strip Matrix → boost-layout | BLOCKED | — | Wait B1 |
-| B3 — apps imports → Ui.Layout.Matrix | BLOCKED | — | Wait B2 |
+| B1 — boost-layout scaffold ⚠ amend | **DONE** | #330 | boost-layout package scaffold per ADR 046 amend D5 augmentation pattern |
+| B2 — web-shell strip Matrix → boost-layout | **DONE** | #331 | Matrix relocate `web-shell/src/matrix/` → `boost-layout/src/` |
+| B3 — apps imports → Ui.Layout.Matrix | **DONE** | #331 | apps switch `Shell.Matrix` → `Layouts.Matrix` (programmatic) + `Ui.Layout.Matrix` (augmentation) |
 | B4-B5 — boost-* renames (table/map/flow) | **ABSORBED** → W6 (#306) | — | — |
-| B5b — boost-charts → boost-chart singular ⚠ amend | PENDING | — | Bundle с PR-B (rename + B6 namespace) |
-| B6-placeholder — Ui.MapView/FlowDiagram/Chart restructure → namespace form ⚠ amend | PENDING | — | Bundle с PR-B (renames + agent rename) |
+| B5b — boost-charts → boost-chart singular ⚠ amend | **DONE** | #329 | mechanical rename within agent + boost-chart + Ui.* namespace restructure |
+| B6-placeholder — Ui.MapView/FlowDiagram/Chart restructure → namespace form ⚠ amend | **DONE** | #329 | `Ui.MapView` → `Ui.Map.View`, etc. via augmentation pattern (#332) |
 | C1 — CapsuleOutlet + DepthContext | **DONE** | #304 | owner-web-router; 9 файлов; 9+4 tests jsdom; vt-name per-depth |
 | C2 — Ui.Outlet swap | **DONE** | #305 | main steward; `Outlet` injection в Page+Widget wrappers переключён на CapsuleOutlet (alias-import). Apps/playground outlet patch — USER в своей ветке. |
-| C3 — CSS селекторы enumerate | READY | — | После C2 merge (✅) — USER dispatches owner-web-style |
-| D1 — Zone directory layout | BLOCKED | — | Wait W+B+C stable |
+| C3 — CSS селекторы enumerate | **DONE** | #309 | owner-web-style; `.vt-route-content` legacy retained as fallback for pre-CapsuleOutlet consumers. Routing-animation track functionally complete. |
+| D1 — Zone directory layout | **DONE** | #323-#327 | 5-PR series: kit / design-time / boost / domain / runtime. Sub-phases: ADR 046 amend (#328) + agent rename (#329) + D5 augmentation runtime hook (#332). |
 | D2 — Cross-domain contracts (web-access drift fix) | **DONE** | этот PR | `IAuthCapability` в `web-contract/capabilities`; web-access потребляет контракт; vite-builder generator wires `useAuth()` arg. W5 known drift закрыт. |
 | D3 — Compliance extension (zone canon enforcement) | **DONE** | этот PR | `zones.ts` + `runZoneCheck` + `cross-zone-import` violation kind. 44 new tests. Sanity sweep 557 web/* files = 0 violations. Vendor-wrapper-comment rule deferred (separate ADR if needed). |
 | D4 — studio rename + absorb ui-creator | **DONE** | #334 | `git mv ui-creator → studio` (preserves code history), npm `web-ui-creator` → `studio`, drop empty creator skeleton, 6 apps + tsconfig + nx + vite-builder + compliance + CLI templates updated, `owner-web-ui-creator` agent renamed to `owner-studio`. Restart required for agent. |
@@ -592,11 +592,12 @@ A0 (merge 046+047+048+plan) ─→ A1 (USER creates owner-boost-matrix + restart
 | E1 — docs:build extract pipeline | **DONE** | #336 | `docs/_meta/docs-system.md` canon + `docs/_build/extract.mjs` (zero-dep line-based parser, code-fence + inline-code aware) + `pnpm docs:build` + `docs/.generated/` ignored. 170 docs / 2027 sections / ~125ms. CP1 contract agreed with user upfront. |
 | E2.1 — section-id pass on ADRs | **DONE** | #337 | `docs/_build/retrofit-ids.mjs` idempotent script. 246 retrofits (225 H2 + 21 H3) across 46 of 47 ADRs. 0 collisions. Warnings: 2419 → 2173 (-246). |
 | E2.2 — section-id pass on canon docs + AI-anchors + 09-packages | **DONE** | #338 | Extended script with web-zones + AI-anchor + OWNERSHIP/README template H2 mappings. 159 retrofits across 46 files. Warnings: 2173 → 2014 (-159). Cumulative: -405 / -16.7%. |
-| E2.3 — emoji-prefixed headings in briefs/anti-patterns | PENDING (low priority) | — | Touch-when-touch; wild structure |
-| E2.4 — document-specific non-canonical headings | PENDING (touch-when-touch) | — | Per-doc decisions |
-| E3 — Status enum normalization + audience tagging | PARTIAL (audience ongoing; status pending) | — | 81 docs use non-canon status (accepted/implemented/living/snapshot). Needs mapping decision: `accepted/implemented → canon`, `planned/draft → proposed`, `living/snapshot/live → documented`. Audience-tagging touch-when-touch (no PR-driven). |
-| E4 — studio/docs consumer | PENDING | — | Can start; needs `<DocSection>` shape design proposal |
-| E5 — apps consume DocSection | BLOCKED | — | Wait E4; low priority |
+| E2.3 — section-id retrofit briefs/playground/figma/layer docs | **DONE** | #346 | +8 dirs, +33 H2 mappings, emoji-prefix strip, 95 retrofits. Warnings 1931 → 1836. Remaining ~1135 auto-slug — content-specific headings (touch-when-touch). |
+| E2.4 — document-specific non-canonical headings | OPEN (touch-when-touch) | — | Per-doc decisions; ~1135 sections (anti-pattern items, doc-specific sub-structure). Auto-slug fallback IS canon §1.3 design choice — warning not error. |
+| E3 — Status enum normalization | **DONE** | #341 | 57 status rewrites + 2 transient deletions (author-intent-to-delete). 138 docs now canon enum; 32 missing field — touch-when-touch. |
+| E3 — Audience tagging | ONGOING (touch-when-touch) | — | No PR-driven; per-doc when touched. |
+| E4 — studio/docs consumer | **DONE** | #345 | `@capsuletech/studio/docs` subpath — DocsProvider/DocSection/DocPage/useDoc; marked-based MD render; body-level audience filter; DI registry shape; 18 tests. |
+| E5 — apps consume DocSection | OPEN — infra ready | — | `<DocSection>` API stable. Apps adopt as needed via `<DocsProvider registry={appRegistry}>` at root. Sample integration in playground / capsule-сайт when those apps are next worked on. |
 | E6 — CI drift-guards | **DONE** | #339 | Standalone `Docs build (ADR 048 E6)` job in `.github/workflows/ci.yml`. Zero-dep (no pnpm install), runs `node docs/_build/extract.mjs`. Fails on errors, passes on warnings. Will escalate to strict mode post-E2.4. |
 
 ## Studio internal audit (post-D5, 2026-06-13)
@@ -607,7 +608,7 @@ A0 (merge 046+047+048+plan) ─→ A1 (USER creates owner-boost-matrix + restart
 |---|---|---|---|
 | S1 — Extract `/generators` to `@capsuletech/data-gen` | **DONE** | #342 | New runtime package (no `web-` prefix). Tree shape (`IEditorTree`/`IEditorNode`/`NodeId`) owned in data-gen (single source of truth). Engine decoupled from studio via optional `IManifestResolver`. Templates stay in studio (composition product-block). Compliance NO_PREFIX_PKG_DIRS set added. 39 tests in data-gen + 187 in studio. |
 | S2 — Consolidate `/manifests` in web-ui kit | **DONE** | #343 | 14 hand-authored manifests moved studio → web-ui (git-rename detected). Schema `IPrimitiveManifestEntry` extended to cover identity + UI + inspector + DnD + bundle-cost. New subpath `@capsuletech/web-ui/manifest`. Studio's `/manifests` subpath thin re-export + studio-specific `rules.ts` stays. `ComponentCategory` moved to web-ui. `IComponentManifest` retained as `@deprecated` alias. |
-| S2 follow-up — W4 part 2 (build-manifest merge) | PENDING | — | `scripts/build-manifest.mjs` extends to merge hand-authored data with auto-gen bundle-cost into single `dist/manifest.json`. Today: auto-gen-only; hand-authored fields read directly from subpath. |
+| S2 follow-up — W4 part 2 (build-manifest merge) | DEFERRED (serialization gap) | — | Merging hand-authored manifests into `dist/manifest.json` at build-time hits a serialization wall: `icon` is `() => JSX.Element` and `propsSchema` is `ZodTypeAny` — neither survives JSON. Conceptual unification (S2 schema) is the win; consumers merge sources at runtime when needed (studio palette reads `/manifest` subpath + `dist/manifest.json` separately and joins). Revisit when palette adds size-badges (W4 brief). |
 | S3 — `/state` rename to `/tree` (optional) | DEFERRED | — | Cosmetic — better signal but more churn |
 | S4 — `/inspector` rename to `/inspector-panel` (optional) | DEFERRED | — | Composition rule canon — subpath = product name. Cosmetic. |
 
