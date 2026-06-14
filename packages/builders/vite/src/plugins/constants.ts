@@ -50,11 +50,13 @@ export type WrapperName = (typeof WRAPPER_NAMES)[number];
  * В отличие от `WRAPPER_NAMES` это не component-wrapper'ы (нет HMR-обёртки),
  * а runtime-функции для доступа к контексту и сервисам.
  *
- * Используется в Views/Widgets/Controllers/Features:
+ * Используется в Views/Widgets/Controllers/Features/Pages:
  *  - `useCtx()` — доступ к `ControllerContext` (store + state + controller methods)
+ *  - `useRouter()` — доступ к ICapsuleRouter в Page/Widget/View (см. ADR 003)
  */
 export const HOOK_IMPORTS = {
   '@capsuletech/web-core': ['useCtx'],
+  '@capsuletech/web-router': ['useRouter'],
 } as const;
 
 /**
