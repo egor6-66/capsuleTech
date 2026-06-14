@@ -15,7 +15,8 @@ const ICONS: Record<IViolation['kind'], string> = {
 
 /** Форматирование одного нарушения для лога/ошибки. */
 export const formatViolation = (v: IViolation): string => {
-  const head = `${ICONS[v.kind]} [compliance] ${v.kind}`;
+  const severityLabel = v.severity === 'error' ? '[ERROR]' : '[WARN]';
+  const head = `${ICONS[v.kind]} ${severityLabel} [compliance] ${v.kind}`;
   const loc = `${v.file}:${v.line}:${v.column}`;
   const body = v.message;
   const hint = v.hint ? `\n   💡 ${v.hint}` : '';

@@ -251,7 +251,15 @@ Single-platform binary на Phase 1 (multi-platform — Phase 2 отдельны
 3. **Stateless View / Shape.** Никакого состояния, никаких импортов кроме Solid и типов.
 4. **Composition Only in Widgets.** Одна View не может «жёстко» использовать другую — только через children/slots на уровне Widget.
 
-✅ Правила **enforced линтером** через `@capsuletech/compliance` (Vite-плагин `CompliancePlugin`, режим `warn`). При нарушении — warning в логе dev-сервера с file:line:column + hint что делать. См. ADR 004.
+✅ Правила **enforced линтером** через `@capsuletech/compliance` (Vite-плагин `CompliancePlugin` + CI gate `pnpm compliance:check`). См. ADR 004.
+
+**Severity mode (L7 flip, 2026-06-14):**
+- **`error` (structural)** — `app-package-import` (runtime `@capsuletech/*` в `apps/*/src`) и `disallowed-import` (запрещённый внешний пакет в слое). Валят CI через `compliance:check` job; в dev-сервере выводятся как `[STRUCTURAL ERROR — CI will fail]` без блокировки HMR.
+- **`warn` (cosmetic)** — `native-jsx` / `native-js` / `raw-class` / `upward-import` / `horizontal-import` / `side-effect-fetch` / `unknown-alias` / `cross-zone-import`. Логируются с file:line:column + hint, не валят CI.
+
+Override per call: `check(path, code, { severity: { 'app-package-import': 'warn' | 'off' } })` или через `ICompliancePluginOptions.severity` для Vite-плагина.
+
+Transitional allowlist: `docs/_meta/compliance-allowlist.json` (опциональный, формат `{ path, kinds[], reason, ttl }`) — суппрессит structural-нарушения по path+kind для cleanup-окна. Сейчас файла нет (playground = 0 structural).
 
 ## Известные шероховатости
 

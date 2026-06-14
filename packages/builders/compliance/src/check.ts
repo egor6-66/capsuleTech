@@ -24,6 +24,22 @@ import {
   type Zone,
 } from './zones';
 
+/**
+ * All known violation kind literals.
+ * Used in per-kind severity mapping (ICheckOptions.severity).
+ */
+export type ViolationKind =
+  | 'disallowed-import' // import не из allowlist данного слоя
+  | 'upward-import' // нижний слой тащит верхний
+  | 'horizontal-import' // сосед по слою (другая группа)
+  | 'side-effect-fetch' // fetch/axios в не-feature
+  | 'unknown-alias' // @-литерал в meta.tags не зарегистрирован в capsule.app.ts
+  | 'cross-zone-import' // packages/web/<zone> импортит запрещённую zone (ADR 047 D1/D2)
+  | 'native-jsx' // HTML host-tag в HCA-слое (Phase L)
+  | 'native-js' // DOM global / raw timer в HCA-слое (Phase L)
+  | 'raw-class' // class=/className= JSX-атрибут в HCA-слое (Phase L)
+  | 'app-package-import'; // runtime @capsuletech/* / @capsule/* в apps/*/src (Phase L)
+
 export interface IViolation {
   file: string;
   line: number;
@@ -39,20 +55,34 @@ export interface IViolation {
    * violations only.
    */
   zone?: Zone;
-  kind:
-    | 'disallowed-import' // import не из allowlist данного слоя
-    | 'upward-import' // нижний слой тащит верхний
-    | 'horizontal-import' // сосед по слою (другая группа)
-    | 'side-effect-fetch' // fetch/axios в не-feature
-    | 'unknown-alias' // @-литерал в meta.tags не зарегистрирован в capsule.app.ts
-    | 'cross-zone-import' // packages/web/<zone> импортит запрещённую zone (ADR 047 D1/D2)
-    | 'native-jsx' // HTML host-tag в HCA-слое (Phase L)
-    | 'native-js' // DOM global / raw timer в HCA-слое (Phase L)
-    | 'raw-class' // class=/className= JSX-атрибут в HCA-слое (Phase L)
-    | 'app-package-import'; // runtime @capsuletech/* / @capsule/* в apps/*/src (Phase L)
+  kind: ViolationKind;
+  /**
+   * Effective severity computed by `check()` from `ICheckOptions.severity` mapping.
+   * `'error'` — structural violation, fails CI gate and Vite build.
+   * `'warn'`  — cosmetic violation, logged but non-blocking.
+   */
+  severity: 'error' | 'warn';
   message: string;
   hint?: string;
 }
+
+/**
+ * Per-kind severity override. Missing kinds fall back to DEFAULT_SEVERITY.
+ * L7 flip: `app-package-import` and `disallowed-import` are `'error'` by default.
+ * Cosmetic kinds (`raw-class`, `native-jsx`, `native-js`) remain `'warn'`.
+ */
+export const DEFAULT_SEVERITY: Record<ViolationKind, 'error' | 'warn'> = {
+  'app-package-import': 'error',
+  'disallowed-import': 'error',
+  'upward-import': 'warn',
+  'horizontal-import': 'warn',
+  'side-effect-fetch': 'warn',
+  'unknown-alias': 'warn',
+  'cross-zone-import': 'warn',
+  'native-jsx': 'warn',
+  'native-js': 'warn',
+  'raw-class': 'warn',
+};
 
 export interface ICheckOptions {
   /** Доп. allowlist по слоям, мерджится с дефолтным. */
@@ -64,10 +94,27 @@ export interface ICheckOptions {
    * Если не задан — проверка `unknown-alias` пропускается.
    */
   aliasKeys?: ReadonlySet<string>;
+  /**
+   * Per-kind severity override. Merged with DEFAULT_SEVERITY (per-key, not full replace).
+   * Missing keys fall through to DEFAULT_SEVERITY.
+   *
+   * Example — revert structural kinds to warn during app-cleanup transition:
+   *   severity: { 'app-package-import': 'warn', 'disallowed-import': 'warn' }
+   */
+  severity?: Partial<Record<ViolationKind, 'error' | 'warn' | 'off'>>;
 }
 
 /** Паттерны для `no-app-package-imports` — запрет runtime-импортов наших namespace. */
 const APP_PKG_PREFIXES = [/^@capsuletech\//, /^@capsule\//];
+
+/**
+ * Resolve effective severity for a given violation kind, merging caller overrides
+ * with DEFAULT_SEVERITY. `'off'` items are filtered out by `check()`.
+ */
+const resolveSeverity = (
+  kind: ViolationKind,
+  override: Partial<Record<ViolationKind, 'error' | 'warn' | 'off'>> | undefined,
+): 'error' | 'warn' | 'off' => override?.[kind] ?? DEFAULT_SEVERITY[kind];
 
 /** Проверить файл — вернуть список нарушений (может быть пустым). */
 export const check = (absPath: string, code: string, opts: ICheckOptions = {}): IViolation[] => {
@@ -81,7 +128,9 @@ export const check = (absPath: string, code: string, opts: ICheckOptions = {}): 
   }
   if (!layer) return [];
 
-  const violations: IViolation[] = [];
+  // Internal accumulator — severity is stamped in the post-process step below.
+  type IViolationRaw = Omit<IViolation, 'severity'>;
+  const violations: IViolationRaw[] = [];
 
   let ast: t.File;
   try {
@@ -391,7 +440,13 @@ export const check = (absPath: string, code: string, opts: ICheckOptions = {}): 
     },
   });
 
-  return violations;
+  // Post-process: stamp severity + filter out 'off' kinds.
+  const severityOverride = opts.severity;
+  return violations.flatMap((v) => {
+    const sev = resolveSeverity(v.kind, severityOverride);
+    if (sev === 'off') return [];
+    return [{ ...v, severity: sev }];
+  });
 };
 
 const LAYER_ORDER: Record<Exclude<Layer, null | 'system' | 'test'>, number> = {
@@ -436,7 +491,8 @@ const runZoneCheck = (absPath: string, code: string): IViolation[] => {
     fromPkg = `@capsuletech/${prefix}-${fromPkgDir}`;
   }
 
-  const violations: IViolation[] = [];
+  type IViolationRaw = Omit<IViolation, 'severity'>;
+  const violations: IViolationRaw[] = [];
 
   let ast: t.File;
   try {
@@ -504,7 +560,8 @@ const runZoneCheck = (absPath: string, code: string): IViolation[] => {
     },
   });
 
-  return violations;
+  // Stamp severity from DEFAULT_SEVERITY (zone-check has no per-call override).
+  return violations.map((v) => ({ ...v, severity: DEFAULT_SEVERITY[v.kind] }));
 };
 
 // Re-export of zones table referenced in error hints. Avoids a circular import.

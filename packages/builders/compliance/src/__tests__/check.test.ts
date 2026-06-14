@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { check } from '../check';
+import { check, DEFAULT_SEVERITY } from '../check';
 
 /**
  * `check(absPath, code, opts)` парсит code как TS+JSX, проходит AST и возвращает
@@ -525,5 +525,101 @@ describe('check — no-raw-class (Phase L)', () => {
     const v = check(WIDGET_PATH, 'const X = () => <Ui.Button class="x" />;');
     const rawClassViolations = v.filter((x) => x.kind === 'raw-class');
     expect(rawClassViolations[0].hint).toContain('@capsuletech/web-ui');
+  });
+
+  // Golden negative: CVA cva() call — NOT a JSX class attribute.
+  // CVA is a function call, not JSX. Ensure rule does NOT false-positive on cva usage.
+  it('[golden negative] CVA cva(...) function call → NOT raw-class', () => {
+    const code = `
+      import { cva } from 'class-variance-authority';
+      const buttonStyles = cva('base', { variants: { size: { sm: 'text-sm' } } });
+      const X = () => <Ui.Button />;
+    `;
+    expect(check(WIDGET_PATH, code).filter((x) => x.kind === 'raw-class')).toHaveLength(0);
+  });
+
+  // Golden negative: dynamic class via Solid store — computed as a variable, not raw JSX attr.
+  it('[golden negative] class stored in variable, passed via prop → NOT raw-class', () => {
+    // class= on host-tag IS raw-class; but passing a variable via a kit prop is not.
+    const code = `const X = () => <Ui.Box padding="md" />;`;
+    expect(check(WIDGET_PATH, code).filter((x) => x.kind === 'raw-class')).toHaveLength(0);
+  });
+});
+
+// ─── L7: per-kind severity (Phase L7, 2026-06-14) ────────────────────────────
+
+describe('IViolation.severity — per-kind stamping', () => {
+  it('app-package-import gets severity: "error" by default', () => {
+    const v = check(WIDGET_PATH, "import { Card } from '@capsuletech/web-ui';");
+    expect(v).toHaveLength(1);
+    expect(v[0].severity).toBe('error');
+  });
+
+  it('disallowed-import gets severity: "error" by default', () => {
+    const v = check(VIEW_PATH, "import { createMachine } from 'xstate';");
+    expect(v).toHaveLength(1);
+    expect(v[0].severity).toBe('error');
+  });
+
+  it('native-jsx gets severity: "warn" by default', () => {
+    const v = check(VIEW_PATH, 'const X = () => <div />;');
+    const nv = v.filter((x) => x.kind === 'native-jsx');
+    expect(nv).toHaveLength(1);
+    expect(nv[0].severity).toBe('warn');
+  });
+
+  it('raw-class gets severity: "warn" by default', () => {
+    const v = check(WIDGET_PATH, 'const X = () => <Ui.Button class="foo" />;');
+    const rv = v.filter((x) => x.kind === 'raw-class');
+    expect(rv).toHaveLength(1);
+    expect(rv[0].severity).toBe('warn');
+  });
+
+  it('native-js gets severity: "warn" by default', () => {
+    const v = check(CONTROLLER_PATH, 'document.querySelector(".x");');
+    const nv = v.filter((x) => x.kind === 'native-js');
+    expect(nv).toHaveLength(1);
+    expect(nv[0].severity).toBe('warn');
+  });
+
+  it('severity override: app-package-import → "warn"', () => {
+    const v = check(WIDGET_PATH, "import { Card } from '@capsuletech/web-ui';", {
+      severity: { 'app-package-import': 'warn' },
+    });
+    expect(v).toHaveLength(1);
+    expect(v[0].severity).toBe('warn');
+  });
+
+  it('severity override: disallowed-import → "off" filters out the violation', () => {
+    const v = check(VIEW_PATH, "import { createMachine } from 'xstate';", {
+      severity: { 'disallowed-import': 'off' },
+    });
+    expect(v).toHaveLength(0);
+  });
+
+  it('severity override: native-jsx → "error" upgrades cosmetic to structural', () => {
+    const v = check(VIEW_PATH, 'const X = () => <div />;', {
+      severity: { 'native-jsx': 'error' },
+    });
+    const nv = v.filter((x) => x.kind === 'native-jsx');
+    expect(nv[0].severity).toBe('error');
+  });
+});
+
+describe('DEFAULT_SEVERITY mapping (L7 canon)', () => {
+  it('structural kinds are "error"', () => {
+    expect(DEFAULT_SEVERITY['app-package-import']).toBe('error');
+    expect(DEFAULT_SEVERITY['disallowed-import']).toBe('error');
+  });
+
+  it('cosmetic kinds are "warn"', () => {
+    expect(DEFAULT_SEVERITY['raw-class']).toBe('warn');
+    expect(DEFAULT_SEVERITY['native-jsx']).toBe('warn');
+    expect(DEFAULT_SEVERITY['native-js']).toBe('warn');
+  });
+
+  it('structural HCA kinds (upward/horizontal) remain "warn" (not yet flipped)', () => {
+    expect(DEFAULT_SEVERITY['upward-import']).toBe('warn');
+    expect(DEFAULT_SEVERITY['horizontal-import']).toBe('warn');
   });
 });

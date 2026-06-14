@@ -16,6 +16,10 @@
  *                                                  — фильтр по kind'у
  *   node scripts/compliance-inventory.mjs --app=playground
  *                                                  — только один app
+ *   node scripts/compliance-inventory.mjs --check   — CI gate mode: exit non-zero
+ *                                                    if any severity:'error' violations
+ *                                                    remain after allowlist filtering.
+ *                                                    See docs/_meta/compliance-allowlist.json.
  *
  * Поведение:
  *  1. Импортит `check` из локально установленного `@capsuletech/compliance`
@@ -48,6 +52,35 @@ const flagValue = (name) => {
 const SAVE_MD = !!flag('md');
 const KIND_FILTER = flagValue('kind');
 const APP_FILTER = flagValue('app');
+/**
+ * --check: CI gate mode.
+ * Exits non-zero if there are severity:'error' violations outside the allowlist.
+ */
+const CHECK_MODE = !!flag('check');
+
+// ─── Allowlist (Variant A) ────────────────────────────────────────────────────
+// Known structural violations during the cleanup transition.
+// CI ignores violations from these path+kind pairs. App cleanup PRs remove entries.
+const ALLOWLIST_PATH = resolve(ROOT, 'docs/_meta/compliance-allowlist.json');
+/** @type {Map<string, Set<string>>} relPath → Set<kind> */
+const buildAllowlistMap = () => {
+  const map = new Map();
+  if (!existsSync(ALLOWLIST_PATH)) return map;
+  try {
+    const raw = JSON.parse(readFileSync(ALLOWLIST_PATH, 'utf8'));
+    for (const entry of raw.entries ?? []) {
+      const relPath = entry.path.replaceAll('\\', '/');
+      if (!map.has(relPath)) map.set(relPath, new Set());
+      for (const kind of entry.kinds ?? []) {
+        map.get(relPath).add(kind);
+      }
+    }
+  } catch (e) {
+    console.error(`[compliance:check] failed to load allowlist: ${e.message}`);
+  }
+  return map;
+};
+const ALLOWLIST = buildAllowlistMap();
 
 const today = new Date().toISOString().slice(0, 10);
 const OUT_PATH = resolve(ROOT, 'docs/_meta', `compliance-inventory-${today}.md`);
@@ -192,3 +225,35 @@ const newKindTotal = Object.entries(byKind)
   .filter(([k]) => NEW_KINDS.has(k))
   .reduce((sum, [, n]) => sum + n, 0);
 console.error(`\n[inventory] scanned=${scannedCount} files, violations=${allViolations.length} (new-kind=${newKindTotal})`);
+
+// ─── --check: CI gate ─────────────────────────────────────────────────────────
+if (CHECK_MODE) {
+  // Filter to severity:'error' violations not covered by the allowlist.
+  const STRUCTURAL_KINDS = new Set(['app-package-import', 'disallowed-import']);
+  const blockingViolations = allViolations.filter((v) => {
+    if (!STRUCTURAL_KINDS.has(v.kind)) return false;
+    // Check allowlist: normalize path relative to ROOT.
+    const relPath = v.relFile.replaceAll('\\', '/');
+    const allowedKinds = ALLOWLIST.get(relPath);
+    if (allowedKinds?.has(v.kind)) return false; // allowlisted
+    return true;
+  });
+
+  if (blockingViolations.length > 0) {
+    console.error('\n[compliance:check] FAILED — structural violations outside allowlist:');
+    for (const v of blockingViolations) {
+      console.error(`  [${v.kind}] ${v.relFile}:${v.line}:${v.column}`);
+      console.error(`    ${v.message}`);
+      if (v.hint) console.error(`    hint: ${v.hint}`);
+    }
+    console.error(`\n[compliance:check] ${blockingViolations.length} blocking violation(s). Fix them or add to docs/_meta/compliance-allowlist.json with a TTL.`);
+    process.exit(1);
+  } else {
+    const allowlistedCount = allViolations.filter((v) => {
+      if (!STRUCTURAL_KINDS.has(v.kind)) return false;
+      const relPath = v.relFile.replaceAll('\\', '/');
+      return ALLOWLIST.get(relPath)?.has(v.kind) ?? false;
+    }).length;
+    console.error(`\n[compliance:check] PASSED — 0 blocking structural violations (${allowlistedCount} allowlisted, ${newKindTotal} cosmetic warn-only).`);
+  }
+}
