@@ -2,6 +2,7 @@
 // Static imports — critical-path, cheap, always on the render waterfall.
 // Known to Vite at build time → emits modulepreload hints → loads in parallel.
 // ---------------------------------------------------------------------------
+import { Icons } from '@capsuletech/web-ui/icons';
 import { Button } from '@capsuletech/web-ui/button';
 // Card and Field: each subpath index already assembles the compound (Card.Header etc.)
 // so a single static import gives the full compound without any Object.assign here.
@@ -24,6 +25,22 @@ import { Dynamic } from 'solid-js/web';
 
 // Re-export static critical-path primitives
 export { Button, Input, Label, Separator, Toggle, Typography };
+
+/**
+ * Curated icon namespace for app-layer global access via `Ui.Icons.*`.
+ *
+ * Apps cannot import @capsuletech/web-ui/icons directly — the widget/view/page
+ * compliance allowlist permits only solid-js imports. This namespace gives
+ * app authors `<Ui.Icons.GripVertical />` through UiProxy injection without
+ * any import keyword in their View/Widget/Page factories.
+ *
+ * UiProxy bypasses wrapComponent for this namespace (see RAW_PASSTHROUGH_KEYS
+ * in engine/ui-proxy.tsx) — icons are pure SVG renders, no meta/store binding.
+ *
+ * Tree-shaking: only the icons in `iconRegistry` are imported — no full
+ * lucide-solid bundle in app chunks.
+ */
+export { Icons };
 
 // Layout namespace: Grid + Flex (static). Heavy variants (Matrix etc.) live
 // in @capsuletech/boost-layout and augment this object at app boot via ADR 033

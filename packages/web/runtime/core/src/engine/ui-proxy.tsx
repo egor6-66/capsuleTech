@@ -376,8 +376,13 @@ export const wrapComponent = (
  *  - 'Flow': Solid control-flow primitives (For/Show/Switch/Match/Index/Dynamic).
  *    Wrapping them would interfere with their function-child / fallback /
  *    nesting semantics and add pointless overhead.
+ *  - 'Icons': curated lucide-solid icon namespace. Icons are pure SVG renders
+ *    with no HCA meta/store binding — wrapping each icon via wrapComponent
+ *    would add pointless overhead and could interfere with SVG props (size,
+ *    strokeWidth, color). Returned verbatim so `<Ui.Icons.GripVertical />`
+ *    renders the native lucide component directly.
  */
-const RAW_PASSTHROUGH_KEYS = new Set<string>(['Flow']);
+const RAW_PASSTHROUGH_KEYS = new Set<string>(['Flow', 'Icons']);
 
 export const UiProxy = (Ui: Record<string, any>, ctx: ICtx<any>, wrapperProps: any) =>
   new Proxy(

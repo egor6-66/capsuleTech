@@ -716,6 +716,61 @@ describe('wrapComponent — kobalte-style raw-value onChange', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// Icons namespace — raw pass-through, renders without wrapComponent overhead
+// ---------------------------------------------------------------------------
+
+describe('UiProxy — Icons namespace is returned raw (not wrapped)', () => {
+  // Minimal stub that mimics a lucide-solid SVG icon component.
+  const StubGripVertical = (props: any) => (
+    <svg data-testid="icon-grip" {...props}>
+      <title>GripVertical</title>
+    </svg>
+  );
+
+  it('Icons key is returned verbatim — exact same object reference', () => {
+    const ctx = mkCtx() as any;
+    const iconsNs = { GripVertical: StubGripVertical };
+    const stubUi = { Icons: iconsNs };
+    const proxied = UiProxy(stubUi, ctx, {});
+
+    expect((proxied as any).Icons).toBe(iconsNs);
+  });
+
+  it('Icons.GripVertical is the same function reference as the stub', () => {
+    const ctx = mkCtx() as any;
+    const iconsNs = { GripVertical: StubGripVertical };
+    const stubUi = { Icons: iconsNs };
+    const proxied = UiProxy(stubUi, ctx, {});
+
+    expect((proxied as any).Icons.GripVertical).toBe(StubGripVertical);
+  });
+
+  it('Icons.GripVertical renders as a valid Solid component', () => {
+    const ctx = mkCtx() as any;
+    const iconsNs = { GripVertical: StubGripVertical };
+    const stubUi = { Icons: iconsNs };
+    const proxied = UiProxy(stubUi, ctx, {});
+    const Icon = (proxied as any).Icons.GripVertical;
+
+    cleanup = render(() => <Icon />, container);
+
+    expect(container.querySelector('[data-testid="icon-grip"]')).not.toBeNull();
+  });
+
+  it('Icons.GripVertical does NOT invoke ctx.store.registerComponent (not event-wrapped)', () => {
+    const ctx = mkCtx() as any;
+    const iconsNs = { GripVertical: StubGripVertical };
+    const stubUi = { Icons: iconsNs };
+    const proxied = UiProxy(stubUi, ctx, {});
+    const Icon = (proxied as any).Icons.GripVertical;
+
+    cleanup = render(() => <Icon />, container);
+
+    expect(ctx.store.registerComponent).not.toHaveBeenCalled();
+  });
+});
+
 describe('wrapComponent — disabled: no auto-inject from store.loading', () => {
   it('disabled is NOT set when store.loading=true and props.disabled is absent', () => {
     // ctx with loading=true — must NOT appear as disabled on the element
