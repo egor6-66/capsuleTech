@@ -164,7 +164,8 @@ push('## Examples by kind (up to 5 each)');
 push('');
 const byKindSamples = {};
 for (const v of allViolations) {
-  (byKindSamples[v.kind] ??= []).push(v);
+  if (!byKindSamples[v.kind]) byKindSamples[v.kind] = [];
+  byKindSamples[v.kind].push(v);
 }
 for (const kind of Object.keys(byKindSamples).sort()) {
   push(`### \`${kind}\` (${byKindSamples[kind].length})`);
