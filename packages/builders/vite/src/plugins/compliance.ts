@@ -1,11 +1,21 @@
-import { check, formatViolations, type ICheckOptions } from '@capsuletech/compliance';
+import { check, formatViolation, formatViolations, type ICheckOptions } from '@capsuletech/compliance';
 import type { Plugin } from 'vite';
 
 export interface ICompliancePluginOptions extends Omit<ICheckOptions, 'aliasKeys'> {
   /**
-   * `warn` — нарушения логируются как warning, dev-server не падает.
-   * `error` — нарушения валят билд / dev-сервер.
-   * По умолчанию `warn` для первого rollout'а; ужесточаем когда чисто.
+   * Global fallback mode when per-kind severity is not configured.
+   * `warn` — all violations are logged; dev-server never fails.
+   * `error` — all violations fail the build (overrides per-kind severity).
+   *
+   * Since L7 (2026-06-14) the preferred approach is per-kind severity via
+   * `ICheckOptions.severity`. This `mode` field controls violations that reach
+   * the plugin after severity filtering:
+   *   - violations with `severity: 'error'` always call `this.error()`.
+   *   - violations with `severity: 'warn'` call `this.warn()` unless mode='error'.
+   *
+   * Default: `'warn'` — dev-server logs errors but does NOT block HMR overlay
+   * for warn-severity violations. Structural errors (app-package-import /
+   * disallowed-import) still produce `this.error()` via per-kind severity.
    */
   mode?: 'warn' | 'error';
   /**
@@ -16,7 +26,7 @@ export interface ICompliancePluginOptions extends Omit<ICheckOptions, 'aliasKeys
 }
 
 export const CompliancePlugin = (opts: ICompliancePluginOptions = {}): Plugin => {
-  const mode = opts.mode ?? 'warn';
+  const globalMode = opts.mode ?? 'warn';
 
   return {
     name: 'capsule-compliance',
@@ -28,12 +38,29 @@ export const CompliancePlugin = (opts: ICompliancePluginOptions = {}): Plugin =>
       });
       if (violations.length === 0) return null;
 
-      const msg = formatViolations(violations);
-      if (mode === 'warn') {
-        this.warn(msg);
-        return null;
+      // Split by effective severity stamped in IViolation.severity.
+      const errors = violations.filter((v) => v.severity === 'error');
+      const warns = violations.filter((v) => v.severity === 'warn');
+
+      // Always log warnings (non-blocking).
+      if (warns.length > 0) {
+        this.warn(formatViolations(warns));
       }
-      this.error(msg);
+
+      // Structural errors: fail build / show overlay.
+      if (errors.length > 0) {
+        if (globalMode === 'warn') {
+          // Dev-server: log errors prominently but don't block HMR.
+          // CI uses compliance:check script (non-zero exit), not Vite build.
+          const errMsg = formatViolations(errors);
+          this.warn(`[STRUCTURAL ERROR — CI will fail]\n${errMsg}`);
+        } else {
+          // mode='error' or explicit upgrade: fail the build.
+          this.error(formatViolations(errors));
+        }
+      }
+
+      return null;
     },
   };
 };
