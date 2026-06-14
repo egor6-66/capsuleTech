@@ -2,6 +2,7 @@
 tags: [hca, adr, proposed]
 status: proposed
 date: 2026-05-19
+last_updated: 2026-06-12
 ---
 
 # ADR 015 — Remote Modules: своё runtime, pluggable transport, manifest-driven

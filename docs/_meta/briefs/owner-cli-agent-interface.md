@@ -3,6 +3,8 @@ title: brief — owner-cli — agent interface
 audience: owner-cli
 status: canon
 created: 2026-06-11
+last_updated: 2026-06-13
+tags: [brief, owner-cli]
 ---
 
 # Brief — owner-cli — Agent interface + minimal plan management

@@ -3,6 +3,7 @@ title: web-zone-boost
 description: Canon для zone `boost` — heavy domain-mirror kit-примитивов. Source of truth о scope, mirror-pattern, импорт-правилах, vendor-stack.
 status: canon
 last_updated: 2026-06-11
+tags: [meta, web-zones, boost]
 ---
 
 # Zone: boost

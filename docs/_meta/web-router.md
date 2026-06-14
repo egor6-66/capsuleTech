@@ -3,6 +3,7 @@ tags: [meta, web-router, ai-context]
 status: documented
 type: ai-anchor
 audience: claude
+last_updated: 2026-06-14
 ---
 
 # 🤖 Web Router — AI context anchor
@@ -91,7 +92,7 @@ apps/<app>/bootstrap.tsx
 
 ## Известные грабли {#gotchas}
 
-1. **`useRouter()` бросает вне Provider'а** — явная ошибка вместо silent-null. Для soft-dep (Storybook, unit-тесты, переиспользуемые компоненты) используй `useContext(RouterContext)` напрямую + null-check. Живой пример: `packages/web/ui/src/primitives/layout/switch.tsx:48`.
+1. **`useRouter()` — auto-imported global в app-коде** (через `HOOK_IMPORTS` в `@capsuletech/vite-builder`, аналогично `useCtx`). В apps пишется без `import` — в Page/Widget/View прямо `const router = useRouter()`. **`useRouter()` бросает вне Provider'а** — явная ошибка вместо silent-null. Для soft-dep (Storybook, unit-тесты, переиспользуемые компоненты вне app-пайплайна) используй `useContext(RouterContext)` напрямую + null-check. Живой пример: `packages/web/ui/src/primitives/layout/switch.tsx:48`.
 
 2. **`current()` реактивен — но через TanStack Solid-store, не через Capsule** — работает в JSX-getter (`<Animate keyed={router.current()}>`). НЕ кэшируй в `const` вне реактивного контекста — будет stale. В `createEffect` логику ставь внутри callback'а, не выноси в helper.
 

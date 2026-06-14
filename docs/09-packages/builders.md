@@ -1,6 +1,7 @@
 ---
 tags: [hca, package, builders]
 status: documented
+last_updated: 2026-05-18
 ---
 
 # @capsuletech/builders

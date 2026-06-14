@@ -1,6 +1,7 @@
 ---
 tags: [style, theming]
 status: documented
+last_updated: 2026-05-28
 ---
 
 # Темовая система: как устроена и как добавить

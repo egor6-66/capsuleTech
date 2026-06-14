@@ -1,6 +1,7 @@
 ---
 tags: [hca, system, building.ts]
 status: documented
+last_updated: 2026-06-13
 ---
 
 # 🛠️ Vite-плагины

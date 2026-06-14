@@ -1,5 +1,5 @@
-export type { ICheckOptions, IViolation } from './check';
-export { check } from './check';
+export type { ICheckOptions, IViolation, ViolationKind } from './check';
+export { check, DEFAULT_SEVERITY } from './check';
 export type { Layer } from './classify';
 export { classify, extractGroup } from './classify';
 export { formatViolation, formatViolations } from './format';

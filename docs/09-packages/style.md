@@ -1,6 +1,7 @@
 ---
 tags: [hca, package, style]
 status: documented
+last_updated: 2026-06-13
 ---
 
 # @capsuletech/web-style

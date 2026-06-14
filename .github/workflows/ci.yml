@@ -110,6 +110,29 @@ jobs:
           pnpm --filter @capsuletech/vite-builder build
       - run: pnpm nx run-many -t build
 
+  compliance:
+    name: Compliance gate (structural L7)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9.0.0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build compliance package
+        run: |
+          pnpm --filter @capsuletech/lib-builder build
+          pnpm --filter @capsuletech/compliance build
+      # Gate: exits non-zero if any severity:'error' violation exists outside allowlist.
+      # Allowlist: docs/_meta/compliance-allowlist.json (known violations with TTL).
+      # App cleanup PRs remove entries; once empty the allowlist file can be deleted.
+      - name: Check structural violations (app-package-import + disallowed-import)
+        run: pnpm compliance:check
+
   docs-build:
     name: Docs build (ADR 048 E6)
     runs-on: ubuntu-latest

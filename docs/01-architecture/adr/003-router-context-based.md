@@ -2,6 +2,7 @@
 tags: [hca, adr, implemented]
 status: canon
 date: 2026-05-10
+last_updated: 2026-06-13
 ---
 
 # ADR 003 — Роутер: Context-based вместо singleton

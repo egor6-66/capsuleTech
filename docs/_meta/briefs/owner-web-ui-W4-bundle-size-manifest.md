@@ -3,6 +3,7 @@ title: owner-web-ui — Phase W4 brief
 description: Bundle-size assertion test + manifest.json генерация для studio palette badge. Реализация L0/L1 gradient infra из W3.
 status: documented
 last_updated: 2026-06-11
+tags: [brief, owner-web-ui, W4]
 ---
 
 # Brief — owner-web-ui — Phase W4 (bundle-size + manifest infra)

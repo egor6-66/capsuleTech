@@ -1,6 +1,7 @@
 ---
 tags: [ui, primitive, grid]
 status: documented
+last_updated: 2026-05-19
 ---
 
 # Grid

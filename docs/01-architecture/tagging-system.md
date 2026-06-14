@@ -1,6 +1,7 @@
 ---
 tags: [hca, architecture, tagging]
 status: documented
+last_updated: 2026-05-27
 ---
 
 # 🏷️ Система мета-тегов

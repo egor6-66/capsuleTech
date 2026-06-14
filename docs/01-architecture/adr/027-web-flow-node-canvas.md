@@ -2,6 +2,7 @@
 tags: [hca, adr, accepted]
 status: canon
 date: 2026-06-02
+last_updated: 2026-06-13
 ---
 
 # ADR 027 — Node-canvas примитив `@capsuletech/web-flow` (обёртка `@dschz/solid-flow`)

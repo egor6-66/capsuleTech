@@ -1,6 +1,7 @@
 ---
 tags: [hca, architecture, lifecycle]
 status: documented
+last_updated: 2026-06-01
 ---
 
 # 🔄 Жизненный цикл — от клика до Feature

@@ -1,6 +1,7 @@
 ---
 tags: [hca, architecture, philosophy]
 status: documented
+last_updated: 2026-06-01
 ---
 
 # 🌑 Философия — UI is a Shadow

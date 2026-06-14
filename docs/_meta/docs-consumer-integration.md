@@ -5,6 +5,7 @@ status: documented
 type: guide
 last_updated: 2026-06-13
 audience: [agent, dev]
+tags: [meta, docs-as-data]
 ---
 
 # Docs consumer integration (ADR 048 E5)

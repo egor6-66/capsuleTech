@@ -2,6 +2,7 @@
 tags: [hca, adr, accepted]
 status: canon
 date: 2026-06-02
+last_updated: 2026-06-13
 ---
 
 # ADR 028 — Чарт-примитивы `@capsuletech/web-charts` (обёртка `solid-chartjs` + Chart.js)

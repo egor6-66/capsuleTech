@@ -21,6 +21,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  GripVertical,
   Image,
   Info,
   LogIn,
@@ -51,6 +52,7 @@ export const iconRegistry = {
   'chevron-down': ChevronDown,
   'chevron-left': ChevronLeft,
   'chevron-right': ChevronRight,
+  'grip-vertical': GripVertical,
   image: Image,
   info: Info,
   'log-in': LogIn,
@@ -69,6 +71,43 @@ export const iconRegistry = {
   'trash-2': Trash2,
   user: User,
   x: X,
+} as const;
+
+/**
+ * PascalCase namespace suitable for use as `Ui.Icons.*` in app-layer code.
+ *
+ * Keys match lucide-solid component names so app authors write
+ * `<Ui.Icons.GripVertical />` — identical to the lucide export name.
+ *
+ * This object is the authoritative whitelist: only icons listed here (and in
+ * {@link iconRegistry}) are pulled into app bundles, keeping tree-shaking intact.
+ * Add to both maps when a new icon is needed.
+ */
+export const Icons = {
+  Bell,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  GripVertical,
+  Image,
+  Info,
+  LogIn,
+  LogOut,
+  Maximize2,
+  Menu,
+  Moon,
+  Move,
+  Palette,
+  Plus,
+  Search,
+  Settings,
+  SlidersHorizontal,
+  Sparkles,
+  Sun,
+  Trash2,
+  User,
+  X,
 } as const;
 
 /** Union of all registered icon names — the typed `icon` value in data contracts. */

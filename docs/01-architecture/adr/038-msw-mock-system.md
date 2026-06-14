@@ -2,6 +2,7 @@
 tags: [hca, adr, superseded, mocks, msw, testing]
 status: superseded
 date: 2026-06-07
+last_updated: 2026-06-12
 ---
 
 > [!warning] Status: 🔄 superseded by [[040-data-gen-utility|ADR 040]]

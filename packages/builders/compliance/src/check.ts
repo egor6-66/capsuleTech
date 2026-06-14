@@ -7,7 +7,14 @@ const traverse: typeof _traverse = (_traverse as any).default ?? _traverse;
 
 import * as t from '@babel/types';
 import { classify, extractGroup, type Layer } from './classify';
-import { CROSS_LAYER_ALLOWED, LAYER_PREFIXES, RUNTIME_ALLOWED } from './rules';
+import {
+  CROSS_LAYER_ALLOWED,
+  HOST_TAG_HINT_SUGGESTIONS,
+  LAYER_PREFIXES,
+  NATIVE_JS_GLOBALS,
+  NATIVE_JS_TIMERS,
+  RUNTIME_ALLOWED,
+} from './rules';
 import {
   classifyZone,
   extractZonePackage,
@@ -16,6 +23,22 @@ import {
   PACKAGE_TO_ZONE,
   type Zone,
 } from './zones';
+
+/**
+ * All known violation kind literals.
+ * Used in per-kind severity mapping (ICheckOptions.severity).
+ */
+export type ViolationKind =
+  | 'disallowed-import' // import не из allowlist данного слоя
+  | 'upward-import' // нижний слой тащит верхний
+  | 'horizontal-import' // сосед по слою (другая группа)
+  | 'side-effect-fetch' // fetch/axios в не-feature
+  | 'unknown-alias' // @-литерал в meta.tags не зарегистрирован в capsule.app.ts
+  | 'cross-zone-import' // packages/web/<zone> импортит запрещённую zone (ADR 047 D1/D2)
+  | 'native-jsx' // HTML host-tag в HCA-слое (Phase L)
+  | 'native-js' // DOM global / raw timer в HCA-слое (Phase L)
+  | 'raw-class' // class=/className= JSX-атрибут в HCA-слое (Phase L)
+  | 'app-package-import'; // runtime @capsuletech/* / @capsule/* в apps/*/src (Phase L)
 
 export interface IViolation {
   file: string;
@@ -32,16 +55,34 @@ export interface IViolation {
    * violations only.
    */
   zone?: Zone;
-  kind:
-    | 'disallowed-import' // import не из allowlist данного слоя
-    | 'upward-import' // нижний слой тащит верхний
-    | 'horizontal-import' // сосед по слою (другая группа)
-    | 'side-effect-fetch' // fetch/axios в не-feature
-    | 'unknown-alias' // @-литерал в meta.tags не зарегистрирован в capsule.app.ts
-    | 'cross-zone-import'; // packages/web/<zone> импортит запрещённую zone (ADR 047 D1/D2)
+  kind: ViolationKind;
+  /**
+   * Effective severity computed by `check()` from `ICheckOptions.severity` mapping.
+   * `'error'` — structural violation, fails CI gate and Vite build.
+   * `'warn'`  — cosmetic violation, logged but non-blocking.
+   */
+  severity: 'error' | 'warn';
   message: string;
   hint?: string;
 }
+
+/**
+ * Per-kind severity override. Missing kinds fall back to DEFAULT_SEVERITY.
+ * L7 flip: `app-package-import` and `disallowed-import` are `'error'` by default.
+ * Cosmetic kinds (`raw-class`, `native-jsx`, `native-js`) remain `'warn'`.
+ */
+export const DEFAULT_SEVERITY: Record<ViolationKind, 'error' | 'warn'> = {
+  'app-package-import': 'error',
+  'disallowed-import': 'error',
+  'upward-import': 'warn',
+  'horizontal-import': 'warn',
+  'side-effect-fetch': 'warn',
+  'unknown-alias': 'warn',
+  'cross-zone-import': 'warn',
+  'native-jsx': 'warn',
+  'native-js': 'warn',
+  'raw-class': 'warn',
+};
 
 export interface ICheckOptions {
   /** Доп. allowlist по слоям, мерджится с дефолтным. */
@@ -53,7 +94,27 @@ export interface ICheckOptions {
    * Если не задан — проверка `unknown-alias` пропускается.
    */
   aliasKeys?: ReadonlySet<string>;
+  /**
+   * Per-kind severity override. Merged with DEFAULT_SEVERITY (per-key, not full replace).
+   * Missing keys fall through to DEFAULT_SEVERITY.
+   *
+   * Example — revert structural kinds to warn during app-cleanup transition:
+   *   severity: { 'app-package-import': 'warn', 'disallowed-import': 'warn' }
+   */
+  severity?: Partial<Record<ViolationKind, 'error' | 'warn' | 'off'>>;
 }
+
+/** Паттерны для `no-app-package-imports` — запрет runtime-импортов наших namespace. */
+const APP_PKG_PREFIXES = [/^@capsuletech\//, /^@capsule\//];
+
+/**
+ * Resolve effective severity for a given violation kind, merging caller overrides
+ * with DEFAULT_SEVERITY. `'off'` items are filtered out by `check()`.
+ */
+const resolveSeverity = (
+  kind: ViolationKind,
+  override: Partial<Record<ViolationKind, 'error' | 'warn' | 'off'>> | undefined,
+): 'error' | 'warn' | 'off' => override?.[kind] ?? DEFAULT_SEVERITY[kind];
 
 /** Проверить файл — вернуть список нарушений (может быть пустым). */
 export const check = (absPath: string, code: string, opts: ICheckOptions = {}): IViolation[] => {
@@ -67,7 +128,9 @@ export const check = (absPath: string, code: string, opts: ICheckOptions = {}): 
   }
   if (!layer) return [];
 
-  const violations: IViolation[] = [];
+  // Internal accumulator — severity is stamped in the post-process step below.
+  type IViolationRaw = Omit<IViolation, 'severity'>;
+  const violations: IViolationRaw[] = [];
 
   let ast: t.File;
   try {
@@ -87,6 +150,22 @@ export const check = (absPath: string, code: string, opts: ICheckOptions = {}): 
   const checkImport = (source: string, isTypeOnly: boolean, line: number, column: number) => {
     if (isTypeOnly) return; // type-only не создаёт runtime-связи
     if (source.startsWith('.')) return; // относительный импорт — внутри пакета/группы, ок
+
+    // Phase L: no-app-package-imports — runtime @capsuletech/* / @capsule/* запрещены в app-коде.
+    // Перехватывает до cross-layer и allowlist проверок, чтобы дать точный message.
+    if (APP_PKG_PREFIXES.some((rx) => rx.test(source))) {
+      violations.push({
+        file: absPath,
+        line,
+        column,
+        source,
+        layer,
+        kind: 'app-package-import',
+        message: `Runtime-импорт "${source}" из app-кода запрещён (слой ${layer}).`,
+        hint: 'App собирается через globals (Ui.*/Views.*/Controllers.*/…). Эти namespace инжектятся через unplugin-auto-import — никаких import не нужно. Для типов используй "import type".',
+      });
+      return;
+    }
 
     // Cross-layer через @views/, @controllers/, @features/, @widgets/, @pages/
     for (const [prefix, targetLayer] of Object.entries(LAYER_PREFIXES)) {
@@ -131,7 +210,7 @@ export const check = (absPath: string, code: string, opts: ICheckOptions = {}): 
       return;
     }
 
-    // Внешние / @capsuletech/* — проверяем allowlist
+    // Внешние — проверяем allowlist
     if (allowed.some((rx) => rx.test(source))) return;
 
     violations.push({
@@ -167,23 +246,104 @@ export const check = (absPath: string, code: string, opts: ICheckOptions = {}): 
     }
   };
 
+  // Phase L: no-native-js — дедупликация по позиции+имени
+  const seenNativeJs = new Set<string>();
+
   traverse(ast, {
+    // ─── Phase L: no-raw-class ────────────────────────────────────────────────
+    // Ловим JSXAttribute с name === 'class' / 'className' / 'classList'
+    // и Solid namespace-директивы class:foo={...}
     JSXAttribute(path) {
       const node = path.node;
-      if (!t.isJSXIdentifier(node.name) || node.name.name !== 'meta') return;
-      const value = node.value;
-      if (!value || !t.isJSXExpressionContainer(value)) return;
-      const expr = value.expression;
-      if (!t.isObjectExpression(expr)) return;
-      for (const prop of expr.properties) {
-        if (!t.isObjectProperty(prop)) continue;
-        const key = prop.key;
-        const keyName = t.isIdentifier(key) ? key.name : t.isStringLiteral(key) ? key.value : null;
-        if (keyName !== 'tags') continue;
-        if (!t.isArrayExpression(prop.value)) continue;
-        checkMetaTags(prop.value);
+      const attrName = node.name;
+
+      // Сначала — meta.tags check (существующий)
+      if (t.isJSXIdentifier(attrName) && attrName.name === 'meta') {
+        const value = node.value;
+        if (!value || !t.isJSXExpressionContainer(value)) return;
+        const expr = value.expression;
+        if (!t.isObjectExpression(expr)) return;
+        for (const prop of expr.properties) {
+          if (!t.isObjectProperty(prop)) continue;
+          const key = prop.key;
+          const keyName = t.isIdentifier(key)
+            ? key.name
+            : t.isStringLiteral(key)
+              ? key.value
+              : null;
+          if (keyName !== 'tags') continue;
+          if (!t.isArrayExpression(prop.value)) continue;
+          checkMetaTags(prop.value);
+        }
+        return;
+      }
+
+      // no-raw-class: JSXIdentifier 'class' | 'className' | 'classList'
+      if (t.isJSXIdentifier(attrName)) {
+        const n = attrName.name;
+        if (n === 'class' || n === 'className' || n === 'classList') {
+          const loc = node.loc?.start;
+          violations.push({
+            file: absPath,
+            line: loc?.line ?? 0,
+            column: loc?.column ?? 0,
+            source: n,
+            layer,
+            kind: 'raw-class',
+            message: `Raw class на JSX-узле запрещён в слое ${layer}.`,
+            hint: 'Передавай через props на Ui.* primitive (variant/size/padding/gap/…). Если нужного prop нет — расширь kit-primitive в @capsuletech/web-ui.',
+          });
+          return;
+        }
+      }
+
+      // Solid namespace-директива: class:foo={signal} или classList={...}
+      if (t.isJSXNamespacedName(attrName)) {
+        const ns = attrName.namespace.name;
+        if (ns === 'class' || ns === 'classList') {
+          const loc = node.loc?.start;
+          violations.push({
+            file: absPath,
+            line: loc?.line ?? 0,
+            column: loc?.column ?? 0,
+            source: `${ns}:${attrName.name.name}`,
+            layer,
+            kind: 'raw-class',
+            message: `Raw class на JSX-узле запрещён в слое ${layer}.`,
+            hint: 'Передавай через props на Ui.* primitive (variant/size/padding/gap/…). Если нужного prop нет — расширь kit-primitive в @capsuletech/web-ui.',
+          });
+        }
       }
     },
+
+    // ─── Phase L: no-native-jsx ───────────────────────────────────────────────
+    JSXOpeningElement(path) {
+      const node = path.node;
+      const nameNode = node.name;
+      // JSXMemberExpression (<Ui.Button>) — ок
+      if (!t.isJSXIdentifier(nameNode)) return;
+      const tagName = nameNode.name;
+      // PascalCase — компонент, не host-tag
+      if (!/^[a-z]/.test(tagName)) return;
+
+      const loc = node.loc?.start;
+      const suggestion = HOST_TAG_HINT_SUGGESTIONS[tagName];
+      const hint = suggestion
+        ? `Используй ${suggestion}. Если нужного примитива нет — расширь @capsuletech/web-ui, не пиши нативу руками.`
+        : 'Используй Ui.* / Views.* primitives. Если нужного примитива нет — расширь @capsuletech/web-ui.';
+
+      violations.push({
+        file: absPath,
+        line: loc?.line ?? 0,
+        column: loc?.column ?? 0,
+        source: tagName,
+        layer,
+        kind: 'native-jsx',
+        message: `Native HTML tag "<${tagName}>" запрещён в слое ${layer}.`,
+        hint,
+      });
+    },
+
     ImportDeclaration(path) {
       const node = path.node;
       const isTypeOnly = node.importKind === 'type';
@@ -191,8 +351,10 @@ export const check = (absPath: string, code: string, opts: ICheckOptions = {}): 
       const loc = node.loc?.start;
       checkImport(source, isTypeOnly, loc?.line ?? 0, loc?.column ?? 0);
     },
+
     CallExpression(path) {
       const node = path.node;
+
       // dynamic import('...')
       if (
         t.isImport(node.callee) &&
@@ -205,13 +367,32 @@ export const check = (absPath: string, code: string, opts: ICheckOptions = {}): 
         return;
       }
 
-      // Side-effect: fetch/axios в не-feature
+      // ─── Phase L: no-native-js (timers) ────────────────────────────────────
+      const callee = node.callee;
+      if (t.isIdentifier(callee) && NATIVE_JS_TIMERS.has(callee.name)) {
+        const loc = node.loc?.start;
+        const key = `${loc?.line ?? 0}:${loc?.column ?? 0}:${callee.name}`;
+        if (!seenNativeJs.has(key)) {
+          seenNativeJs.add(key);
+          violations.push({
+            file: absPath,
+            line: loc?.line ?? 0,
+            column: loc?.column ?? 0,
+            source: callee.name,
+            layer,
+            kind: 'native-js',
+            message: `Прямой доступ к native "${callee.name}" запрещён в слое ${layer}.`,
+            hint: 'Используй Solid primitives (createTimer/createDebounce) или onCleanup для cleanup. Raw timers не привязаны к lifecycle.',
+          });
+        }
+        return;
+      }
+
+      // Side-effect: fetch/axios в не-feature (существующий check)
       if (opts.checkSideEffects === false) return;
       if (layer === 'feature') return;
 
-      const callee = node.callee;
       let calleeName: string | null = null;
-
       if (t.isIdentifier(callee)) {
         calleeName = callee.name;
       } else if (t.isMemberExpression(callee) && t.isIdentifier(callee.object)) {
@@ -232,9 +413,40 @@ export const check = (absPath: string, code: string, opts: ICheckOptions = {}): 
         });
       }
     },
+
+    // ─── Phase L: no-native-js (DOM globals via MemberExpression) ────────────
+    // Ловим: document.X, window.X, localStorage.X и т.д.
+    MemberExpression(path) {
+      const node = path.node;
+      if (!t.isIdentifier(node.object)) return;
+      const name = node.object.name;
+      if (!NATIVE_JS_GLOBALS.has(name)) return;
+
+      const loc = node.loc?.start;
+      const key = `${loc?.line ?? 0}:${loc?.column ?? 0}:${name}`;
+      if (seenNativeJs.has(key)) return;
+      seenNativeJs.add(key);
+
+      violations.push({
+        file: absPath,
+        line: loc?.line ?? 0,
+        column: loc?.column ?? 0,
+        source: name,
+        layer,
+        kind: 'native-js',
+        message: `Прямой доступ к native "${name}" запрещён в слое ${layer}.`,
+        hint: 'Используй services (router/utils/api) или Solid primitives (onMount/onCleanup/createEffect). Прямой DOM-доступ блокирует desktop/SSR.',
+      });
+    },
   });
 
-  return violations;
+  // Post-process: stamp severity + filter out 'off' kinds.
+  const severityOverride = opts.severity;
+  return violations.flatMap((v) => {
+    const sev = resolveSeverity(v.kind, severityOverride);
+    if (sev === 'off') return [];
+    return [{ ...v, severity: sev }];
+  });
 };
 
 const LAYER_ORDER: Record<Exclude<Layer, null | 'system' | 'test'>, number> = {
@@ -279,7 +491,8 @@ const runZoneCheck = (absPath: string, code: string): IViolation[] => {
     fromPkg = `@capsuletech/${prefix}-${fromPkgDir}`;
   }
 
-  const violations: IViolation[] = [];
+  type IViolationRaw = Omit<IViolation, 'severity'>;
+  const violations: IViolationRaw[] = [];
 
   let ast: t.File;
   try {
@@ -347,7 +560,8 @@ const runZoneCheck = (absPath: string, code: string): IViolation[] => {
     },
   });
 
-  return violations;
+  // Stamp severity from DEFAULT_SEVERITY (zone-check has no per-call override).
+  return violations.map((v) => ({ ...v, severity: DEFAULT_SEVERITY[v.kind] }));
 };
 
 // Re-export of zones table referenced in error hints. Avoids a circular import.

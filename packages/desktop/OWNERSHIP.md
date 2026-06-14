@@ -3,7 +3,7 @@ name: "@capsuletech/desktop"
 owner-agent: owner-desktop
 group: cli
 status: pre-1.0
-last-updated: 2026-05-23
+last-updated: 2026-06-14
 ---
 
 # @capsuletech/desktop
@@ -34,10 +34,11 @@ Tauri-shell host для capsule apps. Library с public API `runDev`/`runBuild` 
 - `nx.json:release.groups.cli` — главный (в PR 6 добавляет `@capsuletech/desktop` в group)
 - Root-level `package.json`, `tsconfig.base.json`, `CLAUDE.md` — главный
 
-## Публичный API (планируемый, финализируется в PR 3)
+## Публичный API
+
+### `@capsuletech/desktop` (.)
 
 ```ts
-// @capsuletech/desktop (.)
 export interface IDesktopConfig {
   productName: string;
   identifier: string;
@@ -71,6 +72,33 @@ export function runBuild(opts: RunBuildOptions): Promise<void>;
 ```
 
 Никакого `bin` поля — это library. `dist/bin/capsule-desktop[.exe]` — internal asset, не CLI entry.
+
+### `@capsuletech/desktop/runtime` (./runtime)
+
+Runtime hook для доступа к Tauri API из app-кода (без прямого импорта `@tauri-apps/*`).
+
+```ts
+export interface DesktopRuntime {
+  available: boolean;   // true если window.__TAURI_INTERNALS__ существует
+  invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T>;
+  listen<T>(event: string, handler: (e: { payload: T }) => void): Promise<UnlistenFn>;
+  dialog: { open(opts?: DialogOpenOptions): Promise<string | string[] | null> };
+}
+
+export function useDesktop(): DesktopRuntime;
+```
+
+**Канон:** `useDesktop` зарегистрирован в `HOOK_IMPORTS` (`packages/builders/vite/src/plugins/constants.ts`) — auto-imported global в app TSX аналогично `useCtx` и `useRouter`. Прямой `import` subpath'а из app-кода — нарушение Phase-L compliance. `available: false` вне Tauri, все wrappers бросают `DesktopNotAvailableError` с понятным сообщением.
+
+**Реализация:** dynamic `await import('@tauri-apps/api/core'|'/event'|'plugin-dialog')` внутри обёрток — browser-bundles без Tauri не бундлируют эти пакеты на build-time. `@tauri-apps/*` — `devDependencies` (types при build), `external` в rolldown (не bundling).
+
+### `@capsuletech/desktop/metrics` (./metrics — type-only)
+
+```ts
+import type { SystemSnapshot } from '@capsuletech/desktop/metrics';
+```
+
+Только types, нет JS entry (нет `import`/`default` в exports).
 
 ## Quirks / gotchas
 

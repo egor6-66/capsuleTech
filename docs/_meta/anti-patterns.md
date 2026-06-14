@@ -2,6 +2,7 @@
 title: Anti-patterns Catalog — quick-fix vs proper-fix
 status: documented
 last-updated: 2026-05-31
+tags: [meta, anti-patterns]
 ---
 
 # Anti-patterns Catalog

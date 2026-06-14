@@ -4,6 +4,7 @@ status: documented
 type: ai-anchor
 audience: claude
 updated: 2026-06-02
+last_updated: 2026-06-13
 ---
 
 # 🤖 web-flow — AI context anchor

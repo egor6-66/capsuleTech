@@ -2,6 +2,7 @@
 tags: [hca, adr, implemented]
 status: canon
 date: 2026-05-17
+last_updated: 2026-06-13
 ---
 
 # ADR 010 — Build-time packages live in `packages/builders/`, with `lib-builder` as a leaf
