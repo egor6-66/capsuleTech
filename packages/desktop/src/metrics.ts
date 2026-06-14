@@ -4,19 +4,15 @@
  * Zero runtime — only `export interface` / `export type`. No imports, no deps.
  * Single source of truth for the SystemSnapshot contract shared between:
  *   - Rust serde structs in `native/src/metrics.rs` (camelCase via #[serde(rename_all)])
- *   - TypeScript consumers in webview (via @tauri-apps/api invoke / listen)
+ *   - TypeScript consumers in webview (via `useDesktop()` global)
  *
- * Usage in a capsule app's Feature:
- *   import { invoke } from '@tauri-apps/api/core';
- *   import { listen } from '@tauri-apps/api/event';
- *   import type { SystemSnapshot } from '@capsuletech/desktop/metrics';
+ * Usage in a capsule app's Feature (canon — no imports):
+ *   // useDesktop is auto-imported via HOOK_IMPORTS
+ *   const desktop = useDesktop();
+ *   const snap = await desktop.invoke<SystemSnapshot>('get_system_snapshot');
  *
- *   // pull (one-shot)
- *   const snap = await invoke<SystemSnapshot>('get_system_snapshot');
- *
- *   // push (subscribe)
- *   const unlisten = await listen<SystemSnapshot>('system://metrics', (event) => {
- *     store.update({ metrics: event.payload });
+ *   const unlisten = await desktop.listen<SystemSnapshot>('system://metrics', (e) => {
+ *     store.update({ metrics: e.payload });
  *   });
  */
 

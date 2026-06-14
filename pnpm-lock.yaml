@@ -704,6 +704,12 @@ importers:
       '@capsuletech/lib-builder':
         specifier: workspace:*
         version: link:../builders/lib
+      '@tauri-apps/api':
+        specifier: ^2.11.0
+        version: 2.11.0
+      '@tauri-apps/plugin-dialog':
+        specifier: ^2.7.1
+        version: 2.7.1
       '@types/node':
         specifier: 25.9.0
         version: 25.9.0
