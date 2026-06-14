@@ -53,10 +53,12 @@ export type WrapperName = (typeof WRAPPER_NAMES)[number];
  * Используется в Views/Widgets/Controllers/Features/Pages:
  *  - `useCtx()` — доступ к `ControllerContext` (store + state + controller methods)
  *  - `useRouter()` — доступ к ICapsuleRouter в Page/Widget/View (см. ADR 003)
+ *  - `useDesktop()` — доступ к Tauri runtime: invoke/listen/dialog (ADR 023)
  */
 export const HOOK_IMPORTS = {
   '@capsuletech/web-core': ['useCtx'],
   '@capsuletech/web-router': ['useRouter'],
+  '@capsuletech/desktop/runtime': ['useDesktop'],
 } as const;
 
 /**

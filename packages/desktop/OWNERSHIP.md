@@ -88,7 +88,7 @@ export interface DesktopRuntime {
 export function useDesktop(): DesktopRuntime;
 ```
 
-**Канон:** Apps обращаются через `useDesktop()` global (после followup PR в `@capsuletech/vite-builder` HOOK_IMPORTS). Прямой `import` subpath'а из app-кода — нарушение Phase-L compliance. `available: false` вне Tauri, все wrappers бросают `DesktopNotAvailableError` с понятным сообщением.
+**Канон:** `useDesktop` зарегистрирован в `HOOK_IMPORTS` (`packages/builders/vite/src/plugins/constants.ts`) — auto-imported global в app TSX аналогично `useCtx` и `useRouter`. Прямой `import` subpath'а из app-кода — нарушение Phase-L compliance. `available: false` вне Tauri, все wrappers бросают `DesktopNotAvailableError` с понятным сообщением.
 
 **Реализация:** dynamic `await import('@tauri-apps/api/core'|'/event'|'plugin-dialog')` внутри обёрток — browser-bundles без Tauri не бундлируют эти пакеты на build-time. `@tauri-apps/*` — `devDependencies` (types при build), `external` в rolldown (не bundling).
 
