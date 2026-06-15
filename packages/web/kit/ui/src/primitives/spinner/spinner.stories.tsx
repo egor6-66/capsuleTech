@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 import { Spinner } from '.';
 
 const meta = {
-  title: 'Components/Spinner',
+  title: 'ComponentsPalette/Spinner',
   component: Spinner,
   tags: ['autodocs'],
   argTypes: {

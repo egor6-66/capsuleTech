@@ -1,7 +1,7 @@
 import {
   addNode,
   createEmptyTree,
-  EditorOpError,
+  WebStudioOpError,
   moveNode,
   removeNode,
   reorderChildren,
@@ -9,8 +9,8 @@ import {
 } from './operations';
 import type {
   IAddNodePayload,
-  IEditorContext,
-  IEditorTree,
+  IWebStudioContext,
+  IWebStudioTree,
   IMoveNodePayload,
   IRemoveNodePayload,
   IReorderChildrenPayload,
@@ -20,7 +20,7 @@ import type {
 
 export interface ICreateEditorSchemaOptions {
   /** Стартовое дерево. По умолчанию пустое с корнем `ui.Card`. */
-  initialTree?: IEditorTree;
+  initialTree?: IWebStudioTree;
   rootType?: string;
 }
 
@@ -40,7 +40,7 @@ export interface ICreateEditorSchemaOptions {
  * payload в `target.payload`.
  */
 export const createEditorSchema = (options: ICreateEditorSchemaOptions = {}) => {
-  const initialContext: IEditorContext = {
+  const initialContext: IWebStudioContext = {
     tree: options.initialTree ?? createEmptyTree(options.rootType),
     selectedId: null,
   };
@@ -56,7 +56,7 @@ export const createEditorSchema = (options: ICreateEditorSchemaOptions = {}) => 
             const { tree, nodeId } = addNode(store.ctx.tree, payload);
             store.update({ tree, selectedId: nodeId });
           } catch (err) {
-            if (err instanceof EditorOpError) {
+            if (err instanceof WebStudioOpError) {
               store.setErrors({ editor: err.message });
             } else {
               throw err;
@@ -70,7 +70,7 @@ export const createEditorSchema = (options: ICreateEditorSchemaOptions = {}) => 
             const tree = moveNode(store.ctx.tree, payload);
             store.update({ tree });
           } catch (err) {
-            if (err instanceof EditorOpError) {
+            if (err instanceof WebStudioOpError) {
               store.setErrors({ editor: err.message });
             } else {
               throw err;
@@ -87,7 +87,7 @@ export const createEditorSchema = (options: ICreateEditorSchemaOptions = {}) => 
               store.ctx.selectedId === payload.nodeId ? null : store.ctx.selectedId;
             store.update({ tree, selectedId });
           } catch (err) {
-            if (err instanceof EditorOpError) {
+            if (err instanceof WebStudioOpError) {
               store.setErrors({ editor: err.message });
             } else {
               throw err;
@@ -101,7 +101,7 @@ export const createEditorSchema = (options: ICreateEditorSchemaOptions = {}) => 
             const tree = updateNode(store.ctx.tree, payload);
             store.update({ tree });
           } catch (err) {
-            if (err instanceof EditorOpError) {
+            if (err instanceof WebStudioOpError) {
               store.setErrors({ editor: err.message });
             } else {
               throw err;
@@ -115,7 +115,7 @@ export const createEditorSchema = (options: ICreateEditorSchemaOptions = {}) => 
             const tree = reorderChildren(store.ctx.tree, payload);
             store.update({ tree });
           } catch (err) {
-            if (err instanceof EditorOpError) {
+            if (err instanceof WebStudioOpError) {
               store.setErrors({ editor: err.message });
             } else {
               throw err;

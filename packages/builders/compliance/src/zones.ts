@@ -110,7 +110,7 @@ export const PACKAGE_TO_ZONE: Record<string, Zone> = {
   '@capsuletech/boost-layout': 'boost',
 
   // studio (host/composer; per ADR 047 D6 retired `design-time` parent zone)
-  '@capsuletech/studio': 'studio',
+  '@capsuletech/web-studio': 'studio',
 };
 
 /**

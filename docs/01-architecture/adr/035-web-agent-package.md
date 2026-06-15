@@ -82,7 +82,7 @@ LLM-роутер. `backend/scriber/core/src/types.rs` **уже умеет** ро
 Контракт scriber уже разводит:
 - **client-side tools** (editor-ops `apps/ui-creator`): апп передаёт `ToolDef`-ы,
   модель возвращает `ToolCall`, апп исполняет его **в браузере** против
-  `Controllers.Editor` через `useEmit` (ADR 032), дописывает результат. Сервер
+  `Controllers.WebStudio` через `useEmit` (ADR 032), дописывает результат. Сервер
   только релеит. **Чистый HCA-стык**: агент — ещё один источник на том же канале,
   что и живой человек.
 - **native/server tools** (`apps/nexus`): исполняются **на машине** через scriber

@@ -480,10 +480,10 @@ const runZoneCheck = (absPath: string, code: string): IViolation[] => {
   //   runtime/data-gen    → @capsuletech/data-gen   (no prefix; package-scoped util)
   //   boost/layout        → @capsuletech/boost-layout
   //   domain/auth         → @capsuletech/web-auth
-  //   studio/studio       → @capsuletech/studio     (no prefix; sole inhabitant of zone)
+  //   studio/studio       → @capsuletech/web-studio (sole inhabitant of zone, web-prefixed per zone canon)
   let fromPkg: string;
   if (fromZone === 'studio') {
-    fromPkg = `@capsuletech/${fromPkgDir}`;
+    fromPkg = `@capsuletech/web-${fromPkgDir}`;
   } else if (NO_PREFIX_PKG_DIRS.has(fromPkgDir)) {
     fromPkg = `@capsuletech/${fromPkgDir}`;
   } else {

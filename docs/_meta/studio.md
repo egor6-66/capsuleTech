@@ -6,7 +6,7 @@ audience: claude
 last_updated: 2026-06-13
 ---
 
-# @capsuletech/studio — AI context anchor
+# @capsuletech/web-studio — AI context anchor
 
 > Шпаргалка для Claude-инстансов. Без воды. Юзеру — `docs/09-packages/ui-creator.md`.
 
@@ -19,7 +19,7 @@ Host/composer для авторства capsule UI: всё нужное чтоб
 Редактор работает с двумя независимыми наборами UI-компонентов:
 
 ### КОНТЕНТ-кит (`kit` prop → `useEditorKit()`)
-Передаётся в `<Editor.Provider kit={...}>`. Это компоненты, ИЗ которых пользователь строит свой UI: они наполняют палитру (превью TemplateCard через `<Renderer>`) и рендерят Canvas. Результат работы редактора — JSON-дерево под этот кит. Доступен через `useEditorKit()`.
+Передаётся в `<WebStudio.Provider kit={...}>`. Это компоненты, ИЗ которых пользователь строит свой UI: они наполняют палитру (превью TemplateCard через `<Renderer>`) и рендерят Canvas. Результат работы редактора — JSON-дерево под этот кит. Доступен через `useEditorKit()`.
 
 **Где используется:** `EditorCanvas` (registry для Renderer), `EditorPalette` (TemplateCard preview — только это!).
 
@@ -57,29 +57,29 @@ Host/composer для авторства capsule UI: всё нужное чтоб
 ## Subpath exports {#subpath-exports}
 
 ```ts
-// @capsuletech/studio/manifests — спецификации + правила
+// @capsuletech/web-studio/manifests — спецификации + правила
 import { getManifest, canAcceptChild, canDropInto, canMoveInto, isInside, acceptsChildren }
-  from '@capsuletech/studio/manifests';
+  from '@capsuletech/web-studio/manifests';
 
-// @capsuletech/studio/state — операции + DnD resolver'ы
+// @capsuletech/web-studio/state — операции + DnD resolver'ы
 import { addNode, moveNode, applyDrop, canInto, treeIntent, canvasIntent, dragSpec }
-  from '@capsuletech/studio/state';
+  from '@capsuletech/web-studio/state';
 import type { DragSpec, DropIntent, TreeZone }
-  from '@capsuletech/studio/state';
+  from '@capsuletech/web-studio/state';
 
-// @capsuletech/studio/inspector — form (studio-only)
-import { Inspector } from '@capsuletech/studio/inspector';
+// @capsuletech/web-studio/inspector — form (studio-only)
+import { Inspector } from '@capsuletech/web-studio/inspector';
 
-// @capsuletech/studio/generators — procedural generation
-import { generate, FORM_PRESET, createRng } from '@capsuletech/studio/generators';
+// @capsuletech/web-studio/generators — procedural generation
+import { generate, FORM_PRESET, createRng } from '@capsuletech/web-studio/generators';
 
-// @capsuletech/studio/controllers — HCA-integration (тянет web-core)
-import { EditorController, EditorOverlay } from '@capsuletech/studio/controllers';
-import type { IEditorCtx } from '@capsuletech/studio/controllers';
+// @capsuletech/web-studio/controllers — HCA-integration (тянет web-core)
+import { EditorController, EditorOverlay } from '@capsuletech/web-studio/controllers';
+import type { IEditorCtx } from '@capsuletech/web-studio/controllers';
 
-// @capsuletech/studio/capsule — манифест для capsule.app.ts
+// @capsuletech/web-studio/capsule — манифест для capsule.app.ts
 // (обычно не импортируется напрямую — читается Vite-плагином)
-import capsuleManifest from '@capsuletech/studio/capsule';
+import capsuleManifest from '@capsuletech/web-studio/capsule';
 ```
 
 ## DnD-архитектура (ADR 032, фаза 5)

@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 import { Typography } from './typography';
 
 const meta = {
-  title: 'Components/Typography',
+  title: 'ComponentsPalette/Typography',
   component: Typography,
   tags: ['autodocs'],
   argTypes: {

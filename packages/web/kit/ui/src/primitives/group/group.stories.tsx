@@ -26,7 +26,7 @@ const itemProps = (it: IItem) => ({ children: it.label, variant: it.variant });
 // ---------------------------------------------------------------------------
 
 const meta = {
-  title: 'Components/Group',
+  title: 'ComponentsPalette/Group',
   component: Group,
   tags: ['autodocs'],
   parameters: {

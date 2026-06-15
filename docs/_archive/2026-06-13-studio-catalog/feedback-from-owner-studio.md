@@ -38,7 +38,7 @@ type Variants.Events = { onCreateCustom: { ... } };
 
 **Конкретный текст в D3 (предлагаю):**
 
-> Catalog — единый package-emitter. События неймспейсятся через `<module>/<event>` (slash-separated), e.g. `'palette/onSelect'`, `'variants/onCreateCustom'`. App ловит как `Feature<Catalog.Events>` (одна Feature на весь catalog). Type union `Catalog.Events` экспортируется из `@capsuletech/studio/catalog`.
+> Catalog — единый package-emitter. События неймспейсятся через `<module>/<event>` (slash-separated), e.g. `'palette/onSelect'`, `'variants/onCreateCustom'`. App ловит как `Feature<Catalog.Events>` (одна Feature на весь catalog). Type union `Catalog.Events` экспортируется из `@capsuletech/web-studio/catalog`.
 
 ### 2. D5 — Где живёт `contract.propsType`
 
@@ -65,8 +65,8 @@ import type { IButtonProps } from '@capsuletech/web-ui/button';
 
 **Проблема.** D2 описывает 8 модулей, но не фиксирует, **как они экспортируются**:
 
-- (a) **Один subpath**: `@capsuletech/studio/catalog` с named exports: `{ Palette, Preview, Inspector, ManifestView, BundleInfo, DocsPanel, Contract, Variants }`.
-- (b) **Множество subpath'ов**: `@capsuletech/studio/catalog/palette`, `.../preview`, `.../inspector`, … (8 multi-entry build-targets).
+- (a) **Один subpath**: `@capsuletech/web-studio/catalog` с named exports: `{ Palette, Preview, Inspector, ManifestView, BundleInfo, DocsPanel, Contract, Variants }`.
+- (b) **Множество subpath'ов**: `@capsuletech/web-studio/catalog/palette`, `.../preview`, `.../inspector`, … (8 multi-entry build-targets).
 
 Влияет на: `package.json` exports, multi-entry vite config, OWNERSHIP.md subpath-таблицу, событийный namespace (см. блокер №1).
 
@@ -80,7 +80,7 @@ import type { IButtonProps } from '@capsuletech/web-ui/button';
 
 **Конкретный текст в D2 (предлагаю добавить после списка модулей):**
 
-> **Packaging.** Все 8 модулей экспортируются из единого subpath `@capsuletech/studio/catalog` named exports'ами (`Palette`, `Preview`, `Inspector`, `ManifestView`, `BundleInfo`, `DocsPanel`, `Contract`, `Variants`). Tree-shake обеспечивается ESM-сборкой; consumer импортит только нужное. Этот выбор зеркалит D3 (catalog = единый emitter).
+> **Packaging.** Все 8 модулей экспортируются из единого subpath `@capsuletech/web-studio/catalog` named exports'ами (`Palette`, `Preview`, `Inspector`, `ManifestView`, `BundleInfo`, `DocsPanel`, `Contract`, `Variants`). Tree-shake обеспечивается ESM-сборкой; consumer импортит только нужное. Этот выбор зеркалит D3 (catalog = единый emitter).
 
 ## Желательные правки (2) — non-blocking
 

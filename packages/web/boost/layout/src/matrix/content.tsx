@@ -216,15 +216,10 @@ export const MatrixContent = (props: IMatrixContentProps) => {
         const cellRef =
           cell.draggable !== false && swapBind ? swapBind(cell, rows[0].id) : NOOP_REF;
         const dndState = cellDndState ? cellDndState(cell) : undefined;
-        // vt-route-content: named View Transition region "capsule-content" (web-style/index.css).
-        // Applied when cell.id='main' so the main content animates on routing while
-        // chrome (header/sidebar/footer) stays static. Ensures uniqueness — only
-        // one cell carries view-transition-name at a time.
-        const isMainCell = cell.id === 'main';
         return (
           <div
             ref={cellRef}
-            class={`relative flex h-full w-full items-center justify-center${isMainCell ? ' vt-route-content' : ''}`}
+            class="relative flex h-full w-full items-center justify-center"
           >
             <div
               class="absolute inset-0 overflow-auto flex items-center justify-center"

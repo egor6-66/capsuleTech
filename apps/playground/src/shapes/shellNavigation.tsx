@@ -32,7 +32,7 @@ const ShellNavigation = Shape(
     defaults: [
       // Web Studio — дом креатор-кита (редакторы/тулзы), роль designer.
       // Ведёт на дефолтный workspace (design); layout-роут /web-studio оборачивает его.
-      { label: 'Web Studio', to: '/workspace/web-studio', can: 'studio' },
+      { label: 'Web Studio', to: '/workspace/web-studio/store', can: 'studio' },
       // DevOps — плейсхолдер, роль devops.
       { label: 'DevOps', to: '/workspace/devops', can: 'devops' },
       // Docs — доступна ВСЕМ (без `can`).

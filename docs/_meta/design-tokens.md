@@ -47,7 +47,7 @@ All semantic spacing tokens multiply by `--density` via `calc()`.
 
 ### Semantic spacing tokens (density-aware)
 
-Components reference these, not the raw scale.
+ComponentsPalette reference these, not the raw scale.
 
 | Token | Raw base | Role |
 |---|---|---|

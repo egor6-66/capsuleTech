@@ -7,8 +7,8 @@
  * - addLayer/removeLayer parity (Layer)
  * - setTerrain / setTerrain(null) parity (Terrain)
  * - setSky / setSky({}) parity (Sky)
- * - Components wait for map load if style not yet loaded
- * - Components add immediately if map is already loaded
+ * - ComponentsPalette wait for map load if style not yet loaded
+ * - ComponentsPalette add immediately if map is already loaded
  * - Cleanup is safe when map is already removed (no throws)
  * - styledata listener is registered and removed on cleanup
  */

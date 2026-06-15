@@ -7,8 +7,8 @@
  * (sizeKB, externals, weight, subpath) are merged by `scripts/build-manifest.mjs`
  * into `dist/manifest.json` at build time (W4 follow-up).
  *
- * Consumed by `@capsuletech/studio` palette + inspector + DnD validation
- * (the studio `/manifests` subpath thinly re-exports from here).
+ * Consumed by `@capsuletech/web-studio` palette + inspector + DnD validation
+ * (the web-studio `/manifests` subpath thinly re-exports from here).
  */
 
 export {

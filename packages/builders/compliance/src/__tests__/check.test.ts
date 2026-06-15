@@ -262,8 +262,8 @@ describe('check — app-package-import (Phase L)', () => {
     expect(v[0].source).toBe('@capsuletech/web-style/editor');
   });
 
-  it('@capsuletech/studio subpath → app-package-import', () => {
-    const v = check(WIDGET_PATH, "import { Provider } from '@capsuletech/studio/docs';");
+  it('@capsuletech/web-studio subpath → app-package-import', () => {
+    const v = check(WIDGET_PATH, "import { Provider } from '@capsuletech/web-studio/docs';");
     expect(v).toHaveLength(1);
     expect(v[0].kind).toBe('app-package-import');
   });

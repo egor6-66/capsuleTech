@@ -3,7 +3,7 @@
  *
  * `IEditorTree` / `IEditorNode` / `NodeId` are the shape consumed by both
  * `@capsuletech/web-renderer` (runtime render) and editing tools
- * (`@capsuletech/studio` JSON-tree ops). Owned here so apps that need
+ * (`@capsuletech/web-studio` JSON-tree ops). Owned here so apps that need
  * tree generation without studio can consume directly.
  */
 export type NodeId = string;

@@ -1,42 +1,51 @@
 /**
- * @capsuletech/studio/capsule
+ * @capsuletech/web-studio/capsule
  *
  * Манифест пакета для механизма регистрации (ADR 033).
  *
  * App подключает пакет в capsule.app.ts:
- *   packages: ['@capsuletech/studio']
+ *   packages: ['@capsuletech/web-studio']
  *
  * Вите-плагин (CapsuleRegistryPlugin) читает этот файл через jiti и генерирует
  * глобалы:
- *   - `Editor.Overlay`   → components (EditorOverlay)
- *   - `Editor.Provider`  → components (EditorProvider)
- *   - `Editor.Canvas`    → components (EditorCanvas)
- *   - `Controllers.Editor` → controllers (EditorController)
+ *   - `WebStudio.Overlay`           → components (WebStudioOverlay)
+ *   - `WebStudio.Provider`          → components (WebStudioProvider)
+ *   - `WebStudio.Canvas`            → components (WebStudioCanvas)
+ *   - `WebStudio.Tree`              → components (WebStudioTree)
+ *   - `WebStudio.Palette`           → components (WebStudioPalette)
+ *   - `WebStudio.Inspector`         → components (WebStudioInspector)
+ *   - `WebStudio.ComponentsPalette` → components (Palette)
+ *   - `Controllers.WebStudio`       → controllers (WebStudioController)
  *
- * Имя 'Editor' (не 'UICreator') — отражает семантику use-case: визуальный
- * редактор, не creator-инструментарий.
+ * Имя 'WebStudio' отражает зональный канон (ADR 047 web-zone naming).
+ * Внутренний use-case — визуальный редактор (editor) UI-деревьев; это
+ * domain-функция пакета, а пространство имён соответствует зоне.
  */
 
 import { defineCapsuleModule } from '@capsuletech/web-core/module';
-import { EditorCanvas } from './controllers/EditorCanvas';
-import EditorController from './controllers/EditorController';
-import { EditorInspector } from './controllers/EditorInspector';
-import { EditorOverlay } from './controllers/EditorOverlay';
-import { EditorPalette } from './controllers/EditorPalette';
-import { EditorProvider } from './controllers/EditorProvider';
-import { EditorTree } from './controllers/EditorTree';
+import { WebStudioCanvas } from './controllers/WebStudioCanvas';
+import WebStudioController from './controllers/WebStudioController';
+import { WebStudioInspector } from './controllers/WebStudioInspector';
+import { WebStudioOverlay } from './controllers/WebStudioOverlay';
+import { WebStudioPalette } from './controllers/WebStudioPalette';
+import { WebStudioProvider } from './controllers/WebStudioProvider';
+import { WebStudioTree } from './controllers/WebStudioTree';
+import { Palette as ComponentsPalette } from './palette';
 
 export default defineCapsuleModule({
-  name: 'Editor',
+  name: 'WebStudio',
   components: {
-    Overlay: EditorOverlay,
-    Provider: EditorProvider,
-    Canvas: EditorCanvas,
-    Tree: EditorTree,
-    Palette: EditorPalette,
-    Inspector: EditorInspector,
+    Overlay: WebStudioOverlay,
+    Provider: WebStudioProvider,
+    Canvas: WebStudioCanvas,
+    Tree: WebStudioTree,
+    Palette: WebStudioPalette,
+    Inspector: WebStudioInspector,
+    // Новая палитра (итерация 1 — структура без режимов). Под отдельным ключом
+    // чтобы не ломать legacy `WebStudio.Palette` пока старое не зачищено.
+    ComponentsPalette,
   },
   controllers: {
-    Editor: EditorController,
+    WebStudio: WebStudioController,
   },
 });

@@ -93,7 +93,7 @@ Imports from **1** packages (2 file-references):
 |---|---|---|---|
 | `@capsuletech/shared-zod` | (external) | 2 | — |
 
-### `@capsuletech/studio` (zone: studio) {#studio-studio}
+### `@capsuletech/web-studio` (zone: studio) {#studio-studio}
 
 Imports from **7** packages (47 file-references):
 

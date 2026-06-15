@@ -10,7 +10,7 @@
  *     (`name`, `subpath`, `weight`, `sizeKB`, `externals`, `variants`,
  *     `slotTags`); merges with hand-authored fields.
  *   - `packages/web/ui/test/bundle-size.test.ts` — bundle-size assertions
- *   - `@capsuletech/studio` palette + inspector + DnD validation
+ *   - `@capsuletech/web-studio` palette + inspector + DnD validation
  *     (consumes via `@capsuletech/web-ui/manifest` subpath)
  *   - hand-authored manifest files in `src/manifest/manifests/*.tsx`
  *     populate the UI / DnD / inspector fields
@@ -148,7 +148,7 @@ export interface IWebUiManifest {
 
 /**
  * Backwards-compat alias for studio consumers — pre-S2 they imported
- * `IComponentManifest` from `@capsuletech/studio/manifests`. After
+ * `IComponentManifest` from `@capsuletech/web-studio/manifests`. After
  * unification, the canonical name is `IPrimitiveManifestEntry`.
  *
  * @deprecated use `IPrimitiveManifestEntry` directly.

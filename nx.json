@@ -110,7 +110,7 @@
           "@capsuletech/boost-chart",
           "@capsuletech/boost-layout",
           "@capsuletech/boost-map",
-          "@capsuletech/studio",
+          "@capsuletech/web-studio",
           "@capsuletech/web-profiler",
           "@capsuletech/web-query",
           "@capsuletech/web-renderer",

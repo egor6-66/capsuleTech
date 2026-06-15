@@ -4,7 +4,7 @@ import { Button } from '../button';
 import { Dropdown } from '.';
 
 const meta = {
-  title: 'Components/Dropdown',
+  title: 'ComponentsPalette/Dropdown',
   component: Dropdown,
   tags: ['autodocs'],
   decorators: [

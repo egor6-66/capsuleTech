@@ -95,9 +95,10 @@ const Trigger = (props: IAccordionTriggerProps) => {
 /**
  * Animated content panel.
  *
- * Uses a CSS `grid-template-rows` transition (0fr → 1fr) so the height
- * animates without JS. Kobalte sets `data-[expanded]` / `data-[closed]`
- * on this element — the CVA classes pick them up directly.
+ * Uses keyframe animation via `.accordion-animate` (from `@capsuletech/web-style`).
+ * Kobalte waits for `animationend` before unmounting, so the collapse animation
+ * completes before the element is removed — unlike CSS transitions which fire
+ * after unmount. Pattern mirrors `popover-animate` in Dropdown.Content.
  */
 const Content = (props: IAccordionContentProps) => {
   const [local, others] = splitProps(props, ['class', 'children']);
@@ -119,7 +120,7 @@ const Content = (props: IAccordionContentProps) => {
  * - Independent expand/collapse per item (no shared state between sections).
  * - `multiple` mode: multiple items open simultaneously.
  * - `collapsible` mode: in single mode, active item can be closed by clicking again.
- * - CSS grid-row height animation — no JS, no motionone needed.
+ * - Keyframe height animation via `.accordion-animate` — no JS, no motionone needed.
  * - Chevron indicator rotates on `[data-expanded]`.
  * - Keyboard navigation (arrow keys, Home, End, Enter/Space).
  * - Full a11y: `role="region"`, `aria-labelledby` linking trigger ↔ panel.

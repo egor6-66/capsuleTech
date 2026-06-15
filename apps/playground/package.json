@@ -19,7 +19,7 @@
     "@capsuletech/web-profiler": "workspace:*",
     "@capsuletech/web-query": "workspace:*",
     "@capsuletech/web-renderer": "workspace:*",
-    "@capsuletech/studio": "workspace:*",
+    "@capsuletech/web-studio": "workspace:*",
     "@capsuletech/web-auth": "workspace:*",
     "@capsuletech/web-shell": "workspace:*",
     "@capsuletech/boost-layout": "workspace:*",

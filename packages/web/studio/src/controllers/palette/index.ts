@@ -1,6 +1,6 @@
 /**
- * palette/ — под-компоненты и метаданные Editor.Palette.
- * Барель для внутреннего потребления из EditorPalette.tsx.
+ * palette/ — под-компоненты и метаданные WebStudio.Palette.
+ * Барель для внутреннего потребления из WebStudioPalette.tsx.
  */
 
 export { ContainerItem } from './ContainerItem';

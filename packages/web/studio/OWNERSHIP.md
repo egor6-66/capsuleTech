@@ -1,5 +1,5 @@
 ---
-name: "@capsuletech/studio"
+name: "@capsuletech/web-studio"
 owner-agent: owner-studio
 group: web_base
 zone: studio
@@ -8,7 +8,7 @@ priority: P1
 last-updated: 2026-06-12
 ---
 
-# OWNERSHIP — @capsuletech/studio
+# OWNERSHIP — @capsuletech/web-studio
 
 **Owner agent:** `owner-studio`
 **Package path:** `packages/web/studio/`
@@ -29,7 +29,7 @@ last-updated: 2026-06-12
 ## Vendor stack (ADR 047 D3)
 
 - **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
-- **`@capsuletech/web-core`** (workspace, dep) — HCA wrappers; `/controllers` subpath единственный с этой зависимостью (EditorController).
+- **`@capsuletech/web-core`** (workspace, dep) — HCA wrappers; `/controllers` subpath единственный с этой зависимостью (WebStudioController).
 - **`@capsuletech/web-ui`** (workspace, dep) — chrome редактора.
 - **`@capsuletech/web-dnd`** (workspace, dep) — pointer DnD для палитры/tree.
 - **`@capsuletech/web-renderer`** (workspace, peerDep) — preview JSON-схемы.
@@ -44,32 +44,32 @@ Studio = host/composer (5-я zone). Текущий внутренний toolkit 
 - **Inspector** — generic UI-form по manifest (design-time only);
 - **Generators** — procedural/seeded генераторы UI-деревьев.
 
-**ADR 032 фаза 5 (часть 2):** `/controllers` + `/capsule` добавлены. `/controllers` единственный subpath с `web-core`-зависимостью (EditorController + EditorOverlay). Остальное — framework-agnostic.
+**ADR 032 фаза 5 (часть 2):** `/controllers` + `/capsule` добавлены. `/controllers` единственный subpath с `web-core`-зависимостью (WebStudioController + WebStudioOverlay). Остальное — framework-agnostic.
 
 ## Два кита редактора (архитектурное правило)
 
 Редактор работает с двумя независимыми наборами UI-компонентов:
 
-### КОНТЕНТ-кит (`kit` prop → `useEditorKit()`)
-Передаётся пропом в `<Editor.Provider kit={...}>`. Это компоненты, ИЗ которых пользователь строит свой UI. Используется:
-- `EditorCanvas` — registry для `<Renderer>` (рендер Canvas-контента)
-- `EditorPalette` — только для `<TemplateCard>` preview через `<Renderer>` (превью шаблонов)
+### КОНТЕНТ-кит (`kit` prop → `useWebStudioKit()`)
+Передаётся пропом в `<WebStudio.Provider kit={...}>`. Это компоненты, ИЗ которых пользователь строит свой UI. Используется:
+- `WebStudioCanvas` — registry для `<Renderer>` (рендер Canvas-контента)
+- `WebStudioPalette` — только для `<TemplateCard>` preview через `<Renderer>` (превью шаблонов)
 
-Доступен через `useEditorKit()`. НЕ используется для chrome-элементов самого редактора.
+Доступен через `useWebStudioKit()`. НЕ используется для chrome-элементов самого редактора.
 
 ### Chrome-кит (`@capsuletech/web-ui`, прямая зависимость пакета)
 Фиксированный набор компонентов, КОТОРЫМИ нарисован сам редактор. Импортируются напрямую:
-- `EditorTree` → `import { Dropdown } from '@capsuletech/web-ui/dropdown'` (метки узлов)
-- `EditorPalette` → `import { Dropdown } from '@capsuletech/web-ui/dropdown'` (Dropdown шаблонов)
+- `WebStudioTree` → `import { Dropdown } from '@capsuletech/web-ui/dropdown'` (метки узлов)
+- `WebStudioPalette` → `import { Dropdown } from '@capsuletech/web-ui/dropdown'` (Dropdown шаблонов)
 - `inspector/` → `import { Input } from '@capsuletech/web-ui/input'`, `Toggle` (поля формы)
 
-**Правило для owner-agent:** chrome → `@capsuletech/web-ui` напрямую. `useEditorKit()` — только контент (Canvas render, Palette preview).
+**Правило для owner-agent:** chrome → `@capsuletech/web-ui` напрямую. `useWebStudioKit()` — только контент (Canvas render, Palette preview).
 
 **GAP:** Inspector Select/Textarea — нативный fallback. Свапнуть на `web-ui` Select/Textarea отдельной задачей когда owner-web-ui добавит их.
 
 ## Публичный API (subpaths)
 
-### `@capsuletech/studio/manifests`
+### `@capsuletech/web-studio/manifests`
 
 | Экспорт | Описание |
 |---|---|
@@ -87,7 +87,7 @@ Studio = host/composer (5-я zone). Текущий внутренний toolkit 
 | `type IComponentManifest` | Спецификация компонента |
 | `type IManifestSummary` | Лёгкая сводка |
 
-### `@capsuletech/studio/state`
+### `@capsuletech/web-studio/state`
 
 | Экспорт | Описание |
 |---|---|
@@ -98,10 +98,10 @@ Studio = host/composer (5-я zone). Текущий внутренний toolkit 
 | `reorderChildren(tree, payload)` | Переупорядочить детей |
 | `insertSubtree(tree, fragment, payload)` | Вставить фрагмент с ремапом id |
 | `createEmptyTree(rootType?)` | Пустое дерево |
-| `createEditorSchema(options?)` | XState-совместимая схема |
+| `createWebStudioSchema(options?)` | XState-совместимая схема |
 | `generateId()` | Уникальный NodeId |
 | `ROOT_ID` | Константа id корня |
-| `EditorOpError` | Ошибка операции |
+| `WebStudioOpError` | Ошибка операции |
 | **DnD resolver'ы (ADR 032, фаза 5):** | |
 | `dragSpec(data)` | Распознать DragSpec из raw payload web-dnd |
 | `canInto(tree, spec, parentId)` | Можно ли вставить spec в parentId |
@@ -114,29 +114,29 @@ Studio = host/composer (5-я zone). Текущий внутренний toolkit 
 | `type TreeZone` | Зона строки дерева: before / after / inside |
 | (+ все payload-типы) | IAddNodePayload, IMoveNodePayload, … |
 
-### `@capsuletech/studio/inspector`
+### `@capsuletech/web-studio/inspector`
 
 `Inspector`, `type InspectorProps` — studio-only UI-form (тулинг авторства). Тянет web-style/web-ui; НЕ для prod-bundles.
 
-### `@capsuletech/studio/generators`
+### `@capsuletech/web-studio/generators`
 
 `generate`, `FORM_PRESET`, `CARD_PRODUCT_PRESET`, `LAYOUT_2COL_PRESET`, `BUTTON_PRIMARY_PRESET`, `TYPOGRAPHY_PRESET`, `createRng`, `buildTemplate`, `type IPreset`, `type IGeneratorOptions`.
 
-### `@capsuletech/studio/controllers` (ADR 032, фаза 5)
+### `@capsuletech/web-studio/controllers` (ADR 032, фаза 5)
 
 HCA-integration subpath. Зависит на `@capsuletech/web-core`.
 
 | Экспорт | Описание |
 |---|---|
-| `EditorController` | Package-shipped HCA-Controller: tree/selection/drag/marks state + handlers |
-| `EditorOverlay` | Edit-decoration компонент для `<Renderer editOverlay={...} />` |
-| `type IEditorCtx` | Shape store.ctx: tree, selectedId, dragSpec, dropTargetId, intent, marks |
+| `WebStudioController` | Package-shipped HCA-Controller: tree/selection/drag/marks state + handlers |
+| `WebStudioOverlay` | Edit-decoration компонент для `<Renderer editOverlay={...} />` |
+| `type IWebStudioCtx` | Shape store.ctx: tree, selectedId, dragSpec, dropTargetId, intent, marks |
 | `type IOnDragOverCanvasPayload` | Payload для `onCanvasDragOver` |
 | `type IOnDragOverTreePayload` | Payload для `onTreeDragOver` |
 | `type IOnDropPayload` | Payload для `onDrop` |
 | `type IOnMarkPayload` | Payload для `onMark` |
 
-**Handlers EditorController:**
+**Handlers WebStudioController:**
 
 | Handler | Payload | Описание |
 |---|---|---|
@@ -146,17 +146,17 @@ HCA-integration subpath. Зависит на `@capsuletech/web-core`.
 | `onDrop` | `{ spec, intent }` | applyDrop → tree; clear drag |
 | `onDragEnd` | — | clear dragSpec/dropTargetId/intent |
 | `onMark` | `{ nodeId, color\|null }` | set/unset цветную метку |
-| `onSetTree` | `IEditorTree` | принудительная замена всего дерева |
+| `onSetTree` | `IWebStudioTree` | принудительная замена всего дерева |
 | `canInto` | `{ spec, parentId }` | pure-read: возвращает boolean, не мутирует |
 
 **Различение canvas vs tree surface:** разные handler-имена (`onCanvasDragOver` / `onTreeDragOver`). App-виджеты — тонкие (только emit с payload), resolver-логика в Controller.
 
-### `@capsuletech/studio/capsule` (ADR 033)
+### `@capsuletech/web-studio/capsule` (ADR 033)
 
-`defineCapsuleModule({ name: 'Editor', components: { Overlay: EditorOverlay }, controllers: { Editor: EditorController } })`
+`defineCapsuleModule({ name: 'WebStudio', components: { Overlay: WebStudioOverlay }, controllers: { Editor: WebStudioController } })`
 
-Регистрация в app: `packages: ['@capsuletech/studio']` в `capsule.app.ts`.
-После регистрации доступны: `Editor.Overlay` (компонент), `Controllers.Editor` (HCA-Controller).
+Регистрация в app: `packages: ['@capsuletech/web-studio']` в `capsule.app.ts`.
+После регистрации доступны: `WebStudio.Overlay` (компонент), `Controllers.WebStudio` (HCA-Controller).
 
 ## Известные ограничения / quirks
 
@@ -174,15 +174,15 @@ HCA-integration subpath. Зависит на `@capsuletech/web-core`.
 | `state/__tests__/dnd.test.ts` | dragSpec, canInto, canBeside, applyDrop (all 3 kinds), treeIntent, canvasIntent |
 | `manifests/__tests__/rules.test.ts` | acceptsChildren, canDropInto, isInside, canMoveInto |
 | `generators/__tests__/` | engine, form, fuzzer, rng, templates |
-| `controllers/__tests__/EditorController.test.ts` | onSelect toggle, onDrop mutates tree, onMark set/unset, onDragEnd clear, drag-cycle |
-| `controllers/__tests__/EditorOverlay.test.tsx` | chrome по ctx, emit onSelect на клик, pointer-events drag, линия вставки, цветная метка |
+| `controllers/__tests__/WebStudioController.test.ts` | onSelect toggle, onDrop mutates tree, onMark set/unset, onDragEnd clear, drag-cycle |
+| `controllers/__tests__/WebStudioOverlay.test.tsx` | chrome по ctx, emit onSelect на клик, pointer-events drag, линия вставки, цветная метка |
 
 ## Roadmap
 
 - [x] `docs/_meta/studio.md` AI-anchor
-- [x] `/controllers` subpath → `EditorController` (ADR 032 фаза 5, часть 2)
+- [x] `/controllers` subpath → `WebStudioController` (ADR 032 фаза 5, часть 2)
 - [x] `/capsule` манифест (ADR 033)
-- [ ] App-миграция: удалить `apps/ui-creator/src/editor/`, переписать виджеты на `Controllers.Editor` + `useCtx` (ADR 032 фаза 6)
+- [ ] App-миграция: удалить `apps/ui-creator/src/editor/`, переписать виджеты на `Controllers.WebStudio` + `useCtx` (ADR 032 фаза 6)
 - [ ] Undo/redo для state (command pattern)
 - [ ] Manifest field-types: color, file, date
 - [ ] Schema validation для tree через manifests

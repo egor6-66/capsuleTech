@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 import { Textarea } from './textarea';
 
 const meta = {
-  title: 'Components/Textarea',
+  title: 'ComponentsPalette/Textarea',
   component: Textarea,
   tags: ['autodocs'],
   argTypes: {

@@ -58,7 +58,7 @@ packages/web/agent/
 ## Места встройки (контекст; апп-зоны — НЕ твои)
 
 - **apps/testhub** (workspace) — главный/app-зона.
-- **apps/ui-creator** — персона `ui-builder`: tools = editor-ops из `@capsuletech/web-ui-creator/controllers` (зона `owner-web-ui-creator`). Агент дёргает `Controllers.Editor` тем же `useEmit`, что человек. Координация editor-ops ToolDef — через главного к owner-web-ui-creator.
+- **apps/ui-creator** — персона `ui-builder`: tools = editor-ops из `@capsuletech/web-ui-creator/controllers` (зона `owner-web-ui-creator`). Агент дёргает `Controllers.WebStudio` тем же `useEmit`, что человек. Координация editor-ops ToolDef — через главного к owner-web-ui-creator.
 - **apps/nexus** (desktop) — персона `full-access`: native FS + spawn-agent (scriber native ToolProvider).
 
 ## Cross-package etiquette

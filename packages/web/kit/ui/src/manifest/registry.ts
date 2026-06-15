@@ -3,7 +3,7 @@
  * `@capsuletech/web-ui` manifests post-S2 unification.
  *
  * Consumers:
- *   - `@capsuletech/studio` palette, inspector, DnD validation
+ *   - `@capsuletech/web-studio` palette, inspector, DnD validation
  *     (via `@capsuletech/web-ui/manifest` subpath)
  *   - `scripts/build-manifest.mjs` reads the runtime list to merge
  *     hand-authored fields with auto-generated bundle-cost data
@@ -11,8 +11,8 @@
  *     auto-fields independently).
  */
 
-import { AnimateManifest } from './manifests/animate';
-import { ButtonManifest } from './manifests/button';
+import { AnimateManifest } from '../primitives/wrappers/animate.manifest';
+import { ButtonManifest } from '../primitives/button/button.manifest';
 import {
   CardContentManifest,
   CardDescriptionManifest,
@@ -20,24 +20,25 @@ import {
   CardHeaderManifest,
   CardManifest,
   CardTitleManifest,
-} from './manifests/card';
+} from '../primitives/card/card.manifest';
 import {
   FieldContentManifest,
   FieldDescriptionManifest,
   FieldErrorManifest,
   FieldLabelManifest,
   FieldManifest,
-} from './manifests/field';
-import { GroupManifest } from './manifests/group';
-import { InputManifest } from './manifests/input';
-import { LabelManifest } from './manifests/label';
-import { FlexManifest, GridManifest } from './manifests/layout';
-import { ListManifest } from './manifests/list';
-import { SeparatorManifest } from './manifests/separator';
-import { SkeletonManifest } from './manifests/skeleton';
-import { SpinnerManifest } from './manifests/spinner';
-import { ToggleManifest } from './manifests/toggle';
-import { TypographyManifest } from './manifests/typography';
+} from '../primitives/field/field.manifest';
+import { GroupManifest } from '../primitives/group/group.manifest';
+import { InputManifest } from '../primitives/input/input.manifest';
+import { LabelManifest } from '../primitives/label/label.manifest';
+import { FlexManifest } from '../primitives/layout/flex/flex.manifest';
+import { GridManifest } from '../primitives/layout/grid/grid.manifest';
+import { ListManifest } from '../primitives/list/list.manifest';
+import { SeparatorManifest } from '../primitives/separator/separator.manifest';
+import { SkeletonManifest } from '../primitives/skeleton/skeleton.manifest';
+import { SpinnerManifest } from '../primitives/spinner/spinner.manifest';
+import { ToggleManifest } from '../primitives/toggle/toggle.manifest';
+import { TypographyManifest } from '../primitives/typography/typography.manifest';
 import type { ComponentCategory, IManifestSummary, IPrimitiveManifestEntry } from './types';
 
 const ALL: IPrimitiveManifestEntry[] = [

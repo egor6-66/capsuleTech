@@ -30,7 +30,7 @@ const BIG = Array.from({ length: 1000 }, (_, i) => ({
 }));
 
 const meta = {
-  title: 'Components/List',
+  title: 'ComponentsPalette/List',
   component: List,
   tags: ['autodocs'],
   argTypes: {

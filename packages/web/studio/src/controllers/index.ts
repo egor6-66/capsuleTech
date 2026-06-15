@@ -1,44 +1,44 @@
 /**
- * @capsuletech/studio/controllers
+ * @capsuletech/web-studio/controllers
  *
  * HCA-integration subpath (ADR 032, фаза 5-6). Зависит на @capsuletech/web-core —
  * изолировано в этом subpath'е, generic-ядро пакета (src/index.ts) web-core
  * не импортирует.
  *
  * Поставляет:
- *  - EditorController — package-shipped HCA-Controller (tree/selection/drag/marks)
- *  - EditorOverlay    — edit-decoration компонент для <Renderer editOverlay={...} />
- *  - EditorProvider   — Editor.Provider: kit-context + Controllers.Editor wrapper
- *  - EditorCanvas     — Editor.Canvas: render surface с DnD drop-зоной
- *  - useEditor        — типизированный хук (плоские getter'ы без кастов)
- *  - useEditorKit     — читает kit из EditorProvider context
+ *  - WebStudioController — package-shipped HCA-Controller (tree/selection/drag/marks)
+ *  - WebStudioOverlay    — edit-decoration компонент для <Renderer editOverlay={...} />
+ *  - WebStudioProvider   — WebStudio.Provider: kit-context + Controllers.WebStudio wrapper
+ *  - WebStudioCanvas     — WebStudio.Canvas: render surface с DnD drop-зоной
+ *  - useWebStudio        — типизированный хук (плоские getter'ы без кастов)
+ *  - useWebStudioKit     — читает kit из WebStudioProvider context
  *
- * Регистрация в app: через @capsuletech/studio/capsule (ADR 033).
+ * Регистрация в app: через @capsuletech/web-studio/capsule (ADR 033).
  * Прямой импорт: для кастомных сценариев или unit-тестов.
  */
 
-export { EditorCanvas } from './EditorCanvas';
+export { WebStudioCanvas } from './WebStudioCanvas';
 export type {
-  IEditorCtx,
+  IWebStudioCtx,
   IOnDragOverCanvasPayload,
   IOnDragOverTreePayload,
   IOnDropPayload,
   IOnMarkPayload,
   IOnUpdateNodePropsPayload,
-} from './EditorController';
-export { default as EditorController } from './EditorController';
-export { EditorInspector, schemaToInspectorCategories } from './EditorInspector';
-export { EditorOverlay } from './EditorOverlay';
+} from './WebStudioController';
+export { default as WebStudioController } from './WebStudioController';
+export { WebStudioInspector, schemaToInspectorCategories } from './WebStudioInspector';
+export { WebStudioOverlay } from './WebStudioOverlay';
 export {
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   CONTAINER_ORDER,
   catRank,
-  EditorPalette,
+  WebStudioPalette,
   orderRank,
-} from './EditorPalette';
-export type { EditorKit, IEditorProviderProps } from './EditorProvider';
-export { EditorProvider, useEditorKit } from './EditorProvider';
-export { EditorTree } from './EditorTree';
-export type { IUseEditorResult } from './useEditor';
-export { useEditor } from './useEditor';
+} from './WebStudioPalette';
+export type { WebStudioKit, IWebStudioProviderProps } from './WebStudioProvider';
+export { WebStudioProvider, useWebStudioKit } from './WebStudioProvider';
+export { WebStudioTree } from './WebStudioTree';
+export type { IUseWebStudioResult } from './useWebStudio';
+export { useWebStudio } from './useWebStudio';

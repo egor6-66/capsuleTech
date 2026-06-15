@@ -10,6 +10,7 @@ export default libConfig({
     controllers: 'src/controllers/index.ts',
     capsule: 'src/capsule.ts',
     docs: 'src/docs/index.ts',
+    palette: 'src/palette/index.ts',
   },
-  name: 'CapsuleUiCreator',
+  name: 'CapsuleWebStudio',
 });

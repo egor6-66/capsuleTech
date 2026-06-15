@@ -11,7 +11,7 @@
 
 use serde::{Deserialize, Serialize};
 use sysinfo::{
-    Components, CpuRefreshKind, Disks, MemoryRefreshKind, Networks, ProcessRefreshKind,
+    ComponentsPalette, CpuRefreshKind, Disks, MemoryRefreshKind, Networks, ProcessRefreshKind,
     ProcessesToUpdate, RefreshKind, System,
 };
 
@@ -307,7 +307,7 @@ struct CoreProvider {
     system: System,
     disks: Disks,
     networks: Networks,
-    components: Components,
+    components: ComponentsPalette,
 }
 
 impl CoreProvider {
@@ -323,7 +323,7 @@ impl CoreProvider {
 
         let disks = Disks::new_with_refreshed_list();
         let networks = Networks::new_with_refreshed_list();
-        let mut components = Components::new_with_refreshed_list();
+        let mut components = ComponentsPalette::new_with_refreshed_list();
 
         // Seed components
         components.refresh(true);
@@ -481,7 +481,7 @@ impl CoreProvider {
         procs.sort_by(|a, b| b.cpu_usage.partial_cmp(&a.cpu_usage).unwrap_or(std::cmp::Ordering::Equal));
         procs.truncate(top_n);
 
-        // Components (temperatures)
+        // ComponentsPalette (temperatures)
         let components: Vec<ComponentMetrics> = self
             .components
             .list()

@@ -1,6 +1,6 @@
 # @capsuletech/data-gen
 
-Pure procedural UI-tree generator: seedable RNG + zod-aware fuzzer + declarative presets. Engine extract'нут из `@capsuletech/studio` (S1, 2026-06-13). · zone: **runtime** · status: **alpha (0.0.0)**
+Pure procedural UI-tree generator: seedable RNG + zod-aware fuzzer + declarative presets. Engine extract'нут из `@capsuletech/web-studio` (S1, 2026-06-13). · zone: **runtime** · status: **alpha (0.0.0)**
 
 > Используется studio для палитры палитры/превью, apps для landing demos и mock data, test-стендами для воспроизводимых UI-сценариев. Pure logic — никаких UI / DOM / framework-вендоров.
 
@@ -30,7 +30,7 @@ Inject a manifest resolver to fuzz props from zod schemas:
 
 ```ts
 import { generate, type IManifestResolver } from '@capsuletech/data-gen';
-import { getManifest } from '@capsuletech/studio/manifests';
+import { getManifest } from '@capsuletech/web-studio/manifests';
 
 const resolveManifest: IManifestResolver = (type) => getManifest(type);
 
@@ -55,4 +55,4 @@ Without `resolveManifest`, nodes have empty props (structure-only generation).
 
 - OWNERSHIP: [`./OWNERSHIP.md`](./OWNERSHIP.md)
 - Zone canon: [`docs/_meta/web-zones/runtime.md`](../../../../docs/_meta/web-zones/runtime.md)
-- Sister: [`@capsuletech/studio`](../../studio/) consumes data-gen for palette templates + provides manifest registry.
+- Sister: [`@capsuletech/web-studio`](../../studio/) consumes data-gen for palette templates + provides manifest registry.

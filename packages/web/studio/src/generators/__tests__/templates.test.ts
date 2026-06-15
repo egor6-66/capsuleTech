@@ -62,7 +62,7 @@ describe('listTemplatesFor', () => {
 });
 
 describe('buildTemplate', () => {
-  it('возвращает IEditorTree с root и nodes', () => {
+  it('возвращает IWebStudioTree с root и nodes', () => {
     const templates = getAllTemplates();
     for (const t of templates) {
       const tree = buildTemplate(t);

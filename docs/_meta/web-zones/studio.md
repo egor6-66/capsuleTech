@@ -28,7 +28,7 @@ Studio обязан удовлетворять трём инвариантам:
 
 | Package | npm | Status | One-line |
 |---|---|---|---|
-| `studio` | `@capsuletech/studio` | alpha (0.1.1) | Sole inhabitant. Host/composer для авторства: editor + palette + inspector + canvas + monitor + catalog + docs + generators. Multi-entry subpaths. |
+| `studio` | `@capsuletech/web-studio` | alpha (0.1.1) | Sole inhabitant. Host/composer для авторства: editor + palette + inspector + canvas + monitor + catalog + docs + generators. Multi-entry subpaths. |
 
 > **Zone is single-package by design.** Studio = host, не зоопарк. Новые features = новые subpaths внутри studio, новые reusable блоки = пакеты в других зонах (kit/runtime/boost/domain).
 
@@ -69,7 +69,7 @@ studio ↛ studio (нет — это один пакет)
 apps ↛ studio в prod (вне editor-shell) — must be tree-shaken / lazy-loaded
 ```
 
-**Apps consume studio ТОЛЬКО через editor-shell** (`<EditorRoot>`). Если app-код напрямую импортит из `@capsuletech/studio/inspector` — компилятор/lint должен это ловить (опц. build-time check).
+**Apps consume studio ТОЛЬКО через editor-shell** (`<EditorRoot>`). Если app-код напрямую импортит из `@capsuletech/web-studio/inspector` — компилятор/lint должен это ловить (опц. build-time check).
 
 ## Canonical shape {#canonical-shape}
 

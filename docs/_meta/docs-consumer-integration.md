@@ -1,6 +1,6 @@
 ---
 title: docs-consumer-integration
-description: How apps wire `@capsuletech/studio/docs` to consume the build-time-generated docs registry — DI shape, tsconfig alias, build ordering, sample wiring. Single-page guide for E5 consumers.
+description: How apps wire `@capsuletech/web-studio/docs` to consume the build-time-generated docs registry — DI shape, tsconfig alias, build ordering, sample wiring. Single-page guide for E5 consumers.
 status: documented
 type: guide
 last_updated: 2026-06-13
@@ -61,7 +61,7 @@ Vite + tsc auto-resolve via `tsconfig-paths`. No per-app config needed.
 
 ```tsx
 // apps/<app>/src/App.tsx
-import { DocsProvider } from '@capsuletech/studio/docs';
+import { DocsProvider } from '@capsuletech/web-studio/docs';
 import { docs } from '@capsule/docs-registry';
 
 export default function App() {
@@ -78,7 +78,7 @@ export default function App() {
 ## Step 4 — Render sections {#step-render}
 
 ```tsx
-import { DocSection, DocPage, useDoc } from '@capsuletech/studio/docs';
+import { DocSection, DocPage, useDoc } from '@capsuletech/web-studio/docs';
 
 // Single section (most common — e.g. footer "About", page hint)
 <DocSection slug="architecture/adr/048-docs-as-data#D4" />

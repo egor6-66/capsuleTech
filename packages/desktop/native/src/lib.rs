@@ -10,7 +10,7 @@ use tokio::sync::{mpsc, oneshot};
 //
 //  On Windows, COM is per-thread and per-apartment. `tao` (the
 //  Tauri windowing layer) calls `OleInitialize` on the MAIN
-//  THREAD in STA mode. sysinfo `Components` (WMI) and
+//  THREAD in STA mode. sysinfo `ComponentsPalette` (WMI) and
 //  nvml-wrapper `Nvml::init()` (NVML) both initialize COM in
 //  MTA mode. If any of these run on the main thread BEFORE
 //  `tauri::Builder::run()`, the subsequent `OleInitialize` call

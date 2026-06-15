@@ -203,7 +203,7 @@ import type { SystemSnapshot } from '@capsuletech/desktop/metrics';
 
 ### sysinfo API (ориентир, версию пинит owner-desktop)
 
-sysinfo 0.3x разнёс домены по структурам: `System` (cpu/mem/processes/components на новых версиях вынесены в `Components`), `Disks`, `Networks`, `Components`. Owner-desktop адаптируется под resolved-версию. Ключевое:
+sysinfo 0.3x разнёс домены по структурам: `System` (cpu/mem/processes/components на новых версиях вынесены в `ComponentsPalette`), `Disks`, `Networks`, `ComponentsPalette`. Owner-desktop адаптируется под resolved-версию. Ключевое:
 - `System::new_all()` + `refresh_*` — держать persistent.
 - CPU%: первый refresh даёт 0, нужен второй спустя `MINIMUM_CPU_UPDATE_INTERVAL` (~200ms). Для push-режима интервал ≥ этого порога; для pull-режима — двойной refresh с короткой задержкой внутри команды (или возврат last-known из persistent-инстанса).
 - Сеть: `received()/transmitted()` — delta с прошлого refresh; `total_*` — cumulative.
@@ -220,7 +220,7 @@ sysinfo 0.3x разнёс домены по структурам: `System` (cpu/
 
 ### Cross-platform caveats (документируется в anchor)
 
-- **Температуры**: на Windows `sysinfo::Components` часто пуст без админ-прав/спец-драйверов — `components: []` норма, не баг.
+- **Температуры**: на Windows `sysinfo::ComponentsPalette` часто пуст без админ-прав/спец-драйверов — `components: []` норма, не баг.
 - **Per-process CPU%** суммарно может превышать 100% (на ядро).
 - **GPU**: Phase A покрывает только NVIDIA; на AMD/Intel `gpus: []` пока Phase B не добавит провайдера. Это явно отражается в инструкции app-агенту (UI должен gracefully показывать «GPU: n/a»).
 

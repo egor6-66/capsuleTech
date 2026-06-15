@@ -4,7 +4,7 @@ import { MockBlock } from '../../_mocks';
 import { Grid } from './grid';
 
 const meta = {
-  title: 'Components/Grid',
+  title: 'ComponentsPalette/Grid',
   component: Grid,
   tags: ['autodocs'],
   parameters: { layout: 'padded' },

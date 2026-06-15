@@ -62,7 +62,7 @@ runtime ↛ studio/*
 
 - `@capsuletech/web-auth`, `web-shell`, `web-agent` — domain.
 - `@capsuletech/boost-*` — boost.
-- `@capsuletech/studio` (и его subpath'ы) — studio.
+- `@capsuletech/web-studio` (и его subpath'ы) — studio.
 
 Compliance enforces: runtime → domain/boost/studio = wrong layer (warning).
 

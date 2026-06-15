@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 import { Slider } from './slider';
 
 const meta = {
-  title: 'Components/Slider',
+  title: 'ComponentsPalette/Slider',
   component: Slider,
   tags: ['autodocs'],
   argTypes: {

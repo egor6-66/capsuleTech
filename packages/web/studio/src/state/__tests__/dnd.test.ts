@@ -3,12 +3,12 @@ import { FORM_PRESET, generate, LAYOUT_2COL_PRESET } from '@capsuletech/data-gen
 import type { DragSpec, DropIntent } from '../dnd';
 import { applyDrop, canBeside, canInto, canvasIntent, dragSpec, treeIntent } from '../dnd';
 import { addNode, createEmptyTree } from '../operations';
-import type { IEditorTree } from '../types';
+import type { IWebStudioTree } from '../types';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
-const flexTree = (): IEditorTree => createEmptyTree('ui.Layout.Flex');
-const gridTree = (): IEditorTree => createEmptyTree('ui.Layout.Grid');
+const flexTree = (): IWebStudioTree => createEmptyTree('ui.Layout.Flex');
+const gridTree = (): IWebStudioTree => createEmptyTree('ui.Layout.Grid');
 
 /** Строит: root(Flex) → child → (optional) grandchild. */
 const twoLevelTree = () => {

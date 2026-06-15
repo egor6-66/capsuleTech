@@ -1,6 +1,6 @@
 const Header = Widget((Ui) => (
-  <Ui.Layout.Flex justify={'end'} align={'center'}>
-    <Shapes.WebStudioNavigation />
+  <Ui.Layout.Flex justify={'center'} align={'center'} h={'full'}>
+    STUDIO NAV
   </Ui.Layout.Flex>
 ));
 

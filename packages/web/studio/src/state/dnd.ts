@@ -14,7 +14,7 @@
  */
 import { canDropInto, canMoveInto } from '../manifests/rules';
 import { addNode, insertSubtree, moveNode } from './operations';
-import type { IEditorTree, NodeId } from './types';
+import type { IWebStudioTree, NodeId } from './types';
 
 /**
  * Что тащим:
@@ -24,7 +24,7 @@ import type { IEditorTree, NodeId } from './types';
  */
 export type DragSpec =
   | { kind: 'add'; type: string }
-  | { kind: 'addTree'; fragment: IEditorTree }
+  | { kind: 'addTree'; fragment: IWebStudioTree }
   | { kind: 'move'; nodeId: NodeId };
 
 /** Куда вставить: в `parentId` ПЕРЕД `beforeId` (или в конец, если null). */
@@ -48,7 +48,7 @@ export const dragSpec = (data: RawData): DragSpec | null => {
   if (!data) return null;
   if (data.source === 'palette') {
     if (data.template && typeof data.template === 'object') {
-      return { kind: 'addTree', fragment: data.template as IEditorTree };
+      return { kind: 'addTree', fragment: data.template as IWebStudioTree };
     }
     if (typeof data.type === 'string') return { kind: 'add', type: data.type };
     return null;
@@ -68,19 +68,19 @@ const intoType = (spec: DragSpec): string =>
       : '';
 
 /** Можно ли поместить spec ВНУТРЬ `parentId`. */
-export const canInto = (tree: IEditorTree, spec: DragSpec, parentId: NodeId): boolean =>
+export const canInto = (tree: IWebStudioTree, spec: DragSpec, parentId: NodeId): boolean =>
   spec.kind === 'move'
     ? canMoveInto(tree, spec.nodeId, parentId)
     : canDropInto(tree.nodes[parentId]?.type ?? '', intoType(spec));
 
 /** Можно ли поместить spec СОСЕДОМ узла `siblingId` (в его родителя). */
-export const canBeside = (tree: IEditorTree, spec: DragSpec, siblingId: NodeId): boolean => {
+export const canBeside = (tree: IWebStudioTree, spec: DragSpec, siblingId: NodeId): boolean => {
   const parentId = tree.nodes[siblingId]?.parentId;
   return parentId != null && canInto(tree, spec, parentId);
 };
 
 /** Применить drop — вернуть новое дерево (или прежнее при ошибке операции). */
-export const applyDrop = (tree: IEditorTree, spec: DragSpec, intent: DropIntent): IEditorTree => {
+export const applyDrop = (tree: IWebStudioTree, spec: DragSpec, intent: DropIntent): IWebStudioTree => {
   try {
     if (spec.kind === 'add') {
       const kids = tree.nodes[intent.parentId]!.children;
@@ -103,7 +103,7 @@ export const applyDrop = (tree: IEditorTree, spec: DragSpec, intent: DropIntent)
 
 /** Первый ребёнок, чья середина ниже `y` (вставить перед ним), иначе null (в конец). */
 const beforeChildAt = (
-  tree: IEditorTree,
+  tree: IWebStudioTree,
   scope: ParentNode,
   containerId: NodeId,
   y: number,
@@ -125,7 +125,7 @@ const beforeChildAt = (
  * на root (позиционный), чтобы первый drop работал без раздувания root по высоте.
  */
 export const canvasIntent = (
-  tree: IEditorTree,
+  tree: IWebStudioTree,
   spec: DragSpec,
   x: number,
   y: number,
@@ -146,7 +146,7 @@ export const canvasIntent = (
 
 /** Резолвер дерева: зона строки `targetId` → DropIntent. */
 export const treeIntent = (
-  tree: IEditorTree,
+  tree: IWebStudioTree,
   spec: DragSpec,
   targetId: NodeId,
   zone: TreeZone,

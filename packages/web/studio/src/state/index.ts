@@ -11,7 +11,7 @@ export { generateId, ROOT_ID } from './ids';
 export {
   addNode,
   createEmptyTree,
-  EditorOpError,
+  WebStudioOpError,
   insertSubtree,
   moveNode,
   removeNode,
@@ -22,9 +22,9 @@ export type { ICreateEditorSchemaOptions } from './schema';
 export { createEditorSchema } from './schema';
 export type {
   IAddNodePayload,
-  IEditorContext,
-  IEditorNode,
-  IEditorTree,
+  IWebStudioContext,
+  IWebStudioNode,
+  IWebStudioTree,
   IInsertSubtreePayload,
   IMoveNodePayload,
   IRemoveNodePayload,
