@@ -319,8 +319,8 @@ export const Flex = <T extends ValidComponent = 'div'>(props: IFlexProps<T>) => 
     if (own.gapX !== undefined) s['column-gap'] = toGap(own.gapX);
     if (own.gapY !== undefined) s['row-gap'] = toGap(own.gapY);
     // Sizing props — spacing-scale via CSS custom property, parity with Tailwind.
-    if (own.h !== undefined) s.height = toSpacing(own.h);
-    if (own.w !== undefined) s.width = toSpacing(own.w);
+    if (own.h !== undefined) s.height = own.h === 'full' ? '100%' : toSpacing(own.h);
+    if (own.w !== undefined) s.width = own.w === 'full' ? '100%' : toSpacing(own.w);
     if (own.maxH !== undefined) s['max-height'] = toSpacing(own.maxH);
     if (own.maxW !== undefined) s['max-width'] = toSpacing(own.maxW);
     if (own.minW !== undefined) s['min-width'] = toSpacing(own.minW);

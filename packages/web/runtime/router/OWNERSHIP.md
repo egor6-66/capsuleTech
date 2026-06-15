@@ -51,7 +51,7 @@ createRouter<TRouteTree>({
 useRouter(): ICapsuleRouter        // бросает вне Provider'а
 useRouteDepth(): Accessor<number>  // глубина текущего Outlet'а (root=0, вложенный=1, …) — ADR 046 D4 (impl: useContext(DepthContext))
 
-// Components
+// ComponentsPalette
 CapsuleOutlet: () => JSX.Element   // wrapper над TanStack <Outlet/> + DepthContext.Provider + DOM с view-transition-name (per-depth уникальное имя) + view-transition-class: capsule-route (depth-agnostic CSS-таргетинг, ADR 046 D4)
 
 // Context

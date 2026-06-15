@@ -2,8 +2,8 @@ import { canAcceptChild, getManifest } from '../manifests';
 import { generateId, ROOT_ID } from './ids';
 import type {
   IAddNodePayload,
-  IEditorNode,
-  IEditorTree,
+  IWebStudioNode,
+  IWebStudioTree,
   IInsertSubtreePayload,
   IMoveNodePayload,
   IRemoveNodePayload,
@@ -13,15 +13,15 @@ import type {
 } from './types';
 
 /** Ошибка операции с понятным сообщением — Feature/Controller сможет показать юзеру. */
-export class EditorOpError extends Error {
+export class WebStudioOpError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'EditorOpError';
+    this.name = 'WebStudioOpError';
   }
 }
 
 /** Пустое дерево с одним корнем (`Wrapper` или указанный тип). */
-export const createEmptyTree = (rootType = 'ui.Card'): IEditorTree => ({
+export const createEmptyTree = (rootType = 'ui.Card'): IWebStudioTree => ({
   root: ROOT_ID,
   nodes: {
     [ROOT_ID]: {
@@ -36,7 +36,7 @@ export const createEmptyTree = (rootType = 'ui.Card'): IEditorTree => ({
   },
 });
 
-const cloneNode = (n: IEditorNode): IEditorNode => ({
+const cloneNode = (n: IWebStudioNode): IWebStudioNode => ({
   ...n,
   children: [...n.children],
   props: { ...n.props },
@@ -44,15 +44,15 @@ const cloneNode = (n: IEditorNode): IEditorNode => ({
   styles: { ...n.styles },
 });
 
-const requireNode = (tree: IEditorTree, id: NodeId): IEditorNode => {
+const requireNode = (tree: IWebStudioTree, id: NodeId): IWebStudioNode => {
   const n = tree.nodes[id];
-  if (!n) throw new EditorOpError(`node "${id}" not found`);
+  if (!n) throw new WebStudioOpError(`node "${id}" not found`);
   return n;
 };
 
 /** Глубже ли `descendantId` под `ancestorId`. Включая равенство. */
 const isDescendantOrSelf = (
-  tree: IEditorTree,
+  tree: IWebStudioTree,
   ancestorId: NodeId,
   descendantId: NodeId,
 ): boolean => {
@@ -78,18 +78,18 @@ const insertAt = <T>(arr: T[], item: T, index?: number): T[] => {
  * Возвращает новое дерево + id созданной ноды.
  */
 export const addNode = (
-  tree: IEditorTree,
+  tree: IWebStudioTree,
   payload: IAddNodePayload,
-): { tree: IEditorTree; nodeId: NodeId } => {
+): { tree: IWebStudioTree; nodeId: NodeId } => {
   const parent = requireNode(tree, payload.parentId);
   if (!canAcceptChild(parent.type, payload.type)) {
-    throw new EditorOpError(
+    throw new WebStudioOpError(
       `node type "${parent.type}" не принимает "${payload.type}" как ребёнка`,
     );
   }
   const manifest = getManifest(payload.type);
   const id = generateId();
-  const node: IEditorNode = {
+  const node: IWebStudioNode = {
     id,
     type: payload.type,
     parentId: parent.id,
@@ -119,17 +119,17 @@ export const addNode = (
  *  - перемещать ноду внутрь себя/своих потомков;
  *  - перемещать в leaf или в parent, который не принимает этот тип.
  */
-export const moveNode = (tree: IEditorTree, payload: IMoveNodePayload): IEditorTree => {
+export const moveNode = (tree: IWebStudioTree, payload: IMoveNodePayload): IWebStudioTree => {
   if (payload.nodeId === tree.root) {
-    throw new EditorOpError('root cannot be moved');
+    throw new WebStudioOpError('root cannot be moved');
   }
   const node = requireNode(tree, payload.nodeId);
   const newParent = requireNode(tree, payload.newParentId);
   if (isDescendantOrSelf(tree, payload.nodeId, payload.newParentId)) {
-    throw new EditorOpError('cannot move a node into its own subtree');
+    throw new WebStudioOpError('cannot move a node into its own subtree');
   }
   if (!canAcceptChild(newParent.type, node.type)) {
-    throw new EditorOpError(
+    throw new WebStudioOpError(
       `node type "${newParent.type}" не принимает "${node.type}" как ребёнка`,
     );
   }
@@ -160,9 +160,9 @@ export const moveNode = (tree: IEditorTree, payload: IMoveNodePayload): IEditorT
 /**
  * Удалить ноду и весь её subtree. Root удалить нельзя.
  */
-export const removeNode = (tree: IEditorTree, payload: IRemoveNodePayload): IEditorTree => {
+export const removeNode = (tree: IWebStudioTree, payload: IRemoveNodePayload): IWebStudioTree => {
   if (payload.nodeId === tree.root) {
-    throw new EditorOpError('root cannot be removed');
+    throw new WebStudioOpError('root cannot be removed');
   }
   const node = requireNode(tree, payload.nodeId);
   const parent = requireNode(tree, node.parentId!);
@@ -181,7 +181,7 @@ export const removeNode = (tree: IEditorTree, payload: IRemoveNodePayload): IEdi
   const nextParent = cloneNode(parent);
   nextParent.children = nextParent.children.filter((c) => c !== node.id);
 
-  const nextNodes: Record<NodeId, IEditorNode> = {};
+  const nextNodes: Record<NodeId, IWebStudioNode> = {};
   for (const [id, n] of Object.entries(tree.nodes)) {
     if (!toDelete.has(id)) nextNodes[id] = n;
   }
@@ -194,7 +194,7 @@ export const removeNode = (tree: IEditorTree, payload: IRemoveNodePayload): IEdi
  * Patch props/meta/styles конкретной ноды. Не валидирует props против
  * `propsSchema` — это работа инспектора при вводе. Тут только мердж.
  */
-export const updateNode = (tree: IEditorTree, payload: IUpdateNodePayload): IEditorTree => {
+export const updateNode = (tree: IWebStudioTree, payload: IUpdateNodePayload): IWebStudioTree => {
   const node = requireNode(tree, payload.nodeId);
   const next = cloneNode(node);
   if (payload.patch.props) next.props = { ...next.props, ...payload.patch.props };
@@ -212,14 +212,14 @@ export const updateNode = (tree: IEditorTree, payload: IUpdateNodePayload): IEdi
  * обновления и проще упасть, чем тихо потерять/добавить ноды).
  */
 export const reorderChildren = (
-  tree: IEditorTree,
+  tree: IWebStudioTree,
   payload: IReorderChildrenPayload,
-): IEditorTree => {
+): IWebStudioTree => {
   const parent = requireNode(tree, payload.parentId);
   const current = new Set(parent.children);
   const next = new Set(payload.newOrder);
   if (current.size !== next.size || [...current].some((id) => !next.has(id))) {
-    throw new EditorOpError(
+    throw new WebStudioOpError(
       'reorderChildren: newOrder должен содержать ровно тех же детей что и parent',
     );
   }
@@ -241,18 +241,18 @@ export const reorderChildren = (
  * `fragment` — обычно результат `buildTemplate(t)` из `/generators`.
  */
 export const insertSubtree = (
-  tree: IEditorTree,
-  fragment: IEditorTree,
+  tree: IWebStudioTree,
+  fragment: IWebStudioTree,
   payload: IInsertSubtreePayload,
-): IEditorTree => {
+): IWebStudioTree => {
   const parent = requireNode(tree, payload.parentId);
   const fragmentRoot = fragment.nodes[fragment.root];
   if (!fragmentRoot) {
-    throw new EditorOpError('insertSubtree: fragment.root не найден в fragment.nodes');
+    throw new WebStudioOpError('insertSubtree: fragment.root не найден в fragment.nodes');
   }
 
   if (!canAcceptChild(parent.type, fragmentRoot.type)) {
-    throw new EditorOpError(
+    throw new WebStudioOpError(
       `insertSubtree: node type "${parent.type}" не принимает "${fragmentRoot.type}" как ребёнка`,
     );
   }
@@ -264,7 +264,7 @@ export const insertSubtree = (
   }
 
   // Создаём ремапленные ноды с обновлёнными id / parentId / children.
-  const remappedNodes: Record<NodeId, IEditorNode> = {};
+  const remappedNodes: Record<NodeId, IWebStudioNode> = {};
   for (const [oldId, node] of Object.entries(fragment.nodes)) {
     const newId = idMap.get(oldId)!;
     const newParentId =
@@ -273,7 +273,7 @@ export const insertSubtree = (
           payload.parentId
         : // остальные: ремапим через карту
           (idMap.get(node.parentId) ?? node.parentId);
-    const remapped: IEditorNode = {
+    const remapped: IWebStudioNode = {
       ...cloneNode(node),
       id: newId,
       parentId: newParentId,

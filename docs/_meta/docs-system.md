@@ -1,6 +1,6 @@
 ---
 title: docs-system-canon
-description: Canon для docs-as-data pipeline (ADR 048) — section-ID convention, frontmatter contract, extractable-block shape, slug derivation. Single source of truth для docs/_build/extract.mjs + future @capsuletech/studio/docs consumer.
+description: Canon для docs-as-data pipeline (ADR 048) — section-ID convention, frontmatter contract, extractable-block shape, slug derivation. Single source of truth для docs/_build/extract.mjs + future @capsuletech/web-studio/docs consumer.
 status: canon
 type: canon
 last_updated: 2026-06-12
@@ -13,7 +13,7 @@ tags: [meta, docs-as-data, canon]
 
 > Канон-источники: [[048-docs-as-data|ADR 048]] D2–D6.
 >
-> Этот файл — single source of truth для extractor'а (`docs/_build/extract.mjs`), future consumer'а `@capsuletech/studio/docs`, и CI drift-guards. Изменение конвенции — правка ЭТОГО файла + extractor + регенерация registry.
+> Этот файл — single source of truth для extractor'а (`docs/_build/extract.mjs`), future consumer'а `@capsuletech/web-studio/docs`, и CI drift-guards. Изменение конвенции — правка ЭТОГО файла + extractor + регенерация registry.
 
 ## Зачем {#why}
 

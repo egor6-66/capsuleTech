@@ -9,7 +9,7 @@
  * Centered-фон + `<Ui.Outlet/>` под дочерние страницы.
  */
 const Public = Page((Ui) => (
-  <Ui.Layout.Flex align="center" justify="center" class="min-h-screen vt-route-content">
+  <Ui.Layout.Flex align="center" justify="center" class="min-h-screen">
     <Ui.Outlet />
   </Ui.Layout.Flex>
 ));

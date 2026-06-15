@@ -1,5 +1,5 @@
 /**
- * Row — одна строка Editor.Tree (лист или контейнер-бокс).
+ * Row — одна строка WebStudio.Tree (лист или контейнер-бокс).
  *
  * Layout: Flex из @capsuletech/web-ui/flex.
  * Чеврон-кнопка: Button variant="ghost" size="icon" из @capsuletech/web-ui/button.
@@ -21,7 +21,7 @@ import type { JSX } from 'solid-js';
 import { createEffect, createUniqueId, For, Show } from 'solid-js';
 import { acceptsChildren } from '../../manifests/rules';
 import { canBeside, canInto, type DragSpec, dragSpec } from '../../state/dnd';
-import type { IUseEditorResult } from '../useEditor';
+import type { IUseWebStudioResult } from '../useWebStudio';
 import { boxStyle, colorOf, headerStyle } from './highlight';
 import { MarkPicker } from './MarkPicker';
 import { icon, label } from './utils';
@@ -30,10 +30,10 @@ import { containerZone, insideCandidate, leafZone } from './zones';
 export interface IRowProps {
   id: string;
   depth: number;
-  ed: IUseEditorResult;
+  ed: IUseWebStudioResult;
   /** Глобальный spec активного drag (из useDnD). */
   spec: () => DragSpec | null;
-  /** collapsed-state + toggle из EditorTree. */
+  /** collapsed-state + toggle из WebStudioTree. */
   isCollapsed: (id: string) => boolean;
   toggle: (id: string) => void;
 }

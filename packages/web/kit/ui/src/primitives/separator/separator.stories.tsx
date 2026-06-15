@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 import { Separator } from './separator';
 
 const meta = {
-  title: 'Components/Separator',
+  title: 'ComponentsPalette/Separator',
   component: Separator,
   tags: ['autodocs'],
   argTypes: {

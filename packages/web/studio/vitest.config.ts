@@ -17,12 +17,24 @@ export default defineConfig({
     // Сами тесты pure-logic, jsdom-globals им не мешают.
     environment: 'jsdom',
     globals: false,
-    // lucide-solid поставляется как .jsx — Node нативно не умеет его читать.
-    // inline заставляет vite-plugin-solid трансформировать пакет в тестах.
-    // Аналогично web-ui vitest.config.ts (паттерн из packages/web/ui/).
+    // vitest.setup.ts полифилит matchMedia + ResizeObserver — нужно тестам,
+    // которые импортят реальный web-ui kit (palette/Palette.tsx и далее).
+    // Существующие controllers/__tests__ мокают kit вручную; полифилы им не мешают.
+    setupFiles: ['./vitest.setup.ts'],
+    // Несколько deps поставляются как .jsx/.tsx из dev-conditions.
+    // Node не умеет JSX нативно — inline заставляет vite-plugin-solid трансформировать.
     server: {
       deps: {
-        inline: [/lucide-solid/],
+        inline: [
+          /lucide-solid/,
+          /@capsuletech\/web-ui/,
+          /@capsuletech\/web-style/,
+          /@kobalte\/core/,
+          /@corvu\//,
+          /solid-prevent-scroll/,
+          /solid-presence/,
+          /solid-motionone/,
+        ],
       },
     },
   },

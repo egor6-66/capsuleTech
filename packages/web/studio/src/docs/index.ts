@@ -1,5 +1,5 @@
 /**
- * `@capsuletech/studio/docs` — JSX consumer for the docs-as-data registry
+ * `@capsuletech/web-studio/docs` — JSX consumer for the docs-as-data registry
  * (ADR 048 D5).
  *
  * Apps build the registry from `docs/.generated/registry.ts` (extractor

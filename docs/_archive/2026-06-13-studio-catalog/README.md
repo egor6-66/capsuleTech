@@ -11,7 +11,7 @@ last_updated: 2026-06-13
 
 | Файл | Что |
 |---|---|
-| [`audit.md`](audit.md) | owner-studio audit — 11 doc-vs-code расхождений в `@capsuletech/studio` |
+| [`audit.md`](audit.md) | owner-studio audit — 11 doc-vs-code расхождений в `@capsuletech/web-studio` |
 | [`brief-architect.md`](brief-architect.md) | бриф архитектору — основа для ADR 049 |
 | [`brief-owner-web-ui.md`](brief-owner-web-ui.md) | ТЗ owner-web-ui — D5 (manifest shape) + D8 (co-location) |
 | [`feedback-from-owner-studio.md`](feedback-from-owner-studio.md) | feedback на черновой ADR 049 — три блокера (D2/D3/D5) встроены в финальный текст |

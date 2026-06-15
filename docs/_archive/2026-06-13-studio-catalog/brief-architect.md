@@ -9,7 +9,7 @@
 **Catalog = композиция независимых модулей внутри studio. Layout — в app.**
 
 ```
-@capsuletech/studio/catalog
+@capsuletech/web-studio/catalog
   ├── palette        ← ТОЛЬКО селектор компонентов (accordion, категории, sub-components, variants)
   ├── preview        ← рендер выбранного компонента (через web-renderer + контент-кит)
   ├── inspector      ← редактор пропсов (= /inspector-panel, переиспользуется)

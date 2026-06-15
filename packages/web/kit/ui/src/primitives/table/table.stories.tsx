@@ -55,7 +55,7 @@ const baseColumns: ColumnDef<IUser>[] = [
 // ---------------------------------------------------------------------------
 
 const meta = {
-  title: 'Components/Table',
+  title: 'ComponentsPalette/Table',
   component: Table,
   tags: ['autodocs'],
   decorators: [

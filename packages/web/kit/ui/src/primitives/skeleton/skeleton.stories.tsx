@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 import { Skeleton } from '.';
 
 const meta = {
-  title: 'Components/Skeleton',
+  title: 'ComponentsPalette/Skeleton',
   component: Skeleton,
   tags: ['autodocs'],
   argTypes: {

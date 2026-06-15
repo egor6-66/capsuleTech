@@ -5,7 +5,7 @@ import { Input } from '../input';
 import { Field } from '.';
 
 const meta = {
-  title: 'Components/Field',
+  title: 'ComponentsPalette/Field',
   component: Field,
   tags: ['autodocs'],
   argTypes: {

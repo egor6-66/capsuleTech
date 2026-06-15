@@ -101,7 +101,7 @@ studio  → всё кроме apps (host/composer; single-package) + vendors
 
 | Package | npm deps | npm peers | Compliance |
 |---|---|---|---|
-| `@capsuletech/studio` | `shared-zod`, `web-contract`, `web-core`, `web-dnd`, `web-ui` | `web-renderer` | ✅ |
+| `@capsuletech/web-studio` | `shared-zod`, `web-contract`, `web-core`, `web-dnd`, `web-ui` | `web-renderer` | ✅ |
 
 **Анализ:** Studio = host/composer; может зависеть на всё кроме apps. Sole inhabitant of zone (post-D4 absorb + D6 flatten). Зависит на kit + runtime + shared. На domain или boost — нет (пока). **Canon compliant.**
 

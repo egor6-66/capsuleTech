@@ -1,5 +1,5 @@
 {
-  "name": "@capsuletech/studio",
+  "name": "@capsuletech/web-studio",
   "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "packages/web/studio/src",
   "projectType": "library",

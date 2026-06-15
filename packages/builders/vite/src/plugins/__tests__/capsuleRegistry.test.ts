@@ -1344,9 +1344,9 @@ export { c as default };
 const MOCK_CAPSULE_MJS_WITH_CONTROLLERS = `
 import { defineCapsuleModule as s } from "@capsuletech/web-core/module";
 var c = s({
-  name: "Editor",
+  name: "WebStudio",
   components: { Overlay: o, Provider: p },
-  controllers: { Editor: e }
+  controllers: { WebStudio: e }
 });
 export { c as default };
 `;
@@ -1375,38 +1375,38 @@ describe('resolvePackageEntries — single string entry with controllers (mocked
     const parsed = parseManifestSource(MOCK_CAPSULE_MJS_WITH_CONTROLLERS, 'capsule.mjs');
     expect(parsed).not.toBeNull();
     const simulatedEntry: ResolvedPackageEntry = {
-      pkg: '@capsuletech/studio',
+      pkg: '@capsuletech/web-studio',
       globalName: parsed!.name,
       controllerKeys: parsed!.controllerKeys.length > 0 ? parsed!.controllerKeys : undefined,
     };
-    expect(simulatedEntry.globalName).toBe('Editor');
-    expect(simulatedEntry.controllerKeys).toEqual(['Editor']);
-    expect(simulatedEntry.pkg).toBe('@capsuletech/studio');
+    expect(simulatedEntry.globalName).toBe('WebStudio');
+    expect(simulatedEntry.controllerKeys).toEqual(['WebStudio']);
+    expect(simulatedEntry.pkg).toBe('@capsuletech/web-studio');
   });
 
   it('generatePackagesRuntime from resolved ui-creator entry matches real packages.ts format', () => {
     const parsed = parseManifestSource(MOCK_CAPSULE_MJS_WITH_CONTROLLERS, 'capsule.mjs');
     const entries: ResolvedPackageEntry[] = [
       {
-        pkg: '@capsuletech/studio',
+        pkg: '@capsuletech/web-studio',
         globalName: parsed!.name,
         controllerKeys: parsed!.controllerKeys.length > 0 ? parsed!.controllerKeys : undefined,
       },
     ];
     const runtime = generatePackagesRuntime(entries);
-    expect(runtime).toContain("import Editor_mod from '@capsuletech/studio/capsule';");
-    expect(runtime).toContain('export const Editor = Editor_mod.components;');
+    expect(runtime).toContain("import WebStudio_mod from '@capsuletech/web-studio/capsule';");
+    expect(runtime).toContain('export const WebStudio = WebStudio_mod.components;');
     expect(runtime).toContain(
-      '(globalThis.Controllers ??= {})["Editor"] = Editor_mod.controllers["Editor"];',
+      '(globalThis.Controllers ??= {})["WebStudio"] = WebStudio_mod.controllers["WebStudio"];',
     );
-    expect(runtime).toContain('Object.assign(globalThis, { Editor });');
+    expect(runtime).toContain('Object.assign(globalThis, { WebStudio });');
   });
 
   it('generatePackagesTypes from resolved ui-creator entry matches real packages.d.ts format', () => {
     const parsed = parseManifestSource(MOCK_CAPSULE_MJS_WITH_CONTROLLERS, 'capsule.mjs');
     const entries: ResolvedPackageEntry[] = [
       {
-        pkg: '@capsuletech/studio',
+        pkg: '@capsuletech/web-studio',
         globalName: parsed!.name,
         controllerKeys: parsed!.controllerKeys.length > 0 ? parsed!.controllerKeys : undefined,
       },
@@ -1414,11 +1414,11 @@ describe('resolvePackageEntries — single string entry with controllers (mocked
     const types = generatePackagesTypes(entries);
     expect(types).toContain('declare global {');
     expect(types).toContain(
-      "const Editor: typeof import('@capsuletech/studio/capsule')['default']['components'];",
+      "const WebStudio: typeof import('@capsuletech/web-studio/capsule')['default']['components'];",
     );
     expect(types).toContain('interface Controllers {');
     expect(types).toContain(
-      "Editor: typeof import('@capsuletech/studio/capsule')['default']['controllers'][\"Editor\"];",
+      "WebStudio: typeof import('@capsuletech/web-studio/capsule')['default']['controllers'][\"WebStudio\"];",
     );
     expect(types).toContain('export {};');
   });

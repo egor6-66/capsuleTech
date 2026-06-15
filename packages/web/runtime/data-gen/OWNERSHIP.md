@@ -17,7 +17,7 @@ last_updated: 2026-06-13
 ## Состояние
 
 - **Zone:** `runtime` (per ADR 047 D1).
-- **Status:** `alpha` (0.0.0) — extract'нут из `@capsuletech/studio/generators` в S1 (2026-06-13). Engine pure, без зависимостей на studio. Apps могут потреблять напрямую.
+- **Status:** `alpha` (0.0.0) — extract'нут из `@capsuletech/web-studio/generators` в S1 (2026-06-13). Engine pure, без зависимостей на studio. Apps могут потреблять напрямую.
 - **Priority:** **P2** — поддержка studio + future use в apps (mock data, landing demos, test-стенды).
 - **Maturity bar:** unit-tests на engine/rng/fuzzer (присутствуют) + smoke на presets. Public API стабилен.
 
@@ -37,7 +37,7 @@ Procedural UI-tree generation:
 - **fuzzer** — `fuzzProps(rng, schema, defaults)`. Заполняет props на основе zod-схемы.
 - **presets** — `FORM_PRESET`, `CARD_PRODUCT_PRESET`, `LAYOUT_2COL_PRESET`, `BUTTON_*_PRESET`, `TYPOGRAPHY_*_PRESET`. Стартовый набор грамматик.
 - **wordbank** — RU-словари для FIELD_LABELS/CARD_TITLES/BUTTON_TEXTS.
-- **types** — `IEditorNode`/`IEditorTree`/`NodeId` (canonical JSON-UI-tree shape, used also by `@capsuletech/web-renderer` + `@capsuletech/studio/state`).
+- **types** — `IEditorNode`/`IEditorTree`/`NodeId` (canonical JSON-UI-tree shape, used also by `@capsuletech/web-renderer` + `@capsuletech/web-studio/state`).
 
 ## Public API
 

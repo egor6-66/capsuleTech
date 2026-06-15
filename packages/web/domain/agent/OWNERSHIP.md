@@ -94,7 +94,7 @@ scriber править НЕ здесь** — это зона `owner-scriber` (э
 - **apps/testhub** (workspace) — главный/app-зона. Чат-поверхность, говорит с scriber.
 - **apps/ui-creator** — `ui-builder` персона: tools = editor-ops из
   `@capsuletech/web-ui-creator/controllers` (зона `owner-web-ui-creator`), дёргает
-  `Controllers.Editor` тем же `useEmit`, что человек.
+  `Controllers.WebStudio` тем же `useEmit`, что человек.
 - **apps/nexus** (desktop) — `full-access` персона: native FS + spawn-agent (scriber).
 
 ## Известные ограничения / quirks

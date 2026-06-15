@@ -26,7 +26,7 @@ export interface IPrimitiveManifestEntry {
 
   /**
    * Slug'и из docs-registry (ADR 048). Catalog консумит через
-   * `@capsuletech/studio/docs` → `<DocSection slug={...}/>`.
+   * `@capsuletech/web-studio/docs` → `<DocSection slug={...}/>`.
    * Например: ['kit/button', 'kit/button-a11y', 'patterns/forms'].
    */
   docsRefs?: string[];

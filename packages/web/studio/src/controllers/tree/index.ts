@@ -1,6 +1,6 @@
 /**
- * tree/ — под-компоненты и утилиты Editor.Tree.
- * Барель для внутреннего потребления из EditorTree.tsx.
+ * tree/ — под-компоненты и утилиты WebStudio.Tree.
+ * Барель для внутреннего потребления из WebStudioTree.tsx.
  */
 
 export { boxStyle, colorOf, fill, headerStyle, MARK_COLORS } from './highlight';

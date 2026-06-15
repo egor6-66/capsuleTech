@@ -108,7 +108,7 @@ USER гоняет dev-сервер playground'а на **:3050** (HMR). У теб
 - runtime: между собой OK без циклов; внешне peerDep.
 - boost (`@capsuletech/boost-*`): зависит на kit (light-mirror) + runtime сервисов + heavy vendor.
 - domain (`web-auth`, `web-shell`, `web-agent`): зависит на kit/runtime/boost. **НЕ на другой domain.** Через контракт в `web-contract`.
-- studio (`@capsuletech/studio`): читает структуру всех; не зависит на apps.
+- studio (`@capsuletech/web-studio`): читает структуру всех; не зависит на apps.
 
 ## Vendor stack рулe (ADR 047 D3)
 
@@ -130,7 +130,7 @@ USER гоняет dev-сервер playground'а на **:3050** (HMR). У теб
 Правила:
 1. **`packages/web/<zone>/<pkg>/src/`** — корневой уровень содержит **либо** entry-файлы (`index.ts`, `capsule.ts`) **либо** один концерн. Если есть несколько папок с разной природой — каждая должна стать subpath'ом в `package.json exports`.
 2. **Subpath'ы** в `package.json exports` отражают **публичный** namespace consumers'а (`@capsuletech/<pkg>/<sub>`). Внутренний код в `src/<sub>/` — соответствие 1:1.
-3. **Namespace грануляр.** `Tables.*`, `Maps.*`, `Matrices.*` (ADR 033 регистрация) — каждый booster заводит свой top-level namespace. Не смешивать (`Components.Table` + `Components.Map` — антипаттерн).
+3. **Namespace грануляр.** `Tables.*`, `Maps.*`, `Matrices.*` (ADR 033 регистрация) — каждый booster заводит свой top-level namespace. Не смешивать (`ComponentsPalette.Table` + `ComponentsPalette.Map` — антипаттерн).
 4. **Decomposition на уровне обсуждения.** Перед добавлением нового функционала thinking: «где он переиспользуется НЕ только сейчас, но и в перспективе?» Если есть пересечение с другим пакетом / зоной — **флаг для USER'а**, обсуждаем извлечение в shared / контракт.
 
 ## Perspective-aware decomposition (новое, 2026-06-11)

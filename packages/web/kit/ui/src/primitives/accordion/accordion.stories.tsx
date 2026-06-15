@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 import { Accordion } from '.';
 
 const meta = {
-  title: 'Components/Accordion',
+  title: 'ComponentsPalette/Accordion',
   component: Accordion,
   tags: ['autodocs'],
   decorators: [

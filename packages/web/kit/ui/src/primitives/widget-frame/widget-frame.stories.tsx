@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 import { WidgetFrame, WidgetFrameGrip, WidgetFrameHandle } from '.';
 
 const meta = {
-  title: 'Components/WidgetFrame',
+  title: 'ComponentsPalette/WidgetFrame',
   component: WidgetFrame,
   tags: ['autodocs'],
 } satisfies Meta<typeof WidgetFrame>;

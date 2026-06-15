@@ -4,7 +4,7 @@ import { MockBlock, MockMain, MockRightBar, MockSidebar } from '../../_mocks';
 import { Flex } from './flex';
 
 const meta = {
-  title: 'Components/Flex',
+  title: 'ComponentsPalette/Flex',
   component: Flex,
   tags: ['autodocs'],
   parameters: { layout: 'padded' },

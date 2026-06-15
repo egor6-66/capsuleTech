@@ -1,12 +1,12 @@
 /**
- * zones.ts — pure-функции резолва DnD-зон для Editor.Tree.
+ * zones.ts — pure-функции резолва DnD-зон для WebStudio.Tree.
  *
  * Принимают rect/spec/tree параметрами — без side-effects, без DOM-доступа.
  * DOM-замеры передаются снаружи как clientY / ratioY.
  */
 
 import { canBeside, canInto, type DragSpec, type TreeZone } from '../../state/dnd';
-import type { IEditorTree } from '../../state/types';
+import type { IWebStudioTree } from '../../state/types';
 
 /** Толщина краевых полос «before»/«after» у контейнера (px). */
 export const EDGE = 6;
@@ -20,7 +20,7 @@ export type NodeId = string;
  *  - null — нельзя ни рядом ни внутрь
  */
 export const containerZone = (
-  tree: IEditorTree,
+  tree: IWebStudioTree,
   spec: DragSpec,
   nodeId: NodeId,
   clientY: number,
@@ -39,7 +39,7 @@ export const containerZone = (
  * Возвращает null если сосед не допускается.
  */
 export const leafZone = (
-  tree: IEditorTree,
+  tree: IWebStudioTree,
   spec: DragSpec,
   nodeId: NodeId,
   ratioY: number,
@@ -51,5 +51,5 @@ export const leafZone = (
 /**
  * Является ли нода кандидатом для drop «внутрь» (слабая подсветка пока тащим).
  */
-export const insideCandidate = (tree: IEditorTree, spec: DragSpec, nodeId: NodeId): boolean =>
+export const insideCandidate = (tree: IWebStudioTree, spec: DragSpec, nodeId: NodeId): boolean =>
   canInto(tree, spec, nodeId);

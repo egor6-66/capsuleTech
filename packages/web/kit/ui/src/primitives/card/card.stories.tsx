@@ -4,7 +4,7 @@ import { Button } from '../button';
 import { Card } from '.';
 
 const meta = {
-  title: 'Components/Card',
+  title: 'ComponentsPalette/Card',
   component: Card,
   tags: ['autodocs'],
   decorators: [

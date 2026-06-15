@@ -3,16 +3,20 @@
  * for JSON-UI-tree across renderer/studio/apps. Studio re-exports here for
  * backwards-compatibility of internal imports.
  */
-import type { IEditorNode, IEditorTree, NodeId } from '@capsuletech/data-gen';
+import type {
+  IEditorNode as IWebStudioNode,
+  IEditorTree as IWebStudioTree,
+  NodeId,
+} from '@capsuletech/data-gen';
 
-export type { IEditorNode, IEditorTree, NodeId };
+export type { IWebStudioNode, IWebStudioTree, NodeId };
 
 /**
  * Полный контекст редактора. Кроме дерева — UI-state (выбранная нода).
  * Лежит в XState `context.data` через бридж.
  */
-export interface IEditorContext {
-  tree: IEditorTree;
+export interface IWebStudioContext {
+  tree: IWebStudioTree;
   selectedId: NodeId | null;
 }
 

@@ -13,7 +13,7 @@ export const accordionRootCva = cva('w-full divide-y divide-border', {
 /**
  * Individual accordion section.
  */
-export const accordionItemCva = cva('', {
+export const accordionItemCva = cva('bg-muted/20', {
   variants: {},
   defaultVariants: {},
 });
@@ -61,30 +61,25 @@ export const accordionTriggerCva = cva(
 /**
  * Content panel.
  *
- * Uses the CSS `grid` trick for height animation — transition from
- * `grid-template-rows: 0fr` → `1fr` (no JS needed). Kobalte sets
- * `--kb-accordion-content-height` on this element.
+ * Uses keyframe animation via the `.accordion-animate` class (defined in
+ * `@capsuletech/web-style` index.css). Kobalte waits for `animationend`
+ * before unmounting the element, so keyframe-based animation works correctly
+ * on collapse — unlike CSS `transition-[grid-template-rows]` which fires
+ * after the element is already unmounted.
+ *
+ * Pattern mirrors `popover-animate` / `select-content-animate` used in
+ * Dropdown.Content and Select.Content respectively.
  *
  * `data-[expanded]` / `data-[closed]` are toggled by Kobalte; the
- * outer grid container uses them via `data-[closed]:grid-rows-[0fr]`
- * and `data-[expanded]:grid-rows-[1fr]`.
+ * `.accordion-animate` keyframes respond to those data-attributes for
+ * expand and collapse animations.
  */
-export const accordionContentCva = cva(
-  [
-    // Grid wrapper approach: transition max-height via grid-template-rows
-    'grid overflow-hidden',
-    'transition-[grid-template-rows] duration-300 ease-in-out',
-    'data-[expanded]:grid-rows-[1fr]',
-    'data-[closed]:grid-rows-[0fr]',
-  ].join(' '),
-  {
-    variants: {},
-    defaultVariants: {},
-  },
-);
+export const accordionContentCva = cva('accordion-animate', {
+  variants: {},
+  defaultVariants: {},
+});
 
 /**
  * Inner content wrapper ensures `min-height: 0` so the grid can collapse.
  */
-export const accordionContentInnerClass =
-  'min-h-0 px-4 pb-4 pt-1 text-sm text-muted-foreground';
+export const accordionContentInnerClass = 'min-h-0 text-sm text-muted-foreground';

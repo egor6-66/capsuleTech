@@ -526,7 +526,7 @@ User видит **реальную цену** при выборе примити
   2. Build-step генерации `manifest.json` (`packages/web/ui/scripts/build-manifest.ts` или плагин Vite-builder'а).
   3. Subpath audit — какие из текущих subpath'ов соответствуют L0 critery (re-org если нужно).
   4. Update OWNERSHIP «Состояние» — manifest infra.
-- **Studio consumer** — отдельный PR в `@capsuletech/studio` (после W4), реализует palette badge.
+- **Studio consumer** — отдельный PR в `@capsuletech/web-studio` (после W4), реализует palette badge.
 
 ### Что НЕ делаем (отвергнутая альтернатива)
 

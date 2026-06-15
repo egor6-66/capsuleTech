@@ -106,7 +106,7 @@ describe('PACKAGE_TO_ZONE — canon coverage', () => {
   });
 
   it('lists studio in studio zone', () => {
-    expect(PACKAGE_TO_ZONE['@capsuletech/studio']).toBe('studio');
+    expect(PACKAGE_TO_ZONE['@capsuletech/web-studio']).toBe('studio');
   });
 
   it('omits shared-infra packages (allowed everywhere)', () => {
@@ -179,7 +179,7 @@ describe('isZoneImportAllowed — canon rules', () => {
     expect(
       isZoneImportAllowed(
         'studio',
-        '@capsuletech/studio',
+        '@capsuletech/web-studio',
         'kit',
         '@capsuletech/web-ui',
       ),
@@ -187,7 +187,7 @@ describe('isZoneImportAllowed — canon rules', () => {
     expect(
       isZoneImportAllowed(
         'studio',
-        '@capsuletech/studio',
+        '@capsuletech/web-studio',
         'domain',
         '@capsuletech/web-auth',
       ),

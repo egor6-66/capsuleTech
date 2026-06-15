@@ -1,4 +1,12 @@
-## Unreleased (D6 — 2026-06-12)
+## Unreleased
+
+- **BREAKING**: package renamed `@capsuletech/studio` → `@capsuletech/web-studio` (zone-naming consistency, ADR 047)
+- **BREAKING**: global namespace `Editor.*` → `WebStudio.*`, `Controllers.Editor` → `Controllers.WebStudio`
+- internal types `IEditorNode` / `IEditorTree` / `IEditorContext` / `IEditorCtx` → `IWebStudio*`
+- internal components/hooks `EditorX` / `useEditor` / `useEditorKit` → `WebStudioX` / `useWebStudio` / `useWebStudioKit`
+- new subpath `@capsuletech/web-studio/palette` — компонент-палитра (структура), регистрируется как `WebStudio.ComponentsPalette`
+
+## 0.0.0 (D6 — 2026-06-12)
 
 Directory relocated `packages/web/design-time/studio/` → `packages/web/studio/`. Zone `design-time` retired per ADR 047 D6 — replaced by `studio` as 5-th top-level zone (host/composer canon). npm package name unchanged (`@capsuletech/studio`); no consumer changes required.
 

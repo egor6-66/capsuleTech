@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 import { Toggle } from './toggle';
 
 const meta = {
-  title: 'Components/Toggle',
+  title: 'ComponentsPalette/Toggle',
   component: Toggle,
   tags: ['autodocs'],
   argTypes: {

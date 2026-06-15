@@ -1,5 +1,5 @@
 /**
- * highlight.ts — утилиты визуальной подсветки строк/боксов Editor.Tree.
+ * highlight.ts — утилиты визуальной подсветки строк/боксов WebStudio.Tree.
  *
  * boxStyle — inline-стиль box-shadow + background-color через color-mix.
  * colorOf  — выбирает цвет (метка > primary).

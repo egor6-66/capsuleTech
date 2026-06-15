@@ -1,5 +1,5 @@
 {
-  "name": "@capsuletech/studio",
+  "name": "@capsuletech/web-studio",
   "version": "0.0.0",
   "type": "module",
   "main": "./dist/index.mjs",
@@ -44,6 +44,11 @@
       "types": "./dist/docs/index.d.ts",
       "import": "./dist/docs.mjs",
       "default": "./dist/docs.mjs"
+    },
+    "./palette": {
+      "types": "./dist/palette/index.d.ts",
+      "import": "./dist/palette.mjs",
+      "default": "./dist/palette.mjs"
     }
   },
   "files": [

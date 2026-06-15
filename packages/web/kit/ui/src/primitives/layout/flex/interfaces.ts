@@ -129,15 +129,21 @@ export interface IFlexOwnProps {
   // Явные значения всегда переопределяют авто min-height пустого контейнера.
   // ---------------------------------------------------------------------------
 
-  /** `height`. `h={10}` → `height: calc(var(--spacing) * 10)`. */
-  h?: number;
+  /**
+   * `height`. Числовой шаг spacing-шкалы: `h={10}` → `height: calc(var(--spacing) * 10)`.
+   * Литерал `'full'` → `height: 100%` (паритет с Tailwind `h-full`).
+   */
+  h?: number | 'full';
   /** `min-height`. `minH={6}` → `min-height: calc(var(--spacing) * 6)`.
    *  Переопределяет авто `min-height: var(--size-slot)` пустого контейнера. */
   minH?: number;
   /** `max-height`. `maxH={40}` → `max-height: calc(var(--spacing) * 40)`. */
   maxH?: number;
-  /** `width`. `w={20}` → `width: calc(var(--spacing) * 20)`. */
-  w?: number;
+  /**
+   * `width`. Числовой шаг spacing-шкалы: `w={20}` → `width: calc(var(--spacing) * 20)`.
+   * Литерал `'full'` → `width: 100%` (паритет с Tailwind `w-full`).
+   */
+  w?: number | 'full';
   /** `min-width`. `minW={10}` → `min-width: calc(var(--spacing) * 10)`. */
   minW?: number;
   /** `max-width`. `maxW={80}` → `max-width: calc(var(--spacing) * 80)`. */

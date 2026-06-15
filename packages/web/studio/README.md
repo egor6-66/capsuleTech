@@ -1,4 +1,4 @@
-# @capsuletech/studio
+# @capsuletech/web-studio
 
 Host/composer для дизайна UI capsule — manifests + state-ops + inspector + procedural generators + DnD resolvers.  ·  zone: **studio**  ·  status: **alpha (0.1.1)**
 
@@ -7,7 +7,7 @@ Host/composer для дизайна UI capsule — manifests + state-ops + inspe
 ## Install
 
 ```bash
-pnpm add @capsuletech/studio
+pnpm add @capsuletech/web-studio
 # peer deps:
 pnpm add solid-js @capsuletech/web-renderer
 ```
@@ -16,10 +16,10 @@ pnpm add solid-js @capsuletech/web-renderer
 
 ```ts
 // Subpath-импорты для tree-shake'а:
-import { getManifest, canAcceptChild } from '@capsuletech/studio/manifests';
-import { addNode, moveNode }           from '@capsuletech/studio/state';
-import { Inspector }                   from '@capsuletech/studio/inspector';
-import { generate, FORM_PRESET }       from '@capsuletech/studio/generators';
+import { getManifest, canAcceptChild } from '@capsuletech/web-studio/manifests';
+import { addNode, moveNode }           from '@capsuletech/web-studio/state';
+import { Inspector }                   from '@capsuletech/web-studio/inspector';
+import { generate, FORM_PRESET }       from '@capsuletech/web-studio/generators';
 
 // Procedural — seeded:
 const tree = generate({ preset: FORM_PRESET, seed: 42 });
@@ -33,13 +33,13 @@ Runtime-рендер по JSON-схеме — в отдельном пакете
 - `/state` — pure-функции на JSON-дереве: `addNode`, `moveNode`, immutable.
 - `/inspector` — generic UI-form по manifest (studio-only).
 - `/generators` — procedural/seeded генераторы UI-деревьев + presets.
-- `/controllers` — `EditorController` + `EditorOverlay` (единственный subpath с зависимостью на `web-core`).
+- `/controllers` — `WebStudioController` + `WebStudioOverlay` (единственный subpath с зависимостью на `web-core`).
 - `/capsule` — capsule manifest (ADR 032 phase 5).
 
 ## Build
 
 ```bash
-pnpm nx build @capsuletech/studio
+pnpm nx build @capsuletech/web-studio
 ```
 
 Multi-entry: `index` + `manifests` + `state` + `inspector` + `generators` + `controllers` + `capsule`.

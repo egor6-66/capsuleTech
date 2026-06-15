@@ -47,14 +47,14 @@ Integration-subpath'ы → web-core (одно направление). web-core 
 
 ### 5. Пакеты поставляют Controller'ы
 
-Новый паттерн: пакет может определять+экспортировать Controller через web-core `Controller(...)` из своего `/controllers`. App композит его (`Controllers.Editor`), кастомизирует через `overrides`-проп (уже есть в ControllerProxy). App-логика сокращается.
+Новый паттерн: пакет может определять+экспортировать Controller через web-core `Controller(...)` из своего `/controllers`. App композит его (`Controllers.WebStudio`), кастомизирует через `overrides`-проп (уже есть в ControllerProxy). App-логика сокращается.
 
 ## Применение — растворение `apps/ui-creator/src/editor/`
 
 - `@capsuletech/web-ui-creator/controllers` → **`EditorController`** (HCA): tree/selection/marks в `store.ctx` + handlers `onDrop/onSelect/onMark`, поверх своих `/state` + `/manifests` + dnd-resolver'ов (`dnd.ts`/`rules.ts` переезжают из аппа в web-ui-creator).
 - `@capsuletech/web-dnd/controllers` → meta-aware droppable/draggable, эмитящие `onDrop`/`onDragStart`.
 - `@capsuletech/web-renderer/controllers` → editOverlay, эмитящий `onSelect`.
-- `apps/ui-creator/src/editor/` **удаляется**; app = тонкие виджеты + Page, композящие `Controllers.Editor`, читающие `store.ctx` через `useCtx`.
+- `apps/ui-creator/src/editor/` **удаляется**; app = тонкие виджеты + Page, композящие `Controllers.WebStudio`, читающие `store.ctx` через `useCtx`.
 
 ## Последствия {#consequences}
 
@@ -94,13 +94,13 @@ export default defineAppConfig({
 3. ⏸ **МЕХАНИЗМ РЕГИСТРАЦИИ ПАКЕТОВ** (отдельный ADR, см. ## Зависимость выше) — `capsule.app.ts: packages:` → глобалы `X.*` + `Controllers.X`. **Блокирует фазы 4–5.**
 4. **web-dnd/controllers** (owner-web-dnd) + **web-renderer/controllers** (owner-web-renderer) — meta-aware emit entry-points.
 5. **web-ui-creator** (owner-web-ui-creator): впитать `dnd.ts`/`rules.ts` из аппа в `/state`+`/manifests`; `/controllers` → `EditorController`.
-6. **app** (apps/ui-creator): удалить `editor/`, переписать виджеты на `Controllers.Editor` + `useCtx`.
+6. **app** (apps/ui-creator): удалить `editor/`, переписать виджеты на `Controllers.WebStudio` + `useCtx`.
 
 ## EditorController-контракт (детализация фаз 4–6)
 
 Первый реальный package-shipped Controller. Растворяет `apps/ui-creator/src/editor/`.
 
-**`Controllers.Editor` (из `@capsuletech/web-ui-creator/controllers`) — `store.ctx`:**
+**`Controllers.WebStudio` (из `@capsuletech/web-ui-creator/controllers`) — `store.ctx`:**
 ```
 tree: IEditorTree          // единственный источник правды
 selectedId: NodeId | null
@@ -130,6 +130,6 @@ onMark     payload: { nodeId, color|null } → setMark
 | overlay-chrome (box-shadow/z-index/marks из `canvas.tsx`) | `web-ui-creator/controllers` → `EditorOverlay` (читает `useCtx().store.ctx`, рисует chrome + эмитит `onSelect`) |
 | meta-aware droppable/draggable | `web-dnd/controllers` (эмитят `onDragOver`/`onDrop`/`onDragEnd`) |
 
-**Регистрация:** `web-ui-creator/capsule` манифест (ADR 033) — `defineCapsuleModule({ name: 'Editor', components: { Overlay: EditorOverlay }, controllers: { Editor: EditorController } })`. App: `packages: ['@capsuletech/web-ui-creator']` → `Editor.Overlay` + `Controllers.Editor` глобалятся. App-виджеты (canvas/tree/palette/inspector) — тонкая композиция, читают `useCtx().store.ctx`, ноль resolver/getBoundingClientRect. `Renderer` app пока импортит напрямую (его регистрация как `Renderer.*` — опционально, позже).
+**Регистрация:** `web-ui-creator/capsule` манифест (ADR 033) — `defineCapsuleModule({ name: 'Editor', components: { Overlay: EditorOverlay }, controllers: { Editor: EditorController } })`. App: `packages: ['@capsuletech/web-ui-creator']` → `WebStudio.Overlay` + `Controllers.WebStudio` глобалятся. App-виджеты (canvas/tree/palette/inspector) — тонкая композиция, читают `useCtx().store.ctx`, ноль resolver/getBoundingClientRect. `Renderer` app пока импортит напрямую (его регистрация как `Renderer.*` — опционально, позже).
 
 Связанные: ADR 008 (hybrid FSM + direct next), ADR 009 (hardcoded EVENT_HANDLERS), ADR 031 (renderer editOverlay), ADR 033 (регистрация пакетов).

@@ -12,7 +12,7 @@ const FRAMEWORK_OPTIONS = [
 ];
 
 const meta = {
-  title: 'Components/Select',
+  title: 'ComponentsPalette/Select',
   component: Select,
   tags: ['autodocs'],
   decorators: [

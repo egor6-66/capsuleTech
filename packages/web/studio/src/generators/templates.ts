@@ -4,7 +4,7 @@ import {
   CARD_PRODUCT_PRESET,
   FORM_PRESET,
   generate,
-  type IEditorTree,
+  type IEditorTree as IWebStudioTree,
   type IPreset,
   LAYOUT_2COL_PRESET,
   TYPOGRAPHY_H1_PRESET,
@@ -127,7 +127,7 @@ export const listTemplatesFor = (forType: string): ITemplate[] =>
  * мог читать `propsSchema` и `defaultProps` (data-gen остаётся pure — без
  * прямой зависимости на studio'шный реестр).
  */
-export const buildTemplate = (t: ITemplate, seed?: number): IEditorTree =>
+export const buildTemplate = (t: ITemplate, seed?: number): IWebStudioTree =>
   generate(t.preset, {
     seed: seed ?? t.previewSeed,
     resolveManifest: getManifest,

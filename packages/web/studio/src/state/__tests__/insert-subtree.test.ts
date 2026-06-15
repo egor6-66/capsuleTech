@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FORM_PRESET, generate, LAYOUT_2COL_PRESET } from '@capsuletech/data-gen';
-import { createEmptyTree, EditorOpError, insertSubtree } from '../operations';
+import { createEmptyTree, WebStudioOpError, insertSubtree } from '../operations';
 
 // Вспомогательная функция: дерево с одним Grid-root (принимает любых детей кроме Card-parts)
 const makeGridTree = () => createEmptyTree('ui.Layout.Grid');
@@ -114,21 +114,21 @@ describe('insertSubtree', () => {
     expect(reachable.size).toBe(Object.keys(result.nodes).length);
   });
 
-  it('бросает EditorOpError если parent не принимает root фрагмента', () => {
+  it('бросает WebStudioOpError если parent не принимает root фрагмента', () => {
     // ui.Card принимает только Card.* детей
     const cardTree = createEmptyTree('ui.Card');
     // Фрагмент с root = ui.Layout.Grid — не принимается ui.Card
     const fragment = generate(LAYOUT_2COL_PRESET, { seed: 1 });
 
-    expect(() => insertSubtree(cardTree, fragment, { parentId: 'root' })).toThrow(EditorOpError);
+    expect(() => insertSubtree(cardTree, fragment, { parentId: 'root' })).toThrow(WebStudioOpError);
   });
 
-  it('бросает EditorOpError если parentId не найден', () => {
+  it('бросает WebStudioOpError если parentId не найден', () => {
     const tree = makeFlexTree();
     const fragment = generate(LAYOUT_2COL_PRESET, { seed: 1 });
 
     expect(() => insertSubtree(tree, fragment, { parentId: 'nonexistent-id' })).toThrow(
-      EditorOpError,
+      WebStudioOpError,
     );
   });
 

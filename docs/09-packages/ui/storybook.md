@@ -31,7 +31,7 @@ import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 import { Button } from './<name>';
 
 const meta = {
-  title: 'Components/Button',
+  title: 'ComponentsPalette/Button',
   component: Button,
   tags: ['autodocs'],
   argTypes: {
@@ -49,7 +49,7 @@ export const Secondary: Story = { args: { variant: 'secondary' } };
 export const Small: Story = { args: { size: 'sm' } };
 ```
 
-- `title: 'Components/Button'` — путь в Storybook-дереве (слева).
+- `title: 'ComponentsPalette/Button'` — путь в Storybook-дереве (слева).
 - `component` — типизация для `Meta` и `Story`.
 - `argTypes` — контролы в UI (select, checkbox, text, color, …). Если нет explicit argType — Storybook пытается угадать.
 - `args` — дефолтные значения props.

@@ -29,8 +29,8 @@ export { buildTemplate, getAllTemplates, listTemplatesFor, type ITemplate } from
 | Источник | Что заявлено |
 |---|---|
 | `OWNERSHIP.md` | `/generators`: `generate`, `FORM_PRESET`, `CARD_PRODUCT_PRESET`, `LAYOUT_2COL_PRESET`, `BUTTON_PRIMARY_PRESET`, `TYPOGRAPHY_PRESET`, `createRng`, `buildTemplate`, `type IPreset`, `type IGeneratorOptions`. + Audit-backlog: «должен быть extract'нут в свой пакет». |
-| `docs/_meta/studio.md` | Layout перечисляет `engine.ts`, `templates.ts`, `presets/`, `rng.ts`, `fuzzer.ts` — этих файлов нет. Subpath-секция импортирует `{ generate, FORM_PRESET, createRng }` из `@capsuletech/studio/generators` — не работает. |
-| `README.md` | Импорт `import { generate, FORM_PRESET } from '@capsuletech/studio/generators'` — не работает. + «procedural/seeded генераторы UI-деревьев + presets» — на самом деле это палитра-темплейты, оборачивающие data-gen. |
+| `docs/_meta/studio.md` | Layout перечисляет `engine.ts`, `templates.ts`, `presets/`, `rng.ts`, `fuzzer.ts` — этих файлов нет. Subpath-секция импортирует `{ generate, FORM_PRESET, createRng }` из `@capsuletech/web-studio/generators` — не работает. |
+| `README.md` | Импорт `import { generate, FORM_PRESET } from '@capsuletech/web-studio/generators'` — не работает. + «procedural/seeded генераторы UI-деревьев + presets» — на самом деле это палитра-темплейты, оборачивающие data-gen. |
 
 **Действие.** Перечитать секции generators во всех трёх местах: они описывают пакет образца 0.2.0, до выноса data-gen.
 
@@ -41,7 +41,7 @@ export { buildTemplate, getAllTemplates, listTemplatesFor, type ITemplate } from
 **Реальность кода** (`src/controllers/index.ts`):
 
 ```ts
-// Components
+// ComponentsPalette
 EditorCanvas, EditorOverlay, EditorProvider, EditorTree, EditorPalette, EditorInspector
 // Controller
 EditorController (default), schemaToInspectorCategories
@@ -77,11 +77,11 @@ defineCapsuleModule({
 })
 ```
 
-После регистрации в app доступны глобалы: `Editor.Overlay`, `Editor.Provider`, `Editor.Canvas`, `Editor.Tree`, `Editor.Palette`, `Editor.Inspector`, `Controllers.Editor`.
+После регистрации в app доступны глобалы: `WebStudio.Overlay`, `WebStudio.Provider`, `WebStudio.Canvas`, `WebStudio.Tree`, `WebStudio.Palette`, `WebStudio.Inspector`, `Controllers.WebStudio`.
 
 **Что говорит документация:**
 
-OWNERSHIP / AI-anchor: только `Editor.Overlay` + `Controllers.Editor`.
+OWNERSHIP / AI-anchor: только `WebStudio.Overlay` + `Controllers.WebStudio`.
 
 > Примечание: я ранее задал вопрос про эти 5 компонентов, пользователь ответил «это не реализовано». Возможно имелось в виду композиционно-целевое (`/logic-editor`, `/component-builder`, …) — на текущий код это не отвечает: Provider/Canvas/Tree/Palette/Inspector реализованы и зарегистрированы. Это надо пересверить с архитектором.
 
@@ -167,7 +167,7 @@ OWNERSHIP: одна строка — «`createEditorSchema(options?)` — XState
 
 ---
 
-## 9. `showDefaultOverlay` prop у `Editor.Provider`
+## 9. `showDefaultOverlay` prop у `WebStudio.Provider`
 
 **Реальность кода** (`IEditorProviderProps`):
 

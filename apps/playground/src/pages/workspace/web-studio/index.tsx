@@ -12,28 +12,11 @@ const WebStudio = Page((Ui) => (
     preset="app-shell"
     slots={{
       header: {
-        children: <div>wdad</div>,
-        swapGroup: 'widgets',
-        initialSize: 0.05,
-      },
-      sidebar: {
-        children: <div>wdad</div>,
-        swapGroup: 'widgets',
-        initialSize: 0.25,
+        children: <Widgets.Studio.Header />,
+        initialSize: 0.04,
       },
       main: {
-        children: <div>wdad</div>,
-        swapGroup: 'widgets',
-      },
-      rightBar: {
-        children: <div>wdad</div>,
-        swapGroup: 'widgets',
-        initialSize: 0.25,
-      },
-      footer: {
-        children: <div>wdad</div>,
-        swapGroup: 'widgets',
-        initialSize: 0.25,
+        children: <Ui.Outlet />,
       },
     }}
   />
