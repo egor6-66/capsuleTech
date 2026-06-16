@@ -1123,6 +1123,9 @@ importers:
       '@capsuletech/shared-zod':
         specifier: workspace:*
         version: link:../../shared/zod
+      '@capsuletech/web-contract':
+        specifier: workspace:*
+        version: link:../runtime/contract
       '@capsuletech/web-core':
         specifier: workspace:*
         version: link:../runtime/core

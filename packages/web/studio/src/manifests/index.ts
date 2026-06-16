@@ -1,8 +1,7 @@
 /**
  * Studio's `/manifests` subpath — backwards-compatible barrel post-S2
  * audit unification (2026-06-13). The canonical per-primitive registry
- * lives in `@capsuletech/web-ui/manifest`; this file re-exports it
- * alongside studio-specific DnD validation helpers (`rules.ts`).
+ * lives in `@capsuletech/web-ui/manifest`; this file just re-exports it.
  */
 
 export {
@@ -13,7 +12,6 @@ export {
   listByCategory,
   summarize,
 } from './registry';
-export { acceptsChildren, canDropInto, canMoveInto, isInside } from './rules';
 export type {
   ComponentCategory,
   IComponentManifest,

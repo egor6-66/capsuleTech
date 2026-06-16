@@ -1,30 +1,32 @@
-import { Flex } from '@capsuletech/web-ui/flex';
-import type { JSX } from 'solid-js';
-import { Show } from 'solid-js';
+/**
+ * FieldShell — общий layout одного поля Inspector'а.
+ *
+ * Использует kit `Field` (`@capsuletech/web-ui/field`): `Field.Label` сверху,
+ * `Field.Content` — вокруг контрола, `Field.Description` — для опционального
+ * hint'а. Это даёт согласованный вид с остальным UI (label / spacing /
+ * disabled-state), не нужно городить самописный layout.
+ *
+ * `inline` — для случаев типа Toggle, когда label лежит сбоку от контрола;
+ * включает horizontal orientation у Field.
+ */
+
+import { Field } from '@capsuletech/web-ui/field';
+import { Show, type JSX } from 'solid-js';
 
 interface IFieldShellProps {
   label: string;
   hint?: string;
-  /** Если true, label рендерится inline (для toggle с подписью справа). */
+  /** Inline-layout (label рядом с контролом, для Toggle и подобных). */
   inline?: boolean;
   children: JSX.Element;
 }
 
-/**
- * Общий обёрточный layout для одного поля: label сверху, content под ним,
- * опциональный hint мелким шрифтом внизу. Все Field-компоненты используют
- * эту обёртку, чтобы вид был согласованным.
- */
 export const FieldShell = (props: IFieldShellProps) => (
-  <Flex
-    orientation={props.inline ? 'horizontal' : 'vertical'}
-    gap={props.inline ? 2 : 1}
-    class={props.inline ? 'items-center justify-between' : undefined}
-  >
-    <span class="text-xs opacity-70">{props.label}</span>
-    <div>{props.children}</div>
+  <Field orientation={props.inline ? 'horizontal' : 'vertical'}>
+    <Field.Label>{props.label}</Field.Label>
+    <Field.Content>{props.children}</Field.Content>
     <Show when={props.hint}>
-      <span class="text-xs opacity-50">{props.hint}</span>
+      <Field.Description>{props.hint}</Field.Description>
     </Show>
-  </Flex>
+  </Field>
 );
