@@ -40,7 +40,12 @@ export interface ICellDndState {
   canDrop: Accessor<boolean>;
   /** Drag is active AND this cell would accept the active payload (soft highlight). */
   canAccept: Accessor<boolean>;
-  showBadge: boolean;
+  /**
+   * Reactive: true when the drag-badge should be visible.
+   * MUST be an accessor — toggling DnD off/on must not re-mount cells; the
+   * badge visibility flips through Solid reactivity instead.
+   */
+  showBadge: Accessor<boolean>;
 }
 
 // ---------------------------------------------------------------------------
@@ -97,12 +102,17 @@ export const renderCell = (
     // its own scroll container) also shares the same context.
     // Scroll is delegated entirely to the inner div (innerClass above); the outer
     // stays a clean `relative` container so DragBadge's z-30 wins globally.
+    // `scrollbar-hover` mirrors matrixSlots.resizeMain/Slot visual parity for
+    // draggable cells (parity is otherwise carried by the non-DnD branch below).
     return (
       <Dynamic component={tag} ref={cellRef} class="h-full w-full relative">
         {/* Inner scroll wrapper; pointer-events-none during drag prevents hover leaking
             into cell content (table row hover, map hover, etc.).
             DnD ref lives on the outer wrapper so elementFromPoint() always hits it. */}
-        <div class={innerClass} classList={{ 'pointer-events-none': isDragging() }}>
+        <div
+          class={`${innerClass} scrollbar-hover`}
+          classList={{ 'pointer-events-none': isDragging() }}
+        >
           <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
         </div>
         {/* Absolute overlay renders above canvas / GPU layers — ring/box-shadow do not. */}
@@ -121,7 +131,9 @@ export const renderCell = (
             }}
           />
         </Show>
-        {dndState.showBadge && <DragBadge draggableId={dndState.draggableId} />}
+        <Show when={dndState.showBadge()}>
+          <DragBadge draggableId={dndState.draggableId} />
+        </Show>
       </Dynamic>
     );
   }
