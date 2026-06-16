@@ -393,6 +393,15 @@ importers:
         specifier: ~4.1.0
         version: 4.1.6(@types/node@25.9.0)(@vitest/browser-playwright@4.1.6)(@vitest/ui@4.1.6)(jsdom@29.1.1)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
 
+  packages/docs:
+    dependencies:
+      '@capsuletech/docs-builder':
+        specifier: workspace:*
+        version: link:../builders/docs-builder
+      '@capsuletech/lib-builder':
+        specifier: workspace:*
+        version: link:../builders/lib
+
   packages/shared/utils:
     dependencies:
       es-toolkit:
