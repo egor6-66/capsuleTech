@@ -16,7 +16,7 @@ amended: 2026-06-16
 >
 > Причина: центральный monorepo-scanner работает только внутри capsule-репо, не масштабируется на внешнего пользователя framework'а (он не может «настроить путь» в скрипте который сидит в capsule).
 >
-> См. [[../../_meta/briefs/owner-builders-docs-colocation|brief — per-package distribution]] и новый ADR (TBD номер). Старая центральная реализация (`docs/_build/extract.mjs`) — reference, удаляется в Phase 3 деливери.
+> См. [[052-docs-builder-per-package|ADR 052]] и [[../../_meta/briefs/owner-builders-docs-colocation|brief — per-package distribution]]. Старая центральная реализация (`docs/_build/extract.mjs`) — reference, удаляется в Phase 3 деливери.
 
 # ADR 048 — Docs as data: single MD source + multi-audience projection
 
