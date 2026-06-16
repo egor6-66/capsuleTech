@@ -1,9 +1,9 @@
 ---
 title: docs-system-canon
-description: Canon для docs-as-data pipeline (ADR 048) — section-ID convention, frontmatter contract, extractable-block shape, slug derivation. Single source of truth для docs/_build/extract.mjs + future @capsuletech/web-studio/docs consumer.
+description: Canon для docs-as-data pipeline (ADR 048) — section-ID convention, frontmatter contract, extractable-block shape, slug derivation. Single source of truth для движка `@capsuletech/docs-builder` + per-package producers + `@capsuletech/web-studio/docs` composer.
 status: canon
 type: canon
-last_updated: 2026-06-12
+last_updated: 2026-06-16
 date: 2026-06-12
 audience: [agent, dev]
 tags: [meta, docs-as-data, canon]
@@ -11,9 +11,9 @@ tags: [meta, docs-as-data, canon]
 
 # Docs system canon
 
-> Канон-источники: [[048-docs-as-data|ADR 048]] D2–D6.
+> Канон-источники: [[048-docs-as-data|ADR 048]] D1–D3, D6, D7. D4–D5 пересматриваются под per-package distribution — см. [[briefs/owner-builders-docs-colocation|brief]] и amendment в ADR 048.
 >
-> Этот файл — single source of truth для extractor'а (`docs/_build/extract.mjs`), future consumer'а `@capsuletech/web-studio/docs`, и CI drift-guards. Изменение конвенции — правка ЭТОГО файла + extractor + регенерация registry.
+> Этот файл — single source of truth для движка (`@capsuletech/docs-builder`, в работе; reference — `docs/_build/extract.mjs`), per-package producers, composer'а `@capsuletech/web-studio/docs` и CI drift-guards. Изменение конвенции — правка ЭТОГО файла + движка + регенерация registry.
 
 ## Зачем {#why}
 
@@ -266,17 +266,78 @@ Custom line-based parser (zero new deps). Обрабатывает:
 - Job fails: wikilink errors (post-E2), section-ID collisions, unknown audience, frontmatter schema mismatch
 - Job warns: auto-slug (нет `{#id}`), missing recommended fields
 
-## 8. Что НЕ canon (out of scope) {#out-of-scope}
+## 8. Distribution channel (per-package) {#distribution}
+
+> Pending имплементации — см. [[briefs/owner-builders-docs-colocation|brief]] и amendment к ADR 048. Текущая центральная реализация (`docs/_build/extract.mjs`) — reference, удаляется после готовности нового движка.
+
+### 8.1 Три роли {#distribution-roles}
+
+| Роль | Кто | Что делает |
+|---|---|---|
+| Engine | `@capsuletech/docs-builder` (новый, в `packages/builders/`) | Build-time helper. Sources → docs.json chunk. Реализует §1–§7 канона. |
+| Producer | каждый пакет (`@capsuletech/web-ui` и т.д.) | В своём build дёргает engine → эмитит `dist/docs.json` → экспортит через subpath `./docs.json`. |
+| Composer | `@capsuletech/web-studio/docs` | Импортит `docs.json` пакетов которые app использует, мерджит в runtime registry, отдаёт через `<DocSection>` / `useDoc()`. |
+
+App **не импортит engine** и не настраивает scan paths. Composition — через ADR 033 registration pattern, симметрично с UI-компонентами и controllers.
+
+### 8.2 Slug namespace (для package-level и unit-level docs) {#distribution-slug}
+
+`<pkg-short>/<unit>` где `pkg-short` = npm-name без `@capsuletech/` префикса.
+
+| Файл | Slug |
+|---|---|
+| `packages/web/kit/ui/README.md` | `web-ui` |
+| `packages/web/kit/ui/src/primitives/button/README.md` | `web-ui/button` |
+| `packages/web/boost/layout/src/matrix/README.md` | `web-layout/matrix` |
+| `apps/playground/README.md` | `app/playground` |
+| `docs/01-architecture/adr/048-docs-as-data.md` (root pkg `@capsuletech/docs`) | `architecture/adr/048-docs-as-data` (как §5.1) |
+
+Свойства:
+- стабильно при перемещении пакета между zones (npm-name не меняется);
+- не зависит от внутренней структуры пакета (`src/primitives/...`);
+- не коллидится с slug'ами корневого `@capsuletech/docs` пакета.
+
+### 8.3 Frontmatter расширения для package/unit docs {#distribution-frontmatter}
+
+Поверх §2:
+
+- `package: @capsuletech/web-ui` — npm-name (опц., движок может derive'ить из package.json).
+- `unit: button` — короткое имя юнита (опц., движок может derive'ить из path).
+
+### 8.4 Корневой `docs/` {#distribution-root}
+
+`docs/` (ADR, architecture, _meta) становится отдельным пакетом `@capsuletech/docs` — та же модель что и любой другой пакет (свой build, свой `docs.json`, импорт через subpath). Спец-случая «корневая папка обрабатывается иначе» нет.
+
+### 8.5 Wikilink-резолв cross-package {#distribution-wikilinks}
+
+- **Per-package build** — резолвит только локальные wikilinks. Внешние сохраняются как есть.
+- **Composer / app-side** — после мерджа registries резолвит cross-package wikilinks (warning в dev, error в production build).
+- **Capsule CI** — отдельная job `docs:check-all` строит все registries + резолвит весь граф. Гарантия линковки внутри capsule.
+
+Внешний пользователь capsule не обязан резолвить cross-package linkrot — настраивает по своему усмотрению.
+
+### 8.6 Exclusion patterns (по умолчанию) {#distribution-exclusions}
+
+- `OWNERSHIP.md`, `CHANGELOG.md`
+- `node_modules/**`, `dist/**`, `.capsule/**`, `__tests__/**`, `.generated/**`
+
+`.md` без frontmatter в `packages/`:
+- skip silently если matches default exclusion;
+- иначе warn (видно в build log), никогда не error.
+
+## 9. Что НЕ canon (out of scope) {#out-of-scope}
 
 - **MDX (JSX в .md)** — отложено (ADR 048 D7 + Альтернативы)
 - **i18n** — отложено
 - **Versioning docs** (как docusaurus version-tabs) — отложено
 - **Per-doc rendering pipeline** (rehype → JSX) — E5 решение, не E1
 
-## 9. Связанное {#related}
+## 10. Связанное {#related}
 
-- [[048-docs-as-data|ADR 048]] — обоснование и контекст
+- [[048-docs-as-data|ADR 048]] — обоснование и контекст (D1–D3, D6, D7 — canon; D4–D5 — amendment к per-package)
+- [[briefs/owner-builders-docs-colocation|brief — per-package distribution]] — execution для §8
 - [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] D5 — colocation rule
+- [[033-package-registration|ADR 033]] — registration pattern, применяется к docs composer'у
 - [[web-rework-plan]] Phase E — execution status
-- `docs/_build/extract.mjs` — implementation extractor'а
-- `docs/.generated/registry.ts` — produced artifact
+- `docs/_build/extract.mjs` — reference extractor (удаляется после готовности `@capsuletech/docs-builder`)
+- `docs/.generated/registry.ts` — produced artifact (текущая центральная форма; переедет в per-package shape)
