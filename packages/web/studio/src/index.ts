@@ -1,16 +1,11 @@
-// Корневой barrel — реэкспортит все подпакеты. Для tree-shaking
-// предпочтительно импортировать через подпуть:
-//   import { getManifest }   from '@capsuletech/web-studio/manifests';
-//   import { addNode }       from '@capsuletech/web-studio/state';
-//   import { Inspector }     from '@capsuletech/web-studio/inspector';
-//   import { buildTemplate } from '@capsuletech/web-studio/generators';
-// Тут — точка для тех, кому удобнее «всё в одном импорте».
-//
-// NOTE: data-gen engine (generate, presets, RNG) теперь живёт отдельным
-// пакетом `@capsuletech/data-gen`. Studio's `/generators` остаётся для
-// palette templates (composition of presets с studio UI-метаданными).
+// Корневой barrel — реэкспортит публичные подпуть. Для tree-shaking
+// предпочтительно импортировать через subpath:
+//   import { ComponentsPalette }    from '@capsuletech/web-studio/palette';
+//   import { WebStudioCanvas, ... } from '@capsuletech/web-studio/controllers';
+//   import { getManifest }          from '@capsuletech/web-studio/manifests';
+//   import { DocSection }           from '@capsuletech/web-studio/docs';
 
-export * from './generators';
-export * from './inspector';
+export * from './controllers';
 export * from './manifests';
-export * from './state';
+export * from './palette';
+export { type IWebStudioSelection, useSelectedPreset } from './selection';

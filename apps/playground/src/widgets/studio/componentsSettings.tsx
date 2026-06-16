@@ -1,6 +1,6 @@
 const ComponentsSettings = Widget((Ui) => (
   <Ui.Layout.Flex justify={'center'} align={'center'} h={'full'} w={'full'}>
-    ComponentsSettings
+    <WebStudio.Props />
   </Ui.Layout.Flex>
 ));
 

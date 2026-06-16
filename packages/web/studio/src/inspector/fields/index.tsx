@@ -1,7 +1,27 @@
-import type { JSX } from 'solid-js';
+/**
+ * FieldRenderer — Solid-компонент-диспатчер полей.
+ *
+ * Был обычной функцией `renderField` — возвращал JSX snapshot, не реактивный.
+ * Теперь Solid Component: `<Switch>` диспатчит по `props.field.type`,
+ * каждое поле читает `props.values[key]` реактивно через Solid props proxy
+ * (values приходит из Solid Store) → изменения значений отражаются на
+ * input'ах без re-mount → фокус сохраняется при вводе.
+ */
+
+import { type Component, Match, Switch } from 'solid-js';
 import type { IInspectorKit } from '../kit';
 import { DEFAULT_KIT } from '../kit';
-import type { IFieldDef, OnChangeFn, ValuesMap } from '../types';
+import type {
+  IBooleanField,
+  IFieldDef,
+  INumberField,
+  INumberUnitField,
+  ISelectField,
+  ITextareaField,
+  ITextField,
+  OnChangeFn,
+  ValuesMap,
+} from '../types';
 import { BooleanField } from './BooleanField';
 import { NumberField } from './NumberField';
 import { NumberUnitField } from './NumberUnitField';
@@ -9,54 +29,73 @@ import { SelectField } from './SelectField';
 import { TextareaField } from './TextareaField';
 import { TextField } from './TextField';
 
-/**
- * Диспатчер по `field.type`. Каждый case передаёт уже-типизированный field
- * и пробрасывает изменения через единый `onChange(key, value)`.
- *
- * `kit` — инъектируемый UI-кит (по умолчанию DEFAULT_KIT из @capsuletech/web-ui).
- */
-export const renderField = (
-  field: IFieldDef,
-  values: ValuesMap,
-  onChange: OnChangeFn,
-  kit: IInspectorKit = DEFAULT_KIT,
-): JSX.Element => {
-  const emit = (v: unknown) => onChange(field.key, v);
-  const raw = values[field.key];
-  switch (field.type) {
-    case 'text':
-      return (
-        <TextField field={field} value={raw as string | undefined} onChange={emit} kit={kit} />
-      );
-    case 'textarea':
-      return (
-        <TextareaField field={field} value={raw as string | undefined} onChange={emit} kit={kit} />
-      );
-    case 'number':
-      return (
-        <NumberField field={field} value={raw as number | undefined} onChange={emit} kit={kit} />
-      );
-    case 'number-unit':
-      return (
-        <NumberUnitField
-          field={field}
-          value={raw as string | undefined}
+interface IFieldRendererProps {
+  field: IFieldDef;
+  values: ValuesMap;
+  onChange: OnChangeFn;
+  kit?: IInspectorKit;
+}
+
+export const FieldRenderer: Component<IFieldRendererProps> = (props) => {
+  const kit = () => props.kit ?? DEFAULT_KIT;
+  const emit = (v: unknown) => props.onChange(props.field.key, v);
+  // value() читается реактивно — Solid wrap'ает JSX-выражение { ... value() ... }
+  // в reactive computation. Когда values (Solid Store) меняется, обновляется
+  // только value-prop у уже-смонтированного поля.
+  const value = () => props.values[props.field.key];
+
+  return (
+    <Switch>
+      <Match when={props.field.type === 'text'}>
+        <TextField
+          field={props.field as ITextField}
+          value={value() as string | undefined}
           onChange={emit}
-          kit={kit}
+          kit={kit()}
         />
-      );
-    case 'boolean':
-      return (
-        <BooleanField field={field} value={raw as boolean | undefined} onChange={emit} kit={kit} />
-      );
-    case 'select':
-      return (
-        <SelectField field={field} value={raw as string | undefined} onChange={emit} kit={kit} />
-      );
-    default:
-      // exhaustive — TS подсветит если добавили новый тип и забыли тут
-      return null;
-  }
+      </Match>
+      <Match when={props.field.type === 'textarea'}>
+        <TextareaField
+          field={props.field as ITextareaField}
+          value={value() as string | undefined}
+          onChange={emit}
+          kit={kit()}
+        />
+      </Match>
+      <Match when={props.field.type === 'number'}>
+        <NumberField
+          field={props.field as INumberField}
+          value={value() as number | undefined}
+          onChange={emit}
+          kit={kit()}
+        />
+      </Match>
+      <Match when={props.field.type === 'number-unit'}>
+        <NumberUnitField
+          field={props.field as INumberUnitField}
+          value={value() as string | undefined}
+          onChange={emit}
+          kit={kit()}
+        />
+      </Match>
+      <Match when={props.field.type === 'boolean'}>
+        <BooleanField
+          field={props.field as IBooleanField}
+          value={value() as boolean | undefined}
+          onChange={emit}
+          kit={kit()}
+        />
+      </Match>
+      <Match when={props.field.type === 'select'}>
+        <SelectField
+          field={props.field as ISelectField}
+          value={value() as string | undefined}
+          onChange={emit}
+          kit={kit()}
+        />
+      </Match>
+    </Switch>
+  );
 };
 
 export { BooleanField, NumberField, NumberUnitField, SelectField, TextareaField, TextField };

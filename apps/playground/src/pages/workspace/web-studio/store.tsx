@@ -17,12 +17,7 @@ const Store = Page((Ui) => (
         initialSize: 0.25,
       },
       footer: {
-        children: (
-          <Ui.Layout.Flex h={'full'}>
-            <Widgets.Studio.Contracts />
-            <Widgets.Studio.Manifests />
-          </Ui.Layout.Flex>
-        ),
+        children: <Widgets.Studio.Info />,
         swapGroup: 'widgets',
         initialSize: 0.25,
       },

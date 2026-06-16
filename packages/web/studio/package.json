@@ -15,21 +15,6 @@
       "import": "./dist/manifests.mjs",
       "default": "./dist/manifests.mjs"
     },
-    "./state": {
-      "types": "./dist/state/index.d.ts",
-      "import": "./dist/state.mjs",
-      "default": "./dist/state.mjs"
-    },
-    "./inspector": {
-      "types": "./dist/inspector/index.d.ts",
-      "import": "./dist/inspector.mjs",
-      "default": "./dist/inspector.mjs"
-    },
-    "./generators": {
-      "types": "./dist/generators/index.d.ts",
-      "import": "./dist/generators.mjs",
-      "default": "./dist/generators.mjs"
-    },
     "./controllers": {
       "types": "./dist/controllers/index.d.ts",
       "import": "./dist/controllers.mjs",
@@ -63,6 +48,7 @@
   "dependencies": {
     "@capsuletech/data-gen": "workspace:*",
     "@capsuletech/shared-zod": "workspace:*",
+    "@capsuletech/web-contract": "workspace:*",
     "@capsuletech/web-core": "workspace:*",
     "@capsuletech/web-dnd": "workspace:*",
     "@capsuletech/web-ui": "workspace:*",
