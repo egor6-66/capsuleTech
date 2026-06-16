@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
+import { Flex } from '../layout/flex/flex';
 import { Accordion } from '.';
 
 const meta = {
@@ -100,6 +101,59 @@ export const WithDisabledItem: Story = {
         <Accordion.Content>This section is also interactive.</Accordion.Content>
       </Accordion.Item>
     </Accordion>
+  ),
+};
+
+/**
+ * Responsive multi-column layout via `<Flex wrap='wrap'>` + `fluid` prop.
+ *
+ * Each Accordion receives `fluid={250}` which applies `flex: 1 1 250px` — it
+ * grows to fill available space, shrinks when needed, and wraps to a new row
+ * when the container is narrower than ~500 px (2 × 250 px basis). This mirrors
+ * the canonical `fluid` pattern from `<Flex>` itself.
+ *
+ * Resize the preview to see columns stack into a single column on narrow viewports.
+ */
+export const ResponsiveWithFlex: Story = {
+  name: 'responsive (Flex+fluid composition)',
+  decorators: [
+    (Story) => (
+      <div style={{ width: '640px', padding: '2rem' }}>
+        <Story />
+      </div>
+    ),
+  ],
+  render: () => (
+    <Flex wrap="wrap" gap={4}>
+      <Accordion fluid={250} multiple>
+        <Accordion.Item value="a-1">
+          <Accordion.Trigger>Colors</Accordion.Trigger>
+          <Accordion.Content>
+            Configure the color palette for the background highlight.
+          </Accordion.Content>
+        </Accordion.Item>
+        <Accordion.Item value="a-2">
+          <Accordion.Trigger>Typography</Accordion.Trigger>
+          <Accordion.Content>
+            Choose font family, size, and line-height.
+          </Accordion.Content>
+        </Accordion.Item>
+      </Accordion>
+      <Accordion fluid={250} multiple>
+        <Accordion.Item value="b-1">
+          <Accordion.Trigger>Spacing</Accordion.Trigger>
+          <Accordion.Content>
+            Adjust padding and margin using the 4 px spacing grid.
+          </Accordion.Content>
+        </Accordion.Item>
+        <Accordion.Item value="b-2">
+          <Accordion.Trigger>Shadows</Accordion.Trigger>
+          <Accordion.Content>
+            Pick shadow depth from none / sm / md / lg / xl.
+          </Accordion.Content>
+        </Accordion.Item>
+      </Accordion>
+    </Flex>
   ),
 };
 

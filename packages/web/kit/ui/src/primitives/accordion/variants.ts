@@ -2,8 +2,13 @@ import { cva } from '@capsuletech/web-style';
 
 /**
  * Root accordion wrapper.
- * `divide-y` on the root creates a visual separator between items without
- * requiring explicit `<Separator>` elements.
+ *
+ * `divide-y divide-border` provides visual separators between sibling items.
+ * `w-full` makes the accordion fill its parent block by default.
+ *
+ * For responsive multi-column layouts use the `fluid` prop on each Accordion
+ * together with a parent `<Flex wrap='wrap'>` — same pattern as `Flex`'s own
+ * `fluid` prop. When `fluid` is set, `w-full` is dropped automatically.
  */
 export const accordionRootCva = cva('w-full divide-y divide-border', {
   variants: {},
@@ -37,8 +42,9 @@ export const accordionTriggerCva = cva(
     // `group` on the trigger button allows child elements (chevron) to detect
     // `aria-expanded` via `group-aria-expanded:*` Tailwind variant.
     // Kobalte sets `aria-expanded` directly on the Trigger button.
-    'group flex w-full items-center justify-between',
+    'group flex w-full items-center justify-between cursor-pointer',
     'px-4 py-3',
+
     'text-sm font-medium text-foreground',
     // Default: transparent background (no fill).
     'bg-transparent',

@@ -206,6 +206,7 @@ export const Flex = <T extends ValidComponent = 'div'>(props: IFlexProps<T>) => 
     'w',
     'minW',
     'maxW',
+    'fluid',
   ]);
   const [poly, others] = splitProps(polyAndRest, ['as']);
 
@@ -325,6 +326,7 @@ export const Flex = <T extends ValidComponent = 'div'>(props: IFlexProps<T>) => 
     if (own.maxW !== undefined) s['max-width'] = toSpacing(own.maxW);
     if (own.minW !== undefined) s['min-width'] = toSpacing(own.minW);
     // minH: explicit prop wins over the auto empty-container fallback.
+    if (own.fluid !== undefined) s.flex = `1 1 ${own.fluid}px`;
     if (own.minH !== undefined) {
       s['min-height'] = toSpacing(own.minH);
     } else if (isEmpty()) {
