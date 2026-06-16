@@ -1,19 +1,19 @@
+import type { IAudience } from '@capsuletech/docs-builder';
 import { createMemo, For, type JSX, Show } from 'solid-js';
 import { filterBodyByAudience } from './audience-filter';
 import { useDocsRegistry } from './provider';
 import { renderMarkdown } from './render-markdown';
-import type { Audience } from './types';
 
 export interface IDocPageProps {
   slug: string;
-  audience?: Audience[];
+  audience?: IAudience[];
   fallback?: JSX.Element;
   class?: string;
 }
 
 const defaultFallback = (slug: string) => (
-  <div class="studio-docs-missing" data-slug={slug}>
-    {`[studio/docs] doc "${slug}" not found`}
+  <div class="web-docs-missing" data-slug={slug}>
+    {`[web-docs] doc "${slug}" not found`}
   </div>
 );
 

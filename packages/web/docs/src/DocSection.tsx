@@ -1,8 +1,8 @@
+import type { IAudience } from '@capsuletech/docs-builder';
 import { createMemo, type JSX, Show } from 'solid-js';
 import { filterBodyByAudience } from './audience-filter';
 import { useDocsRegistry } from './provider';
 import { renderMarkdown } from './render-markdown';
-import type { Audience } from './types';
 
 export interface IDocSectionProps {
   /**
@@ -16,7 +16,7 @@ export interface IDocSectionProps {
    * blocks with non-overlapping audience are stripped. If omitted, no
    * filtering — full body rendered.
    */
-  audience?: Audience[];
+  audience?: IAudience[];
   /**
    * Fallback rendered when the slug doesn't resolve (missing doc or section).
    * Default fallback emits a visible warning element (no-op safe in prod).
@@ -27,8 +27,8 @@ export interface IDocSectionProps {
 }
 
 const defaultFallback = (slug: string) => (
-  <div class="studio-docs-missing" data-slug={slug}>
-    {`[studio/docs] section "${slug}" not found`}
+  <div class="web-docs-missing" data-slug={slug}>
+    {`[web-docs] section "${slug}" not found`}
   </div>
 );
 

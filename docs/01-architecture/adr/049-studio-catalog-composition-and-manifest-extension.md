@@ -66,7 +66,7 @@ last_updated: 2026-06-13
   - `@capsuletech/web-ui/manifest` — источник правды о компонентах.
   - `@capsuletech/web-renderer` — рендер preview.
   - `@capsuletech/web-style` — токены, CVA-helpers.
-  - `@capsuletech/web-studio/docs` (per [[048-docs-as-data|ADR 048]]) — `<DocSection>` для docs-panel.
+  - `@capsuletech/web-docs` (per [[048-docs-as-data|ADR 048]]) — `<DocSection>` для docs-panel.
   - `@capsuletech/web-dnd` — drag в будущий `/component-builder`.
   - `@capsuletech/data-gen` — палитра-темплейты для preview.
 - Свой код studio — **тонкая обвязка**: композиция модулей + emit-каналы + типизация.

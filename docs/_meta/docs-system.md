@@ -1,6 +1,6 @@
 ---
 title: docs-system-canon
-description: Canon для docs-as-data pipeline (ADR 048) — section-ID convention, frontmatter contract, extractable-block shape, slug derivation. Single source of truth для движка `@capsuletech/docs-builder` + per-package producers + `@capsuletech/web-studio/docs` composer.
+description: Canon для docs-as-data pipeline (ADR 048) — section-ID convention, frontmatter contract, extractable-block shape, slug derivation. Single source of truth для движка `@capsuletech/docs-builder` + per-package producers + `@capsuletech/web-docs` composer.
 status: canon
 type: canon
 last_updated: 2026-06-16
@@ -13,7 +13,7 @@ tags: [meta, docs-as-data, canon]
 
 > Канон-источники: [[048-docs-as-data|ADR 048]] D1–D3, D6, D7. D4–D5 заменены [[../01-architecture/adr/052-docs-builder-per-package|ADR 052]] (per-package distribution) — см. также [[briefs/owner-builders-docs-colocation|brief]].
 >
-> Этот файл — single source of truth для движка (`@capsuletech/docs-builder`, в работе; reference — `docs/_build/extract.mjs`), per-package producers, composer'а `@capsuletech/web-studio/docs` и CI drift-guards. Изменение конвенции — правка ЭТОГО файла + движка + регенерация registry.
+> Этот файл — single source of truth для движка (`@capsuletech/docs-builder`, в работе; reference — `docs/_build/extract.mjs`), per-package producers, composer'а `@capsuletech/web-docs` и CI drift-guards. Изменение конвенции — правка ЭТОГО файла + движка + регенерация registry.
 
 ## Зачем {#why}
 
@@ -279,7 +279,7 @@ Custom line-based parser (zero new deps). Обрабатывает:
 |---|---|---|
 | Engine | `@capsuletech/docs-builder` (новый, в `packages/builders/`) | Build-time helper-библиотека. Sources → docs.json chunk. Реализует §1–§7 канона. |
 | Producer | каждый пакет (`@capsuletech/web-ui` и т.д.) | В своём build дёргает engine → эмитит `dist/docs.json` → экспортит через subpath `./docs.json` + регистрирует в `capsule.ts`. |
-| Composer | `@capsuletech/web-studio/docs` | Через ADR 033 auto-discovery собирает `docs.json` пакетов которые app зарегистрировал, мерджит в runtime registry, отдаёт через `<DocSection>` / `useDoc()`. |
+| Composer | `@capsuletech/web-docs` | Через ADR 033 auto-discovery собирает `docs.json` пакетов которые app зарегистрировал, мерджит в runtime registry, отдаёт через `<DocSection>` / `useDoc()`. |
 
 App **не импортит engine** и не настраивает scan paths. Composition — через ADR 033 registration pattern, симметрично с UI-компонентами и controllers.
 
@@ -375,7 +375,7 @@ export default {
 
 `docs: () => Promise<IDocsChunk>` — lazy import (не блокирует initial bundle).
 
-**Composer-side контракт** (в `@capsuletech/web-studio/docs`):
+**Composer-side контракт** (в `@capsuletech/web-docs`):
 
 - Тот же auto-import что регистрирует UI/controllers per ADR 033 регистрирует и `docs`.
 - На первый запрос (`<DocSection>` mount или `useDoc()` вызов) — composer лениво резолвит все promise'ы → мерджит в `IDocsRegistry` → memoize'ит.
@@ -384,7 +384,7 @@ export default {
 **Manual fallback** (для пакетов без `capsule.ts`):
 
 ```ts
-import { Docs } from '@capsuletech/web-studio/docs';
+import { Docs } from '@capsuletech/web-docs';
 import externalDocs from 'some-pkg/docs.json';
 
 Docs.register(externalDocs);

@@ -185,6 +185,7 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
         '@capsuletech/boost-table',
         '@capsuletech/web-contract',
         '@capsuletech/web-access',
+        '@capsuletech/web-docs',
         '@capsuletech/data-gen',
       ],
     },

@@ -9,7 +9,7 @@ amended: 2026-06-16
 > [!info] Status
 > **Proposed** — 2026-06-11. Sister-ADR к [[046-boost-namespace-matrix-evict-vt-owner|046]] и [[047-frontend-architecture-zones-cycle-vendor|047]]. Триада ландит одной волной.
 >
-> Этот ADR — про **документацию как данные**: один markdown source, многоаудиторные проекции, build-time извлечение в типизированный registry, JSX-консумерс через `@capsuletech/web-studio/docs`.
+> Этот ADR — про **документацию как данные**: один markdown source, многоаудиторные проекции, build-time извлечение в типизированный registry, JSX-консумерс через `@capsuletech/web-docs`.
 
 > [!warning] Amendment 2026-06-16 — distribution model split
 > D1–D3, D6, D7 — **canon, остаются**. D4 (extraction) и D5 (consumer) — **пересматриваются** под per-package модель: движок становится переиспользуемой библиотекой (`@capsuletech/docs-builder`), каждый пакет производит свой `docs.json` chunk при build, `web-studio/docs` композирует registry из импортов через ADR 033 pattern.
@@ -17,6 +17,15 @@ amended: 2026-06-16
 > Причина: центральный monorepo-scanner работает только внутри capsule-репо, не масштабируется на внешнего пользователя framework'а (он не может «настроить путь» в скрипте который сидит в capsule).
 >
 > См. [[052-docs-builder-per-package|ADR 052]] и [[../../_meta/briefs/owner-builders-docs-colocation|brief — per-package distribution]]. Старая центральная реализация (`docs/_build/extract.mjs`) — reference, удаляется в Phase 3 деливери.
+
+> [!warning] Amendment 2026-06-16 (Phase 3.6) — viewer extracted to `@capsuletech/web-docs`
+> D5 consumer runtime (`DocsProvider` / `<DocSection>` / `<DocPage>` / `useDoc`) **переехал** из `@capsuletech/web-studio/docs` subpath'а в самостоятельный пакет **`@capsuletech/web-docs`** (`packages/web/docs/`).
+>
+> Причина: runtime — generic Solid-консумерс markdown'а, без какой-либо studio-логики. Держать его в studio = заставлять внешних consumer'ов тянуть весь web-studio (composer + product blocks + manifests + inspector + generators) ради `<DocSection>`. Cohesion поломана. Дополнительно: studio дублировала `IDocsRegistry` shape вручную — теперь типы реэкспортятся из `@capsuletech/docs-builder` (single source of truth).
+>
+> Бонус: `@capsuletech/web-docs` сам производит свой `dist/docs.json` для корневого `docs/` vault'а через `DocsExtractPlugin` — заменяет ныне удалённый artefact-пакет `@capsuletech/docs`. Consumer: `import rootDocs from '@capsuletech/web-docs/docs.json'`.
+>
+> Старая ссылка `@capsuletech/web-studio/docs` в D5 ниже — **исторический контекст**, актуальный импорт: `@capsuletech/web-docs`.
 
 # ADR 048 — Docs as data: single MD source + multi-audience projection
 
@@ -136,12 +145,12 @@ export type SectionSlug = `${DocSlug}#${string}`;
 
 Registry **типизирован**. Consumers получают autocomplete + compile-time checks.
 
-### D5 — `@capsuletech/web-studio/docs` consumer {#D5}
+### D5 — `@capsuletech/web-docs` consumer {#D5}
 
 `@capsuletech/web-studio` (за rename из ADR 047 D4) subpath `/docs` экспортит:
 
 ```tsx
-import { DocSection, DocPage, useDoc } from '@capsuletech/web-studio/docs';
+import { DocSection, DocPage, useDoc } from '@capsuletech/web-docs';
 
 // Конкретная секция
 <DocSection slug="adr/046#D1" />
@@ -206,7 +215,7 @@ Phase E (docs infrastructure) — параллельна Phase D, после A0:
 - **E1 — Setup `docs/_build/extract.mjs` + `pnpm docs:build` script.** Main steward / owner-builders (зависит от complexity Vite-integration). Без consumers — registry просто эмитится, никто не consume'ит.
 - **E2 — Section-ID inventory pass** — пройти по существующим `docs/01-architecture/adr/*.md`, добавить `{#id}` к Decision-секциям + Roll-out + Open questions. ADR 046/047/048 уже могут иметь стабильные ID (см. их draft'ы). Главный steward.
 - **E3 — Audience-tagging существующих docs** — низкий приоритет, touch-once при касании.
-- **E4 — `@capsuletech/web-studio/docs` consumer пакет/subpath** — после rename studio (ADR 047 D4). Owner — `owner-studio`.
+- **E4 — `@capsuletech/web-docs` consumer пакет/subpath** — после rename studio (ADR 047 D4). Owner — `owner-studio`.
 - **E5 — Apps consume** — playground / future capsule-сайт показывают `<DocSection>`.
 - **E6 — CI drift-guards** — `pnpm docs:build` встроен в CI job (отдельный или в Test job).
 

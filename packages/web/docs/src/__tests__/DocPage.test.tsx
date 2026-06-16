@@ -1,9 +1,9 @@
 /* @vitest-environment jsdom */
+import type { IDocsRegistry } from '@capsuletech/docs-builder';
 import { render } from 'solid-js/web';
 import { describe, expect, it } from 'vitest';
 import { DocPage } from '../DocPage';
 import { DocsProvider } from '../provider';
-import type { IDocsRegistry } from '../types';
 
 const fixture: IDocsRegistry = {
   'adr/048': {
@@ -68,6 +68,6 @@ describe('<DocPage>', () => {
       ),
       div,
     );
-    expect(div.querySelector('.studio-docs-missing')).toBeTruthy();
+    expect(div.querySelector('.web-docs-missing')).toBeTruthy();
   });
 });
