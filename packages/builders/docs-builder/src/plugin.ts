@@ -33,7 +33,8 @@ export interface IDocsExtractPluginOptions {
 
   /**
    * Slug strategy. Defaults to 'package' (npm-scope-relative slugs).
-   * 'docs' for the root @capsuletech/docs package; 'app' for apps/<name>.
+   * 'docs' for bundling the root docs/ vault (used by @capsuletech/web-docs);
+   * 'app' for apps/<name>.
    */
   slugStrategyOverride?: IDocsSlugStrategy;
 
