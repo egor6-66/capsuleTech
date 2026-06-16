@@ -1,37 +1,27 @@
 /**
- * Smoke tests for DocsExtractPlugin wiring in vite-builder (Phase 3.2 — ADR 052 D2).
- *
- * Verifies:
- * - Plugin re-exported from @capsuletech/vite-builder plugins barrel
- * - capsuleConfig() includes DocsExtractPlugin by default
- * - capsuleConfig() respects docs: false opt-out
- * - Plugin uses 'app' strategy in capsuleConfig context
+ * Smoke tests for DocsExtractPlugin (Phase 3.5 — moved into docs-builder).
  */
 
-import { describe, expect, it, vi } from 'vitest';
-import { DocsExtractPlugin } from '../index';
+import { describe, expect, it } from 'vitest';
+import { DocsExtractPlugin } from '../plugin.js';
 
-describe('DocsExtractPlugin — re-export from vite-builder', () => {
-  it('is exported from plugins/index', () => {
-    expect(typeof DocsExtractPlugin).toBe('function');
-  });
-
+describe('DocsExtractPlugin', () => {
   it('returns a Vite plugin with correct name and apply', () => {
     const plugin = DocsExtractPlugin();
     expect(plugin).toMatchObject({
       name: 'capsule:docs-extract',
       apply: 'build',
     });
+    expect(typeof plugin.closeBundle).toBe('function');
   });
 
-  it('respects enabled: false', () => {
+  it('respects enabled: false at construction time', () => {
     const plugin = DocsExtractPlugin({ enabled: false });
     expect(plugin.name).toBe('capsule:docs-extract');
     expect(typeof plugin.closeBundle).toBe('function');
   });
 
   it('accepts slugStrategyOverride', () => {
-    // Just verify it constructs without throwing
     const plugin = DocsExtractPlugin({ slugStrategyOverride: 'app' });
     expect(plugin.name).toBe('capsule:docs-extract');
   });
@@ -39,5 +29,10 @@ describe('DocsExtractPlugin — re-export from vite-builder', () => {
   it('accepts rootOverride', () => {
     const plugin = DocsExtractPlugin({ rootOverride: '/some/absolute/path' });
     expect(plugin.name).toBe('capsule:docs-extract');
+  });
+
+  it('is re-exported from package index', async () => {
+    const mod = await import('../index.js');
+    expect(typeof mod.DocsExtractPlugin).toBe('function');
   });
 });

@@ -4,7 +4,6 @@ import { resolve } from 'node:path';
 import { defineConfig, mergeConfig, type Plugin, type UserConfig } from 'vite';
 import dts from 'vite-plugin-dts';
 import solidPlugin from 'vite-plugin-solid';
-import { DocsExtractPlugin, type IDocsExtractPluginOptions } from './plugins/docs-extract.js';
 
 export type LibRuntime = 'browser' | 'node' | 'isomorphic';
 
@@ -43,12 +42,6 @@ export interface IDefineLibConfigOptions {
   /** Сырое слияние с финальным config'ом. */
   override?: UserConfig;
   ssr?: boolean;
-  /**
-   * Docs extraction options. Pass `false` to disable DocsExtractPlugin.
-   * By default the plugin is included and emits dist/docs.json at build time.
-   * (ADR 052 D2 — Phase 3.1)
-   */
-  docs?: false | IDocsExtractPluginOptions;
 }
 
 /** Всё, что не должно вшиваться в bundle — резолвится у consumer'а. */
@@ -227,7 +220,6 @@ export const libConfig = (opts: IDefineLibConfigOptions): UserConfig => {
             }),
           ]),
       ...(opts.emitPackageJson === false ? [] : [emitDistPackageJsonPlugin(outDir)]),
-      ...(opts.docs === false ? [] : [DocsExtractPlugin(opts.docs ?? {})]),
       ...(opts.plugins ?? []),
     ],
     resolve: {

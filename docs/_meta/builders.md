@@ -13,9 +13,9 @@ last_updated: 2026-06-13
 
 ## TL;DR {#tldr}
 
-4 build-time пакета + `@capsuletech/docs` (root docs package). `lib-builder` — zero-deps leaf (libConfig для любого пакета). `vite-builder` — рантайм для apps (dev-server + 9 плагинов). `compliance` — AST-линтер HCA-правил. `biome-config` — shared lint preset. Релизятся ОДНОЙ группой `cli` в `nx.json` (fixed, releaseTagPattern `cli@{version}`) вместе с `@capsuletech/cli` и `shared-file-manager`.
+5 build-time пакетов: `lib-builder` — zero-deps leaf (libConfig для любого пакета). `vite-builder` — рантайм для apps (dev-server + 9 плагинов). `docs-builder` — engine + Vite plugin для docs-as-data (ADR 052). `compliance` — AST-линтер HCA-правил. `biome-config` — shared lint preset. Релизятся ОДНОЙ группой `cli` в `nx.json` (fixed, releaseTagPattern `cli@{version}`) вместе с `@capsuletech/cli` и `shared-file-manager`. Отдельно — consumer-пакет `@capsuletech/docs` (root docs), не build-time.
 
-**Phase 3 (ADR 052) done (2026-06-16):** `DocsExtractPlugin` добавлен в `lib-builder` и `vite-builder`. `@capsuletech/docs` пакет создан в `packages/docs/` — wraps корневую `docs/`, эмитит `packages/docs/dist/docs.json` (181 doc). `pnpm docs:build` переключён на `pnpm --filter @capsuletech/docs build`. `docs/_build/extract.mjs` удалён.
+**Phase 3 (ADR 052) done (2026-06-16, после refactor Phase 3.5):** `@capsuletech/docs-builder` владеет engine `extractDocs()` + `DocsExtractPlugin` + CLI `capsule-docs`. lib-builder и vite-builder про docs не знают (zero-deps leaf сохранён). Consumers attach plugin явно: `libConfig({ plugins: [DocsExtractPlugin({ ... })] })`. `@capsuletech/docs` — первый consumer, wraps корневую `docs/`, эмитит `packages/docs/dist/docs.json` (181 doc). `pnpm docs:build` → `pnpm --filter @capsuletech/docs build`. `docs/_build/extract.mjs` удалён.
 
 Главное правило: **build-time пакеты живут тут**. Runtime cross-group — в `packages/shared/`. Критерий — используется в `vite.config.mts` чужих пакетов / `capsule.config.ts` apps'ов, а не в их JSX.
 
@@ -23,10 +23,11 @@ last_updated: 2026-06-13
 
 ```
 packages/builders/
-  lib/         @capsuletech/lib-builder    zero-deps, libConfig() для Vite
-  vite/        @capsuletech/vite-builder   capsuleConfig + 9 плагинов
-  compliance/  @capsuletech/compliance     AST-линтер HCA-слоёв
-  biome/       @capsuletech/biome-config   biome.json preset (НЕТ src/dist!)
+  lib/           @capsuletech/lib-builder    zero-deps, libConfig() для Vite
+  vite/          @capsuletech/vite-builder   capsuleConfig + 9 плагинов
+  docs-builder/  @capsuletech/docs-builder   docs-as-data engine + Vite plugin + bin
+  compliance/    @capsuletech/compliance     AST-линтер HCA-слоёв
+  biome/         @capsuletech/biome-config   biome.json preset (НЕТ src/dist!)
 ```
 
 Цепочка зависимостей (НЕ должна циклить):

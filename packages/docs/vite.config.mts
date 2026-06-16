@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import { DocsExtractPlugin } from '@capsuletech/docs-builder';
 import { libConfig } from '@capsuletech/lib-builder';
 
 // The package root is packages/docs/.
@@ -14,9 +15,12 @@ export default libConfig({
   dts: true,
   // Disable package.json emit — we manage it manually (has docs.json subpath).
   emitPackageJson: false,
-  // DocsExtractPlugin: scan root docs/ with 'docs' slug strategy (per §8.5 + §8.7).
-  docs: {
-    slugStrategyOverride: 'docs',
-    rootOverride: DOCS_ROOT,
-  },
+  // ADR 052 D2 — explicit opt-in to DocsExtractPlugin.
+  // lib-builder is zero-deps; docs-builder ships the plugin, consumers attach it.
+  plugins: [
+    DocsExtractPlugin({
+      slugStrategyOverride: 'docs',
+      rootOverride: DOCS_ROOT,
+    }),
+  ],
 });

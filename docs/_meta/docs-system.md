@@ -314,30 +314,36 @@ capsule-docs build --root . --pkg-name @capsuletech/web-ui --strategy package --
 
 ### 8.3 Producer — Vite-plugin + subpath exports {#distribution-producer}
 
-**Plugin расположение:** `DocsExtractPlugin` в `@capsuletech/vite-builder` (для apps) и `@capsuletech/lib-builder` (для library packages). Auto-встраивается в стандартный build pipeline.
+**Plugin расположение:** `DocsExtractPlugin` живёт в `@capsuletech/docs-builder` рядом с engine'ом (Phase 3.5 refactor — `docs-builder` владеет всей docs-логикой). `lib-builder` остаётся zero-deps leaf; `vite-builder` про docs тоже не знает. Каждый consumer (package или app) **явно** подключает плагин в свой `vite.config.mts` — opt-in per package (см. ниже).
 
 **Plugin lifecycle:**
 
-1. На `buildEnd` сканирует `<packageRoot>/**/*.md` per exclusion-list (§8.9).
-2. Дёргает `extractDocs({ root, slugStrategy, pkgName })` — `pkgName` берётся из `package.json`, `slugStrategy` derived из контекста (lib-builder → `'package'`, vite-builder app → `'app'`).
-3. Эмитит `dist/docs.json` через Vite emit-file API.
+1. На `closeBundle` сканирует `<packageRoot>/**/*.md` per exclusion-list (§8.9). `rootOverride` позволяет указать другой sandbox-корень.
+2. Дёргает `extractDocs({ root, slugStrategy, pkgName })` — `pkgName` берётся из `package.json`, `slugStrategy` — из `slugStrategyOverride` (default `'package'`; `'app'` для `apps/<name>`; `'docs'` для root `@capsuletech/docs`).
+3. Пишет `dist/docs.json` через Node `fs.writeFileSync` (надёжно в SSR/node build mode).
 
-**Plugin options (override per-package, опционально):**
+**Producer-канон (явное подключение):**
 
 ```ts
-// vite.config.ts пакета — обычно НЕ нужно, defaults покрывают всё
-import { DocsExtractPlugin } from '@capsuletech/lib-builder';
+// packages/<scope>/<name>/vite.config.mts
+import { DocsExtractPlugin } from '@capsuletech/docs-builder';
+import { libConfig } from '@capsuletech/lib-builder';
 
-export default {
+export default libConfig({
+  entry: 'src/index.ts',
+  name: 'MyPackage',
   plugins: [
     DocsExtractPlugin({
-      enabled?: boolean,           // default: true
-      exclude?: string[],          // ДОПОЛНИТЕЛЬНО к §8.9 defaults
-      slugStrategyOverride?: 'package' | 'app' | 'docs',
+      // enabled?: boolean              — default true
+      // exclude?: string[]             — ДОПОЛНИТЕЛЬНО к §8.9 defaults
+      // slugStrategyOverride?: ...     — default 'package'
+      // rootOverride?: string          — default cwd (package root)
     }),
   ],
-};
+});
 ```
+
+Для root `@capsuletech/docs`: `DocsExtractPlugin({ slugStrategyOverride: 'docs', rootOverride: REPO_DOCS_PATH })` — единственный consumer, который сканирует чужой корень.
 
 **`package.json` exports (owner-<pkg> добавляет руками при первом подключении):**
 
