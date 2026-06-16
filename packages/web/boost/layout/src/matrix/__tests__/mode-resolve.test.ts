@@ -17,10 +17,26 @@ import { createMatrixModes } from '../mode';
 
 // ---------------------------------------------------------------------------
 // Helper: run createMatrixModes inside a reactive root and read results once.
+//
+// createMatrixModes now takes getter-functions (so the mode-memos observe
+// live signal changes). The helper accepts a plain-value snapshot and wraps
+// each field in a constant getter — these tests only care about steady-state
+// resolution, so a constant getter is equivalent to the legacy plain-value
+// shape they were written against.
 // ---------------------------------------------------------------------------
-function resolve(opts: Parameters<typeof createMatrixModes>[0]) {
+interface IResolveOpts {
+  resize: boolean | undefined;
+  dnd: false | 'swap' | 'insert' | undefined;
+  mode: 'view' | 'edit' | undefined;
+}
+
+function resolve(opts: IResolveOpts) {
   return createRoot((dispose) => {
-    const modes = createMatrixModes(opts);
+    const modes = createMatrixModes({
+      resize: () => opts.resize,
+      dnd: () => opts.dnd,
+      mode: () => opts.mode,
+    });
     const result = {
       resizeEnabled: modes.resizeEnabled(),
       dndEnabled: modes.dndEnabled(),

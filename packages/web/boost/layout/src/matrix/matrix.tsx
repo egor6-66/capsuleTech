@@ -47,11 +47,14 @@ const MatrixImpl = (props: IMatrixProps) => {
     return (local.rows as IRow[]) ?? [];
   });
 
-  // Global signals from @capsuletech/web-style
+  // Global signals from @capsuletech/web-style.
+  // NOTE: pass getter-functions (not snapshots) so the mode-memos observe
+  // live signal changes. Plain `{ resize: local.resize }` would evaluate the
+  // splitProps getter once and freeze the value (regression 2026-06-16).
   const { resizeEnabled, dndEnabled, dndKind } = createMatrixModes({
-    resize: local.resize,
-    dnd: local.dnd,
-    mode: local.mode,
+    resize: () => local.resize,
+    dnd: () => local.dnd,
+    mode: () => local.mode,
   });
 
   return (
