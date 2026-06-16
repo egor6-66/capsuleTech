@@ -58,6 +58,7 @@ jobs:
       - name: Bootstrap shared builders
         run: |
           pnpm --filter @capsuletech/lib-builder build
+          pnpm --filter @capsuletech/docs-builder build
           pnpm --filter @capsuletech/compliance build
           pnpm --filter @capsuletech/shared-file-manager build
           pnpm --filter @capsuletech/vite-builder build
@@ -79,6 +80,7 @@ jobs:
       - name: Bootstrap shared builders
         run: |
           pnpm --filter @capsuletech/lib-builder build
+          pnpm --filter @capsuletech/docs-builder build
           pnpm --filter @capsuletech/compliance build
           pnpm --filter @capsuletech/shared-file-manager build
           pnpm --filter @capsuletech/vite-builder build
@@ -105,6 +107,7 @@ jobs:
       - name: Bootstrap shared builders
         run: |
           pnpm --filter @capsuletech/lib-builder build
+          pnpm --filter @capsuletech/docs-builder build
           pnpm --filter @capsuletech/compliance build
           pnpm --filter @capsuletech/shared-file-manager build
           pnpm --filter @capsuletech/vite-builder build
