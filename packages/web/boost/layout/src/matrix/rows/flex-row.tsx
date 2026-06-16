@@ -122,7 +122,9 @@ export const renderRow = (
       isDragging,
       resizeEnabled,
     );
-    const isResizeActive = resizeEnabled();
+    // NOTE: `resizeEnabled()` must be called INLINE in the JSX prop (not
+    // captured into a local const) so Solid compiler wraps it in a reactive
+    // getter — otherwise inner-row handles never re-render on live toggle.
     return (
       <div
         ref={rowContainerRef}
@@ -138,8 +140,8 @@ export const renderRow = (
           <Flex
             orientation="horizontal"
             items={items}
-            withHandle={isResizeActive}
-            handleDisabled={!isResizeActive}
+            withHandle={resizeEnabled()}
+            handleDisabled={!resizeEnabled()}
             onSizesChange={onRowSizesChange}
           />
         </div>
