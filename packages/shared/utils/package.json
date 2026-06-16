@@ -21,12 +21,12 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "es-toolkit": "^1.46.0"
+    "es-toolkit": "^1.47.1"
   },
   "devDependencies": {
     "@capsuletech/lib-builder": "workspace:*",
     "@capsuletech/vite-builder": "workspace:*",
-    "vitest": "~4.1.0"
+    "vitest": "~4.1.9"
   },
   "publishConfig": {
     "access": "public",
