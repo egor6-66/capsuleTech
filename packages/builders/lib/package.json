@@ -21,6 +21,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@capsuletech/docs-builder": "workspace:*",
     "vite-plugin-dts": "~5.0.0",
     "vite-plugin-solid": "^2.11.12"
   },
