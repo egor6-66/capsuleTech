@@ -3,9 +3,9 @@
  * Подключается через controller `WebStudioInfo` (см. `../controllers`).
  */
 
-export { Info } from './Info';
-export { EmptyState } from './EmptyState';
 export { getContract, hasContract } from './contract-registry';
+export { EmptyState } from './EmptyState';
+export { Info } from './Info';
 export type {
   IContractBlockProps,
   IInfoProps,

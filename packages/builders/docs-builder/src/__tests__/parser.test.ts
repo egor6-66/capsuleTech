@@ -3,14 +3,14 @@ import {
   DEFAULT_AUDIENCE,
   extractWikilinks,
   headingToSlug,
+  normalizeAudience,
   parseAudienceBlocks,
   parseFrontmatter,
   parseHeadings,
   parseSections,
+  parseYaml,
   resolveAudience,
   validateMeta,
-  normalizeAudience,
-  parseYaml,
 } from '../parser.js';
 
 // ─── parseFrontmatter ─────────────────────────────────────────────────────────
@@ -60,7 +60,7 @@ describe('parseFrontmatter', () => {
   });
 
   it('parses quoted strings', () => {
-    const lines = ['---', 'title: "Quoted title"', 'description: \'single quotes\'', '---'];
+    const lines = ['---', 'title: "Quoted title"', "description: 'single quotes'", '---'];
     const { meta } = parseFrontmatter(lines, 'test.md');
     expect(meta.title).toBe('Quoted title');
     expect(meta.description).toBe('single quotes');
@@ -79,7 +79,11 @@ describe('validateMeta', () => {
   });
 
   it('warns on non-canon status', () => {
-    const meta: Record<string, unknown> = { status: 'unknown', tags: ['x'], last_updated: '2026-01-01' };
+    const meta: Record<string, unknown> = {
+      status: 'unknown',
+      tags: ['x'],
+      last_updated: '2026-01-01',
+    };
     const { warnings } = validateMeta(meta, 'test.md');
     expect(warnings.some((w) => w.includes('non-canon status'))).toBe(true);
   });
@@ -134,13 +138,7 @@ describe('parseHeadings', () => {
   });
 
   it('does not parse headings inside code fence', () => {
-    const lines = [
-      '## Real Heading',
-      '```',
-      '## Not a Heading',
-      '```',
-      '## Another Real Heading',
-    ];
+    const lines = ['## Real Heading', '```', '## Not a Heading', '```', '## Another Real Heading'];
     const headings = parseHeadings(lines, 0);
     expect(headings).toHaveLength(2);
     expect(headings[0].heading).toBe('Real Heading');
@@ -156,9 +154,9 @@ describe('parseHeadings', () => {
   it('resolves endLine correctly', () => {
     const lines = [
       '## Section A', // 0
-      'content a',    // 1
-      '### Sub',      // 2
-      'sub',          // 3
+      'content a', // 1
+      '### Sub', // 2
+      'sub', // 3
       '## Section B', // 4
     ];
     const headings = parseHeadings(lines, 0);
@@ -327,10 +325,7 @@ describe('parseSections', () => {
   });
 
   it('uses explicit {#id} as section key', () => {
-    const lines = [
-      '## My Section {#my-id}',
-      'body text',
-    ];
+    const lines = ['## My Section {#my-id}', 'body text'];
     const { sections } = parseSections(lines, 0, 'test.md', null);
     expect(sections['my-id']).toBeDefined();
     expect(sections['my-id'].heading).toBe('My Section');
@@ -358,25 +353,14 @@ describe('parseSections', () => {
   });
 
   it('sets parentId on H3 sections', () => {
-    const lines = [
-      '## Parent {#parent}',
-      'parent body',
-      '### Child {#child}',
-      'child body',
-    ];
+    const lines = ['## Parent {#parent}', 'parent body', '### Child {#child}', 'child body'];
     const { sections } = parseSections(lines, 0, 'test.md', null);
     expect(sections['child'].parentId).toBe('parent');
     expect(sections['parent'].parentId).toBeUndefined();
   });
 
   it('is code-fence aware in section bodies', () => {
-    const lines = [
-      '## Section {#sec}',
-      '```',
-      '## Not a heading',
-      '```',
-      'real content',
-    ];
+    const lines = ['## Section {#sec}', '```', '## Not a heading', '```', 'real content'];
     const { sections } = parseSections(lines, 0, 'test.md', null);
     expect(Object.keys(sections)).toHaveLength(1);
     expect(sections['sec']).toBeDefined();

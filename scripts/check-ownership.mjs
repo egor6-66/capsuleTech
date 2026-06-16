@@ -24,12 +24,7 @@ const EXEMPT = new Map([
 ]);
 
 const REQUIRED_FRONTMATTER = ['name', 'owner-agent', 'group', 'status', 'last-updated'];
-const REQUIRED_SECTIONS = [
-  'Зона ответственности',
-  'Публичный API',
-  'Quirks',
-  'Test coverage',
-];
+const REQUIRED_SECTIONS = ['Зона ответственности', 'Публичный API', 'Quirks', 'Test coverage'];
 
 /** Рекурсивно найти корни пакетов (dir с package.json + name @capsuletech/*). */
 function findPackages(dir, acc = []) {
@@ -94,7 +89,8 @@ for (const pkg of packages) {
   else violations.push({ name: pkg.name, problems });
 }
 
-const checked = packages.length - [...EXEMPT.keys()].filter((n) => packages.some((p) => p.name === n)).length;
+const checked =
+  packages.length - [...EXEMPT.keys()].filter((n) => packages.some((p) => p.name === n)).length;
 console.log(`\nOWNERSHIP gate — ${ok}/${checked} пакетов соответствуют канону.\n`);
 
 if (violations.length) {
@@ -104,7 +100,9 @@ if (violations.length) {
   }
   console.log(`\n${violations.length} нарушений. Канон: docs/_meta/OWNERSHIP-template.md`);
   if (EXEMPT.size) {
-    console.log(`\n  (освобождены: ${[...EXEMPT.entries()].map(([n, r]) => `${n} — ${r}`).join('; ')})`);
+    console.log(
+      `\n  (освобождены: ${[...EXEMPT.entries()].map(([n, r]) => `${n} — ${r}`).join('; ')})`,
+    );
   }
   process.exit(strict ? 1 : 0);
 }

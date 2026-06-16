@@ -87,7 +87,6 @@ describe('WidgetUi — IUiMetaProps injected into component props', () => {
     type CardProps = Parameters<WidgetUi['Card']>[0];
     expectTypeOf<CardProps>().toMatchTypeOf<{ meta?: ITagMeta }>();
   });
-
 });
 
 // ---------------------------------------------------------------------------

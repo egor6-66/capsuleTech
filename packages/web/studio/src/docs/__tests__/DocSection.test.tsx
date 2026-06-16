@@ -31,10 +31,7 @@ const fixture: IDocsRegistry = {
   },
 };
 
-const renderSection = (
-  body: () => HTMLDivElement,
-  Children: () => unknown,
-): (() => void) => {
+const renderSection = (body: () => HTMLDivElement, Children: () => unknown): (() => void) => {
   const div = body();
   return render(() => Children() as never, div);
 };

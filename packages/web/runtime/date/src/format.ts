@@ -1,10 +1,10 @@
 import {
   format as fnsFormat,
+  parse as fnsParse,
   formatDistance,
   formatDistanceToNow,
   formatISO,
   isValid,
-  parse as fnsParse,
   parseISO,
   toDate,
 } from 'date-fns';

@@ -224,7 +224,9 @@ if (SAVE_MD) {
 const newKindTotal = Object.entries(byKind)
   .filter(([k]) => NEW_KINDS.has(k))
   .reduce((sum, [, n]) => sum + n, 0);
-console.error(`\n[inventory] scanned=${scannedCount} files, violations=${allViolations.length} (new-kind=${newKindTotal})`);
+console.error(
+  `\n[inventory] scanned=${scannedCount} files, violations=${allViolations.length} (new-kind=${newKindTotal})`,
+);
 
 // ─── --check: CI gate ─────────────────────────────────────────────────────────
 if (CHECK_MODE) {
@@ -246,7 +248,9 @@ if (CHECK_MODE) {
       console.error(`    ${v.message}`);
       if (v.hint) console.error(`    hint: ${v.hint}`);
     }
-    console.error(`\n[compliance:check] ${blockingViolations.length} blocking violation(s). Fix them or add to docs/_meta/compliance-allowlist.json with a TTL.`);
+    console.error(
+      `\n[compliance:check] ${blockingViolations.length} blocking violation(s). Fix them or add to docs/_meta/compliance-allowlist.json with a TTL.`,
+    );
     process.exit(1);
   } else {
     const allowlistedCount = allViolations.filter((v) => {
@@ -254,6 +258,8 @@ if (CHECK_MODE) {
       const relPath = v.relFile.replaceAll('\\', '/');
       return ALLOWLIST.get(relPath)?.has(v.kind) ?? false;
     }).length;
-    console.error(`\n[compliance:check] PASSED — 0 blocking structural violations (${allowlistedCount} allowlisted, ${newKindTotal} cosmetic warn-only).`);
+    console.error(
+      `\n[compliance:check] PASSED — 0 blocking structural violations (${allowlistedCount} allowlisted, ${newKindTotal} cosmetic warn-only).`,
+    );
   }
 }

@@ -1,5 +1,5 @@
 import type { JSX } from 'solid-js';
-import { For, Match, splitProps, Switch, useContext } from 'solid-js';
+import { For, Match, Switch, splitProps, useContext } from 'solid-js';
 
 import { resolveIcon } from '../../icons';
 import { Dropdown } from '../../primitives/dropdown';
@@ -9,8 +9,8 @@ import { CompositeProxyContext } from '../compositeProxy';
 import type {
   IMenuActionItem,
   IMenuDropdownProps,
-  IMenuProps,
   IMenuItemMeta,
+  IMenuProps,
   MenuItem,
 } from './interfaces';
 

@@ -4,5 +4,5 @@
 //   import { useAuth }      from '@capsuletech/web-auth/session';
 // /ui и /controllers намеренно НЕ в barrel (UI/web-core-зависимые блоки).
 
-export * from './types';
 export * from './session';
+export * from './types';

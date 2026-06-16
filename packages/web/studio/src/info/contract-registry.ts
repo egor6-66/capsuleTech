@@ -9,16 +9,15 @@
  * следующая итерация, когда контрактов станет много.
  */
 
+import type { Contract } from '@capsuletech/web-contract';
 import { ButtonContract } from '@capsuletech/web-ui/button';
 import { CardContract } from '@capsuletech/web-ui/card';
-import type { Contract } from '@capsuletech/web-contract';
 
 const CONTRACT_BY_TYPE: Record<string, Contract> = {
   'ui.Button': ButtonContract,
   'ui.Card': CardContract,
 };
 
-export const getContract = (type: string): Contract | undefined =>
-  CONTRACT_BY_TYPE[type];
+export const getContract = (type: string): Contract | undefined => CONTRACT_BY_TYPE[type];
 
 export const hasContract = (type: string): boolean => type in CONTRACT_BY_TYPE;

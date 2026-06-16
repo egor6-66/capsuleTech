@@ -13,4 +13,4 @@
  */
 
 // Re-export types from docs-builder for consumers who want to type the registry.
-export type { IDocsRegistry, IDocEntry, IDocSection, IDocMeta } from '@capsuletech/docs-builder';
+export type { IDocEntry, IDocMeta, IDocSection, IDocsRegistry } from '@capsuletech/docs-builder';

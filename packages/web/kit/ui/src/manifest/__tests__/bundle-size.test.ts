@@ -33,7 +33,11 @@ const L0_SIZE_LIMIT_KB = 12;
 // Kobalte allowlist — featherweight role-bearing subpaths permitted in L0 graph.
 // Everything else from @kobalte/core/* is "interactive" → forbidden in L0.
 // ---------------------------------------------------------------------------
-const KOBALTE_ALLOWLIST = ['@kobalte/core/polymorphic', '@kobalte/core/separator', '@kobalte/core/skeleton'];
+const KOBALTE_ALLOWLIST = [
+  '@kobalte/core/polymorphic',
+  '@kobalte/core/separator',
+  '@kobalte/core/skeleton',
+];
 
 // ---------------------------------------------------------------------------
 // Load manifest at module-eval time — `it.each` needs the data NOW to declare tests.
@@ -60,12 +64,11 @@ describe('@capsuletech/web-ui — bundle size assertions', () => {
   });
 
   describe('L0 size caps — must stay under budget', () => {
-    it.each<[string, number]>(L0_ENTRIES.map((p) => [p.name, p.sizeKB]))(
-      'L0 subpath "%s" is %s kB (budget: %s kB)',
-      (_name, sizeKB) => {
-        expect(sizeKB).toBeLessThanOrEqual(L0_SIZE_LIMIT_KB);
-      },
-    );
+    it.each<[string, number]>(
+      L0_ENTRIES.map((p) => [p.name, p.sizeKB]),
+    )('L0 subpath "%s" is %s kB (budget: %s kB)', (_name, sizeKB) => {
+      expect(sizeKB).toBeLessThanOrEqual(L0_SIZE_LIMIT_KB);
+    });
   });
 
   describe('L0 graph hygiene — must NOT contain Kobalte interactive', () => {
@@ -78,14 +81,13 @@ describe('@capsuletech/web-ui — bundle size assertions', () => {
   });
 
   describe('L1 sanity — non-empty externals', () => {
-    it.each<[string, string[]]>(L1_ENTRIES.map((p) => [p.name, p.externals]))(
-      'L1 subpath "%s" has non-empty externals (consumer pays peer dep cost)',
-      (_name, externals) => {
-        // L1 primitives are typically thin wrappers over Kobalte/TanStack/etc.
-        // They MUST have externals — if a primitive in L1 has zero externals,
-        // either it's misclassified or something went wrong with measurement.
-        expect(externals.length).toBeGreaterThan(0);
-      },
-    );
+    it.each<[string, string[]]>(
+      L1_ENTRIES.map((p) => [p.name, p.externals]),
+    )('L1 subpath "%s" has non-empty externals (consumer pays peer dep cost)', (_name, externals) => {
+      // L1 primitives are typically thin wrappers over Kobalte/TanStack/etc.
+      // They MUST have externals — if a primitive in L1 has zero externals,
+      // either it's misclassified or something went wrong with measurement.
+      expect(externals.length).toBeGreaterThan(0);
+    });
   });
 });

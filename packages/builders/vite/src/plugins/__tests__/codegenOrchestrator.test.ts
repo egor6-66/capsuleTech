@@ -15,13 +15,13 @@ import { join, resolve } from 'node:path';
 import type { Plugin } from 'vite';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  type CodegenContext,
   createAppConfigSubGenerator,
   createBarrelRegistrySubGenerator,
   createBootstrapSubGenerator,
   createCapsuleRegistryPlugin,
   createEndpointsSubGenerator,
   createPackagesSubGenerator,
-  type CodegenContext,
   type SubGenerator,
 } from '../codegen';
 
@@ -240,11 +240,7 @@ describe('createBarrelRegistrySubGenerator', () => {
   it('onEvent returns true for a widget file', () => {
     const gen = createBarrelRegistrySubGenerator();
     const fakeCtx = { watchDir: WATCH_DIR } as CodegenContext;
-    const result = gen.onEvent(
-      'add',
-      resolve(WATCH_DIR, 'widgets', 'forms', 'auth.tsx'),
-      fakeCtx,
-    );
+    const result = gen.onEvent('add', resolve(WATCH_DIR, 'widgets', 'forms', 'auth.tsx'), fakeCtx);
     expect(result).toBe(true);
   });
 });
@@ -264,22 +260,14 @@ describe('createEndpointsSubGenerator', () => {
   it('onEvent returns true for endpoint files', () => {
     const gen = createEndpointsSubGenerator();
     const fakeCtx = { watchDir: WATCH_DIR } as CodegenContext;
-    const result = gen.onEvent(
-      'add',
-      resolve(WATCH_DIR, 'endpoints', 'auth.ts'),
-      fakeCtx,
-    );
+    const result = gen.onEvent('add', resolve(WATCH_DIR, 'endpoints', 'auth.ts'), fakeCtx);
     expect(result).toBe(true);
   });
 
   it('onEvent returns false for non-endpoint files', () => {
     const gen = createEndpointsSubGenerator();
     const fakeCtx = { watchDir: WATCH_DIR } as CodegenContext;
-    const result = gen.onEvent(
-      'add',
-      resolve(WATCH_DIR, 'widgets', 'auth.tsx'),
-      fakeCtx,
-    );
+    const result = gen.onEvent('add', resolve(WATCH_DIR, 'widgets', 'auth.tsx'), fakeCtx);
     expect(result).toBe(false);
   });
 

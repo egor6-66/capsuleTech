@@ -14,8 +14,8 @@
  */
 
 import { type Registry, Renderer } from '@capsuletech/web-renderer';
-import { Flex } from '@capsuletech/web-ui/flex';
 import * as kit from '@capsuletech/web-ui';
+import { Flex } from '@capsuletech/web-ui/flex';
 import * as kitIcons from '@capsuletech/web-ui/icons';
 import { Typography } from '@capsuletech/web-ui/typography';
 import { Show } from 'solid-js';

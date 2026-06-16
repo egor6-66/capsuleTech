@@ -62,10 +62,7 @@ export interface IValidateMetaResult {
 // ─── frontmatter ─────────────────────────────────────────────────────────────
 
 const stripQuotes = (s: string): string => {
-  if (
-    (s.startsWith('"') && s.endsWith('"')) ||
-    (s.startsWith("'") && s.endsWith("'"))
-  ) {
+  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
     return s.slice(1, -1);
   }
   return s;
@@ -109,9 +106,13 @@ export const parseYaml = (yaml: string, file: string): Record<string, unknown> =
     }
     if (value.startsWith('[') && value.endsWith(']')) {
       const inner = value.slice(1, -1).trim();
-      out[key] = inner === ''
-        ? []
-        : inner.split(',').map((x) => stripQuotes(x.trim())).filter(Boolean);
+      out[key] =
+        inner === ''
+          ? []
+          : inner
+              .split(',')
+              .map((x) => stripQuotes(x.trim()))
+              .filter(Boolean);
       currentKey = null;
       continue;
     }
@@ -174,10 +175,7 @@ export const deriveType = (slug: string, meta: Record<string, unknown>): string 
  * Validate required frontmatter fields. Returns warnings and errors.
  * Mutates meta to handle legacy `last-updated` → `last_updated`.
  */
-export const validateMeta = (
-  meta: Record<string, unknown>,
-  file: string,
-): IValidateMetaResult => {
+export const validateMeta = (meta: Record<string, unknown>, file: string): IValidateMetaResult => {
   const warnings: string[] = [];
   const errors: string[] = [];
 
@@ -363,7 +361,10 @@ export const extractWikilinks = (text: string): string[] => {
 
 /** Extract section body (excluding heading line). */
 const sliceBody = (lines: string[], startLine: number, endLine: number): string =>
-  lines.slice(startLine + 1, endLine).join('\n').trim();
+  lines
+    .slice(startLine + 1, endLine)
+    .join('\n')
+    .trim();
 
 /**
  * Parse all H2/H3 sections from a document.

@@ -31,7 +31,5 @@ export const fieldRules: Record<string, FieldRule> = {
   'ui.Button': buttonRule,
 };
 
-export const applyFieldRule = (
-  type: string,
-  props: Record<string, unknown>,
-): IFieldRuleResult => fieldRules[type]?.(props) ?? {};
+export const applyFieldRule = (type: string, props: Record<string, unknown>): IFieldRuleResult =>
+  fieldRules[type]?.(props) ?? {};

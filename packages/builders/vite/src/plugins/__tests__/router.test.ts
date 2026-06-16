@@ -106,7 +106,9 @@ describe('ROOT_WITH_APP_TEMPLATE', () => {
   });
 
   it('imports Outlet and createRootRouteWithContext from @tanstack/solid-router', () => {
-    expect(tmpl).toContain(`import { Outlet, createRootRouteWithContext } from '@tanstack/solid-router'`);
+    expect(tmpl).toContain(
+      `import { Outlet, createRootRouteWithContext } from '@tanstack/solid-router'`,
+    );
   });
 
   it('does NOT import from @capsuletech/web-core', () => {

@@ -17,9 +17,9 @@
 
 import { resolve } from 'node:path';
 import {
+  type AppConfigRuntimeOpts,
   generateAppConfigRuntime,
   renderAppTagsTypes,
-  type AppConfigRuntimeOpts,
 } from '../../capsuleRegistry';
 import type { AppConfigShape, CodegenContext, SubGenerator } from '../interfaces';
 

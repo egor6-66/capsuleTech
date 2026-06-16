@@ -14,8 +14,8 @@
  * — хотим изолированный unit-тест без DOM.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { createRouter } from '@capsuletech/web-router';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 

@@ -11,8 +11,8 @@
  *
  * @source directive ensures Tailwind scans button source files for utility classes.
  */
-@import 'tailwindcss';
-@source '../../../..';
+@import "tailwindcss";
+@source "../../../..";
 
 @theme inline {
   /* Tailwind v4 color → CSS variable mapping (mirrors web-style/src/index.css) */

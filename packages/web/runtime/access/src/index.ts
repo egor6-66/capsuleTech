@@ -9,7 +9,8 @@
  * + usePermissions/<Can>/filterAllowed. entitlement/flag/route-guard — далее.
  */
 
-export type { AccessPolicy, Capability, IAccessProvider, ICanProps } from './types';
+export { Can } from './Can';
+export { roleProvider } from './providers/role';
 export {
   __resetAccess,
   can,
@@ -17,6 +18,5 @@ export {
   registerAccessProvider,
   usePermissions,
 } from './resolver';
-export { roleProvider } from './providers/role';
 export { setupAccess } from './setup';
-export { Can } from './Can';
+export type { AccessPolicy, Capability, IAccessProvider, ICanProps } from './types';

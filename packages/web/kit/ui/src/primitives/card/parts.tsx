@@ -1,11 +1,11 @@
 import { cn } from '@capsuletech/web-style';
 import { type JSX, splitProps } from 'solid-js';
 import type {
+  CardTextAlign,
   ICardContentProps,
   ICardDescriptionProps,
   ICardHeaderProps,
   ICardTitleProps,
-  CardTextAlign,
 } from './interfaces';
 
 // Static align table — Tailwind purge sees all classes.
@@ -95,7 +95,5 @@ export const CardContent = (props: ICardContentProps) => {
 
 export const CardFooter = (props: JSX.HTMLAttributes<HTMLDivElement>) => {
   const [local, others] = splitProps(props, ['class']);
-  return (
-    <div class={cn('flex items-center px-card pb-card', local.class)} {...others} />
-  );
+  return <div class={cn('flex items-center px-card pb-card', local.class)} {...others} />;
 };

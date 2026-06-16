@@ -1,7 +1,7 @@
 import { cn } from '@capsuletech/web-style';
 import { DropdownMenu as KobalteDropdown } from '@kobalte/core/dropdown-menu';
 import type { ValidComponent } from 'solid-js';
-import { Match, Show, splitProps, Switch } from 'solid-js';
+import { Match, Show, Switch, splitProps } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 
 import { createFinish } from '../../lib/finish';
@@ -72,7 +72,10 @@ const Content = (props: IDropdownContentProps) => {
     <KobalteDropdown.Portal {...local.portalProps}>
       <KobalteDropdown.Content
         class={cn(dropdownContentCva(), 'popover-animate', local.class)}
-        style={{ ...(typeof local.style === 'object' ? local.style : {}), ...finish.surfaceStyle() }}
+        style={{
+          ...(typeof local.style === 'object' ? local.style : {}),
+          ...finish.surfaceStyle(),
+        }}
         {...(others as object)}
       />
     </KobalteDropdown.Portal>
@@ -239,7 +242,10 @@ const SubContent = (props: IDropdownSubContentProps) => {
     <KobalteDropdown.Portal {...local.portalProps}>
       <KobalteDropdown.Content
         class={cn(dropdownContentCva(), 'popover-animate', local.class)}
-        style={{ ...(typeof local.style === 'object' ? local.style : {}), ...finish.surfaceStyle() }}
+        style={{
+          ...(typeof local.style === 'object' ? local.style : {}),
+          ...finish.surfaceStyle(),
+        }}
         {...(others as object)}
       />
     </KobalteDropdown.Portal>
@@ -296,8 +302,8 @@ export {
   Content as DropdownContent,
   Group as DropdownGroup,
   Item as DropdownItem,
-  Row as DropdownRow,
   Label as DropdownLabel,
+  Row as DropdownRow,
   Separator as DropdownSeparator,
   Sub as DropdownSub,
   SubContent as DropdownSubContent,

@@ -11,7 +11,7 @@
  */
 
 import { Field } from '@capsuletech/web-ui/field';
-import { Show, type JSX } from 'solid-js';
+import { type JSX, Show } from 'solid-js';
 
 interface IFieldShellProps {
   label: string;

@@ -7,8 +7,8 @@
  * Existing variant/color CVA contract is stable — only smoke tests here.
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'solid-js/web';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Typography } from '../typography';
 
 let container: HTMLDivElement;
@@ -32,7 +32,11 @@ afterEach(() => {
 describe('Typography — align prop', () => {
   it('adds text-left for align="start"', () => {
     cleanup = render(
-      () => <Typography align="start" data-testid="t">Hello</Typography>,
+      () => (
+        <Typography align="start" data-testid="t">
+          Hello
+        </Typography>
+      ),
       container,
     );
     const el = container.querySelector('[data-testid="t"]');
@@ -41,7 +45,11 @@ describe('Typography — align prop', () => {
 
   it('adds text-center for align="center"', () => {
     cleanup = render(
-      () => <Typography align="center" data-testid="t">Hello</Typography>,
+      () => (
+        <Typography align="center" data-testid="t">
+          Hello
+        </Typography>
+      ),
       container,
     );
     const el = container.querySelector('[data-testid="t"]');
@@ -50,7 +58,11 @@ describe('Typography — align prop', () => {
 
   it('adds text-right for align="end"', () => {
     cleanup = render(
-      () => <Typography align="end" data-testid="t">Hello</Typography>,
+      () => (
+        <Typography align="end" data-testid="t">
+          Hello
+        </Typography>
+      ),
       container,
     );
     const el = container.querySelector('[data-testid="t"]');
@@ -58,10 +70,7 @@ describe('Typography — align prop', () => {
   });
 
   it('does not add alignment class when align is not provided', () => {
-    cleanup = render(
-      () => <Typography data-testid="t">Hello</Typography>,
-      container,
-    );
+    cleanup = render(() => <Typography data-testid="t">Hello</Typography>, container);
     const el = container.querySelector('[data-testid="t"]');
     expect(el?.className).not.toContain('text-left');
     expect(el?.className).not.toContain('text-center');
@@ -76,7 +85,11 @@ describe('Typography — align prop', () => {
 describe('Typography — tone prop', () => {
   it('adds text-foreground for tone="default"', () => {
     cleanup = render(
-      () => <Typography tone="default" data-testid="t">Hello</Typography>,
+      () => (
+        <Typography tone="default" data-testid="t">
+          Hello
+        </Typography>
+      ),
       container,
     );
     const el = container.querySelector('[data-testid="t"]');
@@ -85,7 +98,11 @@ describe('Typography — tone prop', () => {
 
   it('adds text-muted-foreground for tone="muted"', () => {
     cleanup = render(
-      () => <Typography tone="muted" data-testid="t">Hello</Typography>,
+      () => (
+        <Typography tone="muted" data-testid="t">
+          Hello
+        </Typography>
+      ),
       container,
     );
     const el = container.querySelector('[data-testid="t"]');
@@ -94,7 +111,11 @@ describe('Typography — tone prop', () => {
 
   it('adds text-destructive for tone="destructive"', () => {
     cleanup = render(
-      () => <Typography tone="destructive" data-testid="t">Hello</Typography>,
+      () => (
+        <Typography tone="destructive" data-testid="t">
+          Hello
+        </Typography>
+      ),
       container,
     );
     const el = container.querySelector('[data-testid="t"]');
@@ -103,7 +124,11 @@ describe('Typography — tone prop', () => {
 
   it('adds text-primary for tone="primary"', () => {
     cleanup = render(
-      () => <Typography tone="primary" data-testid="t">Hello</Typography>,
+      () => (
+        <Typography tone="primary" data-testid="t">
+          Hello
+        </Typography>
+      ),
       container,
     );
     const el = container.querySelector('[data-testid="t"]');
@@ -118,7 +143,11 @@ describe('Typography — tone prop', () => {
 describe('Typography — size override prop', () => {
   it('adds text-xs for size="xs"', () => {
     cleanup = render(
-      () => <Typography size="xs" data-testid="t">Hello</Typography>,
+      () => (
+        <Typography size="xs" data-testid="t">
+          Hello
+        </Typography>
+      ),
       container,
     );
     const el = container.querySelector('[data-testid="t"]');
@@ -127,7 +156,11 @@ describe('Typography — size override prop', () => {
 
   it('adds text-2xl for size="2xl"', () => {
     cleanup = render(
-      () => <Typography size="2xl" data-testid="t">Hello</Typography>,
+      () => (
+        <Typography size="2xl" data-testid="t">
+          Hello
+        </Typography>
+      ),
       container,
     );
     const el = container.querySelector('[data-testid="t"]');
@@ -136,7 +169,11 @@ describe('Typography — size override prop', () => {
 
   it('does not add a size class when size is not provided', () => {
     cleanup = render(
-      () => <Typography variant="p" data-testid="t">Hello</Typography>,
+      () => (
+        <Typography variant="p" data-testid="t">
+          Hello
+        </Typography>
+      ),
       container,
     );
     const el = container.querySelector('[data-testid="t"]');
@@ -153,7 +190,11 @@ describe('Typography — size override prop', () => {
 describe('Typography — dim prop', () => {
   it('adds opacity-0 when dim=true', () => {
     cleanup = render(
-      () => <Typography dim data-testid="t">Hello</Typography>,
+      () => (
+        <Typography dim data-testid="t">
+          Hello
+        </Typography>
+      ),
       container,
     );
     const el = container.querySelector('[data-testid="t"]');
@@ -162,7 +203,11 @@ describe('Typography — dim prop', () => {
 
   it('adds opacity-100 when dim=false', () => {
     cleanup = render(
-      () => <Typography dim={false} data-testid="t">Hello</Typography>,
+      () => (
+        <Typography dim={false} data-testid="t">
+          Hello
+        </Typography>
+      ),
       container,
     );
     const el = container.querySelector('[data-testid="t"]');
@@ -170,20 +215,14 @@ describe('Typography — dim prop', () => {
   });
 
   it('always adds transition-opacity duration-200', () => {
-    cleanup = render(
-      () => <Typography data-testid="t">Hello</Typography>,
-      container,
-    );
+    cleanup = render(() => <Typography data-testid="t">Hello</Typography>, container);
     const el = container.querySelector('[data-testid="t"]');
     expect(el?.className).toContain('transition-opacity');
     expect(el?.className).toContain('duration-200');
   });
 
   it('adds opacity-100 by default (no dim prop)', () => {
-    cleanup = render(
-      () => <Typography data-testid="t">Hello</Typography>,
-      container,
-    );
+    cleanup = render(() => <Typography data-testid="t">Hello</Typography>, container);
     const el = container.querySelector('[data-testid="t"]');
     expect(el?.className).toContain('opacity-100');
     expect(el?.className).not.toContain('opacity-0');
@@ -196,17 +235,18 @@ describe('Typography — dim prop', () => {
 
 describe('Typography — backward compatibility', () => {
   it('renders a <p> by default', () => {
-    cleanup = render(
-      () => <Typography data-testid="t">Hello</Typography>,
-      container,
-    );
+    cleanup = render(() => <Typography data-testid="t">Hello</Typography>, container);
     const el = container.querySelector('[data-testid="t"]');
     expect(el?.tagName.toLowerCase()).toBe('p');
   });
 
   it('renders correct tag for variant="h1"', () => {
     cleanup = render(
-      () => <Typography variant="h1" data-testid="t">Title</Typography>,
+      () => (
+        <Typography variant="h1" data-testid="t">
+          Title
+        </Typography>
+      ),
       container,
     );
     const el = container.querySelector('[data-testid="t"]');
@@ -215,7 +255,11 @@ describe('Typography — backward compatibility', () => {
 
   it('forwards custom class', () => {
     cleanup = render(
-      () => <Typography class="custom-class" data-testid="t">Hello</Typography>,
+      () => (
+        <Typography class="custom-class" data-testid="t">
+          Hello
+        </Typography>
+      ),
       container,
     );
     const el = container.querySelector('[data-testid="t"]');

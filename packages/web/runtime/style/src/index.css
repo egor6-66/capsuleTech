@@ -564,13 +564,21 @@
    ============================================================================= */
 
 @keyframes vt-fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes vt-fade-out {
-  from { opacity: 1; }
-  to   { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 /* root (Header/chrome) — static, no animation */
@@ -603,7 +611,7 @@
    Чистый CSS, без компонента — body::before глобален, кроет все страницы.
    ============================================================================= */
 html[data-finish] body::before {
-  content: '';
+  content: "";
   position: fixed;
   inset: 0;
   z-index: -1;

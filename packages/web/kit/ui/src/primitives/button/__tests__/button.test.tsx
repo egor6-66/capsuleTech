@@ -6,8 +6,8 @@
  * Covers: fullWidth, polymorphic `as`, backward compatibility smoke.
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'solid-js/web';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Button } from '../button';
 
 let container: HTMLDivElement;
@@ -31,7 +31,11 @@ afterEach(() => {
 describe('Button — fullWidth prop', () => {
   it('adds w-full class when fullWidth=true', () => {
     cleanup = render(
-      () => <Button fullWidth data-testid="btn">Click</Button>,
+      () => (
+        <Button fullWidth data-testid="btn">
+          Click
+        </Button>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="btn"]');
@@ -39,17 +43,18 @@ describe('Button — fullWidth prop', () => {
   });
 
   it('does NOT add w-full when fullWidth is not provided', () => {
-    cleanup = render(
-      () => <Button data-testid="btn">Click</Button>,
-      container,
-    );
+    cleanup = render(() => <Button data-testid="btn">Click</Button>, container);
     const el = container.querySelector<HTMLElement>('[data-testid="btn"]');
     expect(el?.className).not.toContain('w-full');
   });
 
   it('does NOT add w-full when fullWidth=false', () => {
     cleanup = render(
-      () => <Button fullWidth={false} data-testid="btn">Click</Button>,
+      () => (
+        <Button fullWidth={false} data-testid="btn">
+          Click
+        </Button>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="btn"]');
@@ -58,7 +63,11 @@ describe('Button — fullWidth prop', () => {
 
   it('fullWidth combines with variant classes', () => {
     cleanup = render(
-      () => <Button fullWidth variant="outline" data-testid="btn">Click</Button>,
+      () => (
+        <Button fullWidth variant="outline" data-testid="btn">
+          Click
+        </Button>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="btn"]');
@@ -73,17 +82,18 @@ describe('Button — fullWidth prop', () => {
 
 describe('Button — backward compatibility', () => {
   it('renders a <button> by default', () => {
-    cleanup = render(
-      () => <Button data-testid="btn">Click</Button>,
-      container,
-    );
+    cleanup = render(() => <Button data-testid="btn">Click</Button>, container);
     const el = container.querySelector('[data-testid="btn"]');
     expect(el?.tagName.toLowerCase()).toBe('button');
   });
 
   it('renders an <a> when as="a"', () => {
     cleanup = render(
-      () => <Button as="a" href="/foo" data-testid="btn">Link</Button>,
+      () => (
+        <Button as="a" href="/foo" data-testid="btn">
+          Link
+        </Button>
+      ),
       container,
     );
     const el = container.querySelector('[data-testid="btn"]');
@@ -92,7 +102,11 @@ describe('Button — backward compatibility', () => {
 
   it('forwards custom class', () => {
     cleanup = render(
-      () => <Button class="my-class" data-testid="btn">Click</Button>,
+      () => (
+        <Button class="my-class" data-testid="btn">
+          Click
+        </Button>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="btn"]');
@@ -101,7 +115,11 @@ describe('Button — backward compatibility', () => {
 
   it('renders loading spinner when loading=true', () => {
     cleanup = render(
-      () => <Button loading data-testid="btn">Sign in</Button>,
+      () => (
+        <Button loading data-testid="btn">
+          Sign in
+        </Button>
+      ),
       container,
     );
     const el = container.querySelector('[data-testid="btn"]');

@@ -1,3 +1,4 @@
+import { Button } from '@capsuletech/web-ui';
 import {
   createSolidTable,
   flexRender,
@@ -11,15 +12,7 @@ import {
   type SortingState,
   type Table as TanstackTable,
 } from '@tanstack/solid-table';
-import {
-  createEffect,
-  createSignal,
-  For,
-  mergeProps,
-  Show,
-  splitProps,
-} from 'solid-js';
-import { Button } from '@capsuletech/web-ui';
+import { createEffect, createSignal, For, mergeProps, Show, splitProps } from 'solid-js';
 import { createInfiniteScroll } from '../../lib/infiniteScroll';
 import { Table } from '../../primitives/table';
 import type { DataTableTemplate, IDataTableInfiniteOptions, IDataTableProps } from './interfaces';
@@ -132,9 +125,15 @@ interface IDataRowProps<TRow> {
   /** Stable row id for scrollToId — placed as data-row-id attribute. */
   rowId?: string | number;
   /** Escape-hatch row-click callback forwarded from IDataTableProps. */
-  onRowClick?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
+  onRowClick?: (target: {
+    meta?: { tags: string[]; [k: string]: unknown };
+    payload?: Record<string, unknown>;
+  }) => void;
   /** Escape-hatch row double-click callback forwarded from IDataTableProps. */
-  onRowDblClick?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
+  onRowDblClick?: (target: {
+    meta?: { tags: string[]; [k: string]: unknown };
+    payload?: Record<string, unknown>;
+  }) => void;
 }
 
 /**
@@ -206,8 +205,14 @@ function StandardTableBody<TRow>(props: {
   itemPayload?: (row: TRow) => Record<string, unknown>;
   isRowActive?: (row: TRow) => boolean;
   getRowId?: (row: TRow) => string | number;
-  onRowClick?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
-  onRowDblClick?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
+  onRowClick?: (target: {
+    meta?: { tags: string[]; [k: string]: unknown };
+    payload?: Record<string, unknown>;
+  }) => void;
+  onRowDblClick?: (target: {
+    meta?: { tags: string[]; [k: string]: unknown };
+    payload?: Record<string, unknown>;
+  }) => void;
 }) {
   return (
     <Table.Body>
@@ -269,8 +274,14 @@ function InfiniteTable<TRow>(props: {
   isRowActive?: (row: TRow) => boolean;
   scrollToId?: string | number;
   getRowId?: (row: TRow) => string | number;
-  onRowClick?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
-  onRowDblClick?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
+  onRowClick?: (target: {
+    meta?: { tags: string[]; [k: string]: unknown };
+    payload?: Record<string, unknown>;
+  }) => void;
+  onRowDblClick?: (target: {
+    meta?: { tags: string[]; [k: string]: unknown };
+    payload?: Record<string, unknown>;
+  }) => void;
 }) {
   const opts = resolveInfiniteOptions(props.infinite);
   const isPlain = opts.mode === 'plain';

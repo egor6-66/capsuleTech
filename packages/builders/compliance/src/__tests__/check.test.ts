@@ -275,15 +275,13 @@ describe('check — app-package-import (Phase L)', () => {
   });
 
   it('type-only import of @capsuletech/* → ok (no runtime coupling)', () => {
-    expect(
-      check(VIEW_PATH, "import type { ICard } from '@capsuletech/web-ui';"),
-    ).toEqual([]);
+    expect(check(VIEW_PATH, "import type { ICard } from '@capsuletech/web-ui';")).toEqual([]);
   });
 
   it('type-only import of @capsule/* → ok', () => {
-    expect(
-      check(FEATURE_PATH, "import type { IRegistry } from '@capsule/docs-registry';"),
-    ).toEqual([]);
+    expect(check(FEATURE_PATH, "import type { IRegistry } from '@capsule/docs-registry';")).toEqual(
+      [],
+    );
   });
 
   describe('legacy names without web- prefix → also app-package-import (was: disallowed-import)', () => {
@@ -451,7 +449,10 @@ describe('check — no-native-js (Phase L)', () => {
 
   it('deduplication: document.querySelector called twice on same line → 1 violation', () => {
     // Оба document.X на одной строке — MemberExpression ловит document один раз (дедуп по позиции+имени)
-    const v = check(CONTROLLER_PATH, 'const x = document.querySelector, y = document.getElementById;');
+    const v = check(
+      CONTROLLER_PATH,
+      'const x = document.querySelector, y = document.getElementById;',
+    );
     const nativeViolations = v.filter((x) => x.kind === 'native-js' && x.source === 'document');
     // Два MemberExpression могут быть на разных column — не факт что дедупятся,
     // но оба с source='document' должны быть native-js

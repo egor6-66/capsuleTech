@@ -8,5 +8,6 @@
  * Also re-exports the HCA Controllers.Shell namespace (ADR 032, `useEmit`)
  * for consumers that need the full connected layer in one import.
  */
-export * from '../ui';
+
 export * from '../controllers';
+export * from '../ui';

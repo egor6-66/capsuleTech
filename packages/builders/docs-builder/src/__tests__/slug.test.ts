@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
 import { slugFromPath } from '../slug.js';
 
 // We use POSIX-style paths in test data by constructing paths manually.
@@ -52,7 +52,9 @@ describe('slugFromPath — package strategy', () => {
 
   it('nested README → parent dir as unit', () => {
     const absPath = join(pkgRoot, 'src', 'engine', 'README.md');
-    expect(slugFromPath(absPath, pkgRoot, 'package', '@capsuletech/web-core')).toBe('web-core/engine');
+    expect(slugFromPath(absPath, pkgRoot, 'package', '@capsuletech/web-core')).toBe(
+      'web-core/engine',
+    );
   });
 
   it('strips @capsuletech/ scope from pkg name', () => {

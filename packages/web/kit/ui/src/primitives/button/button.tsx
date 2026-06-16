@@ -47,7 +47,7 @@ export const Button = <T extends ValidComponent = 'button'>(props: IButtonProps<
 
   return (
     <Slot
-      as={(resolvedAs() as T)}
+      as={resolvedAs() as T}
       class={className()}
       style={style()}
       disabled={isDisabled()}

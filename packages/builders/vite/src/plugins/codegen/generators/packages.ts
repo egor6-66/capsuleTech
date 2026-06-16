@@ -14,10 +14,13 @@
  * order: 40
  */
 
-import { resolve } from 'node:path';
-import { generatePackagesRuntime, generatePackagesTypes, resolvePackageEntries } from '../../capsuleRegistry';
+import { dirname, resolve } from 'node:path';
+import {
+  generatePackagesRuntime,
+  generatePackagesTypes,
+  resolvePackageEntries,
+} from '../../capsuleRegistry';
 import type { CodegenContext, SubGenerator } from '../interfaces';
-import { dirname } from 'node:path';
 
 export const createPackagesSubGenerator = (): SubGenerator => {
   let dirty = false;

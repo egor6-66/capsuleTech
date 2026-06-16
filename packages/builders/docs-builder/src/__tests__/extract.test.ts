@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import { mkdir, writeFile, rm } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
 import { extractDocs } from '../extract.js';
 
 const createTmpDir = async (prefix = 'docs-builder-test-'): Promise<string> => {
@@ -27,7 +27,11 @@ describe('extractDocs — basic extraction', () => {
   it('returns registry with one entry for a valid doc', async () => {
     const root = await createTmpDir();
     try {
-      await writeDoc(root, 'guide.md', `${VALID_FM}\n\n# Guide\n\n## Overview {#overview}\n\nSome content.\n`);
+      await writeDoc(
+        root,
+        'guide.md',
+        `${VALID_FM}\n\n# Guide\n\n## Overview {#overview}\n\nSome content.\n`,
+      );
 
       const result = await extractDocs({ root, strategy: 'docs' });
 
@@ -181,7 +185,11 @@ describe('extractDocs — package strategy', () => {
     try {
       await writeDoc(root, 'guide.md', `${VALID_FM}\n\n# Guide\n`);
 
-      const result = await extractDocs({ root, strategy: 'package', pkgName: '@capsuletech/web-core' });
+      const result = await extractDocs({
+        root,
+        strategy: 'package',
+        pkgName: '@capsuletech/web-core',
+      });
 
       expect(result.registry['web-core/guide']).toBeDefined();
     } finally {
@@ -207,7 +215,11 @@ describe('extractDocs — wikilinks', () => {
   it('collects wikilinks from sections', async () => {
     const root = await createTmpDir();
     try {
-      await writeDoc(root, 'a.md', `${VALID_FM}\n\n# A\n\n## Section {#sec}\n\nSee [[other-doc]].\n`);
+      await writeDoc(
+        root,
+        'a.md',
+        `${VALID_FM}\n\n# A\n\n## Section {#sec}\n\nSee [[other-doc]].\n`,
+      );
       await writeDoc(root, 'other-doc.md', `${VALID_FM}\n\n# Other\n`);
 
       const result = await extractDocs({ root, strategy: 'docs' });
@@ -221,7 +233,11 @@ describe('extractDocs — wikilinks', () => {
   it('warns on unresolved wikilinks', async () => {
     const root = await createTmpDir();
     try {
-      await writeDoc(root, 'a.md', `${VALID_FM}\n\n# A\n\n## Section {#sec}\n\nSee [[nonexistent]].\n`);
+      await writeDoc(
+        root,
+        'a.md',
+        `${VALID_FM}\n\n# A\n\n## Section {#sec}\n\nSee [[nonexistent]].\n`,
+      );
 
       const result = await extractDocs({ root, strategy: 'docs' });
 

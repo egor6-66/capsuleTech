@@ -1,4 +1,3 @@
-export { Menu, MenuDropdown } from './menu';
 export type {
   IMenuActionItem,
   IMenuDropdownProps,
@@ -11,3 +10,4 @@ export type {
   IMenuToggleItem,
   MenuItem,
 } from './interfaces';
+export { Menu, MenuDropdown } from './menu';

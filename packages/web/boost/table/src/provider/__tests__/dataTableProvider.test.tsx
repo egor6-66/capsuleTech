@@ -89,16 +89,11 @@ describe('DataTableBody', () => {
   it('вне Provider: возвращает null + выводит console.warn', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    cleanup = render(
-      () => <DataTableBody />,
-      container,
-    );
+    cleanup = render(() => <DataTableBody />, container);
 
     // Таблицы нет — body вернул null
     expect(container.querySelector('table')).toBeNull();
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('DataTable.Body'),
-    );
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('DataTable.Body'));
 
     warnSpy.mockRestore();
   });
@@ -137,9 +132,7 @@ describe('DataTableToolbar', () => {
     );
 
     expect(container.querySelector('span')).toBeNull();
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('DataTable.Toolbar'),
-    );
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('DataTable.Toolbar'));
 
     warnSpy.mockRestore();
   });
@@ -153,13 +146,10 @@ describe('useDataTableContext', () => {
   it('вне Provider: возвращает null', () => {
     let ctxValue: ReturnType<typeof useDataTableContext> | undefined;
 
-    cleanup = render(
-      () => {
-        ctxValue = useDataTableContext();
-        return <div />;
-      },
-      container,
-    );
+    cleanup = render(() => {
+      ctxValue = useDataTableContext();
+      return <div />;
+    }, container);
 
     expect(ctxValue).toBeNull();
   });

@@ -175,7 +175,10 @@ export interface IDataTableProps<TRow> {
    * Receives the same target object that DataTableController emits:
    *   `{ meta?: { tags, ...}, payload?: Record<string,unknown> }`
    */
-  onRowClick?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
+  onRowClick?: (target: {
+    meta?: { tags: string[]; [k: string]: unknown };
+    payload?: Record<string, unknown>;
+  }) => void;
 
   /**
    * Direct row double-click callback (escape-hatch, non-HCA).
@@ -186,7 +189,10 @@ export interface IDataTableProps<TRow> {
    *
    * Same target shape as `onRowClick`.
    */
-  onRowDblClick?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
+  onRowDblClick?: (target: {
+    meta?: { tags: string[]; [k: string]: unknown };
+    payload?: Record<string, unknown>;
+  }) => void;
 
   /**
    * Direct row-select callback (escape-hatch, non-HCA).
@@ -194,7 +200,10 @@ export interface IDataTableProps<TRow> {
    * Called when a row is selected (checkbox / programmatic).
    * Same semantics as `onRowClick` — escape-hatch for standalone use.
    */
-  onRowSelect?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
+  onRowSelect?: (target: {
+    meta?: { tags: string[]; [k: string]: unknown };
+    payload?: Record<string, unknown>;
+  }) => void;
 
   /**
    * Enable a leading checkbox column + row selection state.

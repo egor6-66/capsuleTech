@@ -88,10 +88,7 @@ export const buttonPresets: readonly IPreset[] = [
   {
     id: 'icon',
     label: 'Icon',
-    schema: singleButton(
-      { variant: 'ghost', size: 'icon', 'aria-label': 'Action' },
-      'Plus',
-    ),
+    schema: singleButton({ variant: 'ghost', size: 'icon', 'aria-label': 'Action' }, 'Plus'),
     description:
       'Квадратная кнопка только с иконкой — для toolbar/панелей. Требует `aria-label` (озвучивается скринридером). Дети не задаются текстом — иконка приходит из словаря `ui.Icons.*`.',
   },

@@ -1,5 +1,5 @@
+import { afterEach, describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { describe, expect, it, afterEach } from 'vitest';
 import { gen, genList, registerGenerator, unregisterGenerator } from '../gen/index';
 import type { ValueGenerator } from '../gen/types';
 

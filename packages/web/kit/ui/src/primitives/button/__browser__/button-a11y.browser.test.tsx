@@ -130,7 +130,9 @@ describe('Button — focus-ring', () => {
   //
   // TODO (owner-web-ui): add Tailwind compiled CSS to vitest.browser.config.ts setupFiles,
   // then convert this todo → live assertion (both canon-drift and infra will be fixed).
-  it.todo('applies border-ring colour on focus — blocked: Tailwind CSS not in setupFiles + task-5 canon drift');
+  it.todo(
+    'applies border-ring colour on focus — blocked: Tailwind CSS not in setupFiles + task-5 canon drift',
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -207,12 +209,7 @@ describe('Button — loading', () => {
 describe('Button — aria-invalid', () => {
   // RED-CYCLE: aria-invalid:border-destructive not in CVA base — task 5 (canon drift-fix).
   it('shows destructive border colour when aria-invalid="true"', () => {
-    cleanup = render(
-      () => (
-        <Button aria-invalid="true">Submit</Button>
-      ),
-      container,
-    );
+    cleanup = render(() => <Button aria-invalid="true">Submit</Button>, container);
     const el = container.querySelector<HTMLButtonElement>('button')!;
     const cs = getComputedStyle(el);
 

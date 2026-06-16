@@ -7,12 +7,15 @@
  *   (exported for testing and for consumers that want to compose generators)
  */
 
-export { createCapsuleRegistryPlugin, LAYER_INIT_ORDER, type IOrchestratorProps } from './orchestrator';
-export type { SubGenerator, CodegenContext, AppConfigShape } from './interfaces';
-
+export { createAppConfigSubGenerator } from './generators/appConfig';
 // Built-in generator factories (exported for extension points).
 export { createBarrelRegistrySubGenerator } from './generators/barrelRegistry';
-export { createEndpointsSubGenerator } from './generators/endpoints';
-export { createAppConfigSubGenerator } from './generators/appConfig';
-export { createPackagesSubGenerator } from './generators/packages';
 export { createBootstrapSubGenerator } from './generators/bootstrap';
+export { createEndpointsSubGenerator } from './generators/endpoints';
+export { createPackagesSubGenerator } from './generators/packages';
+export type { AppConfigShape, CodegenContext, SubGenerator } from './interfaces';
+export {
+  createCapsuleRegistryPlugin,
+  type IOrchestratorProps,
+  LAYER_INIT_ORDER,
+} from './orchestrator';

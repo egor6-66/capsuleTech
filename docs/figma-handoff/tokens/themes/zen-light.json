@@ -2,25 +2,25 @@
   "$description": "Theme «Zen» — Light mode. Skin-поверхность (цвета + шрифты + тени). Цвета сконвертированы OKLCH→sRGB hex.",
 
   "color": {
-    "background":            { "$type": "color", "$value": "#e9e4d8" },
-    "foreground":            { "$type": "color", "$value": "#1e1e1e" },
-    "card":                  { "$type": "color", "$value": "#f4efe4" },
-    "card-foreground":       { "$type": "color", "$value": "#1e1e1e" },
-    "popover":               { "$type": "color", "$value": "#f4efe4" },
-    "popover-foreground":    { "$type": "color", "$value": "#1e1e1e" },
-    "primary":               { "$type": "color", "$value": "#2e2e2e" },
-    "primary-foreground":    { "$type": "color", "$value": "#e6e4d7" },
-    "secondary":             { "$type": "color", "$value": "#d8d2c4" },
-    "secondary-foreground":  { "$type": "color", "$value": "#2e2e2e" },
-    "muted":                 { "$type": "color", "$value": "#cfc8b8" },
-    "muted-foreground":      { "$type": "color", "$value": "#5e5a52" },
-    "accent":                { "$type": "color", "$value": "#e6e4d7" },
-    "accent-foreground":     { "$type": "color", "$value": "#2e2e2e" },
-    "destructive":           { "$type": "color", "$value": "#dc2626" },
-    "destructive-foreground":{ "$type": "color", "$value": "#ffffff" },
-    "border":                { "$type": "color", "$value": "#d2cbbb" },
-    "input":                 { "$type": "color", "$value": "#d2cbbb" },
-    "ring":                  { "$type": "color", "$value": "#2e2e2e" }
+    "background": { "$type": "color", "$value": "#e9e4d8" },
+    "foreground": { "$type": "color", "$value": "#1e1e1e" },
+    "card": { "$type": "color", "$value": "#f4efe4" },
+    "card-foreground": { "$type": "color", "$value": "#1e1e1e" },
+    "popover": { "$type": "color", "$value": "#f4efe4" },
+    "popover-foreground": { "$type": "color", "$value": "#1e1e1e" },
+    "primary": { "$type": "color", "$value": "#2e2e2e" },
+    "primary-foreground": { "$type": "color", "$value": "#e6e4d7" },
+    "secondary": { "$type": "color", "$value": "#d8d2c4" },
+    "secondary-foreground": { "$type": "color", "$value": "#2e2e2e" },
+    "muted": { "$type": "color", "$value": "#cfc8b8" },
+    "muted-foreground": { "$type": "color", "$value": "#5e5a52" },
+    "accent": { "$type": "color", "$value": "#e6e4d7" },
+    "accent-foreground": { "$type": "color", "$value": "#2e2e2e" },
+    "destructive": { "$type": "color", "$value": "#dc2626" },
+    "destructive-foreground": { "$type": "color", "$value": "#ffffff" },
+    "border": { "$type": "color", "$value": "#d2cbbb" },
+    "input": { "$type": "color", "$value": "#d2cbbb" },
+    "ring": { "$type": "color", "$value": "#2e2e2e" }
   },
 
   "chart": {
@@ -32,46 +32,148 @@
   },
 
   "sidebar": {
-    "DEFAULT":            { "$type": "color", "$value": "#e3ddcf" },
-    "foreground":         { "$type": "color", "$value": "#1e1e1e" },
-    "primary":            { "$type": "color", "$value": "#2e2e2e" },
+    "DEFAULT": { "$type": "color", "$value": "#e3ddcf" },
+    "foreground": { "$type": "color", "$value": "#1e1e1e" },
+    "primary": { "$type": "color", "$value": "#2e2e2e" },
     "primary-foreground": { "$type": "color", "$value": "#e6e4d7" },
-    "accent":             { "$type": "color", "$value": "#e6e4d7" },
-    "accent-foreground":  { "$type": "color", "$value": "#2e2e2e" },
-    "border":             { "$type": "color", "$value": "#d2cbbb" },
-    "ring":               { "$type": "color", "$value": "#2e2e2e" }
+    "accent": { "$type": "color", "$value": "#e6e4d7" },
+    "accent-foreground": { "$type": "color", "$value": "#2e2e2e" },
+    "border": { "$type": "color", "$value": "#d2cbbb" },
+    "ring": { "$type": "color", "$value": "#2e2e2e" }
   },
 
   "font-family": {
-    "sans":  { "$type": "fontFamily", "$value": ["Inter Variable", "Inter", "sans-serif"] },
+    "sans": { "$type": "fontFamily", "$value": ["Inter Variable", "Inter", "sans-serif"] },
     "serif": { "$type": "fontFamily", "$value": ["Playfair Display", "serif"] },
-    "mono":  { "$type": "fontFamily", "$value": ["JetBrains Mono", "monospace"] }
+    "mono": { "$type": "fontFamily", "$value": ["JetBrains Mono", "monospace"] }
   },
 
   "shadow": {
     "$description": "Тени темы. Цвет — чёрный с альфой. Многослойные тени = массив слоёв.",
-    "2xs": { "$type": "shadow", "$value": { "offsetX": "0px", "offsetY": "4px", "blur": "10px", "spread": "0px", "color": "rgba(0,0,0,0.05)" } },
-    "xs":  { "$type": "shadow", "$value": { "offsetX": "0px", "offsetY": "4px", "blur": "10px", "spread": "0px", "color": "rgba(0,0,0,0.05)" } },
-    "sm":  { "$type": "shadow", "$value": [
-      { "offsetX": "0px", "offsetY": "4px", "blur": "10px", "spread": "0px",  "color": "rgba(0,0,0,0.1)" },
-      { "offsetX": "0px", "offsetY": "1px", "blur": "2px",  "spread": "-1px", "color": "rgba(0,0,0,0.1)" }
-    ] },
-    "base": { "$type": "shadow", "$value": [
-      { "offsetX": "0px", "offsetY": "4px", "blur": "10px", "spread": "0px",  "color": "rgba(0,0,0,0.1)" },
-      { "offsetX": "0px", "offsetY": "1px", "blur": "2px",  "spread": "-1px", "color": "rgba(0,0,0,0.1)" }
-    ] },
-    "md": { "$type": "shadow", "$value": [
-      { "offsetX": "0px", "offsetY": "4px", "blur": "10px", "spread": "0px",  "color": "rgba(0,0,0,0.1)" },
-      { "offsetX": "0px", "offsetY": "2px", "blur": "4px",  "spread": "-1px", "color": "rgba(0,0,0,0.1)" }
-    ] },
-    "lg": { "$type": "shadow", "$value": [
-      { "offsetX": "0px", "offsetY": "4px", "blur": "10px", "spread": "0px",  "color": "rgba(0,0,0,0.1)" },
-      { "offsetX": "0px", "offsetY": "4px", "blur": "6px",  "spread": "-1px", "color": "rgba(0,0,0,0.1)" }
-    ] },
-    "xl": { "$type": "shadow", "$value": [
-      { "offsetX": "0px", "offsetY": "4px", "blur": "10px", "spread": "0px",  "color": "rgba(0,0,0,0.1)" },
-      { "offsetX": "0px", "offsetY": "8px", "blur": "10px", "spread": "-1px", "color": "rgba(0,0,0,0.1)" }
-    ] },
-    "2xl": { "$type": "shadow", "$value": { "offsetX": "0px", "offsetY": "4px", "blur": "10px", "spread": "0px", "color": "rgba(0,0,0,0.25)" } }
+    "2xs": {
+      "$type": "shadow",
+      "$value": {
+        "offsetX": "0px",
+        "offsetY": "4px",
+        "blur": "10px",
+        "spread": "0px",
+        "color": "rgba(0,0,0,0.05)"
+      }
+    },
+    "xs": {
+      "$type": "shadow",
+      "$value": {
+        "offsetX": "0px",
+        "offsetY": "4px",
+        "blur": "10px",
+        "spread": "0px",
+        "color": "rgba(0,0,0,0.05)"
+      }
+    },
+    "sm": {
+      "$type": "shadow",
+      "$value": [
+        {
+          "offsetX": "0px",
+          "offsetY": "4px",
+          "blur": "10px",
+          "spread": "0px",
+          "color": "rgba(0,0,0,0.1)"
+        },
+        {
+          "offsetX": "0px",
+          "offsetY": "1px",
+          "blur": "2px",
+          "spread": "-1px",
+          "color": "rgba(0,0,0,0.1)"
+        }
+      ]
+    },
+    "base": {
+      "$type": "shadow",
+      "$value": [
+        {
+          "offsetX": "0px",
+          "offsetY": "4px",
+          "blur": "10px",
+          "spread": "0px",
+          "color": "rgba(0,0,0,0.1)"
+        },
+        {
+          "offsetX": "0px",
+          "offsetY": "1px",
+          "blur": "2px",
+          "spread": "-1px",
+          "color": "rgba(0,0,0,0.1)"
+        }
+      ]
+    },
+    "md": {
+      "$type": "shadow",
+      "$value": [
+        {
+          "offsetX": "0px",
+          "offsetY": "4px",
+          "blur": "10px",
+          "spread": "0px",
+          "color": "rgba(0,0,0,0.1)"
+        },
+        {
+          "offsetX": "0px",
+          "offsetY": "2px",
+          "blur": "4px",
+          "spread": "-1px",
+          "color": "rgba(0,0,0,0.1)"
+        }
+      ]
+    },
+    "lg": {
+      "$type": "shadow",
+      "$value": [
+        {
+          "offsetX": "0px",
+          "offsetY": "4px",
+          "blur": "10px",
+          "spread": "0px",
+          "color": "rgba(0,0,0,0.1)"
+        },
+        {
+          "offsetX": "0px",
+          "offsetY": "4px",
+          "blur": "6px",
+          "spread": "-1px",
+          "color": "rgba(0,0,0,0.1)"
+        }
+      ]
+    },
+    "xl": {
+      "$type": "shadow",
+      "$value": [
+        {
+          "offsetX": "0px",
+          "offsetY": "4px",
+          "blur": "10px",
+          "spread": "0px",
+          "color": "rgba(0,0,0,0.1)"
+        },
+        {
+          "offsetX": "0px",
+          "offsetY": "8px",
+          "blur": "10px",
+          "spread": "-1px",
+          "color": "rgba(0,0,0,0.1)"
+        }
+      ]
+    },
+    "2xl": {
+      "$type": "shadow",
+      "$value": {
+        "offsetX": "0px",
+        "offsetY": "4px",
+        "blur": "10px",
+        "spread": "0px",
+        "color": "rgba(0,0,0,0.25)"
+      }
+    }
   }
 }

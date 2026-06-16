@@ -42,12 +42,16 @@ const getThumb = () => container.querySelector('[role="slider"]') as HTMLElement
 
 /** Fires an ArrowRight keyboard event on the thumb to increment by one step. */
 const pressArrowRight = (el: Element) => {
-  el.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+  el.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }),
+  );
 };
 
 /** Fires an ArrowLeft keyboard event on the thumb to decrement by one step. */
 const pressArrowLeft = (el: Element) => {
-  el.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }));
+  el.dispatchEvent(
+    new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }),
+  );
 };
 
 // ---------------------------------------------------------------------------

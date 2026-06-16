@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  DEFAULT_EXCLUSIONS,
-  shouldExcludeDir,
-  shouldExcludeFile,
-} from '../exclusions.js';
+import { DEFAULT_EXCLUSIONS, shouldExcludeDir, shouldExcludeFile } from '../exclusions.js';
 
 describe('DEFAULT_EXCLUSIONS', () => {
   it('has expected default files', () => {

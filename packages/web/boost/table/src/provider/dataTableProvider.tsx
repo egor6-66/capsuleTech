@@ -34,8 +34,8 @@
  * ```
  */
 
-import { createContext, useContext } from 'solid-js';
 import type { JSX } from 'solid-js';
+import { createContext, useContext } from 'solid-js';
 import { DataTable } from '../composites/dataTable';
 import type {
   IDataTableBodyProps,
@@ -87,7 +87,9 @@ function DataTableBodyComponent(props: IDataTableBodyProps) {
   const ctx = useDataTableContext();
   if (!ctx) {
     if (process.env.NODE_ENV !== 'production') {
-      console.warn('[web-table] DataTable.Body: нет DataTable.Provider выше по дереву. Рендер пропущен.');
+      console.warn(
+        '[web-table] DataTable.Body: нет DataTable.Provider выше по дереву. Рендер пропущен.',
+      );
     }
     return null;
   }
@@ -119,11 +121,7 @@ function DataTableToolbarComponent(props: { children: JSX.Element }) {
     return null;
   }
 
-  return (
-    <div class="mb-component flex items-center gap-2">
-      {props.children}
-    </div>
-  );
+  return <div class="mb-component flex items-center gap-2">{props.children}</div>;
 }
 
 // ---------------------------------------------------------------------------
@@ -154,11 +152,10 @@ function DataTablePaginationComponent(props: { class?: string }) {
 // DataTable.Pagination (namespace-style).
 // ---------------------------------------------------------------------------
 
-export const DataTableProvider: (<TRow>(props: IDataTableProviderProps<TRow>) => JSX.Element) =
+export const DataTableProvider: <TRow>(props: IDataTableProviderProps<TRow>) => JSX.Element =
   DataTableProviderComponent;
 
-export const DataTableBody: (props: IDataTableBodyProps) => JSX.Element =
-  DataTableBodyComponent;
+export const DataTableBody: (props: IDataTableBodyProps) => JSX.Element = DataTableBodyComponent;
 
 export const DataTableToolbar: (props: { children: JSX.Element }) => JSX.Element =
   DataTableToolbarComponent;

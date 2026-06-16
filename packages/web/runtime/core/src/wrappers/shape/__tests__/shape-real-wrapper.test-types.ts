@@ -16,10 +16,10 @@
  *   НЕГАТИВ: row.nonExistent → @ts-expect-error
  */
 
-import { z } from 'zod';
 import type { Component } from 'solid-js';
 import { describe, it } from 'vitest';
-import type { IShapeWrapper, IShapeUi, RowOf, ShapeData, ApplyRowFrom } from '../types';
+import { z } from 'zod';
+import type { ApplyRowFrom, IShapeUi, IShapeWrapper, RowOf, ShapeData } from '../types';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -140,15 +140,27 @@ type _ItemPayloadParam = Parameters<NonNullable<_ConsumerProps['itemPayload']>>[
 type _DataActual = _ConsumerProps['data'];
 
 // getRowId/isRowActive/itemPayload принимают Incident (structural: extends в обе стороны)
-type _GetRowId_ExtendsIncident = Expect<Equal<_GetRowIdParam extends Incident ? true : false, true>>;
-type _GetRowId_IncidentExtends = Expect<Equal<Incident extends _GetRowIdParam ? true : false, true>>;
-type _IsRowActive_ExtendsIncident = Expect<Equal<_IsRowActiveParam extends Incident ? true : false, true>>;
-type _ItemPayload_ExtendsIncident = Expect<Equal<_ItemPayloadParam extends Incident ? true : false, true>>;
+type _GetRowId_ExtendsIncident = Expect<
+  Equal<_GetRowIdParam extends Incident ? true : false, true>
+>;
+type _GetRowId_IncidentExtends = Expect<
+  Equal<Incident extends _GetRowIdParam ? true : false, true>
+>;
+type _IsRowActive_ExtendsIncident = Expect<
+  Equal<_IsRowActiveParam extends Incident ? true : false, true>
+>;
+type _ItemPayload_ExtendsIncident = Expect<
+  Equal<_ItemPayloadParam extends Incident ? true : false, true>
+>;
 type _GetRowIdNotAny = Expect<Equal<IsAny<_GetRowIdParam>, false>>;
 
 // data структурно = Incident[] | undefined
-type _Data_ExtendsArr = Expect<Equal<_DataActual extends (Incident[] | undefined) ? true : false, true>>;
-type _Data_ArrExtends = Expect<Equal<(Incident[] | undefined) extends _DataActual ? true : false, true>>;
+type _Data_ExtendsArr = Expect<
+  Equal<_DataActual extends Incident[] | undefined ? true : false, true>
+>;
+type _Data_ArrExtends = Expect<
+  Equal<Incident[] | undefined extends _DataActual ? true : false, true>
+>;
 
 // Негатив: row.nonExistent в consumer-props → ошибка
 declare const _consumerRow: _GetRowIdParam;
@@ -173,9 +185,7 @@ declare const mockUi: IShapeUi;
 // Тест через typeof: тип ui.PreviewCard — это typeof PreviewCard из web-ui,
 // который несёт __tpl-маркер. Проверяем: extends { __tpl? } → true.
 type _UiPreviewCardType = (typeof mockUi)['PreviewCard'];
-type _UiPreviewCardHasTpl = _UiPreviewCardType extends { readonly __tpl?: infer _M }
-  ? true
-  : false;
+type _UiPreviewCardHasTpl = _UiPreviewCardType extends { readonly __tpl?: infer _M } ? true : false;
 // Ассерт: ui.PreviewCard должен иметь __tpl (не Record<string,any>-based fallback)
 type _ModC_HasMarker = Expect<Equal<_UiPreviewCardHasTpl, true>>;
 
@@ -231,7 +241,10 @@ type NavItem = z.infer<typeof NavSchema>;
 interface INavGroupProps<TRow> {
   item?: { use?: unknown; props?: (it: TRow) => unknown };
 }
-interface NavGroupTemplate { row: unknown; props: INavGroupProps<this['row']>; }
+interface NavGroupTemplate {
+  row: unknown;
+  props: INavGroupProps<this['row']>;
+}
 declare const NavGroupComp: Component<INavGroupProps<any>> & { readonly __tpl?: NavGroupTemplate };
 
 // ПОЗИТИВ: item.props it = NavItem — без аннотации
@@ -282,10 +295,9 @@ const _sBatchNeg = Shape(
 void _sBatchNeg;
 
 // ОБЪЕКТНАЯ ФОРМА arg2 — item без функции (static конфиг)
-const _sBatchObj = Shape(
-  (ui) => ({ schema: z.array(NavSchema), as: NavGroupComp }),
-  { defaults: [{ label: 'Static', to: '/static' }] },
-);
+const _sBatchObj = Shape((ui) => ({ schema: z.array(NavSchema), as: NavGroupComp }), {
+  defaults: [{ label: 'Static', to: '/static' }],
+});
 void _sBatchObj;
 
 // ---------------------------------------------------------------------------

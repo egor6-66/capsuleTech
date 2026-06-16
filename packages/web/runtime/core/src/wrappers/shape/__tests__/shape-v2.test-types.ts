@@ -29,9 +29,9 @@
  *  T_B3. Возвращаемый компонент (overload 2, bind-only): row-типизирован.
  */
 
-import { z } from 'zod';
-import { describe, it } from 'vitest';
 import type { JSX } from 'solid-js';
+import { describe, it } from 'vitest';
+import { z } from 'zod';
 import type {
   ApplyRow,
   ApplyRowFrom,
@@ -131,9 +131,15 @@ type _MarkerOf_Group = Equal<MarkerOf<typeof GroupComp>, GroupTemplate>;
 
 // ApplyRowFrom резолвит props через HKT
 type _ApplyRowFrom_DataTable = ApplyRowFrom<typeof DataTableComp, Incident>;
-type _ApplyRowFrom_DataTable_GetRowId = _ApplyRowFrom_DataTable extends { getRowId?: (row: infer R) => unknown } ? R : never;
+type _ApplyRowFrom_DataTable_GetRowId = _ApplyRowFrom_DataTable extends {
+  getRowId?: (row: infer R) => unknown;
+}
+  ? R
+  : never;
 // getRowId параметр должен быть Incident (structural)
-type _ApplyRowFrom_GetRowId_ExtendsIncident = Expect<Equal<_ApplyRowFrom_DataTable_GetRowId extends Incident ? true : false, true>>;
+type _ApplyRowFrom_GetRowId_ExtendsIncident = Expect<
+  Equal<_ApplyRowFrom_DataTable_GetRowId extends Incident ? true : false, true>
+>;
 
 // ---------------------------------------------------------------------------
 // Симуляция IShapeWrapper через Shape9-подобную сигнатуру (для type-тестов)
@@ -144,7 +150,11 @@ type _ApplyRowFrom_GetRowId_ExtendsIncident = Expect<Equal<_ApplyRowFrom_DataTab
 // Переиспользуем ApplyRowFrom из types.ts для форм
 declare function TestShape<S extends z.ZodType, A extends { readonly __tpl?: object }>(
   bind: (ui: any) => { schema: S; as?: A; item?: any },
-  config: ((props: IShapeBaseProps<ShapeData<S>> & ApplyRowFrom<A, RowOf<S>>) => IShapeConfigBody<ApplyRowFrom<A, RowOf<S>>, S>) | IShapeConfigBody<ApplyRowFrom<A, RowOf<S>>, S>,
+  config:
+    | ((
+        props: IShapeBaseProps<ShapeData<S>> & ApplyRowFrom<A, RowOf<S>>,
+      ) => IShapeConfigBody<ApplyRowFrom<A, RowOf<S>>, S>)
+    | IShapeConfigBody<ApplyRowFrom<A, RowOf<S>>, S>,
 ): (props: IShapeBaseProps<ShapeData<S>> & ApplyRowFrom<A, RowOf<S>>) => unknown;
 
 declare function TestShapeNoConfig<S extends z.ZodType, A extends { readonly __tpl?: object }>(
@@ -192,10 +202,7 @@ describe('Shape v2 type-tests — DataTable template', () => {
 
   // T3. Консьюмер-props типизированы через Incident
   it('T3: consumer props (getRowId, isRowActive) receive Incident', () => {
-    const _shape = TestShape(
-      (_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }),
-      {},
-    );
+    const _shape = TestShape((_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }), {});
     type _Props = Parameters<typeof _shape>[0];
     type _GetRowIdParam = Parameters<NonNullable<_Props['getRowId']>>[0];
     type _IsRowActiveParam = Parameters<NonNullable<_Props['isRowActive']>>[0];
@@ -203,7 +210,9 @@ describe('Shape v2 type-tests — DataTable template', () => {
     // Structural ассерты (extends в обе стороны)
     type _T3_GetRowId_Ext = Expect<Equal<_GetRowIdParam extends Incident ? true : false, true>>;
     type _T3_GetRowId_Inv = Expect<Equal<Incident extends _GetRowIdParam ? true : false, true>>;
-    type _T3_IsRowActive_Ext = Expect<Equal<_IsRowActiveParam extends Incident ? true : false, true>>;
+    type _T3_IsRowActive_Ext = Expect<
+      Equal<_IsRowActiveParam extends Incident ? true : false, true>
+    >;
     type _T3_GetRowIdNotAny = Expect<Equal<IsAny<_GetRowIdParam>, false>>;
 
     void _shape;
@@ -259,35 +268,29 @@ describe('Shape v2 type-tests — Group template', () => {
 
 describe('Shape v2 type-tests — config as plain object', () => {
   it('T6: object config columns.accessorFn row = Incident', () => {
-    const _shape = TestShape(
-      (_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }),
-      {
-        columns: [
-          {
-            accessorFn: (row): string => {
-              type _T6_RowIsIncident = Expect<Equal<typeof row, Incident>>;
-              return row.applicant.name;
-            },
+    const _shape = TestShape((_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }), {
+      columns: [
+        {
+          accessorFn: (row): string => {
+            type _T6_RowIsIncident = Expect<Equal<typeof row, Incident>>;
+            return row.applicant.name;
           },
-        ],
-      },
-    );
+        },
+      ],
+    });
     void _shape;
   });
 
   it('T6-neg: object config row.nonExistent is a type error', () => {
-    const _shape = TestShape(
-      (_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }),
-      {
-        columns: [
-          {
-            accessorFn: (row) =>
-              // @ts-expect-error — nonExistent не существует в Incident
-              row.nonExistent,
-          },
-        ],
-      },
-    );
+    const _shape = TestShape((_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }), {
+      columns: [
+        {
+          accessorFn: (row) =>
+            // @ts-expect-error — nonExistent не существует в Incident
+            row.nonExistent,
+        },
+      ],
+    });
     void _shape;
   });
 });
@@ -298,10 +301,7 @@ describe('Shape v2 type-tests — config as plain object', () => {
 
 describe('Shape v2 type-tests — no degradation', () => {
   it('T7: no any in getRowId / isRowActive / data', () => {
-    const _shape = TestShape(
-      (_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }),
-      {},
-    );
+    const _shape = TestShape((_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }), {});
     type _Props = Parameters<typeof _shape>[0];
     type _GetRowIdParam = Parameters<NonNullable<_Props['getRowId']>>[0];
     type _IsRowActiveParam = Parameters<NonNullable<_Props['isRowActive']>>[0];
@@ -319,13 +319,16 @@ describe('Shape v2 type-tests — no degradation', () => {
 
 describe('Shape v2 type-tests — bind only (no config)', () => {
   it('T8: shape without config arg compiles and data is typed', () => {
-    const _shape = TestShapeNoConfig(
-      (_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }),
-    );
+    const _shape = TestShapeNoConfig((_ui) => ({
+      schema: z.array(IncidentSchema),
+      as: DataTableComp,
+    }));
     type _Props = Parameters<typeof _shape>[0];
     type _DataProp = _Props['data'];
     // data должен принимать Incident[] | undefined
-    type _T8_DataIsArray = Expect<Equal<_DataProp extends Incident[] | undefined ? true : false, true>>;
+    type _T8_DataIsArray = Expect<
+      Equal<_DataProp extends Incident[] | undefined ? true : false, true>
+    >;
     void _shape;
   });
 });
@@ -355,13 +358,10 @@ void _t3NegTestRow.nonExistent;
 describe('Shape v2 type-tests — defaults in config', () => {
   it('T9a: defaults as Incident[] in object config compiles', () => {
     const mockIncidents: Incident[] = [{ id: '1', applicant: { name: 'Alice' } }];
-    const _shape = TestShape(
-      (_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }),
-      {
-        defaults: mockIncidents,
-        columns: [{ accessorKey: 'id' }],
-      },
-    );
+    const _shape = TestShape((_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }), {
+      defaults: mockIncidents,
+      columns: [{ accessorKey: 'id' }],
+    });
     void _shape;
   });
 
@@ -378,13 +378,10 @@ describe('Shape v2 type-tests — defaults in config', () => {
 
   // T10. Негатив: несовместимый defaults (число при array-схеме) → ошибка
   it('T10: incompatible defaults type is a type error', () => {
-    const _shape = TestShape(
-      (_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }),
-      {
-        // @ts-expect-error — number не совместим с Incident[]
-        defaults: 123,
-      },
-    );
+    const _shape = TestShape((_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }), {
+      // @ts-expect-error — number не совместим с Incident[]
+      defaults: 123,
+    });
     void _shape;
   });
 });
@@ -469,18 +466,19 @@ describe('Shape v2 type-tests — IShapeBind.item.props (задача 1)', () =>
 // (declare const внутри it() невозможен в TS — используем module-level)
 
 // T_B1: overload 1 (с config) — consumer props row-typed
-const _TB1_shape = TestShape(
-  (_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }),
-  {},
-);
+const _TB1_shape = TestShape((_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }), {});
 type _TB1_Props = Parameters<typeof _TB1_shape>[0];
 type _TB1_ItemPayloadParam = Parameters<NonNullable<_TB1_Props['itemPayload']>>[0];
 type _TB1_GetRowIdParam = Parameters<NonNullable<_TB1_Props['getRowId']>>[0];
 type _TB1_IsRowActiveParam = Parameters<NonNullable<_TB1_Props['isRowActive']>>[0];
 
-type _TB1_ItemPayload_Ext = Expect<Equal<_TB1_ItemPayloadParam extends Incident ? true : false, true>>;
+type _TB1_ItemPayload_Ext = Expect<
+  Equal<_TB1_ItemPayloadParam extends Incident ? true : false, true>
+>;
 type _TB1_GetRowId_Ext = Expect<Equal<_TB1_GetRowIdParam extends Incident ? true : false, true>>;
-type _TB1_IsRowActive_Ext = Expect<Equal<_TB1_IsRowActiveParam extends Incident ? true : false, true>>;
+type _TB1_IsRowActive_Ext = Expect<
+  Equal<_TB1_IsRowActiveParam extends Incident ? true : false, true>
+>;
 type _TB1_NotAny = Expect<Equal<IsAny<_TB1_GetRowIdParam>, false>>;
 
 // T_B2: negation — row.nonExistent на consumer-props → ошибка
@@ -504,13 +502,16 @@ describe('Shape v2 type-tests — consumer component props row-typed (задач
   // getRowId/itemPayload приходят из ApplyRowFrom — доступны через overload 1/2 с маркером.
   // TestShapeNoConfig возвращает IShapeBaseProps (без строгих row-типов) — data проверяется.
   it('T_B3: bind-only overload — data prop typed as Incident[]', () => {
-    const _shape = TestShapeNoConfig(
-      (_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }),
-    );
+    const _shape = TestShapeNoConfig((_ui) => ({
+      schema: z.array(IncidentSchema),
+      as: DataTableComp,
+    }));
     type _Props = Parameters<typeof _shape>[0];
     type _DataProp = _Props['data'];
     // data должен принимать Incident[] | undefined
-    type _TB3_DataIsIncidentArray = Expect<Equal<_DataProp extends Incident[] | undefined ? true : false, true>>;
+    type _TB3_DataIsIncidentArray = Expect<
+      Equal<_DataProp extends Incident[] | undefined ? true : false, true>
+    >;
     void _shape;
   });
 });

@@ -32,7 +32,9 @@
       "datasource": { "type": "loki", "uid": "loki" },
       "gridPos": { "h": 8, "w": 16, "x": 0, "y": 0 },
       "fieldConfig": {
-        "defaults": { "custom": { "drawStyle": "line", "fillOpacity": 15, "stacking": { "mode": "normal" } } },
+        "defaults": {
+          "custom": { "drawStyle": "line", "fillOpacity": 15, "stacking": { "mode": "normal" } }
+        },
         "overrides": []
       },
       "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["sum"] } },
@@ -54,7 +56,12 @@
       "datasource": { "type": "loki", "uid": "loki" },
       "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
       "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" } }, "overrides": [] },
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "area", "textMode": "value_and_name" },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "value",
+        "graphMode": "area",
+        "textMode": "value_and_name"
+      },
       "targets": [
         {
           "refId": "A",
@@ -72,7 +79,10 @@
       "description": "Prometheus-метрика claude_code_token_usage_tokens_total (подтверждено на smoke). Разбивка по type — input/output/cacheRead/cacheCreation.",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
-      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line", "fillOpacity": 10 }, "unit": "short" }, "overrides": [] },
+      "fieldConfig": {
+        "defaults": { "custom": { "drawStyle": "line", "fillOpacity": 10 }, "unit": "short" },
+        "overrides": []
+      },
       "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["sum"] } },
       "targets": [
         {
@@ -90,7 +100,13 @@
       "description": "Сырой поток событий по выбранным скоупам. tool_name / prompt — в structured metadata (раскрыть строку).",
       "datasource": { "type": "loki", "uid": "loki" },
       "gridPos": { "h": 12, "w": 24, "x": 0, "y": 16 },
-      "options": { "showTime": true, "wrapLogMessage": true, "dedupStrategy": "none", "enableLogDetails": true, "sortOrder": "Descending" },
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "sortOrder": "Descending"
+      },
       "targets": [
         {
           "refId": "A",

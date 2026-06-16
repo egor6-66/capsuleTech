@@ -30,8 +30,8 @@ export const Multiple: Story = {
       <Accordion.Item value="section-1">
         <Accordion.Trigger>Section 1 — Colors</Accordion.Trigger>
         <Accordion.Content>
-          Configure the color palette for the background highlight. Each color token maps to a
-          CSS variable in the active theme.
+          Configure the color palette for the background highlight. Each color token maps to a CSS
+          variable in the active theme.
         </Accordion.Content>
       </Accordion.Item>
       <Accordion.Item value="section-2">
@@ -60,22 +60,22 @@ export const SingleCollapsible: Story = {
       <Accordion.Item value="faq-1">
         <Accordion.Trigger>What is Capsule?</Accordion.Trigger>
         <Accordion.Content>
-          Capsule is an experimental HCA framework built on Solid.js + XState + TanStack Router.
-          UI is a Shadow — the interface is a silent projection of business logic.
+          Capsule is an experimental HCA framework built on Solid.js + XState + TanStack Router. UI
+          is a Shadow — the interface is a silent projection of business logic.
         </Accordion.Content>
       </Accordion.Item>
       <Accordion.Item value="faq-2">
         <Accordion.Trigger>How does UiProxy work?</Accordion.Trigger>
         <Accordion.Content>
-          UiProxy intercepts UI events (onClick, onInput, onChange…) from View children and
-          routes them through ControllerProxy into XState FSM handlers.
+          UiProxy intercepts UI events (onClick, onInput, onChange…) from View children and routes
+          them through ControllerProxy into XState FSM handlers.
         </Accordion.Content>
       </Accordion.Item>
       <Accordion.Item value="faq-3">
         <Accordion.Trigger>What is the Entity layer?</Accordion.Trigger>
         <Accordion.Content>
-          Entity is the domain data layer: Zod schema + defaults + meta, with no UI. It is
-          the single source of truth for shapes (e.g. User, Product, Order).
+          Entity is the domain data layer: Zod schema + defaults + meta, with no UI. It is the
+          single source of truth for shapes (e.g. User, Product, Order).
         </Accordion.Content>
       </Accordion.Item>
     </Accordion>
@@ -134,9 +134,7 @@ export const ResponsiveWithFlex: Story = {
         </Accordion.Item>
         <Accordion.Item value="a-2">
           <Accordion.Trigger>Typography</Accordion.Trigger>
-          <Accordion.Content>
-            Choose font family, size, and line-height.
-          </Accordion.Content>
+          <Accordion.Content>Choose font family, size, and line-height.</Accordion.Content>
         </Accordion.Item>
       </Accordion>
       <Accordion fluid={250} multiple>
@@ -148,9 +146,7 @@ export const ResponsiveWithFlex: Story = {
         </Accordion.Item>
         <Accordion.Item value="b-2">
           <Accordion.Trigger>Shadows</Accordion.Trigger>
-          <Accordion.Content>
-            Pick shadow depth from none / sm / md / lg / xl.
-          </Accordion.Content>
+          <Accordion.Content>Pick shadow depth from none / sm / md / lg / xl.</Accordion.Content>
         </Accordion.Item>
       </Accordion>
     </Flex>

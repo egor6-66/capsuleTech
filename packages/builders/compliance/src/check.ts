@@ -519,8 +519,7 @@ const runZoneCheck = (absPath: string, code: string): IViolation[] => {
 
     if (isZoneImportAllowed(fromZone, fromPkg, targetZone, npmName)) return;
 
-    const isCrossDomain =
-      fromZone === 'domain' && targetZone === 'domain' && npmName !== fromPkg;
+    const isCrossDomain = fromZone === 'domain' && targetZone === 'domain' && npmName !== fromPkg;
     violations.push({
       file: absPath,
       line,

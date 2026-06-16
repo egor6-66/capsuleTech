@@ -21,8 +21,8 @@
  * defineAppConfig (генератор) — позже.
  */
 
-import { registerAccessResolver } from '@capsuletech/web-core';
 import type { IAuthCapability } from '@capsuletech/web-contract/capabilities';
+import { registerAccessResolver } from '@capsuletech/web-core';
 import { roleProvider } from './providers/role';
 import { can, registerAccessProvider } from './resolver';
 import type { AccessPolicy } from './types';

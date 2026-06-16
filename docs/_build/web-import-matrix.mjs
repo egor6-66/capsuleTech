@@ -11,7 +11,7 @@
  * Run from repo root: `node docs/_build/web-import-matrix.mjs`
  */
 import { readdir, readFile, writeFile } from 'node:fs/promises';
-import { join, relative, resolve, dirname } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -119,7 +119,12 @@ for (const pkg of pkgs) {
       if (base === pkg.name) continue; // self-import (subpath)
       let entry = targets.get(base);
       if (!entry) {
-        entry = { fileCount: 0, subpaths: new Set(), files: new Set(), external: !nameToPkg.has(base) };
+        entry = {
+          fileCount: 0,
+          subpaths: new Set(),
+          files: new Set(),
+          external: !nameToPkg.has(base),
+        };
         targets.set(base, entry);
       }
       entry.files.add(relative(pkg.dir, f).replace(/\\/g, '/'));
@@ -153,7 +158,8 @@ const today = new Date().toISOString().slice(0, 10);
 let md = '';
 md += '---\n';
 md += 'title: web-import-matrix\n';
-md += 'description: Baseline cross-package import inventory for packages/web/** (W5 / ADR 047). Snapshot, not enforcement.\n';
+md +=
+  'description: Baseline cross-package import inventory for packages/web/** (W5 / ADR 047). Snapshot, not enforcement.\n';
 md += 'status: documented\n';
 md += 'tags: [meta, web-rework, audit]\n';
 md += `last_updated: ${today}\n`;
@@ -165,7 +171,8 @@ md += `**Scope:** ${pkgs.length} packages in \`packages/web/**\`. **External @ca
 
 // Zone matrix
 md += '## Zone × Zone counts {#zone-matrix}\n\n';
-md += 'Row = importer zone, column = imported zone. Cell = number of (importer-pkg, imported-pkg) edges.\n\n';
+md +=
+  'Row = importer zone, column = imported zone. Cell = number of (importer-pkg, imported-pkg) edges.\n\n';
 md += `| from \\ to | ${ZONES.join(' | ')} |\n`;
 md += `|---|${ZONES.map(() => '---').join('|')}|\n`;
 for (const fromZone of ZONES) {
@@ -191,7 +198,8 @@ md += '- `boost ← runtime, kit`: OK\n';
 md += '- `studio ← *`: OK (top consumer)\n';
 md += '- `kit → *`: violation candidate (kit must stay leaf)\n';
 md += '- `runtime → domain | boost | studio`: violation candidate\n';
-md += '- `domain → boost | studio` or `boost → domain | studio`: cross-axis violation candidate\n\n';
+md +=
+  '- `domain → boost | studio` or `boost → domain | studio`: cross-axis violation candidate\n\n';
 
 // Per-package detail
 md += '## Per-package imports {#per-package}\n\n';

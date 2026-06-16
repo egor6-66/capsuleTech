@@ -15,11 +15,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  hasAccessResolver,
-  registerAccessResolver,
-  resolveAccess,
-} from '../access-resolver';
+import { hasAccessResolver, registerAccessResolver, resolveAccess } from '../access-resolver';
 
 /** Helper: reset resolver slot between tests by passing null. */
 const clearResolver = () => registerAccessResolver(null);

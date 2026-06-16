@@ -55,8 +55,22 @@ export const Toggles: Story = {
         trigger={trigger('Оформление')}
         items={[
           { type: 'label', id: 'h', label: 'Оформление' },
-          { type: 'toggle', id: 'dark', icon: 'moon', label: 'Тёмная', checked: dark(), onChange: setDark },
-          { type: 'toggle', id: 'glass', icon: 'sparkles', label: 'Глэс', checked: glass(), onChange: setGlass },
+          {
+            type: 'toggle',
+            id: 'dark',
+            icon: 'moon',
+            label: 'Тёмная',
+            checked: dark(),
+            onChange: setDark,
+          },
+          {
+            type: 'toggle',
+            id: 'glass',
+            icon: 'sparkles',
+            label: 'Глэс',
+            checked: glass(),
+            onChange: setGlass,
+          },
         ]}
       />
     );
@@ -132,7 +146,14 @@ export const Mixed: Story = {
         }
         items={[
           { type: 'label', id: 'h', label: 'Оформление' },
-          { type: 'toggle', id: 'dark', icon: 'moon', label: 'Тёмная', checked: dark(), onChange: setDark },
+          {
+            type: 'toggle',
+            id: 'dark',
+            icon: 'moon',
+            label: 'Тёмная',
+            checked: dark(),
+            onChange: setDark,
+          },
           {
             type: 'submenu',
             id: 'theme',

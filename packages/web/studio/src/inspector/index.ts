@@ -3,7 +3,6 @@ export type { IParsedUnit } from './fields/parse-unit';
 export { formatUnit, parseUnit } from './fields/parse-unit';
 export { Inspector } from './Inspector';
 export { DEFAULT_KIT } from './kit';
-export { schemaToInspectorCategories } from './zod-to-categories';
 export type {
   IBooleanField,
   ICategory,
@@ -18,3 +17,4 @@ export type {
   OnChangeFn,
   ValuesMap,
 } from './types';
+export { schemaToInspectorCategories } from './zod-to-categories';

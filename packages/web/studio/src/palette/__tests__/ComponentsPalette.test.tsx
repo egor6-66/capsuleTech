@@ -18,9 +18,7 @@ describe('ComponentsPalette — smoke', () => {
     expect(groups.primitives.length).toBeGreaterThan(0);
     expect(groups.compositions.length).toBeGreaterThan(0);
     expect(
-      [...groups.primitives, ...groups.compositions].every(
-        (m) => m.category !== 'composite',
-      ),
+      [...groups.primitives, ...groups.compositions].every((m) => m.category !== 'composite'),
     ).toBe(true);
   });
 

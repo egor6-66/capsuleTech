@@ -9,10 +9,7 @@
  *                                                       не standalone-компонент)
  */
 
-import type {
-  ComponentCategory,
-  IPrimitiveManifestEntry,
-} from '@capsuletech/web-ui/manifest';
+import type { ComponentCategory, IPrimitiveManifestEntry } from '@capsuletech/web-ui/manifest';
 
 const PRIMITIVE_CATEGORIES: readonly ComponentCategory[] = [
   'control',
@@ -29,9 +26,7 @@ export interface IPaletteGroups {
   compositions: readonly IPrimitiveManifestEntry[];
 }
 
-export const groupManifests = (
-  manifests: readonly IPrimitiveManifestEntry[],
-): IPaletteGroups => ({
+export const groupManifests = (manifests: readonly IPrimitiveManifestEntry[]): IPaletteGroups => ({
   primitives: manifests.filter((m) => PRIMITIVE_CATEGORIES.includes(m.category)),
   compositions: manifests.filter((m) => COMPOSITION_CATEGORIES.includes(m.category)),
 });

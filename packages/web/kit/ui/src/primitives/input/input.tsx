@@ -1,5 +1,5 @@
 import { createStyle } from '@capsuletech/web-style';
-import { type JSX, createMemo, createSignal, splitProps } from 'solid-js';
+import { createMemo, createSignal, type JSX, splitProps } from 'solid-js';
 
 import type { IInputProps } from './interfaces';
 import { inputCva } from './variants';

@@ -42,9 +42,7 @@ function HeaderRoot(props: IHeaderProps) {
 // ---------------------------------------------------------------------------
 
 function HeaderNavigation<T extends INavItem = INavItem>(props: IHeaderNavigationProps<T>) {
-  const allowed = createMemo(() =>
-    props.data ? filterAllowed<T>(props.data) : props.data,
-  );
+  const allowed = createMemo(() => (props.data ? filterAllowed<T>(props.data) : props.data));
 
   return (
     <Group<T>

@@ -13,8 +13,7 @@ const PRESETS_BY_TYPE: Record<string, readonly IPreset[]> = {
   'ui.Button': buttonPresets,
 };
 
-export const getPresets = (type: string): readonly IPreset[] =>
-  PRESETS_BY_TYPE[type] ?? [];
+export const getPresets = (type: string): readonly IPreset[] => PRESETS_BY_TYPE[type] ?? [];
 
 export const hasPresets = (type: string): boolean => getPresets(type).length > 0;
 

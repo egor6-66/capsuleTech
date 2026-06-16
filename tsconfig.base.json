@@ -27,7 +27,9 @@
       "@capsuletech/web-state": ["packages/web/runtime/state/src/index.ts"],
       "@capsuletech/web-renderer": ["packages/web/runtime/renderer/src/index.ts"],
       "@capsuletech/web-contract": ["packages/web/runtime/contract/src/index.ts"],
-      "@capsuletech/web-contract/capabilities": ["packages/web/runtime/contract/src/capabilities/index.ts"],
+      "@capsuletech/web-contract/capabilities": [
+        "packages/web/runtime/contract/src/capabilities/index.ts"
+      ],
       "@capsuletech/web-studio": ["packages/web/studio/src/index.ts"],
       "@capsuletech/web-studio/manifests": ["packages/web/studio/src/manifests/index.ts"],
       "@capsuletech/web-studio/state": ["packages/web/studio/src/state/index.ts"],
@@ -106,8 +108,12 @@
       "@capsuletech/web-ui/label": ["packages/web/kit/ui/src/primitives/label/index.ts"],
       "@capsuletech/web-ui/layout": ["packages/web/kit/ui/src/primitives/layout/index.ts"],
       "@capsuletech/web-ui/map": ["packages/web/kit/ui/src/primitives/map/index.ts"],
-      "@capsuletech/web-ui/flow-diagram": ["packages/web/kit/ui/src/primitives/flow-diagram/index.ts"],
-      "@capsuletech/web-ui/flowDiagram": ["packages/web/kit/ui/src/primitives/flow-diagram/index.ts"],
+      "@capsuletech/web-ui/flow-diagram": [
+        "packages/web/kit/ui/src/primitives/flow-diagram/index.ts"
+      ],
+      "@capsuletech/web-ui/flowDiagram": [
+        "packages/web/kit/ui/src/primitives/flow-diagram/index.ts"
+      ],
       "@capsuletech/web-ui/chart": ["packages/web/kit/ui/src/primitives/chart/index.ts"],
       "@capsuletech/web-ui/list": ["packages/web/kit/ui/src/primitives/list/index.ts"],
       "@capsuletech/web-ui/select": ["packages/web/kit/ui/src/primitives/select/index.ts"],
@@ -122,13 +128,23 @@
       "@capsuletech/web-ui/tooltip": ["packages/web/kit/ui/src/primitives/tooltip/index.ts"],
       "@capsuletech/web-ui/typography": ["packages/web/kit/ui/src/primitives/typography/index.ts"],
       "@capsuletech/web-ui/wrappers": ["packages/web/kit/ui/src/primitives/wrappers/index.ts"],
-      "@capsuletech/web-ui/widget-frame": ["packages/web/kit/ui/src/primitives/widget-frame/index.ts"],
-      "@capsuletech/web-ui/widgetFrame": ["packages/web/kit/ui/src/primitives/widget-frame/index.ts"],
-      "@capsuletech/web-ui/compositeProxy": ["packages/web/kit/ui/src/composites/compositeProxy/index.ts"],
+      "@capsuletech/web-ui/widget-frame": [
+        "packages/web/kit/ui/src/primitives/widget-frame/index.ts"
+      ],
+      "@capsuletech/web-ui/widgetFrame": [
+        "packages/web/kit/ui/src/primitives/widget-frame/index.ts"
+      ],
+      "@capsuletech/web-ui/compositeProxy": [
+        "packages/web/kit/ui/src/composites/compositeProxy/index.ts"
+      ],
       "@capsuletech/web-ui/dataTable": ["packages/web/kit/ui/src/composites/dataTable/index.ts"],
-      "@capsuletech/web-ui/dropdownMenu": ["packages/web/kit/ui/src/composites/dropdownMenu/index.ts"],
+      "@capsuletech/web-ui/dropdownMenu": [
+        "packages/web/kit/ui/src/composites/dropdownMenu/index.ts"
+      ],
       "@capsuletech/web-ui/menu": ["packages/web/kit/ui/src/composites/menu/index.ts"],
-      "@capsuletech/web-ui/previewCard": ["packages/web/kit/ui/src/composites/previewCard/index.ts"],
+      "@capsuletech/web-ui/previewCard": [
+        "packages/web/kit/ui/src/composites/previewCard/index.ts"
+      ],
       "@capsuletech/web-shell": ["packages/web/domain/shell/src/index.ts"],
       "@capsuletech/web-shell/ui": ["packages/web/domain/shell/src/ui/index.ts"],
       "@capsuletech/web-shell/controllers": ["packages/web/domain/shell/src/controllers/index.ts"],

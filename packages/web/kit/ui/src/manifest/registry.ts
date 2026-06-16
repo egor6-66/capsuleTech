@@ -11,7 +11,6 @@
  *     auto-fields independently).
  */
 
-import { AnimateManifest } from '../primitives/wrappers/animate.manifest';
 import { ButtonManifest } from '../primitives/button/button.manifest';
 import {
   CardContentManifest,
@@ -39,6 +38,7 @@ import { SkeletonManifest } from '../primitives/skeleton/skeleton.manifest';
 import { SpinnerManifest } from '../primitives/spinner/spinner.manifest';
 import { ToggleManifest } from '../primitives/toggle/toggle.manifest';
 import { TypographyManifest } from '../primitives/typography/typography.manifest';
+import { AnimateManifest } from '../primitives/wrappers/animate.manifest';
 import type { ComponentCategory, IManifestSummary, IPrimitiveManifestEntry } from './types';
 
 const ALL: IPrimitiveManifestEntry[] = [
@@ -83,9 +83,8 @@ export const getManifest = (type: string): IPrimitiveManifestEntry | undefined =
 export const getAllManifests = (): readonly IPrimitiveManifestEntry[] => ALL;
 
 /** Манифесты конкретной категории — для секции палитры. */
-export const listByCategory = (
-  category: ComponentCategory,
-): readonly IPrimitiveManifestEntry[] => ALL.filter((m) => m.category === category);
+export const listByCategory = (category: ComponentCategory): readonly IPrimitiveManifestEntry[] =>
+  ALL.filter((m) => m.category === category);
 
 /** Сводка (без `propsSchema`/`defaultProps`) — для лёгких UI-кусков. */
 export const summarize = (m: IPrimitiveManifestEntry): IManifestSummary => ({

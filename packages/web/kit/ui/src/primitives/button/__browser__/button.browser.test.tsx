@@ -42,9 +42,9 @@ import { Button } from '../button';
 // ---------------------------------------------------------------------------
 const SIZE_HEIGHT: Record<string, string> = {
   default: '36px', // h-9 = 9 × 4px
-  sm: '32px',      // h-8 = 8 × 4px
-  lg: '40px',      // h-10 = 10 × 4px
-  icon: '36px',    // size-9 = 36px
+  sm: '32px', // h-8 = 8 × 4px
+  lg: '40px', // h-10 = 10 × 4px
+  icon: '36px', // size-9 = 36px
 };
 
 // ---------------------------------------------------------------------------
@@ -212,7 +212,10 @@ describe('Button — variant × size matrix', () => {
       document.body.appendChild(probe);
       const tokenBg = getComputedStyle(probe).backgroundColor;
       document.body.removeChild(probe);
-      if (tokenBg === 'rgba(0, 0, 0, 0)' || tokenBg === getComputedStyle(document.body).backgroundColor) {
+      if (
+        tokenBg === 'rgba(0, 0, 0, 0)' ||
+        tokenBg === getComputedStyle(document.body).backgroundColor
+      ) {
         console.warn('[SKIP] Tailwind CSS not injected — bg-primary check skipped');
         return;
       }
@@ -347,10 +350,7 @@ describe('Button — disabled', () => {
 describe('Button — keyboard activation', () => {
   it('fires onClick on Enter key (simulated via synthetic click)', () => {
     const handler = vi.fn();
-    cleanup = render(
-      () => <Button onClick={handler}>Click</Button>,
-      container,
-    );
+    cleanup = render(() => <Button onClick={handler}>Click</Button>, container);
 
     const el = container.querySelector<HTMLButtonElement>('button')!;
     el.focus();
@@ -362,10 +362,7 @@ describe('Button — keyboard activation', () => {
 
   it('fires onClick on Space key (simulated via synthetic click)', () => {
     const handler = vi.fn();
-    cleanup = render(
-      () => <Button onClick={handler}>Click</Button>,
-      container,
-    );
+    cleanup = render(() => <Button onClick={handler}>Click</Button>, container);
 
     const el = container.querySelector<HTMLButtonElement>('button')!;
     el.focus();

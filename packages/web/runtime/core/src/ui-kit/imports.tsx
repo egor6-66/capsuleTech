@@ -2,7 +2,7 @@
 // Static imports — critical-path, cheap, always on the render waterfall.
 // Known to Vite at build time → emits modulepreload hints → loads in parallel.
 // ---------------------------------------------------------------------------
-import { Icons } from '@capsuletech/web-ui/icons';
+
 import { Button } from '@capsuletech/web-ui/button';
 // Card and Field: each subpath index already assembles the compound (Card.Header etc.)
 // so a single static import gives the full compound without any Object.assign here.
@@ -10,10 +10,11 @@ import { Card } from '@capsuletech/web-ui/card';
 import { Field } from '@capsuletech/web-ui/field';
 import { Flex } from '@capsuletech/web-ui/flex';
 import { Grid } from '@capsuletech/web-ui/grid';
-import type { ILayoutNamespace } from '@capsuletech/web-ui/layout';
 import { Group as GroupBase, GroupSeparator } from '@capsuletech/web-ui/group';
+import { Icons } from '@capsuletech/web-ui/icons';
 import { Input } from '@capsuletech/web-ui/input';
 import { Label } from '@capsuletech/web-ui/label';
+import type { ILayoutNamespace } from '@capsuletech/web-ui/layout';
 import { List } from '@capsuletech/web-ui/list';
 import { Separator } from '@capsuletech/web-ui/separator';
 import { Skeleton } from '@capsuletech/web-ui/skeleton';
@@ -24,8 +25,6 @@ import { For, Index, lazy, Match, Show, Switch } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 
 // Re-export static critical-path primitives
-export { Button, Input, Label, Separator, Toggle, Typography };
-
 /**
  * Curated icon namespace for app-layer global access via `Ui.Icons.*`.
  *
@@ -40,7 +39,7 @@ export { Button, Input, Label, Separator, Toggle, Typography };
  * Tree-shaking: only the icons in `iconRegistry` are imported — no full
  * lucide-solid bundle in app chunks.
  */
-export { Icons };
+export { Button, Icons, Input, Label, Separator, Toggle, Typography };
 
 // Layout namespace: Grid + Flex (static). Heavy variants (Matrix etc.) live
 // in @capsuletech/boost-layout and augment this object at app boot via ADR 033

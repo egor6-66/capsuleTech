@@ -130,12 +130,7 @@ export interface IPrimitiveManifestEntry {
  * merging hand-authored data with measured size/externals/variants.
  */
 export type IBuiltManifestEntry = IPrimitiveManifestEntry &
-  Required<
-    Pick<
-      IPrimitiveManifestEntry,
-      'name' | 'subpath' | 'weight' | 'sizeKB' | 'externals'
-    >
-  >;
+  Required<Pick<IPrimitiveManifestEntry, 'name' | 'subpath' | 'weight' | 'sizeKB' | 'externals'>>;
 
 /** Root manifest shape emitted to dist/manifest.json. */
 export interface IWebUiManifest {

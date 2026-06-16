@@ -28,9 +28,7 @@ describe('classifyZone — basic path classification', () => {
   });
 
   it('classifies runtime zone', () => {
-    expect(classifyZone('/repo/packages/web/runtime/core/src/wrappers/widget.tsx')).toBe(
-      'runtime',
-    );
+    expect(classifyZone('/repo/packages/web/runtime/core/src/wrappers/widget.tsx')).toBe('runtime');
   });
 
   it('classifies domain zone', () => {
@@ -62,21 +60,11 @@ describe('classifyZone — basic path classification', () => {
 
 describe('extractZonePackage — package directory extraction', () => {
   it('extracts package dir for each zone', () => {
-    expect(
-      extractZonePackage('/repo/packages/web/kit/ui/src/index.ts', 'kit'),
-    ).toBe('ui');
-    expect(
-      extractZonePackage('/repo/packages/web/runtime/core/src/x.ts', 'runtime'),
-    ).toBe('core');
-    expect(
-      extractZonePackage('/repo/packages/web/boost/layout/src/x.ts', 'boost'),
-    ).toBe('layout');
-    expect(
-      extractZonePackage('/repo/packages/web/domain/auth/src/x.ts', 'domain'),
-    ).toBe('auth');
-    expect(
-      extractZonePackage('/repo/packages/web/studio/src/x.ts', 'studio'),
-    ).toBe('studio');
+    expect(extractZonePackage('/repo/packages/web/kit/ui/src/index.ts', 'kit')).toBe('ui');
+    expect(extractZonePackage('/repo/packages/web/runtime/core/src/x.ts', 'runtime')).toBe('core');
+    expect(extractZonePackage('/repo/packages/web/boost/layout/src/x.ts', 'boost')).toBe('layout');
+    expect(extractZonePackage('/repo/packages/web/domain/auth/src/x.ts', 'domain')).toBe('auth');
+    expect(extractZonePackage('/repo/packages/web/studio/src/x.ts', 'studio')).toBe('studio');
   });
 
   it('returns null when zone is null', () => {
@@ -177,20 +165,10 @@ describe('isZoneImportAllowed — canon rules', () => {
 
   it('allows studio → anything', () => {
     expect(
-      isZoneImportAllowed(
-        'studio',
-        '@capsuletech/web-studio',
-        'kit',
-        '@capsuletech/web-ui',
-      ),
+      isZoneImportAllowed('studio', '@capsuletech/web-studio', 'kit', '@capsuletech/web-ui'),
     ).toBe(true);
     expect(
-      isZoneImportAllowed(
-        'studio',
-        '@capsuletech/web-studio',
-        'domain',
-        '@capsuletech/web-auth',
-      ),
+      isZoneImportAllowed('studio', '@capsuletech/web-studio', 'domain', '@capsuletech/web-auth'),
     ).toBe(true);
   });
 });
@@ -241,22 +219,15 @@ const STUDIO_PATH = '/repo/packages/web/studio/src/index.ts';
 
 describe('check — zone canon enforcement', () => {
   it('kit importing kit subpath → allowed', () => {
-    expect(
-      check(KIT_PATH, "import { Flex } from '@capsuletech/web-ui/flex';"),
-    ).toEqual([]);
+    expect(check(KIT_PATH, "import { Flex } from '@capsuletech/web-ui/flex';")).toEqual([]);
   });
 
   it('kit importing runtime (web-style peer) → allowed', () => {
-    expect(
-      check(KIT_PATH, "import { cn } from '@capsuletech/web-style';"),
-    ).toEqual([]);
+    expect(check(KIT_PATH, "import { cn } from '@capsuletech/web-style';")).toEqual([]);
   });
 
   it('kit importing boost → cross-zone violation', () => {
-    const violations = check(
-      KIT_PATH,
-      "import { Matrix } from '@capsuletech/boost-layout';",
-    );
+    const violations = check(KIT_PATH, "import { Matrix } from '@capsuletech/boost-layout';");
     expect(violations).toHaveLength(1);
     expect(violations[0].kind).toBe('cross-zone-import');
     expect(violations[0].zone).toBe('kit');
@@ -264,16 +235,11 @@ describe('check — zone canon enforcement', () => {
   });
 
   it('runtime importing kit → allowed', () => {
-    expect(
-      check(RUNTIME_PATH, "import { Button } from '@capsuletech/web-ui/button';"),
-    ).toEqual([]);
+    expect(check(RUNTIME_PATH, "import { Button } from '@capsuletech/web-ui/button';")).toEqual([]);
   });
 
   it('runtime importing domain → cross-zone violation', () => {
-    const violations = check(
-      RUNTIME_PATH,
-      "import { useAuth } from '@capsuletech/web-auth';",
-    );
+    const violations = check(RUNTIME_PATH, "import { useAuth } from '@capsuletech/web-auth';");
     expect(violations).toHaveLength(1);
     expect(violations[0].kind).toBe('cross-zone-import');
     expect(violations[0].zone).toBe('runtime');
@@ -292,10 +258,7 @@ import { useCtx } from '@capsuletech/web-core';
   });
 
   it('boost importing domain → cross-zone violation', () => {
-    const violations = check(
-      BOOST_PATH,
-      "import { Shell } from '@capsuletech/web-shell';",
-    );
+    const violations = check(BOOST_PATH, "import { Shell } from '@capsuletech/web-shell';");
     expect(violations).toHaveLength(1);
     expect(violations[0].kind).toBe('cross-zone-import');
     expect(violations[0].zone).toBe('boost');
@@ -315,10 +278,7 @@ import { Matrix } from '@capsuletech/boost-layout';
   });
 
   it('domain → another domain → cross-zone violation (cross-domain canon, D2)', () => {
-    const violations = check(
-      DOMAIN_SHELL_PATH,
-      "import { useAuth } from '@capsuletech/web-auth';",
-    );
+    const violations = check(DOMAIN_SHELL_PATH, "import { useAuth } from '@capsuletech/web-auth';");
     expect(violations).toHaveLength(1);
     expect(violations[0].kind).toBe('cross-zone-import');
     expect(violations[0].message).toContain('Cross-domain import');
@@ -327,10 +287,7 @@ import { Matrix } from '@capsuletech/boost-layout';
 
   it('domain importing same domain (subpath) → allowed', () => {
     expect(
-      check(
-        DOMAIN_SHELL_PATH,
-        "import { something } from '@capsuletech/web-shell/ui';",
-      ),
+      check(DOMAIN_SHELL_PATH, "import { something } from '@capsuletech/web-shell/ui';"),
     ).toEqual([]);
   });
 
@@ -348,12 +305,7 @@ import { Matrix } from '@capsuletech/boost-layout';
   });
 
   it('skips type-only imports', () => {
-    expect(
-      check(
-        KIT_PATH,
-        "import type { Matrix } from '@capsuletech/boost-layout';",
-      ),
-    ).toEqual([]);
+    expect(check(KIT_PATH, "import type { Matrix } from '@capsuletech/boost-layout';")).toEqual([]);
   });
 
   it('skips non-capsule imports (vendors)', () => {
@@ -375,10 +327,7 @@ import { Matrix } from '@capsuletech/boost-layout';
   });
 
   it('emits violation on dynamic import() of cross-zone target', () => {
-    const violations = check(
-      KIT_PATH,
-      "const mod = await import('@capsuletech/boost-layout');",
-    );
+    const violations = check(KIT_PATH, "const mod = await import('@capsuletech/boost-layout');");
     expect(violations).toHaveLength(1);
     expect(violations[0].kind).toBe('cross-zone-import');
   });
