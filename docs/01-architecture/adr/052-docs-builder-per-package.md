@@ -123,6 +123,9 @@ Reasoning: симметрично с UI/controllers, app не пишет boilerp
 
 ### D5 — Root `docs/` → `@capsuletech/docs` package {#D5}
 
+> [!warning] Superseded by Phase 3.6 (2026-06-17)
+> Ниже — **исторический контекст** изначального Phase 3 решения. Wrapper-пакет `@capsuletech/docs` удалён; root `docs/` vault теперь бандлится самим `@capsuletech/web-docs` (viewer). См. amendment-блок в начале ADR.
+
 Корневой `docs/` (ADR, architecture, _meta) становится отдельным пакетом `@capsuletech/docs` (один большой пакет — не разбиваем на `docs-architecture`/`docs-meta` на этой фазе).
 
 - **Расположение:** `packages/docs/` (выходит за `packages/web/*`, потому что не web-specific — это сами знания о проекте).

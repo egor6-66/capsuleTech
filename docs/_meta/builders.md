@@ -13,9 +13,11 @@ last_updated: 2026-06-13
 
 ## TL;DR {#tldr}
 
-5 build-time пакетов: `lib-builder` — zero-deps leaf (libConfig для любого пакета). `vite-builder` — рантайм для apps (dev-server + 9 плагинов). `docs-builder` — engine + Vite plugin для docs-as-data (ADR 052). `compliance` — AST-линтер HCA-правил. `biome-config` — shared lint preset. Релизятся ОДНОЙ группой `cli` в `nx.json` (fixed, releaseTagPattern `cli@{version}`) вместе с `@capsuletech/cli` и `shared-file-manager`. Отдельно — consumer-пакет `@capsuletech/docs` (root docs), не build-time.
+5 build-time пакетов: `lib-builder` — zero-deps leaf (libConfig для любого пакета). `vite-builder` — рантайм для apps (dev-server + 9 плагинов). `docs-builder` — engine + Vite plugin для docs-as-data (ADR 052). `compliance` — AST-линтер HCA-правил. `biome-config` — shared lint preset. Релизятся ОДНОЙ группой `cli` в `nx.json` (fixed, releaseTagPattern `cli@{version}`) вместе с `@capsuletech/cli` и `shared-file-manager`. Корневой `docs/` vault бандлится в `@capsuletech/web-docs` (Phase 3.6 — бывший wrapper `@capsuletech/docs` удалён).
 
-**Phase 3 (ADR 052) done (2026-06-16, после refactor Phase 3.5):** `@capsuletech/docs-builder` владеет engine `extractDocs()` + `DocsExtractPlugin` + CLI `capsule-docs`. lib-builder и vite-builder про docs не знают (zero-deps leaf сохранён). Consumers attach plugin явно: `libConfig({ plugins: [DocsExtractPlugin({ ... })] })`. `@capsuletech/docs` — первый consumer, wraps корневую `docs/`, эмитит `packages/docs/dist/docs.json` (181 doc). `pnpm docs:build` → `pnpm --filter @capsuletech/docs build`. `docs/_build/extract.mjs` удалён.
+**Phase 3 (ADR 052) done (2026-06-16, после refactor Phase 3.5):** `@capsuletech/docs-builder` владеет engine `extractDocs()` + `DocsExtractPlugin` + CLI `capsule-docs`. lib-builder и vite-builder про docs не знают (zero-deps leaf сохранён). Consumers attach plugin явно: `libConfig({ plugins: [DocsExtractPlugin({ ... })] })`. `docs/_build/extract.mjs` удалён.
+
+**Phase 3.6 done (2026-06-17):** wrapper `@capsuletech/docs` удалён, корневой `docs/` vault теперь бандлится самим `@capsuletech/web-docs` (viewer пакетом) — он эмитит `packages/web/docs/dist/docs.json` (181 doc) рядом с runtime'ом. `pnpm docs:build` → `pnpm --filter @capsuletech/web-docs build`. Причина: wrapper-пакет был content-delivery-vehicle без библиотечной ценности; viewer и его «дефолтный контент» (root capsule vault) = одна вещь.
 
 Главное правило: **build-time пакеты живут тут**. Runtime cross-group — в `packages/shared/`. Критерий — используется в `vite.config.mts` чужих пакетов / `capsule.config.ts` apps'ов, а не в их JSX.
 

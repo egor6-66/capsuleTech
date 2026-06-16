@@ -9,6 +9,9 @@ tags: [brief, owner-builders, docs, adr-048]
 
 # Brief — docs-as-data: per-package distribution (движок как библиотека, дока живёт в пакете)
 
+> [!info] Amendment Phase 3.6 (2026-06-17)
+> Brief описывает оригинальную 3-pkg-модель (Phase 1–5). После Phase 3.6 wrapper-пакет `@capsuletech/docs` удалён, root vault бандлится в `@capsuletech/web-docs`. Топология теперь **2 пакета** (engine + viewer-with-bundled-vault). См. ADR 052 amendment-блок. Ниже — исторический контекст плана.
+
 ## Цель {#goal}
 
 Переделать docs-as-data pipeline (ADR 048) так, чтобы:
