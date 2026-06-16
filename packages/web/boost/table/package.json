@@ -52,7 +52,7 @@
     "@capsuletech/web-style": "workspace:*",
     "@capsuletech/web-ui": "workspace:*",
     "@tanstack/solid-table": "^8.21.3",
-    "@tanstack/solid-virtual": "^3.13.24"
+    "@tanstack/solid-virtual": "^3.13.29"
   },
   "peerDependencies": {
     "solid-js": "^1.9.12"
