@@ -11,7 +11,7 @@ tags: [meta, docs-as-data, canon]
 
 # Docs system canon
 
-> Канон-источники: [[048-docs-as-data|ADR 048]] D1–D3, D6, D7. D4–D5 пересматриваются под per-package distribution — см. [[briefs/owner-builders-docs-colocation|brief]] и amendment в ADR 048.
+> Канон-источники: [[048-docs-as-data|ADR 048]] D1–D3, D6, D7. D4–D5 заменены [[../01-architecture/adr/052-docs-builder-per-package|ADR 052]] (per-package distribution) — см. также [[briefs/owner-builders-docs-colocation|brief]].
 >
 > Этот файл — single source of truth для движка (`@capsuletech/docs-builder`, в работе; reference — `docs/_build/extract.mjs`), per-package producers, composer'а `@capsuletech/web-studio/docs` и CI drift-guards. Изменение конвенции — правка ЭТОГО файла + движка + регенерация registry.
 
