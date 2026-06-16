@@ -205,7 +205,7 @@ Canon `docs-system.md` §2 остаётся as-is. Опционально для
 ## Деливери {#delivery}
 
 1. **Phase 0 — новый ADR.** Главный заводит [[../../01-architecture/adr/052-docs-builder-per-package|ADR 052]] «Docs-as-data — per-package distribution». Решает open questions §1–5. Замещает ADR 048 D4 + D5 (но НЕ D1–D3, D6, D7 — они остаются canon). **Status: done.**
-2. **Phase 1 — design PR (no code), owner-builders.** Update `docs/_meta/docs-system.md` секциями про distribution channel + producer contract + composer contract. Согласовать с главным → merge.
+2. **Phase 1 — design PR (no code), owner-builders.** Update `docs/_meta/docs-system.md` секциями про distribution channel + producer contract + composer contract. Согласовать с главным → merge. **Status: done.**
 3. **Phase 2 — impl PR (engine), owner-builders.** Создать `@capsuletech/docs-builder` пакет (порт логики из `extract.mjs`). Unit-тесты. Без consumers — пакет работает изолированно.
 4. **Phase 3 — impl PR (root docs as package), owner-builders + главный.** Создать `@capsuletech/docs` (corner case: package wrapping корневую `docs/`). Удалить `docs/_build/extract.mjs`. Перевести `pnpm docs:build` на новый flow.
 5. **Phase 4 — impl PR (first colocated), owner-web-ui.** Подключить `docs-builder` к `@capsuletech/web-ui` build. Добавить один colocated README (Button) как canonical example. Проверить через playground.

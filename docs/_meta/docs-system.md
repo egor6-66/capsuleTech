@@ -268,62 +268,219 @@ Custom line-based parser (zero new deps). Обрабатывает:
 
 ## 8. Distribution channel (per-package) {#distribution}
 
-> Pending имплементации — см. [[briefs/owner-builders-docs-colocation|brief]] и amendment к ADR 048. Текущая центральная реализация (`docs/_build/extract.mjs`) — reference, удаляется после готовности нового движка.
+> Канон-источник: [[../01-architecture/adr/052-docs-builder-per-package|ADR 052]]. Pending имплементации — см. [[briefs/owner-builders-docs-colocation|brief]]. Текущая центральная реализация (`docs/_build/extract.mjs`) — reference, удаляется после готовности нового движка (Phase 3).
 
 ### 8.1 Три роли {#distribution-roles}
 
 | Роль | Кто | Что делает |
 |---|---|---|
-| Engine | `@capsuletech/docs-builder` (новый, в `packages/builders/`) | Build-time helper. Sources → docs.json chunk. Реализует §1–§7 канона. |
-| Producer | каждый пакет (`@capsuletech/web-ui` и т.д.) | В своём build дёргает engine → эмитит `dist/docs.json` → экспортит через subpath `./docs.json`. |
-| Composer | `@capsuletech/web-studio/docs` | Импортит `docs.json` пакетов которые app использует, мерджит в runtime registry, отдаёт через `<DocSection>` / `useDoc()`. |
+| Engine | `@capsuletech/docs-builder` (новый, в `packages/builders/`) | Build-time helper-библиотека. Sources → docs.json chunk. Реализует §1–§7 канона. |
+| Producer | каждый пакет (`@capsuletech/web-ui` и т.д.) | В своём build дёргает engine → эмитит `dist/docs.json` → экспортит через subpath `./docs.json` + регистрирует в `capsule.ts`. |
+| Composer | `@capsuletech/web-studio/docs` | Через ADR 033 auto-discovery собирает `docs.json` пакетов которые app зарегистрировал, мерджит в runtime registry, отдаёт через `<DocSection>` / `useDoc()`. |
 
 App **не импортит engine** и не настраивает scan paths. Composition — через ADR 033 registration pattern, симметрично с UI-компонентами и controllers.
 
-### 8.2 Slug namespace (для package-level и unit-level docs) {#distribution-slug}
+### 8.2 Engine API — `@capsuletech/docs-builder` {#distribution-engine}
+
+**Расположение:** `packages/builders/docs-builder/`. **Релиз-группа:** `cli` (fixed-versioning, тег `cli@{version}`). **Owner:** `owner-builders`.
+
+**Programmatic API** (основной путь использования):
+
+```ts
+import { extractDocs } from '@capsuletech/docs-builder';
+
+const registry: IDocsRegistry = await extractDocs({
+  root: '/abs/path/to/packageRoot',     // абсолютный путь до package root
+  slugStrategy: 'package',              // 'package' | 'app' | 'docs'
+  pkgName: '@capsuletech/web-ui',       // для slug-derivation pkg-short
+  exclude?: string[],                   // дополнительно к defaults (§8.9)
+});
+```
+
+`extractDocs` — pure function, side-effect-free. Возвращает в памяти. Caller сам решает куда писать (`dist/docs.json` через Vite-plugin, stdout через CLI, тест-fixture через прямой вызов).
+
+**CLI bin (escape-hatch):**
+
+```bash
+capsule-docs build --root . --pkg-name @capsuletech/web-ui --strategy package --out dist/docs.json
+```
+
+Для пакетов вне Vite/lib-builder pipeline'а.
+
+**Зависимости:** zero new deps. Порт логики из `docs/_build/extract.mjs` (line-based parser).
+
+### 8.3 Producer — Vite-plugin + subpath exports {#distribution-producer}
+
+**Plugin расположение:** `DocsExtractPlugin` в `@capsuletech/vite-builder` (для apps) и `@capsuletech/lib-builder` (для library packages). Auto-встраивается в стандартный build pipeline.
+
+**Plugin lifecycle:**
+
+1. На `buildEnd` сканирует `<packageRoot>/**/*.md` per exclusion-list (§8.9).
+2. Дёргает `extractDocs({ root, slugStrategy, pkgName })` — `pkgName` берётся из `package.json`, `slugStrategy` derived из контекста (lib-builder → `'package'`, vite-builder app → `'app'`).
+3. Эмитит `dist/docs.json` через Vite emit-file API.
+
+**Plugin options (override per-package, опционально):**
+
+```ts
+// vite.config.ts пакета — обычно НЕ нужно, defaults покрывают всё
+import { DocsExtractPlugin } from '@capsuletech/lib-builder';
+
+export default {
+  plugins: [
+    DocsExtractPlugin({
+      enabled?: boolean,           // default: true
+      exclude?: string[],          // ДОПОЛНИТЕЛЬНО к §8.9 defaults
+      slugStrategyOverride?: 'package' | 'app' | 'docs',
+    }),
+  ],
+};
+```
+
+**`package.json` exports (owner-<pkg> добавляет руками при первом подключении):**
+
+```json
+{
+  "name": "@capsuletech/web-ui",
+  "exports": {
+    ".": "./dist/index.js",
+    "./docs.json": "./dist/docs.json",
+    "./capsule": "./dist/capsule.js"
+  }
+}
+```
+
+`./docs.json` — opt-in. Пакет может не публиковать (private utility) — просто не добавлять в `exports`.
+
+### 8.4 Composer — auto-discovery через `capsule.ts` {#distribution-composer}
+
+**Producer-side контракт** (в пакете):
+
+```ts
+// packages/web/kit/ui/src/capsule.ts
+export default {
+  components: { ui: { Button, Input, /* ... */ } },
+  controllers: { /* ... */ },
+  docs: () => import('@capsuletech/web-ui/docs.json'),  // ← НОВОЕ
+};
+```
+
+`docs: () => Promise<IDocsChunk>` — lazy import (не блокирует initial bundle).
+
+**Composer-side контракт** (в `@capsuletech/web-studio/docs`):
+
+- Тот же auto-import что регистрирует UI/controllers per ADR 033 регистрирует и `docs`.
+- На первый запрос (`<DocSection>` mount или `useDoc()` вызов) — composer лениво резолвит все promise'ы → мерджит в `IDocsRegistry` → memoize'ит.
+- Slug-коллизии между пакетами — error (build-time через cross-package check §8.8 + runtime через assert в composer'е).
+
+**Manual fallback** (для пакетов без `capsule.ts`):
+
+```ts
+import { Docs } from '@capsuletech/web-studio/docs';
+import externalDocs from 'some-pkg/docs.json';
+
+Docs.register(externalDocs);
+```
+
+Не основной путь — escape-hatch. Не используется в capsule-монорепо.
+
+**Public API сохраняется:** `<DocSection slug=…/>`, `<DocPage slug=… audience=…/>`, `useDoc(slug)`. Менять контракт не предполагается.
+
+### 8.5 Slug namespace (для package-level и unit-level docs) {#distribution-slug}
 
 `<pkg-short>/<unit>` где `pkg-short` = npm-name без `@capsuletech/` префикса.
 
-| Файл | Slug |
-|---|---|
-| `packages/web/kit/ui/README.md` | `web-ui` |
-| `packages/web/kit/ui/src/primitives/button/README.md` | `web-ui/button` |
-| `packages/web/boost/layout/src/matrix/README.md` | `web-layout/matrix` |
-| `apps/playground/README.md` | `app/playground` |
-| `docs/01-architecture/adr/048-docs-as-data.md` (root pkg `@capsuletech/docs`) | `architecture/adr/048-docs-as-data` (как §5.1) |
+| Файл | Slug | strategy |
+|---|---|---|
+| `packages/web/kit/ui/README.md` | `web-ui` | `package` |
+| `packages/web/kit/ui/src/primitives/button/README.md` | `web-ui/button` | `package` |
+| `packages/web/boost/layout/src/matrix/README.md` | `web-layout/matrix` | `package` |
+| `apps/playground/README.md` | `app/playground` | `app` |
+| `docs/01-architecture/adr/048-docs-as-data.md` (root pkg `@capsuletech/docs`) | `architecture/adr/048-docs-as-data` | `docs` (см. §5.1) |
+
+**`package` strategy:**
+1. `pkg-short` = `<pkgName>`.replace(`@capsuletech/`, ``) (или generic: всё после последнего `/`).
+2. Path относительно package root, `src/`-префикс strip'ается.
+3. Numeric prefix у директорий strip'ается (как §5.1).
+4. Если file basename = `README.md` — берётся имя родительской директории как `<unit>`.
+5. Package root `README.md` → slug = `<pkg-short>` (без `<unit>`).
+
+**`app` strategy:** аналогично `package` но `pkg-short` = `app/<appName>`.
 
 Свойства:
 - стабильно при перемещении пакета между zones (npm-name не меняется);
 - не зависит от внутренней структуры пакета (`src/primitives/...`);
 - не коллидится с slug'ами корневого `@capsuletech/docs` пакета.
 
-### 8.3 Frontmatter расширения для package/unit docs {#distribution-frontmatter}
+### 8.6 Frontmatter расширения для package/unit docs {#distribution-frontmatter}
 
 Поверх §2:
 
-- `package: @capsuletech/web-ui` — npm-name (опц., движок может derive'ить из package.json).
-- `unit: button` — короткое имя юнита (опц., движок может derive'ить из path).
+- `package: @capsuletech/web-ui` — npm-name (опц., движок derive'ит из `package.json` если не задан).
+- `unit: button` — короткое имя юнита (опц., движок derive'ит из path если не задан).
 
-### 8.4 Корневой `docs/` {#distribution-root}
+Эти поля попадают в `meta` секцию registry — composer'у не нужны (slug уже несёт инфу), но полезны для дебага / поиска / тулинга.
 
-`docs/` (ADR, architecture, _meta) становится отдельным пакетом `@capsuletech/docs` — та же модель что и любой другой пакет (свой build, свой `docs.json`, импорт через subpath). Спец-случая «корневая папка обрабатывается иначе» нет.
+### 8.7 Корневой `docs/` как `@capsuletech/docs` {#distribution-root}
 
-### 8.5 Wikilink-резолв cross-package {#distribution-wikilinks}
+`docs/` (ADR, architecture, _meta) становится пакетом `@capsuletech/docs` в `packages/docs/`. Та же модель что и любой пакет:
 
-- **Per-package build** — резолвит только локальные wikilinks. Внешние сохраняются как есть.
-- **Composer / app-side** — после мерджа registries резолвит cross-package wikilinks (warning в dev, error в production build).
-- **Capsule CI** — отдельная job `docs:check-all` строит все registries + резолвит весь граф. Гарантия линковки внутри capsule.
+- собственный `build` с `DocsExtractPlugin` (`slugStrategy: 'docs'` — slug per §5.1).
+- эмитит `dist/docs.json`, экспортит через `./docs.json`.
+- регистрируется через `capsule.ts` так же как web-ui.
 
-Внешний пользователь capsule не обязан резолвить cross-package linkrot — настраивает по своему усмотрению.
+Спец-случая «корневая папка обрабатывается иначе» нет. После Phase 3 `docs/_build/extract.mjs` удаляется.
 
-### 8.6 Exclusion patterns (по умолчанию) {#distribution-exclusions}
+**Slug-coexistence:**
+- root-пакет → slug'и без префикса (`architecture/adr/052-docs-builder-per-package`)
+- per-package → slug'и с pkg-prefix (`web-ui/button`)
 
-- `OWNERSHIP.md`, `CHANGELOG.md`
-- `node_modules/**`, `dist/**`, `.capsule/**`, `__tests__/**`, `.generated/**`
+Коллизий нет — namespace'ы не пересекаются.
 
-`.md` без frontmatter в `packages/`:
-- skip silently если matches default exclusion;
-- иначе warn (видно в build log), никогда не error.
+### 8.8 Cross-package wikilink CI check {#distribution-wikilinks}
+
+**Per-package build** — резолвит только локальные wikilinks. Внешние (`[[web-ui/button]]` из `@capsuletech/docs`) сохраняются в `wikilinks: string[]` секции без резолва.
+
+**Composer runtime** — после мерджа всех registries резолвит cross-package wikilinks. Упавшие → warning в dev console, error в production build.
+
+**Capsule CI** — отдельная job, отдельный скрипт:
+
+```bash
+pnpm docs:check-graph    # → node scripts/docs-check-graph.mjs
+```
+
+Что делает:
+1. Ждёт что все пакеты сбилдены (`packages/**/dist/docs.json` существуют).
+2. Импортит каждый.
+3. Мерджит в whole-graph registry.
+4. Резолвит wikilink-граф, error на упавшие.
+
+В CI это **отдельная job** `docs:check-graph` рядом с `compliance:check` / `lint` / `typecheck` / текущим `Docs build (ADR 048 E6)`. Падение = failed PR.
+
+**НЕ внутри `@capsuletech/docs` build** — иначе пакет docs начинает зависеть от других пакетов, нарушает зону.
+
+**Внешний пользователь capsule:** опционально через `capsule docs check` CLI (обёртка над тем же скриптом, конфигурируется через capsule.config.ts). Не обязательно — external projects могут не хотеть cross-package валидации.
+
+### 8.9 Exclusion patterns (по умолчанию) {#distribution-exclusions}
+
+Skip-list движка (apply'ится в `extractDocs` всегда, override-able):
+
+- `OWNERSHIP.md`, `CHANGELOG.md`, `LICENSE.md`
+- `node_modules/**`, `dist/**`, `.capsule/**`, `__tests__/**`, `__fixtures__/**`, `.generated/**`
+- `*.draft.md` (опциональный шаблон для работы-в-процессе)
+
+**Per-package override:**
+```ts
+DocsExtractPlugin({
+  exclude: ['src/internal/**/*.md', 'CONTRIBUTING.md'],  // ДОПОЛНИТЕЛЬНО к defaults
+});
+```
+
+**`.md` без frontmatter:**
+- match'ит default exclusion → skip silently;
+- иначе → warn (видно в build log), `extractDocs` всё равно пропускает файл;
+- никогда не error (legacy не валит build).
+
+Frontmatter валидируется по §2 contract — `title`/`status`/`tags`/`last_updated` обязательны для включения в registry.
 
 ## 9. Что НЕ canon (out of scope) {#out-of-scope}
 
@@ -334,10 +491,11 @@ App **не импортит engine** и не настраивает scan paths. 
 
 ## 10. Связанное {#related}
 
-- [[048-docs-as-data|ADR 048]] — обоснование и контекст (D1–D3, D6, D7 — canon; D4–D5 — amendment к per-package)
-- [[briefs/owner-builders-docs-colocation|brief — per-package distribution]] — execution для §8
-- [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] D5 — colocation rule
-- [[033-package-registration|ADR 033]] — registration pattern, применяется к docs composer'у
-- [[web-rework-plan]] Phase E — execution status
-- `docs/_build/extract.mjs` — reference extractor (удаляется после готовности `@capsuletech/docs-builder`)
-- `docs/.generated/registry.ts` — produced artifact (текущая центральная форма; переедет в per-package shape)
+- [[../01-architecture/adr/052-docs-builder-per-package|ADR 052]] — distribution canon (D1–D6); этот файл — implementation contract.
+- [[048-docs-as-data|ADR 048]] — обоснование и контекст (D1–D3, D6, D7 — canon; D4–D5 — заменены ADR 052).
+- [[briefs/owner-builders-docs-colocation|brief — per-package distribution]] — execution plan (Phase 0–6).
+- [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] D5 — colocation rule.
+- [[033-package-registration|ADR 033]] — registration pattern, применяется к docs composer'у (§8.4).
+- [[web-rework-plan]] Phase E — execution status.
+- `docs/_build/extract.mjs` — reference extractor (удаляется после готовности `@capsuletech/docs-builder` в Phase 3).
+- `docs/.generated/registry.ts` — produced artifact (текущая центральная форма; переедет в per-package `<pkg>/dist/docs.json` shape).
