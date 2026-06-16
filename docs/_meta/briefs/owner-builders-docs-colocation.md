@@ -45,7 +45,7 @@ tags: [brief, owner-builders, docs, adr-048]
 |---|---|---|
 | **Движок** | `@capsuletech/docs-builder` (новый пакет в `packages/builders/`) | Build-time helper. Принимает source dir + frontmatter rules + slug strategy → возвращает / эмитит `docs.json` chunk. |
 | **Producer** | каждый пакет (`@capsuletech/web-ui` и т.д.) | В своём `build` дёргает движок → получает свой `docs.json` рядом с `dist/` → экспортит через subpath `./docs.json`. |
-| **Composer** | `@capsuletech/web-studio/docs` (consumer уже есть) | Импортит `docs.json` из пакетов которые app использует, мерджит в единый runtime registry. Предоставляет `<DocSection>`, `useDoc()` и т.д. |
+| **Composer** | `@capsuletech/web-docs` (consumer уже есть) | Импортит `docs.json` из пакетов которые app использует, мерджит в единый runtime registry. Предоставляет `<DocSection>`, `useDoc()` и т.д. |
 
 App в этом флоу **не импортит движок** и не настраивает scan roots. App импортит web-studio + пакеты с которыми работает — composition автоматическая через ADR 033 pattern.
 
@@ -87,7 +87,7 @@ packages/web/kit/ui/
 
 ### Composer контракт {#composer-contract}
 
-`@capsuletech/web-studio/docs` использует ADR 033 registration pattern:
+`@capsuletech/web-docs` использует ADR 033 registration pattern:
 
 ```ts
 // web-studio capsule.ts (или DocsProvider init)

@@ -1,8 +1,8 @@
 /* @vitest-environment jsdom */
+import type { IDocsRegistry } from '@capsuletech/docs-builder';
 import { render } from 'solid-js/web';
 import { describe, expect, it } from 'vitest';
 import { DocsProvider } from '../provider';
-import type { IDocsRegistry } from '../types';
 import { useDoc } from '../useDoc';
 
 const fixture: IDocsRegistry = {

@@ -1,5 +1,5 @@
+import type { IDocEntry } from '@capsuletech/docs-builder';
 import { useDocsRegistry } from './provider';
-import type { IDocEntry } from './types';
 
 /**
  * Lookup a doc entry by slug. Returns undefined if the registry has no

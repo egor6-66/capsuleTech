@@ -25,11 +25,6 @@
       "import": "./dist/capsule.mjs",
       "default": "./dist/capsule.mjs"
     },
-    "./docs": {
-      "types": "./dist/docs/index.d.ts",
-      "import": "./dist/docs.mjs",
-      "default": "./dist/docs.mjs"
-    },
     "./palette": {
       "types": "./dist/palette/index.d.ts",
       "import": "./dist/palette.mjs",
@@ -51,8 +46,7 @@
     "@capsuletech/web-contract": "workspace:*",
     "@capsuletech/web-core": "workspace:*",
     "@capsuletech/web-dnd": "workspace:*",
-    "@capsuletech/web-ui": "workspace:*",
-    "marked": "^9.1.6"
+    "@capsuletech/web-ui": "workspace:*"
   },
   "peerDependencies": {
     "@capsuletech/web-renderer": "workspace:*",
