@@ -203,6 +203,8 @@ importers:
         specifier: ^7.28.0
         version: 7.28.0
 
+  packages/builders/docs-builder: {}
+
   packages/builders/lib:
     dependencies:
       vite-plugin-dts:
