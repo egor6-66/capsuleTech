@@ -146,7 +146,8 @@
       "@capsuletech/canvas-three": ["packages/canvas/three/src/index.ts"],
       "@capsuletech/desktop": ["packages/desktop/src/index.ts"],
       "@capsuletech/desktop/metrics": ["packages/desktop/src/metrics.ts"],
-      "@capsuletech/docs-builder": ["packages/builders/docs-builder/src/index.ts"]
+      "@capsuletech/docs-builder": ["packages/builders/docs-builder/src/index.ts"],
+      "@capsuletech/docs": ["packages/docs/src/index.ts"]
     }
   }
 }

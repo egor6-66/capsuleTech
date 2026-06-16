@@ -1,6 +1,6 @@
 {
-  "name": "@capsuletech/docs-builder",
-  "version": "0.0.0",
+  "name": "@capsuletech/docs",
+  "version": "0.0.1",
   "type": "module",
   "main": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -9,25 +9,19 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "default": "./dist/index.mjs"
-    }
-  },
-  "bin": {
-    "capsule-docs": "./dist/bin.mjs"
+    },
+    "./docs.json": "./dist/docs.json"
   },
   "files": [
     "dist"
   ],
   "scripts": {
     "build": "vite build",
-    "dev": "vite build --watch",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "dev": "vite build --watch"
   },
   "dependencies": {
-    "vite-plugin-dts": "~5.0.0"
-  },
-  "devDependencies": {
-    "@vue/language-core": "~3.1.5"
+    "@capsuletech/docs-builder": "workspace:*",
+    "@capsuletech/lib-builder": "workspace:*"
   },
   "publishConfig": {
     "access": "public",

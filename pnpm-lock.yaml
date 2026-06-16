@@ -203,7 +203,15 @@ importers:
         specifier: ^7.28.0
         version: 7.28.0
 
-  packages/builders/docs-builder: {}
+  packages/builders/docs-builder:
+    dependencies:
+      vite-plugin-dts:
+        specifier: 5.0.0
+        version: 5.0.0(@vue/language-core@3.1.8(typescript@5.9.3))(esbuild@0.27.7)(rolldown@1.0.1)(rollup@4.60.4)(typescript@5.9.3)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
+    devDependencies:
+      '@vue/language-core':
+        specifier: ~3.1.5
+        version: 3.1.8(typescript@5.9.3)
 
   packages/builders/lib:
     dependencies:
@@ -389,6 +397,15 @@ importers:
       vitest:
         specifier: ~4.1.0
         version: 4.1.6(@types/node@25.9.0)(@vitest/browser-playwright@4.1.6)(@vitest/ui@4.1.6)(jsdom@29.1.1)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
+
+  packages/docs:
+    dependencies:
+      '@capsuletech/docs-builder':
+        specifier: workspace:*
+        version: link:../builders/docs-builder
+      '@capsuletech/lib-builder':
+        specifier: workspace:*
+        version: link:../builders/lib
 
   packages/shared/utils:
     dependencies:

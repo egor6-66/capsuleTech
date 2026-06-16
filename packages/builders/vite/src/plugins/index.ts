@@ -23,16 +23,16 @@ export {
 // ADR 037: new orchestrator API (sub-generator architecture).
 // createCapsuleRegistryPlugin is the preferred way to compose codegen for new consumers.
 export {
-  createCapsuleRegistryPlugin,
-  createBarrelRegistrySubGenerator,
-  createEndpointsSubGenerator,
-  createAppConfigSubGenerator,
-  createPackagesSubGenerator,
-  createBootstrapSubGenerator,
-  type SubGenerator,
-  type CodegenContext,
   type AppConfigShape,
+  type CodegenContext,
+  createAppConfigSubGenerator,
+  createBarrelRegistrySubGenerator,
+  createBootstrapSubGenerator,
+  createCapsuleRegistryPlugin,
+  createEndpointsSubGenerator,
+  createPackagesSubGenerator,
   type IOrchestratorProps,
+  type SubGenerator,
 } from './codegen';
 export { CompliancePlugin } from './compliance';
 export { HMRWrappingPlugin } from './HMRWrapping';

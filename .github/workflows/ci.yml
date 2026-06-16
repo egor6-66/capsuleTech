@@ -58,6 +58,7 @@ jobs:
       - name: Bootstrap shared builders
         run: |
           pnpm --filter @capsuletech/lib-builder build
+          pnpm --filter @capsuletech/docs-builder build
           pnpm --filter @capsuletech/compliance build
           pnpm --filter @capsuletech/shared-file-manager build
           pnpm --filter @capsuletech/vite-builder build
@@ -79,6 +80,7 @@ jobs:
       - name: Bootstrap shared builders
         run: |
           pnpm --filter @capsuletech/lib-builder build
+          pnpm --filter @capsuletech/docs-builder build
           pnpm --filter @capsuletech/compliance build
           pnpm --filter @capsuletech/shared-file-manager build
           pnpm --filter @capsuletech/vite-builder build
@@ -105,6 +107,7 @@ jobs:
       - name: Bootstrap shared builders
         run: |
           pnpm --filter @capsuletech/lib-builder build
+          pnpm --filter @capsuletech/docs-builder build
           pnpm --filter @capsuletech/compliance build
           pnpm --filter @capsuletech/shared-file-manager build
           pnpm --filter @capsuletech/vite-builder build
@@ -134,15 +137,25 @@ jobs:
         run: pnpm compliance:check
 
   docs-build:
-    name: Docs build (ADR 048 E6)
+    name: Docs build (ADR 052 Phase 3)
     runs-on: ubuntu-latest
-    # Lightweight drift-guard: extractor is zero-dep, no pnpm install needed.
+    # Builds @capsuletech/docs package which emits packages/docs/dist/docs.json
+    # via DocsExtractPlugin scanning root docs/ with 'docs' slug strategy.
     # Fails on errors (section-id collision, unknown audience); warnings are
     # informational until E2 inventory pass is complete (canon §1.3 / §4.2).
     steps:
       - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 9.0.0
       - uses: actions/setup-node@v6
         with:
           node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Bootstrap builders (docs-builder + lib-builder)
+        run: |
+          pnpm --filter @capsuletech/docs-builder build
+          pnpm --filter @capsuletech/lib-builder build
       - name: Build docs registry
-        run: node docs/_build/extract.mjs
+        run: pnpm docs:build

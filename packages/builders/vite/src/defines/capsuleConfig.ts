@@ -27,7 +27,7 @@ export interface ICapsuleConfig {
   /**
    * Опциональная секция для Tauri-shell. Читается @capsuletech/cli командой
    * `capsule desktop dev|build <app>` (см. ADR 017). vite-builder сам секцию
-   * НЕ использует — это data-only поле, прокидывается через capsule.config.ts.
+   * НЕ использует — это data-только поле, прокидывается через capsule.config.ts.
    */
   desktop?: IDesktopConfig;
 }

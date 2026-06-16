@@ -247,8 +247,11 @@ export type SectionSlug = `${DocSlug}#${string}`;
 ### 7.2 Script {#pipeline-script}
 
 ```bash
-pnpm docs:build         # → node docs/_build/extract.mjs
+pnpm docs:build         # → pnpm --filter @capsuletech/docs build
 ```
+
+> ADR 052 Phase 3 (2026-06-16): script переведён на `@capsuletech/docs` пакет.
+> `docs/_build/extract.mjs` удалён. Результат: `packages/docs/dist/docs.json`.
 
 ### 7.3 Parser stack {#pipeline-parser}
 
@@ -311,30 +314,36 @@ capsule-docs build --root . --pkg-name @capsuletech/web-ui --strategy package --
 
 ### 8.3 Producer — Vite-plugin + subpath exports {#distribution-producer}
 
-**Plugin расположение:** `DocsExtractPlugin` в `@capsuletech/vite-builder` (для apps) и `@capsuletech/lib-builder` (для library packages). Auto-встраивается в стандартный build pipeline.
+**Plugin расположение:** `DocsExtractPlugin` живёт в `@capsuletech/docs-builder` рядом с engine'ом (Phase 3.5 refactor — `docs-builder` владеет всей docs-логикой). `lib-builder` остаётся zero-deps leaf; `vite-builder` про docs тоже не знает. Каждый consumer (package или app) **явно** подключает плагин в свой `vite.config.mts` — opt-in per package (см. ниже).
 
 **Plugin lifecycle:**
 
-1. На `buildEnd` сканирует `<packageRoot>/**/*.md` per exclusion-list (§8.9).
-2. Дёргает `extractDocs({ root, slugStrategy, pkgName })` — `pkgName` берётся из `package.json`, `slugStrategy` derived из контекста (lib-builder → `'package'`, vite-builder app → `'app'`).
-3. Эмитит `dist/docs.json` через Vite emit-file API.
+1. На `closeBundle` сканирует `<packageRoot>/**/*.md` per exclusion-list (§8.9). `rootOverride` позволяет указать другой sandbox-корень.
+2. Дёргает `extractDocs({ root, slugStrategy, pkgName })` — `pkgName` берётся из `package.json`, `slugStrategy` — из `slugStrategyOverride` (default `'package'`; `'app'` для `apps/<name>`; `'docs'` для root `@capsuletech/docs`).
+3. Пишет `dist/docs.json` через Node `fs.writeFileSync` (надёжно в SSR/node build mode).
 
-**Plugin options (override per-package, опционально):**
+**Producer-канон (явное подключение):**
 
 ```ts
-// vite.config.ts пакета — обычно НЕ нужно, defaults покрывают всё
-import { DocsExtractPlugin } from '@capsuletech/lib-builder';
+// packages/<scope>/<name>/vite.config.mts
+import { DocsExtractPlugin } from '@capsuletech/docs-builder';
+import { libConfig } from '@capsuletech/lib-builder';
 
-export default {
+export default libConfig({
+  entry: 'src/index.ts',
+  name: 'MyPackage',
   plugins: [
     DocsExtractPlugin({
-      enabled?: boolean,           // default: true
-      exclude?: string[],          // ДОПОЛНИТЕЛЬНО к §8.9 defaults
-      slugStrategyOverride?: 'package' | 'app' | 'docs',
+      // enabled?: boolean              — default true
+      // exclude?: string[]             — ДОПОЛНИТЕЛЬНО к §8.9 defaults
+      // slugStrategyOverride?: ...     — default 'package'
+      // rootOverride?: string          — default cwd (package root)
     }),
   ],
-};
+});
 ```
+
+Для root `@capsuletech/docs`: `DocsExtractPlugin({ slugStrategyOverride: 'docs', rootOverride: REPO_DOCS_PATH })` — единственный consumer, который сканирует чужой корень.
 
 **`package.json` exports (owner-<pkg> добавляет руками при первом подключении):**
 
@@ -497,5 +506,6 @@ Frontmatter валидируется по §2 contract — `title`/`status`/`tag
 - [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] D5 — colocation rule.
 - [[033-package-registration|ADR 033]] — registration pattern, применяется к docs composer'у (§8.4).
 - [[web-rework-plan]] Phase E — execution status.
-- `docs/_build/extract.mjs` — reference extractor (удаляется после готовности `@capsuletech/docs-builder` в Phase 3).
-- `docs/.generated/registry.ts` — produced artifact (текущая центральная форма; переедет в per-package `<pkg>/dist/docs.json` shape).
+- `docs/_build/extract.mjs` — **УДАЛЁН** (ADR 052 Phase 3, 2026-06-16). Заменён `@capsuletech/docs` пакетом.
+- `packages/docs/dist/docs.json` — produced artifact (per-package форма; ADR 052 Phase 3 done).
+- `docs/.generated/registry.ts` — legacy artifact (больше не генерируется; файл можно удалить при следующей очистке).
