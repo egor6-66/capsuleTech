@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { IDesktopConfig } from '@capsuletech/desktop';
 import tailwindcss from '@tailwindcss/vite';
+import { DocsExtractPlugin, type IDocsExtractPluginOptions } from '@capsuletech/lib-builder';
 import AutoImport from 'unplugin-auto-import/vite';
 import {
   AliasesPlugin,
@@ -27,9 +28,15 @@ export interface ICapsuleConfig {
   /**
    * Опциональная секция для Tauri-shell. Читается @capsuletech/cli командой
    * `capsule desktop dev|build <app>` (см. ADR 017). vite-builder сам секцию
-   * НЕ использует — это data-only поле, прокидывается через capsule.config.ts.
+   * НЕ использует — это data-только поле, прокидывается через capsule.config.ts.
    */
   desktop?: IDesktopConfig;
+  /**
+   * Docs extraction options. Pass `false` to disable DocsExtractPlugin for this app.
+   * By default the plugin is included and emits dist/docs.json at build time.
+   * (ADR 052 D2 — Phase 3.2)
+   */
+  docs?: false | IDocsExtractPluginOptions;
 }
 
 interface IProps {
@@ -267,6 +274,20 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
       // FilterPattern supports both slash styles; the regex covers Win (\) and
       // Unix (/) path separators.
       solidPlugin({ ssr: false, exclude: [/[\\/]entities[\\/]/] }),
+      // ADR 052 D2 — emit dist/docs.json for apps at build time.
+      // strategy: 'app', rootOverride: app root (not .capsule/ which is the Vite root).
+      // Disabled if config.docs === false; otherwise passes through options.
+      ...(config.docs === false
+        ? []
+        : [
+            DocsExtractPlugin({
+              ...(typeof config.docs === 'object' ? config.docs : {}),
+              slugStrategyOverride:
+                (typeof config.docs === 'object' && config.docs.slugStrategyOverride) || 'app',
+              rootOverride:
+                (typeof config.docs === 'object' && config.docs.rootOverride) || root,
+            }),
+          ]),
     ],
     resolve: {
       dedupe,

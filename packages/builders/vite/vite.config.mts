@@ -7,6 +7,9 @@ export default libConfig({
   entry: 'src/index.ts',
   name: 'CapsuleVite',
   runtime: 'node',
+  // DocsExtractPlugin is not needed for the vite-builder package itself —
+  // it is a build-tool, not a content package.
+  docs: false,
 
   external: [
     'vite',

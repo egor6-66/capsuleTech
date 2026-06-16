@@ -1,4 +1,7 @@
 export { default as solidPlugin } from 'vite-plugin-solid';
+// Re-export from lib-builder so consumers can import from one place.
+export { DocsExtractPlugin } from '@capsuletech/lib-builder';
+export type { IDocsExtractPluginOptions, IDocsSlugStrategy } from '@capsuletech/lib-builder';
 export { AliasesPlugin } from './aliases';
 export type { PackageEntry, ResolvedPackageEntry } from './capsuleRegistry';
 // Unified codegen orchestrator — replaces ExportGeneratorPlugin,
