@@ -13,7 +13,9 @@ last_updated: 2026-06-13
 
 ## TL;DR {#tldr}
 
-4 build-time пакета. `lib-builder` — zero-deps leaf (libConfig для любого пакета). `vite-builder` — рантайм для apps (dev-server + 9 плагинов). `compliance` — AST-линтер HCA-правил. `biome-config` — shared lint preset. Релизятся ОДНОЙ группой `cli` в `nx.json` (fixed, releaseTagPattern `cli@{version}`) вместе с `@capsuletech/cli` и `shared-file-manager`.
+4 build-time пакета + `@capsuletech/docs` (root docs package). `lib-builder` — zero-deps leaf (libConfig для любого пакета). `vite-builder` — рантайм для apps (dev-server + 9 плагинов). `compliance` — AST-линтер HCA-правил. `biome-config` — shared lint preset. Релизятся ОДНОЙ группой `cli` в `nx.json` (fixed, releaseTagPattern `cli@{version}`) вместе с `@capsuletech/cli` и `shared-file-manager`.
+
+**Phase 3 (ADR 052) done (2026-06-16):** `DocsExtractPlugin` добавлен в `lib-builder` и `vite-builder`. `@capsuletech/docs` пакет создан в `packages/docs/` — wraps корневую `docs/`, эмитит `packages/docs/dist/docs.json` (181 doc). `pnpm docs:build` переключён на `pnpm --filter @capsuletech/docs build`. `docs/_build/extract.mjs` удалён.
 
 Главное правило: **build-time пакеты живут тут**. Runtime cross-group — в `packages/shared/`. Критерий — используется в `vite.config.mts` чужих пакетов / `capsule.config.ts` apps'ов, а не в их JSX.
 

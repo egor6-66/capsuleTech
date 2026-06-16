@@ -247,8 +247,11 @@ export type SectionSlug = `${DocSlug}#${string}`;
 ### 7.2 Script {#pipeline-script}
 
 ```bash
-pnpm docs:build         # → node docs/_build/extract.mjs
+pnpm docs:build         # → pnpm --filter @capsuletech/docs build
 ```
+
+> ADR 052 Phase 3 (2026-06-16): script переведён на `@capsuletech/docs` пакет.
+> `docs/_build/extract.mjs` удалён. Результат: `packages/docs/dist/docs.json`.
 
 ### 7.3 Parser stack {#pipeline-parser}
 
@@ -497,5 +500,6 @@ Frontmatter валидируется по §2 contract — `title`/`status`/`tag
 - [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] D5 — colocation rule.
 - [[033-package-registration|ADR 033]] — registration pattern, применяется к docs composer'у (§8.4).
 - [[web-rework-plan]] Phase E — execution status.
-- `docs/_build/extract.mjs` — reference extractor (удаляется после готовности `@capsuletech/docs-builder` в Phase 3).
-- `docs/.generated/registry.ts` — produced artifact (текущая центральная форма; переедет в per-package `<pkg>/dist/docs.json` shape).
+- `docs/_build/extract.mjs` — **УДАЛЁН** (ADR 052 Phase 3, 2026-06-16). Заменён `@capsuletech/docs` пакетом.
+- `packages/docs/dist/docs.json` — produced artifact (per-package форма; ADR 052 Phase 3 done).
+- `docs/.generated/registry.ts` — legacy artifact (больше не генерируется; файл можно удалить при следующей очистке).
