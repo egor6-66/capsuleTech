@@ -58,8 +58,8 @@ const Value = (props: ISelectValueProps) => {
  * Kobalte natively delays Content removal from the DOM while a closing CSS
  * animation plays — no `forceMount` or motionone needed. The `select-content-animate`
  * class (defined in `@capsuletech/web-style/index.css`) animates the panel HEIGHT
- * (grid-rows 0fr→1fr) rather than scaling it, so the attached single-block panel
- * unfolds downward from the seam without the scale/translate "pinch" flash:
+ * (grid-rows 0fr→1fr) rather than scaling it, so the detached panel unfolds
+ * downward from its top edge without the scale/translate "pinch" flash:
  *   - enter → `select-unfold` keyframe on `[data-expanded]`
  *   - exit  → `select-fold`   keyframe on `[data-closed]`
  *
@@ -131,9 +131,11 @@ const Content = (props: ISelectContentProps) => {
  * </Select>
  * ```
  *
- * `gutter` defaults to `0` px — the panel butts directly against the trigger so
- * the two form a single continuous block (the trigger flattens its bottom corners
- * and the panel its top; see `variants.ts`). Pass an explicit `gutter` to detach.
+ * `gutter` defaults to `4` px — the panel floats below the trigger with a small
+ * gap (shadcn Select canon). This makes floating-ui's `shift` collision correction
+ * near viewport edges imperceptible: a detached panel tolerates a 2-3 px horizontal
+ * offset; a seamless single-block would show a broken seam. Pass an explicit
+ * `gutter` to override.
  */
 const SelectImpl = (props: ISelectProps) => {
   const [local, kobalteProps] = splitProps(props, [
@@ -159,7 +161,7 @@ const SelectImpl = (props: ISelectProps) => {
       options={optionValues()}
       placeholder={local.placeholder}
       optionDisabled={(v) => disabledSet().has(v)}
-      gutter={local.gutter ?? 0}
+      gutter={local.gutter ?? 4}
       itemComponent={(itemProps) => (
         <KobalteSelect.Item item={itemProps.item} class={selectItemCva()}>
           <KobalteSelect.ItemIndicator class={selectItemIndicatorCva()}>

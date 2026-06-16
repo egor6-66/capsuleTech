@@ -44,9 +44,23 @@ import {
  * ```
  */
 const AccordionImpl = (props: IAccordionProps) => {
-  const [local, others] = splitProps(props, ['class']);
+  const [local, others] = splitProps(props, ['class', 'fluid']);
+
+  const rootClass = () =>
+    local.fluid !== undefined
+      ? // Drop `w-full` when fluid is set — it conflicts with `flex: 1 1 Npx`.
+        cn('divide-y divide-border', local.class)
+      : cn(accordionRootCva(), local.class);
+
+  const rootStyle = (): string | undefined =>
+    local.fluid !== undefined ? `flex: 1 1 ${local.fluid}px` : undefined;
+
   return (
-    <KobalteAccordion class={cn(accordionRootCva(), local.class)} {...(others as any)} />
+    <KobalteAccordion
+      class={rootClass()}
+      style={rootStyle()}
+      {...(others as any)}
+    />
   );
 };
 

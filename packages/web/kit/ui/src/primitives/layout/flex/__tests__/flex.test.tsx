@@ -485,6 +485,35 @@ describe('Flex — sizing props apply as inline-style calc(var(--spacing) * N)',
     expect(root.style.maxWidth).toBe('calc(var(--spacing) * 80)');
   });
 
+  it('fluid prop sets flex shorthand inline style', () => {
+    cleanup = render(
+      () => (
+        <Flex fluid={400}>
+          <span>content</span>
+        </Flex>
+      ),
+      container,
+    );
+
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.style.flex).toBe('1 1 400px');
+  });
+
+  it('fluid and h can coexist independently', () => {
+    cleanup = render(
+      () => (
+        <Flex fluid={300} h={20}>
+          <span>content</span>
+        </Flex>
+      ),
+      container,
+    );
+
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.style.flex).toBe('1 1 300px');
+    expect(root.style.height).toBe('calc(var(--spacing) * 20)');
+  });
+
   it('sizing props do not affect items-mode (no inline styles leaked)', () => {
     // items-mode renders ResizableFlex or StaticItemsFlex — sizing props are
     // only consumed in CSS-flex mode; they must not appear on items-mode roots.
@@ -503,5 +532,109 @@ describe('Flex — sizing props apply as inline-style calc(var(--spacing) * N)',
     expect(root.style.height).toBe('');
     expect(root.style.width).toBe('');
     expect(root.style.minHeight).toBe('');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 8. ResizableHandle withHandle layout-stability regression
+//    GripIcon mount/unmount must not shift handle dimensions (1px stays 1px).
+// ---------------------------------------------------------------------------
+
+describe('ResizableHandle — withHandle toggle does not cause layout shift', () => {
+  const resizableItems: IFlexItem[] = [
+    { children: <div data-testid="panel-a" style="width:100%;height:100%">A</div>, resizable: true, initialSize: 0.5 },
+    { children: <div data-testid="panel-b" style="width:100%;height:100%">B</div>, resizable: true, initialSize: 0.5 },
+  ];
+
+  it('handle element is present when withHandle=false (no grip in DOM)', () => {
+    cleanup = render(
+      () => <Flex orientation="horizontal" items={resizableItems} />,
+      container,
+    );
+
+    const handles = container.querySelectorAll('[data-corvu-resizable-handle]');
+    expect(handles.length).toBeGreaterThanOrEqual(1);
+
+    // No grip wrapper (the absolute-positioned div inside handle) when withHandle is absent
+    for (const handle of handles) {
+      // GripIcon renders a div with absolute positioning; when Show's condition is
+      // false the div should not be in the DOM at all.
+      const gripDivs = handle.querySelectorAll('div');
+      expect(gripDivs.length).toBe(0);
+    }
+  });
+
+  it('GripIcon div is in DOM when withHandle=true', () => {
+    cleanup = render(
+      () => <Flex orientation="horizontal" items={resizableItems} withHandle />,
+      container,
+    );
+
+    const handles = container.querySelectorAll('[data-corvu-resizable-handle]');
+    expect(handles.length).toBeGreaterThanOrEqual(1);
+
+    // With withHandle=true the GripIcon div must be rendered inside the handle
+    const firstHandle = handles[0];
+    const gripDivs = firstHandle.querySelectorAll('div');
+    expect(gripDivs.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('GripIcon div carries absolute positioning classes (out of flow)', () => {
+    cleanup = render(
+      () => <Flex orientation="horizontal" items={resizableItems} withHandle />,
+      container,
+    );
+
+    const handles = container.querySelectorAll('[data-corvu-resizable-handle]');
+    const firstHandle = handles[0];
+    // The GripIcon outer div must have `absolute` class so it is out of flex-flow.
+    // jsdom does not compute layout, but we can assert the class is present.
+    const gripDiv = firstHandle.querySelector('div');
+    expect(gripDiv).not.toBeNull();
+    expect(gripDiv!.classList.contains('absolute')).toBe(true);
+  });
+
+  it('handle does not carry flex/items-center/justify-center classes (no min-content sizing)', () => {
+    cleanup = render(
+      () => <Flex orientation="horizontal" items={resizableItems} withHandle />,
+      container,
+    );
+
+    const handles = container.querySelectorAll('[data-corvu-resizable-handle]');
+    const firstHandle = handles[0] as HTMLElement;
+
+    // These classes were removed in the layout-shift fix; if they reappear the
+    // bug will regress because flex min-content expands the 1px handle.
+    expect(firstHandle.classList.contains('flex')).toBe(false);
+    expect(firstHandle.classList.contains('items-center')).toBe(false);
+    expect(firstHandle.classList.contains('justify-center')).toBe(false);
+  });
+
+  it('handle still carries relative class (required for absolute GripIcon anchor)', () => {
+    cleanup = render(
+      () => <Flex orientation="horizontal" items={resizableItems} withHandle />,
+      container,
+    );
+
+    const handles = container.querySelectorAll('[data-corvu-resizable-handle]');
+    const firstHandle = handles[0] as HTMLElement;
+    expect(firstHandle.classList.contains('relative')).toBe(true);
+  });
+
+  it('hit-area after-pseudo overlay class is present (after:w-1 kept)', () => {
+    // The wider click-target is provided by the `after:` pseudo-element utility
+    // classes on the handle element. jsdom cannot compute pseudo-elements, but
+    // we can assert the Tailwind class is present so it will be included in the
+    // stylesheet at build time.
+    cleanup = render(
+      () => <Flex orientation="horizontal" items={resizableItems} withHandle />,
+      container,
+    );
+
+    const handles = container.querySelectorAll('[data-corvu-resizable-handle]');
+    const firstHandle = handles[0] as HTMLElement;
+    // Tailwind `after:w-1` compiles to a class string; the raw class token is
+    // what appears in classList (Tailwind v4 uses atomic classname passthrough).
+    expect(firstHandle.className).toContain('after:w-1');
   });
 });

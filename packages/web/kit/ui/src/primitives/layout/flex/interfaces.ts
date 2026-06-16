@@ -148,6 +148,17 @@ export interface IFlexOwnProps {
   minW?: number;
   /** `max-width`. `maxW={80}` → `max-width: calc(var(--spacing) * 80)`. */
   maxW?: number;
+
+  /**
+   * Canonical responsive-flex pattern. Applies `flex: 1 1 Npx` inline:
+   * grows to fill parent's main-axis, shrinks when needed, basis = N (px).
+   * Combined with parent's `wrap='wrap'`, wraps to new row/column when
+   * container ≤ 2×N. Cross-axis stretches via default `align-self: stretch`.
+   *
+   * Replaces `w='full'` / `h='full'` for typical responsive widget roots.
+   * For fixed sizes use `h={N}` / `w={N}`; for fluid use `fluid={N}`.
+   */
+  fluid?: number;
 }
 
 export type IFlexProps<T extends ValidComponent = 'div'> = ISlotProps<T> & IFlexOwnProps;

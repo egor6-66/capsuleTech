@@ -20,6 +20,17 @@ export interface IAccordionProps extends AccordionRootProps {
   /** Extra CSS classes on the root element. */
   class?: string;
   children?: JSX.Element;
+  /**
+   * Canonical responsive pattern (mirrors Flex's `fluid`). Applies
+   * `flex: 1 1 Npx` inline: grows to fill parent's main-axis, shrinks
+   * when needed, basis = N (px). Combined with parent `<Flex wrap='wrap'>`,
+   * wraps to new row when container ≤ 2×N.
+   *
+   * When set, `w-full` is dropped to avoid conflict with the `flex` shorthand.
+   *
+   * For typical (non-responsive) usage, omit — Accordion stays `w-full`.
+   */
+  fluid?: number;
 }
 
 /**

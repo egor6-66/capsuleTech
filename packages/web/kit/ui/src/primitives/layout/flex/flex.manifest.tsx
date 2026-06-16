@@ -29,6 +29,8 @@ export const FlexManifest: IComponentManifest = {
     // h/w: число (spacing-шкала) или 'full' (100%).
     h: z.union([z.number(), z.literal('full')]).optional(),
     w: z.union([z.number(), z.literal('full')]).optional(),
+    // fluid: responsive basis (px). flex: 1 1 Npx — растёт/сжимается, basis = N.
+    fluid: z.number().optional(),
     class: z.string().optional().default('w-full'),
     style: z.record(z.string()).optional().default({ padding: 'var(--space-card)' }),
   }),

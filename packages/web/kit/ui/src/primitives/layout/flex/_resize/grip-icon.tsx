@@ -3,13 +3,18 @@
  * Поворот для vertical-orientation — через CSS-селектор у родителя handle
  * (`[&[data-orientation=vertical]>div]:rotate-90` в `resizableHandleCva`).
  *
+ * Намеренно `position: absolute` — выпадает из flex-потока handle'а, чтобы
+ * mount/unmount grip'а не влиял на layout-размер 1px-handle'а (нет layout shift).
+ * Родительский handle имеет `position: relative` и держит размер сам по себе.
+ *
  * @param class — optional override for the outer wrapper (e.g. remove border when
  *   embedded inside a styled button).
  */
 export const GripIcon = (props: { class?: string }) => (
   <div
     class={
-      props.class ?? 'z-10 flex h-4 w-3 items-center justify-center rounded-sm border bg-border'
+      props.class ??
+      'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex h-4 w-3 items-center justify-center rounded-sm border bg-border'
     }
   >
     <svg

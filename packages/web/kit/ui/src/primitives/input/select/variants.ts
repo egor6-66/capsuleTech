@@ -27,11 +27,15 @@ import { INPUT_FIELD_BASE } from '../base';
  * a focus-visible ring here would falsely re-light after a mouse click-away. The
  * open ring is the affordance; no ring on the closed-but-focused trigger.
  *
- * ## Single-block (attached panel)
- * When open, the bottom corners flatten (`data-[expanded]:rounded-b-none`) so the
- * trigger and the panel below (which flattens its top, see `selectContentCva`)
- * read as one continuous block with no rounded seam. Tuned for downward placement
- * (Kobalte exposes no placement data-attribute to flip these for upward opens).
+ * ## Detached panel
+ * The panel floats below the trigger with a small gutter (default 4 px, see
+ * `SelectImpl`). Trigger corners remain fully rounded in the open state — no
+ * seam-flattening. This avoids the 2-3 px pixel misalignment that floating-ui's
+ * `shift` collision middleware introduces when the trigger is near a viewport edge:
+ * with an attached single-block layout the shifted seam looks broken; with a
+ * detached panel a small horizontal offset is imperceptible. The open state
+ * therefore shows only a `ring-1 ring-ring` affordance, matching shadcn Select
+ * canon.
  */
 export const selectTriggerCva = cva(
   [
@@ -44,12 +48,8 @@ export const selectTriggerCva = cva(
     'font-normal',
     // Background state 2: filled — no placeholder-shown means a value is selected
     '[&:not([data-placeholder-shown])]:bg-muted/40',
-    // Open state — bg + accent border (NOT a box-shadow ring): a border-colour flip
-    // lets the trigger and the attached panel share one continuous outline (the
-    // panel uses the same `border-ring`), reading as a single bordered block.
-    'data-[expanded]:bg-background data-[expanded]:border-ring',
-    // Single-block: flatten the seam shared with the attached panel
-    'data-[expanded]:rounded-b-none',
+    // Open state — standard ring affordance (shadcn canon); border stays border-input
+    'data-[expanded]:bg-background data-[expanded]:ring-1 data-[expanded]:ring-ring',
     // Placeholder text colour
     'data-[placeholder-shown]:text-muted-foreground',
   ].join(' '),
@@ -68,12 +68,16 @@ export const selectTriggerCva = cva(
  * (Note: there is NO `--kb-select-content-available-*` — an earlier version used
  * those non-existent names, so `min-w`/`max-h` were silently inert.)
  *
- * ## Single-block (attached to trigger)
- * Width is pinned to the trigger width and the top corners flatten + top border is
- * dropped, so the panel continues the trigger as one block (paired with the
- * trigger's `data-[expanded]:rounded-b-none`). The side/bottom border uses
- * `border-ring` to match the open trigger's `border-ring`, giving the whole block
- * one continuous outline. Tuned for downward placement.
+ * ## Detached panel (shadcn canon)
+ * The panel floats below the trigger with a gutter (default 4 px set via `gutter`
+ * prop on `SelectImpl`). Width is pinned to the trigger via
+ * `w-[var(--kb-popper-anchor-width)]` so the panel aligns horizontally even when
+ * floating-ui's `shift` middleware applies a small horizontal correction near
+ * viewport edges — a detached panel tolerates that offset; a seamless single-block
+ * would not (visible seam misalignment).
+ *
+ * All four corners are rounded, full border uses `border-border` (matching
+ * `Dropdown.Content` canon). No top-edge tricks.
  *
  * No panel padding — items run edge-to-edge so their highlight background spans the
  * full width; content spacing lives on the item (see `selectItemCva`).
@@ -90,8 +94,8 @@ export const selectContentCva = cva(
     'z-50 w-[var(--kb-popper-anchor-width)]',
     // overflow-hidden: clip the rounded corners + clip the grid-rows collapse;
     // the scroll + max-height live on the inner content wrapper (see select.tsx).
-    'overflow-hidden rounded-md rounded-t-none',
-    'border border-ring border-t-0 bg-popover text-popover-foreground shadow-md outline-none',
+    'overflow-hidden rounded-md',
+    'border border-border bg-popover text-popover-foreground shadow-md outline-none',
   ].join(' '),
   {
     variants: {},
