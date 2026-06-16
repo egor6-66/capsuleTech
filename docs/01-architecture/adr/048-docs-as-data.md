@@ -2,13 +2,21 @@
 tags: [hca, adr, proposed, docs, infrastructure, projection]
 status: proposed
 date: 2026-06-11
-last_updated: 2026-06-12
+last_updated: 2026-06-16
+amended: 2026-06-16
 ---
 
 > [!info] Status
 > **Proposed** — 2026-06-11. Sister-ADR к [[046-boost-namespace-matrix-evict-vt-owner|046]] и [[047-frontend-architecture-zones-cycle-vendor|047]]. Триада ландит одной волной.
 >
 > Этот ADR — про **документацию как данные**: один markdown source, многоаудиторные проекции, build-time извлечение в типизированный registry, JSX-консумерс через `@capsuletech/web-studio/docs`.
+
+> [!warning] Amendment 2026-06-16 — distribution model split
+> D1–D3, D6, D7 — **canon, остаются**. D4 (extraction) и D5 (consumer) — **пересматриваются** под per-package модель: движок становится переиспользуемой библиотекой (`@capsuletech/docs-builder`), каждый пакет производит свой `docs.json` chunk при build, `web-studio/docs` композирует registry из импортов через ADR 033 pattern.
+>
+> Причина: центральный monorepo-scanner работает только внутри capsule-репо, не масштабируется на внешнего пользователя framework'а (он не может «настроить путь» в скрипте который сидит в capsule).
+>
+> См. [[../../_meta/briefs/owner-builders-docs-colocation|brief — per-package distribution]] и новый ADR (TBD номер). Старая центральная реализация (`docs/_build/extract.mjs`) — reference, удаляется в Phase 3 деливери.
 
 # ADR 048 — Docs as data: single MD source + multi-audience projection
 
