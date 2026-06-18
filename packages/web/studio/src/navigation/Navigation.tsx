@@ -68,9 +68,7 @@ const NavigationComponent = (props: INavigationProps) => {
         {(seg) => (
           <Button
             variant={active() === seg.id ? 'default' : 'ghost'}
-            onClick={() =>
-              emit('onNavigate', { source: 'WebStudio.Navigation', payload: seg.id })
-            }
+            onClick={() => emit('onNavigate', { source: 'WebStudio.Navigation', payload: seg.id })}
           >
             {seg.label}
           </Button>

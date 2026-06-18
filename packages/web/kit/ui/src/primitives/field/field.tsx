@@ -8,8 +8,12 @@ export function Field(props: IFieldProps) {
   const [local, variants, others] = splitProps(props, ['class', 'style'], ['orientation']);
 
   const styleProps = mergeProps(variants, {
-    get class() { return local.class; },
-    get style() { return local.style; },
+    get class() {
+      return local.class;
+    },
+    get style() {
+      return local.style;
+    },
   });
   const { className, style } = createStyle(fieldCva, styleProps);
   return (

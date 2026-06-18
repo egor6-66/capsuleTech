@@ -1,7 +1,8 @@
 /* @vitest-environment jsdom */
+
+import { getPresets } from '@capsuletech/web-ui/manifest';
 import { render } from 'solid-js/web';
 import { afterEach, describe, expect, it } from 'vitest';
-import { getPresets } from '@capsuletech/web-ui/manifest';
 import { useSelectedPreset } from '../../selection';
 import { WebStudioCanvas } from '../WebStudioCanvas';
 
@@ -18,7 +19,8 @@ const canvasRoot = (host: HTMLElement): HTMLElement | Document => {
   const frame = host.querySelector('iframe');
   return frame?.contentDocument?.body ?? host;
 };
-const canvasText = (host: HTMLElement): string => (canvasRoot(host) as HTMLElement).textContent ?? '';
+const canvasText = (host: HTMLElement): string =>
+  (canvasRoot(host) as HTMLElement).textContent ?? '';
 
 describe('WebStudioCanvas', () => {
   it('показывает empty state когда ничего не выбрано', () => {

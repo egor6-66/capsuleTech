@@ -19,8 +19,12 @@ export const Spinner = (props: ISpinnerProps) => {
   const [local, variants] = splitProps(merged, ['class', 'style', 'label']);
 
   const styleProps = mergeProps(variants, {
-    get class() { return local.class; },
-    get style() { return local.style; },
+    get class() {
+      return local.class;
+    },
+    get style() {
+      return local.style;
+    },
   });
   const { className, style } = createStyle(spinnerCva, styleProps);
 

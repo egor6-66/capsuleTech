@@ -11,6 +11,7 @@
  *     auto-fields independently).
  */
 
+import type { Contract } from '@capsuletech/web-contract';
 import { ButtonManifest } from '../primitives/button/button.manifest';
 import {
   CardContentManifest,
@@ -38,7 +39,6 @@ import { SkeletonManifest } from '../primitives/skeleton/skeleton.manifest';
 import { SpinnerManifest } from '../primitives/spinner/spinner.manifest';
 import { ToggleManifest } from '../primitives/toggle/toggle.manifest';
 import { TypographyManifest } from '../primitives/typography/typography.manifest';
-import type { Contract } from '@capsuletech/web-contract';
 import type {
   ComponentCategory,
   FieldRule,
@@ -133,21 +133,16 @@ export const getCategories = (): ComponentCategory[] => {
 };
 
 /** Presets примитива по `node.type`. Пусто (`[]`) если presets не заданы. */
-export const getPresets = (type: string): readonly IPreset[] =>
-  BY_TYPE.get(type)?.presets ?? [];
+export const getPresets = (type: string): readonly IPreset[] => BY_TYPE.get(type)?.presets ?? [];
 
 /** true если примитив имеет хотя бы один preset. */
-export const hasPresets = (type: string): boolean =>
-  (BY_TYPE.get(type)?.presets?.length ?? 0) > 0;
+export const hasPresets = (type: string): boolean => (BY_TYPE.get(type)?.presets?.length ?? 0) > 0;
 
 /**
  * Применяет field-rule примитива к текущим props. Возвращает `{}` если rule
  * не задана. Результат содержит `hidden` и/или `disabled` наборы полей.
  */
-export const applyFieldRule = (
-  type: string,
-  props: Record<string, unknown>,
-): IFieldRuleResult =>
+export const applyFieldRule = (type: string, props: Record<string, unknown>): IFieldRuleResult =>
   BY_TYPE.get(type)?.fieldRule?.(props) ?? {};
 
 // Re-export types so that consumers can import from one place.

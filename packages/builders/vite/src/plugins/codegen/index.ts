@@ -7,21 +7,32 @@
  *   (exported for testing and for consumers that want to compose generators)
  */
 
-export { createCapsuleRegistryPlugin, LAYER_INIT_ORDER, type IOrchestratorProps } from './orchestrator';
-export type { SubGenerator, CodegenContext, AppConfigShape, AppConfigResult } from './interfaces';
-
+export { createAppConfigSubGenerator } from './generators/appConfig';
 // Built-in generator factories (exported for extension points).
 export { createBarrelRegistrySubGenerator } from './generators/barrelRegistry';
-export { createEndpointsSubGenerator } from './generators/endpoints';
-export { createAppConfigSubGenerator } from './generators/appConfig';
-export { createPackagesSubGenerator } from './generators/packages';
-export { createDocsSourcesSubGenerator, generateDocsSourcesRuntime, derivePackageShort, checkDocsJsonExport } from './generators/docs-sources';
 export { createBootstrapSubGenerator } from './generators/bootstrap';
-export { createEndpointsSubGenerator } from './generators/endpoints';
-export { createPackagesSubGenerator } from './generators/packages';
-export type { AppConfigShape, CodegenContext, SubGenerator } from './interfaces';
+export {
+  checkDocsJsonExport,
+  createDocsSourcesSubGenerator,
+  derivePackageShort,
+  generateDocsSourcesRuntime,
+} from './generators/docs-sources';
+export { createEndpointsSubGenerator, createEndpointsSubGenerator } from './generators/endpoints';
+export { createPackagesSubGenerator, createPackagesSubGenerator } from './generators/packages';
+export type {
+  AppConfigResult,
+  AppConfigShape,
+  AppConfigShape,
+  CodegenContext,
+  CodegenContext,
+  SubGenerator,
+  SubGenerator,
+} from './interfaces';
 export {
   createCapsuleRegistryPlugin,
+  createCapsuleRegistryPlugin,
   type IOrchestratorProps,
+  type IOrchestratorProps,
+  LAYER_INIT_ORDER,
   LAYER_INIT_ORDER,
 } from './orchestrator';

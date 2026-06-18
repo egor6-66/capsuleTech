@@ -34,10 +34,18 @@ export function List<T = unknown>(props: IListProps<T>) {
     );
 
     const { className, style } = createStyle(listVariants, {
-      get variant() { return variants.variant; },
-      get orientation() { return local.min ? undefined : variants.orientation; },
-      get class() { return local.min ? undefined : local.class; },
-      get style() { return local.min ? undefined : local.style; },
+      get variant() {
+        return variants.variant;
+      },
+      get orientation() {
+        return local.min ? undefined : variants.orientation;
+      },
+      get class() {
+        return local.min ? undefined : local.class;
+      },
+      get style() {
+        return local.min ? undefined : local.style;
+      },
     });
 
     const getItemProps = local.item.props ?? ((item: T) => item as Record<string, unknown>);
@@ -74,10 +82,18 @@ export function List<T = unknown>(props: IListProps<T>) {
     );
 
     const { className, style } = createStyle(listVariants, {
-      get variant() { return variants.variant; },
-      get orientation() { return variants.orientation; },
-      get class() { return local.class; },
-      get style() { return local.style; },
+      get variant() {
+        return variants.variant;
+      },
+      get orientation() {
+        return variants.orientation;
+      },
+      get class() {
+        return local.class;
+      },
+      get style() {
+        return local.style;
+      },
     });
 
     return (
@@ -95,10 +111,18 @@ export function List<T = unknown>(props: IListProps<T>) {
   );
 
   const { className, style } = createStyle(listVariants, {
-    get variant() { return variants.variant; },
-    get orientation() { return variants.orientation; },
-    get class() { return local.class; },
-    get style() { return local.style; },
+    get variant() {
+      return variants.variant;
+    },
+    get orientation() {
+      return variants.orientation;
+    },
+    get class() {
+      return local.class;
+    },
+    get style() {
+      return local.style;
+    },
   });
 
   return (
@@ -118,10 +142,18 @@ function VirtualList<T>(props: IVirtualListProps<T>) {
   );
 
   const { className, style } = createStyle(listVariants, {
-    get variant() { return variants.variant; },
-    get orientation() { return variants.orientation; },
-    get class() { return local.class; },
-    get style() { return local.style; },
+    get variant() {
+      return variants.variant;
+    },
+    get orientation() {
+      return variants.orientation;
+    },
+    get class() {
+      return local.class;
+    },
+    get style() {
+      return local.style;
+    },
   });
 
   const virtualizer = createVirtualizer({

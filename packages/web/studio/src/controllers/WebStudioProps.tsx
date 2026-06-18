@@ -23,13 +23,12 @@
 
 import { Flex } from '@capsuletech/web-ui/flex';
 import { Icons } from '@capsuletech/web-ui/icons';
-import { getManifest } from '@capsuletech/web-ui/manifest';
+import { applyFieldRule, getManifest } from '@capsuletech/web-ui/manifest';
 import { Typography } from '@capsuletech/web-ui/typography';
 import { createMemo, Show } from 'solid-js';
 import { Inspector } from '../inspector/Inspector';
 import type { ICategory, ISelectField } from '../inspector/types';
 import { schemaToInspectorCategories } from '../inspector/zod-to-categories';
-import { applyFieldRule } from '@capsuletech/web-ui/manifest';
 import { useSelectedPreset } from '../selection';
 
 const ICON_NAMES = Object.keys(Icons) as ReadonlyArray<keyof typeof Icons>;
@@ -104,7 +103,8 @@ export const WebStudioProps = () => {
       // Icon-field занимает СЛОТ `children` (тот же логический prop, другой
       // тип ввода). Считаем индекс ДО фильтрации, иначе rule.hidden['children']
       // выкинет его и мы потеряем позицию.
-      const childrenIdx = hasIconNow && i === 0 ? cat.fields.findIndex((f) => f.key === 'children') : -1;
+      const childrenIdx =
+        hasIconNow && i === 0 ? cat.fields.findIndex((f) => f.key === 'children') : -1;
       const mapped = cat.fields.map((f, idx) => {
         if (idx === childrenIdx) return ICON_FIELD;
         if (disabled.has(f.key)) return { ...f, disabled: true };
@@ -112,7 +112,8 @@ export const WebStudioProps = () => {
       });
       const fields = mapped.filter((f) => f.key === ICON_FIELD.key || !hidden.has(f.key));
       // hasIcon с нестандартным manifest'ом (нет `children`) — кладём в конец как fallback.
-      if (hasIconNow && i === 0 && childrenIdx === -1) return { ...cat, fields: [...fields, ICON_FIELD] };
+      if (hasIconNow && i === 0 && childrenIdx === -1)
+        return { ...cat, fields: [...fields, ICON_FIELD] };
       return { ...cat, fields };
     });
   };

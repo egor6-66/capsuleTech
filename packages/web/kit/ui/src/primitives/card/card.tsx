@@ -31,8 +31,12 @@ const CardImpl = (props: ICardProps) => {
     sizing.elevation !== undefined ? ELEVATION[sizing.elevation] : undefined;
 
   const styleProps = mergeProps(variants, {
-    get class() { return cn(local.class, elevationClass()); },
-    get style() { return local.style; },
+    get class() {
+      return cn(local.class, elevationClass());
+    },
+    get style() {
+      return local.style;
+    },
   });
   const { className, style } = createStyle(cardCva, styleProps);
 

@@ -13,8 +13,8 @@
  */
 
 import type { ISchema } from '@capsuletech/web-renderer';
-import { createStore, produce } from 'solid-js/store';
 import type { IPreset } from '@capsuletech/web-ui/manifest';
+import { createStore, produce } from 'solid-js/store';
 
 interface ISelectionState {
   preset: IPreset | null;

@@ -28,13 +28,13 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { createJiti } from 'jiti';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
-  createDocsSourcesSubGenerator,
   type AppConfigResult,
   type CodegenContext,
+  createDocsSourcesSubGenerator,
 } from '../codegen';
-import { createJiti } from 'jiti';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -278,15 +278,25 @@ function makeCtxWithResult(result: AppConfigResult): TestCtxWithTracking {
     capsuleRoot: CAPSULE_ROOT_RESILIENCE,
     watchDir: resolve('/project/apps/myapp/src'),
     appConfigPath: resolve('/project/apps/myapp/capsule.app.ts'),
-    writeOut: (absPath: string, content: string) => { written.set(absPath, content); },
-    removeOut: (absPath: string) => { removed.push(absPath); },
-    parse: () => { throw new Error('not needed'); },
-    names: () => { throw new Error('not needed'); },
+    writeOut: (absPath: string, content: string) => {
+      written.set(absPath, content);
+    },
+    removeOut: (absPath: string) => {
+      removed.push(absPath);
+    },
+    parse: () => {
+      throw new Error('not needed');
+    },
+    names: () => {
+      throw new Error('not needed');
+    },
     loadAppConfig: () => result,
     logger: {
       info: (_msg: string) => {},
       warn: (_msg: string) => {},
-      error: (msg: string) => { errors.push(msg); },
+      error: (msg: string) => {
+        errors.push(msg);
+      },
     },
     written,
     removed,
@@ -347,14 +357,20 @@ describe('docs-sources — successful generation info log (Fix 3)', () => {
       appConfigPath: resolve('/project/apps/myapp/capsule.app.ts'),
       writeOut: (_absPath: string, _content: string) => {},
       removeOut: (_absPath: string) => {},
-      parse: () => { throw new Error('not needed'); },
-      names: () => { throw new Error('not needed'); },
+      parse: () => {
+        throw new Error('not needed');
+      },
+      names: () => {
+        throw new Error('not needed');
+      },
       loadAppConfig: () => ({
         status: 'ok',
         config: { docs: { rootVault: true } },
       }),
       logger: {
-        info: (msg: string) => { infoMessages.push(msg); },
+        info: (msg: string) => {
+          infoMessages.push(msg);
+        },
         warn: (_msg: string) => {},
         error: (_msg: string) => {},
       },
@@ -381,12 +397,18 @@ describe('docs-sources — successful generation info log (Fix 3)', () => {
       appConfigPath: resolve('/project/apps/myapp/capsule.app.ts'),
       writeOut: (_absPath: string, _content: string) => {},
       removeOut: (_absPath: string) => {},
-      parse: () => { throw new Error('not needed'); },
-      names: () => { throw new Error('not needed'); },
+      parse: () => {
+        throw new Error('not needed');
+      },
+      names: () => {
+        throw new Error('not needed');
+      },
       // No docs field → cleanup path
       loadAppConfig: () => ({ status: 'ok', config: {} }),
       logger: {
-        info: (msg: string) => { infoMessages.push(msg); },
+        info: (msg: string) => {
+          infoMessages.push(msg);
+        },
         warn: (_msg: string) => {},
         error: (_msg: string) => {},
       },

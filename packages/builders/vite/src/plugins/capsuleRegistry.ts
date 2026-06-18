@@ -29,12 +29,12 @@ import { names } from '@nx/devkit';
 import { createJiti } from 'jiti';
 import type { Plugin, UserConfig, ViteDevServer } from 'vite';
 import { walkFiles, watcherManager } from '../utils';
-import { DEFINE_FACTORIES, LAYER_TO_NAMESPACE } from './constants';
 import {
   checkDocsJsonExport,
   derivePackageShort,
   generateDocsSourcesRuntime,
 } from './codegen/generators/docs-sources';
+import { DEFINE_FACTORIES, LAYER_TO_NAMESPACE } from './constants';
 
 // CJS/ESM interop for @babel/traverse (same pattern as hmrWrapping.ts)
 const traverse = (
@@ -1507,8 +1507,7 @@ export const CapsuleRegistryPlugin = ({
     // Docs sources — opt-in via `docs:` field in capsule.app.ts.
     const docs = config?.docs;
     const hasDocsConfig =
-      docs &&
-      (docs.rootVault === true || (docs.packages && docs.packages.length > 0));
+      docs && (docs.rootVault === true || (docs.packages && docs.packages.length > 0));
 
     if (!hasDocsConfig) {
       if (existsSync(docsSourcesOut)) rmSync(docsSourcesOut);

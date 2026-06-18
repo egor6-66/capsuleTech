@@ -3,10 +3,10 @@ import type { Component, JSX } from 'solid-js';
 // Schema types are canonically defined in @capsuletech/web-contract.
 // Re-exported here for back-compat: consumers importing from
 // '@capsuletech/web-renderer' continue to work without changes.
-export type { NodeId, IEditorNode, IInteraction, ISchema } from '@capsuletech/web-contract';
+export type { IEditorNode, IInteraction, ISchema, NodeId } from '@capsuletech/web-contract';
 
 // Import locally to use in renderer-specific type declarations below.
-import type { NodeId, IEditorNode, ISchema } from '@capsuletech/web-contract';
+import type { IEditorNode, ISchema, NodeId } from '@capsuletech/web-contract';
 
 /**
  * Монотонная шкала возможностей. Каждый следующий мод — строгий супер-сет

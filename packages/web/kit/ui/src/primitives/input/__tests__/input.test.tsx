@@ -9,9 +9,9 @@
  *   - class prop merges and updates reactively.
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Input } from '../input';
 
 let container: HTMLDivElement;

@@ -263,7 +263,10 @@ describe('check — app-package-import (Phase L)', () => {
   });
 
   it('@capsuletech/web-studio subpath → app-package-import', () => {
-    const v = check(WIDGET_PATH, "import { ComponentsPalette } from '@capsuletech/web-studio/palette';");
+    const v = check(
+      WIDGET_PATH,
+      "import { ComponentsPalette } from '@capsuletech/web-studio/palette';",
+    );
     expect(v).toHaveLength(1);
     expect(v[0].kind).toBe('app-package-import');
   });

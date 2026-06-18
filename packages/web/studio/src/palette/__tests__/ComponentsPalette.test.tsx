@@ -1,11 +1,10 @@
 /* @vitest-environment jsdom */
-import { getAllManifests } from '@capsuletech/web-ui/manifest';
+import { getAllManifests, getPresets, hasPresets } from '@capsuletech/web-ui/manifest';
 import { render } from 'solid-js/web';
 import { afterEach, describe, expect, it } from 'vitest';
 import { useSelectedPreset } from '../../selection';
 import { ComponentsPalette } from '../ComponentsPalette';
 import { groupManifests } from '../groups';
-import { getPresets, hasPresets } from '@capsuletech/web-ui/manifest';
 
 // Сбрасываем shared selection-singleton между тестами.
 afterEach(() => {

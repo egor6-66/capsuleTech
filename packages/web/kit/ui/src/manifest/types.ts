@@ -16,8 +16,8 @@
  *     populate the UI / DnD / inspector fields
  */
 
-import type { Contract, ISchema } from '@capsuletech/web-contract';
 import type { ZodTypeAny } from '@capsuletech/shared-zod';
+import type { Contract, ISchema } from '@capsuletech/web-contract';
 import type { JSX } from 'solid-js';
 
 /**

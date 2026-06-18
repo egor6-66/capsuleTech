@@ -20,9 +20,15 @@ export const Separator = (props: ISeparatorProps) => {
   const activeVariant = () => local.variant || local.orientation;
 
   const { className, style } = createStyle(separatorCva, {
-    get variant() { return activeVariant(); },
-    get class() { return local.class; },
-    get style() { return local.style; },
+    get variant() {
+      return activeVariant();
+    },
+    get class() {
+      return local.class;
+    },
+    get style() {
+      return local.style;
+    },
   });
 
   return (

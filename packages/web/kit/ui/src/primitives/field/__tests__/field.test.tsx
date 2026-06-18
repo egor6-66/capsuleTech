@@ -122,7 +122,11 @@ describe('Field — reactivity contract', () => {
   it('updates orientation class when orientation signal changes', () => {
     const [orientation, setOrientation] = createSignal<'vertical' | 'horizontal'>('vertical');
     cleanup = render(
-      () => <Field orientation={orientation()} data-testid="field">content</Field>,
+      () => (
+        <Field orientation={orientation()} data-testid="field">
+          content
+        </Field>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="field"]');
@@ -136,7 +140,11 @@ describe('Field — reactivity contract', () => {
   it('updates class when class signal changes', () => {
     const [cls, setCls] = createSignal('');
     cleanup = render(
-      () => <Field class={cls()} data-testid="field">content</Field>,
+      () => (
+        <Field class={cls()} data-testid="field">
+          content
+        </Field>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="field"]');

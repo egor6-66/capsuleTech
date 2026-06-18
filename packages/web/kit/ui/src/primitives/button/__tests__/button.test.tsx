@@ -7,7 +7,6 @@
  * reactivity contract (variant/size/class/fullWidth update at runtime).
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -141,7 +140,11 @@ describe('Button — reactivity contract', () => {
   it('updates CVA class when variant signal changes', () => {
     const [variant, setVariant] = createSignal<'default' | 'outline'>('default');
     cleanup = render(
-      () => <Button variant={variant()} data-testid="btn">Click</Button>,
+      () => (
+        <Button variant={variant()} data-testid="btn">
+          Click
+        </Button>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="btn"]');
@@ -157,7 +160,11 @@ describe('Button — reactivity contract', () => {
   it('updates CVA class when size signal changes', () => {
     const [size, setSize] = createSignal<'default' | 'lg'>('default');
     cleanup = render(
-      () => <Button size={size()} data-testid="btn">Click</Button>,
+      () => (
+        <Button size={size()} data-testid="btn">
+          Click
+        </Button>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="btn"]');
@@ -172,7 +179,11 @@ describe('Button — reactivity contract', () => {
   it('updates class when fullWidth signal changes', () => {
     const [fw, setFw] = createSignal(false);
     cleanup = render(
-      () => <Button fullWidth={fw()} data-testid="btn">Click</Button>,
+      () => (
+        <Button fullWidth={fw()} data-testid="btn">
+          Click
+        </Button>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="btn"]');
@@ -185,7 +196,11 @@ describe('Button — reactivity contract', () => {
   it('updates class when class signal changes', () => {
     const [cls, setCls] = createSignal('');
     cleanup = render(
-      () => <Button class={cls()} data-testid="btn">Click</Button>,
+      () => (
+        <Button class={cls()} data-testid="btn">
+          Click
+        </Button>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="btn"]');

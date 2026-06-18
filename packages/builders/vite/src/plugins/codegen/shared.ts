@@ -9,12 +9,15 @@
 
 export {
   type BarrelFiles,
+  type BootstrapContribution,
   type EndpointLeaf,
   endpointFileToLeaf,
   // --- AppConfig ---
   generateAppConfigRuntime,
   // --- Barrel registry ---
   generateBarrelRegistry,
+  // --- Bootstrap ---
+  generateBootstrap,
   // --- Bootstrap ---
   generateBootstrap,
   // --- Endpoints ---
@@ -32,9 +35,6 @@ export {
   type ResolvedPackageEntry,
   renderAppTagsTypes,
   resolvePackageEntries,
-  // --- Bootstrap ---
-  generateBootstrap,
-  type BootstrapContribution,
   // --- Leaf helpers ---
   wrapperFileToLeaf,
 } from '../capsuleRegistry';

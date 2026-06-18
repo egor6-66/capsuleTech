@@ -45,8 +45,12 @@ export const Typography = (props: ITypographyProps) => {
 
   // 3. Создаем реактивные стили через CVA
   const styleProps = mergeProps(variantProps, {
-    get class() { return local.class; },
-    get style() { return local.style; },
+    get class() {
+      return local.class;
+    },
+    get style() {
+      return local.style;
+    },
   });
   const { className, style } = createStyle(typographyCva, styleProps);
 

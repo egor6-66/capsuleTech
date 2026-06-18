@@ -7,7 +7,6 @@
  * Existing variant/color CVA contract is stable — only smoke tests here.
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -243,7 +242,11 @@ describe('Typography — reactivity contract', () => {
   it('updates CVA class when variant signal changes', () => {
     const [variant, setVariant] = createSignal<'p' | 'h1'>('p');
     cleanup = render(
-      () => <Typography variant={variant()} data-testid="t">Hello</Typography>,
+      () => (
+        <Typography variant={variant()} data-testid="t">
+          Hello
+        </Typography>
+      ),
       container,
     );
     // p: text-base in className; no text-4xl
@@ -259,7 +262,11 @@ describe('Typography — reactivity contract', () => {
   it('updates class when class signal changes', () => {
     const [cls, setCls] = createSignal('');
     cleanup = render(
-      () => <Typography class={cls()} data-testid="t">Hello</Typography>,
+      () => (
+        <Typography class={cls()} data-testid="t">
+          Hello
+        </Typography>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="t"]');

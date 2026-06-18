@@ -50,9 +50,7 @@ export const createPackagesSubGenerator = (): SubGenerator => {
 
       if (result.status === 'error') {
         // Transient load error — keep existing output, log the error.
-        ctx.logger?.error(
-          `[capsule:packages] failed to load appConfig: ${String(result.error)}`,
-        );
+        ctx.logger?.error(`[capsule:packages] failed to load appConfig: ${String(result.error)}`);
         return;
       }
 

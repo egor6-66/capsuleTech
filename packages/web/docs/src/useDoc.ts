@@ -39,7 +39,7 @@ export const useLazyDoc = (slug: string): Resource<IDocEntry | null> => {
   if (!ctxRegistry && !hasDocsSources()) {
     throw new Error(
       '[web-docs] useLazyDoc() called with no <DocsProvider> and no registered sources. ' +
-        "Add docs: { rootVault, packages } to your apps/<app>/capsule.app.ts, or wrap " +
+        'Add docs: { rootVault, packages } to your apps/<app>/capsule.app.ts, or wrap ' +
         'a subtree in <DocsProvider registry={...}/> for explicit fixture mode.',
     );
   }

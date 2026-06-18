@@ -10,7 +10,6 @@
  * in card.test.tsx.
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -362,7 +361,11 @@ describe('Card — reactivity contract', () => {
   it('updates className when class signal changes', () => {
     const [cls, setCls] = createSignal('');
     cleanup = render(
-      () => <Card class={cls()} data-testid="card">content</Card>,
+      () => (
+        <Card class={cls()} data-testid="card">
+          content
+        </Card>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="card"]');
@@ -375,7 +378,11 @@ describe('Card — reactivity contract', () => {
   it('updates elevation class when elevation signal changes', () => {
     const [elev, setElev] = createSignal<'none' | 'lg'>('none');
     cleanup = render(
-      () => <Card elevation={elev()} data-testid="card">content</Card>,
+      () => (
+        <Card elevation={elev()} data-testid="card">
+          content
+        </Card>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="card"]');

@@ -17,9 +17,14 @@
 
 import { Accordion } from '@capsuletech/web-ui/accordion';
 import { Flex } from '@capsuletech/web-ui/flex';
-import { getAllManifests, type IPrimitiveManifestEntry } from '@capsuletech/web-ui/manifest';
+import {
+  getAllManifests,
+  getPresets,
+  hasPresets,
+  type IPreset,
+  type IPrimitiveManifestEntry,
+} from '@capsuletech/web-ui/manifest';
 import { For, Show } from 'solid-js';
-import { getPresets, hasPresets, type IPreset } from '@capsuletech/web-ui/manifest';
 import { useSelectedPreset } from '../selection';
 import { groupManifests } from './groups';
 

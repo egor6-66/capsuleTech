@@ -36,13 +36,13 @@
 
 import { resolve } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { AppConfigResult, AppConfigShape, CodegenContext } from '../codegen';
 import {
   checkDocsJsonExport,
   createDocsSourcesSubGenerator,
   derivePackageShort,
   generateDocsSourcesRuntime,
 } from '../codegen';
-import type { AppConfigResult, AppConfigShape, CodegenContext } from '../codegen';
 
 // ---------------------------------------------------------------------------
 // derivePackageShort
@@ -115,7 +115,7 @@ describe('generateDocsSourcesRuntime', () => {
     expect(out).toContain('setDocsSources({');
     expect(out).toContain('});');
     // No import paths for packages.
-    expect(out).not.toContain("import(");
+    expect(out).not.toContain('import(');
   });
 
   it('ends with newline', () => {
@@ -207,19 +207,24 @@ const makeCtx = (config: AppConfigShape | undefined, loadResult?: AppConfigResul
   const written = new Map<string, string>();
   const removed: string[] = [];
   // Convert AppConfigShape | undefined → AppConfigResult for the new API.
-  const result: AppConfigResult = loadResult ?? (
-    config === undefined
-      ? { status: 'missing' }
-      : { status: 'ok', config }
-  );
+  const result: AppConfigResult =
+    loadResult ?? (config === undefined ? { status: 'missing' } : { status: 'ok', config });
   return {
     capsuleRoot: CAPSULE_ROOT,
     watchDir: resolve('/project/apps/myapp/src'),
     appConfigPath: APP_CONFIG_PATH,
-    writeOut: (absPath: string, content: string) => { written.set(absPath, content); },
-    removeOut: (absPath: string) => { removed.push(absPath); },
-    parse: () => { throw new Error('parse not needed'); },
-    names: () => { throw new Error('names not needed'); },
+    writeOut: (absPath: string, content: string) => {
+      written.set(absPath, content);
+    },
+    removeOut: (absPath: string) => {
+      removed.push(absPath);
+    },
+    parse: () => {
+      throw new Error('parse not needed');
+    },
+    names: () => {
+      throw new Error('names not needed');
+    },
     loadAppConfig: () => result,
     written,
     removed,
@@ -301,7 +306,7 @@ describe('flush() — packages with mocked checkDocsJsonExport', () => {
     const ctx = makeCtx({ docs: { rootVault: true } });
     gen.flush(ctx, true);
     const content = ctx.written.get(OUT_PATH)!;
-    expect(content).toContain("setDocsSources({");
+    expect(content).toContain('setDocsSources({');
     expect(content).toContain("'@capsuletech/web-docs'");
   });
 });
