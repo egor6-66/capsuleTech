@@ -15,4 +15,5 @@ export { createBarrelRegistrySubGenerator } from './generators/barrelRegistry';
 export { createEndpointsSubGenerator } from './generators/endpoints';
 export { createAppConfigSubGenerator } from './generators/appConfig';
 export { createPackagesSubGenerator } from './generators/packages';
+export { createDocsSourcesSubGenerator, generateDocsSourcesRuntime, derivePackageShort, checkDocsJsonExport } from './generators/docs-sources';
 export { createBootstrapSubGenerator } from './generators/bootstrap';

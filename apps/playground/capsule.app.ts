@@ -12,6 +12,10 @@ export default defineAppConfig({
     '@capsuletech/boost-layout',
     '@capsuletech/web-studio',
   ],
+  docs: {
+    rootVault: false,
+    packages: ['@capsuletech/web-ui'],
+  },
   api: () => ({
     bases: { default: '/api' },
   }),

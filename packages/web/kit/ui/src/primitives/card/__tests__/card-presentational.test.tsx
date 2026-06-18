@@ -11,6 +11,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
 import { Card } from '../card';
 
@@ -312,5 +313,38 @@ describe('Button — fullWidth prop', () => {
   it('is tested in button tests — import guard', () => {
     // Button tests live in button/__tests__. This is a Card test file.
     expect(true).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Reactivity contract — class prop must update at runtime
+// ---------------------------------------------------------------------------
+
+describe('Card — reactivity contract', () => {
+  it('updates className when class signal changes', () => {
+    const [cls, setCls] = createSignal('');
+    cleanup = render(
+      () => <Card class={cls()} data-testid="card">content</Card>,
+      container,
+    );
+    const el = container.querySelector<HTMLElement>('[data-testid="card"]');
+    expect(el?.className).not.toContain('my-dynamic');
+
+    setCls('my-dynamic');
+    expect(el?.className).toContain('my-dynamic');
+  });
+
+  it('updates elevation class when elevation signal changes', () => {
+    const [elev, setElev] = createSignal<'none' | 'lg'>('none');
+    cleanup = render(
+      () => <Card elevation={elev()} data-testid="card">content</Card>,
+      container,
+    );
+    const el = container.querySelector<HTMLElement>('[data-testid="card"]');
+    expect(el?.className).toContain('shadow-none');
+
+    setElev('lg');
+    expect(el?.className).toContain('shadow-lg');
+    expect(el?.className).not.toContain('shadow-none');
   });
 });

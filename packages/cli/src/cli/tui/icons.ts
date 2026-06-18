@@ -39,7 +39,9 @@ export const ICONS = {
 
   // dev
   devServer: '🚀',
+  previewServer: '🔍',
   buildApp: '🏗️',
+  deploy: '📡',
   desktopDev: '💻',
   desktopBuild: '📀',
 

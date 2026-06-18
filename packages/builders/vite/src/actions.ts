@@ -37,3 +37,13 @@ export const buildCapsuleApp = async (
   const finalConfig = capsuleConfig({ config, root, workspaceRoot, isDev: false });
   await build(finalConfig);
 };
+
+export const createPreviewCapsuleServer = async (
+  config: UserConfig,
+  root: string,
+  workspaceRoot: string,
+): Promise<void> => {
+  const finalConfig = capsuleConfig({ config, root, workspaceRoot, isDev: false });
+  const server = await preview(finalConfig);
+  server.printUrls();
+};

@@ -1,5 +1,5 @@
 import { cn, createStyle } from '@capsuletech/web-style';
-import { createMemo, splitProps } from 'solid-js';
+import { createMemo, mergeProps, splitProps } from 'solid-js';
 
 import { createFinish } from '../../lib/finish';
 
@@ -37,11 +37,11 @@ const CardImpl = (props: ICardProps) => {
   const elevationClass = () =>
     sizing.elevation !== undefined ? ELEVATION[sizing.elevation] : undefined;
 
-  const { className, style } = createStyle(cardCva, {
-    ...variants,
-    class: cn(local.class, elevationClass()),
-    style: local.style,
+  const styleProps = mergeProps(variants, {
+    get class() { return cn(local.class, elevationClass()); },
+    get style() { return local.style; },
   });
+  const { className, style } = createStyle(cardCva, styleProps);
 
   // Finish hook — activated via global useFinishMode() signal from web-style.
   const finish = createFinish();

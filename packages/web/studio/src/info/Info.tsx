@@ -12,6 +12,7 @@
 
 import { Accordion } from '@capsuletech/web-ui/accordion';
 import { Flex } from '@capsuletech/web-ui/flex';
+import { Show } from 'solid-js';
 import { ContractBlock } from './ContractBlock';
 import { ManifestBlock } from './ManifestBlock';
 import { ReadmeBlock } from './ReadmeBlock';
@@ -41,13 +42,15 @@ export const Info = (props: IInfoProps) => (
       </Accordion.Item>
     </Accordion>
 
-    <Accordion defaultValue={[]} fluid={300} multiple>
-      <Accordion.Item value="readme">
-        <Accordion.Trigger>Readme</Accordion.Trigger>
-        <Accordion.Content>
-          <ReadmeBlock type={props.type} />
-        </Accordion.Content>
-      </Accordion.Item>
-    </Accordion>
+    <Show when={props.manifest?.docSlug}>
+      <Accordion defaultValue={[]} fluid={300} multiple>
+        <Accordion.Item value="readme">
+          <Accordion.Trigger>Readme</Accordion.Trigger>
+          <Accordion.Content>
+            <ReadmeBlock type={props.type} manifest={props.manifest} />
+          </Accordion.Content>
+        </Accordion.Item>
+      </Accordion>
+    </Show>
   </Flex>
 );

@@ -29,6 +29,16 @@ export default defineConfig({
           /lucide-solid/,
           /@capsuletech\/web-ui/,
           /@capsuletech\/web-style/,
+          // canvas-style блок тянет @capsuletech/web-shell/ui (ThemePicker + ModeToggle);
+          // barrel пакета подтягивает header → @capsuletech/web-access → web-core →
+          // @tanstack/solid-router (вернее, его dev-jsx экспорт). Все эти source-link'и
+          // приходят как .tsx/.jsx — Node нативно не умеет, нужен transform vite-plugin-solid.
+          /@capsuletech\/web-shell/,
+          /@capsuletech\/web-access/,
+          /@capsuletech\/web-core/,
+          /@capsuletech\/web-intl/,
+          /@tanstack\/solid-router/,
+          /@solidjs\/meta/,
           /@kobalte\/core/,
           /@corvu\//,
           /solid-prevent-scroll/,

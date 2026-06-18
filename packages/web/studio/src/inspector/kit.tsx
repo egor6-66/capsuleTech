@@ -73,6 +73,7 @@ const InspectorSelect: Component<SelectKitProps> = (props) => {
       onChange={handleChange as any}
       placeholder={props.placeholder}
       class={props.class}
+      closeOnSelection={false}
     />
   );
 };

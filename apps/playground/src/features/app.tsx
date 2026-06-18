@@ -21,55 +21,68 @@
  *   Тип — глобал `Entities.Viewer.Row` (codegen $infer), без импорта.
  */
 
-type AppCtx = { viewer: Entities.Viewer.Row | null };
+type AppCtx = {
+  viewer: Entities.Viewer.Row | null;
+};
 
-const App = Feature<Auth.Events, AppCtx>(({ router, utils, authApi }) => ({
-  initial: 'guest',
+const App = Feature<Auth.Events & WebStudio.Navigation.Events, AppCtx>(
+  ({ router, utils, authApi }) => ({
+    initial: 'guest',
 
-  context: {
-    viewer: null,
-  },
+    context: {
+      viewer: null,
+    },
 
-  states: {
-    guest: {
-      onInit: ({ store, state }) => {
-        // Restore: rehydrated сессия (configureAuthSession в capsule.app.ts) синхронно
-        // восстановлена из localStorage → входим в authed без формы. Нет токена → /login.
-        if (authApi?.isAuthed()) {
-          store.update({ viewer: authApi.user() });
+    states: {
+      guest: {
+        onInit: ({ store, state }) => {
+          // Restore: rehydrated сессия (configureAuthSession в capsule.app.ts) синхронно
+          // восстановлена из localStorage → входим в authed без формы. Нет токена → /login.
+          if (authApi?.isAuthed()) {
+            store.update({ viewer: authApi.user() });
+            state.set('authed');
+            return;
+          }
+        },
+
+        // Именованные события пакета авторизации (top-level → target.payload типизирован).
+        onLogin: ({ target, store, state }) => {
+          store.update({ viewer: target.payload?.user });
           state.set('authed');
-          return;
-        }
-        router.goTo('/login');
+          router.goTo('/workspace/web-studio');
+        },
       },
 
-      // Именованные события пакета авторизации (top-level → target.payload типизирован).
-      onLogin: ({ target, store, state }) => {
-        store.update({ viewer: target.payload?.user });
-        state.set('authed');
+      authed: {
+        // onInit: () => {
+        //   router.goTo('/workspace');
+        // },
+        onClick: ({ target, store, state }) => {
+          if (utils.includes(target.meta?.tags ?? [], 'logout')) {
+            // auth — инжектированный action пакета web-auth (services injection spike):
+            // чистит auth-сессию пакета (defaultAuthSession), приходит первым аргументом.
+            authApi?.logout();
+            store.update({ viewer: null });
+            state.set('guest');
+            router.goTo('/login');
+          }
+        },
       },
     },
 
-    authed: {
-      onInit: () => {
-        router.goTo('/workspace');
-      },
-      onClick: ({ target, store, state }) => {
-        if (utils.includes(target.meta?.tags ?? [], 'logout')) {
-          // auth — инжектированный action пакета web-auth (services injection spike):
-          // чистит auth-сессию пакета (defaultAuthSession), приходит первым аргументом.
-          authApi?.logout();
-          store.update({ viewer: null });
-          state.set('guest');
-        }
-      },
+    onLoginError: ({ target }) => {
+      // eslint-disable-next-line no-console
+      console.error('[app] login failed:', target.payload?.message);
     },
-  },
 
-  onLoginError: ({ target }) => {
-    // eslint-disable-next-line no-console
-    console.error('[app] login failed:', target.payload?.message);
-  },
-}));
+    // Navigation между разделами студии (WebStudio.Navigation, ADR 032).
+    // payload — id сегмента ('store' | 'creator'); подсветка активной кнопки
+    // derived из URL внутри пакета — здесь только роутинг.
+    onNavigate: ({ target }) => {
+      const segment = target.payload;
+      router.goTo(`/workspace/web-studio/${segment}`);
+    },
+  }),
+);
 
 export default App;

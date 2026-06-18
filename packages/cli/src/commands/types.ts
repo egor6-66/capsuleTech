@@ -33,6 +33,19 @@ export interface CommandParam {
   default?: unknown;
 }
 
+/**
+ * Опция в стиле `--server <url>` / `--no-build`. Регистрируется в commander
+ * через `subCmd.option(flag, description, default?)`; в action прилетит как
+ * camelCase-ключ внутри `params` (`--no-build` → `params.build = false`,
+ * `--server <url>` → `params.server = '…'`). В TUI не спрашивается.
+ */
+export interface CommandOption {
+  /** Полная commander-сигнатура: `--server <url>`, `--no-build`, `--mocks`. */
+  flag: string;
+  description: string;
+  default?: unknown;
+}
+
 export type CommandAction = (
   ctx: CliContext,
   params: Record<string, unknown>,
@@ -47,6 +60,8 @@ export interface Command {
   scope: Scope[];
   category: Category;
   params?: CommandParam[];
+  /** Опции `--flag` (commander-only; в TUI не спрашиваются). */
+  options?: CommandOption[];
   /** Параметры, уже зашитые в команду (одна action — несколько команд). */
   staticParams?: Record<string, unknown>;
   action: CommandAction;

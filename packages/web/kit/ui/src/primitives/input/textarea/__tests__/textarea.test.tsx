@@ -14,6 +14,7 @@
  *   - onInput handler fires on input events.
  */
 /* @vitest-environment jsdom */
+import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Textarea } from '../textarea';
@@ -101,5 +102,31 @@ describe('Textarea', () => {
     cleanup = render(() => <Textarea size="lg" />, container);
     const el = container.querySelector('textarea')!;
     expect(el.className).toContain('text-base');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Reactivity contract — size/class must update at runtime
+// ---------------------------------------------------------------------------
+
+describe('Textarea — reactivity contract', () => {
+  it('updates CVA class when size signal changes', () => {
+    const [size, setSize] = createSignal<'default' | 'sm'>('default');
+    cleanup = render(() => <Textarea size={size()} />, container);
+    const el = container.querySelector('textarea')!;
+    expect(el.className).not.toContain('text-xs');
+
+    setSize('sm');
+    expect(el.className).toContain('text-xs');
+  });
+
+  it('updates class when class signal changes', () => {
+    const [cls, setCls] = createSignal('');
+    cleanup = render(() => <Textarea class={cls()} />, container);
+    const el = container.querySelector('textarea')!;
+    expect(el.className).not.toContain('my-dynamic');
+
+    setCls('my-dynamic');
+    expect(el.className).toContain('my-dynamic');
   });
 });
