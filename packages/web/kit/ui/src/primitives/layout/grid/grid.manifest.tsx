@@ -1,8 +1,8 @@
 import { z } from '@capsuletech/shared-zod';
 import { LayoutGrid } from '../../../icons';
-import type { IComponentManifest } from '../../../manifest/types';
+import type { IPrimitiveManifestEntry } from '../../../manifest/types';
 
-export const GridManifest: IComponentManifest = {
+export const GridManifest: IPrimitiveManifestEntry = {
   type: 'ui.Layout.Grid',
   label: 'Grid',
   category: 'container',

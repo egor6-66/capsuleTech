@@ -14,7 +14,6 @@ export {
 } from './registry';
 export type {
   ComponentCategory,
-  IComponentManifest,
   IManifestSummary,
   IPrimitiveManifestEntry,
 } from './types';

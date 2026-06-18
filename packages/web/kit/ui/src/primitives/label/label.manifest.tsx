@@ -1,8 +1,8 @@
 import { z } from '@capsuletech/shared-zod';
 import { Tag } from '../../icons';
-import type { IComponentManifest } from '../../manifest/types';
+import type { IPrimitiveManifestEntry } from '../../manifest/types';
 
-export const LabelManifest: IComponentManifest = {
+export const LabelManifest: IPrimitiveManifestEntry = {
   type: 'ui.Label',
   label: 'Label',
   category: 'typography',

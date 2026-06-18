@@ -225,15 +225,6 @@ export interface IFieldRuleResult {
  */
 export type FieldRule = (props: Record<string, unknown>) => IFieldRuleResult;
 
-/**
- * Backwards-compat alias for studio consumers — pre-S2 they imported
- * `IComponentManifest` from `@capsuletech/web-studio/manifests`. After
- * unification, the canonical name is `IPrimitiveManifestEntry`.
- *
- * @deprecated use `IPrimitiveManifestEntry` directly.
- */
-export type IComponentManifest = IPrimitiveManifestEntry;
-
 /** Минимальная сводка манифеста для палитры (без `propsSchema`/`defaultProps`). */
 export interface IManifestSummary {
   type: string;
