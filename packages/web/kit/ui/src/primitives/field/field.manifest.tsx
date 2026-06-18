@@ -1,6 +1,6 @@
 import { z } from '@capsuletech/shared-zod';
 import { AlertCircle, FormInput, Inbox, Info, Tag } from '../../icons';
-import type { IComponentManifest } from '../../manifest/types';
+import type { IPrimitiveManifestEntry } from '../../manifest/types';
 
 const FIELD_DIRECT_CHILDREN = new Set([
   'ui.Field.Label',
@@ -11,7 +11,7 @@ const FIELD_DIRECT_CHILDREN = new Set([
 
 const isFieldPart = (type: string) => type.startsWith('ui.Field.');
 
-export const FieldManifest: IComponentManifest = {
+export const FieldManifest: IPrimitiveManifestEntry = {
   type: 'ui.Field',
   label: 'Field',
   category: 'composition',
@@ -24,7 +24,7 @@ export const FieldManifest: IComponentManifest = {
   }),
 };
 
-export const FieldLabelManifest: IComponentManifest = {
+export const FieldLabelManifest: IPrimitiveManifestEntry = {
   type: 'ui.Field.Label',
   label: 'Field Label',
   category: 'composite',
@@ -37,7 +37,7 @@ export const FieldLabelManifest: IComponentManifest = {
   }),
 };
 
-export const FieldContentManifest: IComponentManifest = {
+export const FieldContentManifest: IPrimitiveManifestEntry = {
   type: 'ui.Field.Content',
   label: 'Field Content',
   category: 'composite',
@@ -49,7 +49,7 @@ export const FieldContentManifest: IComponentManifest = {
   }),
 };
 
-export const FieldDescriptionManifest: IComponentManifest = {
+export const FieldDescriptionManifest: IPrimitiveManifestEntry = {
   type: 'ui.Field.Description',
   label: 'Field Description',
   category: 'composite',
@@ -62,7 +62,7 @@ export const FieldDescriptionManifest: IComponentManifest = {
   }),
 };
 
-export const FieldErrorManifest: IComponentManifest = {
+export const FieldErrorManifest: IPrimitiveManifestEntry = {
   type: 'ui.Field.Error',
   label: 'Field Error',
   category: 'composite',

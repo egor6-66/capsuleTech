@@ -1,7 +1,7 @@
 import { type ZodObject, type ZodTypeAny, z } from '@capsuletech/shared-zod';
 import { propsSchemaOf } from '@capsuletech/web-contract';
 import { MousePointerClick } from '../../icons';
-import type { IComponentManifest } from '../../manifest/types';
+import type { IPrimitiveManifestEntry } from '../../manifest/types';
 import { ButtonContract } from './button.contract';
 import { buttonPresets } from './button.presets';
 
@@ -10,7 +10,7 @@ import { buttonPresets } from './button.presets';
 const baseProps = propsSchemaOf<ZodObject<Record<string, ZodTypeAny>>>(ButtonContract);
 if (!baseProps) throw new Error('ButtonContract has no props schema — add rule.props(...)');
 
-export const ButtonManifest: IComponentManifest = {
+export const ButtonManifest: IPrimitiveManifestEntry = {
   type: 'ui.Button',
   label: 'Button',
   category: 'control',

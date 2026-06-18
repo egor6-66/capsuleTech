@@ -1,8 +1,8 @@
 import { z } from '@capsuletech/shared-zod';
 import { TextCursorInput } from '../../icons';
-import type { IComponentManifest } from '../../manifest/types';
+import type { IPrimitiveManifestEntry } from '../../manifest/types';
 
-export const InputManifest: IComponentManifest = {
+export const InputManifest: IPrimitiveManifestEntry = {
   type: 'ui.Input',
   label: 'Input',
   category: 'control',

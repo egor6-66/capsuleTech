@@ -1,8 +1,8 @@
 import { z } from '@capsuletech/shared-zod';
 import { ToggleLeft } from '../../icons';
-import type { IComponentManifest } from '../../manifest/types';
+import type { IPrimitiveManifestEntry } from '../../manifest/types';
 
-export const ToggleManifest: IComponentManifest = {
+export const ToggleManifest: IPrimitiveManifestEntry = {
   type: 'ui.Toggle',
   label: 'Toggle',
   category: 'control',

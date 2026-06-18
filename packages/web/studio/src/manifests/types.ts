@@ -11,7 +11,6 @@
 
 export type {
   ComponentCategory,
-  IComponentManifest,
   IManifestSummary,
   IPrimitiveManifestEntry,
 } from '@capsuletech/web-ui/manifest';

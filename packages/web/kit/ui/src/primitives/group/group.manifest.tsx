@@ -1,8 +1,8 @@
 import { z } from '@capsuletech/shared-zod';
 import { Group } from '../../icons';
-import type { IComponentManifest } from '../../manifest/types';
+import type { IPrimitiveManifestEntry } from '../../manifest/types';
 
-export const GroupManifest: IComponentManifest = {
+export const GroupManifest: IPrimitiveManifestEntry = {
   type: 'ui.Group',
   label: 'Group',
   category: 'container',

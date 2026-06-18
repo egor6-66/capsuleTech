@@ -27,7 +27,6 @@ export type {
   ComponentCategory,
   FieldRule,
   IBuiltManifestEntry,
-  IComponentManifest,
   IFieldRuleResult,
   IManifestSummary,
   IPreset,

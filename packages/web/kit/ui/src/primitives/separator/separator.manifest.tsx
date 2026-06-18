@@ -1,8 +1,8 @@
 import { z } from '@capsuletech/shared-zod';
 import { Minus } from '../../icons';
-import type { IComponentManifest } from '../../manifest/types';
+import type { IPrimitiveManifestEntry } from '../../manifest/types';
 
-export const SeparatorManifest: IComponentManifest = {
+export const SeparatorManifest: IPrimitiveManifestEntry = {
   type: 'ui.Separator',
   label: 'Separator',
   category: 'feedback',
