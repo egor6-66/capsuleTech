@@ -448,15 +448,22 @@ function makeBootstrapCtx(docsConfig?: { rootVault?: boolean }): {
 } {
   const capsuleRoot = resolve('/project/apps/myapp/.capsule');
   const written = new Map<string, string>();
+  const appConfigPath = resolve('/project/apps/myapp/capsule.app.ts');
   const ctx: CodegenContext = {
     capsuleRoot,
     watchDir: resolve('/project/apps/myapp/src'),
-    appConfigPath: resolve('/project/apps/myapp/capsule.app.ts'),
+    appConfigPath,
     writeOut: (absPath: string, content: string) => { written.set(absPath, content); },
     removeOut: (_absPath: string) => {},
     parse: () => { throw new Error('not needed'); },
     names: () => { throw new Error('not needed'); },
-    loadAppConfig: () => docsConfig !== undefined ? { docs: docsConfig } : {},
+    // New three-state AppConfigResult API:
+    // - docsConfig !== undefined → status 'ok' with the given docs config
+    // - docsConfig === undefined → status 'ok' with empty config (no docs field)
+    loadAppConfig: () =>
+      docsConfig !== undefined
+        ? { status: 'ok', config: { docs: docsConfig } }
+        : { status: 'ok', config: {} },
   };
   return { capsuleRoot, written, ctx };
 }

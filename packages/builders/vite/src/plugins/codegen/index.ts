@@ -8,7 +8,7 @@
  */
 
 export { createCapsuleRegistryPlugin, LAYER_INIT_ORDER, type IOrchestratorProps } from './orchestrator';
-export type { SubGenerator, CodegenContext, AppConfigShape } from './interfaces';
+export type { SubGenerator, CodegenContext, AppConfigShape, AppConfigResult } from './interfaces';
 
 // Built-in generator factories (exported for extension points).
 export { createBarrelRegistrySubGenerator } from './generators/barrelRegistry';

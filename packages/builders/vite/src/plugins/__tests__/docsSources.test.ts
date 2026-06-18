@@ -42,7 +42,7 @@ import {
   derivePackageShort,
   generateDocsSourcesRuntime,
 } from '../codegen';
-import type { AppConfigShape, CodegenContext } from '../codegen';
+import type { AppConfigResult, AppConfigShape, CodegenContext } from '../codegen';
 
 // ---------------------------------------------------------------------------
 // derivePackageShort
@@ -203,9 +203,15 @@ interface TestCtx extends CodegenContext {
   removed: string[];
 }
 
-const makeCtx = (config: AppConfigShape | undefined): TestCtx => {
+const makeCtx = (config: AppConfigShape | undefined, loadResult?: AppConfigResult): TestCtx => {
   const written = new Map<string, string>();
   const removed: string[] = [];
+  // Convert AppConfigShape | undefined → AppConfigResult for the new API.
+  const result: AppConfigResult = loadResult ?? (
+    config === undefined
+      ? { status: 'missing' }
+      : { status: 'ok', config }
+  );
   return {
     capsuleRoot: CAPSULE_ROOT,
     watchDir: resolve('/project/apps/myapp/src'),
@@ -214,7 +220,7 @@ const makeCtx = (config: AppConfigShape | undefined): TestCtx => {
     removeOut: (absPath: string) => { removed.push(absPath); },
     parse: () => { throw new Error('parse not needed'); },
     names: () => { throw new Error('names not needed'); },
-    loadAppConfig: () => config,
+    loadAppConfig: () => result,
     written,
     removed,
   } as unknown as TestCtx;

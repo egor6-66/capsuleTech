@@ -30,6 +30,11 @@ import { createJiti } from 'jiti';
 import type { Plugin, UserConfig, ViteDevServer } from 'vite';
 import { walkFiles, watcherManager } from '../utils';
 import { DEFINE_FACTORIES, LAYER_TO_NAMESPACE } from './constants';
+import {
+  checkDocsJsonExport,
+  derivePackageShort,
+  generateDocsSourcesRuntime,
+} from './codegen/generators/docs-sources';
 
 // CJS/ESM interop for @babel/traverse (same pattern as hmrWrapping.ts)
 const traverse = (
@@ -849,10 +854,40 @@ export const generateEndpointsTypes = (): string =>
 // Sub-generator: app-config.gen.ts (Phase: subsystems)
 // ---------------------------------------------------------------------------
 
+/**
+ * Vite-time global identifiers injected by Vite plugins at build time but
+ * NOT available in raw jiti execution context.
+ * We inject identity stubs so `defineAppConfig({...})` doesn't throw ReferenceError.
+ */
+const CAPSULE_VITE_TIME_GLOBALS: ReadonlyArray<string> = [
+  'defineAppConfig',
+  'defineCapsuleConfig',
+  'defineEndpoint',
+];
+
 const loadConfigFresh = (configPath: string): unknown => {
-  const j = createJiti(import.meta.url, { interopDefault: true, moduleCache: false });
-  const mod = j(configPath) as { default?: unknown } | unknown;
-  return (mod as { default?: unknown })?.default ?? mod;
+  // Inject identity stubs for Vite-time globals before loading via jiti.
+  const prevValues: Map<string, unknown> = new Map();
+  for (const name of CAPSULE_VITE_TIME_GLOBALS) {
+    prevValues.set(name, (globalThis as Record<string, unknown>)[name]);
+    (globalThis as Record<string, unknown>)[name] = <T>(x: T): T => x;
+  }
+
+  try {
+    const j = createJiti(import.meta.url, { interopDefault: true, moduleCache: false });
+    const mod = j(configPath) as { default?: unknown } | unknown;
+    return (mod as { default?: unknown })?.default ?? mod;
+  } finally {
+    // Restore previous values to avoid side-effects across calls.
+    for (const name of CAPSULE_VITE_TIME_GLOBALS) {
+      const prev = prevValues.get(name);
+      if (prev === undefined) {
+        delete (globalThis as Record<string, unknown>)[name];
+      } else {
+        (globalThis as Record<string, unknown>)[name] = prev;
+      }
+    }
+  }
 };
 
 interface AppConfigShape {
@@ -1394,6 +1429,11 @@ export const CapsuleRegistryPlugin = ({
   const packagesTypesOut = resolve(capsuleRoot, '@types', 'packages.d.ts');
   const layerTypesOut = resolve(capsuleRoot, '@types', 'layer-types.d.ts');
   const bootstrapOut = resolve(capsuleRoot, 'bootstrap.tsx');
+  const docsSourcesOut = resolve(capsuleRoot, 'registry', 'docs-sources.ts');
+
+  // Tracks whether docs-sources.ts was written in the last flush.
+  // Used by flushBootstrap to decide whether to include it as a contribution.
+  let docsSourcesHasFile = false;
 
   // Directory of capsule.app.ts — used as jiti root for manifest resolution.
   const appConfigDir = dirname(appConfigPath);
@@ -1436,6 +1476,9 @@ export const CapsuleRegistryPlugin = ({
       writeOut(appConfigRuntimeOut, generateAppConfigRuntime(undefined));
       writeOut(packagesOut, generatePackagesRuntime([]));
       writeOut(packagesTypesOut, generatePackagesTypes([]));
+      // No docs config when file is missing — cleanup any existing docs-sources.ts.
+      if (existsSync(docsSourcesOut)) rmSync(docsSourcesOut);
+      docsSourcesHasFile = false;
       onAppConfigLoad?.({});
       return;
     }
@@ -1443,7 +1486,8 @@ export const CapsuleRegistryPlugin = ({
     try {
       config = loadConfigFresh(appConfigPath) as AppConfigShape;
     } catch (e) {
-      console.error('[capsule-registry] failed to load', appConfigPath, e);
+      console.error(`[capsule:app-config] failed to load appConfig (${appConfigPath}):`, e);
+      // Transient error — keep existing docs-sources.ts intact (do NOT removeOut).
       return;
     }
     const tags = config?.meta?.tags ?? [];
@@ -1460,11 +1504,49 @@ export const CapsuleRegistryPlugin = ({
     writeOut(packagesOut, generatePackagesRuntime(resolvedPackages));
     writeOut(packagesTypesOut, generatePackagesTypes(resolvedPackages));
 
+    // Docs sources — opt-in via `docs:` field in capsule.app.ts.
+    const docs = config?.docs;
+    const hasDocsConfig =
+      docs &&
+      (docs.rootVault === true || (docs.packages && docs.packages.length > 0));
+
+    if (!hasDocsConfig) {
+      if (existsSync(docsSourcesOut)) rmSync(docsSourcesOut);
+      docsSourcesHasFile = false;
+    } else {
+      const entries: Array<{ key: string; pkg: string }> = [];
+
+      if (docs!.rootVault === true) {
+        entries.push({ key: 'root', pkg: '@capsuletech/web-docs' });
+      }
+
+      for (const pkg of docs!.packages ?? []) {
+        if (!checkDocsJsonExport(pkg, appConfigDir)) {
+          continue;
+        }
+        entries.push({ key: derivePackageShort(pkg), pkg });
+      }
+
+      if (entries.length === 0) {
+        if (existsSync(docsSourcesOut)) rmSync(docsSourcesOut);
+        docsSourcesHasFile = false;
+      } else {
+        writeOut(docsSourcesOut, generateDocsSourcesRuntime(entries));
+        docsSourcesHasFile = true;
+        const keys = entries.map((e) => e.key).join(', ');
+        console.info(`[capsule:docs-sources] registered ${entries.length} source(s): [${keys}]`);
+      }
+    }
+
     onAppConfigLoad?.(config);
   };
 
   const flushBootstrap = () => {
-    writeOut(bootstrapOut, generateBootstrap());
+    // Include docs-sources as a bootstrap contribution if the file was written.
+    const contributions: BootstrapContribution[] = docsSourcesHasFile
+      ? [{ phase: 'globals', importPath: './registry/docs-sources' }]
+      : [];
+    writeOut(bootstrapOut, generateBootstrap(contributions));
   };
 
   // --- File → wrapper leaf ---
