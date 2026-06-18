@@ -52,9 +52,17 @@ export const createAppConfigSubGenerator = (opts?: {
       if (!dirty && !forced) return;
       dirty = false;
 
-      const config = ctx.loadAppConfig();
+      const result = ctx.loadAppConfig();
 
-      if (!config) {
+      if (result.status === 'error') {
+        // Transient load error — keep existing output, log the error.
+        ctx.logger?.error(
+          `[capsule:app-config] failed to load appConfig: ${String(result.error)}`,
+        );
+        return;
+      }
+
+      if (result.status === 'missing') {
         ctx.writeOut(
           resolve(ctx.capsuleRoot, '@types', 'app-tags.d.ts'),
           renderAppTagsTypes([], []),
@@ -67,6 +75,7 @@ export const createAppConfigSubGenerator = (opts?: {
         return;
       }
 
+      const config = result.config;
       const tags = config?.meta?.tags ?? [];
       const aliases = config?.aliases ?? {};
       const aliasKeys = Object.keys(aliases);

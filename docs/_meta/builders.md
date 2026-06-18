@@ -224,6 +224,8 @@ const plugin = createCapsuleRegistryPlugin({
 
 ### 🔴 Стабильные грабли
 
+0. **[CLOSED 2026-06-18] jiti globals injection для `loadConfigFresh`.** `capsule.app.ts` использует `defineAppConfig({...})` как bare-идентификатор (Vite-time global, инжектится AutoImport). При загрузке через `jiti` (config-time) этот глобал не существует → `ReferenceError: defineAppConfig is not defined` → `loadConfigFresh` бросал exception. Downstream: `docs-sources` sub-gen получал `cfg=undefined` → `docs-sources.ts` НЕ генерировался → `setDocsSources` не вызывался → доки молча не работали (UI: «не найден»). **Фикс** (2026-06-18): перед `j(configPath)` инжектируются identity-стабы для `defineAppConfig`, `defineCapsuleConfig`, `defineEndpoint` через `globalThis`. Cleanup в `finally`. Затронуто обе копии `loadConfigFresh`: `orchestrator.ts` (новый оркестратор) и `capsuleRegistry.ts` (legacy `CapsuleRegistryPlugin`). Тест: `loadAppConfig.test.ts > jiti globals injection`. **Три-стейтовый `loadAppConfig` API** (см. ниже п.15) сопутствует этому фиксу.
+
 0. **[CLOSED 2026-06-05] `@capsule/registry` alias — `configResolved` не виден dev-resolver'у.** ADR-034 phase 2 регистрировал alias мутацией `config.resolve.alias.push(...)` в `configResolved`. Rolldown подхватывает post-resolution мутацию на build — отсюда `vite build` работал. Dev-server строит свой resolver из конфига ДО configResolved → alias отсутствует → `Failed to resolve import "@capsule/registry"`. Фикс: alias регистрируется через **`config()` hook** (return `{ resolve: { alias: { '@capsule/registry': path } } }`). Тест: `CapsuleRegistryPlugin.config hook` в `capsuleRegistry.test.ts`. Проверено через `resolveConfig` (11 alias entries включая наш).
 
 1. **biome-config — config-only пакет.** Нет `src/`/`dist/`. `package.json`: `files: ["biome.json"]` + `exports: { "./biome.json": "./biome.json" }`. Тарбол содержит `biome.json`, внешний consumer пишет `"extends": ["@capsuletech/biome-config/biome.json"]`. `dev:builders` в root исключает пакет (`--filter "!@capsuletech/biome-config"`), потому что у него нет `build`/`dev` — это нормально, не баг.
@@ -231,6 +233,8 @@ const plugin = createCapsuleRegistryPlugin({
 2. **Compliance allowlist outdated** ([rules.ts](../../packages/builders/compliance/src/rules.ts)) — ссылки на `@capsuletech/style/state/router/ui`, но реальные пакеты теперь `@capsuletech/web-*`. Regex не матчит → каждый widget/page-импорт `@capsuletech/web-ui` → `disallowed-import`. Не падает только потому что `mode: 'warn'`. Тесты `check.test.ts` тоже на старых именах. Фикс — обновить regex + тесты.
 
 3. **vite-builder `bundleDependencies` stale** ([vite.config.mts:23](../../packages/builders/vite/vite.config.mts:23)) — `/^@capsuletech\/shared-compliance/` от старого имени. Должно быть `/^@capsuletech\/compliance/`. Сейчас compliance остаётся external в dist (работает через workspace, но intent комментария нарушен).
+
+3a. **[CLOSED 2026-06-18] AliasesPlugin — string find захватывал subpath'ы.** Vite применяет строковый `find` как prefix: `{ find: '@capsuletech/web-ui', replacement: '/path/to/index.ts' }` матчил `@capsuletech/web-ui/docs.json` → replacement становился `/path/to/index.ts/docs.json` (os error 3 при build). Корень: `import('@capsuletech/web-ui/docs.json')` в codegen-генерированном `docs-sources.ts` — первый клиент subpath'а без tsconfig-записи. Фикс: `buildWorkspaceSrcAliases` теперь создаёт `find: /^@specifier$/` (RegExp с `^$` anchor) — exact-match только. Subpath'ы без записи в tsconfig НЕ матчатся ни одним alias → fallthrough на node_modules → package.json exports map (dist). Subpath'ы С записью в tsconfig (`/icons`, `/button`, `/manifest`…) получают собственный exact-match alias → src HMR. Тест: `aliases.test.ts`. Rule: main entry → src (через alias), subpath → exports map (через fallthrough).
 
 ### 🟡 По месту
 
@@ -251,6 +255,12 @@ const plugin = createCapsuleRegistryPlugin({
 10. **CHANGELOG.md в compliance/vite** — 60+ записей "version bump only". Побочка release-group `cli` (fixed). Не actionable.
 
 11. **[[shared-vite-dist]] цикл** — после правок в `packages/builders/vite/src/` обязательно `pnpm --filter @capsuletech/vite-builder build` + рестарт dev-сервера. Без ребилда твоё изменение не видно — apps читают dist/, не src/. Smoke-test: `console.log('[plugin] loaded')` на верхнем уровне (вне transform).
+
+15. **`loadAppConfig` — три-стейтовый API (2026-06-18).** `CodegenContext.loadAppConfig()` теперь возвращает `AppConfigResult`:
+  - `{ status: 'ok', config }` — успешная загрузка.
+  - `{ status: 'missing' }` — файл не существует (валидный edge case).
+  - `{ status: 'error', error, configPath }` — exception при загрузке.
+  Sub-gen'ы должны: на `missing` — делать cleanup (`removeOut`); на `error` — логировать через `ctx.logger?.error(...)` и НЕ удалять предыдущий файл (transient error не должен разрушать предыдущее состояние); на `ok` — работать как обычно. `ctx.logger` опционален (присутствует в dev-server context через `configureServer`, fallback = console). Тест: `loadAppConfig.test.ts > loadAppConfig three-state API`.
 
 12. **Scaffold templates не попадают в dist автоматически** — `EnsureScaffoldPlugin` при runtime'е читает `.template`-файлы из `dist/plugins/scaffold/template/` (через `__dirname`). Но `libConfig` / rollup не копируют non-JS ресурсы — нужна явная запись в `staticCopyPlugin` в `vite/vite.config.mts`. Если добавить новый `.template`-файл в `src/` без добавления в `staticCopyPlugin` → `copyFile` бросит ENOENT при запуске dev-сервера, scaffold тихо ломается. Фикс уже применён (2026-05-20): `scaffold/template` копируется в `dist/plugins/scaffold/template/`.
 

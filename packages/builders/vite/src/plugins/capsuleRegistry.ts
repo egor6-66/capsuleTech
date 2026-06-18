@@ -30,6 +30,11 @@ import { createJiti } from 'jiti';
 import type { Plugin, UserConfig, ViteDevServer } from 'vite';
 import { walkFiles, watcherManager } from '../utils';
 import { DEFINE_FACTORIES, LAYER_TO_NAMESPACE } from './constants';
+import {
+  checkDocsJsonExport,
+  derivePackageShort,
+  generateDocsSourcesRuntime,
+} from './codegen/generators/docs-sources';
 
 // CJS/ESM interop for @babel/traverse (same pattern as hmrWrapping.ts)
 const traverse = (
@@ -282,11 +287,36 @@ export const generateRegistryIndex = (): string => {
 };
 
 /**
- * Generates .capsule/registry/package.json with sideEffects: false.
- * Required for bundler tree-shaking of barrel re-exports.
+ * Files within .capsule/registry/ that contain module-level side effects and
+ * must NOT be tree-shaken by the bundler.
+ *
+ * - packages.ts    → Object.assign(globalThis, { Auth, Shell, … }) at module eval
+ * - docs-sources.ts → setDocsSources({…}) at module eval
+ *
+ * All other registry files (barrel re-exports, endpoints, index) are pure
+ * re-exports and remain tree-shakeable.
+ *
+ * Extend this array when a new side-effect file is added to registry/.
+ */
+export const REGISTRY_SIDE_EFFECT_FILES = ['./packages.ts', './docs-sources.ts'] as const;
+
+/**
+ * Generates .capsule/registry/package.json.
+ *
+ * Uses `sideEffects` string-array (whitelist) rather than `false`:
+ *   - Barrel re-exports remain tree-shakeable per-route (ADR-034 intent).
+ *   - Side-effect modules (packages.ts, docs-sources.ts) are preserved by
+ *     the bundler even though their exports are not statically referenced.
+ *
+ * Background: Rolldown (Vite 6+) treats `sideEffects: false` as "no side
+ * effects anywhere in this package tree" and DCE-removes modules whose exports
+ * are not imported by any consumer. packages.ts / docs-sources.ts use
+ * Object.assign(globalThis) / setDocsSources() for their effect — those calls
+ * are invisible to the bundler's static import-graph analysis, so without the
+ * whitelist the modules are eliminated from the prod bundle.
  */
 export const generateRegistryPackageJson = (): string =>
-  JSON.stringify({ sideEffects: false }, null, 2) + '\n';
+  JSON.stringify({ sideEffects: [...REGISTRY_SIDE_EFFECT_FILES] }, null, 2) + '\n';
 
 /**
  * Main barrel-registry generator.
@@ -849,10 +879,40 @@ export const generateEndpointsTypes = (): string =>
 // Sub-generator: app-config.gen.ts (Phase: subsystems)
 // ---------------------------------------------------------------------------
 
+/**
+ * Vite-time global identifiers injected by Vite plugins at build time but
+ * NOT available in raw jiti execution context.
+ * We inject identity stubs so `defineAppConfig({...})` doesn't throw ReferenceError.
+ */
+const CAPSULE_VITE_TIME_GLOBALS: ReadonlyArray<string> = [
+  'defineAppConfig',
+  'defineCapsuleConfig',
+  'defineEndpoint',
+];
+
 const loadConfigFresh = (configPath: string): unknown => {
-  const j = createJiti(import.meta.url, { interopDefault: true, moduleCache: false });
-  const mod = j(configPath) as { default?: unknown } | unknown;
-  return (mod as { default?: unknown })?.default ?? mod;
+  // Inject identity stubs for Vite-time globals before loading via jiti.
+  const prevValues: Map<string, unknown> = new Map();
+  for (const name of CAPSULE_VITE_TIME_GLOBALS) {
+    prevValues.set(name, (globalThis as Record<string, unknown>)[name]);
+    (globalThis as Record<string, unknown>)[name] = <T>(x: T): T => x;
+  }
+
+  try {
+    const j = createJiti(import.meta.url, { interopDefault: true, moduleCache: false });
+    const mod = j(configPath) as { default?: unknown } | unknown;
+    return (mod as { default?: unknown })?.default ?? mod;
+  } finally {
+    // Restore previous values to avoid side-effects across calls.
+    for (const name of CAPSULE_VITE_TIME_GLOBALS) {
+      const prev = prevValues.get(name);
+      if (prev === undefined) {
+        delete (globalThis as Record<string, unknown>)[name];
+      } else {
+        (globalThis as Record<string, unknown>)[name] = prev;
+      }
+    }
+  }
 };
 
 interface AppConfigShape {
@@ -1030,39 +1090,13 @@ export interface BootstrapContribution {
  *
  * The generated file is deterministic. `.capsule/` is gitignored, so
  * regeneration on every plugin run is safe.
- */
-/**
- * Derive a unique TS binding name from an import path so a bare
- * `import './x';` can be promoted to `import * as _xxx from './x'; void _xxx;`.
  *
- * Why: Rolldown (Vite 8) does NOT recognise `Object.assign(globalThis, …)`
- * (used by registry/packages.ts) or `setDocsSources(…)` (used by
- * registry/docs-sources.ts) as a module side-effect, and tree-shakes
- * bare `import './x';` lines out of the prod bundle entirely. The
- * wildcard import + `void` reference creates a named binding that the
- * bundler keeps. This is the only known workaround that survives the
- * production build path; pkg-level `sideEffects: true` is not applicable
- * to the generated `.capsule/` tree.
- *
- * Verified 2026-06-17 against playground prod build (Layouts.Matrix
- * ReferenceError until this fix).
+ * Side-effect preservation:
+ *   packages.ts and docs-sources.ts use Object.assign(globalThis)/setDocsSources()
+ *   at module eval. The bundler preserves them because REGISTRY_SIDE_EFFECT_FILES
+ *   are listed in .capsule/registry/package.json `sideEffects` whitelist array —
+ *   bare `import './x';` is therefore sufficient; no `void _x` workaround needed.
  */
-const sideEffectBindingName = (importPath: string): string => {
-  const cleaned = importPath
-    .replace(/^\.\//, '')
-    .replace(/\.[^/.]+$/, '')
-    .split(/[/\\\-.]/)
-    .filter(Boolean)
-    .map((seg, idx) => (idx === 0 ? seg : seg.charAt(0).toUpperCase() + seg.slice(1)))
-    .join('');
-  return `_${cleaned || 'sideEffect'}`;
-};
-
-const emitSideEffectImport = (importPath: string): string[] => {
-  const name = sideEffectBindingName(importPath);
-  return [`import * as ${name} from '${importPath}';`, `void ${name};`];
-};
-
 export const generateBootstrap = (contributions: readonly BootstrapContribution[] = []): string => {
   // Build de-duplicated set of all import paths from LAYER_INIT_ORDER.
   const existingPaths = new Set(LAYER_INIT_ORDER.map((l) => l.importPath));
@@ -1102,17 +1136,17 @@ export const generateBootstrap = (contributions: readonly BootstrapContribution[
         // Routes is a named import — routeTree is consumed by BaseProviders.
         lines.push(`import { routeTree } from '${layer.importPath}';`);
       } else {
-        // All other legacy layers: side-effect import (see sideEffectBindingName).
-        // packages: runs Object.assign(globalThis, ...) for external pkg globals.
-        // app-config: runs registerAliases + setApiClient on module eval.
-        lines.push(...emitSideEffectImport(layer.importPath));
+        // Bare side-effect import. Bundler preservation is guaranteed by the
+        // sideEffects whitelist in .capsule/registry/package.json (generated by
+        // generateRegistryPackageJson). No `void _x` workaround needed.
+        lines.push(`import '${layer.importPath}';`);
       }
     }
 
     for (const contrib of extraEntries) {
       // Contributions are side-effect imports too (e.g. docs-sources calls
-      // setDocsSources at module eval).
-      lines.push(...emitSideEffectImport(contrib.importPath));
+      // setDocsSources at module eval). Same guarantee via sideEffects whitelist.
+      lines.push(`import '${contrib.importPath}';`);
     }
   }
 
@@ -1394,6 +1428,11 @@ export const CapsuleRegistryPlugin = ({
   const packagesTypesOut = resolve(capsuleRoot, '@types', 'packages.d.ts');
   const layerTypesOut = resolve(capsuleRoot, '@types', 'layer-types.d.ts');
   const bootstrapOut = resolve(capsuleRoot, 'bootstrap.tsx');
+  const docsSourcesOut = resolve(capsuleRoot, 'registry', 'docs-sources.ts');
+
+  // Tracks whether docs-sources.ts was written in the last flush.
+  // Used by flushBootstrap to decide whether to include it as a contribution.
+  let docsSourcesHasFile = false;
 
   // Directory of capsule.app.ts — used as jiti root for manifest resolution.
   const appConfigDir = dirname(appConfigPath);
@@ -1436,6 +1475,9 @@ export const CapsuleRegistryPlugin = ({
       writeOut(appConfigRuntimeOut, generateAppConfigRuntime(undefined));
       writeOut(packagesOut, generatePackagesRuntime([]));
       writeOut(packagesTypesOut, generatePackagesTypes([]));
+      // No docs config when file is missing — cleanup any existing docs-sources.ts.
+      if (existsSync(docsSourcesOut)) rmSync(docsSourcesOut);
+      docsSourcesHasFile = false;
       onAppConfigLoad?.({});
       return;
     }
@@ -1443,7 +1485,8 @@ export const CapsuleRegistryPlugin = ({
     try {
       config = loadConfigFresh(appConfigPath) as AppConfigShape;
     } catch (e) {
-      console.error('[capsule-registry] failed to load', appConfigPath, e);
+      console.error(`[capsule:app-config] failed to load appConfig (${appConfigPath}):`, e);
+      // Transient error — keep existing docs-sources.ts intact (do NOT removeOut).
       return;
     }
     const tags = config?.meta?.tags ?? [];
@@ -1460,11 +1503,49 @@ export const CapsuleRegistryPlugin = ({
     writeOut(packagesOut, generatePackagesRuntime(resolvedPackages));
     writeOut(packagesTypesOut, generatePackagesTypes(resolvedPackages));
 
+    // Docs sources — opt-in via `docs:` field in capsule.app.ts.
+    const docs = config?.docs;
+    const hasDocsConfig =
+      docs &&
+      (docs.rootVault === true || (docs.packages && docs.packages.length > 0));
+
+    if (!hasDocsConfig) {
+      if (existsSync(docsSourcesOut)) rmSync(docsSourcesOut);
+      docsSourcesHasFile = false;
+    } else {
+      const entries: Array<{ key: string; pkg: string }> = [];
+
+      if (docs!.rootVault === true) {
+        entries.push({ key: 'root', pkg: '@capsuletech/web-docs' });
+      }
+
+      for (const pkg of docs!.packages ?? []) {
+        if (!checkDocsJsonExport(pkg, appConfigDir)) {
+          continue;
+        }
+        entries.push({ key: derivePackageShort(pkg), pkg });
+      }
+
+      if (entries.length === 0) {
+        if (existsSync(docsSourcesOut)) rmSync(docsSourcesOut);
+        docsSourcesHasFile = false;
+      } else {
+        writeOut(docsSourcesOut, generateDocsSourcesRuntime(entries));
+        docsSourcesHasFile = true;
+        const keys = entries.map((e) => e.key).join(', ');
+        console.info(`[capsule:docs-sources] registered ${entries.length} source(s): [${keys}]`);
+      }
+    }
+
     onAppConfigLoad?.(config);
   };
 
   const flushBootstrap = () => {
-    writeOut(bootstrapOut, generateBootstrap());
+    // Include docs-sources as a bootstrap contribution if the file was written.
+    const contributions: BootstrapContribution[] = docsSourcesHasFile
+      ? [{ phase: 'globals', importPath: './registry/docs-sources' }]
+      : [];
+    writeOut(bootstrapOut, generateBootstrap(contributions));
   };
 
   // --- File → wrapper leaf ---

@@ -448,15 +448,22 @@ function makeBootstrapCtx(docsConfig?: { rootVault?: boolean }): {
 } {
   const capsuleRoot = resolve('/project/apps/myapp/.capsule');
   const written = new Map<string, string>();
+  const appConfigPath = resolve('/project/apps/myapp/capsule.app.ts');
   const ctx: CodegenContext = {
     capsuleRoot,
     watchDir: resolve('/project/apps/myapp/src'),
-    appConfigPath: resolve('/project/apps/myapp/capsule.app.ts'),
+    appConfigPath,
     writeOut: (absPath: string, content: string) => { written.set(absPath, content); },
     removeOut: (_absPath: string) => {},
     parse: () => { throw new Error('not needed'); },
     names: () => { throw new Error('not needed'); },
-    loadAppConfig: () => docsConfig !== undefined ? { docs: docsConfig } : {},
+    // New three-state AppConfigResult API:
+    // - docsConfig !== undefined → status 'ok' with the given docs config
+    // - docsConfig === undefined → status 'ok' with empty config (no docs field)
+    loadAppConfig: () =>
+      docsConfig !== undefined
+        ? { status: 'ok', config: { docs: docsConfig } }
+        : { status: 'ok', config: {} },
   };
   return { capsuleRoot, written, ctx };
 }
@@ -503,7 +510,7 @@ describe('bootstrap flush — contribution collection', () => {
 
     const bootstrapContent = written.get(resolve(ctx.capsuleRoot, 'bootstrap.tsx'));
     expect(bootstrapContent).toBeDefined();
-    expect(bootstrapContent).toMatch(/import \* as _\w+ from '\.\/registry\/docs-sources';/);
+    expect(bootstrapContent).toContain("import './registry/docs-sources';");
   });
 
   it('bootstrap.tsx removes docs-sources import after docs config is removed (onAppConfigChange cycle)', () => {
@@ -521,7 +528,7 @@ describe('bootstrap flush — contribution collection', () => {
     bootstrap.flush(ctx1, true);
 
     const content1 = written1.get(resolve(ctx1.capsuleRoot, 'bootstrap.tsx'));
-    expect(content1).toMatch(/import \* as _\w+ from '\.\/registry\/docs-sources';/);
+    expect(content1).toContain("import './registry/docs-sources';");
 
     // --- Round 2: app config changed, docs removed ---
     docsSources.onAppConfigChange?.(ctx1); // marks dirty
@@ -549,11 +556,11 @@ describe('bootstrap flush — contribution collection', () => {
 
     const content = written.get(resolve(ctx.capsuleRoot, 'bootstrap.tsx'));
     expect(content).toBeDefined();
-    // Legacy entries from LAYER_INIT_ORDER
-    expect(content).toMatch(/import \* as _\w+ from '\.\/registry\/packages';/);
-    expect(content).toMatch(/import \* as _\w+ from '\.\/app-config\.gen';/);
+    // Legacy entries from LAYER_INIT_ORDER — bare side-effect imports
+    expect(content).toContain("import './registry/packages';");
+    expect(content).toContain("import './app-config.gen';");
     expect(content).toContain("import { routeTree } from './routes/routeTree.gen'");
-    // Contribution from docs-sources
-    expect(content).toMatch(/import \* as _\w+ from '\.\/registry\/docs-sources';/);
+    // Contribution from docs-sources — bare side-effect import
+    expect(content).toContain("import './registry/docs-sources';");
   });
 });

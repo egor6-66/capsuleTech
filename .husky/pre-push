@@ -1,0 +1,25 @@
+#!/usr/bin/env sh
+# pre-push gate (canon §0 — «эталон работает»): не пускаем сломанный код в remote.
+# Запускает test+build для затронутых пакетов (через nx affected --base=origin/main).
+# Bypass (emergency only): git push --no-verify
+
+echo ""
+echo "[pre-push] Running affected test + build (base=origin/main)…"
+echo ""
+
+pnpm nx affected -t test build --base=origin/main
+status=$?
+
+if [ $status -ne 0 ]; then
+  echo ""
+  echo "  [pre-push] FAILED — test или build упали на затронутых пакетах."
+  echo "  Не пушим сломанный код (canon §0)."
+  echo ""
+  echo "  Bypass (emergency only): git push --no-verify"
+  echo ""
+  exit 1
+fi
+
+echo ""
+echo "[pre-push] OK — affected test + build green."
+echo ""
