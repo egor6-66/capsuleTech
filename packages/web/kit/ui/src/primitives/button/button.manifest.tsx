@@ -16,6 +16,7 @@ export const ButtonManifest: IComponentManifest = {
   icon: () => <MousePointerClick size={16} />,
   description: 'Кнопка с вариантами оформления',
   isLeaf: true,
+  contract: ButtonContract,
   docSlug: 'web-ui/primitives/button',
   defaultProps: {
     variant: 'default',

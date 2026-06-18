@@ -16,6 +16,7 @@
  *     populate the UI / DnD / inspector fields
  */
 
+import type { Contract } from '@capsuletech/web-contract';
 import type { ZodTypeAny } from '@capsuletech/shared-zod';
 import type { JSX } from 'solid-js';
 
@@ -91,6 +92,20 @@ export interface IPrimitiveManifestEntry {
    * могут — UI-leaf не могут. Soft-rule, не enforced renderer'ом.
    */
   canBeRoot?: boolean;
+
+  // ─── Contract (optional, hand-authored) ─────────────────────────────────
+  /**
+   * Контракт компонента — карманится манифестом, доступен через `getContract(type)`.
+   *
+   * Позволяет studio/inspector/тестам получать декларативные facets (styleSlots,
+   * accepts, variants, validate) без хардкода hand-maintained реестра в studio.
+   *
+   * Если не задан — `getContract(type)` возвращает `undefined` (допустимо для
+   * примитивов без формального контракта).
+   *
+   * Example: `contract: ButtonContract` (импорт из `'./button.contract'`)
+   */
+  contract?: Contract;
 
   // ─── Docs wiring (optional, hand-authored) ──────────────────────────────
   /**
