@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@capsuletech/docs-builder": "workspace:*",
-    "marked": "^9.1.6"
+    "marked": "^18.0.5"
   },
   "peerDependencies": {
     "solid-js": "^1.9.12"
