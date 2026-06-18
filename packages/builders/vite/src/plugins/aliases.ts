@@ -103,11 +103,22 @@ async function readBasePaths(baseConfigPath: string): Promise<Record<string, str
  *
  * Wildcard-записи (key = '@pkg/*', target = 'src/*') НЕ преобразуются в Vite
  * regex-алиасы намеренно: tsconfig.base.json уже не содержит wildcard для
- * web-ui (заменены явными subpath-записями). Если в будущем появится wildcardentry
+ * web-ui (заменены явными subpath-записями). Если в будущем появится wildcard-entry
  * — она будет проигнорирована (target с /* не существует как файл), что
  * безопасно (fallback на exports).
+ *
+ * ВАЖНО — exact-match через RegExp:
+ *   Vite применяет строковый alias как prefix: find='@capsuletech/web-ui' матчит
+ *   '@capsuletech/web-ui/docs.json', заменяя его на '<src>/index.ts/docs.json'
+ *   (бессмысленный путь). Чтобы alias срабатывал ТОЛЬКО для main entry (точное
+ *   совпадение), `find` создаётся как RegExp /^<escaped-specifier>$/.
+ *   Subpath-записи из tsconfig (например '@capsuletech/web-ui/icons') имеют
+ *   собственный alias entry — они тоже exact-match через RegExp.
+ *   Subpath'ы, которых нет в tsconfig (например '/docs.json'), не матчатся ни одним
+ *   alias'ом → Vite fallthrough → node_modules → package.json exports map (dist).
  */
-function buildWorkspaceSrcAliases(
+/** @internal — exported for unit-tests only */
+export function buildWorkspaceSrcAliases(
   basePaths: Record<string, string[]>,
   workspaceRoot: string,
 ): ViteAliasEntry[] {
@@ -122,12 +133,18 @@ function buildWorkspaceSrcAliases(
     // In capsule-test the packages/ directory doesn't exist → existsSync false
     // → alias skipped → Vite uses package.json exports (dist).
     if (!existsSync(absTarget)) continue;
-    aliases.push({ find: specifier, replacement: absTarget });
+    // Use RegExp with ^ and $ anchors to get exact-match semantics.
+    // A plain string find in Vite is prefix-based: '@capsuletech/web-ui' would
+    // also match '@capsuletech/web-ui/docs.json', building the invalid path
+    // '<src>/index.ts/docs.json'. The regex ensures only the exact specifier
+    // matches, letting subpaths without an alias entry fall through to the
+    // package.json exports map.
+    aliases.push({ find: new RegExp(`^${escapeRegex(specifier)}$`), replacement: absTarget });
   }
-  // Sort most-specific first (longer find = more specific).
-  // Vite alias matching is prefix-based: "@capsuletech/web-ui" would match
-  // "@capsuletech/web-ui/select" before the subpath entry gets a chance.
-  // Sorting by descending find-length ensures subpaths win over bare specifiers.
+  // Sort most-specific first (longer pattern string = more specific).
+  // With exact-match regexes there is no prefix-capture risk, but sorting still
+  // ensures deterministic ordering when multiple patterns could match the same id
+  // in edge cases.
   aliases.sort((a, b) => String(b.find).length - String(a.find).length);
   return aliases;
 }
@@ -159,7 +176,8 @@ function projectLocalToWorkspace(
   return out;
 }
 
-interface ViteAliasEntry {
+/** @internal — exported for unit-tests only */
+export interface ViteAliasEntry {
   find: string | RegExp;
   replacement: string;
 }

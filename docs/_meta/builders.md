@@ -234,6 +234,8 @@ const plugin = createCapsuleRegistryPlugin({
 
 3. **vite-builder `bundleDependencies` stale** ([vite.config.mts:23](../../packages/builders/vite/vite.config.mts:23)) — `/^@capsuletech\/shared-compliance/` от старого имени. Должно быть `/^@capsuletech\/compliance/`. Сейчас compliance остаётся external в dist (работает через workspace, но intent комментария нарушен).
 
+3a. **[CLOSED 2026-06-18] AliasesPlugin — string find захватывал subpath'ы.** Vite применяет строковый `find` как prefix: `{ find: '@capsuletech/web-ui', replacement: '/path/to/index.ts' }` матчил `@capsuletech/web-ui/docs.json` → replacement становился `/path/to/index.ts/docs.json` (os error 3 при build). Корень: `import('@capsuletech/web-ui/docs.json')` в codegen-генерированном `docs-sources.ts` — первый клиент subpath'а без tsconfig-записи. Фикс: `buildWorkspaceSrcAliases` теперь создаёт `find: /^@specifier$/` (RegExp с `^$` anchor) — exact-match только. Subpath'ы без записи в tsconfig НЕ матчатся ни одним alias → fallthrough на node_modules → package.json exports map (dist). Subpath'ы С записью в tsconfig (`/icons`, `/button`, `/manifest`…) получают собственный exact-match alias → src HMR. Тест: `aliases.test.ts`. Rule: main entry → src (через alias), subpath → exports map (через fallthrough).
+
 ### 🟡 По месту
 
 4. **HMRWrappingPlugin матчит wrapper по identifier-name.** Если пишешь `import { Page as MyPage }` — HMR молча сломается. AutoImport инжектит чистые имена, edge case, но знай.
