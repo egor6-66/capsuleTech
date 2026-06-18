@@ -26,3 +26,5 @@ export type {
   Severity,
   Violation,
 } from './types';
+
+export type { IEditorNode, IInteraction, ISchema, NodeId } from './schema';

@@ -20,7 +20,9 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@capsuletech/web-contract": "workspace:*"
+  },
   "peerDependencies": {
     "solid-js": "^1.9.12"
   },
