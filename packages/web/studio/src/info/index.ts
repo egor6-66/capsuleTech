@@ -5,7 +5,6 @@
 
 export { Info } from './Info';
 export { EmptyState } from './EmptyState';
-export { getContract, hasContract } from './contract-registry';
 export type {
   IContractBlockProps,
   IInfoProps,
