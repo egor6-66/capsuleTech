@@ -1,8 +1,8 @@
 import { z } from '@capsuletech/shared-zod';
 import { List } from '../../icons';
-import type { IComponentManifest } from '../../manifest/types';
+import type { IPrimitiveManifestEntry } from '../../manifest/types';
 
-export const ListManifest: IComponentManifest = {
+export const ListManifest: IPrimitiveManifestEntry = {
   type: 'ui.List',
   label: 'List',
   category: 'container',

@@ -1,5 +1,5 @@
 import { createStyle } from '@capsuletech/web-style';
-import { createMemo, createSignal, type JSX, splitProps } from 'solid-js';
+import { type JSX, createMemo, createSignal, mergeProps, splitProps } from 'solid-js';
 
 import type { IInputProps } from './interfaces';
 import { inputCva } from './variants';
@@ -11,11 +11,11 @@ export const Input = (props: IInputProps) => {
     ['size', 'variant'],
   );
 
-  const { className, style } = createStyle(inputCva, {
-    ...variants,
-    class: local.class,
-    style: local.style,
+  const styleProps = mergeProps(variants, {
+    get class() { return local.class; },
+    get style() { return local.style; },
   });
+  const { className, style } = createStyle(inputCva, styleProps);
 
   // Track whether the field has a non-empty value so we can set data-filled.
   // Controlled path: derive from props.value reactively.

@@ -7,6 +7,8 @@
  * Existing variant/color CVA contract is stable — only smoke tests here.
  */
 
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Typography } from '../typography';
@@ -232,6 +234,41 @@ describe('Typography — dim prop', () => {
 // ---------------------------------------------------------------------------
 // Backward compatibility smoke
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Reactivity contract — variant/color/class must update at runtime
+// ---------------------------------------------------------------------------
+
+describe('Typography — reactivity contract', () => {
+  it('updates CVA class when variant signal changes', () => {
+    const [variant, setVariant] = createSignal<'p' | 'h1'>('p');
+    cleanup = render(
+      () => <Typography variant={variant()} data-testid="t">Hello</Typography>,
+      container,
+    );
+    // p: text-base in className; no text-4xl
+    expect(container.querySelector('[data-testid="t"]')?.className).not.toContain('text-4xl');
+
+    setVariant('h1');
+    // Dynamic changes tag — re-query after signal update
+    const el = container.querySelector<HTMLElement>('[data-testid="t"]');
+    expect(el?.className).toContain('text-4xl');
+    expect(el?.tagName.toLowerCase()).toBe('h1');
+  });
+
+  it('updates class when class signal changes', () => {
+    const [cls, setCls] = createSignal('');
+    cleanup = render(
+      () => <Typography class={cls()} data-testid="t">Hello</Typography>,
+      container,
+    );
+    const el = container.querySelector<HTMLElement>('[data-testid="t"]');
+    expect(el?.className).not.toContain('my-dynamic');
+
+    setCls('my-dynamic');
+    expect(el?.className).toContain('my-dynamic');
+  });
+});
 
 describe('Typography — backward compatibility', () => {
   it('renders a <p> by default', () => {

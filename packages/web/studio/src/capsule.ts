@@ -9,6 +9,7 @@
  * Vite-плагин (CapsuleRegistryPlugin) читает этот файл через jiti и генерирует
  * глобалы:
  *   - `WebStudio.Canvas`             → preview через Renderer (kit хардкод)
+ *   - `WebStudio.CanvasStyle`        → canvas-only override темы/dark (state-injectable)
  *   - `WebStudio.ComponentsPalette`  → палитра компонентов
  *   - `WebStudio.Props`              → редактор пропсов выбранного пресета
  *   - `WebStudio.Info`               → info-панель (контракт / манифест / readme)
@@ -19,16 +20,20 @@
 
 import { defineCapsuleModule } from '@capsuletech/web-core/module';
 import { WebStudioCanvas } from './controllers/WebStudioCanvas';
+import { WebStudioCanvasStyle } from './controllers/WebStudioCanvasStyle';
 import { WebStudioInfo } from './controllers/WebStudioInfo';
 import { WebStudioProps } from './controllers/WebStudioProps';
+import { Navigation } from './navigation';
 import { ComponentsPalette } from './palette';
 
 export default defineCapsuleModule({
   name: 'WebStudio',
   components: {
     Canvas: WebStudioCanvas,
+    CanvasStyle: WebStudioCanvasStyle,
     ComponentsPalette,
     Info: WebStudioInfo,
+    Navigation,
     Props: WebStudioProps,
   },
 });

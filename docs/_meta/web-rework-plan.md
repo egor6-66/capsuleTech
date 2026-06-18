@@ -443,7 +443,7 @@ tags: [meta, web-rework, plan]
 
 ## Phase E — Docs infrastructure (per ADR 048)
 
-> Цель: docs/**/*.md остаются source-of-truth; build-time extraction → typed registry; JSX-консумерс через @capsuletech/web-studio/docs; CI drift-guards.
+> Цель: docs/**/*.md остаются source-of-truth; build-time extraction → typed registry; JSX-консумерс через @capsuletech/web-docs; CI drift-guards.
 
 Phase E **параллельна** Phase D (разные зоны кода).
 
@@ -474,7 +474,7 @@ Phase E **параллельна** Phase D (разные зоны кода).
 - **Steps:** при правке любой доки contributors добавляют `<!-- audience: ... -->` теги где есть аудитор-разница. Не bulk-PR.
 - **Status:** ONGOING.
 
-### E4 — `@capsuletech/web-studio/docs` consumer
+### E4 — `@capsuletech/web-docs` consumer
 
 - **Owner:** owner-studio (post D4 rename).
 - **Steps:**
@@ -597,7 +597,7 @@ A0 (merge 046+047+048+plan) ─→ A1 (USER creates owner-boost-matrix + restart
 | E2.4 — document-specific non-canonical headings | OPEN (touch-when-touch) | — | Per-doc decisions; ~1135 sections (anti-pattern items, doc-specific sub-structure). Auto-slug fallback IS canon §1.3 design choice — warning not error. |
 | E3 — Status enum normalization | **DONE** | #341 | 57 status rewrites + 2 transient deletions (author-intent-to-delete). 138 docs now canon enum; 32 missing field — touch-when-touch. |
 | E3 — Audience tagging | ONGOING (touch-when-touch) | — | No PR-driven; per-doc when touched. |
-| E4 — studio/docs consumer | **DONE** | #345 | `@capsuletech/web-studio/docs` subpath — DocsProvider/DocSection/DocPage/useDoc; marked-based MD render; body-level audience filter; DI registry shape; 18 tests. |
+| E4 — studio/docs consumer | **DONE** | #345 | `@capsuletech/web-docs` subpath — DocsProvider/DocSection/DocPage/useDoc; marked-based MD render; body-level audience filter; DI registry shape; 18 tests. |
 | E5 — apps consume DocSection | OPEN — infra ready | — | `<DocSection>` API stable. Apps adopt as needed via `<DocsProvider registry={appRegistry}>` at root. Sample integration in playground / capsule-сайт when those apps are next worked on. |
 | E6 — CI drift-guards | **DONE** | #339 | Standalone `Docs build (ADR 048 E6)` job in `.github/workflows/ci.yml`. Zero-dep (no pnpm install), runs `node docs/_build/extract.mjs`. Fails on errors, passes on warnings. Will escalate to strict mode post-E2.4. |
 

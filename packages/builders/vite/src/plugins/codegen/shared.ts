@@ -32,7 +32,9 @@ export {
   type ResolvedPackageEntry,
   renderAppTagsTypes,
   resolvePackageEntries,
-  type WrapperLeaf,
+  // --- Bootstrap ---
+  generateBootstrap,
+  type BootstrapContribution,
   // --- Leaf helpers ---
   wrapperFileToLeaf,
 } from '../capsuleRegistry';

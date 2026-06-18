@@ -163,7 +163,7 @@
       "@capsuletech/desktop": ["packages/desktop/src/index.ts"],
       "@capsuletech/desktop/metrics": ["packages/desktop/src/metrics.ts"],
       "@capsuletech/docs-builder": ["packages/builders/docs-builder/src/index.ts"],
-      "@capsuletech/docs": ["packages/docs/src/index.ts"]
+      "@capsuletech/web-docs": ["packages/web/docs/src/index.ts"]
     }
   }
 }

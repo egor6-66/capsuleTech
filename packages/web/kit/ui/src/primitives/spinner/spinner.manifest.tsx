@@ -1,8 +1,8 @@
 import { z } from '@capsuletech/shared-zod';
 import { Loader2 } from '../../icons';
-import type { IComponentManifest } from '../../manifest/types';
+import type { IPrimitiveManifestEntry } from '../../manifest/types';
 
-export const SpinnerManifest: IComponentManifest = {
+export const SpinnerManifest: IPrimitiveManifestEntry = {
   type: 'ui.Spinner',
   label: 'Spinner',
   category: 'feedback',

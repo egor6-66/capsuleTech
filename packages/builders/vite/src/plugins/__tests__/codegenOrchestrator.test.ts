@@ -20,6 +20,7 @@ import {
   createBarrelRegistrySubGenerator,
   createBootstrapSubGenerator,
   createCapsuleRegistryPlugin,
+  createDocsSourcesSubGenerator,
   createEndpointsSubGenerator,
   createPackagesSubGenerator,
   type SubGenerator,
@@ -334,6 +335,34 @@ describe('createPackagesSubGenerator', () => {
   });
 });
 
+describe('createDocsSourcesSubGenerator', () => {
+  it('creates a sub-generator with id docs-sources and order 50', () => {
+    const gen = createDocsSourcesSubGenerator();
+    expect(gen.id).toBe('docs-sources');
+    expect(gen.order).toBe(50);
+  });
+
+  it('match() returns false — not triggered by src file events', () => {
+    const gen = createDocsSourcesSubGenerator();
+    expect(gen.match('/any/file.ts')).toBe(false);
+  });
+
+  it('onAppConfigChange marks dirty and returns true', () => {
+    const gen = createDocsSourcesSubGenerator();
+    const fakeCtx = {} as CodegenContext;
+    const result = gen.onAppConfigChange?.(fakeCtx);
+    expect(result).toBe(true);
+  });
+
+  it('bootstrap() returns null before flush (_hasFile=false initially)', () => {
+    // docs-sources bootstrap() is conditional — only returns contribution when
+    // the file has actually been written (to avoid importing a non-existent module).
+    const gen = createDocsSourcesSubGenerator();
+    const fakeCtx = {} as CodegenContext;
+    expect(gen.bootstrap?.(fakeCtx)).toBeNull();
+  });
+});
+
 describe('createBootstrapSubGenerator', () => {
   it('creates a sub-generator with id bootstrap and order 90', () => {
     const gen = createBootstrapSubGenerator(() => []);
@@ -351,6 +380,14 @@ describe('createBootstrapSubGenerator', () => {
     const fakeCtx = {} as CodegenContext;
     expect(gen.bootstrap?.(fakeCtx)).toBeNull();
   });
+
+  it('onAppConfigChange() marks dirty and returns true', () => {
+    // Bootstrap must re-generate when appConfig changes because sub-gen contributions
+    // (e.g. docs-sources) may change based on the new appConfig content.
+    const gen = createBootstrapSubGenerator(() => []);
+    const fakeCtx = {} as CodegenContext;
+    expect(gen.onAppConfigChange?.(fakeCtx)).toBe(true);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -358,21 +395,160 @@ describe('createBootstrapSubGenerator', () => {
 // ---------------------------------------------------------------------------
 
 describe('sub-generator ordering', () => {
-  it('built-in generators have deterministic order: barrel(10) < endpoints(20) < appConfig(30) < packages(40) < bootstrap(90)', () => {
+  it('built-in generators have deterministic order: barrel(10) < endpoints(20) < appConfig(30) < packages(40) < docs-sources(50) < bootstrap(90)', () => {
     const barrel = createBarrelRegistrySubGenerator();
     const endpoints = createEndpointsSubGenerator();
     const appConfig = createAppConfigSubGenerator();
     const packages = createPackagesSubGenerator();
+    const docsSources = createDocsSourcesSubGenerator();
     const bootstrap = createBootstrapSubGenerator(() => []);
 
     expect(barrel.order).toBeLessThan(endpoints.order);
     expect(endpoints.order).toBeLessThan(appConfig.order);
     expect(appConfig.order).toBeLessThan(packages.order);
-    expect(packages.order).toBeLessThan(bootstrap.order);
+    expect(packages.order).toBeLessThan(docsSources.order);
+    expect(docsSources.order).toBeLessThan(bootstrap.order);
   });
 
   it('bootstrap has the highest order (last to flush)', () => {
     const bootstrap = createBootstrapSubGenerator(() => []);
     expect(bootstrap.order).toBe(90);
+  });
+
+  it('docs-sources order is 50', () => {
+    const docsSources = createDocsSourcesSubGenerator();
+    expect(docsSources.order).toBe(50);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Bootstrap flush — collects contributions from sub-generators
+// ---------------------------------------------------------------------------
+
+/**
+ * Minimal CodegenContext for bootstrap flush tests.
+ * Tracks what was written to bootstrap.tsx.
+ */
+function makeBootstrapCtx(docsConfig?: { rootVault?: boolean }): {
+  capsuleRoot: string;
+  written: Map<string, string>;
+  ctx: CodegenContext;
+} {
+  const capsuleRoot = resolve('/project/apps/myapp/.capsule');
+  const written = new Map<string, string>();
+  const appConfigPath = resolve('/project/apps/myapp/capsule.app.ts');
+  const ctx: CodegenContext = {
+    capsuleRoot,
+    watchDir: resolve('/project/apps/myapp/src'),
+    appConfigPath,
+    writeOut: (absPath: string, content: string) => { written.set(absPath, content); },
+    removeOut: (_absPath: string) => {},
+    parse: () => { throw new Error('not needed'); },
+    names: () => { throw new Error('not needed'); },
+    // New three-state AppConfigResult API:
+    // - docsConfig !== undefined → status 'ok' with the given docs config
+    // - docsConfig === undefined → status 'ok' with empty config (no docs field)
+    loadAppConfig: () =>
+      docsConfig !== undefined
+        ? { status: 'ok', config: { docs: docsConfig } }
+        : { status: 'ok', config: {} },
+  };
+  return { capsuleRoot, written, ctx };
+}
+
+describe('bootstrap flush — contribution collection', () => {
+  it('bootstrap.tsx does NOT contain docs-sources import when docs config is absent', () => {
+    // Simulates the full cycle:
+    //   1. docs-sources sub-gen flushes with no docs config → _hasFile=false
+    //   2. bootstrap collects contributions → docs-sources returns null → not included
+    const docsSources = createDocsSourcesSubGenerator();
+    const allGenerators = [docsSources];
+
+    const bootstrap = createBootstrapSubGenerator(() => allGenerators);
+
+    const { ctx, written } = makeBootstrapCtx(undefined);
+
+    // docs-sources flush: no docs → removeOut, _hasFile stays false
+    docsSources.flush(ctx, true);
+
+    // bootstrap flush: forced
+    bootstrap.flush(ctx, true);
+
+    const bootstrapContent = written.get(resolve(ctx.capsuleRoot, 'bootstrap.tsx'));
+    expect(bootstrapContent).toBeDefined();
+    expect(bootstrapContent).not.toContain('docs-sources');
+  });
+
+  it('bootstrap.tsx contains docs-sources import when docs config is present', () => {
+    // Simulates the full cycle:
+    //   1. docs-sources sub-gen flushes with rootVault=true → _hasFile=true
+    //   2. bootstrap collects contributions → docs-sources returns { phase:'globals', importPath:'./registry/docs-sources' }
+    const docsSources = createDocsSourcesSubGenerator();
+    const allGenerators = [docsSources];
+
+    const bootstrap = createBootstrapSubGenerator(() => allGenerators);
+
+    const { ctx, written } = makeBootstrapCtx({ rootVault: true });
+
+    // docs-sources flush: rootVault=true → writes file, _hasFile=true
+    docsSources.flush(ctx, true);
+
+    // bootstrap flush: forced
+    bootstrap.flush(ctx, true);
+
+    const bootstrapContent = written.get(resolve(ctx.capsuleRoot, 'bootstrap.tsx'));
+    expect(bootstrapContent).toBeDefined();
+    expect(bootstrapContent).toContain("import './registry/docs-sources';");
+  });
+
+  it('bootstrap.tsx removes docs-sources import after docs config is removed (onAppConfigChange cycle)', () => {
+    // Simulates:
+    //   Round 1: docs config present → docs-sources written → bootstrap has import
+    //   Round 2: docs config removed → docs-sources removed → bootstrap drops import
+
+    const docsSources = createDocsSourcesSubGenerator();
+    const allGenerators = [docsSources];
+    const bootstrap = createBootstrapSubGenerator(() => allGenerators);
+
+    // --- Round 1: docs config present ---
+    const { ctx: ctx1, written: written1 } = makeBootstrapCtx({ rootVault: true });
+    docsSources.flush(ctx1, true);
+    bootstrap.flush(ctx1, true);
+
+    const content1 = written1.get(resolve(ctx1.capsuleRoot, 'bootstrap.tsx'));
+    expect(content1).toContain("import './registry/docs-sources';");
+
+    // --- Round 2: app config changed, docs removed ---
+    docsSources.onAppConfigChange?.(ctx1); // marks dirty
+    bootstrap.onAppConfigChange?.(ctx1);   // marks dirty
+
+    // New context with no docs config
+    const { ctx: ctx2, written: written2 } = makeBootstrapCtx(undefined);
+    // Flush in order (orchestrator guarantees order 50 before 90)
+    docsSources.flush(ctx2, false); // dirty → removeOut, _hasFile=false
+    bootstrap.flush(ctx2, false);   // dirty → collects contributions → no docs-sources
+
+    const content2 = written2.get(resolve(ctx2.capsuleRoot, 'bootstrap.tsx'));
+    expect(content2).toBeDefined();
+    expect(content2).not.toContain('docs-sources');
+  });
+
+  it('LAYER_INIT_ORDER entries are always present in bootstrap.tsx', () => {
+    // Even with sub-gen contributions, legacy LAYER_INIT_ORDER entries must be present.
+    const docsSources = createDocsSourcesSubGenerator();
+    const bootstrap = createBootstrapSubGenerator(() => [docsSources]);
+
+    const { ctx, written } = makeBootstrapCtx({ rootVault: true });
+    docsSources.flush(ctx, true);
+    bootstrap.flush(ctx, true);
+
+    const content = written.get(resolve(ctx.capsuleRoot, 'bootstrap.tsx'));
+    expect(content).toBeDefined();
+    // Legacy entries from LAYER_INIT_ORDER — bare side-effect imports
+    expect(content).toContain("import './registry/packages';");
+    expect(content).toContain("import './app-config.gen';");
+    expect(content).toContain("import { routeTree } from './routes/routeTree.gen'");
+    // Contribution from docs-sources — bare side-effect import
+    expect(content).toContain("import './registry/docs-sources';");
   });
 });

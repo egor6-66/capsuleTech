@@ -17,7 +17,9 @@ services:
       PUBLIC_HOST: ${PUBLIC_HOST:-}
     ports:
       # Один порт — приложения раздаются под своими base-путями (/ewc/, …).
-      - "8090:8080"
+      # Host-side порт берём из .env (DEPLOY_PORT). Должен совпадать с портом
+      # в DEPLOY_SERVER (CLI). Контейнер всегда слушает 8080 внутри.
+      - "${DEPLOY_PORT:-8090}:8080"
     volumes:
       - preview-data:/data
 

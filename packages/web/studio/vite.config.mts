@@ -6,7 +6,6 @@ export default libConfig({
     manifests: 'src/manifests/index.ts',
     controllers: 'src/controllers/index.ts',
     capsule: 'src/capsule.ts',
-    docs: 'src/docs/index.ts',
     palette: 'src/palette/index.ts',
   },
   name: 'CapsuleWebStudio',

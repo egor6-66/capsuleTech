@@ -9,9 +9,11 @@
  *   - Field.Description renders data-slot=field-description.
  *   - Field.Error renders when errors are provided.
  *   - Field.Error is absent when errors array is empty.
+ *   - orientation prop updates at runtime (reactivity contract).
  */
 /* @vitest-environment jsdom */
 
+import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Field } from '../index';
@@ -109,5 +111,38 @@ describe('Field.Error', () => {
     cleanup = render(() => <Field.Error errors={[]} />, container);
     const el = container.querySelector('[data-slot="field-error"]');
     expect(el).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Reactivity contract — orientation prop must update at runtime
+// ---------------------------------------------------------------------------
+
+describe('Field — reactivity contract', () => {
+  it('updates orientation class when orientation signal changes', () => {
+    const [orientation, setOrientation] = createSignal<'vertical' | 'horizontal'>('vertical');
+    cleanup = render(
+      () => <Field orientation={orientation()} data-testid="field">content</Field>,
+      container,
+    );
+    const el = container.querySelector<HTMLElement>('[data-testid="field"]');
+    expect(el?.className).toContain('flex-col');
+
+    setOrientation('horizontal');
+    expect(el?.className).toContain('flex-row');
+    expect(el?.className).not.toContain('flex-col');
+  });
+
+  it('updates class when class signal changes', () => {
+    const [cls, setCls] = createSignal('');
+    cleanup = render(
+      () => <Field class={cls()} data-testid="field">content</Field>,
+      container,
+    );
+    const el = container.querySelector<HTMLElement>('[data-testid="field"]');
+    expect(el?.className).not.toContain('my-dynamic');
+
+    setCls('my-dynamic');
+    expect(el?.className).toContain('my-dynamic');
   });
 });

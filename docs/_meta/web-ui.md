@@ -542,3 +542,78 @@ User видит **реальную цену** при выборе примити
 - [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] — zones + vendor transparency.
 - [[044-web-menu-package|ADR 044]] — heavy=pkg / light=kit principle.
 - [[web-rework-plan]] — Phase W (W3 — этот раздел, W4 — implementation).
+
+---
+
+## Reactivity contract for primitives {#reactivity-contract}
+
+> Зафиксировано 2026-06-17. Детали — [[briefs/owner-web-ui-reactive-variant-props]].
+
+### Правило
+
+Каждый props-проп любого primitive `@capsuletech/web-ui`, влияющий на CSS-класс или inline-style, **обязан быть реактивным**: изменение пропа runtime (через Solid signal или `mergeProps`) должно немедленно отражаться в DOM без перемонтирования компонента.
+
+Это критично для web-studio Inspector: Inspector меняет props ноды через `store.set()`, Renderer проксирует их через `mergeProps(() => node.props, ...)` — «вход» в primitive уже реактивный. Если primitive делает snapshot внутри себя — пайплайн рвётся.
+
+### Канон-паттерн (mergeProps + getters)
+
+```ts
+// ПРАВИЛЬНО — splitProps-результат (variantProps) + getters для class/style
+const styleProps = mergeProps(variantProps, {
+  get class() { return cn(local.class, presentational.someFlag && 'w-full'); },
+  get style() { return local.style; },
+});
+const { className, style } = createStyle(buttonCva, styleProps);
+```
+
+**Почему:** `mergeProps(variantProps, {...getters...})` создаёт Solid-proxy, где каждое поле — reactive getter. `createStyle` вызывает `cvaFn(props)` внутри `createMemo`, поэтому любой доступ к `props.variant`, `props.class` и т.д. отслеживается и memo перерасcчитывается при изменении.
+
+**Чего НЕ делать:**
+
+```ts
+// НЕПРАВИЛЬНО — spread создаёт статичный объект
+const { className } = createStyle(buttonCva, {
+  ...variantProps,          // ← eager snapshot splitProps-proxy
+  class: cn(local.class),  // ← eager read
+  style: local.style,       // ← eager read
+});
+
+// НЕПРАВИЛЬНО — даже без spread, eager read в object literal
+const { className } = createStyle(myCva, {
+  variant: activeVariant(), // ← snapshot вычисленного значения
+  class: local.class,
+});
+```
+
+**Для случаев без CVA-variants** (только class/style через `createStyle`):
+
+```ts
+const { className, style } = createStyle(labelCva, {
+  get class() { return local.class; },
+  get style() { return local.style; },
+});
+```
+
+### Forward-compat маркер
+
+Следующая итерация (user-defined-props) потребует overload `createStyle` принимающий accessor или динамический prop→class mapping. Текущий `mergeProps`-паттерн этому не противоречит — миграция будет тривиальной точечной заменой там, где придут user-defined vars. Не имплементировать сейчас.
+
+### Что покрыто (2026-06-17)
+
+Фикс прокатан по **9 файлам**:
+
+| Файл | Что было сломано |
+|---|---|
+| `button/button.tsx` | `{...variantProps, class: cn(...), style: ...}` — snapshot variant+size |
+| `card/card.tsx` | `{...variants, class: cn(...), style: ...}` — snapshot variant |
+| `input/input.tsx` | `{...variants, class: ..., style: ...}` — snapshot size |
+| `input/textarea/textarea.tsx` | `{...variants, class: ..., style: ...}` — snapshot size |
+| `field/field.tsx` | `{...variants, class: ..., style: ...}` — snapshot orientation |
+| `spinner/spinner.tsx` | `{...variants, class: ..., style: ...}` — snapshot size |
+| `typography/typography.tsx` | `{...variantProps, class: ..., style: ...}` — snapshot variant+color |
+| `separator/separator.tsx` | `{variant: activeVariant(), class: ..., style: ...}` — eager call + reads |
+| `list/list.tsx` | 4 call-sites (batch/render-prop/semantic/VirtualList) — eager reads |
+
+Тесты на реактивность: `button`, `card`, `field`, `input`, `list`, `separator`, `spinner`, `textarea`, `typography`.
+
+Бриф: `docs/_meta/briefs/owner-web-ui-reactive-variant-props.md`.

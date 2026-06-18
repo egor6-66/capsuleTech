@@ -18,11 +18,11 @@ export const Spinner = (props: ISpinnerProps) => {
   const merged = mergeProps({ label: 'Loading' }, props);
   const [local, variants] = splitProps(merged, ['class', 'style', 'label']);
 
-  const { className, style } = createStyle(spinnerCva, {
-    ...variants,
-    class: local.class,
-    style: local.style,
+  const styleProps = mergeProps(variants, {
+    get class() { return local.class; },
+    get style() { return local.style; },
   });
+  const { className, style } = createStyle(spinnerCva, styleProps);
 
   return (
     <span role="status" aria-label={local.label} style={style()}>

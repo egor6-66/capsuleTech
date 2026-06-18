@@ -1,8 +1,8 @@
 import { z } from '@capsuletech/shared-zod';
 import { Rows3 } from '../../../icons';
-import type { IComponentManifest } from '../../../manifest/types';
+import type { IPrimitiveManifestEntry } from '../../../manifest/types';
 
-export const FlexManifest: IComponentManifest = {
+export const FlexManifest: IPrimitiveManifestEntry = {
   type: 'ui.Layout.Flex',
   label: 'Flex',
   category: 'container',

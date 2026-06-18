@@ -12,6 +12,7 @@
 export type { ContractCarrier, ContractSource } from './collect';
 export { collectContracts } from './collect';
 export { defineContract, isContract } from './define-contract';
+export { propsSchemaOf } from './derive';
 export { rule } from './rules';
 export type {
   Contract,
@@ -25,3 +26,5 @@ export type {
   Severity,
   Violation,
 } from './types';
+
+export type { IEditorNode, IInteraction, ISchema, NodeId } from './schema';

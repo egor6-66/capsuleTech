@@ -46,7 +46,17 @@ export const createPackagesSubGenerator = (): SubGenerator => {
       if (!dirty && !forced) return;
       dirty = false;
 
-      const config = ctx.loadAppConfig();
+      const result = ctx.loadAppConfig();
+
+      if (result.status === 'error') {
+        // Transient load error — keep existing output, log the error.
+        ctx.logger?.error(
+          `[capsule:packages] failed to load appConfig: ${String(result.error)}`,
+        );
+        return;
+      }
+
+      const config = result.status === 'ok' ? result.config : undefined;
       const appConfigDir = dirname(ctx.appConfigPath);
       const resolvedPackages = resolvePackageEntries(config?.packages, appConfigDir);
 

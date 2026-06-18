@@ -67,6 +67,7 @@ import {
   generateRegistryPackageJson,
   LAYER_INIT_ORDER,
   parseManifestSource,
+  REGISTRY_SIDE_EFFECT_FILES,
   type ResolvedPackageEntry,
   resolvePackageEntries,
 } from '../capsuleRegistry';
@@ -138,15 +139,47 @@ describe('generateRegistryIndex', () => {
 // ---------------------------------------------------------------------------
 
 describe('generateRegistryPackageJson', () => {
-  it('contains sideEffects: false', () => {
-    const out = generateRegistryPackageJson();
-    const parsed = JSON.parse(out);
-    expect(parsed.sideEffects).toBe(false);
-  });
-
   it('is valid JSON', () => {
     const out = generateRegistryPackageJson();
     expect(() => JSON.parse(out)).not.toThrow();
+  });
+
+  it('sideEffects is an array (whitelist form, NOT false)', () => {
+    const out = generateRegistryPackageJson();
+    const parsed = JSON.parse(out);
+    expect(Array.isArray(parsed.sideEffects)).toBe(true);
+  });
+
+  it('sideEffects whitelist contains ./packages.ts', () => {
+    const out = generateRegistryPackageJson();
+    const parsed = JSON.parse(out);
+    expect(parsed.sideEffects).toContain('./packages.ts');
+  });
+
+  it('sideEffects whitelist contains ./docs-sources.ts', () => {
+    const out = generateRegistryPackageJson();
+    const parsed = JSON.parse(out);
+    expect(parsed.sideEffects).toContain('./docs-sources.ts');
+  });
+
+  it('sideEffects array matches REGISTRY_SIDE_EFFECT_FILES constant', () => {
+    const out = generateRegistryPackageJson();
+    const parsed = JSON.parse(out);
+    expect(parsed.sideEffects).toEqual([...REGISTRY_SIDE_EFFECT_FILES]);
+  });
+});
+
+describe('REGISTRY_SIDE_EFFECT_FILES constant', () => {
+  it('contains ./packages.ts', () => {
+    expect(REGISTRY_SIDE_EFFECT_FILES).toContain('./packages.ts');
+  });
+
+  it('contains ./docs-sources.ts', () => {
+    expect(REGISTRY_SIDE_EFFECT_FILES).toContain('./docs-sources.ts');
+  });
+
+  it('has at least 2 entries', () => {
+    expect(REGISTRY_SIDE_EFFECT_FILES.length).toBeGreaterThanOrEqual(2);
   });
 });
 
@@ -299,7 +332,11 @@ describe('generateBarrelRegistry — empty layer', () => {
     const files = generateBarrelRegistry([]);
     expect(files.has('package.json')).toBe(true);
     const pkg = JSON.parse(files.get('package.json')!);
-    expect(pkg.sideEffects).toBe(false);
+    // sideEffects must be a whitelist array, NOT false (packages.ts / docs-sources.ts
+    // use module-level side effects that the bundler must not DCE).
+    expect(Array.isArray(pkg.sideEffects)).toBe(true);
+    expect(pkg.sideEffects).toContain('./packages.ts');
+    expect(pkg.sideEffects).toContain('./docs-sources.ts');
   });
 });
 
@@ -563,8 +600,10 @@ describe('generateBootstrap — structure', () => {
 describe('generateBootstrap — import order matches LAYER_INIT_ORDER', () => {
   it('packages (globals) imported before app-config (subsystems)', () => {
     const out = generateBootstrap();
-    const packagesIdx = out.indexOf("import './registry/packages'");
-    const appConfigIdx = out.indexOf("import './app-config.gen'");
+    // bare side-effect import: `import './registry/packages';`
+    const packagesIdx = out.indexOf("'./registry/packages'");
+    // bare side-effect import: `import './app-config.gen';`
+    const appConfigIdx = out.indexOf("'./app-config.gen'");
     expect(packagesIdx).toBeGreaterThanOrEqual(0);
     expect(appConfigIdx).toBeGreaterThanOrEqual(0);
     expect(packagesIdx).toBeLessThan(appConfigIdx);
@@ -572,17 +611,23 @@ describe('generateBootstrap — import order matches LAYER_INIT_ORDER', () => {
 
   it('app-config (subsystems) imported before routeTree (render)', () => {
     const out = generateBootstrap();
-    const appConfigIdx = out.indexOf("import './app-config.gen'");
+    // bare side-effect import: `import './app-config.gen';`
+    const appConfigIdx = out.indexOf("'./app-config.gen'");
     const routeTreeIdx = out.indexOf("import { routeTree } from './routes/routeTree.gen'");
     expect(appConfigIdx).toBeGreaterThanOrEqual(0);
     expect(routeTreeIdx).toBeGreaterThanOrEqual(0);
     expect(appConfigIdx).toBeLessThan(routeTreeIdx);
   });
 
-  it('packages uses bare side-effect import (no named binding)', () => {
+  it('packages uses bare side-effect import (sideEffects whitelist preserves it)', () => {
     const out = generateBootstrap();
-    expect(out).toMatch(/import '\.\/registry\/packages'/);
-    expect(out).not.toMatch(/import \{[^}]*\} from '\.\/registry\/packages'/);
+    expect(out).toContain("import './registry/packages';");
+  });
+
+  it('does NOT use void _x workaround (sideEffects whitelist is the proper fix)', () => {
+    const out = generateBootstrap();
+    expect(out).not.toMatch(/void _\w+/);
+    expect(out).not.toMatch(/import \* as _\w+ from/);
   });
 
   it('routeTree uses named import', () => {
@@ -997,15 +1042,18 @@ describe('LAYER_INIT_ORDER — packages entry', () => {
     expect(packagesIdx).toBeLessThan(appConfigIdx);
   });
 
-  it('bootstrap contains packages side-effect import', () => {
+  it('bootstrap contains packages bare side-effect import', () => {
     const out = generateBootstrap();
     expect(out).toContain("import './registry/packages';");
   });
 
   it('packages side-effect import appears before app-config in bootstrap', () => {
     const out = generateBootstrap();
-    const packagesIdx = out.indexOf("import './registry/packages'");
-    const appConfigIdx = out.indexOf("import './app-config.gen'");
+    // bare side-effect imports: `import './registry/packages';` and `import './app-config.gen';`
+    const packagesIdx = out.indexOf("'./registry/packages'");
+    const appConfigIdx = out.indexOf("'./app-config.gen'");
+    expect(packagesIdx).toBeGreaterThanOrEqual(0);
+    expect(appConfigIdx).toBeGreaterThanOrEqual(0);
     expect(packagesIdx).toBeLessThan(appConfigIdx);
   });
 });

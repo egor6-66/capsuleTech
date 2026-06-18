@@ -38,8 +38,15 @@ import { SkeletonManifest } from '../primitives/skeleton/skeleton.manifest';
 import { SpinnerManifest } from '../primitives/spinner/spinner.manifest';
 import { ToggleManifest } from '../primitives/toggle/toggle.manifest';
 import { TypographyManifest } from '../primitives/typography/typography.manifest';
-import { AnimateManifest } from '../primitives/wrappers/animate.manifest';
-import type { ComponentCategory, IManifestSummary, IPrimitiveManifestEntry } from './types';
+import type { Contract } from '@capsuletech/web-contract';
+import type {
+  ComponentCategory,
+  FieldRule,
+  IFieldRuleResult,
+  IManifestSummary,
+  IPreset,
+  IPrimitiveManifestEntry,
+} from './types';
 
 const ALL: IPrimitiveManifestEntry[] = [
   // controls
@@ -79,6 +86,15 @@ const BY_TYPE = new Map<string, IPrimitiveManifestEntry>(ALL.map((m) => [m.type,
 /** Резолв манифеста по `node.type` (тот же, что в renderer'е). */
 export const getManifest = (type: string): IPrimitiveManifestEntry | undefined => BY_TYPE.get(type);
 
+/**
+ * Резолв контракта по `node.type`.
+ *
+ * Возвращает `Contract` если он co-located в манифесте (`manifest.contract`),
+ * иначе `undefined`. Используется studio-инспектором и тестами вместо
+ * hand-maintained `contract-registry.ts` в studio.
+ */
+export const getContract = (type: string): Contract | undefined => BY_TYPE.get(type)?.contract;
+
 /** Все манифесты в порядке регистрации. */
 export const getAllManifests = (): readonly IPrimitiveManifestEntry[] => ALL;
 
@@ -115,3 +131,24 @@ export const getCategories = (): ComponentCategory[] => {
   for (const m of ALL) seen.add(m.category);
   return Array.from(seen);
 };
+
+/** Presets примитива по `node.type`. Пусто (`[]`) если presets не заданы. */
+export const getPresets = (type: string): readonly IPreset[] =>
+  BY_TYPE.get(type)?.presets ?? [];
+
+/** true если примитив имеет хотя бы один preset. */
+export const hasPresets = (type: string): boolean =>
+  (BY_TYPE.get(type)?.presets?.length ?? 0) > 0;
+
+/**
+ * Применяет field-rule примитива к текущим props. Возвращает `{}` если rule
+ * не задана. Результат содержит `hidden` и/или `disabled` наборы полей.
+ */
+export const applyFieldRule = (
+  type: string,
+  props: Record<string, unknown>,
+): IFieldRuleResult =>
+  BY_TYPE.get(type)?.fieldRule?.(props) ?? {};
+
+// Re-export types so that consumers can import from one place.
+export type { FieldRule, IFieldRuleResult, IPreset };

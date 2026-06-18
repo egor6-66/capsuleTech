@@ -12,17 +12,24 @@
  */
 
 export {
+  applyFieldRule,
   canAcceptChild,
   getAllManifests,
   getCategories,
+  getContract,
   getManifest,
+  getPresets,
+  hasPresets,
   listByCategory,
   summarize,
 } from './registry';
 export type {
   ComponentCategory,
-  IComponentManifest,
+  FieldRule,
+  IBuiltManifestEntry,
+  IFieldRuleResult,
   IManifestSummary,
+  IPreset,
   IPrimitiveManifestEntry,
   IWebUiManifest,
 } from './types';

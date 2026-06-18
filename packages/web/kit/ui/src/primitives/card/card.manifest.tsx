@@ -1,6 +1,14 @@
 import { z } from '@capsuletech/shared-zod';
-import { AlignJustify, AlignLeft, CreditCard, Heading1, PanelBottom, Type } from '../../icons';
-import type { IComponentManifest } from '../../manifest/types';
+import {
+  AlignJustify,
+  AlignLeft,
+  CreditCard,
+  Heading1,
+  PanelBottom,
+  Type,
+} from '../../icons';
+import type { IPrimitiveManifestEntry } from '../../manifest/types';
+import { CardContract } from './card.contract';
 
 const CARD_DIRECT_CHILDREN = new Set([
   'ui.Card.Header',
@@ -12,13 +20,14 @@ const CARD_DIRECT_CHILDREN = new Set([
 
 const isCardPart = (type: string) => type.startsWith('ui.Card.');
 
-export const CardManifest: IComponentManifest = {
+export const CardManifest: IPrimitiveManifestEntry = {
   type: 'ui.Card',
   label: 'Card',
   category: 'composition',
   icon: () => <CreditCard size={16} />,
   description: 'Контейнер-карточка с шапкой/контентом/футером',
   accepts: (childType) => CARD_DIRECT_CHILDREN.has(childType),
+  contract: CardContract,
   defaultProps: {
     class: 'w-full max-w-sm',
   },
@@ -28,7 +37,7 @@ export const CardManifest: IComponentManifest = {
   }),
 };
 
-export const CardHeaderManifest: IComponentManifest = {
+export const CardHeaderManifest: IPrimitiveManifestEntry = {
   type: 'ui.Card.Header',
   label: 'Card Header',
   category: 'composite',
@@ -40,7 +49,7 @@ export const CardHeaderManifest: IComponentManifest = {
   }),
 };
 
-export const CardTitleManifest: IComponentManifest = {
+export const CardTitleManifest: IPrimitiveManifestEntry = {
   type: 'ui.Card.Title',
   label: 'Card Title',
   category: 'composite',
@@ -53,7 +62,7 @@ export const CardTitleManifest: IComponentManifest = {
   }),
 };
 
-export const CardDescriptionManifest: IComponentManifest = {
+export const CardDescriptionManifest: IPrimitiveManifestEntry = {
   type: 'ui.Card.Description',
   label: 'Card Description',
   category: 'composite',
@@ -66,7 +75,7 @@ export const CardDescriptionManifest: IComponentManifest = {
   }),
 };
 
-export const CardContentManifest: IComponentManifest = {
+export const CardContentManifest: IPrimitiveManifestEntry = {
   type: 'ui.Card.Content',
   label: 'Card Content',
   category: 'composite',
@@ -78,7 +87,7 @@ export const CardContentManifest: IComponentManifest = {
   }),
 };
 
-export const CardFooterManifest: IComponentManifest = {
+export const CardFooterManifest: IPrimitiveManifestEntry = {
   type: 'ui.Card.Footer',
   label: 'Card Footer',
   category: 'composite',

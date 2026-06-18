@@ -1,8 +1,8 @@
 import { z } from '@capsuletech/shared-zod';
 import { Sparkles } from '../../icons';
-import type { IComponentManifest } from '../../manifest/types';
+import type { IPrimitiveManifestEntry } from '../../manifest/types';
 
-export const AnimateManifest: IComponentManifest = {
+export const AnimateManifest: IPrimitiveManifestEntry = {
   type: 'ui.Animate',
   label: 'Animate',
   category: 'wrapper',

@@ -1,8 +1,8 @@
 import { z } from '@capsuletech/shared-zod';
 import { RectangleHorizontal } from '../../icons';
-import type { IComponentManifest } from '../../manifest/types';
+import type { IPrimitiveManifestEntry } from '../../manifest/types';
 
-export const SkeletonManifest: IComponentManifest = {
+export const SkeletonManifest: IPrimitiveManifestEntry = {
   type: 'ui.Skeleton',
   label: 'Skeleton',
   category: 'feedback',

@@ -132,6 +132,9 @@ importers:
       '@capsuletech/web-core':
         specifier: workspace:*
         version: link:../../packages/web/runtime/core
+      '@capsuletech/web-docs':
+        specifier: workspace:*
+        version: link:../../packages/web/docs
       '@capsuletech/web-profiler':
         specifier: workspace:*
         version: link:../../packages/web/runtime/profiler
@@ -398,15 +401,6 @@ importers:
         specifier: ~4.1.0
         version: 4.1.6(@types/node@25.9.0)(@vitest/browser-playwright@4.1.6)(@vitest/ui@4.1.6)(jsdom@29.1.1)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
 
-  packages/docs:
-    dependencies:
-      '@capsuletech/docs-builder':
-        specifier: workspace:*
-        version: link:../builders/docs-builder
-      '@capsuletech/lib-builder':
-        specifier: workspace:*
-        version: link:../builders/lib
-
   packages/shared/utils:
     dependencies:
       es-toolkit:
@@ -600,6 +594,31 @@ importers:
         specifier: ^2.11.12
         version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
 
+  packages/web/docs:
+    dependencies:
+      '@capsuletech/docs-builder':
+        specifier: workspace:*
+        version: link:../../builders/docs-builder
+      marked:
+        specifier: ^9.1.6
+        version: 9.1.6
+      solid-js:
+        specifier: 1.9.12
+        version: 1.9.12
+    devDependencies:
+      '@capsuletech/lib-builder':
+        specifier: workspace:*
+        version: link:../../builders/lib
+      '@testing-library/jest-dom':
+        specifier: ^6.9.1
+        version: 6.9.1
+      jsdom:
+        specifier: ~29.1.1
+        version: 29.1.1
+      vite-plugin-solid:
+        specifier: ^2.11.12
+        version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
+
   packages/web/domain/agent:
     dependencies:
       '@capsuletech/shared-zod':
@@ -735,6 +754,9 @@ importers:
         specifier: 1.9.12
         version: 1.9.12
     devDependencies:
+      '@capsuletech/docs-builder':
+        specifier: workspace:*
+        version: link:../../../builders/docs-builder
       '@capsuletech/lib-builder':
         specifier: workspace:*
         version: link:../../../builders/lib
@@ -1024,6 +1046,9 @@ importers:
 
   packages/web/runtime/renderer:
     dependencies:
+      '@capsuletech/web-contract':
+        specifier: workspace:*
+        version: link:../contract
       solid-js:
         specifier: 1.9.12
         version: 1.9.12
@@ -1151,15 +1176,24 @@ importers:
       '@capsuletech/web-dnd':
         specifier: workspace:*
         version: link:../runtime/dnd
+      '@capsuletech/web-docs':
+        specifier: workspace:*
+        version: link:../docs
       '@capsuletech/web-renderer':
         specifier: workspace:*
         version: link:../runtime/renderer
+      '@capsuletech/web-router':
+        specifier: workspace:*
+        version: link:../runtime/router
+      '@capsuletech/web-shell':
+        specifier: workspace:*
+        version: link:../domain/shell
+      '@capsuletech/web-style':
+        specifier: workspace:*
+        version: link:../runtime/style
       '@capsuletech/web-ui':
         specifier: workspace:*
         version: link:../kit/ui
-      marked:
-        specifier: ^9.1.6
-        version: 9.1.6
       solid-js:
         specifier: 1.9.12
         version: 1.9.12

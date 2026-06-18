@@ -7,7 +7,7 @@
  * и рендерит его.
  *
  * **Field rules** — гибкий механизм условной видимости/блокировки полей
- * (`palette/rules.ts`). Например, для Button: при `size === 'icon'`
+ * (`@capsuletech/web-ui/manifest` → `applyFieldRule`). Например, для Button: при `size === 'icon'`
  * скрываем поле `children` (текстовый children лишний — иконку рисует
  * child-нода `ui.Icons.<Name>`).
  *
@@ -29,7 +29,7 @@ import { createMemo, Show } from 'solid-js';
 import { Inspector } from '../inspector/Inspector';
 import type { ICategory, ISelectField } from '../inspector/types';
 import { schemaToInspectorCategories } from '../inspector/zod-to-categories';
-import { applyFieldRule } from '../palette/rules';
+import { applyFieldRule } from '@capsuletech/web-ui/manifest';
 import { useSelectedPreset } from '../selection';
 
 const ICON_NAMES = Object.keys(Icons) as ReadonlyArray<keyof typeof Icons>;
@@ -80,6 +80,15 @@ export const WebStudioProps = () => {
     return null;
   };
 
+  // hasIcon мемоизируем (===-сравнение по boolean) — иначе смена ИМЕНИ
+  // иконки через patchNodeType фиктивно дёргает categories() (iconChild
+  // реактивно подписан на child.type) → новый массив + новые category-объекты
+  // → <For each={categories}> в Inspector ремаунтит ВСЁ → Select закрывается.
+  // hasIcon как boolean-memo не файрит при смене с 'Plus' на 'Settings',
+  // поэтому categories() не пересчитывается, Select остаётся открытым
+  // (закрытие/открытие — забота closeOnSelection).
+  const hasIcon = createMemo(() => iconChild() !== null);
+
   // Финальные categories: rules применены + icon-поле inject'ится в первую
   // категорию когда у ноды есть icon-child. Это превращает иконку в обычный
   // props-field — рендерится через дефолтный Inspector→SelectField, без
@@ -89,13 +98,21 @@ export const WebStudioProps = () => {
     const r = ruleResult();
     const hidden = new Set(r.hidden ?? []);
     const disabled = new Set(r.disabled ?? []);
-    const hasIcon = iconChild() !== null;
-    if (hidden.size === 0 && disabled.size === 0 && !hasIcon) return base;
+    const hasIconNow = hasIcon();
+    if (hidden.size === 0 && disabled.size === 0 && !hasIconNow) return base;
     return base.map((cat, i) => {
-      const filtered = cat.fields
-        .filter((f) => !hidden.has(f.key))
-        .map((f) => (disabled.has(f.key) ? { ...f, disabled: true } : f));
-      const fields = hasIcon && i === 0 ? [...filtered, ICON_FIELD] : filtered;
+      // Icon-field занимает СЛОТ `children` (тот же логический prop, другой
+      // тип ввода). Считаем индекс ДО фильтрации, иначе rule.hidden['children']
+      // выкинет его и мы потеряем позицию.
+      const childrenIdx = hasIconNow && i === 0 ? cat.fields.findIndex((f) => f.key === 'children') : -1;
+      const mapped = cat.fields.map((f, idx) => {
+        if (idx === childrenIdx) return ICON_FIELD;
+        if (disabled.has(f.key)) return { ...f, disabled: true };
+        return f;
+      });
+      const fields = mapped.filter((f) => f.key === ICON_FIELD.key || !hidden.has(f.key));
+      // hasIcon с нестандартным manifest'ом (нет `children`) — кладём в конец как fallback.
+      if (hasIconNow && i === 0 && childrenIdx === -1) return { ...cat, fields: [...fields, ICON_FIELD] };
       return { ...cat, fields };
     });
   };

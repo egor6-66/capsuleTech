@@ -7,9 +7,10 @@ import { For, Show, splitProps } from 'solid-js';
 import type { IThemePickerProps } from './interfaces';
 
 /**
- * Dropdown-based theme picker. A connected control — theme state lives in the
- * `@capsuletech/web-style` module-level signal. The active theme is marked with
- * a checkmark inside the list.
+ * Dropdown-based theme picker. A connected control — by default, theme state
+ * lives in the `@capsuletech/web-style` module-level signal. Can be made fully
+ * state-injectable via the `value` + `onSelect` props, which bypass the global
+ * signal entirely (useful for canvas-local theme overrides in studio).
  *
  * @example
  * ```tsx
@@ -23,6 +24,10 @@ import type { IThemePickerProps } from './interfaces';
  *     <ThemePicker mode="sub" />
  *   </Dropdown.Content>
  * </Dropdown>
+ *
+ * // Canvas-local override (state-injectable):
+ * const [canvasTheme, setCanvasTheme] = createSignal('default');
+ * <ThemePicker value={canvasTheme} onSelect={setCanvasTheme} />
  * ```
  */
 export const ThemePicker = (props: IThemePickerProps) => {
@@ -30,11 +35,14 @@ export const ThemePicker = (props: IThemePickerProps) => {
     'themes',
     'target',
     'onChange',
+    'onSelect',
+    'value',
     'triggerLabel',
     'class',
     'mode',
   ]);
-  const current = useTheme();
+  const globalTheme = useTheme();
+  const current = () => local.value?.() ?? globalTheme();
   const themes = () => local.themes ?? DISCOVERED_THEMES;
   const mode = () => local.mode ?? 'standalone';
 
@@ -43,7 +51,11 @@ export const ThemePicker = (props: IThemePickerProps) => {
       {(name) => (
         <Dropdown.Item
           onSelect={() => {
-            setTheme(name, local.target);
+            if (local.onSelect) {
+              local.onSelect(name);
+            } else {
+              setTheme(name, local.target);
+            }
             local.onChange?.(name);
           }}
         >
@@ -58,7 +70,7 @@ export const ThemePicker = (props: IThemePickerProps) => {
 
   if (mode() === 'standalone') {
     return (
-      <Dropdown>
+      <Dropdown modal={false}>
         <Dropdown.Trigger as={Button} variant="outline" size="sm" class={local.class}>
           <Show
             when={local.triggerLabel !== undefined}

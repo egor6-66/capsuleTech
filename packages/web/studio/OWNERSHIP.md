@@ -84,7 +84,7 @@ Studio = host/composer (5-я zone). Текущий внутренний toolkit 
 | `isInside(tree, ancestorId, nodeId)` | Лежит ли nodeId внутри поддерева ancestorId |
 | `canMoveInto(tree, dragId, targetId)` | Полная валидация move (не root, не в себя, не в потомков) |
 | `type ComponentCategory` | Допустимые категории компонентов |
-| `type IComponentManifest` | Спецификация компонента |
+| `type IPrimitiveManifestEntry` | Спецификация компонента |
 | `type IManifestSummary` | Лёгкая сводка |
 
 ### `@capsuletech/web-studio/state`

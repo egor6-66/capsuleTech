@@ -167,6 +167,43 @@ export interface IAppConfig {
       key?: string;
     };
   };
+
+  /**
+   * Docs-as-data wiring (ADR 048 + ADR 052 Phase 3.6).
+   *
+   * Опт-ин на подключение docs в app. Присутствие поля = активация
+   * `DocsRegistrySubGenerator` (см. `@capsuletech/vite-builder`), который
+   * генерит `.capsule/registry/docs-sources.ts` — карту lazy-loader'ов
+   * для каждого источника. `@capsuletech/web-docs` runtime подбирает
+   * её на bootstrap.
+   *
+   * Apps без поля `docs:` не получают никакой docs-обвязки — чистый
+   * runtime, нулевой overhead. Apps с полем должны иметь
+   * `@capsuletech/web-docs` в своих dependencies (импортируется из
+   * сгенерированного файла).
+   *
+   * Inline structural type — нет cycle web-core → web-docs.
+   *
+   * @example
+   * docs: {
+   *   rootVault: true,                            // bundle root capsule vault
+   *   packages: ['@capsuletech/web-ui'],          // подключить per-package docs
+   * }
+   */
+  docs?: {
+    /**
+     * Подключить корневой vault'а `docs/` (ADR'ы, _meta) через
+     * `@capsuletech/web-docs/docs.json`. Slug'и без префикса
+     * (`architecture/adr/048-docs-as-data`).
+     */
+    rootVault?: boolean;
+    /**
+     * Явный список пакетов чьи `./docs.json` экспорты подключаем.
+     * Пакеты без `./docs.json` в `package.json:exports` молча
+     * пропускаются с варнингом.
+     */
+    packages?: ReadonlyArray<string>;
+  };
 }
 
 /**

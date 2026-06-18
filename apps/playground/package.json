@@ -5,7 +5,9 @@
   "private": true,
   "scripts": {
     "dev": "capsule dev",
-    "build": "capsule build"
+    "build": "capsule build",
+    "preview": "capsule preview",
+    "deploy": "capsule deploy"
   },
   "devDependencies": {
     "@capsuletech/cli": "workspace:*"
@@ -20,6 +22,7 @@
     "@capsuletech/web-query": "workspace:*",
     "@capsuletech/web-renderer": "workspace:*",
     "@capsuletech/web-studio": "workspace:*",
+    "@capsuletech/web-docs": "workspace:*",
     "@capsuletech/web-auth": "workspace:*",
     "@capsuletech/web-shell": "workspace:*",
     "@capsuletech/boost-layout": "workspace:*",

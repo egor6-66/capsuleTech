@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "capsule dev",
-    "build": "capsule build"
+    "build": "capsule build",
+    "preview": "capsule preview"
   },
   "devDependencies": {
     "@capsuletech/cli": "<%= cap %>"

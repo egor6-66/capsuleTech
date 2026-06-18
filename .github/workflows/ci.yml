@@ -139,8 +139,9 @@ jobs:
   docs-build:
     name: Docs build (ADR 052 Phase 3)
     runs-on: ubuntu-latest
-    # Builds @capsuletech/docs package which emits packages/docs/dist/docs.json
-    # via DocsExtractPlugin scanning root docs/ with 'docs' slug strategy.
+    # Builds @capsuletech/web-docs which bundles the root docs/ vault into
+    # packages/web/docs/dist/docs.json via DocsExtractPlugin with 'docs' slug
+    # strategy (ADR 052 Phase 3.6 — previously @capsuletech/docs, removed).
     # Fails on errors (section-id collision, unknown audience); warnings are
     # informational until E2 inventory pass is complete (canon §1.3 / §4.2).
     steps:
