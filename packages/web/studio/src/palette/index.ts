@@ -11,4 +11,3 @@
 
 export { ComponentsPalette } from './ComponentsPalette';
 export { groupManifests, type IPaletteGroups } from './groups';
-export { getPresets, hasPresets, type IPreset } from './presets';

@@ -1,20 +1,19 @@
 /**
- * Button presets — варианты Button-компонента для палитры (JSON-схемы для
- * Renderer'а).
+ * Button presets — именованные варианты Button-компонента для палитры студио.
+ *
+ * Каждый preset — JSON-схема для Renderer'а (`@capsuletech/web-renderer`);
+ * палитра рендерит превью через `<Renderer schema mode="static" />`.
  *
  * Один пресет на variant из kit'а (CVA `variant` enum: default / destructive /
  * outline / secondary / ghost / link) + отдельный icon-only пресет.
  *
- * Children каждого пресета = его label — пользователь сразу видит «какую
- * кнопку выбрал» без редактирования. После выбора пресета user может ручно
- * сменить любой prop в Inspector'е.
- *
- * Резолв компонентов в Renderer'е: `ui.Button` → kit.Button,
- * `ui.Icons.<Name>` → kit.Icons.<Name>.
+ * Скопировано 1:1 из `packages/web/studio/src/palette/presets/button.tsx`
+ * (phase 2-3 item C — kit canonical home). Studio-файл будет удалён в phase 4.
  */
 
-import type { IPreset } from './types';
+import type { IPreset } from '../../manifest/types';
 
+/** Вспомогательный helper: строит схему с одной кнопкой + опциональной иконкой. */
 const singleButton = (props: Record<string, unknown>, iconChild?: string): IPreset['schema'] => {
   const nodes: IPreset['schema']['components']['nodes'] = {
     btn: {

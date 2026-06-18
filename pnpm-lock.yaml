@@ -1046,6 +1046,9 @@ importers:
 
   packages/web/runtime/renderer:
     dependencies:
+      '@capsuletech/web-contract':
+        specifier: workspace:*
+        version: link:../contract
       solid-js:
         specifier: 1.9.12
         version: 1.9.12

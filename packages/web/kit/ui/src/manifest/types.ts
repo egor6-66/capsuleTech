@@ -16,7 +16,7 @@
  *     populate the UI / DnD / inspector fields
  */
 
-import type { Contract } from '@capsuletech/web-contract';
+import type { Contract, ISchema } from '@capsuletech/web-contract';
 import type { ZodTypeAny } from '@capsuletech/shared-zod';
 import type { JSX } from 'solid-js';
 
@@ -107,6 +107,19 @@ export interface IPrimitiveManifestEntry {
    */
   contract?: Contract;
 
+  // ─── Palette presets + Inspector field-rules (hand-authored, optional) ──
+  /**
+   * Презентационные варианты примитива для палитры студио. Каждый preset —
+   * JSON-схема для Renderer'а; палитра рендерит превью через `<Renderer mode="static" />`.
+   */
+  presets?: readonly IPreset[];
+
+  /**
+   * Field-rule для Inspector'а — при таких props какие поля скрыть/заблокировать.
+   * Свойство компонента (e.g. Button.size='icon' → children скрыт), не studio-concern.
+   */
+  fieldRule?: FieldRule;
+
   // ─── Docs wiring (optional, hand-authored) ──────────────────────────────
   /**
    * Slug в docs registry — путь к README этого компонента в формате
@@ -172,6 +185,45 @@ export interface IWebUiManifest {
   generatedAt: string;
   primitives: IBuiltManifestEntry[];
 }
+
+/**
+ * Preset — именованный вариант primitive'а в палитре студио. JSON-схема для
+ * Renderer'а (`@capsuletech/web-renderer`) — палитра рендерит preview через
+ * `<Renderer schema mode="static" />`.
+ *
+ * Карманится манифестом примитива (`manifest.presets`) — studio palette читает
+ * через `getPresets(type)` (kit владеет описанием вариаций своего компонента).
+ */
+export interface IPreset {
+  /** Стабильный id внутри компонента. Используется как key + DnD payload. */
+  id: string;
+  /** Человекочитаемое имя для палитры (RU). */
+  label: string;
+  /** JSON-схема для Renderer'а — что показывать в превью. */
+  schema: ISchema;
+  /** Описание варианта для info-панели студио (когда применять). */
+  description?: string;
+}
+
+/**
+ * Результат field-rule — какие поля Inspector'а скрываются/блокируются при
+ * текущих props ноды. Pattern: rule принимает props, возвращает sets.
+ */
+export interface IFieldRuleResult {
+  /** Поля скрываются из Inspector'а (визуально). */
+  hidden?: readonly string[];
+  /** Поля показываются, но input заблокирован. */
+  disabled?: readonly string[];
+}
+
+/**
+ * Field-rule — функция от props ноды к информации о видимости/блокировке
+ * полей в Inspector'е. Карманится манифестом (`manifest.fieldRule`).
+ *
+ * Пример (Button + icon-size): `if (props.size === 'icon') return { hidden: ['children'] }` —
+ * иконку рисует child-нода `ui.Icons.<Name>`, текстовый children лишний.
+ */
+export type FieldRule = (props: Record<string, unknown>) => IFieldRuleResult;
 
 /**
  * Backwards-compat alias for studio consumers — pre-S2 they imported

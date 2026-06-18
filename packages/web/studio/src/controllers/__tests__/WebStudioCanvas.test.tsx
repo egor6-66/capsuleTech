@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 import { render } from 'solid-js/web';
 import { afterEach, describe, expect, it } from 'vitest';
-import { getPresets } from '../../palette/presets';
+import { getPresets } from '@capsuletech/web-ui/manifest';
 import { useSelectedPreset } from '../../selection';
 import { WebStudioCanvas } from '../WebStudioCanvas';
 

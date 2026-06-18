@@ -3,6 +3,7 @@ import { propsSchemaOf } from '@capsuletech/web-contract';
 import { MousePointerClick } from '../../icons';
 import type { IComponentManifest } from '../../manifest/types';
 import { ButtonContract } from './button.contract';
+import { buttonPresets } from './button.presets';
 
 // Contract = root for props (variant, size, disabled, loading, fullWidth, aria-invalid).
 // Manifest extends with Inspector-only fields (children, class).
@@ -26,4 +27,6 @@ export const ButtonManifest: IComponentManifest = {
     children: z.string().default('Button'),
     class: z.string().optional(),
   }),
+  presets: buttonPresets,
+  fieldRule: (props) => (props.size === 'icon' ? { hidden: ['children'] } : {}),
 };
