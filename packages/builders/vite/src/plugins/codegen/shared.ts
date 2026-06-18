@@ -18,8 +18,6 @@ export {
   generateBarrelRegistry,
   // --- Bootstrap ---
   generateBootstrap,
-  // --- Bootstrap ---
-  generateBootstrap,
   // --- Endpoints ---
   generateEndpointsRuntime,
   generateEndpointsTypes,

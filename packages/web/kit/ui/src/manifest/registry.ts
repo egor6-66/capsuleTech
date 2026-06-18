@@ -39,6 +39,7 @@ import { SkeletonManifest } from '../primitives/skeleton/skeleton.manifest';
 import { SpinnerManifest } from '../primitives/spinner/spinner.manifest';
 import { ToggleManifest } from '../primitives/toggle/toggle.manifest';
 import { TypographyManifest } from '../primitives/typography/typography.manifest';
+import { AnimateManifest } from '../primitives/wrappers/animate.manifest';
 import type {
   ComponentCategory,
   FieldRule,

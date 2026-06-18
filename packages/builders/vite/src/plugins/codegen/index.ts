@@ -17,22 +17,16 @@ export {
   derivePackageShort,
   generateDocsSourcesRuntime,
 } from './generators/docs-sources';
-export { createEndpointsSubGenerator, createEndpointsSubGenerator } from './generators/endpoints';
-export { createPackagesSubGenerator, createPackagesSubGenerator } from './generators/packages';
+export { createEndpointsSubGenerator } from './generators/endpoints';
+export { createPackagesSubGenerator } from './generators/packages';
 export type {
   AppConfigResult,
   AppConfigShape,
-  AppConfigShape,
   CodegenContext,
-  CodegenContext,
-  SubGenerator,
   SubGenerator,
 } from './interfaces';
 export {
   createCapsuleRegistryPlugin,
-  createCapsuleRegistryPlugin,
   type IOrchestratorProps,
-  type IOrchestratorProps,
-  LAYER_INIT_ORDER,
   LAYER_INIT_ORDER,
 } from './orchestrator';
