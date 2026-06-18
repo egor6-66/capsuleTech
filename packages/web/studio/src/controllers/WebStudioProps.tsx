@@ -7,7 +7,7 @@
  * и рендерит его.
  *
  * **Field rules** — гибкий механизм условной видимости/блокировки полей
- * (`palette/rules.ts`). Например, для Button: при `size === 'icon'`
+ * (`@capsuletech/web-ui/manifest` → `applyFieldRule`). Например, для Button: при `size === 'icon'`
  * скрываем поле `children` (текстовый children лишний — иконку рисует
  * child-нода `ui.Icons.<Name>`).
  *
@@ -29,7 +29,7 @@ import { createMemo, Show } from 'solid-js';
 import { Inspector } from '../inspector/Inspector';
 import type { ICategory, ISelectField } from '../inspector/types';
 import { schemaToInspectorCategories } from '../inspector/zod-to-categories';
-import { applyFieldRule } from '../palette/rules';
+import { applyFieldRule } from '@capsuletech/web-ui/manifest';
 import { useSelectedPreset } from '../selection';
 
 const ICON_NAMES = Object.keys(Icons) as ReadonlyArray<keyof typeof Icons>;

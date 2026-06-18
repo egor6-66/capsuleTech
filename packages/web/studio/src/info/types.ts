@@ -5,7 +5,7 @@
 
 import type { Contract } from '@capsuletech/web-contract';
 import type { IPrimitiveManifestEntry } from '@capsuletech/web-ui/manifest';
-import type { IPreset } from '../palette/presets';
+import type { IPreset } from '@capsuletech/web-ui/manifest';
 
 export interface IInfoProps {
   /** Выбранный пресет (для description + label в Manifest-блоке). */
