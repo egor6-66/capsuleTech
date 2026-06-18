@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { collectContracts, defineContract, isContract, rule } from '../index';
+import { collectContracts, defineContract, isContract, propsSchemaOf, rule } from '../index';
 import type { SchemaLike } from '../types';
 
 /** Минимальный zod-стаб (leaf zero-dep, тесту настоящий zod не нужен). */
@@ -105,6 +105,37 @@ describe('срез: DataTable (widget — data/events декларативно)'
     expect(DataTableContract.surface.data).toBe(dataShape);
     expect(DataTableContract.surface.events).toEqual(['onRowClick', 'onSort', 'onSelect']);
     expect(DataTableContract.kind).toBe('widget');
+  });
+});
+
+describe('propsSchemaOf — деривация props-схемы из контракта', () => {
+  const schema: SchemaLike = {
+    safeParse(value) {
+      const v = (value as Record<string, unknown>)?.variant;
+      return { success: v == null || v === 'default' };
+    },
+  };
+
+  it('возвращает ту же reference что была передана в rule.props', () => {
+    const c = defineContract({ name: 'X', kind: 'primitive' }, [rule.props(schema)]);
+    expect(propsSchemaOf(c)).toBe(schema);
+  });
+
+  it('safeParse работает на извлечённой схеме', () => {
+    const c = defineContract({ name: 'Y', kind: 'primitive' }, [rule.props(schema)]);
+    const extracted = propsSchemaOf(c);
+    expect(extracted?.safeParse({ variant: 'default' }).success).toBe(true);
+    expect(extracted?.safeParse({ variant: 'neon' }).success).toBe(false);
+  });
+
+  it('возвращает undefined если rule.props не применялся', () => {
+    const c = defineContract({ name: 'Z', kind: 'primitive' }, [rule.isLeaf()]);
+    expect(propsSchemaOf(c)).toBeUndefined();
+  });
+
+  it('возвращает undefined для контракта без правил', () => {
+    const c = defineContract({ name: 'Empty', kind: 'primitive' });
+    expect(propsSchemaOf(c)).toBeUndefined();
   });
 });
 
