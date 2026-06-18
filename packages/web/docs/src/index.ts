@@ -1,13 +1,23 @@
 /**
- * `@capsuletech/web-docs` — Solid runtime for the docs-as-data registry
- * (ADR 048 D5, extracted from `@capsuletech/web-studio/docs` per ADR 052
- * Phase 3.6).
+ * `@capsuletech/web-docs` — Solid runtime for the docs-as-data registry.
  *
- * Consumers either:
- *   1. Build the registry per-package via `DocsExtractPlugin` and pass
- *      it through `<DocsProvider registry={...}>`, or
- *   2. Use the bundled root-vault registry shipped with this package:
- *      `import rootDocs from '@capsuletech/web-docs/docs.json'`.
+ * Two flows supported:
+ *
+ *   1. **Config-driven (default).** Apps declare `docs: { rootVault, packages }`
+ *      in `apps/<app>/capsule.app.ts`. The capsule-registry's docs-sources
+ *      sub-generator emits `.capsule/registry/docs-sources.ts` which calls
+ *      `setDocsSources(...)` at bootstrap. Components like `<DocSection>` /
+ *      `<DocPage>` / `useLazyDoc(slug)` resolve by slug-prefix dispatch +
+ *      lazy `import()` per source.
+ *
+ *   2. **Explicit registry (escape hatch).** Wrap a subtree in
+ *      `<DocsProvider registry={...}>` to inject a fixed registry — useful
+ *      for tests, isolated previews, or one-off views. Components consult
+ *      the context registry synchronously via `useDoc(slug)`.
+ *
+ * The bundled root-vault registry (capsule's own `docs/`) is available at
+ * `@capsuletech/web-docs/docs.json` and is loaded automatically when
+ * `docs.rootVault: true` is set in the app config.
  *
  * Types are re-exported from `@capsuletech/docs-builder` — single source
  * of truth for the registry shape.
@@ -15,8 +25,17 @@
 
 export { DocPage, type IDocPageProps } from './DocPage';
 export { DocSection, type IDocSectionProps } from './DocSection';
-export { DocsProvider, type IDocsProviderProps, useDocsRegistry } from './provider';
-export { useDoc } from './useDoc';
+export { DocsProvider, type IDocsProviderProps, useContextRegistry } from './provider';
+export { renderMarkdown } from './render-markdown';
+export {
+  type DocsSourceLoader,
+  _resetDocsSources,
+  hasDocsSources,
+  loadDoc,
+  loadRegistry,
+  setDocsSources,
+} from './sources';
+export { useDoc, useLazyDoc } from './useDoc';
 
 export type {
   IAudience,

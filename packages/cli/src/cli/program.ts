@@ -41,11 +41,17 @@ const attachCommand = (parent: Commander, node: TreeNode): void => {
       const sig = param.required ? `<${param.name}>` : `[${param.name}]`;
       subCmd.argument(sig, param.description);
     }
+    for (const opt of cmd.options ?? []) {
+      if (opt.default !== undefined) subCmd.option(opt.flag, opt.description, opt.default as never);
+      else subCmd.option(opt.flag, opt.description);
+    }
     subCmd.action(async (...args: unknown[]) => {
-      // commander передаёт позиционные args + последний — сам объект Command.
-      // Срежем хвост.
+      // commander передаёт: <позиционные...> [options-объект] <Command>. Опции
+      // лежат в опциональном объекте перед последним аргументом — берём его, а
+      // не сам Command, чтобы потом не дёргать .opts() лишний раз.
       const positionalValues = args.slice(0, positional.length);
-      const params: Record<string, unknown> = {};
+      const opts = (args[positional.length] as Record<string, unknown>) ?? {};
+      const params: Record<string, unknown> = { ...opts };
       positional.forEach((p, i) => {
         if (positionalValues[i] !== undefined) params[p.name] = positionalValues[i];
       });

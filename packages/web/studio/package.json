@@ -43,9 +43,13 @@
   "dependencies": {
     "@capsuletech/data-gen": "workspace:*",
     "@capsuletech/shared-zod": "workspace:*",
+    "@capsuletech/web-docs": "workspace:*",
     "@capsuletech/web-contract": "workspace:*",
     "@capsuletech/web-core": "workspace:*",
     "@capsuletech/web-dnd": "workspace:*",
+    "@capsuletech/web-router": "workspace:*",
+    "@capsuletech/web-shell": "workspace:*",
+    "@capsuletech/web-style": "workspace:*",
     "@capsuletech/web-ui": "workspace:*"
   },
   "peerDependencies": {

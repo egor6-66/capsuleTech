@@ -96,15 +96,21 @@ DEPLOY_SERVER=http://<server>:8080 DEPLOY_TOKEN=<token> \
 | `POST` | `/api/deploy/:app` | Bearer | приём gzip-tar; base в `X-Capsule-Base` |
 | `GET`  | `/<base>/...`     | — | статика приложения + SPA-fallback |
 
-## ENV
+## ENV (`docker/preview-server/.env` — единая точка правды)
 
-| Переменная | Default | Назначение |
-|---|---|---|
-| `DEPLOY_TOKEN` | — | bearer-токен для deploy (без него deploy отключён) |
-| `PORT` | `8080` | HTTP-порт (API + лендинг + раздача) |
-| `DATA_DIR` | `/data` | где лежат распакованные сборки (volume) |
-| `PUBLIC_HOST` | из Host-хедера | host[:port] для построения ссылок |
-| `MAX_UPLOAD_BYTES` | `268435456` | лимит размера загрузки (256 MiB) |
+Файл читается обоими сторонами: `docker-compose.yml` (server-side) и
+`capsule deploy` (CLI, dev-side). Общая инва про сервер — здесь;
+точечные настройки приложения (`base`, `--root`) — в `apps/<name>/capsule.config.ts`.
+
+| Переменная | Default | Сторона | Назначение |
+|---|---|---|---|
+| `DEPLOY_SERVER` | — | CLI | полный URL preview-сервера (с портом); CLI грузит сюда |
+| `DEPLOY_PORT` | `8090` | server | host-side порт docker-mapping'а; должен совпадать с портом в `DEPLOY_SERVER` |
+| `DEPLOY_TOKEN` | — | оба | bearer-токен для deploy (без него POST → 503) |
+| `PUBLIC_HOST` | из Host-хедера | server | host[:port] для построения ссылок в ответе deploy / лендинге |
+| `PORT` (контейнер) | `8080` | server | HTTP-порт внутри контейнера (compose всегда мапит на 8080) |
+| `DATA_DIR` | `/data` | server | где лежат распакованные сборки (volume) |
+| `MAX_UPLOAD_BYTES` | `268435456` | server | лимит размера загрузки (256 MiB) |
 
 ## Траблшутинг
 

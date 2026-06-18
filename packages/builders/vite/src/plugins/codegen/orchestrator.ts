@@ -29,6 +29,7 @@ import { LAYER_INIT_ORDER } from '../capsuleRegistry';
 import { createAppConfigSubGenerator } from './generators/appConfig';
 import { createBarrelRegistrySubGenerator } from './generators/barrelRegistry';
 import { createBootstrapSubGenerator } from './generators/bootstrap';
+import { createDocsSourcesSubGenerator } from './generators/docs-sources';
 import { createEndpointsSubGenerator } from './generators/endpoints';
 import { createPackagesSubGenerator } from './generators/packages';
 import type { AppConfigShape, CodegenContext, SubGenerator } from './interfaces';
@@ -129,6 +130,7 @@ export interface IOrchestratorProps {
  *   20 — endpoints        (endpoints.ts + api.d.ts + defineEndpoint transform)
  *   30 — app-config       (app-config.gen.ts + app-tags.d.ts + defineAppConfig transform)
  *   40 — packages         (registry/packages.ts + packages.d.ts)
+ *   50 — docs-sources     (registry/docs-sources.ts — opt-in via capsule.app.ts docs: field)
  *   90 — bootstrap        (bootstrap.tsx — assembled last from contributions)
  *
  * Additional generators can be injected via opts.extraGenerators.
@@ -148,6 +150,7 @@ export const createCapsuleRegistryPlugin = (opts: IOrchestratorProps): Plugin =>
     createEndpointsSubGenerator(),
     appConfigSubGen,
     packagesSubGen,
+    createDocsSourcesSubGenerator(),
     bootstrapSubGen,
   ];
 

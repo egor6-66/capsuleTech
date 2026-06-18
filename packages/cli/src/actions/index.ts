@@ -3,6 +3,7 @@ export { createApp } from './create-app';
 export { createLayer } from './create-layer';
 export { createLib } from './create-lib';
 export { createWorkspace } from './create-workspace';
+export { deploy } from './deploy';
 export { devServer } from './dev-server';
 export {
   gitBranches,
@@ -20,5 +21,6 @@ export {
 } from './git';
 export { nxAffected, nxGraph, nxProjects, nxReleaseTags, nxReport, nxRun } from './nx';
 export { goToRoot, openProject } from './open-project';
+export { previewServer } from './preview-server';
 export { release, releasePlan } from './release';
 export { workspaceInfo } from './workspace-info';

@@ -22,6 +22,19 @@ export interface AppConfigShape {
   packages?: ReadonlyArray<string | { use: string; as?: string }>;
   access?: Record<string, readonly string[]>;
   auth?: { session?: { storage?: 'local' | 'memory'; key?: string } };
+  docs?: {
+    /**
+     * Include the root vault docs.json from @capsuletech/web-docs.
+     * Entry key: 'root'.
+     */
+    rootVault?: boolean;
+    /**
+     * Explicit list of package names whose ./docs.json export to include.
+     * e.g. ['@capsuletech/web-ui']
+     * Packages without a ./docs.json export are skipped with a warning.
+     */
+    packages?: ReadonlyArray<string>;
+  };
 }
 
 /** Babel AST returned from ctx.parse() */

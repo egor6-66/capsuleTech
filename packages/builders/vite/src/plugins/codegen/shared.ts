@@ -27,6 +27,7 @@ export {
   resolvePackageEntries,
   // --- Bootstrap ---
   generateBootstrap,
+  type BootstrapContribution,
   // --- Leaf helpers ---
   wrapperFileToLeaf,
   endpointFileToLeaf,

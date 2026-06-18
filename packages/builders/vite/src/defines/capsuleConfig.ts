@@ -15,6 +15,27 @@ import {
 import { DEFINE_FACTORIES, HOOK_IMPORTS, WRAPPER_NAMES } from '../plugins/constants';
 import { appConfig } from './appConfig';
 
+/**
+ * Параметры раздачи app на self-hosted preview-сервер (ADR 024). Читаются
+ * `@capsuletech/cli` командой `capsule deploy` — vite-builder сами поля НЕ
+ * использует. Семантические свойства app (постоянные для всех релизов); infra
+ * (server URL / bearer token) живёт в `docker/preview-server/.env`, а per-run
+ * override'ы — CLI-флаги `--no-build` / `--dist`. CLI-флаги имеют приоритет
+ * над конфигом.
+ */
+export interface IDeployConfig {
+  /**
+   * Раздать приложение под корнем `/` (testing-hub режим). Требует `base: '/'`
+   * (или отсутствие `base`). Эквивалент CLI-флага `--root`.
+   */
+  root?: boolean;
+  /**
+   * Собирать с моками (`CAPSULE_MOCKS=true`) — для demo-app, которым нужен
+   * preview без реального бэка. Эквивалент CLI-флага `--mocks`.
+   */
+  mocks?: boolean;
+}
+
 export interface ICapsuleConfig {
   devServerPort?: number;
   /**
@@ -30,6 +51,10 @@ export interface ICapsuleConfig {
    * НЕ использует — это data-только поле, прокидывается через capsule.config.ts.
    */
   desktop?: IDesktopConfig;
+  /**
+   * Опциональная секция для `capsule deploy` (ADR 024). См. {@link IDeployConfig}.
+   */
+  deploy?: IDeployConfig;
 }
 
 interface IProps {
@@ -48,12 +73,17 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
   const watchDir = join(root, 'src');
   const appConfigState = { aliasKeys: new Set<string>() };
 
-  // Вычисляем флаг моков:
-  //   CAPSULE_MOCKS='true'  capsule build → prod-сборка с моками (для preview-деплоя)
-  //   CAPSULE_MOCKS='false' capsule dev   → явное отключение моков в dev
-  //   (не задан)            capsule dev   → моки on  (текущее поведение)
-  //   (не задан)            capsule build → моки off
-  const mocks = process.env.CAPSULE_MOCKS != null ? process.env.CAPSULE_MOCKS === 'true' : isDev;
+  // Вычисляем флаг моков. Приоритет (убывающий):
+  //   1. env CAPSULE_MOCKS='true'/'false'  — явный override (CLI-флаг или CI)
+  //   2. config.deploy?.mocks             — статическое намерение из capsule.config.ts
+  //      (позволяет `capsule build && capsule preview` без ручного env)
+  //   3. isDev                            — дефолт: моки on в dev, off в build
+  const mocks =
+    process.env.CAPSULE_MOCKS != null
+      ? process.env.CAPSULE_MOCKS === 'true'
+      : config.deploy?.mocks != null
+        ? config.deploy.mocks
+        : isDev;
 
   const dedupe = [
     'solid-js',

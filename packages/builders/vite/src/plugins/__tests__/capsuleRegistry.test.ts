@@ -561,8 +561,8 @@ describe('generateBootstrap — structure', () => {
 describe('generateBootstrap — import order matches LAYER_INIT_ORDER', () => {
   it('packages (globals) imported before app-config (subsystems)', () => {
     const out = generateBootstrap();
-    const packagesIdx = out.indexOf("import './registry/packages'");
-    const appConfigIdx = out.indexOf("import './app-config.gen'");
+    const packagesIdx = out.indexOf("from './registry/packages'");
+    const appConfigIdx = out.indexOf("from './app-config.gen'");
     expect(packagesIdx).toBeGreaterThanOrEqual(0);
     expect(appConfigIdx).toBeGreaterThanOrEqual(0);
     expect(packagesIdx).toBeLessThan(appConfigIdx);
@@ -570,17 +570,17 @@ describe('generateBootstrap — import order matches LAYER_INIT_ORDER', () => {
 
   it('app-config (subsystems) imported before routeTree (render)', () => {
     const out = generateBootstrap();
-    const appConfigIdx = out.indexOf("import './app-config.gen'");
+    const appConfigIdx = out.indexOf("from './app-config.gen'");
     const routeTreeIdx = out.indexOf("import { routeTree } from './routes/routeTree.gen'");
     expect(appConfigIdx).toBeGreaterThanOrEqual(0);
     expect(routeTreeIdx).toBeGreaterThanOrEqual(0);
     expect(appConfigIdx).toBeLessThan(routeTreeIdx);
   });
 
-  it('packages uses bare side-effect import (no named binding)', () => {
+  it('packages uses wildcard side-effect import + void use (Rolldown tree-shake fix)', () => {
     const out = generateBootstrap();
-    expect(out).toMatch(/import '\.\/registry\/packages'/);
-    expect(out).not.toMatch(/import \{[^}]*\} from '\.\/registry\/packages'/);
+    expect(out).toMatch(/import \* as _\w+ from '\.\/registry\/packages';/);
+    expect(out).toMatch(/void _\w+;/);
   });
 
   it('routeTree uses named import', () => {
@@ -997,13 +997,13 @@ describe('LAYER_INIT_ORDER — packages entry', () => {
 
   it('bootstrap contains packages side-effect import', () => {
     const out = generateBootstrap();
-    expect(out).toContain("import './registry/packages';");
+    expect(out).toMatch(/import \* as _\w+ from '\.\/registry\/packages';/);
   });
 
   it('packages side-effect import appears before app-config in bootstrap', () => {
     const out = generateBootstrap();
-    const packagesIdx = out.indexOf("import './registry/packages'");
-    const appConfigIdx = out.indexOf("import './app-config.gen'");
+    const packagesIdx = out.indexOf("from './registry/packages'");
+    const appConfigIdx = out.indexOf("from './app-config.gen'");
     expect(packagesIdx).toBeLessThan(appConfigIdx);
   });
 });

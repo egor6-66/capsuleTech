@@ -11,6 +11,7 @@
       "default": "./dist/index.mjs"
     },
     "./package.json": "./package.json",
+    "./docs.json": "./dist/docs.json",
     "./icons": {
       "types": "./dist/components/icons/index.d.ts",
       "import": "./dist/components/icons/index.mjs",
@@ -371,6 +372,7 @@
     "solid-js": "^1.9.12"
   },
   "devDependencies": {
+    "@capsuletech/docs-builder": "workspace:*",
     "@capsuletech/lib-builder": "workspace:*",
     "@capsuletech/vite-builder": "workspace:*",
     "@capsuletech/web-router": "workspace:*",

@@ -1,7 +1,7 @@
 import { createStyle } from '@capsuletech/web-style';
 import { createVirtualizer } from '@tanstack/solid-virtual';
 import type { JSX } from 'solid-js';
-import { For, splitProps } from 'solid-js';
+import { For, mergeProps, splitProps } from 'solid-js';
 import type {
   IListBatchProps,
   IListProps,
@@ -34,10 +34,10 @@ export function List<T = unknown>(props: IListProps<T>) {
     );
 
     const { className, style } = createStyle(listVariants, {
-      variant: variants.variant,
-      orientation: local.min ? undefined : variants.orientation,
-      class: local.min ? undefined : local.class,
-      style: local.min ? undefined : local.style,
+      get variant() { return variants.variant; },
+      get orientation() { return local.min ? undefined : variants.orientation; },
+      get class() { return local.min ? undefined : local.class; },
+      get style() { return local.min ? undefined : local.style; },
     });
 
     const getItemProps = local.item.props ?? ((item: T) => item as Record<string, unknown>);
@@ -74,10 +74,10 @@ export function List<T = unknown>(props: IListProps<T>) {
     );
 
     const { className, style } = createStyle(listVariants, {
-      variant: variants.variant,
-      orientation: variants.orientation,
-      class: local.class,
-      style: local.style,
+      get variant() { return variants.variant; },
+      get orientation() { return variants.orientation; },
+      get class() { return local.class; },
+      get style() { return local.style; },
     });
 
     return (
@@ -95,10 +95,10 @@ export function List<T = unknown>(props: IListProps<T>) {
   );
 
   const { className, style } = createStyle(listVariants, {
-    variant: variants.variant,
-    orientation: variants.orientation,
-    class: local.class,
-    style: local.style,
+    get variant() { return variants.variant; },
+    get orientation() { return variants.orientation; },
+    get class() { return local.class; },
+    get style() { return local.style; },
   });
 
   return (
@@ -118,10 +118,10 @@ function VirtualList<T>(props: IVirtualListProps<T>) {
   );
 
   const { className, style } = createStyle(listVariants, {
-    variant: variants.variant,
-    orientation: variants.orientation,
-    class: local.class,
-    style: local.style,
+    get variant() { return variants.variant; },
+    get orientation() { return variants.orientation; },
+    get class() { return local.class; },
+    get style() { return local.style; },
   });
 
   const virtualizer = createVirtualizer({

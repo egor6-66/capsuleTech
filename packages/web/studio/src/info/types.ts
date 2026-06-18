@@ -31,4 +31,5 @@ export interface IManifestBlockProps {
 
 export interface IReadmeBlockProps {
   type: string;
+  manifest: IPrimitiveManifestEntry | undefined;
 }

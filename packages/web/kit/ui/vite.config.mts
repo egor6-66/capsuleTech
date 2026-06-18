@@ -10,6 +10,7 @@ import {
 } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { DocsExtractPlugin } from '@capsuletech/docs-builder';
 import { libConfig } from '@capsuletech/lib-builder';
 import type { Plugin } from 'vite';
 
@@ -194,5 +195,11 @@ export default libConfig({
     ...componentEntries,
   },
   name: 'CapsuleUi',
-  plugins: [remapPrimitivesDtsPlugin('dist')],
+  plugins: [
+    remapPrimitivesDtsPlugin('dist'),
+    // ADR 052 Phase 4 — first colocated docs producer.
+    // Scans `<packageRoot>/**/*.md` (per §8.9 exclusions) and emits
+    // `dist/docs.json` with slugs under `web-ui/<unit>` (`slugStrategy: 'package'`).
+    DocsExtractPlugin(),
+  ],
 });

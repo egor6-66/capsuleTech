@@ -21,18 +21,18 @@ const ShellNavigation = Shape(
       props: (it) => ({
         as: ui.Link,
         to: it.to,
-        variant: 'outline',
+        variant: 'ghost',
         // Активный link несёт aria-current='page' → подсветка аксентом,
         // pointer-events-none блокирует повторный клик/hover-flicker.
         class:
-          'aria-[current=page]:bg-accent aria-[current=page]:text-accent-foreground aria-[current=page]:font-semibold aria-[current=page]:pointer-events-none',
+          'aria-[current=page]:bg-primary aria-[current=page]:text-primary-foreground aria-[current=page]:font-semibold aria-[current=page]:pointer-events-none',
         children: it.label,
       }),
     },
     defaults: [
       // Web Studio — дом креатор-кита (редакторы/тулзы), роль designer.
       // Ведёт на дефолтный workspace (design); layout-роут /web-studio оборачивает его.
-      { label: 'Web Studio', to: '/workspace/web-studio/store', can: 'studio' },
+      { label: 'Web Studio', to: '/workspace/web-studio', can: 'studio' },
       // DevOps — плейсхолдер, роль devops.
       { label: 'DevOps', to: '/workspace/devops', can: 'devops' },
       // Docs — доступна ВСЕМ (без `can`).

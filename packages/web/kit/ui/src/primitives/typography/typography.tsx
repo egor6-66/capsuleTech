@@ -44,11 +44,11 @@ export const Typography = (props: ITypographyProps) => {
   );
 
   // 3. Создаем реактивные стили через CVA
-  const { className, style } = createStyle(typographyCva, {
-    ...variantProps,
-    class: local.class,
-    style: local.style,
+  const styleProps = mergeProps(variantProps, {
+    get class() { return local.class; },
+    get style() { return local.style; },
   });
+  const { className, style } = createStyle(typographyCva, styleProps);
 
   // 4. Объединяем все дополнительные классы (реактивный мемо)
   const finalClass = () =>

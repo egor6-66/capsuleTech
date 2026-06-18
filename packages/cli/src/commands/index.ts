@@ -2,6 +2,7 @@ import { CATEGORY_ICONS } from '../cli/tui/icons';
 import type { CliContext } from '../context';
 import { buildCommands } from './build';
 import { createCommands } from './create';
+import { deployCommands } from './deploy';
 import { desktopCommands } from './desktop';
 import { devCommands } from './dev';
 import { gitCommands } from './git';
@@ -18,6 +19,7 @@ export const staticCommands: Command[] = [
   ...createCommands,
   ...devCommands,
   ...buildCommands,
+  ...deployCommands,
   ...desktopCommands,
   ...workspaceCommands,
   ...gitCommands,
