@@ -10,6 +10,7 @@
  */
 export { collectContracts } from './collect';
 export { defineContract, isContract } from './define-contract';
+export { propsSchemaOf } from './derive';
 export { rule } from './rules';
 
 export type { ContractCarrier, ContractSource } from './collect';
