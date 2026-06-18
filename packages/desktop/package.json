@@ -36,9 +36,9 @@
   "peerDependencies": {},
   "devDependencies": {
     "@capsuletech/lib-builder": "workspace:*",
-    "@tauri-apps/api": "^2.11.0",
+    "@tauri-apps/api": "^2.11.1",
     "@tauri-apps/plugin-dialog": "^2.7.1",
-    "@types/node": "25.9.0",
-    "vitest": "~4.1.0"
+    "@types/node": "25.9.3",
+    "vitest": "~4.1.9"
   }
 }
