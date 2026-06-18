@@ -1,6 +1,6 @@
 import { cn, createStyle } from '@capsuletech/web-style';
 import type { ValidComponent } from 'solid-js';
-import { Show, mergeProps, splitProps } from 'solid-js';
+import { mergeProps, Show, splitProps } from 'solid-js';
 
 import { Slot } from '../slot';
 import { Spinner } from '../spinner';
@@ -32,8 +32,12 @@ export const Button = <T extends ValidComponent = 'button'>(props: IButtonProps<
   );
 
   const styleProps = mergeProps(variantProps, {
-    get class() { return cn(local.class, presentational.fullWidth && 'w-full'); },
-    get style() { return local.style; },
+    get class() {
+      return cn(local.class, presentational.fullWidth && 'w-full');
+    },
+    get style() {
+      return local.style;
+    },
   });
   const { className, style } = createStyle(buttonCva, styleProps);
 
@@ -47,7 +51,7 @@ export const Button = <T extends ValidComponent = 'button'>(props: IButtonProps<
 
   return (
     <Slot
-      as={(resolvedAs() as T)}
+      as={resolvedAs() as T}
       class={className()}
       style={style()}
       disabled={isDisabled()}

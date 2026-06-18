@@ -25,11 +25,11 @@ let _finishModeValue = false;
 const _defaultConfig: IFinishConfig = {
   topForegroundAlpha: 0.09,
   topStopPosition: 0,
-  midCardAlpha: 0.70,
+  midCardAlpha: 0.7,
   midStopPosition: 45,
   bottomPrimaryAlpha: 0.18,
   bottomStopPosition: 100,
-  hairlineAlpha: 0.40,
+  hairlineAlpha: 0.4,
   innerBorderAlpha: 0.06,
   contactShadow: '0 1px 2px rgb(0 0 0 / 0.4)',
   glowAlpha: 0.22,

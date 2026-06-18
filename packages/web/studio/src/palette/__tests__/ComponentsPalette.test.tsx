@@ -1,11 +1,10 @@
 /* @vitest-environment jsdom */
-import { getAllManifests } from '@capsuletech/web-ui/manifest';
+import { getAllManifests, getPresets, hasPresets } from '@capsuletech/web-ui/manifest';
 import { render } from 'solid-js/web';
 import { afterEach, describe, expect, it } from 'vitest';
 import { useSelectedPreset } from '../../selection';
 import { ComponentsPalette } from '../ComponentsPalette';
 import { groupManifests } from '../groups';
-import { getPresets, hasPresets } from '@capsuletech/web-ui/manifest';
 
 // Сбрасываем shared selection-singleton между тестами.
 afterEach(() => {
@@ -18,9 +17,7 @@ describe('ComponentsPalette — smoke', () => {
     expect(groups.primitives.length).toBeGreaterThan(0);
     expect(groups.compositions.length).toBeGreaterThan(0);
     expect(
-      [...groups.primitives, ...groups.compositions].every(
-        (m) => m.category !== 'composite',
-      ),
+      [...groups.primitives, ...groups.compositions].every((m) => m.category !== 'composite'),
     ).toBe(true);
   });
 

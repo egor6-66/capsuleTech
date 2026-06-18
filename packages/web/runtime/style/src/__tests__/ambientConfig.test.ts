@@ -67,9 +67,9 @@ describe('ambientConfig', () => {
     expect(DEFAULT_AMBIENT_CONFIG.glows).toHaveLength(3);
 
     const [g0, g1, g2] = DEFAULT_AMBIENT_CONFIG.glows;
-    expect(g0).toEqual({ x: 8,   y: -6,  size: 55, alpha: 0.28, tint: 'primary' });
+    expect(g0).toEqual({ x: 8, y: -6, size: 55, alpha: 0.28, tint: 'primary' });
     expect(g1).toEqual({ x: 112, y: 116, size: 50, alpha: 0.22, tint: 'primary' });
-    expect(g2).toEqual({ x: 96,  y: 4,   size: 42, alpha: 0.14, tint: 'accent'  });
+    expect(g2).toEqual({ x: 96, y: 4, size: 42, alpha: 0.14, tint: 'accent' });
   });
 
   // ── Initial state (no localStorage) ────────────────────────────────────────

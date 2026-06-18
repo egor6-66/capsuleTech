@@ -1,4 +1,11 @@
-import type { Contract, ContractBase, ContractSurface, Rule, RuleContext, Violation } from './types';
+import type {
+  Contract,
+  ContractBase,
+  ContractSurface,
+  Rule,
+  RuleContext,
+  Violation,
+} from './types';
 
 /** Непубличный бренд — `isContract` отличает контракт от произвольного объекта. */
 const CONTRACT_BRAND = Symbol.for('capsule.contract');

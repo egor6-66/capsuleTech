@@ -22,7 +22,6 @@ export { notFound, RouterProvider, redirect } from '@tanstack/solid-router';
 export { CapsuleOutlet } from './CapsuleOutlet';
 export { RouterContext, useRouter } from './context';
 export { DepthContext } from './depthContext';
-export { useRouteDepth } from './useRouteDepth';
 export type {
   IBeforeLoadContext,
   ICapsuleRouter,
@@ -32,3 +31,4 @@ export type {
   TanStackRouter,
 } from './service';
 export { createRouter } from './service';
+export { useRouteDepth } from './useRouteDepth';

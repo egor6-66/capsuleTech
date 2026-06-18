@@ -23,19 +23,28 @@
 // Mock @capsuletech/web-style so createFinish (used in Dropdown.Content / SubContent)
 // can resolve useFinishMode / useFinishConfig without a real browser signal.
 import { vi } from 'vitest';
+
 vi.mock('@capsuletech/web-style', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@capsuletech/web-style')>();
   return {
     ...actual,
     useFinishMode: () => () => false,
     useFinishConfig: () => () => ({
-      topForegroundAlpha: 0.09, topStopPosition: 0,
-      midCardAlpha: 0.70, midStopPosition: 45,
-      bottomPrimaryAlpha: 0.18, bottomStopPosition: 100,
-      hairlineAlpha: 0.40, innerBorderAlpha: 0.06,
+      topForegroundAlpha: 0.09,
+      topStopPosition: 0,
+      midCardAlpha: 0.7,
+      midStopPosition: 45,
+      bottomPrimaryAlpha: 0.18,
+      bottomStopPosition: 100,
+      hairlineAlpha: 0.4,
+      innerBorderAlpha: 0.06,
       contactShadow: '0 1px 2px rgb(0 0 0 / 0.4)',
-      glowAlpha: 0.22, glowSpread: '0 8px 24px',
-      innerOnly: false, centerGlowAlpha: 0, centerGlowSize: '60%', surfaceAlpha: 1,
+      glowAlpha: 0.22,
+      glowSpread: '0 8px 24px',
+      innerOnly: false,
+      centerGlowAlpha: 0,
+      centerGlowSize: '60%',
+      surfaceAlpha: 1,
     }),
   };
 });

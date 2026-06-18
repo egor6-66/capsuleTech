@@ -11,11 +11,8 @@
  *  - пустой реестр возвращает пустой объект.
  */
 
-import { describe, expect, it, beforeEach } from 'vitest';
-import {
-  registerPackageServices,
-  getPackageServices,
-} from '../package-services';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { getPackageServices, registerPackageServices } from '../package-services';
 
 // Между тестами нам нужен чистый реестр. Модуль хранит состояние в module-level
 // переменной. Простейший способ изолировать тесты — читать/писать через публичный
@@ -51,7 +48,7 @@ describe('registerPackageServices / getPackageServices — базовый сце
   });
 });
 
-describe('registerPackageServices — несколько namespace\'ов', () => {
+describe("registerPackageServices — несколько namespace'ов", () => {
   it('два namespace сосуществуют независимо', () => {
     const loginFn = () => 'login';
     const dropFn = () => 'drop';

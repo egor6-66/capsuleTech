@@ -119,6 +119,8 @@ function PreviewCardComponent<TData>(rawProps: IPreviewCardProps<TData>) {
  *     readonly __tpl?: PreviewCardTemplate;
  *   } = PreviewCardComponent;
  */
-export const PreviewCard: (<TRow>(props: IPreviewCardProps<TRow>) => import('solid-js').JSX.Element) & {
+export const PreviewCard: (<TRow>(
+  props: IPreviewCardProps<TRow>,
+) => import('solid-js').JSX.Element) & {
   readonly __tpl?: PreviewCardTemplate;
 } = PreviewCardComponent;

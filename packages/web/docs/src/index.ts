@@ -23,20 +23,6 @@
  * of truth for the registry shape.
  */
 
-export { DocPage, type IDocPageProps } from './DocPage';
-export { DocSection, type IDocSectionProps } from './DocSection';
-export { DocsProvider, type IDocsProviderProps, useContextRegistry } from './provider';
-export { renderMarkdown } from './render-markdown';
-export {
-  type DocsSourceLoader,
-  _resetDocsSources,
-  hasDocsSources,
-  loadDoc,
-  loadRegistry,
-  setDocsSources,
-} from './sources';
-export { useDoc, useLazyDoc } from './useDoc';
-
 export type {
   IAudience,
   IDocEntry,
@@ -45,3 +31,16 @@ export type {
   IDocStatus,
   IDocsRegistry,
 } from '@capsuletech/docs-builder';
+export { DocPage, type IDocPageProps } from './DocPage';
+export { DocSection, type IDocSectionProps } from './DocSection';
+export { DocsProvider, type IDocsProviderProps, useContextRegistry } from './provider';
+export { renderMarkdown } from './render-markdown';
+export {
+  _resetDocsSources,
+  type DocsSourceLoader,
+  hasDocsSources,
+  loadDoc,
+  loadRegistry,
+  setDocsSources,
+} from './sources';
+export { useDoc, useLazyDoc } from './useDoc';

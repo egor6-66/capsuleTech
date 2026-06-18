@@ -1,5 +1,5 @@
-export { formatDate, isValidDate, normalizeDate, parseDate } from './format';
 export { inRange, range, rangePresets } from './filters';
+export { formatDate, isValidDate, normalizeDate, parseDate } from './format';
 export { getDateLocale, setDateLocale } from './locale';
 export type {
   DateFormatName,

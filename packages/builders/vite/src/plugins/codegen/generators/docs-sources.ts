@@ -16,9 +16,9 @@
  * order: 50 (after packages=40, before bootstrap=90)
  */
 
+import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
-import { readFileSync } from 'node:fs';
 import type { CodegenContext, SubGenerator } from '../interfaces';
 
 /** Output path relative to .capsule/ */
@@ -83,9 +83,7 @@ export const checkDocsJsonExport = (pkg: string, appConfigDir: string): boolean 
         const segments = afterNm.split('/');
         const pkgDirParts = isScoped ? segments.slice(0, 2) : segments.slice(0, 1);
         pkgJsonPath =
-          mainEntry.slice(0, nmIdx + nmMarker.length) +
-          pkgDirParts.join('/') +
-          '/package.json';
+          mainEntry.slice(0, nmIdx + nmMarker.length) + pkgDirParts.join('/') + '/package.json';
       }
     } catch {
       // pass — pkgJsonPath remains null
@@ -93,9 +91,7 @@ export const checkDocsJsonExport = (pkg: string, appConfigDir: string): boolean 
   }
 
   if (!pkgJsonPath) {
-    console.warn(
-      `[capsule:docs-sources] '${pkg}' has no "./docs.json" export, skipping`,
-    );
+    console.warn(`[capsule:docs-sources] '${pkg}' has no "./docs.json" export, skipping`);
     return false;
   }
 
@@ -104,9 +100,7 @@ export const checkDocsJsonExport = (pkg: string, appConfigDir: string): boolean 
   try {
     pkgJson = JSON.parse(readFileSync(pkgJsonPath, 'utf-8')) as Record<string, unknown>;
   } catch {
-    console.warn(
-      `[capsule:docs-sources] could not read package.json for '${pkg}', skipping`,
-    );
+    console.warn(`[capsule:docs-sources] could not read package.json for '${pkg}', skipping`);
     return false;
   }
 
@@ -194,10 +188,7 @@ export const createDocsSourcesSubGenerator = (): SubGenerator => {
       const docs = cfg?.docs;
 
       // Cleanup: no docs config or nothing useful declared.
-      if (
-        !docs ||
-        (docs.rootVault !== true && (!docs.packages || docs.packages.length === 0))
-      ) {
+      if (!docs || (docs.rootVault !== true && (!docs.packages || docs.packages.length === 0))) {
         ctx.removeOut(outPath);
         _hasFile = false;
         return;

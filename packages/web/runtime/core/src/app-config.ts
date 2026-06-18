@@ -6,8 +6,6 @@
 // этот augmentation (TS2664) — у web-query нет dep на web-core, и paths/exports
 // его не вытягивали в context augmentation. Вернули inline-объявление здесь —
 // type-inversion приемлема, runtime-cycle она не создаёт.
-import type { ApiConfig, MwToolbox } from '@capsuletech/web-query';
-import type { ICreateRouterOpts } from '@capsuletech/web-router';
 
 // `intl?:` — import типов + runtime-функций из web-intl (headless singleton, нет
 // runtime-cycle; пакет в dependencies, поэтому статический import безопасен).
@@ -19,6 +17,8 @@ import {
   setLocale,
   setTenant,
 } from '@capsuletech/web-intl';
+import type { ApiConfig, MwToolbox } from '@capsuletech/web-query';
+import type { ICreateRouterOpts } from '@capsuletech/web-router';
 
 /**
  * Конфиг приложения — то, что разработчик пишет в `apps/<app>/capsule.app.ts`.
@@ -240,12 +240,9 @@ export const applyIntlConfig = (intl: IAppConfig['intl']): void => {
 
   if (intl.defaultLocale) setDefaultLocale(intl.defaultLocale);
 
-  const persistedLocale =
-    typeof window !== 'undefined' && localStorage.getItem('capsule-locale');
+  const persistedLocale = typeof window !== 'undefined' && localStorage.getItem('capsule-locale');
   if (intl.locale && !persistedLocale) setLocale(intl.locale);
 
-  const persistedTenant =
-    typeof window !== 'undefined' && localStorage.getItem('capsule-tenant');
+  const persistedTenant = typeof window !== 'undefined' && localStorage.getItem('capsule-tenant');
   if (intl.tenant && !persistedTenant) setTenant(intl.tenant);
 };
-

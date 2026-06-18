@@ -150,12 +150,7 @@ export const SizingProps: Story = {
       >
         <MockBlock label="h={16}" tone="c" />
       </Flex>
-      <Flex
-        w={64}
-        minH={12}
-        align="center"
-        class="border border-dashed border-white/20 rounded"
-      >
+      <Flex w={64} minH={12} align="center" class="border border-dashed border-white/20 rounded">
         <MockBlock label="w={64} minH={12}" />
       </Flex>
     </Flex>

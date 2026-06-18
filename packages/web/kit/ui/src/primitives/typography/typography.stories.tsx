@@ -161,13 +161,27 @@ export const SizeOverride: Story = {
   name: 'size — override variant font-size',
   render: () => (
     <div class="flex flex-col gap-2">
-      <Typography variant="p" size="xs">size="xs" — text-xs</Typography>
-      <Typography variant="p" size="sm">size="sm" — text-sm</Typography>
-      <Typography variant="p" size="base">size="base" — text-base</Typography>
-      <Typography variant="p" size="lg">size="lg" — text-lg</Typography>
-      <Typography variant="p" size="xl">size="xl" — text-xl</Typography>
-      <Typography variant="p" size="2xl">size="2xl" — text-2xl</Typography>
-      <Typography variant="h2" size="sm">h2 variant but size="sm" (override)</Typography>
+      <Typography variant="p" size="xs">
+        size="xs" — text-xs
+      </Typography>
+      <Typography variant="p" size="sm">
+        size="sm" — text-sm
+      </Typography>
+      <Typography variant="p" size="base">
+        size="base" — text-base
+      </Typography>
+      <Typography variant="p" size="lg">
+        size="lg" — text-lg
+      </Typography>
+      <Typography variant="p" size="xl">
+        size="xl" — text-xl
+      </Typography>
+      <Typography variant="p" size="2xl">
+        size="2xl" — text-2xl
+      </Typography>
+      <Typography variant="h2" size="sm">
+        h2 variant but size="sm" (override)
+      </Typography>
     </div>
   ),
 };

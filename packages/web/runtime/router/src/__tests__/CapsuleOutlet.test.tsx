@@ -86,9 +86,7 @@ describe('CapsuleOutlet — DOM + depth propagation', () => {
     );
     const wrappers = container.querySelectorAll('.vt-route-content');
     expect(wrappers.length).toBe(2);
-    const names = Array.from(wrappers).map(
-      (el) => (el as HTMLElement).style.viewTransitionName,
-    );
+    const names = Array.from(wrappers).map((el) => (el as HTMLElement).style.viewTransitionName);
     expect(names).toContain('capsule-content-0'); // первый: parent -1 + 1
     expect(names).toContain('capsule-content-1'); // второй: parent 0 + 1
     dispose();

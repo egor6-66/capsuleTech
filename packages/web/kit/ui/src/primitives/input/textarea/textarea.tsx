@@ -1,5 +1,5 @@
 import { createStyle } from '@capsuletech/web-style';
-import { type JSX, createMemo, createSignal, mergeProps, splitProps } from 'solid-js';
+import { createMemo, createSignal, type JSX, mergeProps, splitProps } from 'solid-js';
 
 import type { ITextareaProps } from './interfaces';
 import { textareaCva } from './variants';
@@ -28,8 +28,12 @@ export const Textarea = (props: ITextareaProps) => {
   );
 
   const styleProps = mergeProps(variants, {
-    get class() { return local.class; },
-    get style() { return local.style; },
+    get class() {
+      return local.class;
+    },
+    get style() {
+      return local.style;
+    },
   });
   const { className, style } = createStyle(textareaCva, styleProps);
 

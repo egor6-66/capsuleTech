@@ -1,5 +1,5 @@
-import { createMemo } from 'solid-js';
 import { type IFinishConfig, useFinishConfig, useFinishMode } from '@capsuletech/web-style';
+import { createMemo } from 'solid-js';
 
 import type { IFinishContract } from './interfaces';
 
@@ -63,16 +63,17 @@ export function createFinish(
 
     // ── ON: approved finish effect ────────────────────────────────────────
 
-    const topPct       = pct(cfg.topForegroundAlpha);
-    const hairPct      = pct(cfg.hairlineAlpha);
-    const borderPct    = pct(cfg.innerBorderAlpha);
-    const glowPct      = pct(cfg.glowAlpha);
+    const topPct = pct(cfg.topForegroundAlpha);
+    const hairPct = pct(cfg.hairlineAlpha);
+    const borderPct = pct(cfg.innerBorderAlpha);
+    const glowPct = pct(cfg.glowAlpha);
     const innerGlowPct = pct(cfg.innerGlowAlpha);
 
     // Three-stop gradient — surfaceAlpha controls card-colour opacity in each stop.
-    const cardBase = cfg.surfaceAlpha === 1
-      ? 'var(--card)'
-      : `color-mix(in srgb, var(--card) ${pct(cfg.surfaceAlpha)}%, transparent)`;
+    const cardBase =
+      cfg.surfaceAlpha === 1
+        ? 'var(--card)'
+        : `color-mix(in srgb, var(--card) ${pct(cfg.surfaceAlpha)}%, transparent)`;
 
     const topStop = `color-mix(in srgb, var(--foreground) ${topPct}%, ${cardBase})`;
     const midStop = `color-mix(in srgb, ${cardBase} ${pct(cfg.midCardAlpha)}%, transparent)`;
@@ -102,7 +103,7 @@ export function createFinish(
     //   2. inset inner border — full 1 px perimeter contour
     //   3. contact shadow — tight dark drop   (omitted when innerOnly)
     //   4. depth glow — soft coloured ambient (omitted when innerOnly)
-    const hairline    = `inset 0 1px 0 color-mix(in srgb, var(--foreground) ${hairPct}%, transparent)`;
+    const hairline = `inset 0 1px 0 color-mix(in srgb, var(--foreground) ${hairPct}%, transparent)`;
     const innerBorder = `inset 0 0 0 1px color-mix(in srgb, var(--foreground) ${borderPct}%, transparent)`;
 
     const shadowLayers: string[] = [hairline, innerBorder];

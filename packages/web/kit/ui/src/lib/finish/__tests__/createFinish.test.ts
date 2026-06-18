@@ -29,11 +29,11 @@ let _finishModeValue = false;
 let _finishConfigValue: IFinishConfig = {
   topForegroundAlpha: 0.09,
   topStopPosition: 0,
-  midCardAlpha: 0.70,
+  midCardAlpha: 0.7,
   midStopPosition: 45,
   bottomPrimaryAlpha: 0.18,
   bottomStopPosition: 100,
-  hairlineAlpha: 0.40,
+  hairlineAlpha: 0.4,
   innerBorderAlpha: 0.06,
   contactShadow: '0 1px 2px rgb(0 0 0 / 0.4)',
   glowAlpha: 0.22,
@@ -73,11 +73,11 @@ function resetConfig(): void {
   _finishConfigValue = {
     topForegroundAlpha: 0.09,
     topStopPosition: 0,
-    midCardAlpha: 0.70,
+    midCardAlpha: 0.7,
     midStopPosition: 45,
     bottomPrimaryAlpha: 0.18,
     bottomStopPosition: 100,
-    hairlineAlpha: 0.40,
+    hairlineAlpha: 0.4,
     innerBorderAlpha: 0.06,
     contactShadow: '0 1px 2px rgb(0 0 0 / 0.4)',
     glowAlpha: 0.22,
@@ -252,7 +252,7 @@ describe('createFinish — reads from useFinishConfig()', () => {
   it('reflects custom hairlineAlpha from store', () => {
     createRoot((dispose) => {
       setFinishMode(true);
-      setFinishConfig({ hairlineAlpha: 0.60 });
+      setFinishConfig({ hairlineAlpha: 0.6 });
       const finish = createFinish();
       expect(finish.surfaceStyle()['box-shadow']).toContain('60%');
       dispose();
@@ -277,7 +277,7 @@ describe('createFinish — per-instance config override', () => {
   it('respects custom bottomPrimaryAlpha override', () => {
     createRoot((dispose) => {
       setFinishMode(true);
-      const finish = createFinish({ bottomPrimaryAlpha: 0.30 });
+      const finish = createFinish({ bottomPrimaryAlpha: 0.3 });
       expect(finish.surfaceStyle().background).toContain('30%');
       dispose();
     });
@@ -286,7 +286,7 @@ describe('createFinish — per-instance config override', () => {
   it('respects custom midCardAlpha override', () => {
     createRoot((dispose) => {
       setFinishMode(true);
-      const finish = createFinish({ midCardAlpha: 0.50 });
+      const finish = createFinish({ midCardAlpha: 0.5 });
       expect(finish.surfaceStyle().background).toContain('50%');
       dispose();
     });
@@ -295,7 +295,7 @@ describe('createFinish — per-instance config override', () => {
   it('respects custom hairlineAlpha override', () => {
     createRoot((dispose) => {
       setFinishMode(true);
-      const finish = createFinish({ hairlineAlpha: 0.60 });
+      const finish = createFinish({ hairlineAlpha: 0.6 });
       expect(finish.surfaceStyle()['box-shadow']).toContain('60%');
       dispose();
     });
@@ -340,7 +340,11 @@ describe('createFinish — per-instance config override', () => {
   it('respects custom stop positions override', () => {
     createRoot((dispose) => {
       setFinishMode(true);
-      const finish = createFinish({ topStopPosition: 5, midStopPosition: 50, bottomStopPosition: 95 });
+      const finish = createFinish({
+        topStopPosition: 5,
+        midStopPosition: 50,
+        bottomStopPosition: 95,
+      });
       const bg = finish.surfaceStyle().background as string;
       expect(bg).toContain('5%');
       expect(bg).toContain('50%');
@@ -361,7 +365,7 @@ describe('createFinish — innerOnly knob', () => {
       const finish = createFinish({ innerOnly: false });
       const shadow = finish.surfaceStyle()['box-shadow'] as string;
       // outer layers must be present
-      expect(shadow).toContain('0 1px 2px');      // contactShadow
+      expect(shadow).toContain('0 1px 2px'); // contactShadow
       expect(shadow).toContain('--primary'); // glow
       dispose();
     });
@@ -376,8 +380,8 @@ describe('createFinish — innerOnly knob', () => {
       expect(shadow).toContain('inset 0 1px 0');
       expect(shadow).toContain('inset 0 0 0 1px');
       // outer layers absent
-      expect(shadow).not.toContain('0 1px 2px rgb(0 0 0');  // contactShadow gone
-      expect(shadow).not.toContain('8px 24px');              // glow gone
+      expect(shadow).not.toContain('0 1px 2px rgb(0 0 0'); // contactShadow gone
+      expect(shadow).not.toContain('8px 24px'); // glow gone
       dispose();
     });
   });

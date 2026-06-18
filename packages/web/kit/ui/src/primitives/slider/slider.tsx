@@ -57,8 +57,7 @@ export const Slider = (props: ISliderProps) => {
   const stepVal = () => local.step ?? 0.01;
 
   // Kobalte Slider works with number[], so we wrap/unwrap single values.
-  const kobalteValue = () =>
-    local.value !== undefined ? [local.value] : undefined;
+  const kobalteValue = () => (local.value !== undefined ? [local.value] : undefined);
 
   const kobalteDefault = () =>
     local.defaultValue !== undefined ? [local.defaultValue] : [minVal()];
@@ -87,9 +86,7 @@ export const Slider = (props: ISliderProps) => {
     >
       <Show when={local.label}>
         <div class={sliderLabelRowCva()}>
-          <KobalteSlider.Label class="text-sm text-foreground">
-            {local.label}
-          </KobalteSlider.Label>
+          <KobalteSlider.Label class="text-sm text-foreground">{local.label}</KobalteSlider.Label>
           <Show when={local.showValue}>
             <KobalteSlider.ValueLabel class={sliderValueCva()} />
           </Show>

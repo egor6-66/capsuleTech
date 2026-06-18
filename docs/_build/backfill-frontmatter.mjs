@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { execFileSync } from 'node:child_process';
 /**
  * Frontmatter backfill (ADR 048 E2 cleanup).
  *
@@ -10,8 +11,7 @@
  * Idempotent. Run from repo root: `node docs/_build/backfill-frontmatter.mjs`
  */
 import { readdir, readFile, writeFile } from 'node:fs/promises';
-import { execFileSync } from 'node:child_process';
-import { join, relative, resolve, dirname } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -56,8 +56,7 @@ const splitFrontmatter = (src) => {
   };
 };
 
-const hasField = (fmLines, key) =>
-  fmLines.some((ln) => new RegExp(`^${key}\\s*:`).test(ln));
+const hasField = (fmLines, key) => fmLines.some((ln) => new RegExp(`^${key}\\s*:`).test(ln));
 
 const stats = { scanned: 0, backfilled: 0, skippedNoFm: 0, skippedHasField: 0 };
 

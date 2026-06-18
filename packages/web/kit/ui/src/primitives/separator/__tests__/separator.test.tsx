@@ -10,9 +10,9 @@
  *   - class prop merges and updates reactively.
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Separator } from '../separator';
 
 let container: HTMLDivElement;
@@ -55,10 +55,7 @@ describe('Separator — smoke', () => {
 describe('Separator — reactivity contract', () => {
   it('updates CVA class when orientation signal changes', () => {
     const [orientation, setOrientation] = createSignal<'horizontal' | 'vertical'>('horizontal');
-    cleanup = render(
-      () => <Separator orientation={orientation()} />,
-      container,
-    );
+    cleanup = render(() => <Separator orientation={orientation()} />, container);
     const el = container.firstElementChild as HTMLElement;
     expect(el?.className).toContain('h-px');
 

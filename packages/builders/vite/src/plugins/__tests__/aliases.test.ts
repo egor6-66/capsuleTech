@@ -169,7 +169,9 @@ describe('buildWorkspaceSrcAliases — subpath alias (tsconfig entry present)', 
     const aliases = buildWorkspaceSrcAliases(BASE_PATHS, WORKSPACE_ROOT);
     const matched = resolveAlias(aliases, '@capsuletech/web-ui/icons');
     expect(matched).not.toBeNull();
-    expect(matched!.replacement).toBe(resolve(WORKSPACE_ROOT, 'packages/web/kit/ui/src/icons/index.ts'));
+    expect(matched!.replacement).toBe(
+      resolve(WORKSPACE_ROOT, 'packages/web/kit/ui/src/icons/index.ts'),
+    );
   });
 
   it('subpath alias does NOT match deeper path (icons/foo)', () => {

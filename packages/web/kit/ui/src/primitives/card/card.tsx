@@ -2,15 +2,8 @@ import { cn, createStyle } from '@capsuletech/web-style';
 import { createMemo, mergeProps, splitProps } from 'solid-js';
 
 import { createFinish } from '../../lib/finish';
-
-import {
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from './parts';
 import type { ICardProps } from './interfaces';
+import { CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './parts';
 import { cardCva } from './variants';
 
 // Static elevation table — Tailwind purge sees all shadow-* classes.
@@ -38,8 +31,12 @@ const CardImpl = (props: ICardProps) => {
     sizing.elevation !== undefined ? ELEVATION[sizing.elevation] : undefined;
 
   const styleProps = mergeProps(variants, {
-    get class() { return cn(local.class, elevationClass()); },
-    get style() { return local.style; },
+    get class() {
+      return cn(local.class, elevationClass());
+    },
+    get style() {
+      return local.style;
+    },
   });
   const { className, style } = createStyle(cardCva, styleProps);
 
@@ -62,13 +59,7 @@ const CardImpl = (props: ICardProps) => {
     ...finish.surfaceStyle(),
   }));
 
-  return (
-    <div
-      class={className()}
-      style={mergedStyle()}
-      {...(others as object)}
-    />
-  );
+  return <div class={className()} style={mergedStyle()} {...(others as object)} />;
 };
 
 export const Card = Object.assign(CardImpl, {

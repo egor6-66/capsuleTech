@@ -180,17 +180,15 @@ export interface SubGenerator {
    * Called during flush by the BootstrapSubGenerator.
    * Return null if this sub-generator has no bootstrap contribution.
    */
-  bootstrap?(ctx: CodegenContext): { phase: 'globals' | 'subsystems' | 'render'; importPath: string } | null;
+  bootstrap?(
+    ctx: CodegenContext,
+  ): { phase: 'globals' | 'subsystems' | 'render'; importPath: string } | null;
 
   /**
    * Optional: Vite transform hook contribution.
    * Called by the base plugin's transform hook — first non-null result wins.
    */
-  transform?(
-    code: string,
-    id: string,
-    ctx: CodegenContext,
-  ): { code: string; map: null } | null;
+  transform?(code: string, id: string, ctx: CodegenContext): { code: string; map: null } | null;
 
   /**
    * Optional: Vite config hook contribution.

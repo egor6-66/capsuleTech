@@ -160,9 +160,7 @@ type _TopLevelPayloadCheck = Expect<
   Equal<_TopLevelOnLoginPayload, { user: string; token: string } | undefined>
 >;
 // top-level и per-state payload-тип совпадают (Equal)
-type _TopVsStatePayloadConsistent = Expect<
-  Equal<_TopLevelOnLoginPayload, _GuestOnLoginPayload>
->;
+type _TopVsStatePayloadConsistent = Expect<Equal<_TopLevelOnLoginPayload, _GuestOnLoginPayload>>;
 
 // d) Backward-compat: open форма — states[string] по-прежнему IStateHandlers с index-sig
 type OpenAuthSchema = IDefineStateSchema<IAuthCtx>;

@@ -29,10 +29,10 @@ import type { IBridge, IMachineContext } from '@capsuletech/web-state';
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Context } from '../../engine/ctx';
+import type { IPageWrapper, IWidgetRenderer, IWidgetWrapper } from '../interfaces';
 import { PageWrapper } from '../page';
 import { ViewWrapper } from '../view';
 import { WidgetWrapper } from '../widget';
-import type { IWidgetRenderer, IWidgetWrapper, IPageWrapper } from '../interfaces';
 
 // ---------------------------------------------------------------------------
 // Minimal fake IBridge — mirrors the shape used by ui-proxy tests (mkCtx).
@@ -375,24 +375,20 @@ type _DefaultStoreCheck = Expect<Equal<_DefaultWidgetRendererStore, IBridge | un
 // TS infers S from annotation, F defaults to DefaultFeatureSource.
 // Compile-time: check that IWidgetWrapper accepts a renderer with StoreOf-typed store
 // (S is inferred from component arg, F remains default).
-const _inlineAnnotationWidget = (WidgetWrapper as IWidgetWrapper)(
-  (_ui, store: FakeStoreOf) => {
-    const data: FakeCtx = store.ctx.data;
-    void data;
-    return null as any;
-  },
-);
+const _inlineAnnotationWidget = (WidgetWrapper as IWidgetWrapper)((_ui, store: FakeStoreOf) => {
+  const data: FakeCtx = store.ctx.data;
+  void data;
+  return null as any;
+});
 void _inlineAnnotationWidget;
 
 // --- Page<F> explicit source generic --- (same pattern)
-const _pageRendererWithF: import('../interfaces').IPageRenderer<Record<string, any>, FakeStoreOf> = (
-  _ui,
-  store,
-) => {
-  const ctx: IMachineContext<FakeCtx> = store.ctx;
-  void ctx;
-  return null as any;
-};
+const _pageRendererWithF: import('../interfaces').IPageRenderer<Record<string, any>, FakeStoreOf> =
+  (_ui, store) => {
+    const ctx: IMachineContext<FakeCtx> = store.ctx;
+    void ctx;
+    return null as any;
+  };
 const _wrappedPage = (PageWrapper as IPageWrapper)<FakeFeatureType>(_pageRendererWithF);
 void _wrappedPage;
 
@@ -401,13 +397,11 @@ type _DefaultPageRendererStore = Parameters<import('../interfaces').IPageRendere
 type _DefaultPageStoreCheck = Expect<Equal<_DefaultPageRendererStore, IBridge | undefined>>;
 
 // Inline-annotation style for Page
-const _inlineAnnotationPage = (PageWrapper as IPageWrapper)(
-  (_ui, store: FakeStoreOf) => {
-    const data: FakeCtx = store.ctx.data;
-    void data;
-    return null as any;
-  },
-);
+const _inlineAnnotationPage = (PageWrapper as IPageWrapper)((_ui, store: FakeStoreOf) => {
+  const data: FakeCtx = store.ctx.data;
+  void data;
+  return null as any;
+});
 void _inlineAnnotationPage;
 
 describe('Widget/Page store generic — type-level contracts', () => {

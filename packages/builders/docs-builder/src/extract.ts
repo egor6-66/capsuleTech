@@ -17,7 +17,13 @@ import {
   validateMeta,
 } from './parser.js';
 import { slugFromPath } from './slug.js';
-import type { IDocEntry, IDocMeta, IExtractDocsOptions, IExtractDocsResult, IDocsRegistry } from './types.js';
+import type {
+  IDocEntry,
+  IDocMeta,
+  IDocsRegistry,
+  IExtractDocsOptions,
+  IExtractDocsResult,
+} from './types.js';
 
 // ─── walk ─────────────────────────────────────────────────────────────────────
 
@@ -60,11 +66,7 @@ const processFile = async (
   const lines = src.split(/\r?\n/);
   const file = relative(root, absPath).replace(/\\/g, '/');
 
-  const {
-    meta: rawMeta,
-    bodyStartLine,
-    warnings: fmWarnings,
-  } = parseFrontmatter(lines, file);
+  const { meta: rawMeta, bodyStartLine, warnings: fmWarnings } = parseFrontmatter(lines, file);
   warnings.push(...fmWarnings);
 
   const slug = slugFromPath(absPath, root, opts.strategy, opts.pkgName);
@@ -77,10 +79,10 @@ const processFile = async (
 
   // Build computed meta
   const headings = lines.filter((l) => l.match(/^#\s+(.+)$/));
-  const h1Match = lines.find((l) => l.match(/^#\s+(.+?)(\s*\{#[^\}]+\})?\s*$/));
+  const h1Match = lines.find((l) => l.match(/^#\s+(.+?)(\s*\{#[^}]+\})?\s*$/));
   let titleFallback: string | undefined;
   if (h1Match) {
-    const m = h1Match.match(/^#\s+(.+?)(\s*\{#[^\}]+\})?\s*$/);
+    const m = h1Match.match(/^#\s+(.+?)(\s*\{#[^}]+\})?\s*$/);
     if (m) titleFallback = m[1].trim();
   }
 
@@ -94,12 +96,12 @@ const processFile = async (
     meta.title = titleFallback;
   }
 
-  const { sections, warnings: secWarnings, errors: secErrors, docWikilinks } = parseSections(
-    lines,
-    bodyStartLine,
-    file,
-    docAudience,
-  );
+  const {
+    sections,
+    warnings: secWarnings,
+    errors: secErrors,
+    docWikilinks,
+  } = parseSections(lines, bodyStartLine, file, docAudience);
   warnings.push(...secWarnings);
   errors.push(...secErrors);
 
@@ -114,9 +116,7 @@ const processFile = async (
 
 // ─── wikilink resolution ──────────────────────────────────────────────────────
 
-const resolveWikilinks = (
-  registry: IDocsRegistry,
-): string[] => {
+const resolveWikilinks = (registry: IDocsRegistry): string[] => {
   const warnings: string[] = [];
   const knownSlugs = new Set(Object.keys(registry));
 
@@ -141,9 +141,7 @@ const resolveWikilinks = (
  *
  * Caller decides what to do with errors (throw / log / ignore).
  */
-export const extractDocs = async (
-  opts: IExtractDocsOptions,
-): Promise<IExtractDocsResult> => {
+export const extractDocs = async (opts: IExtractDocsOptions): Promise<IExtractDocsResult> => {
   const warnings: string[] = [];
   const errors: string[] = [];
   const registry: IDocsRegistry = {};

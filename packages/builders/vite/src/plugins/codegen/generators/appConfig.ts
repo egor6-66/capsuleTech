@@ -17,9 +17,9 @@
 
 import { resolve } from 'node:path';
 import {
+  type AppConfigRuntimeOpts,
   generateAppConfigRuntime,
   renderAppTagsTypes,
-  type AppConfigRuntimeOpts,
 } from '../../capsuleRegistry';
 import type { AppConfigShape, CodegenContext, SubGenerator } from '../interfaces';
 
@@ -56,9 +56,7 @@ export const createAppConfigSubGenerator = (opts?: {
 
       if (result.status === 'error') {
         // Transient load error — keep existing output, log the error.
-        ctx.logger?.error(
-          `[capsule:app-config] failed to load appConfig: ${String(result.error)}`,
-        );
+        ctx.logger?.error(`[capsule:app-config] failed to load appConfig: ${String(result.error)}`);
         return;
       }
 

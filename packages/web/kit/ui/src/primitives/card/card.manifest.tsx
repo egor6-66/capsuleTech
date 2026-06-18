@@ -1,12 +1,5 @@
 import { z } from '@capsuletech/shared-zod';
-import {
-  AlignJustify,
-  AlignLeft,
-  CreditCard,
-  Heading1,
-  PanelBottom,
-  Type,
-} from '../../icons';
+import { AlignJustify, AlignLeft, CreditCard, Heading1, PanelBottom, Type } from '../../icons';
 import type { IPrimitiveManifestEntry } from '../../manifest/types';
 import { CardContract } from './card.contract';
 

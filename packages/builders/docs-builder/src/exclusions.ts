@@ -4,11 +4,7 @@
  */
 
 /** File names (exact match on basename) that are always skipped. */
-export const DEFAULT_EXCLUDE_FILES: string[] = [
-  'OWNERSHIP.md',
-  'CHANGELOG.md',
-  'LICENSE.md',
-];
+export const DEFAULT_EXCLUDE_FILES: string[] = ['OWNERSHIP.md', 'CHANGELOG.md', 'LICENSE.md'];
 
 /** File name suffix patterns that are always skipped (*.draft.md). */
 export const DEFAULT_EXCLUDE_SUFFIXES: string[] = ['.draft.md'];
@@ -47,9 +43,10 @@ export const shouldExcludeFile = (
   extraFiles: string[] = [],
   extraSuffixes: string[] = [],
 ): boolean => {
-  const name = filePath.includes('/') || filePath.includes('\\')
-    ? filePath.replace(/\\/g, '/').split('/').pop()!
-    : filePath;
+  const name =
+    filePath.includes('/') || filePath.includes('\\')
+      ? filePath.replace(/\\/g, '/').split('/').pop()!
+      : filePath;
 
   const allFiles = [...DEFAULT_EXCLUDE_FILES, ...extraFiles];
   if (allFiles.includes(name)) return true;

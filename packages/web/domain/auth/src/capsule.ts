@@ -24,8 +24,8 @@
  * чисто манифестом. Для спайка (ADR 039 §spike) — приемлемо.
  */
 
-import { defineCapsuleModule } from '@capsuletech/web-core/module';
 import { registerPackageServices } from '@capsuletech/web-core';
+import { defineCapsuleModule } from '@capsuletech/web-core/module';
 import { AuthLogin } from './controllers/index';
 import { defaultAuthSession, useAuth } from './session/index';
 import type { IAuthUser } from './types';

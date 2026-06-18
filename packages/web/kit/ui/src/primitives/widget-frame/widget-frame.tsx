@@ -3,7 +3,11 @@ import { Show, splitProps } from 'solid-js';
 
 import { createFinish } from '../../lib/finish';
 
-import type { IWidgetFrameGripProps, IWidgetFrameHandleProps, IWidgetFrameProps } from './interfaces';
+import type {
+  IWidgetFrameGripProps,
+  IWidgetFrameHandleProps,
+  IWidgetFrameProps,
+} from './interfaces';
 import { getClipPath, gripCornerClasses } from './variants';
 
 // ---------------------------------------------------------------------------
@@ -119,9 +123,7 @@ export const WidgetFrame = (props: IWidgetFrameProps) => {
 
   // Glow filter — only when active
   const glowFilter = () =>
-    local.active
-      ? 'drop-shadow(0 0 6px color-mix(in srgb, var(--ring) 40%, transparent))'
-      : 'none';
+    local.active ? 'drop-shadow(0 0 6px color-mix(in srgb, var(--ring) 40%, transparent))' : 'none';
 
   // Outer rim layer style (clipped, background = rim color)
   const rimLayerStyle = () => ({

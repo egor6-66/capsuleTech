@@ -20,6 +20,7 @@
  *  - `DISCOVERED_THEMES` (eager-glob по themes/).
  */
 
+export type { IAmbientConfig, IAmbientGlow } from './ambientConfig';
 export {
   addAmbientGlow,
   applyAmbient,
@@ -29,19 +30,18 @@ export {
   setAmbientGlow,
   useAmbientConfig,
 } from './ambientConfig';
-export type { IAmbientConfig, IAmbientGlow } from './ambientConfig';
 export {
   setDndMode,
   toggleDndMode,
   useDndMode,
 } from './dndMode';
+export type { IFinishConfig } from './finishConfig';
 export {
   DEFAULT_FINISH_CONFIG,
   resetFinishConfig,
   setFinishConfig,
   useFinishConfig,
 } from './finishConfig';
-export type { IFinishConfig } from './finishConfig';
 export {
   setFinishMode,
   toggleFinishMode,

@@ -6,7 +6,7 @@
  * Usage: node docs/_build/inventory-missing-meta.mjs
  */
 import { readdir, readFile, stat } from 'node:fs/promises';
-import { join, relative, resolve, dirname } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -50,9 +50,14 @@ for (const f of files) {
   groups[top] = (groups[top] || 0) + 1;
   const src = await readFile(f, 'utf8');
   const meta = parseFm(src);
-  if (!meta) { noFm.push(rel); continue; }
+  if (!meta) {
+    noFm.push(rel);
+    continue;
+  }
   const hasStatus = meta.status && meta.status !== '';
-  const hasLu = (meta.last_updated && meta.last_updated !== '') || (meta['last-updated'] && meta['last-updated'] !== '');
+  const hasLu =
+    (meta.last_updated && meta.last_updated !== '') ||
+    (meta['last-updated'] && meta['last-updated'] !== '');
   const hasTags = meta.tags !== undefined && meta.tags !== '';
   if (!hasStatus) noStatus.push(rel);
   if (!hasLu) noLastUpdated.push(rel);

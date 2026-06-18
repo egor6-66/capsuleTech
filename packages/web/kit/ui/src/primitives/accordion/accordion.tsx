@@ -55,13 +55,7 @@ const AccordionImpl = (props: IAccordionProps) => {
   const rootStyle = (): string | undefined =>
     local.fluid !== undefined ? `flex: 1 1 ${local.fluid}px` : undefined;
 
-  return (
-    <KobalteAccordion
-      class={rootClass()}
-      style={rootStyle()}
-      {...(others as any)}
-    />
-  );
+  return <KobalteAccordion class={rootClass()} style={rootStyle()} {...(others as any)} />;
 };
 
 /**
@@ -70,9 +64,7 @@ const AccordionImpl = (props: IAccordionProps) => {
  */
 const Item = (props: IAccordionItemProps) => {
   const [local, others] = splitProps(props, ['class']);
-  return (
-    <KobalteAccordion.Item class={cn(accordionItemCva(), local.class)} {...(others as any)} />
-  );
+  return <KobalteAccordion.Item class={cn(accordionItemCva(), local.class)} {...(others as any)} />;
 };
 
 /**
@@ -91,10 +83,7 @@ const Trigger = (props: IAccordionTriggerProps) => {
   const [local, others] = splitProps(props, ['class', 'children']);
   return (
     <KobalteAccordion.Header>
-      <KobalteAccordion.Trigger
-        class={cn(accordionTriggerCva(), local.class)}
-        {...(others as any)}
-      >
+      <KobalteAccordion.Trigger class={cn(accordionTriggerCva(), local.class)} {...(others as any)}>
         <span>{local.children}</span>
         <ChevronDown
           size={16}
@@ -117,10 +106,7 @@ const Trigger = (props: IAccordionTriggerProps) => {
 const Content = (props: IAccordionContentProps) => {
   const [local, others] = splitProps(props, ['class', 'children']);
   return (
-    <KobalteAccordion.Content
-      class={cn(accordionContentCva(), local.class)}
-      {...(others as any)}
-    >
+    <KobalteAccordion.Content class={cn(accordionContentCva(), local.class)} {...(others as any)}>
       {/* Inner wrapper ensures min-h:0 so grid can fully collapse */}
       <div class={accordionContentInnerClass}>{local.children}</div>
     </KobalteAccordion.Content>
@@ -146,8 +132,4 @@ export const Accordion = Object.assign(AccordionImpl, {
 });
 
 // Named re-exports for web-core createLazy pattern.
-export {
-  Content as AccordionContent,
-  Item as AccordionItem,
-  Trigger as AccordionTrigger,
-};
+export { Content as AccordionContent, Item as AccordionItem, Trigger as AccordionTrigger };

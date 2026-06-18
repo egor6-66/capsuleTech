@@ -73,10 +73,7 @@ describe('Field.Content — base', () => {
   });
 
   it('passes extra class through', () => {
-    cleanup = render(
-      () => <Field.Content class="my-custom-class">child</Field.Content>,
-      container,
-    );
+    cleanup = render(() => <Field.Content class="my-custom-class">child</Field.Content>, container);
     const el = container.querySelector<HTMLElement>('[data-slot="field-content"]');
     expect(el?.className).toContain('my-custom-class');
   });
@@ -96,10 +93,7 @@ describe('Field.Label', () => {
 
 describe('Field.Description', () => {
   it('renders with data-slot=field-description', () => {
-    cleanup = render(
-      () => <Field.Description>Helper text</Field.Description>,
-      container,
-    );
+    cleanup = render(() => <Field.Description>Helper text</Field.Description>, container);
     const el = container.querySelector('[data-slot="field-description"]');
     expect(el).not.toBeNull();
   });
@@ -107,10 +101,7 @@ describe('Field.Description', () => {
 
 describe('Field.Error', () => {
   it('renders when errors array is non-empty', () => {
-    cleanup = render(
-      () => <Field.Error errors={[{ message: 'Required' }]} />,
-      container,
-    );
+    cleanup = render(() => <Field.Error errors={[{ message: 'Required' }]} />, container);
     const el = container.querySelector('[data-slot="field-error"]');
     expect(el).not.toBeNull();
     expect(el?.textContent).toContain('Required');
@@ -131,7 +122,11 @@ describe('Field — reactivity contract', () => {
   it('updates orientation class when orientation signal changes', () => {
     const [orientation, setOrientation] = createSignal<'vertical' | 'horizontal'>('vertical');
     cleanup = render(
-      () => <Field orientation={orientation()} data-testid="field">content</Field>,
+      () => (
+        <Field orientation={orientation()} data-testid="field">
+          content
+        </Field>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="field"]');
@@ -145,7 +140,11 @@ describe('Field — reactivity contract', () => {
   it('updates class when class signal changes', () => {
     const [cls, setCls] = createSignal('');
     cleanup = render(
-      () => <Field class={cls()} data-testid="field">content</Field>,
+      () => (
+        <Field class={cls()} data-testid="field">
+          content
+        </Field>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="field"]');

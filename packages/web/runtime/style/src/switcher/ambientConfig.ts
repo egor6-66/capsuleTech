@@ -55,9 +55,9 @@ export interface IAmbientConfig {
  */
 export const DEFAULT_AMBIENT_CONFIG: IAmbientConfig = {
   glows: [
-    { x: 8,   y: -6,  size: 55, alpha: 0.28, tint: 'primary' },
+    { x: 8, y: -6, size: 55, alpha: 0.28, tint: 'primary' },
     { x: 112, y: 116, size: 50, alpha: 0.22, tint: 'primary' },
-    { x: 96,  y: 4,   size: 42, alpha: 0.14, tint: 'accent'  },
+    { x: 96, y: 4, size: 42, alpha: 0.14, tint: 'accent' },
   ],
 };
 

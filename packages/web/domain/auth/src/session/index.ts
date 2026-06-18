@@ -116,7 +116,7 @@ export const localSessionStorage = (key: string): ISessionStorage => ({
         typeof (parsed as Record<string, unknown>).token === 'string' &&
         typeof (parsed as Record<string, unknown>).user === 'object' &&
         (parsed as Record<string, unknown>).user !== null &&
-        typeof ((parsed as Record<string, Record<string, unknown>>).user).role === 'string'
+        typeof (parsed as Record<string, Record<string, unknown>>).user.role === 'string'
       ) {
         return parsed as IPersistedSession;
       }
@@ -155,9 +155,7 @@ export const emptySession: IAuthSession = {
  * Если передан `ISessionStorage` и в нём есть валидная запись — store
  * инициализируется восстановленной сессией (status: 'authed').
  */
-export const createAuthSession = (
-  storage?: ITokenStorage | ISessionStorage,
-): IAuthSessionStore => {
+export const createAuthSession = (storage?: ITokenStorage | ISessionStorage): IAuthSessionStore => {
   // Определяем тип хранилища: ISessionStorage имеет метод `getSession`.
   const isSessionStorage = (s: ITokenStorage | ISessionStorage): s is ISessionStorage =>
     typeof (s as ISessionStorage).getSession === 'function';
@@ -294,9 +292,7 @@ export interface IConfigureAuthSessionOptions {
 export const configureAuthSession = (options: IConfigureAuthSessionOptions): void => {
   if (options.storage === 'local') {
     if (!options.key) {
-      throw new Error(
-        '[web-auth] configureAuthSession: "key" is required when storage is "local"',
-      );
+      throw new Error('[web-auth] configureAuthSession: "key" is required when storage is "local"');
     }
     // Создаём новый store с localStorage-персистентностью и rehydrate синхронно.
     _sessionRef.current = createAuthSession(localSessionStorage(options.key));

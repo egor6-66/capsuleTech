@@ -119,9 +119,7 @@ vi.mock('@capsuletech/web-ui/group', () => {
     );
   };
 
-  const GroupSeparator = (props: any) => (
-    <hr data-testid="group-separator" class={props.class} />
-  );
+  const GroupSeparator = (props: any) => <hr data-testid="group-separator" class={props.class} />;
 
   return { Group, GroupSeparator };
 });

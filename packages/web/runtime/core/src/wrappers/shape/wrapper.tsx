@@ -160,10 +160,12 @@ const shape = (bind: (...args: unknown[]) => unknown, config?: unknown) => {
     // so resolver reads on reactive signals propagate correctly).
     // Items without `can` are always kept. Non-array data passes through unchanged.
     const getData = () => {
-      const raw = hasConsumerData ? ownProps.data : (() => {
-        const cfg = getRawConfig();
-        return 'defaults' in cfg ? cfg.defaults : bindDefaults;
-      })();
+      const raw = hasConsumerData
+        ? ownProps.data
+        : (() => {
+            const cfg = getRawConfig();
+            return 'defaults' in cfg ? cfg.defaults : bindDefaults;
+          })();
 
       if (!hasAccessResolver() || !Array.isArray(raw)) return raw;
 

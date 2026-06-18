@@ -1,8 +1,6 @@
 // @capsuletech/boost-table — main barrel.
 // Exports DataTable composite, Table primitives, lib hooks, and Provider.
 
-// --- composites ---
-export { DataTable, DataTableContract } from './composites/dataTable';
 export type {
   ColumnDef,
   DataTableTemplate,
@@ -10,23 +8,18 @@ export type {
   IDataTableInfiniteOptions,
   IDataTableProps,
 } from './composites/dataTable';
-
-// --- provider (super-shape / shared-data bus, ADR 036 §6) ---
-export {
-  DataTableProvider,
-  DataTableBody,
-  DataTableToolbar,
-  DataTablePagination,
-  useDataTableContext,
-} from './provider';
+// --- composites ---
+export { DataTable, DataTableContract } from './composites/dataTable';
 export type {
-  IDataTableSharedContext,
-  IDataTableProviderProps,
-  IDataTableBodyProps,
-} from './provider';
-
-// --- primitives ---
-export { Table } from './primitives/table';
+  IInfiniteScrollContract,
+  IInfiniteScrollItem,
+  IInfiniteScrollOptions,
+  InfiniteScrollMode,
+} from './lib/infiniteScroll';
+// --- lib ---
+export { createInfiniteScroll } from './lib/infiniteScroll';
+export type { IPaginationContract, IPaginationOptions } from './lib/pagination';
+export { createPagination } from './lib/pagination';
 export type {
   ITableBodyProps,
   ITableCellProps,
@@ -35,15 +28,18 @@ export type {
   ITableProps,
   ITableRowProps,
 } from './primitives/table';
-
-// --- lib ---
-export { createInfiniteScroll } from './lib/infiniteScroll';
+// --- primitives ---
+export { Table } from './primitives/table';
 export type {
-  IInfiniteScrollContract,
-  IInfiniteScrollItem,
-  IInfiniteScrollOptions,
-  InfiniteScrollMode,
-} from './lib/infiniteScroll';
-
-export { createPagination } from './lib/pagination';
-export type { IPaginationContract, IPaginationOptions } from './lib/pagination';
+  IDataTableBodyProps,
+  IDataTableProviderProps,
+  IDataTableSharedContext,
+} from './provider';
+// --- provider (super-shape / shared-data bus, ADR 036 §6) ---
+export {
+  DataTableBody,
+  DataTablePagination,
+  DataTableProvider,
+  DataTableToolbar,
+  useDataTableContext,
+} from './provider';

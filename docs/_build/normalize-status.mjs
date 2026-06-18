@@ -25,8 +25,8 @@
  * Usage: node docs/_build/normalize-status.mjs [--dry-run]
  */
 
-import { readdir, readFile, writeFile, unlink } from 'node:fs/promises';
-import { join, relative, resolve, dirname } from 'node:path';
+import { readdir, readFile, unlink, writeFile } from 'node:fs/promises';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -84,7 +84,10 @@ const rewriteStatus = (src, mapping) => {
   if (lines[0] !== '---') return null;
   let fmEnd = -1;
   for (let i = 1; i < lines.length; i++) {
-    if (lines[i] === '---') { fmEnd = i; break; }
+    if (lines[i] === '---') {
+      fmEnd = i;
+      break;
+    }
   }
   if (fmEnd === -1) return null;
 
@@ -155,4 +158,7 @@ const main = async () => {
   }
 };
 
-main().catch((err) => { console.error(err); process.exit(1); });
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

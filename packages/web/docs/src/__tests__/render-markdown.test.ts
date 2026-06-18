@@ -4,7 +4,9 @@ import { renderMarkdown } from '../render-markdown';
 describe('renderMarkdown — wikilink rewrite', () => {
   it('rewrites bare wikilink to anchor with data-wikilink', () => {
     const html = renderMarkdown('See [[web-ui/button]] for details.');
-    expect(html).toContain('<a href="#web-ui/button" data-wikilink="web-ui/button">web-ui/button</a>');
+    expect(html).toContain(
+      '<a href="#web-ui/button" data-wikilink="web-ui/button">web-ui/button</a>',
+    );
   });
 
   it('rewrites aliased wikilink', () => {

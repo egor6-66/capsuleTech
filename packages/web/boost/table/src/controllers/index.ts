@@ -26,5 +26,5 @@
  * ```
  */
 
-export type { IDataTableEvents, IDataTableRowTarget } from './interfaces';
 export { DataTableController } from './dataTableController';
+export type { IDataTableEvents, IDataTableRowTarget } from './interfaces';

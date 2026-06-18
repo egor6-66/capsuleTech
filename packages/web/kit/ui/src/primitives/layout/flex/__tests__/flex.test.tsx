@@ -517,15 +517,9 @@ describe('Flex — sizing props apply as inline-style calc(var(--spacing) * N)',
   it('sizing props do not affect items-mode (no inline styles leaked)', () => {
     // items-mode renders ResizableFlex or StaticItemsFlex — sizing props are
     // only consumed in CSS-flex mode; they must not appear on items-mode roots.
-    const items: IFlexItem[] = [
-      { children: <div>A</div> },
-      { children: <div>B</div> },
-    ];
+    const items: IFlexItem[] = [{ children: <div>A</div> }, { children: <div>B</div> }];
 
-    cleanup = render(
-      () => <Flex items={items} h={10} w={20} minH={6} />,
-      container,
-    );
+    cleanup = render(() => <Flex items={items} h={10} w={20} minH={6} />, container);
 
     // items-mode root does not carry Flex's computed() styles
     const root = container.firstElementChild as HTMLElement;
@@ -542,15 +536,28 @@ describe('Flex — sizing props apply as inline-style calc(var(--spacing) * N)',
 
 describe('ResizableHandle — withHandle toggle does not cause layout shift', () => {
   const resizableItems: IFlexItem[] = [
-    { children: <div data-testid="panel-a" style="width:100%;height:100%">A</div>, resizable: true, initialSize: 0.5 },
-    { children: <div data-testid="panel-b" style="width:100%;height:100%">B</div>, resizable: true, initialSize: 0.5 },
+    {
+      children: (
+        <div data-testid="panel-a" style="width:100%;height:100%">
+          A
+        </div>
+      ),
+      resizable: true,
+      initialSize: 0.5,
+    },
+    {
+      children: (
+        <div data-testid="panel-b" style="width:100%;height:100%">
+          B
+        </div>
+      ),
+      resizable: true,
+      initialSize: 0.5,
+    },
   ];
 
   it('handle element is present when withHandle=false (no grip in DOM)', () => {
-    cleanup = render(
-      () => <Flex orientation="horizontal" items={resizableItems} />,
-      container,
-    );
+    cleanup = render(() => <Flex orientation="horizontal" items={resizableItems} />, container);
 
     const handles = container.querySelectorAll('[data-corvu-resizable-handle]');
     expect(handles.length).toBeGreaterThanOrEqual(1);

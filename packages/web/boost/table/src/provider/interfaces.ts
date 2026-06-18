@@ -30,7 +30,11 @@
  * ```
  */
 
-import type { IColumn, IDataTableInfiniteOptions, IDataTableProps } from '../composites/dataTable/interfaces';
+import type {
+  IColumn,
+  IDataTableInfiniteOptions,
+  IDataTableProps,
+} from '../composites/dataTable/interfaces';
 
 /**
  * Данные, хранимые в shared Context провайдера.
@@ -48,7 +52,10 @@ export interface IDataTableSharedContext<TRow = unknown> {
   /** Предикат активной строки (из props провайдера). */
   isRowActive?: (row: TRow) => boolean;
   /** Escape-hatch callback (из props провайдера). */
-  onRowClick?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
+  onRowClick?: (target: {
+    meta?: { tags: string[]; [k: string]: unknown };
+    payload?: Record<string, unknown>;
+  }) => void;
 }
 
 /**
@@ -61,7 +68,10 @@ export interface IDataTableProviderProps<TRow> {
   itemMeta?: (row: TRow) => { tags: string[]; [k: string]: unknown };
   itemPayload?: (row: TRow) => Record<string, unknown>;
   isRowActive?: (row: TRow) => boolean;
-  onRowClick?: (target: { meta?: { tags: string[]; [k: string]: unknown }; payload?: Record<string, unknown> }) => void;
+  onRowClick?: (target: {
+    meta?: { tags: string[]; [k: string]: unknown };
+    payload?: Record<string, unknown>;
+  }) => void;
   children: import('solid-js').JSX.Element;
 }
 
@@ -70,4 +80,7 @@ export interface IDataTableProviderProps<TRow> {
  * Принимает только display-опции: sorting, pagination, infinite, etc.
  * data + columns — из Context.
  */
-export type IDataTableBodyProps = Omit<IDataTableProps<unknown>, 'data' | 'columns' | 'itemMeta' | 'itemPayload' | 'isRowActive' | 'onRowClick'>;
+export type IDataTableBodyProps = Omit<
+  IDataTableProps<unknown>,
+  'data' | 'columns' | 'itemMeta' | 'itemPayload' | 'isRowActive' | 'onRowClick'
+>;

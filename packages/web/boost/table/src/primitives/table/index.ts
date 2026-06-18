@@ -1,4 +1,3 @@
-export { Table } from './table';
 export type {
   ITableBodyProps,
   ITableCellProps,
@@ -7,3 +6,4 @@ export type {
   ITableProps,
   ITableRowProps,
 } from './interfaces';
+export { Table } from './table';

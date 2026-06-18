@@ -59,13 +59,11 @@ describe('tracker-resolve v2 — itemAs in bind extras resolves via ShapeUiConte
 
     const { Template, getCapture } = makeCaptureTemplate('itemAs-1');
 
-    const MyShape = Shape(
-      (_ui) => ({
-        schema: z.array(z.string()),
-        as: Template,
-        itemAs: tracker.Button as any,
-      }),
-    );
+    const MyShape = Shape((_ui) => ({
+      schema: z.array(z.string()),
+      as: Template,
+      itemAs: tracker.Button as any,
+    }));
 
     cleanup = render(
       () => (
@@ -81,7 +79,9 @@ describe('tracker-resolve v2 — itemAs in bind extras resolves via ShapeUiConte
 
   it('nested path tracker (ui.Navigation.Item) resolves correctly as itemAs', () => {
     const NavItemComponent = (_props: any) => (
-      <a href="https://example.com" data-testid="nav-item">nav</a>
+      <a href="https://example.com" data-testid="nav-item">
+        nav
+      </a>
     );
 
     const fakeUi = { Navigation: { Item: NavItemComponent } };
@@ -89,13 +89,11 @@ describe('tracker-resolve v2 — itemAs in bind extras resolves via ShapeUiConte
 
     const { Template, getCapture } = makeCaptureTemplate('itemAs-nested');
 
-    const MyShape = Shape(
-      (_ui) => ({
-        schema: z.array(z.string()),
-        as: Template,
-        itemAs: tracker.Navigation.Item as any,
-      }),
-    );
+    const MyShape = Shape((_ui) => ({
+      schema: z.array(z.string()),
+      as: Template,
+      itemAs: tracker.Navigation.Item as any,
+    }));
 
     cleanup = render(
       () => (
@@ -117,24 +115,24 @@ describe('tracker-resolve v2 — itemAs in bind extras resolves via ShapeUiConte
 describe('tracker-resolve v2 — itemProps callable wraps result with tracker resolution', () => {
   it('calling itemProps(item) returns object with resolved as-tracker', () => {
     const LinkComponent = (_props: any) => (
-      <a href="https://example.com" data-testid="link">link</a>
+      <a href="https://example.com" data-testid="link">
+        link
+      </a>
     );
     const fakeUi = { Link: LinkComponent };
     const tracker = createUiTracker();
 
     const { Template, getCapture } = makeCaptureTemplate('itemProps-1');
 
-    const MyShape = Shape(
-      (_ui) => ({
-        schema: z.array(z.object({ to: z.string(), label: z.string() })),
-        as: Template,
-        itemProps: (item: { to: string; label: string }) => ({
-          as: tracker.Link as any,
-          to: item.to,
-          children: item.label,
-        }),
+    const MyShape = Shape((_ui) => ({
+      schema: z.array(z.object({ to: z.string(), label: z.string() })),
+      as: Template,
+      itemProps: (item: { to: string; label: string }) => ({
+        as: tracker.Link as any,
+        to: item.to,
+        children: item.label,
       }),
-    );
+    }));
 
     cleanup = render(
       () => (
@@ -160,17 +158,15 @@ describe('tracker-resolve v2 — itemProps callable wraps result with tracker re
     const fakeUi = {};
     const { Template, getCapture } = makeCaptureTemplate('itemProps-pass');
 
-    const MyShape = Shape(
-      (_ui) => ({
-        schema: z.array(z.string()),
-        as: Template,
-        itemProps: (item: string) => ({
-          label: item,
-          count: 42,
-          active: true,
-        }),
+    const MyShape = Shape((_ui) => ({
+      schema: z.array(z.string()),
+      as: Template,
+      itemProps: (item: string) => ({
+        label: item,
+        count: 42,
+        active: true,
       }),
-    );
+    }));
 
     cleanup = render(
       () => (
@@ -199,15 +195,13 @@ describe('tracker-resolve v2 — non-tracker values are not modified', () => {
   it('plain primitive extras pass through as-is', () => {
     const { Template, getCapture } = makeCaptureTemplate('plain-1');
 
-    const MyShape = Shape(
-      (_ui) => ({
-        schema: z.array(z.string()),
-        as: Template,
-        anyPlainProp: 42,
-        variant: 'attached' as const,
-        enabled: true,
-      }),
-    );
+    const MyShape = Shape((_ui) => ({
+      schema: z.array(z.string()),
+      as: Template,
+      anyPlainProp: 42,
+      variant: 'attached' as const,
+      enabled: true,
+    }));
 
     cleanup = render(() => <MyShape />, container);
 
@@ -220,13 +214,11 @@ describe('tracker-resolve v2 — non-tracker values are not modified', () => {
     const configObj = { foo: 1, bar: 'baz' };
     const { Template, getCapture } = makeCaptureTemplate('plain-obj');
 
-    const MyShape = Shape(
-      (_ui) => ({
-        schema: z.array(z.string()),
-        as: Template,
-        configObj,
-      }),
-    );
+    const MyShape = Shape((_ui) => ({
+      schema: z.array(z.string()),
+      as: Template,
+      configObj,
+    }));
 
     cleanup = render(() => <MyShape />, container);
     expect(getCapture().configObj).toEqual({ foo: 1, bar: 'baz' });
@@ -257,13 +249,11 @@ describe('tracker-resolve v2 — callable returning non-object passes result thr
   it('callback returning a string passes result through unchanged', () => {
     const { Template, getCapture } = makeCaptureTemplate('cb-string');
 
-    const MyShape = Shape(
-      (_ui) => ({
-        schema: z.array(z.string()),
-        as: Template,
-        lazyCallback: (item: string) => item.toUpperCase(),
-      }),
-    );
+    const MyShape = Shape((_ui) => ({
+      schema: z.array(z.string()),
+      as: Template,
+      lazyCallback: (item: string) => item.toUpperCase(),
+    }));
 
     cleanup = render(() => <MyShape />, container);
 
@@ -275,13 +265,11 @@ describe('tracker-resolve v2 — callable returning non-object passes result thr
   it('callback returning null passes null through', () => {
     const { Template, getCapture } = makeCaptureTemplate('cb-null');
 
-    const MyShape = Shape(
-      (_ui) => ({
-        schema: z.array(z.string()),
-        as: Template,
-        nullCallback: () => null,
-      }),
-    );
+    const MyShape = Shape((_ui) => ({
+      schema: z.array(z.string()),
+      as: Template,
+      nullCallback: () => null,
+    }));
 
     cleanup = render(() => <MyShape />, container);
 
@@ -293,13 +281,11 @@ describe('tracker-resolve v2 — callable returning non-object passes result thr
     const { Template, getCapture } = makeCaptureTemplate('cb-array');
     const arr = [1, 2, 3];
 
-    const MyShape = Shape(
-      (_ui) => ({
-        schema: z.array(z.string()),
-        as: Template,
-        arrayCallback: () => arr,
-      }),
-    );
+    const MyShape = Shape((_ui) => ({
+      schema: z.array(z.string()),
+      as: Template,
+      arrayCallback: () => arr,
+    }));
 
     cleanup = render(() => <MyShape />, container);
 
@@ -317,13 +303,11 @@ describe('tracker-resolve v2 — missing ShapeUiContext does not crash', () => {
     const tracker = createUiTracker();
     const { Template, getCapture } = makeCaptureTemplate('no-ctx');
 
-    const MyShape = Shape(
-      (_ui) => ({
-        schema: z.array(z.string()),
-        as: Template,
-        itemAs: tracker.Button as any,
-      }),
-    );
+    const MyShape = Shape((_ui) => ({
+      schema: z.array(z.string()),
+      as: Template,
+      itemAs: tracker.Button as any,
+    }));
 
     cleanup = render(() => <MyShape />, container);
 
@@ -351,13 +335,11 @@ describe('tracker-resolve v2 — itemAs does not interfere with defaultAs resolu
     };
     const fakeUiCapturing = { ...fakeUi, Group: CapturingGroup };
 
-    const MyShape = Shape(
-      (_ui) => ({
-        schema: z.array(z.string()),
-        as: tracker.Group as any,
-        itemAs: tracker.Button as any,
-      }),
-    );
+    const MyShape = Shape((_ui) => ({
+      schema: z.array(z.string()),
+      as: tracker.Group as any,
+      itemAs: tracker.Button as any,
+    }));
 
     cleanup = render(
       () => (

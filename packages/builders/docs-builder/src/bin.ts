@@ -4,8 +4,8 @@
  * Usage: capsule-docs build --root <path> --strategy <package|app|docs> --out <path> [--pkg-name <name>]
  */
 
-import { writeFile, mkdir } from 'node:fs/promises';
-import { resolve, dirname } from 'node:path';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
 import { extractDocs } from './extract.js';
 import type { ISlugStrategy } from './types.js';
 

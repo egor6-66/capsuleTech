@@ -1,5 +1,5 @@
 import { createStyle } from '@capsuletech/web-style';
-import { type JSX, createMemo, createSignal, mergeProps, splitProps } from 'solid-js';
+import { createMemo, createSignal, type JSX, mergeProps, splitProps } from 'solid-js';
 
 import type { IInputProps } from './interfaces';
 import { inputCva } from './variants';
@@ -12,8 +12,12 @@ export const Input = (props: IInputProps) => {
   );
 
   const styleProps = mergeProps(variants, {
-    get class() { return local.class; },
-    get style() { return local.style; },
+    get class() {
+      return local.class;
+    },
+    get style() {
+      return local.style;
+    },
   });
   const { className, style } = createStyle(inputCva, styleProps);
 

@@ -8,32 +8,31 @@
  */
 
 export {
+  type BarrelFiles,
+  type BootstrapContribution,
+  type EndpointLeaf,
+  endpointFileToLeaf,
+  // --- AppConfig ---
+  generateAppConfigRuntime,
   // --- Barrel registry ---
   generateBarrelRegistry,
-  generateRegistryIndex,
-  generateRegistryPackageJson,
-  // --- Layer types ---
-  generateLayerTypes,
+  // --- Bootstrap ---
+  generateBootstrap,
   // --- Endpoints ---
   generateEndpointsRuntime,
   generateEndpointsTypes,
-  // --- AppConfig ---
-  generateAppConfigRuntime,
-  renderAppTagsTypes,
+  // --- Layer types ---
+  generateLayerTypes,
   // --- Packages ---
   generatePackagesRuntime,
   generatePackagesTypes,
+  generateRegistryIndex,
+  generateRegistryPackageJson,
+  type PackageEntry,
   parseManifestSource,
+  type ResolvedPackageEntry,
+  renderAppTagsTypes,
   resolvePackageEntries,
-  // --- Bootstrap ---
-  generateBootstrap,
-  type BootstrapContribution,
   // --- Leaf helpers ---
   wrapperFileToLeaf,
-  endpointFileToLeaf,
-  type WrapperLeaf,
-  type EndpointLeaf,
-  type BarrelFiles,
-  type PackageEntry,
-  type ResolvedPackageEntry,
 } from '../capsuleRegistry';

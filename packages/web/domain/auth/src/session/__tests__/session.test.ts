@@ -2,16 +2,16 @@
  * /session — тесты session-store + useAuth() + persistence.
  */
 
-import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  createAuthSession,
   configureAuthSession,
+  createAuthSession,
+  defaultAuthSession,
   emptySession,
   localSessionStorage,
   localStorageStorage,
   memoryStorage,
   useAuth,
-  defaultAuthSession,
 } from '../index';
 
 describe('emptySession', () => {

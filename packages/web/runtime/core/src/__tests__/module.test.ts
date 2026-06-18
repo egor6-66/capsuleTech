@@ -222,14 +222,19 @@ describe('IAppConfig.intl — type-level', () => {
 // ---------------------------------------------------------------------------
 
 // Mock web-intl module — vi.hoisted гарантирует инициализацию до хойстинга vi.mock
-const { mockRegisterCopy, mockRegisterTenantCopy, mockSetDefaultLocale, mockSetLocale, mockSetTenant } =
-  vi.hoisted(() => ({
-    mockRegisterCopy: vi.fn(),
-    mockRegisterTenantCopy: vi.fn(),
-    mockSetDefaultLocale: vi.fn(),
-    mockSetLocale: vi.fn(),
-    mockSetTenant: vi.fn(),
-  }));
+const {
+  mockRegisterCopy,
+  mockRegisterTenantCopy,
+  mockSetDefaultLocale,
+  mockSetLocale,
+  mockSetTenant,
+} = vi.hoisted(() => ({
+  mockRegisterCopy: vi.fn(),
+  mockRegisterTenantCopy: vi.fn(),
+  mockSetDefaultLocale: vi.fn(),
+  mockSetLocale: vi.fn(),
+  mockSetTenant: vi.fn(),
+}));
 
 vi.mock('@capsuletech/web-intl', () => ({
   registerCopy: mockRegisterCopy,
@@ -277,8 +282,12 @@ describe('applyIntlConfig', () => {
       },
     });
     expect(mockRegisterTenantCopy).toHaveBeenCalledTimes(2);
-    expect(mockRegisterTenantCopy).toHaveBeenCalledWith('acme', 'en', { 'login.title': 'Acme Login' });
-    expect(mockRegisterTenantCopy).toHaveBeenCalledWith('acme', 'ru', { 'login.title': 'Вход Acme' });
+    expect(mockRegisterTenantCopy).toHaveBeenCalledWith('acme', 'en', {
+      'login.title': 'Acme Login',
+    });
+    expect(mockRegisterTenantCopy).toHaveBeenCalledWith('acme', 'ru', {
+      'login.title': 'Вход Acme',
+    });
   });
 
   it('calls setDefaultLocale when defaultLocale is provided', () => {

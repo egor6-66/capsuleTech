@@ -9,9 +9,9 @@
  *   - variant/orientation/class update at runtime (reactivity contract).
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { List } from '../list';
 
 let container: HTMLDivElement;
@@ -47,7 +47,11 @@ describe('List — render-prop mode smoke', () => {
 describe('List — semantic mode smoke', () => {
   it('renders a <ul> element', () => {
     cleanup = render(
-      () => <List><li>item</li></List>,
+      () => (
+        <List>
+          <li>item</li>
+        </List>
+      ),
       container,
     );
     expect(container.querySelector('ul')).not.toBeNull();
@@ -62,7 +66,11 @@ describe('List — reactivity contract (semantic mode)', () => {
   it('updates class when class signal changes', () => {
     const [cls, setCls] = createSignal('');
     cleanup = render(
-      () => <List class={cls()}><li>item</li></List>,
+      () => (
+        <List class={cls()}>
+          <li>item</li>
+        </List>
+      ),
       container,
     );
     const el = container.querySelector('ul')!;
@@ -77,13 +85,7 @@ describe('List — reactivity contract (render-prop mode)', () => {
   it('updates class when class signal changes', () => {
     const [cls, setCls] = createSignal('');
     cleanup = render(
-      () => (
-        <List
-          items={['a']}
-          class={cls()}
-          children={(item) => <div>{item}</div>}
-        />
-      ),
+      () => <List items={['a']} class={cls()} children={(item) => <div>{item}</div>} />,
       container,
     );
     // render-prop mode renders a <div> container

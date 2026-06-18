@@ -8,12 +8,13 @@
  *
  * Спека: docs/playground/contracts.md · роадмап: docs/playground/roadmap.md (F0).
  */
+
+export type { ContractCarrier, ContractSource } from './collect';
 export { collectContracts } from './collect';
 export { defineContract, isContract } from './define-contract';
 export { propsSchemaOf } from './derive';
 export { rule } from './rules';
-
-export type { ContractCarrier, ContractSource } from './collect';
+export type { IEditorNode, IInteraction, ISchema, NodeId } from './schema';
 export type {
   Contract,
   ContractBase,
@@ -26,5 +27,3 @@ export type {
   Severity,
   Violation,
 } from './types';
-
-export type { IEditorNode, IInteraction, ISchema, NodeId } from './schema';

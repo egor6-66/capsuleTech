@@ -15,6 +15,7 @@ import { join, resolve } from 'node:path';
 import type { Plugin } from 'vite';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  type CodegenContext,
   createAppConfigSubGenerator,
   createBarrelRegistrySubGenerator,
   createBootstrapSubGenerator,
@@ -22,7 +23,6 @@ import {
   createDocsSourcesSubGenerator,
   createEndpointsSubGenerator,
   createPackagesSubGenerator,
-  type CodegenContext,
   type SubGenerator,
 } from '../codegen';
 
@@ -241,11 +241,7 @@ describe('createBarrelRegistrySubGenerator', () => {
   it('onEvent returns true for a widget file', () => {
     const gen = createBarrelRegistrySubGenerator();
     const fakeCtx = { watchDir: WATCH_DIR } as CodegenContext;
-    const result = gen.onEvent(
-      'add',
-      resolve(WATCH_DIR, 'widgets', 'forms', 'auth.tsx'),
-      fakeCtx,
-    );
+    const result = gen.onEvent('add', resolve(WATCH_DIR, 'widgets', 'forms', 'auth.tsx'), fakeCtx);
     expect(result).toBe(true);
   });
 });
@@ -265,22 +261,14 @@ describe('createEndpointsSubGenerator', () => {
   it('onEvent returns true for endpoint files', () => {
     const gen = createEndpointsSubGenerator();
     const fakeCtx = { watchDir: WATCH_DIR } as CodegenContext;
-    const result = gen.onEvent(
-      'add',
-      resolve(WATCH_DIR, 'endpoints', 'auth.ts'),
-      fakeCtx,
-    );
+    const result = gen.onEvent('add', resolve(WATCH_DIR, 'endpoints', 'auth.ts'), fakeCtx);
     expect(result).toBe(true);
   });
 
   it('onEvent returns false for non-endpoint files', () => {
     const gen = createEndpointsSubGenerator();
     const fakeCtx = { watchDir: WATCH_DIR } as CodegenContext;
-    const result = gen.onEvent(
-      'add',
-      resolve(WATCH_DIR, 'widgets', 'auth.tsx'),
-      fakeCtx,
-    );
+    const result = gen.onEvent('add', resolve(WATCH_DIR, 'widgets', 'auth.tsx'), fakeCtx);
     expect(result).toBe(false);
   });
 
@@ -453,10 +441,16 @@ function makeBootstrapCtx(docsConfig?: { rootVault?: boolean }): {
     capsuleRoot,
     watchDir: resolve('/project/apps/myapp/src'),
     appConfigPath,
-    writeOut: (absPath: string, content: string) => { written.set(absPath, content); },
+    writeOut: (absPath: string, content: string) => {
+      written.set(absPath, content);
+    },
     removeOut: (_absPath: string) => {},
-    parse: () => { throw new Error('not needed'); },
-    names: () => { throw new Error('not needed'); },
+    parse: () => {
+      throw new Error('not needed');
+    },
+    names: () => {
+      throw new Error('not needed');
+    },
     // New three-state AppConfigResult API:
     // - docsConfig !== undefined → status 'ok' with the given docs config
     // - docsConfig === undefined → status 'ok' with empty config (no docs field)
@@ -532,13 +526,13 @@ describe('bootstrap flush — contribution collection', () => {
 
     // --- Round 2: app config changed, docs removed ---
     docsSources.onAppConfigChange?.(ctx1); // marks dirty
-    bootstrap.onAppConfigChange?.(ctx1);   // marks dirty
+    bootstrap.onAppConfigChange?.(ctx1); // marks dirty
 
     // New context with no docs config
     const { ctx: ctx2, written: written2 } = makeBootstrapCtx(undefined);
     // Flush in order (orchestrator guarantees order 50 before 90)
     docsSources.flush(ctx2, false); // dirty → removeOut, _hasFile=false
-    bootstrap.flush(ctx2, false);   // dirty → collects contributions → no docs-sources
+    bootstrap.flush(ctx2, false); // dirty → collects contributions → no docs-sources
 
     const content2 = written2.get(resolve(ctx2.capsuleRoot, 'bootstrap.tsx'));
     expect(content2).toBeDefined();

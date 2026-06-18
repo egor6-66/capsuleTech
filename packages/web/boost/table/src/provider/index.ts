@@ -1,12 +1,12 @@
 export {
-  DataTableProvider,
   DataTableBody,
-  DataTableToolbar,
   DataTablePagination,
+  DataTableProvider,
+  DataTableToolbar,
   useDataTableContext,
 } from './dataTableProvider';
 export type {
-  IDataTableSharedContext,
-  IDataTableProviderProps,
   IDataTableBodyProps,
+  IDataTableProviderProps,
+  IDataTableSharedContext,
 } from './interfaces';

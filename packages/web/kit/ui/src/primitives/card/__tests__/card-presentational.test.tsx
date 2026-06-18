@@ -10,9 +10,9 @@
  * in card.test.tsx.
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Card } from '../card';
 
 // ---------------------------------------------------------------------------
@@ -29,11 +29,11 @@ vi.mock('@capsuletech/web-style', async (importOriginal) => {
     useFinishConfig: () => () => ({
       topForegroundAlpha: 0.09,
       topStopPosition: 0,
-      midCardAlpha: 0.70,
+      midCardAlpha: 0.7,
       midStopPosition: 45,
       bottomPrimaryAlpha: 0.18,
       bottomStopPosition: 100,
-      hairlineAlpha: 0.40,
+      hairlineAlpha: 0.4,
       innerBorderAlpha: 0.06,
       contactShadow: '0 1px 2px rgb(0 0 0 / 0.4)',
       glowAlpha: 0.22,
@@ -68,7 +68,11 @@ afterEach(() => {
 describe('Card — elevation prop', () => {
   it('adds shadow-none for elevation="none"', () => {
     cleanup = render(
-      () => <Card elevation="none" data-testid="card">content</Card>,
+      () => (
+        <Card elevation="none" data-testid="card">
+          content
+        </Card>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="card"]');
@@ -77,7 +81,11 @@ describe('Card — elevation prop', () => {
 
   it('adds shadow-sm for elevation="sm"', () => {
     cleanup = render(
-      () => <Card elevation="sm" data-testid="card">content</Card>,
+      () => (
+        <Card elevation="sm" data-testid="card">
+          content
+        </Card>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="card"]');
@@ -86,7 +94,11 @@ describe('Card — elevation prop', () => {
 
   it('adds shadow-lg for elevation="lg"', () => {
     cleanup = render(
-      () => <Card elevation="lg" data-testid="card">content</Card>,
+      () => (
+        <Card elevation="lg" data-testid="card">
+          content
+        </Card>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="card"]');
@@ -95,7 +107,11 @@ describe('Card — elevation prop', () => {
 
   it('adds shadow-xl for elevation="xl"', () => {
     cleanup = render(
-      () => <Card elevation="xl" data-testid="card">content</Card>,
+      () => (
+        <Card elevation="xl" data-testid="card">
+          content
+        </Card>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="card"]');
@@ -110,7 +126,11 @@ describe('Card — elevation prop', () => {
 describe('Card — sizing props', () => {
   it('applies width inline style for w prop', () => {
     cleanup = render(
-      () => <Card w={96} data-testid="card">content</Card>,
+      () => (
+        <Card w={96} data-testid="card">
+          content
+        </Card>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="card"]');
@@ -119,7 +139,11 @@ describe('Card — sizing props', () => {
 
   it('applies min-width inline style for minW prop', () => {
     cleanup = render(
-      () => <Card minW={20} data-testid="card">content</Card>,
+      () => (
+        <Card minW={20} data-testid="card">
+          content
+        </Card>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="card"]');
@@ -128,7 +152,11 @@ describe('Card — sizing props', () => {
 
   it('applies max-width inline style for maxW prop', () => {
     cleanup = render(
-      () => <Card maxW={120} data-testid="card">content</Card>,
+      () => (
+        <Card maxW={120} data-testid="card">
+          content
+        </Card>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="card"]');
@@ -136,10 +164,7 @@ describe('Card — sizing props', () => {
   });
 
   it('does not set width when w is not provided', () => {
-    cleanup = render(
-      () => <Card data-testid="card">content</Card>,
-      container,
-    );
+    cleanup = render(() => <Card data-testid="card">content</Card>, container);
     const el = container.querySelector<HTMLElement>('[data-testid="card"]');
     expect(el?.style.width).toBe('');
   });
@@ -191,7 +216,9 @@ describe('Card.Title — align prop', () => {
     cleanup = render(
       () => (
         <Card>
-          <Card.Title align="center" data-testid="title">Title</Card.Title>
+          <Card.Title align="center" data-testid="title">
+            Title
+          </Card.Title>
         </Card>
       ),
       container,
@@ -204,7 +231,9 @@ describe('Card.Title — align prop', () => {
     cleanup = render(
       () => (
         <Card>
-          <Card.Title align="end" data-testid="title">Title</Card.Title>
+          <Card.Title align="end" data-testid="title">
+            Title
+          </Card.Title>
         </Card>
       ),
       container,
@@ -217,7 +246,9 @@ describe('Card.Title — align prop', () => {
     cleanup = render(
       () => (
         <Card>
-          <Card.Title align="start" data-testid="title">Title</Card.Title>
+          <Card.Title align="start" data-testid="title">
+            Title
+          </Card.Title>
         </Card>
       ),
       container,
@@ -236,7 +267,9 @@ describe('Card.Description — align prop', () => {
     cleanup = render(
       () => (
         <Card>
-          <Card.Description align="center" data-testid="desc">Description</Card.Description>
+          <Card.Description align="center" data-testid="desc">
+            Description
+          </Card.Description>
         </Card>
       ),
       container,
@@ -282,7 +315,9 @@ describe('Card.Content — default flex-col layout', () => {
     cleanup = render(
       () => (
         <Card>
-          <Card.Content gap={4} data-testid="content">Content</Card.Content>
+          <Card.Content gap={4} data-testid="content">
+            Content
+          </Card.Content>
         </Card>
       ),
       container,
@@ -295,7 +330,9 @@ describe('Card.Content — default flex-col layout', () => {
     cleanup = render(
       () => (
         <Card>
-          <Card.Content padding={6} data-testid="content">Content</Card.Content>
+          <Card.Content padding={6} data-testid="content">
+            Content
+          </Card.Content>
         </Card>
       ),
       container,
@@ -324,7 +361,11 @@ describe('Card — reactivity contract', () => {
   it('updates className when class signal changes', () => {
     const [cls, setCls] = createSignal('');
     cleanup = render(
-      () => <Card class={cls()} data-testid="card">content</Card>,
+      () => (
+        <Card class={cls()} data-testid="card">
+          content
+        </Card>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="card"]');
@@ -337,7 +378,11 @@ describe('Card — reactivity contract', () => {
   it('updates elevation class when elevation signal changes', () => {
     const [elev, setElev] = createSignal<'none' | 'lg'>('none');
     cleanup = render(
-      () => <Card elevation={elev()} data-testid="card">content</Card>,
+      () => (
+        <Card elevation={elev()} data-testid="card">
+          content
+        </Card>
+      ),
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="card"]');

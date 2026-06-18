@@ -44,10 +44,7 @@ export interface DesktopRuntime {
    * Returns an unlisten function — call it to unsubscribe.
    * Outside Tauri → throws `DesktopNotAvailableError`.
    */
-  listen<T>(
-    event: string,
-    handler: (e: { payload: T }) => void,
-  ): Promise<UnlistenFn>;
+  listen<T>(event: string, handler: (e: { payload: T }) => void): Promise<UnlistenFn>;
 
   dialog: {
     /**
@@ -60,8 +57,7 @@ export interface DesktopRuntime {
 
 // ─── Error type ──────────────────────────────────────────────────────────────
 
-const NOT_AVAILABLE_MSG =
-  'Desktop runtime is not available — running outside Tauri.';
+const NOT_AVAILABLE_MSG = 'Desktop runtime is not available — running outside Tauri.';
 
 class DesktopNotAvailableError extends Error {
   constructor() {
@@ -82,10 +78,7 @@ function isTauri(): boolean {
 
 // ─── Wrappers ─────────────────────────────────────────────────────────────────
 
-async function runtimeInvoke<T>(
-  cmd: string,
-  args?: Record<string, unknown>,
-): Promise<T> {
+async function runtimeInvoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
   if (!isTauri()) throw new DesktopNotAvailableError();
   const { invoke } = await import('@tauri-apps/api/core');
   return invoke<T>(cmd, args);
@@ -100,9 +93,7 @@ async function runtimeListen<T>(
   return listen<T>(event, handler);
 }
 
-async function runtimeDialogOpen(
-  opts?: DialogOpenOptions,
-): Promise<string | string[] | null> {
+async function runtimeDialogOpen(opts?: DialogOpenOptions): Promise<string | string[] | null> {
   if (!isTauri()) throw new DesktopNotAvailableError();
   const { open } = await import('@tauri-apps/plugin-dialog');
   return open(opts ?? {});

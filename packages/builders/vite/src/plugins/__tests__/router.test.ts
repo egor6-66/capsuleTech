@@ -120,7 +120,9 @@ describe('ROOT_WITH_APP_TEMPLATE', () => {
   });
 
   it('imports Outlet and createRootRouteWithContext from @tanstack/solid-router', () => {
-    expect(tmpl).toContain(`import { Outlet, createRootRouteWithContext } from '@tanstack/solid-router'`);
+    expect(tmpl).toContain(
+      `import { Outlet, createRootRouteWithContext } from '@tanstack/solid-router'`,
+    );
   });
 
   it('does NOT import from @capsuletech/web-core', () => {
@@ -405,7 +407,10 @@ describe('fileGenerator integration — _index.tsx opt-in fallback', () => {
 
   it('INDEX_ROUTE_WITH_COMPONENT_TEMPLATE renders correct importPath for nested layout', () => {
     // workspace/web-studio/index.tsx → importPath for _index = workspace/web-studio/_index
-    const out = INDEX_ROUTE_WITH_COMPONENT_TEMPLATE('/workspace/web-studio/', 'workspace/web-studio/_index');
+    const out = INDEX_ROUTE_WITH_COMPONENT_TEMPLATE(
+      '/workspace/web-studio/',
+      'workspace/web-studio/_index',
+    );
     expect(out).toContain(`import('@pages/workspace/web-studio/_index')`);
     expect(out).toContain(`createFileRoute('/workspace/web-studio/')`);
   });

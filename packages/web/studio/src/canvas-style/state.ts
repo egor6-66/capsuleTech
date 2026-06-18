@@ -52,4 +52,5 @@ export const resetCanvasStyle = (): void => {
 };
 
 /** `true` if at least one axis is currently overridden. */
-export const useCanvasStyleActive = (): Accessor<boolean> => () => theme() !== null || dark() !== null;
+export const useCanvasStyleActive = (): Accessor<boolean> => () =>
+  theme() !== null || dark() !== null;

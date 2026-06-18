@@ -72,9 +72,7 @@ export const Controlled: Story = {
           max={1}
           step={0.01}
         />
-        <span class="text-xs text-muted-foreground font-mono">
-          value = {alpha().toFixed(2)}
-        </span>
+        <span class="text-xs text-muted-foreground font-mono">value = {alpha().toFixed(2)}</span>
       </div>
     );
   },

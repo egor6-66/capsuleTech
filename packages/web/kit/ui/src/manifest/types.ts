@@ -16,8 +16,8 @@
  *     populate the UI / DnD / inspector fields
  */
 
-import type { Contract, ISchema } from '@capsuletech/web-contract';
 import type { ZodTypeAny } from '@capsuletech/shared-zod';
+import type { Contract, ISchema } from '@capsuletech/web-contract';
 import type { JSX } from 'solid-js';
 
 /**
@@ -170,12 +170,7 @@ export interface IPrimitiveManifestEntry {
  * merging hand-authored data with measured size/externals/variants.
  */
 export type IBuiltManifestEntry = IPrimitiveManifestEntry &
-  Required<
-    Pick<
-      IPrimitiveManifestEntry,
-      'name' | 'subpath' | 'weight' | 'sizeKB' | 'externals'
-    >
-  >;
+  Required<Pick<IPrimitiveManifestEntry, 'name' | 'subpath' | 'weight' | 'sizeKB' | 'externals'>>;
 
 /** Root manifest shape emitted to dist/manifest.json. */
 export interface IWebUiManifest {

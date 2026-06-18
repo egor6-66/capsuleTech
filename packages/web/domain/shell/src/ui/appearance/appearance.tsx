@@ -42,11 +42,7 @@ function ToggleRow(props: { mode: 'dark' | 'finish' }) {
       icon={descriptor().icon}
       label={descriptor().label}
       trailing={
-        <Toggle
-          size="sm"
-          checked={descriptor().active()}
-          onChange={() => descriptor().toggle()}
-        />
+        <Toggle size="sm" checked={descriptor().active()} onChange={() => descriptor().toggle()} />
       }
     />
   );

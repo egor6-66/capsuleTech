@@ -71,10 +71,7 @@ export const sliderLabelRowCva = cva(
 /**
  * Value display — monospaced so digits don't jump width.
  */
-export const sliderValueCva = cva(
-  'font-mono text-xs tabular-nums text-muted-foreground',
-  {
-    variants: {},
-    defaultVariants: {},
-  },
-);
+export const sliderValueCva = cva('font-mono text-xs tabular-nums text-muted-foreground', {
+  variants: {},
+  defaultVariants: {},
+});

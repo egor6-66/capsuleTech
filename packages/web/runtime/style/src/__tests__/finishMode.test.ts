@@ -72,7 +72,10 @@ describe('useFinishMode / setFinishMode / toggleFinishMode', () => {
 
   it('does NOT set data-finish on <html> by default', async () => {
     await loadModule();
-    expect(documentElementMock.setAttribute).not.toHaveBeenCalledWith('data-finish', expect.anything());
+    expect(documentElementMock.setAttribute).not.toHaveBeenCalledWith(
+      'data-finish',
+      expect.anything(),
+    );
     expect(documentElementAttrs).not.toHaveProperty('data-finish');
   });
 

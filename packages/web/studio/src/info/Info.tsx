@@ -33,11 +33,7 @@ export const Info = (props: IInfoProps) => (
       <Accordion.Item value="manifest">
         <Accordion.Trigger>Манифест</Accordion.Trigger>
         <Accordion.Content>
-          <ManifestBlock
-            manifest={props.manifest}
-            preset={props.preset}
-            type={props.type}
-          />
+          <ManifestBlock manifest={props.manifest} preset={props.preset} type={props.type} />
         </Accordion.Content>
       </Accordion.Item>
     </Accordion>

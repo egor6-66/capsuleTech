@@ -73,12 +73,7 @@ describe('DataTableController', () => {
   it('рендерит DataTable без ошибок', () => {
     expect(() => {
       cleanup = render(
-        () => (
-          <DataTableController
-            data={sampleData}
-            columns={sampleColumns}
-          />
-        ),
+        () => <DataTableController data={sampleData} columns={sampleColumns} />,
         container,
       );
     }).not.toThrow();
@@ -181,11 +176,7 @@ describe('DataTableController', () => {
 
     cleanup = render(
       () => (
-        <DataTableController
-          data={sampleData}
-          columns={sampleColumns}
-          onRowClick={onRowClick}
-        />
+        <DataTableController data={sampleData} columns={sampleColumns} onRowClick={onRowClick} />
       ),
       container,
     );

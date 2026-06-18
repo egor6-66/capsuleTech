@@ -15,8 +15,8 @@
  * типы конструкциям через `import { z } from 'zod'`.
  */
 
-import { z as zRaw } from 'zod';
 import { describe, it } from 'vitest';
+import { z as zRaw } from 'zod';
 import { Zod, z } from '../z';
 
 // ---------------------------------------------------------------------------

@@ -457,7 +457,9 @@ describe('generateAppConfigRuntime', () => {
 
   it('contains IAppConfig type import and applyIntlConfig value import', () => {
     const out = generateAppConfigRuntime({});
-    expect(out).toContain("import { type IAppConfig, applyIntlConfig } from '@capsuletech/web-core/app-config';");
+    expect(out).toContain(
+      "import { type IAppConfig, applyIntlConfig } from '@capsuletech/web-core/app-config';",
+    );
   });
 
   it('contains applyIntlConfig guarded by intl check', () => {
@@ -486,13 +488,13 @@ describe('generateAppConfigRuntime', () => {
 
   it('does NOT emit web-access import when hasAccess is false (default)', () => {
     const out = generateAppConfigRuntime({});
-    expect(out).not.toContain("@capsuletech/web-access");
+    expect(out).not.toContain('@capsuletech/web-access');
     expect(out).not.toContain('setupAccess(');
   });
 
   it('does NOT emit web-auth import when hasAuthSession is false (default)', () => {
     const out = generateAppConfigRuntime({});
-    expect(out).not.toContain("@capsuletech/web-auth");
+    expect(out).not.toContain('@capsuletech/web-auth');
     expect(out).not.toContain('configureAuthSession(');
   });
 
@@ -522,9 +524,9 @@ describe('generateAppConfigRuntime', () => {
 
   it('access/auth imports appear before appConfigRaw import', () => {
     const out = generateAppConfigRuntime({}, { hasAccess: true, hasAuthSession: true });
-    const accessIdx = out.indexOf("import { setupAccess }");
-    const authIdx = out.indexOf("import { configureAuthSession }");
-    const rawIdx = out.indexOf("import appConfigRaw from");
+    const accessIdx = out.indexOf('import { setupAccess }');
+    const authIdx = out.indexOf('import { configureAuthSession }');
+    const rawIdx = out.indexOf('import appConfigRaw from');
     expect(accessIdx).toBeGreaterThanOrEqual(0);
     expect(authIdx).toBeGreaterThanOrEqual(0);
     expect(rawIdx).toBeGreaterThanOrEqual(0);
@@ -1609,7 +1611,9 @@ describe('generateLayerTypes — Features (flat leaf)', () => {
   it('emits namespace Features with type member', () => {
     const out = generateLayerTypes(leaves);
     expect(out).toContain('namespace Features {');
-    expect(out).toContain("type Incidents = (typeof import('@capsule/registry').Features)['Incidents'];");
+    expect(out).toContain(
+      "type Incidents = (typeof import('@capsule/registry').Features)['Incidents'];",
+    );
   });
 
   it('has export {} for module augmentation', () => {
@@ -1625,9 +1629,7 @@ describe('generateLayerTypes — Features (flat leaf)', () => {
 });
 
 describe('generateLayerTypes — Features (nested: Auth/Login)', () => {
-  const leaves = [
-    wrapperLeaf('features', '@features/auth/login', ['Auth', 'Login']),
-  ];
+  const leaves = [wrapperLeaf('features', '@features/auth/login', ['Auth', 'Login'])];
 
   it('emits nested namespace Features { namespace Auth { type Login = … } }', () => {
     const out = generateLayerTypes(leaves);
@@ -1660,9 +1662,7 @@ describe('generateLayerTypes — Controllers (flat leaf)', () => {
 });
 
 describe('generateLayerTypes — Controllers (nested: Shell/Matrix)', () => {
-  const leaves = [
-    wrapperLeaf('controllers', '@controllers/shell/matrix', ['Shell', 'Matrix']),
-  ];
+  const leaves = [wrapperLeaf('controllers', '@controllers/shell/matrix', ['Shell', 'Matrix'])];
 
   it('emits nested namespace Controllers { namespace Shell { type Matrix = … } }', () => {
     const out = generateLayerTypes(leaves);
@@ -1699,9 +1699,7 @@ describe('generateLayerTypes — Entities (flat leaf)', () => {
 });
 
 describe('generateLayerTypes — Entities (nested: Orders/Item)', () => {
-  const leaves = [
-    wrapperLeaf('entities', '@entities/orders/item', ['Orders', 'Item']),
-  ];
+  const leaves = [wrapperLeaf('entities', '@entities/orders/item', ['Orders', 'Item'])];
 
   it('emits nested namespace for nested entity', () => {
     const out = generateLayerTypes(leaves);
@@ -1759,9 +1757,13 @@ describe('generateLayerTypes — multiple leaves in same layer', () => {
 
   it('emits type members for all three features', () => {
     const out = generateLayerTypes(leaves);
-    expect(out).toContain("type Incidents = (typeof import('@capsule/registry').Features)['Incidents'];");
+    expect(out).toContain(
+      "type Incidents = (typeof import('@capsule/registry').Features)['Incidents'];",
+    );
     expect(out).toContain("type Users = (typeof import('@capsule/registry').Features)['Users'];");
-    expect(out).toContain("type Login = (typeof import('@capsule/registry').Features)['Auth']['Login'];");
+    expect(out).toContain(
+      "type Login = (typeof import('@capsule/registry').Features)['Auth']['Login'];",
+    );
   });
 
   it('output is deterministic (sorted by segments path)', () => {

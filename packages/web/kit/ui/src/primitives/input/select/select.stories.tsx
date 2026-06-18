@@ -107,7 +107,12 @@ export const ManyOptions: Story = {
     ];
     return (
       <div class="flex flex-col gap-2">
-        <Select options={MANY} value={value()} onChange={setValue} placeholder="Select framework…" />
+        <Select
+          options={MANY}
+          value={value()}
+          onChange={setValue}
+          placeholder="Select framework…"
+        />
         <p class="text-sm text-muted-foreground">Selected: {value() ?? '(none)'}</p>
       </div>
     );

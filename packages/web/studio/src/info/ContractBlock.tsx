@@ -27,9 +27,7 @@ export const ContractBlock = (props: IContractBlockProps) => (
           <span>{c().kind}</span>
         </div>
         <Show when={c().surface.isLeaf}>
-          <div class="text-muted-foreground">
-            Не принимает вложенные элементы (leaf)
-          </div>
+          <div class="text-muted-foreground">Не принимает вложенные элементы (leaf)</div>
         </Show>
         <Show when={c().surface.variants?.length}>
           <div>
@@ -37,9 +35,7 @@ export const ContractBlock = (props: IContractBlockProps) => (
             <div class="flex flex-wrap gap-1">
               <For each={c().surface.variants}>
                 {(v) => (
-                  <span class="rounded bg-muted/40 px-1.5 py-0.5 font-mono text-[11px]">
-                    {v}
-                  </span>
+                  <span class="rounded bg-muted/40 px-1.5 py-0.5 font-mono text-[11px]">{v}</span>
                 )}
               </For>
             </div>
@@ -48,9 +44,7 @@ export const ContractBlock = (props: IContractBlockProps) => (
         <Show when={c().surface.styleSlots?.length}>
           <div>
             <span class="text-muted-foreground">Стилевые слоты: </span>
-            <span class="font-mono text-[11px]">
-              {c().surface.styleSlots!.join(', ')}
-            </span>
+            <span class="font-mono text-[11px]">{c().surface.styleSlots!.join(', ')}</span>
           </div>
         </Show>
         <Show when={c().rules.length}>

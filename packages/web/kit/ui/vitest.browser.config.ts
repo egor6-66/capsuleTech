@@ -29,9 +29,7 @@ export default defineConfig({
     },
     // Bootstrap CSS custom properties (theme tokens) so that getComputedStyle()
     // assertions on computed colours and radii work without the full web-style build.
-    setupFiles: [
-      './src/primitives/button/__browser__/_browser.setup.ts',
-    ],
+    setupFiles: ['./src/primitives/button/__browser__/_browser.setup.ts'],
     // Do NOT include vitest.setup.ts — it patches jsdom globals (ResizeObserver mock,
     // matchMedia stub, CSSStyleDeclaration.setProperty) that are unnecessary and
     // potentially harmful in a real browser environment.
