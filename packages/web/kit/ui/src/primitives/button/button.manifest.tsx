@@ -1,6 +1,7 @@
 import { z } from '@capsuletech/shared-zod';
 import { MousePointerClick } from '../../icons';
 import type { IComponentManifest } from '../../manifest/types';
+import { ButtonContract } from './button.contract';
 
 export const ButtonManifest: IComponentManifest = {
   type: 'ui.Button',
@@ -9,6 +10,7 @@ export const ButtonManifest: IComponentManifest = {
   icon: () => <MousePointerClick size={16} />,
   description: 'Кнопка с вариантами оформления',
   isLeaf: true,
+  contract: ButtonContract,
   docSlug: 'web-ui/primitives/button',
   defaultProps: {
     variant: 'default',

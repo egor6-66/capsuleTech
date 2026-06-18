@@ -15,6 +15,7 @@ export {
   canAcceptChild,
   getAllManifests,
   getCategories,
+  getContract,
   getManifest,
   listByCategory,
   summarize,

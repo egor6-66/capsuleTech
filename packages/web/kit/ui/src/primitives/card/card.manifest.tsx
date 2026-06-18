@@ -8,6 +8,7 @@ import {
   Type,
 } from '../../icons';
 import type { IComponentManifest } from '../../manifest/types';
+import { CardContract } from './card.contract';
 
 const CARD_DIRECT_CHILDREN = new Set([
   'ui.Card.Header',
@@ -26,6 +27,7 @@ export const CardManifest: IComponentManifest = {
   icon: () => <CreditCard size={16} />,
   description: 'Контейнер-карточка с шапкой/контентом/футером',
   accepts: (childType) => CARD_DIRECT_CHILDREN.has(childType),
+  contract: CardContract,
   defaultProps: {
     class: 'w-full max-w-sm',
   },

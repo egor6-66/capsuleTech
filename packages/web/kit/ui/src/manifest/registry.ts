@@ -39,6 +39,7 @@ import { SkeletonManifest } from '../primitives/skeleton/skeleton.manifest';
 import { SpinnerManifest } from '../primitives/spinner/spinner.manifest';
 import { ToggleManifest } from '../primitives/toggle/toggle.manifest';
 import { TypographyManifest } from '../primitives/typography/typography.manifest';
+import type { Contract } from '@capsuletech/web-contract';
 import type { ComponentCategory, IManifestSummary, IPrimitiveManifestEntry } from './types';
 
 const ALL: IPrimitiveManifestEntry[] = [
@@ -78,6 +79,15 @@ const BY_TYPE = new Map<string, IPrimitiveManifestEntry>(ALL.map((m) => [m.type,
 
 /** Резолв манифеста по `node.type` (тот же, что в renderer'е). */
 export const getManifest = (type: string): IPrimitiveManifestEntry | undefined => BY_TYPE.get(type);
+
+/**
+ * Резолв контракта по `node.type`.
+ *
+ * Возвращает `Contract` если он co-located в манифесте (`manifest.contract`),
+ * иначе `undefined`. Используется studio-инспектором и тестами вместо
+ * hand-maintained `contract-registry.ts` в studio.
+ */
+export const getContract = (type: string): Contract | undefined => BY_TYPE.get(type)?.contract;
 
 /** Все манифесты в порядке регистрации. */
 export const getAllManifests = (): readonly IPrimitiveManifestEntry[] => ALL;
