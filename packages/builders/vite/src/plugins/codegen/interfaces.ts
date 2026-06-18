@@ -15,6 +15,19 @@
 import type { parse } from '@babel/parser';
 import type { names } from '@nx/devkit';
 
+/**
+ * Three-state result of loadAppConfig().
+ *
+ * - ok:      file loaded successfully; config contains the parsed AppConfigShape.
+ * - missing: file does not exist; sub-generators should perform cleanup (removeOut).
+ * - error:   exception during load; sub-generators should log the error and keep
+ *            any previously generated file intact (do NOT removeOut on transient errors).
+ */
+export type AppConfigResult =
+  | { status: 'ok'; config: AppConfigShape }
+  | { status: 'missing' }
+  | { status: 'error'; error: unknown; configPath: string };
+
 /** Shape of a loaded capsule.app.ts config (subset used by codegen). */
 export interface AppConfigShape {
   meta?: { tags?: readonly string[] };
@@ -75,9 +88,29 @@ export interface CodegenContext {
   /**
    * Load (or return cached) capsule.app.ts config.
    * Uses jiti for fresh evaluation on every call (no stale cache).
-   * Returns undefined if the file does not exist or fails to load.
+   *
+   * Three-state return:
+   *   { status: 'ok', config }    — file loaded and parsed successfully
+   *   { status: 'missing' }       — file does not exist (valid edge case)
+   *   { status: 'error', error, configPath } — exception during load
+   *
+   * Sub-generators should:
+   *   - On 'missing': perform cleanup (removeOut) — same as before.
+   *   - On 'error': log a warning via ctx.logger and keep existing output intact
+   *     (do NOT call removeOut — transient errors should not destroy previous state).
+   *   - On 'ok': proceed normally.
    */
-  loadAppConfig(): AppConfigShape | undefined;
+  loadAppConfig(): AppConfigResult;
+
+  /**
+   * Optional Vite logger. Available when the plugin runs inside a Vite plugin context.
+   * Falls back to console if not provided (e.g. in tests).
+   */
+  logger?: {
+    info(msg: string): void;
+    warn(msg: string): void;
+    error(msg: string): void;
+  };
 }
 
 /**

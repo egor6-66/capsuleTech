@@ -78,6 +78,8 @@ Vite-конфиг и 9 плагинов для dev-сервера HCA-apps. Дё
 
 - **`dist/` rebuild обязателен после правок `src/`.** Apps читают `dist/index.mjs`, не `src/`. После изменений: `pnpm --filter @capsuletech/vite-builder build` + рестарт dev-сервера. Smoke: `console.log('[plugin] loaded')` на верхнем уровне плагина.
 
+- **`defineAppConfig` / `defineCapsuleConfig` / `defineEndpoint` — Vite-time глобалы, не доступны в jiti.** `capsule.app.ts` может использовать `defineAppConfig({...})` как bare-идентификатор (инжектируется AutoImport через Vite-плагин). При загрузке через `jiti` (config-time в `loadConfigFresh`) эти глобалы не существуют → `ReferenceError`. **Решение** (2026-06-18): перед `j(configPath)` инжектируются identity-стабы через `globalThis`, cleanup в `finally`. Это поведение задокументировано в `VITE_TIME_GLOBALS` константе в orchestrator.ts и `CAPSULE_VITE_TIME_GLOBALS` в capsuleRegistry.ts. При добавлении новых Vite-time глобалов — обновлять оба массива.
+
 - **`optimizeDeps.exclude`** — список `@capsuletech/web-*` пакетов в `capsuleConfig.ts`. При добавлении нового workspace-пакета добавь его сюда, иначе esbuild попытается пре-бандлить и сломает JSX-транспиляцию.
 
 - **`solidPlugin` exclude для `entities/`.** `vite-plugin-solid` внутри использует `solid-refresh`, который оборачивает любой `const X = SomeCall(...)` в `.tsx`-файле в `(props) => SomeCall(...)(props)` для поддержки HMR компонентов. `Entity` возвращает plain config object (`{ schema, defaults }`), а не Solid-компонент — после такой обёртки `Entities.Users` становится функцией, и любой доступ к `.schema`/`.defaults` падает TypeError. `HMRWrappingPlugin` entity уже скипает (использует только `RENDER_WRAPPER_NAMES`), но `solid-refresh` — отдельный babel-pass внутри `solidPlugin`. Поэтому `solidPlugin` получает `exclude: [/[\\/]entities[\\/]/]`. Регекс покрывает оба сепаратора (Win/Unix). При добавлении других data-layer слоёв (не возвращающих Solid-компонент) — добавлять в этот же exclude-список.
@@ -104,6 +106,7 @@ Vite-конфиг и 9 плагинов для dev-сервера HCA-apps. Дё
 |---|---|---|
 | Unit | `src/plugins/__tests__/capsuleRegistry.test.ts` | CapsuleRegistryPlugin — generateWrappersRuntime/Types (включая `interface + const` для всех 6 NS), generateEndpointsRuntime/Types, generateAppConfigRuntime, generateBootstrap, LAYER_INIT_ORDER контракт, transform hooks; **resolvePackageEntries** (packages[]-кодген сквозной тест через parseManifestSource mock-source — закрывает дыру e2e smoke); generatePackagesRuntime/Types с controllerKeys |
 | Unit | `src/plugins/__tests__/hmrWrapping.test.ts` | HMRWrappingPlugin — babel-AST transforms для всех wrapper-типов, export default injection, Entity skip |
+| Unit | `src/plugins/__tests__/loadAppConfig.test.ts` | **jiti globals injection** (Fix 1) — `defineAppConfig/defineCapsuleConfig/defineEndpoint` не бросают ReferenceError, cleanup globalThis; **`loadAppConfig` три-стейтовый API** (Fix 2) — `ok/missing/error` states через реальные tmp-файлы; **docs-sources resilience** — `status:error` → не удаляет файл, логирует; `status:missing` → cleanup OK; **Fix 3** — info-лог при успешной генерации |
 
 Перед изменением любого плагина: `pnpm --filter @capsuletech/vite-builder test`.
 Перед release: `pnpm test:e2e:cli` обязателен.

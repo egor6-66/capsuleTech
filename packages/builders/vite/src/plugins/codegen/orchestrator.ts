@@ -32,22 +32,61 @@ import { createBootstrapSubGenerator } from './generators/bootstrap';
 import { createDocsSourcesSubGenerator } from './generators/docs-sources';
 import { createEndpointsSubGenerator } from './generators/endpoints';
 import { createPackagesSubGenerator } from './generators/packages';
-import type { AppConfigShape, CodegenContext, SubGenerator } from './interfaces';
+import type { AppConfigResult, AppConfigShape, CodegenContext, SubGenerator } from './interfaces';
 
 // ---------------------------------------------------------------------------
 // CodegenContext factory
 // ---------------------------------------------------------------------------
 
+/**
+ * Vite-time global identifiers that capsule.app.ts / capsule.config.ts may use
+ * as bare calls (auto-imported via Vite plugin at build time, but NOT available
+ * in raw Node.js / jiti execution context).
+ *
+ * We inject identity functions before loading so that:
+ *   defineAppConfig({ ... }) → returns the argument unchanged
+ *   defineCapsuleConfig({ ... }) → same
+ *   defineEndpoint({ ... }) → same
+ *
+ * This matches what the Vite transform hooks do at build time.
+ */
+const VITE_TIME_GLOBALS: ReadonlyArray<string> = [
+  'defineAppConfig',
+  'defineCapsuleConfig',
+  'defineEndpoint',
+];
+
 const loadConfigFresh = (configPath: string): unknown => {
-  const j = createJiti(import.meta.url, { interopDefault: true, moduleCache: false });
-  const mod = j(configPath) as { default?: unknown } | unknown;
-  return (mod as { default?: unknown })?.default ?? mod;
+  // Inject identity stubs for Vite-time globals so that bare calls like
+  // `defineAppConfig({...})` don't throw ReferenceError under jiti.
+  const prevValues: Map<string, unknown> = new Map();
+  for (const name of VITE_TIME_GLOBALS) {
+    prevValues.set(name, (globalThis as Record<string, unknown>)[name]);
+    (globalThis as Record<string, unknown>)[name] = <T>(x: T): T => x;
+  }
+
+  try {
+    const j = createJiti(import.meta.url, { interopDefault: true, moduleCache: false });
+    const mod = j(configPath) as { default?: unknown } | unknown;
+    return (mod as { default?: unknown })?.default ?? mod;
+  } finally {
+    // Restore previous values (or remove injected keys) to avoid side-effects.
+    for (const name of VITE_TIME_GLOBALS) {
+      const prev = prevValues.get(name);
+      if (prev === undefined) {
+        delete (globalThis as Record<string, unknown>)[name];
+      } else {
+        (globalThis as Record<string, unknown>)[name] = prev;
+      }
+    }
+  }
 };
 
 const createContext = (
   capsuleRoot: string,
   watchDir: string,
   appConfigPath: string,
+  logger?: CodegenContext['logger'],
 ): CodegenContext => {
   // Diff-write: only write if content changed.
   const writeOut = (absPath: string, content: string): void => {
@@ -73,13 +112,13 @@ const createContext = (
 
   const namesCtx = (s: string) => names(s);
 
-  const loadAppConfig = (): AppConfigShape | undefined => {
-    if (!existsSync(appConfigPath)) return undefined;
+  const loadAppConfig = (): AppConfigResult => {
+    if (!existsSync(appConfigPath)) return { status: 'missing' };
     try {
-      return loadConfigFresh(appConfigPath) as AppConfigShape;
+      const config = loadConfigFresh(appConfigPath) as AppConfigShape;
+      return { status: 'ok', config };
     } catch (e) {
-      console.error('[capsule-registry] failed to load', appConfigPath, e);
-      return undefined;
+      return { status: 'error', error: e, configPath: appConfigPath };
     }
   };
 
@@ -92,6 +131,7 @@ const createContext = (
     parse: parseCtx,
     names: namesCtx,
     loadAppConfig,
+    logger,
   };
 };
 
@@ -138,7 +178,15 @@ export interface IOrchestratorProps {
 export const createCapsuleRegistryPlugin = (opts: IOrchestratorProps): Plugin => {
   const { capsuleRoot, watchDir, appConfigPath, onAppConfigLoad, extraGenerators = [] } = opts;
 
-  const ctx = createContext(capsuleRoot, watchDir, appConfigPath);
+  // Mutable logger ref — updated when Vite server becomes available.
+  // Falls back to console so tests and buildStart work without configureServer.
+  const loggerRef: CodegenContext['logger'] = {
+    info: (msg) => console.info(msg),
+    warn: (msg) => console.warn(msg),
+    error: (msg) => console.error(msg),
+  };
+
+  const ctx = createContext(capsuleRoot, watchDir, appConfigPath, loggerRef);
 
   // Build the sub-gen registry (sorted by order).
   const appConfigSubGen = createAppConfigSubGenerator({ onAppConfigLoad });
@@ -238,6 +286,11 @@ export const createCapsuleRegistryPlugin = (opts: IOrchestratorProps): Plugin =>
     },
 
     async configureServer(server: ViteDevServer) {
+      // Wire the real Vite logger into the context so sub-generators can use it.
+      loggerRef.info = (msg) => server.config.logger.info(msg);
+      loggerRef.warn = (msg) => server.config.logger.warn(msg);
+      loggerRef.error = (msg) => server.config.logger.error(msg);
+
       const absWatch = resolve(server.config.root, watchDir);
       await initialScan(absWatch);
 

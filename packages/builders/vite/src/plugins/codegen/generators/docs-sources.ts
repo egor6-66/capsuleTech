@@ -180,9 +180,17 @@ export const createDocsSourcesSubGenerator = (): SubGenerator => {
       dirty = false;
 
       const outPath = resolve(ctx.capsuleRoot, DOCS_SOURCES_REL);
-      const cfg = ctx.loadAppConfig();
-      console.log('[capsule:docs-sources][debug] loadAppConfig keys:', cfg ? Object.keys(cfg) : 'undefined');
-      console.log('[capsule:docs-sources][debug] cfg.docs:', JSON.stringify((cfg as { docs?: unknown })?.docs));
+      const result = ctx.loadAppConfig();
+
+      if (result.status === 'error') {
+        // Transient load error — keep existing output intact, log the error.
+        ctx.logger?.error(
+          `[capsule:docs-sources] failed to load appConfig: ${String(result.error)}`,
+        );
+        return;
+      }
+
+      const cfg = result.status === 'ok' ? result.config : undefined;
       const docs = cfg?.docs;
 
       // Cleanup: no docs config or nothing useful declared.
@@ -221,6 +229,10 @@ export const createDocsSourcesSubGenerator = (): SubGenerator => {
 
       ctx.writeOut(outPath, generateDocsSourcesRuntime(entries));
       _hasFile = true;
+
+      // Log registered sources after successful generation.
+      const keys = entries.map((e) => e.key).join(', ');
+      ctx.logger?.info(`[capsule:docs-sources] registered ${entries.length} source(s): [${keys}]`);
     },
 
     bootstrap(_ctx): { phase: 'globals'; importPath: string } | null {
