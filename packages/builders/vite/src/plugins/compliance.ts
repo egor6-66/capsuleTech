@@ -1,4 +1,4 @@
-import { check, formatViolations, type ICheckOptions } from '@capsuletech/compliance';
+import { check, formatViolations, type ICheckOptions, type IViolation } from '@capsuletech/compliance';
 import type { Plugin } from 'vite';
 
 export interface ICompliancePluginOptions extends Omit<ICheckOptions, 'aliasKeys'> {
@@ -23,6 +23,15 @@ export interface ICompliancePluginOptions extends Omit<ICheckOptions, 'aliasKeys
    * после загрузки `capsule.app.ts`; Compliance читает на каждом `transform`.
    */
   appConfigState?: { aliasKeys: Set<string> };
+  /**
+   * Side-channel для каждой violation — потоковая dev-диагностика (DevDiagnosticsPlugin).
+   * Вызывается на каждом transform с массивом violations (или пустым массивом если файл
+   * прошёл проверку — это сигнал для cleanup в потоке).
+   *
+   * НЕ влияет на основной flow (`this.warn`/`this.error` остаются). Если callback падает —
+   * исключение поглощается, основной transform продолжает.
+   */
+  onDiagnostic?: (file: string, violations: IViolation[]) => void;
 }
 
 export const CompliancePlugin = (opts: ICompliancePluginOptions = {}): Plugin => {
@@ -36,6 +45,15 @@ export const CompliancePlugin = (opts: ICompliancePluginOptions = {}): Plugin =>
         ...opts,
         aliasKeys: opts.appConfigState?.aliasKeys,
       });
+      // Side-channel for streaming diagnostics. Always called — empty array
+      // signals "file is clean" so the consumer can cleanup previous entries.
+      if (opts.onDiagnostic) {
+        try {
+          opts.onDiagnostic(id, violations);
+        } catch {
+          /* dev-diagnostics is best-effort; transform must not fail */
+        }
+      }
       if (violations.length === 0) return null;
 
       // Split by effective severity stamped in IViolation.severity.
