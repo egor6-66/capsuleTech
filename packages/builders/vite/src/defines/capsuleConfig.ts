@@ -8,6 +8,7 @@ import {
   AppSourceServePlugin,
   CapsuleRegistryPlugin,
   CompliancePlugin,
+  createDevDiagnosticsPlugin,
   EnsureScaffoldPlugin,
   HMRWrappingPlugin,
   RouterPlugin,
@@ -293,7 +294,42 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
       // like `/src/standalone.tsx` are stable and portable (no /@fs/D:/... hacks).
       // TEMPORARY — remove when Variant B ADR (Vite root = appRoot) lands.
       AppSourceServePlugin({ appRoot: root }),
-      CompliancePlugin({ mode: 'warn', appConfigState }),
+      // Dev-diagnostics stream → .capsule/dev-diagnostics.log (JSONL).
+      // SessionStart hook агента подцепит файл через Monitor; каждая запись = notification.
+      // Только в serve-режиме (apply: 'serve' внутри плагина); в build игнорируется.
+      ...(isDev
+        ? (() => {
+            const { plugin, state } = createDevDiagnosticsPlugin({
+              workspaceRoot,
+              appRoot: root,
+            });
+            return [
+              plugin,
+              CompliancePlugin({
+                mode: 'warn',
+                appConfigState,
+                onDiagnostic: (file, violations) => {
+                  if (violations.length === 0) {
+                    state.clearFor('compliance', file);
+                    return;
+                  }
+                  state.emit(
+                    violations.map((v) => ({
+                      ts: Date.now(),
+                      type: 'compliance' as const,
+                      severity: v.severity,
+                      file: v.file,
+                      line: v.line,
+                      col: v.column,
+                      code: v.kind,
+                      message: v.message,
+                    })),
+                  );
+                },
+              }),
+            ];
+          })()
+        : [CompliancePlugin({ mode: 'warn', appConfigState })]),
 
       RouterPlugin({
         watchDir,

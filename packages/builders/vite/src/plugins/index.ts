@@ -36,6 +36,14 @@ export {
   type SubGenerator,
 } from './codegen';
 export { CompliancePlugin } from './compliance';
+export type {
+  DiagnosticSeverity,
+  DiagnosticType,
+  IDevDiagnostic,
+  IDevDiagnosticsPluginOptions,
+  IDevDiagnosticsState,
+} from './devDiagnostics';
+export { createDevDiagnosticsPlugin } from './devDiagnostics';
 export { HMRWrappingPlugin } from './HMRWrapping';
 export { RouterPlugin } from './router';
 export { EnsureScaffoldPlugin } from './scaffold';
