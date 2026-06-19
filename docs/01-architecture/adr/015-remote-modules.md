@@ -2,7 +2,9 @@
 tags: [hca, adr, proposed]
 status: proposed
 date: 2026-05-19
-last_updated: 2026-06-12
+last_updated: 2026-06-19
+amendments:
+  - 2026-06-19 — Phase ordering re-aligned to renderer-as-first-consumer (iframe transport → Phase 1)
 ---
 
 # ADR 015 — Remote Modules: своё runtime, pluggable transport, manifest-driven
@@ -274,9 +276,98 @@ Reference-подход PROTEI. Простая ментальная модель,
 
 Каждая phase — отдельный PR. ADR переходит в `status: implemented` только после Phase 5.
 
+## Amendment 2026-06-19 — Phase ordering re-aligned to renderer-as-first-consumer {#amendment-2026-06-19}
+
+### Что меняется
+
+Roadmap фаз (секция Migration / Roadmap выше) пере-упорядочен. Public API (`src/interfaces.ts`), архитектурные решения (1-8 в «Решение»), pluggable transport-модель — **без изменений**. Меняется только **последовательность реализации транспортов**.
+
+### Почему
+
+Появился первый реальный consumer — `@capsuletech/web-renderer` как самостоятельный runtime внутри `@capsuletech/web-studio` creator-mode. Требования consumer'а:
+
+- **CSS isolation** — рендерер не должен наследовать host'овые глобальные стили / Tailwind utilities / theme tokens.
+- **Свой Solid root + своя event delegation** — Kobalte Portal-based примитивы (Select / Dropdown / Tooltip) и pointer-based DnD не работают через host-document-делегацию, когда DOM-узел физически живёт в другом document'е.
+
+**Из этого следует — local-inline transport (Phase 1 в оригинале) не валидирует ключевую ценность remote-runtime для рендерера.** `import(url)` грузит модуль в тот же runtime/DOM/event-loop; стили через `<link>` уезжают в общий `<head>`; никакой изоляции. Local-inline остаётся валидным транспортом для будущих consumer'ов которым изоляция не нужна (например, сторонний модуль карты с собственным namespaced CSS), но **до появления такого consumer'а** реализация откладывается (канон §0 — без живого consumer'а не строим).
+
+Iframe-transport (бывшая Phase 3) даёт обе вещи разом: свой `document`/`<head>` → CSS изоляция; свой Solid root внутри iframe → своя event delegation; postMessage канал host ↔ iframe — типизированный (тот же `IRemoteHandle` API).
+
+### Новый порядок фаз
+
+| Phase | Было (2026-05-19) | Стало (2026-06-19) |
+|---|---|---|
+| **0** | Skeleton + types (done, PR #77) | без изменений |
+| **1** | local signal-bus, same-window embedded | **iframe (post-message), same-origin** — driven by renderer use-case |
+| **2** | BroadcastChannel + standalone | BroadcastChannel + standalone window (same-origin multi-window) |
+| **3** | post-message (cross-origin iframe) | cross-origin extensions (postMessage с origin-checks) |
+| **4** | socket + manifest plugin | без изменений |
+| **5** | compliance + HCA-injection | без изменений |
+| **deferred** | — | **local-inline** — ждёт consumer'а; возможно drop'нется если не появится |
+
+### Дополнения к контракту (additive, не ломающие)
+
+**Module entry contract — `bootstrap()` lifecycle, не Solid component.**
+
+Изначально (Решение п.2) module entry экспозил `default` как Solid-component-factory: `export default (props) => JSX`. Это работало только для local-inline transport (web-remote вызывает factory внутри своего Solid root'а).
+
+Для iframe-transport (и для будущих window/socket) iframe-loader должен сам поднимать Solid render внутри iframe (свой Solid root). Универсальный контракт — **lifecycle-функция**, одна на все transport'ы:
+
+```ts
+export interface IRemoteBootstrap<Props = Record<string, unknown>> {
+  (root: HTMLElement, props: Props, channel: IRemoteChannel): IRemoteDispose;
+}
+export type IRemoteDispose = () => void;
+
+// Symmetric channel (module-side counterpart of IRemoteHandle):
+export interface IRemoteChannel {
+  send: (event: string, payload?: unknown) => void;
+  request: <T = unknown>(event: string, payload?: unknown, timeoutMs?: number) => Promise<IRemoteResponse<T>>;
+  on: (event: string, cb: (payload?: unknown) => void) => () => void;
+}
+```
+
+Module-side для Solid-based remote:
+
+```ts
+import { render } from 'solid-js/web';
+
+export const bootstrap: IRemoteBootstrap = (root, props, channel) => {
+  channel.on('schema.update', (next) => /* ... */);
+  const dispose = render(() => <App {...props} channel={channel} />, root);
+  return dispose;
+};
+```
+
+- В iframe transport: iframe-loader (srcdoc-template, owned by web-remote) вызывает `bootstrap()` после ready-handshake.
+- В будущем local-inline transport: web-remote вызывает `bootstrap(div, props, channel)` в своём контейнере; внутри `bootstrap` модуль сам решает поднимать ли Solid root (он попадёт в один process с host'ом, но `render()` под капотом изолирует Solid-owner-дерево).
+- В будущем window transport: то же, в `window.opener`-context.
+
+Эти типы — **additive** к Phase 0 `src/interfaces.ts`: `IRemoteBootstrap`, `IRemoteChannel`, `IRemoteDispose` добавляются, существующие не меняются.
+
+**Iframe-loader (srcdoc-shell) — runtime-internal.** Web-remote владеет тонким HTML/JS shell'ом который грузится внутрь iframe (через `srcdoc`-attribute). Single source of truth для bootstrap flow + handshake + channel envelope. Remote-модули о существовании shell'а не знают — публикуют только bundle + manifest, как и в оригинальном дизайне.
+
+**Iframe sandbox.** `<iframe sandbox="allow-scripts allow-same-origin">` — оба токена нужны для same-origin postMessage (без `allow-same-origin` srcdoc-iframe считается opaque-origin → postMessage не парится с parent'ом).
+
+### Что НЕ меняется
+
+- `src/interfaces.ts` существующие types (Phase 0) — без правок.
+- Архитектурные решения 1-8 в «Решение» — без правок.
+- Pluggable transport-resolver через `ITransport` + `canReach()` — без правок.
+- Multi-instance routing key `(name, instanceId, sessionId)` — без правок.
+- Manifest формат (`capsule.manifest.json`) — без правок.
+- HCA-интеграция (Provider в корне, hook в Widget, service в Feature, запрещено в Controller/Entity) — без правок.
+- Reactive URL change (`updateModule`) — без правок (iframe-srcdoc ремоунтится по `module.url` change через keyed Solid effect).
+
+### Триггер для следующей переоценки
+
+Возврат к local-inline transport — когда появится consumer которому inline-mount экономически оправдан (нет CSS-конфликта, не нужна event-delegation-изоляция, важен bundle-size). Без такого consumer'а — drop из roadmap при следующем review (целевая дата — Phase 4 / Q1 2027).
+
 ## Связанное {#related}
 
 - [[003-router-context-based|ADR 003]] — Router (будет расширен методом `openInWindow`)
 - [[004-compliance-linter|ADR 004]] — Линтер (будет расширен правилом про remote)
 - [[002-controller-vs-feature|ADR 002]] — Controller vs Feature (remote = IO = Feature)
+- `docs/_meta/briefs/web-remote-phase1-renderer-mvp.md` — Phase 1 implementation brief (consumes this amendment)
+- `docs/_meta/briefs/web-ui-mount-provider-revert.md` — parallel revert (отказ от iframe + MountProvider workaround'а в kit'е, мотивация для amendment'а)
 - Reference (не входит в репо): `D:\CODING\projects\PROTEI\new\module-federation-server`, `D:\CODING\projects\PROTEI\new\reacttools\modules\module-federation`
