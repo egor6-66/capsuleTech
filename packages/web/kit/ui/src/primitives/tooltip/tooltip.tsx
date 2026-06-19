@@ -2,6 +2,8 @@ import { cn } from '@capsuletech/web-style';
 import { Tooltip as KobalteTooltip } from '@kobalte/core/tooltip';
 import { createContext, createSignal, splitProps, useContext } from 'solid-js';
 
+import { useMountTarget } from '../../lib/mountTarget';
+
 import type {
   ITooltipArrowProps,
   ITooltipContentProps,
@@ -133,8 +135,17 @@ const Trigger = (props: ITooltipTriggerProps) => {
  */
 const Content = (props: ITooltipContentProps) => {
   const [local, others] = splitProps(props, ['class', 'style', 'portalProps', 'children']);
+  const mountFromCtx = useMountTarget();
+
+  // Portal mount: explicit prop > context > Kobalte default (undefined → body).
+  const portalProps = () => {
+    const raw = local.portalProps;
+    if (raw?.mount !== undefined) return raw;
+    return { ...raw, mount: mountFromCtx() };
+  };
+
   return (
-    <KobalteTooltip.Portal {...local.portalProps}>
+    <KobalteTooltip.Portal {...(portalProps() as object)}>
       <KobalteTooltip.Content
         class={cn(tooltipContentCva(), local.class)}
         style={local.style}

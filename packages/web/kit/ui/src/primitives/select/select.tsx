@@ -4,6 +4,7 @@ import { Check, ChevronDown } from 'lucide-solid';
 import { splitProps } from 'solid-js';
 
 import { createFinish } from '../../lib/finish';
+import { useMountTarget } from '../../lib/mountTarget';
 
 import type {
   ISelectContentProps,
@@ -79,9 +80,17 @@ const Content = (props: ISelectContentProps) => {
   const [local, others] = splitProps(props, ['class', 'style', 'portalProps']);
 
   const finish = createFinish({ opaque: true });
+  const mountFromCtx = useMountTarget();
+
+  // Portal mount: explicit prop > context > Kobalte default (undefined → body).
+  const portalProps = () => {
+    const raw = local.portalProps;
+    if (raw?.mount !== undefined) return raw;
+    return { ...raw, mount: mountFromCtx() };
+  };
 
   return (
-    <KobalteSelect.Portal {...(local.portalProps as object)}>
+    <KobalteSelect.Portal {...(portalProps() as object)}>
       <KobalteSelect.Content
         class={cn(selectContentCva(), 'select-content-animate', local.class)}
         style={{

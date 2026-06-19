@@ -5,6 +5,7 @@ import { Match, Show, Switch, splitProps } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 
 import { createFinish } from '../../lib/finish';
+import { useMountTarget } from '../../lib/mountTarget';
 
 import type {
   IDropdownContentProps,
@@ -67,9 +68,17 @@ const Content = (props: IDropdownContentProps) => {
   const [local, others] = splitProps(props, ['class', 'style', 'portalProps']);
 
   const finish = createFinish({ opaque: true });
+  const mountFromCtx = useMountTarget();
+
+  // Portal mount: explicit prop > context > Kobalte default (undefined → body).
+  const portalProps = () => {
+    const raw = local.portalProps;
+    if (raw?.mount !== undefined) return raw;
+    return { ...raw, mount: mountFromCtx() };
+  };
 
   return (
-    <KobalteDropdown.Portal {...local.portalProps}>
+    <KobalteDropdown.Portal {...portalProps()}>
       <KobalteDropdown.Content
         class={cn(dropdownContentCva(), 'popover-animate', local.class)}
         style={{
@@ -237,9 +246,17 @@ const SubContent = (props: IDropdownSubContentProps) => {
   const [local, others] = splitProps(props, ['class', 'style', 'portalProps']);
 
   const finish = createFinish({ opaque: true });
+  const mountFromCtx = useMountTarget();
+
+  // Portal mount: explicit prop > context > Kobalte default (undefined → body).
+  const portalProps = () => {
+    const raw = local.portalProps;
+    if (raw?.mount !== undefined) return raw;
+    return { ...raw, mount: mountFromCtx() };
+  };
 
   return (
-    <KobalteDropdown.Portal {...local.portalProps}>
+    <KobalteDropdown.Portal {...(portalProps() as object)}>
       <KobalteDropdown.Content
         class={cn(dropdownContentCva(), 'popover-animate', local.class)}
         style={{

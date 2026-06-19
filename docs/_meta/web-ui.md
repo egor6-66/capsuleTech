@@ -60,6 +60,42 @@ Storybook guide: `docs/09-packages/ui/storybook.md`.
 
 **No setPointerCapture:** window-level listeners only (set/release capture breaks `elementFromPoint` for droppable hit-test).
 
+## Portal-based primitives — MountProvider
+
+**Select / Dropdown / Tooltip** монтируют свои popover'ы через Kobalte Portal. Дефолтный `mount` — `document.body` JS-контекста.
+
+Host может override'нуть через `<MountProvider value={el}>` из `@capsuletech/web-ui/lib` (re-exported через основной barrel):
+
+```tsx
+import { MountProvider } from '@capsuletech/web-ui';
+
+// iframe-изоляция — Portal уезжает внутрь iframe body:
+<MountProvider value={iframeBody}>
+  <Select ... />
+  <Dropdown>...</Dropdown>
+  <Tooltip>...</Tooltip>
+</MountProvider>
+
+// Async target (появляется после load-event):
+const [iframeBody, setIframeBody] = createSignal<HTMLElement>();
+<MountProvider value={iframeBody}>
+  ...
+</MountProvider>
+
+// Per-instance override через portalProps.mount (берёт приоритет над MountProvider):
+<Dropdown.Content portalProps={{ mount: specificEl }} />
+```
+
+**Порядок приоритетов:** `portalProps.mount` (явный) → `<MountProvider value>` (контекст) → Kobalte default (`document.body`).
+
+**Охват:** `Select.Content`, `Dropdown.Content`, `Dropdown.SubContent`, `Tooltip.Content`.
+
+**Источник:** `packages/web/kit/ui/src/lib/mountTarget/MountProvider.tsx`.
+
+**Known use-case:** `@capsuletech/web-studio` CanvasFrame (iframe preview). Интеграция — отдельный бриф для owner-web-studio, после landing этого модуля в kit.
+
+---
+
 ## New components (PR #169–#177)
 
 ### Dropdown primitive + DropdownMenu composite
@@ -68,7 +104,7 @@ Storybook guide: `docs/09-packages/ui/storybook.md`.
 - Kobalte-based compound via `@kobalte/core/dropdown-menu`
 - Sub-components: `Dropdown.{Trigger, Content, Item, Separator, Group, Label, Sub, SubTrigger, SubContent}`
 - Keyboard nav (Arrow keys, Enter, Escape), ARIA compliance, Floating UI positioning
-- Portal-mounted Content/SubContent into document.body
+- Portal-mounted Content/SubContent — дефолт `document.body`, override через `<MountProvider>` (см. выше)
 - Available in ViewUi + WidgetUi via named re-exports (`DropdownTrigger`, `DropdownContent`, etc.)
 
 **DropdownMenu** (PR #175):
