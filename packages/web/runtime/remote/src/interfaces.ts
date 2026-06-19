@@ -2,6 +2,8 @@
  * Public type contracts for @capsuletech/web-remote.
  *
  * See ADR 015 (docs/01-architecture/adr/015-remote-modules.md) for the rationale.
+ * See ADR 053 (docs/01-architecture/adr/053-app-as-remote-symmetry-and-config-channel.md)
+ * for the consumer model (bootstrap signature, two-channel contract, reserved props).
  * This file is the SOURCE OF TRUTH for the API shape — runtime in subsequent
  * Phases (1..5) must implement these types unchanged.
  *
@@ -24,6 +26,12 @@ export interface IRemoteModuleConfig {
   url: string;
   /** Default props passed to every instance of this module. Per-instance props override. */
   props?: Record<string, unknown>;
+  /**
+   * Ambient app config for this module type (e.g. `serverUrl`, `theme`, `locale`).
+   * Merged host-side: provider.config → modules[name].config → <Remote config={...}>.
+   * ADR-053 Decision 3.
+   */
+  config?: Record<string, unknown>;
   /** Optional explicit standalone-route URL (defaults to `${url}/standalone`). */
   standaloneUrl?: string;
 }
@@ -40,6 +48,12 @@ export interface IRemoteProviderProps {
   serverUrl?: string;
   /** List of remote modules available in this app. Reactive — can be mutated at runtime. */
   modules: IRemoteModuleConfig[];
+  /**
+   * Provider-level ambient config default — applies to ALL embedded modules.
+   * Lowest priority in merge: provider.config → modules[name].config → <Remote config={...}>.
+   * ADR-053 Decision 3.
+   */
+  config?: Record<string, unknown>;
   children?: JSX.Element;
 }
 
@@ -70,8 +84,16 @@ export interface IRemoteManifest {
 
 /**
  * Props of the <Remote /> component returned from useRemote().
- * Any extra props are forwarded to the remote module as-is (validated against
- * its zod schema at mount time once Phase 4 lands).
+ *
+ * Reserved props (ADR-053 Decision 6):
+ *  - System: `name`, `instanceId`, `fallback` — host-side wire, not forwarded.
+ *  - Config: `config` — merged host-side, sent via __capsule_remote_config__ envelope.
+ *  - Events: props matching /^on[A-Z]/ — auto-subscribed via transport.onMessage.
+ *  - Runtime props: everything else — forwarded via __capsule_remote_props__ envelope.
+ *  - children: BANNED at TypeScript level (composition across frame boundary = future ADR).
+ *
+ * Extra props (non-reserved, non-on*) are forwarded to the remote module via
+ * __capsule_remote_props__ envelope (validated against zod schema once Phase 4 lands).
  */
 export interface IRemoteComponentProps {
   /** Module name as registered in <RemoteProvider modules>. */
@@ -84,7 +106,17 @@ export interface IRemoteComponentProps {
   instanceId?: string;
   /** Fallback shown during load / on error. */
   fallback?: (status: 'loading' | 'error' | 'success') => JSX.Element;
-  /** Anything else is forwarded to the remote module. */
+  /**
+   * Per-instance ambient config override. Highest priority in merge:
+   *   provider.config → modules[name].config → config (this prop).
+   * `undefined` is equivalent to omitting the prop — does NOT clear ambient config.
+   * ADR-053 Decision 3.
+   */
+  config?: Record<string, unknown>;
+  // children: INTENTIONALLY ABSENT — composition across iframe frame boundary
+  // requires a separate architectural ADR (ADR-053 Decision 6 / risk #3).
+  // Runtime silently ignores children if passed via any-cast.
+  /** Anything else (non-reserved, non-on*) is forwarded to the remote module. */
   [key: string]: unknown;
 }
 
@@ -181,4 +213,73 @@ export interface ITransport {
   send: (msg: IRemoteMessage) => void;
   onMessage: (cb: (msg: IRemoteMessage) => void) => () => void;
   dispose: () => void;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Module lifecycle contract (Phase 1 additive — ADR-053 Decisions 2 + 3)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Symmetric module-side communication handle (counterpart of IRemoteHandle).
+ * Passed to bootstrap() as part of the structured context object.
+ *
+ * Reserved namespace: event names starting with `__capsule_` are reserved for
+ * shell-internal envelopes. Calling channel.on/send with such names logs a
+ * console.warn and is a no-op. ADR-053 Decision 6.
+ */
+export interface IRemoteChannel {
+  /** Fire-and-forget — module sends an event to the host. */
+  send: (event: string, payload?: unknown) => void;
+  /** Awaitable request/response round-trip from module to host. */
+  request: <T = unknown>(
+    event: string,
+    payload?: unknown,
+    timeoutMs?: number,
+  ) => Promise<IRemoteResponse<T>>;
+  /**
+   * Subscribe to messages from the host (or to responses from the host).
+   * Returns an unsubscribe function.
+   */
+  on: (event: string, cb: (payload?: unknown) => void) => () => void;
+}
+
+/**
+ * Cleanup function returned from bootstrap(). Called when the remote module
+ * is unmounted. Must dispose the Solid root (render() return value) and any
+ * active subscriptions.
+ */
+export type IRemoteDispose = () => void;
+
+/**
+ * Universal lifecycle entry-point exported by every remote module.
+ * Named export `bootstrap` — NOT default (default is reserved for HCA Page).
+ *
+ * Shell calls: bootstrap(rootElement, { props, config, channel }) on ready.
+ * Props and config are Solid-reactive proxy objects — direct property access
+ * is tracked by Solid; enumeration (Object.keys / spread / JSON.stringify) is
+ * snapshot-only and does NOT react to future updates. ADR-053 Decision 4.
+ *
+ * @example
+ * ```ts
+ * import { render } from 'solid-js/web';
+ * export const bootstrap: IRemoteBootstrap = (root, { props, config, channel }) => {
+ *   return render(() => <App greeting={props.greeting} theme={config.theme} />, root);
+ * };
+ * ```
+ */
+export interface IRemoteBootstrap<
+  Props = Record<string, unknown>,
+  Config = Record<string, unknown>,
+> {
+  (
+    root: HTMLElement,
+    ctx: {
+      /** Reactive accessor object for runtime props from the host. */
+      props: Props;
+      /** Reactive accessor object for ambient config (merged provider → module → instance). */
+      config: Config;
+      /** Channel for communicating back to the host. */
+      channel: IRemoteChannel;
+    },
+  ): IRemoteDispose;
 }
