@@ -1,4 +1,9 @@
-import { check, formatViolations, type ICheckOptions, type IViolation } from '@capsuletech/compliance';
+import {
+  check,
+  formatViolations,
+  type ICheckOptions,
+  type IViolation,
+} from '@capsuletech/compliance';
 import type { Plugin } from 'vite';
 
 export interface ICompliancePluginOptions extends Omit<ICheckOptions, 'aliasKeys'> {

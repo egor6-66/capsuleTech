@@ -19,10 +19,10 @@
 // Cleanup: при clean compile файла (compliance — per-file, tsc — per-cycle).
 // Rotation: не нужна — truncate при старте достаточно.
 
+import { type ChildProcess, spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
-import { spawn, type ChildProcess } from 'node:child_process';
-import type { Plugin, Logger } from 'vite';
+import type { Logger, Plugin } from 'vite';
 
 export type DiagnosticType = 'ts' | 'compliance' | 'vite';
 export type DiagnosticSeverity = 'error' | 'warn';
@@ -97,7 +97,9 @@ const normalizeFile = (file: string, workspaceRoot: string): string => {
  * Парсит одну tsc-строку формата `path/to/file.ts(10,5): error TS2322: message`.
  * Возвращает null если строка не подходит (preamble, blank, summary).
  */
-const parseTscLine = (line: string): {
+const parseTscLine = (
+  line: string,
+): {
   file: string;
   line: number;
   col: number;
@@ -123,6 +125,14 @@ const parseTscLine = (line: string): {
 
 /** Маркер конца cycle'а от tsc --watch — "Found N error(s)." */
 const isTscCycleEnd = (line: string): boolean => /Found\s+\d+\s+errors?\b/i.test(line);
+
+/**
+ * ANSI escape sequence — `ESC [ <params> m` (color/style codes).
+ * Используется для очистки Vite-Logger сообщений перед записью в лог.
+ * biome-ignore lint/suspicious/noControlCharactersInRegex: intentional — strip ANSI color codes from terminal output before persisting to JSONL.
+ */
+const ANSI_RX = new RegExp(`${String.fromCharCode(0x1b)}\\[[0-9;]*m`, 'g');
+const stripAnsi = (s: string): string => s.replace(ANSI_RX, '');
 
 export const createDevDiagnosticsPlugin = (
   opts: IDevDiagnosticsPluginOptions,
@@ -262,7 +272,9 @@ export const createDevDiagnosticsPlugin = (
       const extractFileFromMsg = (msg: string): string | undefined => {
         // Vite error message typically contains "at /abs/path:line:col" or
         // "[plugin xxx] /abs/path:line:col: details". Best-effort extraction.
-        const m = msg.match(/(?:^|[\s\[(])((?:[A-Za-z]:)?\/[^\s:()]+\.[a-zA-Z]+)(?::(\d+))?(?::(\d+))?/);
+        const m = msg.match(
+          /(?:^|[\s[(])((?:[A-Za-z]:)?\/[^\s:()]+\.[a-zA-Z]+)(?::(\d+))?(?::(\d+))?/,
+        );
         if (!m) return undefined;
         return m[1];
       };
@@ -275,7 +287,7 @@ export const createDevDiagnosticsPlugin = (
           severity: 'error',
           file: file === '<unknown>' ? appRoot : file,
           code: 'vite-error',
-          message: msg.replace(/\x1b\[[0-9;]*m/g, '').trim(),
+          message: stripAnsi(msg).trim(),
         });
         return origError(msg, options);
       };
@@ -290,7 +302,7 @@ export const createDevDiagnosticsPlugin = (
             severity: 'warn',
             file,
             code: 'vite-warn',
-            message: msg.replace(/\x1b\[[0-9;]*m/g, '').trim(),
+            message: stripAnsi(msg).trim(),
           });
         }
         return origWarn(msg, options);

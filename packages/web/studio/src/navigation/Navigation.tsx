@@ -27,7 +27,7 @@ import { useRouter } from '@capsuletech/web-router';
 import { Button } from '@capsuletech/web-ui/button';
 import { Group } from '@capsuletech/web-ui/group';
 import { For } from 'solid-js';
-import { SEGMENTS, STUDIO_BASE, type SegmentId } from './segments';
+import { SEGMENTS, type SegmentId, STUDIO_BASE } from './segments';
 
 export type { SegmentId };
 

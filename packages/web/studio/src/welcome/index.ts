@@ -3,6 +3,6 @@
  * Подключается через controller `WebStudioWelcome` (см. `../controllers`).
  */
 
-export { Welcome } from './Welcome';
-export type { IWelcomeEvents } from './Welcome';
 export type { IWelcomeProps } from './types';
+export type { IWelcomeEvents } from './Welcome';
+export { Welcome } from './Welcome';

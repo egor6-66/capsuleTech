@@ -23,12 +23,7 @@ import { Layout } from '@capsuletech/web-ui/layout';
 import { Typography } from '@capsuletech/web-ui/typography';
 import { For } from 'solid-js';
 import { SEGMENTS, type SegmentId } from '../navigation/segments';
-import {
-  DEFAULT_DESCRIPTION,
-  DEFAULT_HINT,
-  DEFAULT_TITLE,
-  type IWelcomeProps,
-} from './types';
+import { DEFAULT_DESCRIPTION, DEFAULT_HINT, DEFAULT_TITLE, type IWelcomeProps } from './types';
 
 export interface IWelcomeEvents {
   /** ID сегмента карточки, по которой кликнули (`'store' | 'creator'`). */
@@ -67,9 +62,7 @@ const WelcomeComponent = (props: IWelcomeProps) => {
               role="button"
               tabIndex={0}
               class="cursor-pointer transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              onClick={() =>
-                emit('onNavigate', { source: 'WebStudio.Welcome', payload: seg.id })
-              }
+              onClick={() => emit('onNavigate', { source: 'WebStudio.Welcome', payload: seg.id })}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();

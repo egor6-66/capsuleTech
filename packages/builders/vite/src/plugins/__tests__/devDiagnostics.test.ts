@@ -33,7 +33,9 @@ const { parseTscLine, isTscCycleEnd, dedupeKey, normalizeFile } = _devDiagnostic
 
 describe('parseTscLine', () => {
   it('parses error line with file:line:col', () => {
-    const r = parseTscLine("src/foo.ts(10,5): error TS2322: Type 'X' is not assignable to type 'Y'.");
+    const r = parseTscLine(
+      "src/foo.ts(10,5): error TS2322: Type 'X' is not assignable to type 'Y'.",
+    );
     expect(r).toEqual({
       file: 'src/foo.ts',
       line: 10,
@@ -92,12 +94,26 @@ describe('dedupeKey', () => {
   });
 
   it('produces different key for different line', () => {
-    const base: IDevDiagnostic = { ts: 1, type: 'ts', severity: 'error', file: 'a', line: 1, message: 'x' };
+    const base: IDevDiagnostic = {
+      ts: 1,
+      type: 'ts',
+      severity: 'error',
+      file: 'a',
+      line: 1,
+      message: 'x',
+    };
     expect(dedupeKey(base)).not.toBe(dedupeKey({ ...base, line: 2 }));
   });
 
   it('produces different key for different type', () => {
-    const base: IDevDiagnostic = { ts: 1, type: 'ts', severity: 'error', file: 'a', line: 1, message: 'x' };
+    const base: IDevDiagnostic = {
+      ts: 1,
+      type: 'ts',
+      severity: 'error',
+      file: 'a',
+      line: 1,
+      message: 'x',
+    };
     expect(dedupeKey(base)).not.toBe(dedupeKey({ ...base, type: 'compliance' }));
   });
 });
