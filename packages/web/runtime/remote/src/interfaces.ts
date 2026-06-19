@@ -267,19 +267,14 @@ export type IRemoteDispose = () => void;
  * };
  * ```
  */
-export interface IRemoteBootstrap<
-  Props = Record<string, unknown>,
-  Config = Record<string, unknown>,
-> {
-  (
-    root: HTMLElement,
-    ctx: {
-      /** Reactive accessor object for runtime props from the host. */
-      props: Props;
-      /** Reactive accessor object for ambient config (merged provider → module → instance). */
-      config: Config;
-      /** Channel for communicating back to the host. */
-      channel: IRemoteChannel;
-    },
-  ): IRemoteDispose;
-}
+export type IRemoteBootstrap<Props = Record<string, unknown>, Config = Record<string, unknown>> = (
+  root: HTMLElement,
+  ctx: {
+    /** Reactive accessor object for runtime props from the host. */
+    props: Props;
+    /** Reactive accessor object for ambient config (merged provider → module → instance). */
+    config: Config;
+    /** Channel for communicating back to the host. */
+    channel: IRemoteChannel;
+  },
+) => IRemoteDispose;

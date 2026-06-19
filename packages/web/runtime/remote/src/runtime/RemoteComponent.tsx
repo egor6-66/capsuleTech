@@ -17,10 +17,10 @@ import {
   createMemo,
   createResource,
   createUniqueId,
+  type JSX,
   Match,
   onCleanup,
   Switch,
-  type JSX,
 } from 'solid-js';
 import type {
   IRemoteComponentProps,
@@ -28,13 +28,12 @@ import type {
   IRemoteModuleConfig,
   ITransport,
 } from '../interfaces';
-import { buildSrcdoc } from './buildSrcdoc';
-
 // Vite resolves this at build time — boot.js is a dist-asset of this package.
 // The ?url suffix turns the import into a string URL (not executed inline).
 // At test time this is mocked via vi.mock.
 // eslint-disable-next-line import/no-unresolved
 import bootUrl from '../shell/boot?url';
+import { buildSrcdoc } from './buildSrcdoc';
 
 /** Internal props added by RemoteProvider — not part of the public API. */
 export interface IRemoteComponentInternalProps extends IRemoteComponentProps {
@@ -99,7 +98,14 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
     const mf = manifest();
     if (!m || !mf) return undefined;
     const url = bootUrl as string;
-    return buildSrcdoc({ name: rawProps.name, instanceId, sessionId: rawProps.sessionId, module: m, manifest: mf, bootUrl: url });
+    return buildSrcdoc({
+      name: rawProps.name,
+      instanceId,
+      sessionId: rawProps.sessionId,
+      module: m,
+      manifest: mf,
+      bootUrl: url,
+    });
   });
 
   // ─── Ready handshake ──────────────────────────────────────────────────────

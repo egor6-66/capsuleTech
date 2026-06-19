@@ -24,7 +24,12 @@
  */
 
 import { createStore, reconcile } from 'solid-js/store';
-import type { IRemoteBootstrap, IRemoteChannel, IRemoteMessage, IRemoteResponse } from '../interfaces';
+import type {
+  IRemoteBootstrap,
+  IRemoteChannel,
+  IRemoteMessage,
+  IRemoteResponse,
+} from '../interfaces';
 
 // ─── Bootstrap params (injected by srcdoc) ───────────────────────────────────
 
@@ -190,7 +195,7 @@ const makeProxy = (store: Record<string, unknown>): Record<string, unknown> =>
       return Object.keys(store);
     },
     getOwnPropertyDescriptor(_target, key: string) {
-      if (Object.prototype.hasOwnProperty.call(store, key)) {
+      if (Object.hasOwn(store, key)) {
         return { enumerable: true, configurable: true, value: store[key] };
       }
       return undefined;

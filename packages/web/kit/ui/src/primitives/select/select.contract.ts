@@ -24,9 +24,7 @@ export const SelectContract = defineContract({ name: 'Select', kind: 'primitive'
       disabled: z.boolean().optional(),
       required: z.boolean().optional(),
       name: z.string().optional(),
-      'aria-invalid': z
-        .union([z.literal('true'), z.literal('false'), z.boolean()])
-        .optional(),
+      'aria-invalid': z.union([z.literal('true'), z.literal('false'), z.boolean()]).optional(),
     }),
   ),
   // Slots: root = trigger; content = popover panel.

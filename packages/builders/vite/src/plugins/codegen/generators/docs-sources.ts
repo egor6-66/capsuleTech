@@ -104,7 +104,7 @@ export const checkDocsJsonExport = (pkg: string, appConfigDir: string): boolean 
     return false;
   }
 
-  const exports = pkgJson['exports'] as Record<string, unknown> | undefined;
+  const exports = pkgJson.exports as Record<string, unknown> | undefined;
   if (!exports?.['./docs.json']) {
     return false;
   }

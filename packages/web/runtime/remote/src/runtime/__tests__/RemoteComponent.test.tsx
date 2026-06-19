@@ -13,11 +13,16 @@
  *  - Fallback rendering (loading / error)
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
-import { RemoteComponent, type IRemoteComponentInternalProps } from '../RemoteComponent';
-import type { IRemoteManifest, IRemoteMessage, IRemoteModuleConfig, ITransport } from '../../interfaces';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type {
+  IRemoteManifest,
+  IRemoteMessage,
+  IRemoteModuleConfig,
+  ITransport,
+} from '../../interfaces';
+import { type IRemoteComponentInternalProps, RemoteComponent } from '../RemoteComponent';
 
 // ─── Mock bootUrl (Vite ?url import) ─────────────────────────────────────────
 vi.mock('../shell/boot?url', () => ({ default: 'http://test/boot.mjs' }));
@@ -68,7 +73,10 @@ const makeMockTransport = (): MockTransport => {
     unregister: (name: string, instanceId: string) => {
       registrations.delete(`${name}:${instanceId}`);
     },
-  } as MockTransport & { register: (...args: unknown[]) => void; unregister: (...args: unknown[]) => void };
+  } as MockTransport & {
+    register: (...args: unknown[]) => void;
+    unregister: (...args: unknown[]) => void;
+  };
 };
 
 const SESSION = 'sess-test';
@@ -107,10 +115,7 @@ describe('RemoteComponent', () => {
       modules: makeModules(),
       ...props,
     };
-    disposeRoot = render(
-      () => <RemoteComponent {...baseProps} />,
-      container,
-    );
+    disposeRoot = render(() => <RemoteComponent {...baseProps} />, container);
   };
 
   // ─── Prop classification ───────────────────────────────────────────────────
@@ -185,18 +190,24 @@ describe('RemoteComponent', () => {
     renderRemote({
       config: { a: 'instance', c: 'instance-only' },
       modules: {
-        hello: { name: 'hello', url: 'http://localhost:3001', config: { a: 'module', b: 'module' } },
+        hello: {
+          name: 'hello',
+          url: 'http://localhost:3001',
+          config: { a: 'module', b: 'module' },
+        },
       },
       providerConfig: { a: 'provider', d: 'provider-only' },
     });
     await Promise.resolve();
 
-    const configEnvelopes = transport.sent.filter((m) => m.eventName === '__capsule_remote_config__');
+    const configEnvelopes = transport.sent.filter(
+      (m) => m.eventName === '__capsule_remote_config__',
+    );
     expect(configEnvelopes.length).toBeGreaterThan(0);
     const payload = configEnvelopes[0]!.payload as Record<string, unknown>;
 
-    expect(payload['a']).toBe('instance');   // instance wins
-    expect(payload['b']).toBe('module');     // module wins over provider
+    expect(payload['a']).toBe('instance'); // instance wins
+    expect(payload['b']).toBe('module'); // module wins over provider
     expect(payload['c']).toBe('instance-only');
     expect(payload['d']).toBe('provider-only');
   });
@@ -211,7 +222,9 @@ describe('RemoteComponent', () => {
     });
     await Promise.resolve();
 
-    const configEnvelopes = transport.sent.filter((m) => m.eventName === '__capsule_remote_config__');
+    const configEnvelopes = transport.sent.filter(
+      (m) => m.eventName === '__capsule_remote_config__',
+    );
     const payload = configEnvelopes[0]!.payload as Record<string, unknown>;
 
     expect(payload['x']).toBe('module-val');
@@ -363,7 +376,9 @@ describe('RemoteComponent', () => {
     });
 
     const propsEnvelopes = transport.sent.filter((m) => m.eventName === '__capsule_remote_props__');
-    const configEnvelopes = transport.sent.filter((m) => m.eventName === '__capsule_remote_config__');
+    const configEnvelopes = transport.sent.filter(
+      (m) => m.eventName === '__capsule_remote_config__',
+    );
 
     expect(propsEnvelopes.length).toBeGreaterThan(0);
     expect(configEnvelopes.length).toBeGreaterThan(0);
@@ -373,7 +388,10 @@ describe('RemoteComponent', () => {
 
   it('renders fallback("loading") while manifest is loading', async () => {
     // Override fetch to never resolve
-    vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise(() => {})),
+    );
 
     const fallback = vi.fn((status: string) => <div data-status={status}>Loading...</div>);
     disposeRoot = render(

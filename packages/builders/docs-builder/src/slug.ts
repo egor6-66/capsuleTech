@@ -8,7 +8,7 @@
  *   app     — app/<appName>/[...path/<unit>]
  */
 
-import { relative, sep } from 'node:path';
+import { relative } from 'node:path';
 import type { ISlugStrategy } from './types.js';
 
 /** Strip leading `NN-` numeric prefix from a directory segment only. File basenames keep theirs. */

@@ -2,9 +2,9 @@
  * Tests for createHostHandle.
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import { createHostHandle } from '../createHostHandle';
+import { describe, expect, it, vi } from 'vitest';
 import type { IRemoteMessage, ITransport } from '../../interfaces';
+import { createHostHandle } from '../createHostHandle';
 
 const SESSION = 'sess-1';
 const NAME = 'geo';
@@ -155,9 +155,7 @@ describe('createHostHandle', () => {
       result = handle.openStandalone({ foo: 'bar' });
     }).not.toThrow();
 
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('openStandalone'),
-    );
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('openStandalone'));
     // Returns undefined
     expect(result).toBeUndefined();
 

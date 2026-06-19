@@ -44,14 +44,11 @@ describe('useMountTarget — no Provider', () => {
   it('returns an Accessor that gives undefined', () => {
     let result: HTMLElement | undefined = 'sentinel' as unknown as HTMLElement | undefined;
 
-    cleanup = render(
-      () => {
-        const mount = useMountTarget();
-        result = mount();
-        return <></>;
-      },
-      container,
-    );
+    cleanup = render(() => {
+      const mount = useMountTarget();
+      result = mount();
+      return <></>;
+    }, container);
 
     expect(result).toBeUndefined();
   });

@@ -5,7 +5,7 @@
  * Canon: docs/_meta/docs-system.md §1, §2
  */
 
-import type { IAudience, IAudienceBlock, IDocMeta, IDocSection } from './types.js';
+import type { IAudience, IAudienceBlock, IDocSection } from './types.js';
 
 // ─── constants ────────────────────────────────────────────────────────────────
 

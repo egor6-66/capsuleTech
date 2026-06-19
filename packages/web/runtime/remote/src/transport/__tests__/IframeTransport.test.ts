@@ -3,9 +3,9 @@
  * Runs in jsdom environment (window + MessageEvent available).
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { IframeTransport } from '../IframeTransport';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IRemoteMessage } from '../../interfaces';
+import { IframeTransport } from '../IframeTransport';
 
 const SESSION = 'test-session';
 
@@ -71,9 +71,7 @@ describe('IframeTransport', () => {
 
   it('send does nothing if iframe is not registered', () => {
     // Should not throw
-    expect(() =>
-      transport.send(makeMsg({ to: 'unknown', toInstance: 'inst' })),
-    ).not.toThrow();
+    expect(() => transport.send(makeMsg({ to: 'unknown', toInstance: 'inst' }))).not.toThrow();
   });
 
   // ── broadcast ─────────────────────────────────────────────────────────────

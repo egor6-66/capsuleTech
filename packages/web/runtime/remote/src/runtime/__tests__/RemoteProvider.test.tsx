@@ -3,13 +3,13 @@
  * Uses Solid render in jsdom.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { IRemoteModuleConfig } from '../../interfaces';
+import { IframeTransport } from '../../transport/IframeTransport';
 import { RemoteProvider } from '../RemoteProvider';
 import { useRemote } from '../useRemote';
-import { IframeTransport } from '../../transport/IframeTransport';
-import type { IRemoteModuleConfig } from '../../interfaces';
 
 // Helper to render inside a div and get the context
 function renderProvider(
@@ -95,21 +95,32 @@ describe('RemoteProvider + useRemote', () => {
     disposeRoot = render(
       () => (
         <RemoteProvider modules={modules()}>
-          <InnerCapture onCtx={(ctx) => { capturedCtx = ctx; }} />
+          <InnerCapture
+            onCtx={(ctx) => {
+              capturedCtx = ctx;
+            }}
+          />
         </RemoteProvider>
       ),
       container,
     );
 
     expect(capturedCtx).toBeDefined();
-    expect(capturedCtx!.modules['hello']).toMatchObject({ name: 'hello', url: 'http://localhost:3001' });
+    expect(capturedCtx!.modules['hello']).toMatchObject({
+      name: 'hello',
+      url: 'http://localhost:3001',
+    });
   });
 
   it('updateModule mutates the modules store', () => {
     disposeRoot = render(
       () => (
         <RemoteProvider modules={[{ name: 'hello', url: 'http://localhost:3001' }]}>
-          <InnerCapture onCtx={(ctx) => { capturedCtx = ctx; }} />
+          <InnerCapture
+            onCtx={(ctx) => {
+              capturedCtx = ctx;
+            }}
+          />
         </RemoteProvider>
       ),
       container,
@@ -128,7 +139,11 @@ describe('RemoteProvider + useRemote', () => {
     disposeRoot = render(
       () => (
         <RemoteProvider modules={modules()}>
-          <InnerCapture onCtx={(ctx) => { capturedCtx = ctx; }} />
+          <InnerCapture
+            onCtx={(ctx) => {
+              capturedCtx = ctx;
+            }}
+          />
         </RemoteProvider>
       ),
       container,
@@ -150,7 +165,11 @@ describe('RemoteProvider + useRemote', () => {
     disposeRoot = render(
       () => (
         <RemoteProvider modules={[{ name: 'x', url: 'http://x.test' }]}>
-          <InnerCapture onCtx={(ctx) => { capturedCtx = ctx; }} />
+          <InnerCapture
+            onCtx={(ctx) => {
+              capturedCtx = ctx;
+            }}
+          />
         </RemoteProvider>
       ),
       container,
@@ -170,7 +189,11 @@ describe('RemoteProvider + useRemote', () => {
     disposeRoot = render(
       () => (
         <RemoteProvider modules={[{ name: 'x', url: 'http://x.test' }]}>
-          <InnerCapture onCtx={(ctx) => { capturedCtx = ctx; }} />
+          <InnerCapture
+            onCtx={(ctx) => {
+              capturedCtx = ctx;
+            }}
+          />
         </RemoteProvider>
       ),
       container,

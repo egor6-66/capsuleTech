@@ -12,7 +12,8 @@
       "!**/.claude",
       "!**/.obsidian",
       "!packages/cli/e2e/fixture",
-      "!docs/_archive"
+      "!docs/_archive",
+      "!docs/.generated"
     ]
   }
 }

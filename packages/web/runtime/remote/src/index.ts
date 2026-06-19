@@ -6,9 +6,13 @@
  */
 
 export type {
+  // Phase 1 additive — lifecycle + two-channel (ADR-053)
+  IRemoteBootstrap,
+  IRemoteChannel,
   // Phase 0 — transport + messaging
   IRemoteComponentProps,
   IRemoteContext,
+  IRemoteDispose,
   IRemoteHandle,
   IRemoteManifest,
   IRemoteMessage,
@@ -17,10 +21,6 @@ export type {
   IRemoteResponse,
   ITransport,
   TransportKind,
-  // Phase 1 additive — lifecycle + two-channel (ADR-053)
-  IRemoteBootstrap,
-  IRemoteChannel,
-  IRemoteDispose,
 } from './interfaces';
 
 // Phase 1 runtime

@@ -9,7 +9,7 @@
  * ADR-053 Decision 8.
  */
 
-import { createEffect, createUniqueId, onCleanup, type JSX } from 'solid-js';
+import { createEffect, createUniqueId, type JSX, onCleanup } from 'solid-js';
 import { createStore, reconcile } from 'solid-js/store';
 import type {
   IRemoteComponentProps,
@@ -19,9 +19,9 @@ import type {
   ITransport,
 } from '../interfaces';
 import { IframeTransport } from '../transport/IframeTransport';
-import { RemoteContext } from './RemoteContext';
-import { RemoteComponent } from './RemoteComponent';
 import { createHostHandle } from './createHostHandle';
+import { RemoteComponent } from './RemoteComponent';
+import { RemoteContext } from './RemoteContext';
 
 export const RemoteProvider = (props: IRemoteProviderProps): JSX.Element => {
   const sessionId = createUniqueId();

@@ -38,7 +38,6 @@ import { resolve } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { AppConfigResult, AppConfigShape, CodegenContext } from '../codegen';
 import {
-  checkDocsJsonExport,
   createDocsSourcesSubGenerator,
   derivePackageShort,
   generateDocsSourcesRuntime,

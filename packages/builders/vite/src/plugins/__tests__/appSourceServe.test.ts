@@ -249,9 +249,7 @@ describe('AppSourceServePlugin — appRoot normalisation', () => {
       'D:/CODING/projects/my/capsule/apps/remote-hello',
       '/src/standalone.tsx',
     );
-    expect(final).toBe(
-      '/@fs/D:/CODING/projects/my/capsule/apps/remote-hello/src/standalone.tsx',
-    );
+    expect(final).toBe('/@fs/D:/CODING/projects/my/capsule/apps/remote-hello/src/standalone.tsx');
   });
 
   it('strips leading slash from Unix-style paths to avoid double-slash in /@fs/', async () => {

@@ -2,9 +2,9 @@
  * Tests for buildSrcdoc — pure unit tests (no DOM required, but runs in jsdom).
  */
 
-import { describe, it, expect } from 'vitest';
-import { buildSrcdoc } from '../buildSrcdoc';
+import { describe, expect, it } from 'vitest';
 import type { IRemoteManifest, IRemoteModuleConfig } from '../../interfaces';
+import { buildSrcdoc } from '../buildSrcdoc';
 
 const MODULE: IRemoteModuleConfig = {
   name: 'hello',
@@ -72,12 +72,8 @@ describe('buildSrcdoc', () => {
       bootUrl: BOOT_URL,
     });
 
-    expect(html).toContain(
-      '<link rel="stylesheet" href="http://localhost:3001/assets/style.css">',
-    );
-    expect(html).toContain(
-      '<link rel="stylesheet" href="http://localhost:3001/assets/extra.css">',
-    );
+    expect(html).toContain('<link rel="stylesheet" href="http://localhost:3001/assets/style.css">');
+    expect(html).toContain('<link rel="stylesheet" href="http://localhost:3001/assets/extra.css">');
   });
 
   it('produces no <link> when manifest.styles is absent', () => {
