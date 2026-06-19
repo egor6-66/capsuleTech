@@ -27,7 +27,7 @@ const INPUT_FIELD_BASE = [
  *
  * The shared INPUT_FIELD_BASE carries layout, border, `px-input`, `bg-transparent`
  * and `outline-none`. It deliberately does NOT carry a focus-visible ring (see
- * input/base.ts comments): the trigger's only ring is the OPEN-state ring below.
+ * comments above INPUT_FIELD_BASE): the trigger's only ring is the OPEN-state ring below.
  *
  * Kobalte data-attributes used for state:
  *   `data-[expanded]`           — set when the popover is open (any input method).
