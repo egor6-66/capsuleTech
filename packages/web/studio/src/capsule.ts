@@ -15,6 +15,7 @@
  *   - `WebStudio.Tree`               → иерархия композиции (creator-mode)
  *   - `WebStudio.Props`              → редактор пропсов выбранного пресета
  *   - `WebStudio.Info`               → info-панель (контракт / манифест / readme)
+ *   - `WebStudio.Welcome`            → welcome/index-fallback для /workspace/web-studio
  *
  * Selection — общий singleton в `@capsuletech/web-studio/selection`; все
  * модули читают/пишут без Provider'а.
@@ -27,6 +28,7 @@ import { WebStudioCreatorRoot } from './controllers/WebStudioCreatorRoot';
 import { WebStudioInfo } from './controllers/WebStudioInfo';
 import { WebStudioProps } from './controllers/WebStudioProps';
 import { WebStudioTree } from './controllers/WebStudioTree';
+import { WebStudioWelcome } from './controllers/WebStudioWelcome';
 import { Navigation } from './navigation';
 import { ComponentsPalette } from './palette';
 
@@ -41,5 +43,6 @@ export default defineCapsuleModule({
     Navigation,
     Props: WebStudioProps,
     Tree: WebStudioTree,
+    Welcome: WebStudioWelcome,
   },
 });

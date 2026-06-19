@@ -22,3 +22,4 @@ export {
 export { WebStudioInfo } from './WebStudioInfo';
 export { WebStudioProps } from './WebStudioProps';
 export { WebStudioTree } from './WebStudioTree';
+export { WebStudioWelcome } from './WebStudioWelcome';
