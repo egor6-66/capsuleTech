@@ -15,11 +15,14 @@
  * - Глобальные body-mirror'ы (`.dark` на `<body>` для 3rd-party observer'ов
  *   и т.д.) не затрагивают canvas — у iframe свой body.
  *
- * ### Чего НЕ даёт
- * **Kobalte / Portal-based компоненты** монтируют popover'ы через
- * `document.body` JS-контекста — а контекст у нас родительский, значит popover
- * уезжает в app's body. Решается на следующей итерации через `<MountProvider>`
- * с `mount={iframeBody}`, который kit-обёртки будут консумить.
+ * ### Portal mount routing
+ *
+ * Внутрь iframe оборачиваем детей в `<MountProvider value={iframeBody}>` из
+ * `@capsuletech/web-ui` — kit Portal-based примитивы (Select, Dropdown, Tooltip)
+ * консумят `useMountTarget()` и монтят popover'ы в iframe body, а не в app's
+ * body главного документа. Без этого Portal'ы уезжали в parent's body, popper'у
+ * floating-ui considered trigger inside iframe → popover в main → визуально
+ * ломалось (popover не виден / смещён).
  *
  * ### Override semantics (theme / dark пропы)
  *
@@ -59,6 +62,7 @@
  * textContent у style-тегов и iframe увидит stale — добавим характ-observer.
  */
 
+import { MountProvider } from '@capsuletech/web-ui';
 import { createEffect, createSignal, type JSX, onCleanup, onMount } from 'solid-js';
 import { Portal } from 'solid-js/web';
 
@@ -231,7 +235,11 @@ export const CanvasFrame = (props: ICanvasFrameProps): JSX.Element => {
         title="capsule-canvas"
         style="display:block; width:100%; height:100%; border:0; background:transparent;"
       />
-      {body() && <Portal mount={body() as HTMLElement}>{props.children}</Portal>}
+      {body() && (
+        <Portal mount={body() as HTMLElement}>
+          <MountProvider value={() => body() ?? undefined}>{props.children}</MountProvider>
+        </Portal>
+      )}
     </>
   );
 };

@@ -1,4 +1,4 @@
-const Store = Page((Ui) => (
+const Creator = Page((Ui) => (
   <Layouts.Matrix
     preset="app-shell"
     slots={{
@@ -12,12 +12,17 @@ const Store = Page((Ui) => (
         swapGroup: 'widgets',
       },
       rightBar: {
-        children: <Widgets.Studio.Inspector />,
+        children: <Widgets.Studio.Tree />,
         swapGroup: 'widgets',
         initialSize: 0.25,
       },
       footer: {
-        children: <Widgets.Studio.Info />,
+        children: (
+          <Ui.Layout.Flex wrap={'wrap'}>
+            <Widgets.Studio.Inspector />
+            <Widgets.Studio.Monitoring />
+          </Ui.Layout.Flex>
+        ),
         swapGroup: 'widgets',
         initialSize: 0.25,
       },
@@ -25,4 +30,4 @@ const Store = Page((Ui) => (
   />
 ));
 
-export default Store;
+export default Creator;

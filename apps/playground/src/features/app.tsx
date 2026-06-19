@@ -21,11 +21,7 @@
  *   Тип — глобал `Entities.Viewer.Row` (codegen $infer), без импорта.
  */
 
-type AppCtx = {
-  viewer: Entities.Viewer.Row | null;
-};
-
-const App = Feature<Auth.Events & WebStudio.Navigation.Events, AppCtx>(
+const App = Feature<Auth.Events & WebStudio.Navigation.Events, Entities.Viewer.Row>(
   ({ router, utils, authApi }) => ({
     initial: 'guest',
 
