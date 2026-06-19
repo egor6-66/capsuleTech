@@ -1,6 +1,26 @@
 import { cva } from '@capsuletech/web-style';
 
-import { INPUT_FIELD_BASE } from '../base';
+/**
+ * Inlined INPUT_FIELD_BASE — tokens live in `@capsuletech/web-style`;
+ * this string is a local aggregation for CVA. Kept in sync with
+ * primitives/input/variants.ts and primitives/select/variants.ts.
+ */
+const INPUT_FIELD_BASE = [
+  // Layout & sizing — common to all three controls
+  'flex w-full rounded-md border border-input text-sm shadow-sm',
+  // Horizontal padding shared by all three; height controlled per-control
+  'px-input',
+  // Transition covers bg, border colour, and box-shadow (ring)
+  'transition-[background-color,border-color,box-shadow] duration-200',
+  // Background state 1: empty
+  'bg-transparent',
+  // Suppress native outline; the active ring is supplied per-control
+  'outline-none',
+  // Placeholder
+  'placeholder:text-muted-foreground',
+  // Disabled
+  'disabled:cursor-not-allowed disabled:opacity-50',
+].join(' ');
 
 export const variants = {
   variant: {

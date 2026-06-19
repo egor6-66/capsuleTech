@@ -3,7 +3,7 @@ import { Select as KobalteSelect } from '@kobalte/core/select';
 import { Check, ChevronDown } from 'lucide-solid';
 import { splitProps } from 'solid-js';
 
-import { createFinish } from '../../../lib/finish';
+import { createFinish } from '../../lib/finish';
 
 import type {
   ISelectContentProps,

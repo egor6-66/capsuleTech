@@ -1,13 +1,33 @@
 import { cva } from '@capsuletech/web-style';
 
-import { INPUT_FIELD_BASE } from '../base';
+/**
+ * Inlined INPUT_FIELD_BASE — tokens live in `@capsuletech/web-style`;
+ * this string is a local aggregation for CVA. Kept in sync with
+ * primitives/input/variants.ts and primitives/textarea/variants.ts.
+ */
+const INPUT_FIELD_BASE = [
+  // Layout & sizing — common to all three controls
+  'flex w-full rounded-md border border-input text-sm shadow-sm',
+  // Horizontal padding shared by all three; height controlled per-control
+  'px-input',
+  // Transition covers bg, border colour, and box-shadow (ring)
+  'transition-[background-color,border-color,box-shadow] duration-200',
+  // Background state 1: empty
+  'bg-transparent',
+  // Suppress native outline; the active ring is supplied per-control
+  'outline-none',
+  // Placeholder
+  'placeholder:text-muted-foreground',
+  // Disabled
+  'disabled:cursor-not-allowed disabled:opacity-50',
+].join(' ');
 
 /**
  * Trigger button — visually matches `Input` / `Textarea` in size/border.
  *
  * The shared INPUT_FIELD_BASE carries layout, border, `px-input`, `bg-transparent`
  * and `outline-none`. It deliberately does NOT carry a focus-visible ring (see
- * `base.ts`): the trigger's only ring is the OPEN-state ring below.
+ * input/base.ts comments): the trigger's only ring is the OPEN-state ring below.
  *
  * Kobalte data-attributes used for state:
  *   `data-[expanded]`           — set when the popover is open (any input method).
