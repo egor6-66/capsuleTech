@@ -26,12 +26,9 @@
 import { ModeToggle, ThemePicker } from '@capsuletech/web-shell/ui';
 import { useDarkMode } from '@capsuletech/web-style';
 import { Accordion } from '@capsuletech/web-ui/accordion';
-import { Button } from '@capsuletech/web-ui/button';
 import { Flex } from '@capsuletech/web-ui/flex';
-import { Moon, RotateCcw } from '@capsuletech/web-ui/icons';
-import { Show } from 'solid-js';
+import { Moon } from '@capsuletech/web-ui/icons';
 import {
-  resetCanvasStyle,
   setCanvasDark,
   setCanvasTheme,
   useCanvasDark,

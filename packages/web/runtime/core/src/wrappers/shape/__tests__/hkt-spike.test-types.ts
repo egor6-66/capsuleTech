@@ -783,15 +783,15 @@ declare function ShapeP<S extends z.ZodType, A extends { __tpl?: unknown }>(
 // ============================================================================
 
 const _shapePFunc = ShapeP(
-  (ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }),
-  (props) => ({ columns: [{ accessorFn: (row) => row.applicant.name }] }),
+  (_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }),
+  (_props) => ({ columns: [{ accessorFn: (row) => row.applicant.name }] }),
 );
 void _shapePFunc;
 
 // --- P-1a: row в accessorFn = Incident (строгий Equal) ---
 const _shapePFuncRowCheck = ShapeP(
-  (ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }),
-  (props) => ({
+  (_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }),
+  (_props) => ({
     columns: [
       {
         accessorFn: (row): string => {
@@ -826,8 +826,8 @@ type _PP_ArrExtendsData = Expect<
 
 // --- P-1d: негатив — row.nonExistent → @ts-expect-error ---
 const _shapePFuncNeg = ShapeP(
-  (ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }),
-  (props) => ({
+  (_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }),
+  (_props) => ({
     columns: [
       {
         accessorFn: (row) =>
@@ -842,7 +842,7 @@ void _shapePFuncNeg;
 // --- P-1e: негатив — props.nonExistent не существует.
 // Прямой доступ к несуществующему полю без cast — стандартный паттерн.
 const _shapePFuncPropsNeg = ShapeP(
-  (ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }),
+  (_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }),
   (props) => {
     type _PP_PropsIsDataTable = Expect<
       Equal<typeof props extends IDataTableProps<Incident> ? true : false, true>
@@ -865,14 +865,14 @@ type _PP_DataItemNotAny = Expect<Equal<IsAny<_PP_DataItemInferActual>, false>>;
 // ТЕСТ P-2: arg2 как ОБЪЕКТ (не функция)
 // ============================================================================
 
-const _shapePObj = ShapeP((ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }), {
+const _shapePObj = ShapeP((_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }), {
   columns: [{ accessorFn: (row) => row.applicant.name }],
 });
 void _shapePObj;
 
 // --- P-2a: row в accessorFn = Incident (строгий Equal) ---
 const _shapePObjRowCheck = ShapeP(
-  (ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }),
+  (_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }),
   {
     columns: [
       {
@@ -898,7 +898,7 @@ type _PO_IncidentExtendsGetRowId = Expect<
 type _PO_GetRowIdNotAny = Expect<Equal<IsAny<_PO_GetRowIdParam>, false>>;
 
 // --- P-2c: негатив в объекте — row.nonExistent → @ts-expect-error ---
-const _shapePObjNeg = ShapeP((ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }), {
+const _shapePObjNeg = ShapeP((_ui) => ({ schema: z.array(IncidentSchema), as: DataTableComp }), {
   columns: [
     {
       accessorFn: (row) =>

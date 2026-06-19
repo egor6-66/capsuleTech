@@ -159,7 +159,7 @@ describe('RemoteComponent', () => {
     await Promise.resolve();
     const propEnvelopes = transport.sent.filter((m) => m.eventName === '__capsule_remote_props__');
     const payload = propEnvelopes[0]!.payload as Record<string, unknown>;
-    expect(payload['greeting']).toBe('World');
+    expect(payload.greeting).toBe('World');
   });
 
   // ─── online / onclick non-collision ───────────────────────────────────────
@@ -169,7 +169,7 @@ describe('RemoteComponent', () => {
     await Promise.resolve();
     const propEnvelopes = transport.sent.filter((m) => m.eventName === '__capsule_remote_props__');
     const payload = propEnvelopes[0]!.payload as Record<string, unknown>;
-    expect(payload['online']).toBe(true);
+    expect(payload.online).toBe(true);
   });
 
   it('onclick (lowercase) is treated as runtime prop, not event', async () => {
@@ -206,10 +206,10 @@ describe('RemoteComponent', () => {
     expect(configEnvelopes.length).toBeGreaterThan(0);
     const payload = configEnvelopes[0]!.payload as Record<string, unknown>;
 
-    expect(payload['a']).toBe('instance'); // instance wins
-    expect(payload['b']).toBe('module'); // module wins over provider
-    expect(payload['c']).toBe('instance-only');
-    expect(payload['d']).toBe('provider-only');
+    expect(payload.a).toBe('instance'); // instance wins
+    expect(payload.b).toBe('module'); // module wins over provider
+    expect(payload.c).toBe('instance-only');
+    expect(payload.d).toBe('provider-only');
   });
 
   it('config={undefined} is equivalent to no config prop — provider+module merge applies', async () => {
@@ -227,8 +227,8 @@ describe('RemoteComponent', () => {
     );
     const payload = configEnvelopes[0]!.payload as Record<string, unknown>;
 
-    expect(payload['x']).toBe('module-val');
-    expect(payload['y']).toBe('provider-val');
+    expect(payload.x).toBe('module-val');
+    expect(payload.y).toBe('provider-val');
   });
 
   // ─── Reactive props ───────────────────────────────────────────────────────
@@ -260,7 +260,7 @@ describe('RemoteComponent', () => {
     const lastPayload = transport.sent
       .filter((m) => m.eventName === '__capsule_remote_props__')
       .at(-1)!.payload as Record<string, unknown>;
-    expect(lastPayload['greeting']).toBe('Universe');
+    expect(lastPayload.greeting).toBe('Universe');
   });
 
   // ─── Reactive config ──────────────────────────────────────────────────────
@@ -292,7 +292,7 @@ describe('RemoteComponent', () => {
     const lastPayload = transport.sent
       .filter((m) => m.eventName === '__capsule_remote_config__')
       .at(-1)!.payload as Record<string, unknown>;
-    expect(lastPayload['theme']).toBe('dark');
+    expect(lastPayload.theme).toBe('dark');
   });
 
   // ─── Auto-subscribe on* props ─────────────────────────────────────────────

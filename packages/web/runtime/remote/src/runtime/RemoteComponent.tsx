@@ -230,6 +230,7 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
           ref={(el) => {
             iframeRef = el;
           }}
+          title={rawProps.name}
           srcdoc={srcdoc()}
           style="width:100%;height:100%;border:0;display:block"
           sandbox="allow-scripts allow-same-origin"

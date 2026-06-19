@@ -92,7 +92,6 @@ export const createHostHandle = (
       console.warn(
         '[capsule/remote] openStandalone — Phase 2 feature (BroadcastChannel + standalone window not yet implemented)',
       );
-      return undefined;
     },
   };
 };

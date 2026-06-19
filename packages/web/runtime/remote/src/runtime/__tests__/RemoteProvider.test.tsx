@@ -7,7 +7,6 @@ import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { IRemoteModuleConfig } from '../../interfaces';
-import { IframeTransport } from '../../transport/IframeTransport';
 import { RemoteProvider } from '../RemoteProvider';
 import { useRemote } from '../useRemote';
 
@@ -106,7 +105,7 @@ describe('RemoteProvider + useRemote', () => {
     );
 
     expect(capturedCtx).toBeDefined();
-    expect(capturedCtx!.modules['hello']).toMatchObject({
+    expect(capturedCtx!.modules.hello).toMatchObject({
       name: 'hello',
       url: 'http://localhost:3001',
     });
@@ -128,7 +127,7 @@ describe('RemoteProvider + useRemote', () => {
 
     capturedCtx!.updateModule('hello', { url: 'http://localhost:4000' });
 
-    expect(capturedCtx!.modules['hello']?.url).toBe('http://localhost:4000');
+    expect(capturedCtx!.modules.hello?.url).toBe('http://localhost:4000');
   });
 
   it('modules reactive: adding a new module updates the store', () => {
@@ -149,14 +148,14 @@ describe('RemoteProvider + useRemote', () => {
       container,
     );
 
-    expect(capturedCtx!.modules['b']).toBeUndefined();
+    expect(capturedCtx!.modules.b).toBeUndefined();
 
     setModules([
       { name: 'a', url: 'http://a.test' },
       { name: 'b', url: 'http://b.test' },
     ]);
 
-    expect(capturedCtx!.modules['b']).toMatchObject({ name: 'b', url: 'http://b.test' });
+    expect(capturedCtx!.modules.b).toMatchObject({ name: 'b', url: 'http://b.test' });
   });
 
   it('transports contains exactly one IframeTransport in Phase 1 (assertion via Remote function)', () => {

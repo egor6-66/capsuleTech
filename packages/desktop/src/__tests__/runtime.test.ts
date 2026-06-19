@@ -19,7 +19,7 @@ describe('useDesktop()', () => {
     beforeEach(() => {
       // Ensure the marker is absent
       // biome-ignore lint/performance/noDelete: test teardown
-      delete (globalThis as Record<string, unknown>)['__TAURI_INTERNALS__'];
+      delete (globalThis as Record<string, unknown>).__TAURI_INTERNALS__;
     });
 
     it('exports useDesktop as a function', () => {
@@ -77,14 +77,14 @@ describe('useDesktop()', () => {
   describe('when running inside Tauri (__TAURI_INTERNALS__ present)', () => {
     beforeEach(() => {
       // Simulate Tauri presence by injecting the sentinel object
-      (globalThis as Record<string, unknown>)['__TAURI_INTERNALS__'] = {
+      (globalThis as Record<string, unknown>).__TAURI_INTERNALS__ = {
         metadata: { currentWindow: { label: 'main' } },
       };
     });
 
     afterEach(() => {
       // biome-ignore lint/performance/noDelete: test teardown
-      delete (globalThis as Record<string, unknown>)['__TAURI_INTERNALS__'];
+      delete (globalThis as Record<string, unknown>).__TAURI_INTERNALS__;
     });
 
     it('available is true', () => {

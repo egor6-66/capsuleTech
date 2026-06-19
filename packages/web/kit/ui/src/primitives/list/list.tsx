@@ -1,7 +1,7 @@
 import { createStyle } from '@capsuletech/web-style';
 import { createVirtualizer } from '@tanstack/solid-virtual';
 import type { JSX } from 'solid-js';
-import { For, mergeProps, splitProps } from 'solid-js';
+import { For, splitProps } from 'solid-js';
 import type {
   IListBatchProps,
   IListProps,

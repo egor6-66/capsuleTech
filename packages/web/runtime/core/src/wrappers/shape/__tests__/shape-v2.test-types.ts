@@ -33,11 +33,9 @@ import type { JSX } from 'solid-js';
 import { describe, it } from 'vitest';
 import { z } from 'zod';
 import type {
-  ApplyRow,
   ApplyRowFrom,
   IShapeBaseProps,
   IShapeConfigBody,
-  IShapeWrapper,
   MarkerOf,
   RowOf,
   ShapeData,

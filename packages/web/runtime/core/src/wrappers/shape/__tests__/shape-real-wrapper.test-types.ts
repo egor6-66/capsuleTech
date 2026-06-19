@@ -19,7 +19,7 @@
 import type { Component } from 'solid-js';
 import { describe, it } from 'vitest';
 import { z } from 'zod';
-import type { ApplyRowFrom, IShapeUi, IShapeWrapper, RowOf, ShapeData } from '../types';
+import type { IShapeUi, IShapeWrapper } from '../types';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -85,8 +85,8 @@ declare const Shape: IShapeWrapper;
 
 // Основной вызов — форма как у пользователя в приложении
 const _s = Shape(
-  (ui) => ({ schema: z.array(IncidentSchema), as: MarkedComp }),
-  (props) => ({
+  (_ui) => ({ schema: z.array(IncidentSchema), as: MarkedComp }),
+  (_props) => ({
     columns: [
       {
         accessorFn: (row) => row.applicant.name,
@@ -98,8 +98,8 @@ void _s;
 
 // Строгий ассерт: row = Incident (не unknown/any)
 const _sCoreCheck = Shape(
-  (ui) => ({ schema: z.array(IncidentSchema), as: MarkedComp }),
-  (props) => ({
+  (_ui) => ({ schema: z.array(IncidentSchema), as: MarkedComp }),
+  (_props) => ({
     columns: [
       {
         accessorFn: (row): string => {
@@ -116,8 +116,8 @@ void _sCoreCheck;
 
 // Негатив: row.nonExistent → ошибка (доказывает что row не any/unknown)
 const _sCoreNeg = Shape(
-  (ui) => ({ schema: z.array(IncidentSchema), as: MarkedComp }),
-  (props) => ({
+  (_ui) => ({ schema: z.array(IncidentSchema), as: MarkedComp }),
+  (_props) => ({
     columns: [
       {
         accessorFn: (row) =>
@@ -193,7 +193,7 @@ type _ModC_HasMarker = Expect<Equal<_UiPreviewCardHasTpl, true>>;
 // PreviewCard: одиночный item → schema = z.object(...), RowOf<S> = Incident.
 const _sModC = Shape(
   (ui: IShapeUi) => ({ schema: IncidentSchema, as: ui.PreviewCard }),
-  (props) => ({
+  (_props) => ({
     fields: [
       {
         header: 'Applicant',
@@ -212,7 +212,7 @@ void _sModC;
 // Негатив: row.nonExistent → ошибка (ui.PreviewCard несёт реальный маркер, row не any)
 const _sModCNeg = Shape(
   (ui: IShapeUi) => ({ schema: IncidentSchema, as: ui.PreviewCard }),
-  (props) => ({
+  (_props) => ({
     fields: [
       {
         header: 'ID',
@@ -249,8 +249,8 @@ declare const NavGroupComp: Component<INavGroupProps<any>> & { readonly __tpl?: 
 
 // ПОЗИТИВ: item.props it = NavItem — без аннотации
 const _sBatch = Shape(
-  (ui) => ({ schema: z.array(NavSchema), as: NavGroupComp }),
-  (ui, props) => ({
+  (_ui) => ({ schema: z.array(NavSchema), as: NavGroupComp }),
+  (ui, _props) => ({
     item: {
       // ui доступен в arg2 для path-tracker (например ui.Button)
       use: ui.Button,
@@ -268,8 +268,8 @@ void _sBatch;
 
 // Строгий ассерт: it = NavItem
 const _sBatchCheck = Shape(
-  (ui) => ({ schema: z.array(NavSchema), as: NavGroupComp }),
-  (ui, props) => ({
+  (_ui) => ({ schema: z.array(NavSchema), as: NavGroupComp }),
+  (_ui, _props) => ({
     item: {
       props: (it): Record<string, unknown> => {
         type _ItIsNavItem = Expect<Equal<typeof it, NavItem>>;
@@ -283,8 +283,8 @@ void _sBatchCheck;
 
 // НЕГАТИВ: it.nonExistent → ошибка (доказывает что it не any/unknown)
 const _sBatchNeg = Shape(
-  (ui) => ({ schema: z.array(NavSchema), as: NavGroupComp }),
-  (ui, props) => ({
+  (_ui) => ({ schema: z.array(NavSchema), as: NavGroupComp }),
+  (_ui, _props) => ({
     item: {
       props: (it) =>
         // @ts-expect-error — nonExistent не существует в NavItem
@@ -295,7 +295,7 @@ const _sBatchNeg = Shape(
 void _sBatchNeg;
 
 // ОБЪЕКТНАЯ ФОРМА arg2 — item без функции (static конфиг)
-const _sBatchObj = Shape((ui) => ({ schema: z.array(NavSchema), as: NavGroupComp }), {
+const _sBatchObj = Shape((_ui) => ({ schema: z.array(NavSchema), as: NavGroupComp }), {
   defaults: [{ label: 'Static', to: '/static' }],
 });
 void _sBatchObj;

@@ -156,7 +156,7 @@ describe('DataTableController', () => {
         <DataTableController
           data={sampleData}
           columns={sampleColumns}
-          itemMeta={(row) => ({ tags: ['row'] })}
+          itemMeta={(_row) => ({ tags: ['row'] })}
           itemPayload={(row) => ({ id: (row as any).id })}
           onRowClick={onRowClick}
         />
@@ -228,7 +228,7 @@ describe('DataTableController', () => {
         <DataTableController
           data={sampleData}
           columns={sampleColumns}
-          itemMeta={(row) => ({ tags: ['row'] })}
+          itemMeta={(_row) => ({ tags: ['row'] })}
           itemPayload={(row) => ({ id: (row as any).id })}
           onRowDblClick={onRowDblClick}
         />
@@ -256,7 +256,7 @@ describe('DataTableController', () => {
         <DataTableController
           data={sampleData}
           columns={sampleColumns}
-          itemMeta={(row) => ({ tags: ['row'] })}
+          itemMeta={(_row) => ({ tags: ['row'] })}
           itemPayload={(row) => ({ id: (row as any).id })}
           onRowClick={onRowClick}
           onRowDblClick={onRowDblClick}
