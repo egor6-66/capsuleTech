@@ -7,8 +7,8 @@
  * принимает решение что делать: router.goTo, логирование, блокировка перехода.
  *
  * Канон:
- *   - Сегменты студии — её собственное знание; список зашит здесь, аппом
- *     не параметризуется (студия знает свои разделы).
+ *   - Сегменты студии — её собственное знание; список зашит в `./segments`,
+ *     аппом не параметризуется (студия знает свои разделы).
  *   - Активный сегмент derived из роутера через `useRouter().current()` —
  *     single source of truth = URL, никаких локальных стейтов в аппе.
  *   - Пакет НЕ роутит сам: только эмитит `onNavigate` с `payload = segment`.
@@ -27,19 +27,9 @@ import { useRouter } from '@capsuletech/web-router';
 import { Button } from '@capsuletech/web-ui/button';
 import { Group } from '@capsuletech/web-ui/group';
 import { For } from 'solid-js';
+import { SEGMENTS, STUDIO_BASE, type SegmentId } from './segments';
 
-/**
- * Сегменты студии. Path-ID совпадает с дочерним роутом
- * (`/workspace/web-studio/<id>`), label — человекочитаемая подпись.
- */
-const SEGMENTS = [
-  { id: 'store', label: 'Store' },
-  { id: 'creator', label: 'Creator' },
-] as const;
-
-type SegmentId = (typeof SEGMENTS)[number]['id'];
-
-const STUDIO_BASE = '/workspace/web-studio';
+export type { SegmentId };
 
 export interface INavigationEvents {
   /** ID сегмента, по которому кликнули (`'store' | 'creator'`). */
