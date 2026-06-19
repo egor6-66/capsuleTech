@@ -15,5 +15,10 @@
 
 export { WebStudioCanvas } from './WebStudioCanvas';
 export { WebStudioCanvasStyle } from './WebStudioCanvasStyle';
+export {
+  type IWebStudioCreatorRootProps,
+  WebStudioCreatorRoot,
+} from './WebStudioCreatorRoot';
 export { WebStudioInfo } from './WebStudioInfo';
 export { WebStudioProps } from './WebStudioProps';
+export { WebStudioTree } from './WebStudioTree';

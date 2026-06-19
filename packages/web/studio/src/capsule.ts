@@ -8,9 +8,11 @@
  *
  * Vite-плагин (CapsuleRegistryPlugin) читает этот файл через jiti и генерирует
  * глобалы:
- *   - `WebStudio.Canvas`             → preview через Renderer (kit хардкод)
+ *   - `WebStudio.Canvas`             → preview (store-mode) / composition canvas (creator-mode)
  *   - `WebStudio.CanvasStyle`        → canvas-only override темы/dark (state-injectable)
- *   - `WebStudio.ComponentsPalette`  → палитра компонентов
+ *   - `WebStudio.ComponentsPalette`  → палитра компонентов (click в store / drag в creator)
+ *   - `WebStudio.CreatorRoot`        → обёртка creator-страницы (общий DnDProvider)
+ *   - `WebStudio.Tree`               → иерархия композиции (creator-mode)
  *   - `WebStudio.Props`              → редактор пропсов выбранного пресета
  *   - `WebStudio.Info`               → info-панель (контракт / манифест / readme)
  *
@@ -21,8 +23,10 @@
 import { defineCapsuleModule } from '@capsuletech/web-core/module';
 import { WebStudioCanvas } from './controllers/WebStudioCanvas';
 import { WebStudioCanvasStyle } from './controllers/WebStudioCanvasStyle';
+import { WebStudioCreatorRoot } from './controllers/WebStudioCreatorRoot';
 import { WebStudioInfo } from './controllers/WebStudioInfo';
 import { WebStudioProps } from './controllers/WebStudioProps';
+import { WebStudioTree } from './controllers/WebStudioTree';
 import { Navigation } from './navigation';
 import { ComponentsPalette } from './palette';
 
@@ -32,8 +36,10 @@ export default defineCapsuleModule({
     Canvas: WebStudioCanvas,
     CanvasStyle: WebStudioCanvasStyle,
     ComponentsPalette,
+    CreatorRoot: WebStudioCreatorRoot,
     Info: WebStudioInfo,
     Navigation,
     Props: WebStudioProps,
+    Tree: WebStudioTree,
   },
 });

@@ -1,8 +1,8 @@
 import { cn } from '@capsuletech/web-style';
+import { Layout } from '@capsuletech/web-ui/layout';
 import { Toggle } from '@capsuletech/web-ui/toggle';
 import { Show } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
-
 import type { IModeDescriptor, IModeToggleProps } from './interfaces';
 import { MODES } from './modes';
 
@@ -27,7 +27,7 @@ export const ModeToggle = (props: IModeToggleProps) => {
     typeof props.mode === 'string' ? MODES[props.mode] : props.mode;
 
   return (
-    <div class={cn('inline-flex items-center gap-2', props.class)}>
+    <Layout.Flex class={cn('items-center gap-2 py-1.5 px-2', props.class)}>
       <Show when={descriptor().icon}>
         {(Icon) => (
           <Dynamic
@@ -46,6 +46,6 @@ export const ModeToggle = (props: IModeToggleProps) => {
           props.onChange?.(next);
         }}
       />
-    </div>
+    </Layout.Flex>
   );
 };

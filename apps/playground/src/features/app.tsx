@@ -21,11 +21,7 @@
  *   Тип — глобал `Entities.Viewer.Row` (codegen $infer), без импорта.
  */
 
-type AppCtx = {
-  viewer: Entities.Viewer.Row | null;
-};
-
-const App = Feature<Auth.Events & WebStudio.Navigation.Events, AppCtx>(
+const App = Feature<Auth.Events & WebStudio.Navigation.Events, Entities.Viewer.Row>(
   ({ router, utils, authApi }) => ({
     initial: 'guest',
 
@@ -41,6 +37,7 @@ const App = Feature<Auth.Events & WebStudio.Navigation.Events, AppCtx>(
           if (authApi?.isAuthed()) {
             store.update({ viewer: authApi.user() });
             state.set('authed');
+            router.goTo('/workspace/web-studio');
             return;
           }
         },

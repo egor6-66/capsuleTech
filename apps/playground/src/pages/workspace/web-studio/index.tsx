@@ -6,21 +6,23 @@
  * Гейт: роль designer (developer видит всё).
  */
 
-const WebStudio = Page((Ui) => (
-  <Layouts.Matrix
-    mode="view"
-    preset="app-shell"
-    slots={{
-      header: {
-        children: <Widgets.Studio.Header />,
-        initialSize: 0.04,
-      },
-      main: {
-        children: <Ui.Outlet />,
-      },
-    }}
-  />
+const WebStudioLayout = Page((Ui) => (
+  <WebStudio.CreatorRoot>
+    <Layouts.Matrix
+      mode="view"
+      preset="app-shell"
+      slots={{
+        header: {
+          children: <Widgets.Studio.Header />,
+          initialSize: 0.04,
+        },
+        main: {
+          children: <Ui.Outlet />,
+        },
+      }}
+    />
+  </WebStudio.CreatorRoot>
 ));
 export const meta = { can: 'studio' };
 
-export default WebStudio;
+export default WebStudioLayout;

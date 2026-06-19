@@ -7,10 +7,29 @@
  * НЕ принимает values — categories описывают **структуру** полей, не их значения.
  * Возврат стабилен по ref'у при том же schema-объекте (важно для createMemo →
  * Inspector не remount'ит fields при изменении values).
+ *
+ * Поля сортируются по типу (selects → inputs → switches) для визуальной
+ * упорядоченности Inspector'а. Внутри группы сохраняется declaration order
+ * схемы (JS sort стабилен с ES2019).
  */
 
 import type { ZodTypeAny } from '@capsuletech/shared-zod';
 import type { ICategory, IFieldDef } from './types';
+
+/**
+ * Группа поля для сортировки Inspector'а:
+ *   0 — selects (enum-выбор из фиксированного списка)
+ *   1 — inputs  (text/textarea/number/number-unit — ручной ввод)
+ *   2 — switches (boolean toggle)
+ */
+const FIELD_TYPE_ORDER: Record<IFieldDef['type'], number> = {
+  select: 0,
+  text: 1,
+  textarea: 1,
+  number: 1,
+  'number-unit': 1,
+  boolean: 2,
+};
 
 export const schemaToInspectorCategories = (schema: ZodTypeAny): ICategory[] => {
   // biome-ignore lint/suspicious/noExplicitAny: zod internals access
@@ -49,6 +68,8 @@ export const schemaToInspectorCategories = (schema: ZodTypeAny): ICategory[] => 
   }
 
   if (fields.length === 0) return [];
+
+  fields.sort((a, b) => FIELD_TYPE_ORDER[a.type] - FIELD_TYPE_ORDER[b.type]);
 
   return [
     {

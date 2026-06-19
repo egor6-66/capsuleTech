@@ -31,6 +31,7 @@ import {
 import { GroupManifest } from '../primitives/group/group.manifest';
 import { InputManifest } from '../primitives/input/input.manifest';
 import { LabelManifest } from '../primitives/label/label.manifest';
+import { SelectManifest } from '../primitives/select/select.manifest';
 import { FlexManifest } from '../primitives/layout/flex/flex.manifest';
 import { GridManifest } from '../primitives/layout/grid/grid.manifest';
 import { ListManifest } from '../primitives/list/list.manifest';
@@ -53,6 +54,7 @@ const ALL: IPrimitiveManifestEntry[] = [
   // controls
   ButtonManifest,
   InputManifest,
+  SelectManifest,
   ToggleManifest,
   // typography
   TypographyManifest,
