@@ -163,6 +163,27 @@ const plugin = createCapsuleRegistryPlugin({
 
 **LAYER_INIT_ORDER** — единственная точка контроля порядка загрузки. Добавляешь новый слой → добавляешь запись в `LAYER_INIT_ORDER` в `capsuleRegistry.ts` + пишешь sub-generator. Порядок в `bootstrap.tsx` обновится автоматически.
 
+## Static assets / public/ folder (Phase 1, 2026-06-19)
+
+`capsuleConfig` устанавливает `publicDir: join(root, 'public')`, где `root = apps/<app>/`:
+
+- **Канонический путь** для ручных статических файлов — `apps/<app>/public/`.
+- `apps/<app>/public/capsule.manifest.json` → dev: `GET /capsule.manifest.json` → 200 JSON без копирования.
+- В production: Vite автоматически копирует `public/` → `dist/`.
+- Используется в app-as-remote паттерне (ADR-053): remote-app размещает manifest в `public/`, host fetch'ит по стабильному URL.
+
+До этого фикса Vite дефолтировал на `<root>/public` = `.capsule/public/` — сгенерированный каталог, неудобный для ручных файлов.
+
+## `/src/*` URL rewrite — AppSourceServePlugin (Phase 2, 2026-06-19)
+
+**Контекст:** Vite root = `.capsule/`, поэтому URL `/src/standalone.tsx` → `.capsule/src/standalone.tsx` (не существует). Dev-server возвращает SPA fallback (HTML) вместо JS-модуля.
+
+**AppSourceServePlugin** — middleware, который перехватывает `/src/*` и rewrite'ит в `/@fs/<appRoot>/src/*`. Это делает `/src/standalone.tsx` стабильным portable entry URL для remote-app manifest'а (ADR-053 §7 demo).
+
+**TEMPORARY** — удалить при landing'е Variant B ADR («Vite root = appRoot»). Файл: `packages/builders/vite/src/plugins/appSourceServe.ts`. Removal condition зафиксирован в JSDoc и OWNERSHIP.md.
+
+Связанное: `docs/_meta/briefs/builders-app-as-remote-dev-gaps-2026-06-19.md`.
+
 ## Rolldown — статус Ф1 (2026-06-04)
 
 ### Механизм включения
