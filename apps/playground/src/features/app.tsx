@@ -37,6 +37,7 @@ const App = Feature<Auth.Events & WebStudio.Navigation.Events, Entities.Viewer.R
           if (authApi?.isAuthed()) {
             store.update({ viewer: authApi.user() });
             state.set('authed');
+            router.goTo('/workspace/web-studio');
             return;
           }
         },
