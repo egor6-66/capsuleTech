@@ -1,10 +1,11 @@
 ---
 tags: [hca, adr, proposed]
-status: proposed
+status: partially-implemented
 date: 2026-05-19
 last_updated: 2026-06-19
 amendments:
   - 2026-06-19 — Phase ordering re-aligned to renderer-as-first-consumer (iframe transport → Phase 1)
+  - 2026-06-19 — Phase 1 implemented: IframeTransport + RemoteProvider + useRemote + two-channel contract (ADR-053)
 ---
 
 # ADR 015 — Remote Modules: своё runtime, pluggable transport, manifest-driven

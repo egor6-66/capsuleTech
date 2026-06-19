@@ -3,140 +3,179 @@ name: "@capsuletech/web-remote"
 owner-agent: owner-web-remote
 group: web_base
 zone: runtime
-status: scaffold
-priority: P3
-last-updated: 2026-06-11
+status: alpha
+priority: P2
+last-updated: 2026-06-19
 ---
 
 # @capsuletech/web-remote
 
-Динамическая загрузка независимо собранных удалённых модулей в host-приложение — собственный runtime (без `@module-federation/*`), pluggable transport-слой, reactive registry.
+Universal wrapper making any capsule app embeddable as a module inside another app.
+Own runtime (no `@module-federation/*`), pluggable transport layer, reactive registry.
+Phase 1: IframeTransport + two-channel contract (ADR-053).
 
 ## Состояние (читать ПЕРВЫМ)
 
 - **Zone:** `runtime` — module federation alternative.
-- **Status:** `scaffold` (0.0.0) — Phase 0: type contracts, runtime пуст.
-- **Priority:** **P3** — нужен только для micro-frontend сценариев.
-- **Maturity bar (до alpha):**
-  - Provider / useRemote / `<Remote>` impl.
-  - Transports: local + BroadcastChannel + postMessage + socket.
-  - RemoteManifestPlugin.
-  - openInWindow integration.
-- **Active blockers:** ждёт окончательного канона + потребности у apps.
-- **Roadmap:**
-  1. Provider + useRemote + `<Remote>` MVP.
-  2. local transport.
-  3. BroadcastChannel transport.
-- **Last activity:** 2026-06-11 (canon refresh).
+- **Status:** `alpha` (0.0.0) — Phase 1: IframeTransport + RemoteProvider + useRemote + two-channel.
+- **Priority:** **P2** — renderer-as-remote landing depends on this (Phase 1a).
+- **Active blockers:**
+  - DnD-through-iframe ADR (architect zone) — blocks renderer-as-remote embedding.
+  - `createCapsuleApp` in `@capsuletech/web-core/bootstrap` (owner-web-core, Phase 1a).
+  - `EmitProvider` for `useEmit → channel` routing (owner-web-core, Phase 1a).
+  - `useAppConfig({ override })` (owner-web-query, Phase 1a).
+- **Transport array assertion:** `transports: ITransport[]` array shape REQUIRED even with a single
+  transport. Single-transport hardcode is forbidden — Phase 2+ adds BroadcastChannelTransport
+  to the array without changing consumer API. See ADR-053 Decision 8.
 
 ## Vendor stack (ADR 047 D3)
 
-- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
-
-Leaf-пакет zone runtime. Контракт в ADR 015. Никаких external module-federation вендоров — собственный runtime.
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — reactive framework. https://docs.solidjs.com/
 
 ## Зона ответственности
 
 ### Owns
 
-- `packages/web/remote/src/` (полностью) — типы, runtime, транспорты, provider, компоненты
-- `packages/web/remote/package.json` exports / deps / peerDeps
-- `packages/web/remote/vite.config.mts`
-- `packages/web/remote/vitest.config.ts`
-- `packages/web/remote/tsconfig*.json`
-- `packages/web/remote/README.md`
+- `packages/web/runtime/remote/src/` (fully) — types, runtime, transports, provider, shell
+- `packages/web/runtime/remote/package.json` exports / deps / peerDeps
+- `packages/web/runtime/remote/vite.config.mts`
+- `packages/web/runtime/remote/vitest.config.ts`
+- `packages/web/runtime/remote/tsconfig*.json`
+- `packages/web/runtime/remote/README.md`
+- `packages/web/runtime/remote/OWNERSHIP.md`
 
 ### Не трогает
 
-- Содержимое других `@capsuletech/*` пакетов (делегировать соответствующему owner'у).
-- `packages/web/router/*` — Phase 2 требует добавления `openInWindow` в `routerService`; координировать с `owner-web-router`.
-- `packages/web/core/*` — Phase 5 потенциально нужен service-inject в Widget/Feature; координировать с `owner-web-core`.
-- `packages/builders/*` — Phase 4 нужен `RemoteManifestPlugin` в vite-builder и compliance-rule для Phase 5; координировать с `owner-builders`.
-- `backend/*` — Phase 4 нужен Rust crate `backend/mf-bus/`; вне зоны, эскалировать пользователю.
-- Root-level `package.json`, `tsconfig.base.json`, `nx.json` (главный assistant).
-- `apps/*/` (user / framework-developer scope).
-- `scripts/release-local.mjs` и другие shared infra (главный assistant).
+- `packages/web/router/*` — Phase 2 requires `openInWindow` in routerService; coordinate with owner-web-router.
+- `packages/web/core/*` — Phase 5 service-inject in Widget/Feature + Phase 1a `createCapsuleApp`/`EmitProvider`; coordinate with owner-web-core.
+- `packages/builders/*` — Phase 4 RemoteManifestPlugin + Phase 5 compliance rule; coordinate with owner-builders.
+- `backend/*` — Phase 4 Rust crate `backend/mf-bus/`; escalate to user.
+- Root-level `package.json`, `tsconfig.base.json`, `nx.json` — main assistant.
+- `apps/*/` — user / framework-developer scope.
 
 ## Публичный API
 
-Единственный entrypoint `.` (`packages/web/remote/src/index.ts` → `dist/index.mjs`).
+Два entrypoint: `.` (runtime) + `./boot.js` (iframe-side shell dist-asset).
 
-**Phase 0 — только type-contracts (runtime не реализован):**
+**Phase 0 types (unchanged):**
 
-| Экспорт | Тип | Описание |
+| Export | Type | Description |
 |---|---|---|
-| `IRemoteModuleConfig` | interface | Конфигурация одного удалённого модуля (`name`, `url`, `props?`, `standaloneUrl?`) |
-| `IRemoteProviderProps` | interface | Props `<RemoteProvider>` (`serverUrl?`, `modules`, `children?`) |
-| `IRemoteContext` | interface | Контекст `useRemote()` — `Remote`, `remote`, `updateModule`, `modules` |
-| `IRemoteHandle` | interface | Per-instance handle: `send`, `request`, `on`, `openStandalone` |
-| `IRemoteResponse<T>` | interface | Ответ на request/response round-trip (`status`, `payload?`, `error?`) |
-| `IRemoteComponentProps` | interface | Props компонента `<Remote>` (`name`, `instanceId?`, `fallback?`, `...rest`) |
-| `IRemoteManifest` | interface | Манифест удалённого модуля (`name`, `version`, `entry`, `styles?`, `props?`, `events?`) |
-| `IRemoteMessage` | interface | Envelope для всех транспортов; ключ маршрутизации `(to, toInstance, sessionId)` |
-| `ITransport` | interface | Pluggable transport contract (`kind`, `canReach`, `send`, `onMessage`, `dispose`) |
+| `IRemoteModuleConfig` | interface | `name`, `url`, `props?`, `config?`, `standaloneUrl?` |
+| `IRemoteProviderProps` | interface | `serverUrl?`, `modules`, `config?`, `children?` |
+| `IRemoteContext` | interface | `Remote`, `remote`, `updateModule`, `modules` |
+| `IRemoteHandle` | interface | `send`, `request`, `on`, `openStandalone` |
+| `IRemoteResponse<T>` | interface | `status`, `payload?`, `error?` |
+| `IRemoteComponentProps` | interface | `name`, `instanceId?`, `fallback?`, `config?`, `[key]` |
+| `IRemoteManifest` | interface | `name`, `version`, `entry`, `styles?`, `props?`, `events?` |
+| `IRemoteMessage` | interface | Envelope; routing key `(to, toInstance, sessionId)` |
+| `ITransport` | interface | `kind`, `canReach`, `send`, `onMessage`, `dispose` |
 | `TransportKind` | type | `'local' \| 'broadcast-channel' \| 'post-message' \| 'socket'` |
 
-Авторитативный design doc: `docs/01-architecture/adr/015-remote-modules.md` (status: proposed).
+**Phase 1 additive types (ADR-053):**
 
-**Изменение публичного API = breaking change → координация с главным.** Любое удаление экспорта — major-bump + согласование с пользователем. Добавление новых полей должно быть breaking-friendly (optional).
+| Export | Type | Description |
+|---|---|---|
+| `IRemoteBootstrap<P,C>` | interface | Module lifecycle entry: `(root, { props, config, channel }) => IRemoteDispose` |
+| `IRemoteChannel` | interface | Module-side handle: `send`, `request`, `on` |
+| `IRemoteDispose` | type | `() => void` — cleanup from bootstrap |
 
-**Runtime реализуется поэтапно (см. Roadmap ниже).**
+**Phase 1 runtime:**
+
+| Export | Type | Description |
+|---|---|---|
+| `RemoteProvider` | component | Root provider. `config?` + `modules` + `children`. |
+| `useRemote()` | hook | Returns `IRemoteContext`. Throws outside provider. |
+
+**`./boot.js`** — iframe-side shell. Accessed via `import bootUrl from '@capsuletech/web-remote/boot.js?url'`. NOT imported directly.
+
+## Reserved props (ADR-053 Decision 6)
+
+| Class | Pattern | Action |
+|---|---|---|
+| **System** | `name`, `instanceId`, `fallback` | Host-side wire — NOT forwarded |
+| **Config** | `config` | Merged host-side, sent via `__capsule_remote_config__` envelope |
+| **Events** | `/^on[A-Z]/` | Auto-subscribed via `transport.onMessage` |
+| **Runtime props** | Everything else | Forwarded via `__capsule_remote_props__` envelope |
+| **children** | `children` | **TS-level ban** — composition across frame = future ADR |
+
+Note: `online`, `onclick` (lowercase after `on`) do NOT match `/^on[A-Z]/` — safe as boolean props.
+
+## Reserved namespace `__capsule_*`
+
+Shell-internal envelope names:
+- `__capsule_remote_ready__` — module → host ready handshake
+- `__capsule_remote_props__` — host → module props envelope
+- `__capsule_remote_config__` — host → module config envelope
+
+User code `channel.on/send('__capsule_*', ...)` → `console.warn` + no-op.
+
+## Config merge order (ADR-053 Decision 3)
+
+```
+provider.config → modules[name].config → <Remote config={...}>
+```
+
+Applied host-side in `RemoteComponent`. Module receives finalized snapshot.
+`<Remote config={undefined}>` ≡ no prop (does NOT clear ambient config).
 
 ## Quirks / gotchas
 
-- **`@module-federation/*` не используется намеренно.** Reference (PROTEI) тянет MF 2.0, под Solid не тестировано и имеет проблемы с multi-instance. Собственный runtime через `import(url)` + manifest — осознанный выбор (ADR-015 «Альтернативы»).
-- **`instanceId` обязателен как часть routing-key.** `(to, toInstance, sessionId)` — неделимый ключ. Два standalone одного модуля в одной сессии = 2 разных endpoint'а. Нельзя делать `instanceId` необязательным для маршрутизации — это закрывает провал multi-instance референс-реализации.
-- **`updateModule(name, { url: newUrl })` должно forcibly remount всех instance'ов этого `name`.** Это part of Phase 1 contract; должно быть покрыто тестом.
-- **socket.io обязателен только для cross-origin standalone + cross-device.** Same-window (`local`) и same-origin multi-window (`BroadcastChannel`) работают без сервера. Не делать socket обязательным.
-- **Standalone-окно через `routerService`, НЕ `window.open(url + ?queryString)`.** Query-string теряет `opener` после refresh; route с typed params через TanStack Router — правильный путь (Phase 2).
-- **CORS requirements.** Manifest-fetch (`capsule.manifest.json`) и ESM `import()` должны идти с правильным CORS на стороне remote-сервера. Документировать в user-guide при Phase 4.
-- **Phase 0 — runtime пуст.** `dist/` содержит только type declarations. Компоненты `<RemoteProvider>`, `<Remote>`, хук `useRemote()`, транспорты — не реализованы. Любой runtime-импорт до Phase 1 упадёт в рантайме.
-- **Пакет не в release-группах `nx.json`.** Version `0.0.0`, релизы включатся после Phase 4. Не запускать `pnpm publish` без согласования с пользователем.
+- **`@module-federation/*` not used.** See ADR-015 Alternatives.
+- **`instanceId` in routing key.** `(to, toInstance, sessionId)` — indivisible key. Two instances of the same module = 2 different endpoints. Do not make instanceId optional for routing.
+- **`updateModule(name, { url })` forces remount** of all instances of that name (keyed via Solid store reconcile). Test-covered.
+- **Reactive props = direct property access only.** `Object.keys(props)` / spread / JSON.stringify = snapshot, non-reactive. Module authors must use `createMemo(() => Object.keys(propsStore))` for dynamic iteration. ADR-053 Decision 4 caveat.
+- **Serialization boundary — structured-clone.** Functions, Symbols, DOM nodes, class instances with private fields → silent drop via postMessage. Canonical path for callbacks = `on*` props, NOT regular props. ADR-053 risk #9.
+- **`sandbox="allow-scripts allow-same-origin"` is NOT a security boundary.** Iframe with this pair sees parent cookies/localStorage. For same-origin trusted capsule apps — OK. Untrusted third-party → stricter sandbox + cross-origin (Phase 3+). ADR-053 risk #2.
+- **DnD across iframe boundary — NOT supported in Phase 1.** Pointer events don't cross frame. Studio palette drag → renderer canvas drop requires a separate ADR. Escalate to architect. ADR-053 risk #3.
+- **`openStandalone()` — Phase 2 feature.** Returns `undefined`, logs `console.warn`. Does NOT throw. Acceptance gate.
+- **`boot.js` dist-asset, NOT inline srcdoc.** Import via `import bootUrl from '@capsuletech/web-remote/boot.js?url'`. Separate Vite entry in vite.config.mts.
+- **Package not in release groups `nx.json`.** Version `0.0.0`, releases enabled after Phase 4. Do not `pnpm publish` without user agreement.
 
-## План рефакторинга / оптимизаций
+## Plan / Roadmap
 
-- [ ] **Phase 1 — LocalTransport + Provider + Remote + useRemote** — embedded transport (`local`), `<RemoteProvider>`, `<Remote>`, `useRemote()`. Demo в новом app. Smoke без сервера, same-window only. (priority: high)
-- [ ] **Phase 2 — BroadcastChannel transport + standalone-window** — `BroadcastChannel` transport, same-origin multi-window. `routerService.openInWindow` через `owner-web-router`. (priority: high)
-- [ ] **Phase 3 — post-message transport** — cross-origin, same-device, через iframe и/или `window.opener`. (priority: medium)
-- [ ] **Phase 4 — socket transport + RemoteManifestPlugin** — `socket` transport, backend `mf-bus/` Rust crate. `RemoteManifestPlugin` для билда remote-модулей. Manifest-driven props/events типизация. (priority: medium)
-- [ ] **Phase 5 — Compliance rule** — запрет `@capsuletech/web-remote` в Controller/Entity через `@capsuletech/compliance`. Координировать с `owner-builders`. (priority: low)
-- [x] **Phase 0 — type-contracts skeleton** — `src/interfaces.ts` (175 строк), `src/index.ts` barrel, package scaffold. PR #77, merged 2026-05-19.
+- [x] **Phase 0 — type-contracts skeleton** — `src/interfaces.ts`, PR #77, merged 2026-05-19.
+- [x] **Phase 1 — IframeTransport + two-channel + Provider + useRemote + boot.js** — ADR-053 consumer model. This PR.
+- [ ] **Phase 1a — followup (NOT blocking Phase 1 merge):**
+  - `createCapsuleApp` helper in `@capsuletech/web-core/bootstrap` (owner-web-core)
+  - `EmitProvider` for `useEmit → channel` routing (owner-web-core)
+  - `capsule create-app` generates `src/standalone.ts` template (owner-cli + owner-builders)
+  - `useAppConfig({ override })` canonical API (owner-web-query)
+  - DnD-through-iframe ADR (architect zone)
+  - Renderer-as-remote landing (depends on DnD ADR)
+- [ ] **Phase 2 — BroadcastChannel + standalone window** — `routerService.openInWindow` (owner-web-router).
+- [ ] **Phase 3 — cross-origin postMessage** — origin checks, stricter sandbox.
+- [ ] **Phase 4 — socket transport + RemoteManifestPlugin** — `socket` transport, `backend/mf-bus/` Rust crate. `RemoteManifestPlugin` for remote module builds.
+- [ ] **Phase 5 — Compliance rule** — `no-remote-in-controller` in `@capsuletech/compliance` (owner-builders).
 
 ## Test coverage
 
-| Тип | Где | Что покрывает |
+| Type | Location | Coverage |
 |---|---|---|
-| Unit | — | Нет (Phase 0, только типы) |
-| Integration | — | Нет |
-| E2E | — | Нет |
+| Unit | `src/transport/__tests__/IframeTransport.test.ts` | IframeTransport (9 cases) |
+| Unit | `src/runtime/__tests__/buildSrcdoc.test.ts` | buildSrcdoc pure fn (7 cases) |
+| Unit | `src/runtime/__tests__/createHostHandle.test.ts` | createHostHandle (7 cases) |
+| Unit | `src/runtime/__tests__/RemoteProvider.test.tsx` | RemoteProvider + useRemote (6 cases) |
+| Unit | `src/runtime/__tests__/RemoteComponent.test.tsx` | RemoteComponent 4-class props + merge + reactive (19 cases) |
 
-**Phase 0 — тестов нет, тестировать нечего (только type declarations).**
+Total: 48 unit tests. All green.
 
-План по фазам:
-
-- **Phase 1:** pure-helpers (URL resolution, session-key derivation) — vitest node; `LocalTransport` — pure JS, node; `<RemoteProvider>` + `useRemote()` — jsdom + Solid render (аналогично UiProxy-тестам в `packages/web/core`).
-- **Phase 2:** `BroadcastChannel` — jsdom поддерживает; mock в node.
-- **Phase 3:** `postMessage` cross-frame — Playwright (multi-frame); pure-message-routing — unit.
-- **Phase 4:** `socket` — mock socket.io клиент в node. Server-side — в Rust crate отдельно.
-
-**Перед изменением (Phase 1+):** unit-tests должны быть green (`pnpm --filter @capsuletech/web-remote test`).
-**При breaking change:** обновить tests + добавить новые для contract.
-**Перед release:** `pnpm test:e2e:cli` обязателен.
+Phase 1 shell (boot.ts) — covered via E2E in demo (apps/remote-host + apps/remote-hello, separate PR). jsdom does not load real modules via dynamic import(url), so boot.ts is validated in real browser.
 
 ## Cross-package dependencies
 
-| Зона | Owner |
-|---|---|
-| `routerService.openInWindow` (Phase 2) | owner-web-router |
-| Service injection в Widget/Feature (Phase 5) | owner-web-core |
-| `RemoteManifestPlugin` в vite-builder (Phase 4) | owner-builders |
-| Compliance rule `no-remote-in-controller` (Phase 5) | owner-builders |
-| Socket-server Rust crate `backend/mf-bus/` (Phase 4) | эскалировать пользователю |
+| Zone | Owner | Phase |
+|---|---|---|
+| `routerService.openInWindow` | owner-web-router | Phase 2 |
+| `createCapsuleApp` helper | owner-web-core | Phase 1a |
+| `EmitProvider` (`useEmit → channel`) | owner-web-core | Phase 1a |
+| `useAppConfig({ override })` | owner-web-query | Phase 1a |
+| `RemoteManifestPlugin` in vite-builder | owner-builders | Phase 4 |
+| Compliance rule `no-remote-in-controller` | owner-builders | Phase 5 |
+| Socket-server Rust crate `backend/mf-bus/` | escalate to user | Phase 4 |
+| DnD-through-iframe ADR | architect | Phase 1a |
 
 ## Release group
 
-Пакет **не включён** ни в одну release-группу `nx.json` — Phase 0 (version `0.0.0`).
-
-Релизы включатся после стабилизации Phase 4 (RemoteManifestPlugin + Compliance rule). При включении — отдельная группа `remote` (собственный темп релизов, не `web_base`). Финальное решение согласовать с пользователем.
-
-После изменений — координировать release через главного.
+Package **not included** in any release group in `nx.json` — version `0.0.0`.
+Releases enabled after Phase 4 stabilization. Separate group `remote` (own release cadence, not `web_base`). Decision to be confirmed with user.
