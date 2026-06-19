@@ -48,9 +48,25 @@ export const AppSourceServePlugin = (opts: { appRoot: string }): Plugin => ({
     // (use() without index inserts at the end of the stack, but Vite evaluates
     // middlewares sequentially and our rewrite happens before the SPA fallback
     // that would 200 the request with index.html).
-    server.middlewares.use('/src', (req, _res, next) => {
-      // req.url under '/src' mount is the sub-path after '/src' (could be '' or '/standalone.tsx').
-      const subPath = req.url ?? '';
+    // IMPORTANT: do NOT use server.middlewares.use('/src', handler) here.
+    //
+    // Connect's mount-based use(path, fn) has two contracts that break URL rewriting:
+    //   1. On entry: Connect strips the mount prefix from req.url before calling fn
+    //      (e.g. '/src/standalone.tsx' becomes '/standalone.tsx' inside fn).
+    //   2. On next(): Connect RESTORES the original req.url
+    //      (your rewrite to '/@fs/...' is overwritten back to '/src/standalone.tsx').
+    //
+    // The SPA fallback middleware that runs next in the Vite chain then sees the
+    // original '/src/standalone.tsx' and serves index.html with text/html instead
+    // of the JS module — silent failure, white screen in the iframe.
+    //
+    // Fix: register without a mount path so Connect never touches req.url.
+    // We guard manually with startsWith('/src/') to stay scoped to our prefix.
+    server.middlewares.use((req, _res, next) => {
+      const url = req.url;
+      if (!url || (!url.startsWith('/src/') && url !== '/src')) return next();
+      // req.url is the full path (Connect does NOT strip anything without a mount).
+      const subPath = url === '/src' ? '' : url.slice(4); // '/src/foo' → '/foo'; '/src' → ''
       // Normalise appRoot for the /@fs/ URL scheme:
       //   Windows: 'D:/...'  → '/@fs/D:/...'   (no leading slash on appRoot)
       //   Unix:    '/home/..' → '/@fs/home/..'  (strip leading slash to avoid '/@fs//home/..')
