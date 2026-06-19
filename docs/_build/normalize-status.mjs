@@ -123,7 +123,7 @@ const main = async () => {
       continue;
     }
     const result = rewriteStatus(src, STATUS_MAP);
-    if (!result || !result.changed) {
+    if (!result?.changed) {
       stats.skipped++;
       continue;
     }
