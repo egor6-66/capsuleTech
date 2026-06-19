@@ -5,6 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 import AutoImport from 'unplugin-auto-import/vite';
 import {
   AliasesPlugin,
+  AppSourceServePlugin,
   CapsuleRegistryPlugin,
   CompliancePlugin,
   EnsureScaffoldPlugin,
@@ -96,6 +97,13 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
   const capsuleConfig = {
     ...config,
     root: capsuleRoot,
+    // Static assets (favicons, robots.txt, capsule.manifest.json for remote-app,
+    // etc.) live in `apps/<app>/public/` — the conventional Vite location.
+    // Without this override Vite default would be `<root>/public` = `.capsule/public/`,
+    // which is a generated directory and not the right place for hand-crafted assets.
+    // Phase 1 of ADR-053 app-as-remote: manifest fetch 404 fix.
+    // See: docs/_meta/briefs/builders-app-as-remote-dev-gaps-2026-06-19.md Phase 1
+    publicDir: join(root, 'public'),
     base: config.base ?? '/',
     define: {
       __CAPSULE_CONFIG__: JSON.stringify(config),
@@ -280,6 +288,11 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
       }),
       tailwindcss(),
       AliasesPlugin({ appRoot: root, workspaceRoot }),
+      // Phase 2 of ADR-053 app-as-remote dev-gap fix.
+      // Rewrites `/src/*` → `/@fs/<appRoot>/src/*` so that manifest entry URLs
+      // like `/src/standalone.tsx` are stable and portable (no /@fs/D:/... hacks).
+      // TEMPORARY — remove when Variant B ADR (Vite root = appRoot) lands.
+      AppSourceServePlugin({ appRoot: root }),
       CompliancePlugin({ mode: 'warn', appConfigState }),
 
       RouterPlugin({
