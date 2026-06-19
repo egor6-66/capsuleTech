@@ -124,8 +124,7 @@ const CreatorCanvas = () => {
    * drag активен. Это OK — пользователь не кликает по контенту во время drag'а.
    */
   const isDragging = () => dnd.state.activeId() !== null;
-  const frameClass = () =>
-    isDragging() ? 'pointer-events-none h-full w-full' : 'h-full w-full';
+  const frameClass = () => (isDragging() ? 'pointer-events-none h-full w-full' : 'h-full w-full');
 
   const drop = createDroppable({
     id: 'creator-canvas-root',

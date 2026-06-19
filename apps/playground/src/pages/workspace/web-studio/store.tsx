@@ -1,4 +1,4 @@
-const Store = Page((Ui) => (
+const Store = Page((_Ui) => (
   <Layouts.Matrix
     preset="app-shell"
     slots={{

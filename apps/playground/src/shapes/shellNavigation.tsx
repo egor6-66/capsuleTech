@@ -9,7 +9,7 @@
  * Глобал `Shapes.ShellNavigation`. Mount — `Widgets.Header`.
  */
 const ShellNavigation = Shape(
-  (ui, { zod }) => ({
+  (_ui, { zod }) => ({
     schema: zod.array(
       zod.object({ label: zod.string(), to: zod.string(), can: zod.string().optional() }),
     ),

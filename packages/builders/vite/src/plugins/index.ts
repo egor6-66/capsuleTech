@@ -1,5 +1,6 @@
 export { default as solidPlugin } from 'vite-plugin-solid';
 export { AliasesPlugin } from './aliases';
+export { AppSourceServePlugin } from './appSourceServe';
 export type { PackageEntry, ResolvedPackageEntry } from './capsuleRegistry';
 // Unified codegen orchestrator — replaces ExportGeneratorPlugin,
 // EndpointsRegistryPlugin, and AppConfigPlugin (codegen part).

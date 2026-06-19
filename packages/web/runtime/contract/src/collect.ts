@@ -23,7 +23,7 @@ export function collectContracts(source: ContractSource): Contract[] {
   const out: Contract[] = [];
   for (const c of carriers) {
     const contract = resolve(c);
-    if (contract && contract.name) out.push(contract);
+    if (contract?.name) out.push(contract);
   }
   return out;
 }

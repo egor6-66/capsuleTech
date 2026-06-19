@@ -25,11 +25,11 @@
  * that simulates what createContext() produces.
  */
 
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createJiti } from 'jiti';
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   type AppConfigResult,
   type CodegenContext,
@@ -136,7 +136,7 @@ describe('jiti globals injection (Fix 1)', () => {
 
   it('injected globals are cleaned up after load (no lingering globalThis pollution)', () => {
     // Before loading — globals should not exist (or be whatever they were before)
-    const beforeAppConfig = (globalThis as Record<string, unknown>)['defineAppConfig'];
+    const beforeAppConfig = (globalThis as Record<string, unknown>).defineAppConfig;
 
     const file = writeTempFile(
       tmpDir,
@@ -146,7 +146,7 @@ describe('jiti globals injection (Fix 1)', () => {
     loadWithGlobals(file);
 
     // After loading — globalThis.defineAppConfig should be restored to the prior value
-    const afterAppConfig = (globalThis as Record<string, unknown>)['defineAppConfig'];
+    const afterAppConfig = (globalThis as Record<string, unknown>).defineAppConfig;
     expect(afterAppConfig).toBe(beforeAppConfig);
   });
 

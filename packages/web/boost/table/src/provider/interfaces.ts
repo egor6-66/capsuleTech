@@ -30,11 +30,7 @@
  * ```
  */
 
-import type {
-  IColumn,
-  IDataTableInfiniteOptions,
-  IDataTableProps,
-} from '../composites/dataTable/interfaces';
+import type { IColumn, IDataTableProps } from '../composites/dataTable/interfaces';
 
 /**
  * Данные, хранимые в shared Context провайдера.

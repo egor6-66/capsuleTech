@@ -26,7 +26,7 @@ const parseArgs = (argv: string[]): Record<string, string | boolean> => {
   while (i < argv.length) {
     const arg = argv[i];
     if (arg === '--help' || arg === '-h') {
-      args['help'] = true;
+      args.help = true;
       i++;
       continue;
     }
@@ -50,7 +50,7 @@ const parseArgs = (argv: string[]): Record<string, string | boolean> => {
 const main = async (): Promise<void> => {
   const args = parseArgs(process.argv.slice(2));
 
-  if (args['help']) {
+  if (args.help) {
     console.log(USAGE);
     process.exit(0);
   }
@@ -65,9 +65,9 @@ const main = async (): Promise<void> => {
   // Re-parse excluding the subcommand
   const flags = parseArgs(process.argv.slice(3));
 
-  const root = flags['root'] as string | undefined;
-  const strategy = flags['strategy'] as string | undefined;
-  const out = flags['out'] as string | undefined;
+  const root = flags.root as string | undefined;
+  const strategy = flags.strategy as string | undefined;
+  const out = flags.out as string | undefined;
   const pkgName = flags['pkg-name'] as string | undefined;
 
   if (!root) {

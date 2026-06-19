@@ -72,7 +72,7 @@ function isTauri(): boolean {
   return (
     typeof globalThis !== 'undefined' &&
     '__TAURI_INTERNALS__' in globalThis &&
-    (globalThis as Record<string, unknown>)['__TAURI_INTERNALS__'] != null
+    (globalThis as Record<string, unknown>).__TAURI_INTERNALS__ != null
   );
 }
 

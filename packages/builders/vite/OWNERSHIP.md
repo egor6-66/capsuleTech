@@ -50,9 +50,33 @@ Vite-конфиг и 9 плагинов для dev-сервера HCA-apps. Дё
 | `CapsuleRegistryPlugin` | `plugins/capsuleRegistry.ts` | Unified codegen: scan src/** → wrappers.ts + slots.d.ts + endpoints.ts + api.d.ts + app-config.gen.ts + bootstrap.tsx |
 | `tailwindcss()` | `capsuleConfig.ts` (inline) | Tailwind v4 через `@tailwindcss/vite` |
 | `AliasesPlugin` | `plugins/aliases.ts` | Мержит paths → `.capsule/tsconfig.paths.json` + Vite `resolve.alias` |
+| `AppSourceServePlugin` | `plugins/appSourceServe.ts` | **TEMPORARY** — rewrite `/src/*` → `/@fs/<appRoot>/src/*` (см. ниже) |
 | `CompliancePlugin` | `plugins/compliance.ts` | pre-transform: `check()` на каждый файл, режим `warn` |
 | `RouterPlugin` | `plugins/router/index.ts` | ensureRootRoutePlugin + page-mirror generator + TanStackRouterVite |
 | `solidPlugin` | `capsuleConfig.ts` (inline) | Solid.js JSX transform |
+
+## Публичный API / dev-server behavior
+
+### Static assets — `public/` folder
+
+`capsuleConfig` устанавливает `publicDir: join(root, 'public')`, где `root = apps/<app>/`. Это **канонический** путь для статических asset'ов:
+
+- Файлы в `apps/<app>/public/` отдаются Vite dev-server'ом по URL'у `/` без трансформации.
+- `apps/<app>/public/capsule.manifest.json` → `GET /capsule.manifest.json` → 200 JSON (используется в app-as-remote паттерне, ADR-053).
+- В production (`capsule build`) Vite копирует `public/` в `dist/` автоматически.
+
+До Phase 1 (2026-06-19) `publicDir` не был переопределён — Vite дефолтировал на `.capsule/public/`, что требовало ручного копирования файлов в сгенерированный каталог.
+
+### `/src/*` URL rewrite
+
+`AppSourceServePlugin` регистрирует middleware, который rewrite'ит запросы `/src/*` в `/@fs/<appRoot>/src/*`. Это позволяет manifest'у remote-app указывать `"entry": "/src/standalone.tsx"` вместо абсолютного `/@fs/D:/...` пути.
+
+**AppSourceServePlugin — KNOWN TEMPORARY WORKAROUND.**
+
+- Корень проблемы: Vite root = `.capsule/`, поэтому `/src/...` URL'ы резолвятся в `.capsule/src/...` (не существует).
+- Этот middleware — Variant A: rewrite в `/@fs/` namespace.
+- **Removal condition:** удалить `AppSourceServePlugin` + его регистрацию в `capsuleConfig.ts` + его barrel-export при landing'е **Variant B ADR** («Vite root = appRoot»). После Variant B `/src/...` резолвятся корректно без middleware.
+- Связано: `docs/_meta/briefs/builders-app-as-remote-dev-gaps-2026-06-19.md` Phase 2, ADR-053.
 
 ## SSOT
 
@@ -81,6 +105,8 @@ Vite-конфиг и 9 плагинов для dev-сервера HCA-apps. Дё
 - **`defineAppConfig` / `defineCapsuleConfig` / `defineEndpoint` — Vite-time глобалы, не доступны в jiti.** `capsule.app.ts` может использовать `defineAppConfig({...})` как bare-идентификатор (инжектируется AutoImport через Vite-плагин). При загрузке через `jiti` (config-time в `loadConfigFresh`) эти глобалы не существуют → `ReferenceError`. **Решение** (2026-06-18): перед `j(configPath)` инжектируются identity-стабы через `globalThis`, cleanup в `finally`. Это поведение задокументировано в `VITE_TIME_GLOBALS` константе в orchestrator.ts и `CAPSULE_VITE_TIME_GLOBALS` в capsuleRegistry.ts. При добавлении новых Vite-time глобалов — обновлять оба массива.
 
 - **`optimizeDeps.exclude`** — список `@capsuletech/web-*` пакетов в `capsuleConfig.ts`. При добавлении нового workspace-пакета добавь его сюда, иначе esbuild попытается пре-бандлить и сломает JSX-транспиляцию.
+
+- **`AppSourceServePlugin` — temporary middleware, Variant A.** Перехватывает `/src/*` запросы и rewrite'ит в `/@fs/<appRoot>/src/*`. Нужен потому что Vite root = `.capsule/` → `/src/...` URL'ы не резолвятся к реальным source-файлам. **Удалить при landing'е Variant B ADR («Vite root = appRoot»).** До тех пор не добавляй альтернативных механизмов для той же цели — duplicate middleware ломает `/src/*` chain.
 
 - **`solidPlugin` exclude для `entities/`.** `vite-plugin-solid` внутри использует `solid-refresh`, который оборачивает любой `const X = SomeCall(...)` в `.tsx`-файле в `(props) => SomeCall(...)(props)` для поддержки HMR компонентов. `Entity` возвращает plain config object (`{ schema, defaults }`), а не Solid-компонент — после такой обёртки `Entities.Users` становится функцией, и любой доступ к `.schema`/`.defaults` падает TypeError. `HMRWrappingPlugin` entity уже скипает (использует только `RENDER_WRAPPER_NAMES`), но `solid-refresh` — отдельный babel-pass внутри `solidPlugin`. Поэтому `solidPlugin` получает `exclude: [/[\\/]entities[\\/]/]`. Регекс покрывает оба сепаратора (Win/Unix). При добавлении других data-layer слоёв (не возвращающих Solid-компонент) — добавлять в этот же exclude-список.
 

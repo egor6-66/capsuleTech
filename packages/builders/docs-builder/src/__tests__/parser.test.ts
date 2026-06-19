@@ -3,12 +3,10 @@ import {
   DEFAULT_AUDIENCE,
   extractWikilinks,
   headingToSlug,
-  normalizeAudience,
   parseAudienceBlocks,
   parseFrontmatter,
   parseHeadings,
   parseSections,
-  parseYaml,
   resolveAudience,
   validateMeta,
 } from '../parser.js';
@@ -341,7 +339,7 @@ describe('parseSections', () => {
   it('adds collision suffix to auto-slug', () => {
     const lines = ['## Dup', 'a', '## Dup', 'b'];
     const { sections, warnings } = parseSections(lines, 0, 'test.md', null);
-    expect(sections['dup']).toBeDefined();
+    expect(sections.dup).toBeDefined();
     expect(sections['dup-2']).toBeDefined();
     expect(warnings.some((w) => w.includes('collision suffix'))).toBe(true);
   });
@@ -355,14 +353,14 @@ describe('parseSections', () => {
   it('sets parentId on H3 sections', () => {
     const lines = ['## Parent {#parent}', 'parent body', '### Child {#child}', 'child body'];
     const { sections } = parseSections(lines, 0, 'test.md', null);
-    expect(sections['child'].parentId).toBe('parent');
-    expect(sections['parent'].parentId).toBeUndefined();
+    expect(sections.child.parentId).toBe('parent');
+    expect(sections.parent.parentId).toBeUndefined();
   });
 
   it('is code-fence aware in section bodies', () => {
     const lines = ['## Section {#sec}', '```', '## Not a heading', '```', 'real content'];
     const { sections } = parseSections(lines, 0, 'test.md', null);
     expect(Object.keys(sections)).toHaveLength(1);
-    expect(sections['sec']).toBeDefined();
+    expect(sections.sec).toBeDefined();
   });
 });

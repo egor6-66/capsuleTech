@@ -36,11 +36,11 @@ describe('extractDocs — basic extraction', () => {
       const result = await extractDocs({ root, strategy: 'docs' });
 
       expect(result.errors).toHaveLength(0);
-      expect(result.registry['guide']).toBeDefined();
+      expect(result.registry.guide).toBeDefined();
       // frontmatter title takes priority over H1 fallback
-      expect(result.registry['guide'].meta.title).toBe('Test Doc');
-      expect(result.registry['guide'].meta.status).toBe('canon');
-      expect(result.registry['guide'].sections['overview']).toBeDefined();
+      expect(result.registry.guide.meta.title).toBe('Test Doc');
+      expect(result.registry.guide.meta.status).toBe('canon');
+      expect(result.registry.guide.sections.overview).toBeDefined();
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -67,8 +67,8 @@ describe('extractDocs — basic extraction', () => {
 
       const result = await extractDocs({ root, strategy: 'docs' });
 
-      expect(result.registry['a']).toBeDefined();
-      expect(result.registry['b']).toBeDefined();
+      expect(result.registry.a).toBeDefined();
+      expect(result.registry.b).toBeDefined();
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -85,7 +85,7 @@ describe('extractDocs — exclusions', () => {
       const result = await extractDocs({ root, strategy: 'docs' });
 
       expect(Object.keys(result.registry)).not.toContain('OWNERSHIP');
-      expect(result.registry['guide']).toBeDefined();
+      expect(result.registry.guide).toBeDefined();
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -122,7 +122,7 @@ describe('extractDocs — exclusions', () => {
       const result = await extractDocs({ root, strategy: 'docs' });
 
       expect(Object.keys(result.registry)).not.toContain('node_modules/pkg/doc');
-      expect(result.registry['guide']).toBeDefined();
+      expect(result.registry.guide).toBeDefined();
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -224,7 +224,7 @@ describe('extractDocs — wikilinks', () => {
 
       const result = await extractDocs({ root, strategy: 'docs' });
 
-      expect(result.registry['a'].wikilinks).toContain('other-doc');
+      expect(result.registry.a.wikilinks).toContain('other-doc');
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -260,13 +260,13 @@ describe('extractDocs — registry shape', () => {
 
       const result = await extractDocs({ root, strategy: 'docs' });
 
-      const entry = result.registry['doc'];
+      const entry = result.registry.doc;
       expect(entry).toBeDefined();
       expect(entry.meta).toBeDefined();
       expect(entry.sections).toBeDefined();
       expect(Array.isArray(entry.wikilinks)).toBe(true);
 
-      expect(entry.sections['s1']).toMatchObject({
+      expect(entry.sections.s1).toMatchObject({
         heading: 'Section One',
         level: 2,
         body: expect.any(String),
@@ -274,7 +274,7 @@ describe('extractDocs — registry shape', () => {
         wikilinks: expect.any(Array),
       });
 
-      expect(entry.sections['sub']).toMatchObject({
+      expect(entry.sections.sub).toMatchObject({
         heading: 'Sub Section',
         level: 3,
         parentId: 's1',

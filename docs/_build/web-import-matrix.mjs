@@ -35,7 +35,7 @@ const findPackages = async () => {
     const zoneDir = join(WEB_ROOT, zone.name);
     // sole-inhabitant zone — package.json lives directly under zoneDir
     const zonePj = await readPj(join(zoneDir, 'package.json'));
-    if (zonePj && zonePj.name) {
+    if (zonePj?.name) {
       pkgs.push({ zone: zone.name, dirName: zone.name, name: zonePj.name, dir: zoneDir });
       continue;
     }
@@ -45,7 +45,7 @@ const findPackages = async () => {
       if (pkg.name === 'node_modules' || pkg.name === 'dist' || pkg.name.startsWith('.')) continue;
       const pkgDir = join(zoneDir, pkg.name);
       const pj = await readPj(join(pkgDir, 'package.json'));
-      if (pj && pj.name) {
+      if (pj?.name) {
         pkgs.push({ zone: zone.name, dirName: pkg.name, name: pj.name, dir: pkgDir });
       }
     }
