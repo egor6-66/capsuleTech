@@ -1,185 +1,150 @@
 ---
-title: @capsuletech/web-remote Phase 1 MVP — IframeTransport + Provider + Remote + useRemote (renderer use-case anchor)
+title: '@capsuletech/web-remote Phase 1 MVP — IframeTransport + Provider + Remote + useRemote + two-channel contract (app-as-remote foundation)'
 status: ready
 audience: owner-web-remote
 last_updated: 2026-06-19
-adr: docs/01-architecture/adr/015-remote-modules.md (amendment 2026-06-19 — see Phase ordering)
+adr:
+  - docs/01-architecture/adr/015-remote-modules.md (amendment 2026-06-19 — phase ordering)
+  - docs/01-architecture/adr/053-app-as-remote-symmetry-and-config-channel.md (consumer model — primary source of truth)
+ai-anchor: docs/_meta/web-remote.md
 ---
 
 # Контекст
 
-Пакет `@capsuletech/web-remote` (Phase 0) — type-contracts готовы (`src/interfaces.ts`), runtime пуст. ADR-015 фиксирует контракт; OWNERSHIP.md фиксирует roadmap.
+Пакет `@capsuletech/web-remote` (Phase 0) — type-contracts готовы (`src/interfaces.ts`), runtime пуст. ADR-015 фиксирует транспортный контракт + pluggable transports; ADR-053 фиксирует consumer model (app-as-remote, two-channel contract, structured bootstrap). Этот бриф — **implementation roadmap для Phase 1**.
 
-Первый реальный consumer — `@capsuletech/web-renderer` как самостоятельный runtime внутри `@capsuletech/web-studio` creator-mode. Требования consumer'а:
+**Authoritative sources** (порядок приоритета при конфликте):
 
-- **CSS isolation от host'а** — рендерер не должен наследовать глобальные стили / Tailwind utilities / theme tokens студии. Иначе compositions выглядят иначе чем в prod-режиме.
-- **Свой Solid root + своя event delegation** — Kobalte popover'ы (Select / Dropdown / Tooltip) и любые pointer-based примитивы должны работать без host-document-делегации (попытка через iframe + MountProvider провалилась корнево, см. revert-бриф).
-- **Mode-параметризация** (studio / standalone / embed) через initial props.
-- **Типизированный канал** host ↔ renderer для schema mutations, selection, lifecycle events.
+1. **ADR-053** — consumer model: bootstrap signature, two-channel contract (props vs config), reserved props classes, reactive proxy, auto-subscribe `on*`, demo validation checks. Если бриф противоречит ADR-053 — действует ADR.
+2. **ADR-015 (с amendment 2026-06-19)** — транспортный контракт, phase ordering (iframe = Phase 1).
+3. **`docs/_meta/web-remote.md`** — AI-anchor с quick-reference таблицами (создаётся в этом же PR).
 
-**Из этих требований следует — Phase 1 transport = iframe, не local-inline.** Local-inline (`import(url)` в тот же runtime) не даёт CSS isolation и не решает event-delegation — для рендерера бесполезен. ADR-015 amendment 2026-06-19 пере-упорядочивает roadmap (см. amendment в самом ADR): iframe → Phase 1, local-inline отложен / возможно drop'нут (канон §0 — без живого consumer'а не строим).
+Phase 1 = **iframe MVP + canonical consumer model + reference demo**. Без сервера, без cross-origin, без manifest-write-side, без HCA-injection. Реализует ADR-053 decisions 1-8 + 11 acceptance gates.
 
-Public type contracts (Phase 0, `src/interfaces.ts`) **не меняются** — `TransportKind` уже включает `'post-message'`, `IRemoteMessage`/`IRemoteHandle`/`IRemoteProviderProps` подходят к iframe-сценарию без правок.
-
-> **Привязка к канону.** §0: контракт remote остаётся **general-purpose** — pluggable transport через `ITransport`. Renderer — первый consumer, валидирующий API; не определяет финальную форму API. Future transports (BroadcastChannel, socket, local-inline) встают на тот же контракт.
+> **Привязка к канону.** §0: контракт remote остаётся **general-purpose** через `ITransport` + `canReach`. Renderer — первый consumer, валидирующий API; не определяет финальную форму API. Future transports (BroadcastChannel, socket, cross-origin postMessage) встают на тот же контракт.
 
 # Скоп
 
-Phase 1 (по amended roadmap'у):
+## Phase 1.a — Additive types в `src/interfaces.ts`
 
-> **Phase 1 — IframeTransport + Provider + Remote + useRemote** — same-origin iframe с собственным Solid root внутри; postMessage канал host ↔ iframe; `<RemoteProvider>` / `<Remote>` / `useRemote()`. Demo (отдельным PR). Multi-window / cross-origin / inline — следующие фазы.
-
-## Phase 1.a — Module entry contract (lifecycle, не Solid component)
-
-Universal module contract — **`bootstrap(root, props, channel)`** lifecycle-функция, не Solid component. Это позволяет одному артефакту обслуживать любой transport:
-
-- В iframe: iframe-loader вызывает `bootstrap(document.getElementById('root'), props, channel)`.
-- В будущем inline-transport: web-remote вызывает `bootstrap(div, props, channel)` внутри своего Solid контейнера.
-- В будущем standalone window: то же, в `window.opener`-context.
+**Только additive** — Phase 0 типы (`IRemoteModuleConfig`, `IRemoteProviderProps`, `IRemoteManifest`, `IRemoteComponentProps`, `IRemoteResponse`, `IRemoteHandle`, `IRemoteContext`, `TransportKind`, `IRemoteMessage`, `ITransport`) не меняются ломающе. Расширения:
 
 ```ts
-// Что remote-модуль экспортит из его entry (manifest.entry):
-export interface IRemoteBootstrap<Props = Record<string, unknown>> {
-  (root: HTMLElement, props: Props, channel: IRemoteChannel): IRemoteDispose;
+// Lifecycle (ADR-053 Decision 2)
+export interface IRemoteBootstrap<
+  Props = Record<string, unknown>,
+  Config = Record<string, unknown>,
+> {
+  (root: HTMLElement, ctx: { props: Props; config: Config; channel: IRemoteChannel }): IRemoteDispose;
 }
+
 export type IRemoteDispose = () => void;
 
-// channel — symmetric local handle (от лица module'а):
+// Symmetric module-side handle (counterpart IRemoteHandle)
 export interface IRemoteChannel {
   send: (event: string, payload?: unknown) => void;
   request: <T = unknown>(event: string, payload?: unknown, timeoutMs?: number) => Promise<IRemoteResponse<T>>;
   on: (event: string, cb: (payload?: unknown) => void) => () => void;
 }
+
+// IRemoteModuleConfig — добавляется `config?`
+export interface IRemoteModuleConfig {
+  name: string;
+  url: string;
+  props?: Record<string, unknown>;
+  config?: Record<string, unknown>;       // ← ADR-053 Decision 3 (ambient config)
+  standaloneUrl?: string;
+}
+
+// IRemoteProviderProps — добавляется `config?`
+export interface IRemoteProviderProps {
+  serverUrl?: string;
+  modules: IRemoteModuleConfig[];
+  config?: Record<string, unknown>;       // ← ambient config provider-level default
+  children?: JSX.Element;
+}
+
+// IRemoteComponentProps — добавляется `config?`, `children` бан на TS-уровне
+export interface IRemoteComponentProps {
+  name: string;
+  instanceId?: string;
+  fallback?: (status: 'loading' | 'error' | 'success') => JSX.Element;
+  config?: Record<string, unknown>;       // ← per-instance config override
+  // children: NEVER (ADR-053 Decision 6 — composition across frame = future ADR)
+  [key: string]: unknown;
+}
 ```
 
-Module-side для Solid-based remote:
-
-```ts
-// packages/web/renderer/src/standalone.ts (пример — будет в followup'е, НЕ в этом брифе)
-import { render } from 'solid-js/web';
-import { Renderer } from './Renderer';
-
-export const bootstrap: IRemoteBootstrap = (root, props, channel) => {
-  channel.on('schema.update', (next) => /* setSchema(next) */);
-  const dispose = render(() => <Renderer schema={props.schema} onSelect={(id) => channel.send('selection.change', id)} />, root);
-  return dispose;
-};
-```
-
-Добавить `IRemoteBootstrap`, `IRemoteDispose`, `IRemoteChannel` в `src/interfaces.ts` — это **новые типы**, не ломающие (только additive).
+Все три новых типа экспортятся из `src/index.ts`.
 
 ## Phase 1.b — `src/transport/IframeTransport.ts`
 
-Сидит в host-`<RemoteProvider>`. Один экземпляр на provider. Обслуживает все iframe-инстансы через единый `message`-listener.
+Сидит в `RemoteProvider`. Один экземпляр на provider; обслуживает все iframe-инстансы через единый `window.addEventListener('message')` handler.
 
-- `kind: 'post-message'` (из `TransportKind`).
-- `canReach({ name, instanceId, isStandalone, sameOrigin }) → !isStandalone && sameOrigin` (Phase 1 — same-origin only; cross-origin = Phase 2-3).
-- На конструктор: `window.addEventListener('message', handler)`, парсит `event.data` как `IRemoteMessage`, валидирует `sessionId` (отбрасывает чужие), dispatch'ит подписчикам.
-- `send(msg)` — резолвит iframe по `(msg.to, msg.toInstance)` через registry (см. ниже), `iframe.contentWindow.postMessage(msg, sameOriginTarget)`.
-- `onMessage(cb)` — добавляет cb в local subscriber set; cb вызывается при каждом валидном `message`-event.
-- `dispose()` — снимает `message` listener, чистит registry.
+- `kind: 'post-message'`.
+- `canReach({ name, instanceId, isStandalone, sameOrigin }) → !isStandalone && sameOrigin` (Phase 1 — same-origin only).
+- **Iframe registry** — internal `Map<\`${name}:${instanceId}\`, HTMLIFrameElement>`. `RemoteComponent` на mount вызывает `transport.register(name, instanceId, iframeEl)`, на unmount — `transport.unregister(name, instanceId)`.
+- `send(msg)` — резолвит iframe по `(msg.to, msg.toInstance)`, делает `iframe.contentWindow.postMessage(msg, '*')` (same-origin, target origin не критичен).
+- `onMessage(cb)` — добавляет cb в local subscriber set. Все incoming messages фильтруются по `sessionId` (чужие игнорируются).
+- `dispose()` — снимает `message` listener, чистит registry + subscribers.
 
-**Iframe registry** — internal Map<`${name}:${instanceId}`, HTMLIFrameElement> в transport'е. `<Remote>` компонент при mount регистрирует iframe (`transport.register(name, instanceId, iframeEl)`), при unmount — снимает.
+## Phase 1.c — Iframe shell как **`boot.js`** dist-asset (NOT inline srcdoc)
 
-## Phase 1.c — `src/runtime/iframeBootstrap.ts` (iframe-side loader)
+**ADR-053 consequences-negative + Acceptance gate**: shell-логика слишком тяжела для inline-srcdoc-template (два store'а, два envelope dispatcher'а, proxy fabric, request/response pending Map, ready-handshake state, reserved-namespace guard). Phase 1 default — **отдельный dist-asset**:
 
-Тонкий HTML/JS-shell, который грузится **внутрь** iframe. Web-remote **владеет** этим shell'ом (не remote-модуль) — single source of truth для bootstrap flow. Реализация:
+- Файл `packages/web/runtime/remote/src/shell/boot.ts` → собирается в `dist/boot.js` (отдельная entry в Vite config пакета, format: `iife` или `esm` self-contained).
+- Импортируется в `RemoteComponent`: `import bootUrl from '@capsuletech/web-remote/boot.js?url'` (Vite-resolved URL).
+- srcdoc остаётся **коротким template'ом** с inject'ом bootstrap-параметров + `<script src="${bootUrl}">` (или inline `import(bootUrl)` для ESM-варианта).
 
-**Подход — srcdoc-template.** `<Remote>` строит iframe `srcdoc` атрибут на mount, который содержит inline HTML + bootstrap script. Преимущества: нет отдельного хостинга bootstrap-page, нет CORS, нет лишнего HTTP round-trip; srcdoc исполняется в same-origin контексте (parent's origin) → postMessage без cross-origin handshake.
+Преимущества:
+- Debuggable URL в DevTools (sources tab).
+- Type-checked на build'е web-remote'а (TS).
+- HMR при разработке самого shell'а.
+- Cache между instance'ами (один HTTP запрос на N iframe'ов).
+- Не съедает символьный budget srcdoc.
 
-Template (упрощённо):
+### Shell обязанности
 
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <link rel="stylesheet" href="${module.url}/${manifest.styles?.[0] ?? ''}" />
-  <!-- ... остальные styles ... -->
-</head>
-<body style="margin:0">
-  <div id="capsule-remote-root"></div>
-  <script type="module">
-    const NAME = ${JSON.stringify(name)};
-    const INSTANCE_ID = ${JSON.stringify(instanceId)};
-    const SESSION_ID = ${JSON.stringify(sessionId)};
-    const ENTRY = ${JSON.stringify(new URL(manifest.entry, module.url).href)};
-
-    // Channel — symmetric postMessage envelope sender + dispatcher.
-    const subs = new Map(); // eventName → Set<cb>
-    const pending = new Map(); // requestId → resolve
-    const channel = {
-      send: (eventName, payload) => window.parent.postMessage({
-        from: NAME, fromInstance: INSTANCE_ID, to: '__host__', sessionId: SESSION_ID, eventName, payload,
-      }, '*'),
-      request: (eventName, payload, timeoutMs = 5000) => new Promise((resolve) => {
-        const requestId = crypto.randomUUID();
-        const t = setTimeout(() => { pending.delete(requestId); resolve({ status: 'error', error: 'timeout' }); }, timeoutMs);
-        pending.set(requestId, (res) => { clearTimeout(t); resolve(res); });
-        window.parent.postMessage({ from: NAME, fromInstance: INSTANCE_ID, to: '__host__', sessionId: SESSION_ID, eventName, payload, requestId }, '*');
-      }),
-      on: (eventName, cb) => {
-        if (!subs.has(eventName)) subs.set(eventName, new Set());
-        subs.get(eventName).add(cb);
-        return () => subs.get(eventName)?.delete(cb);
-      },
-    };
-
-    window.addEventListener('message', (e) => {
-      const msg = e.data;
-      if (!msg || msg.sessionId !== SESSION_ID || msg.to !== NAME || (msg.toInstance && msg.toInstance !== INSTANCE_ID)) return;
-      if (msg.isResponse && msg.requestId) {
-        pending.get(msg.requestId)?.({ status: msg.status, payload: msg.payload, error: msg.error });
-        pending.delete(msg.requestId);
-      } else {
-        subs.get(msg.eventName)?.forEach((cb) => cb(msg.payload));
-      }
-    });
-
-    // Initial handshake: tell host we're ready, host posts back props.
-    let bootstrapped = false;
-    const onReadyResponse = (e) => {
-      const msg = e.data;
-      if (msg?.eventName !== '__capsule_remote_props__' || msg.sessionId !== SESSION_ID) return;
-      window.removeEventListener('message', onReadyResponse);
-      bootstrapped = true;
-      import(ENTRY).then(({ bootstrap }) => {
-        if (typeof bootstrap !== 'function') {
-          console.error('[capsule/remote] module entry must export bootstrap()');
-          return;
-        }
-        bootstrap(document.getElementById('capsule-remote-root'), msg.payload, channel);
-      });
-    };
-    window.addEventListener('message', onReadyResponse);
-    window.parent.postMessage({
-      from: NAME, fromInstance: INSTANCE_ID, to: '__host__', sessionId: SESSION_ID, eventName: '__capsule_remote_ready__',
-    }, '*');
-  </script>
-</body>
-</html>
-```
-
-> Builder может вынести shell в отдельный hidden helper-файл и `import.meta.glob`/`?raw`-impl'ить; главное — **shell не публикуется в public API** пакета, это runtime-internal.
-
-**srcdoc'ом не злоупотреблять:** размер шаблона держим минимальным. Если потребности iframe-side обвязки разрастаются (HMR, error overlay) — выносим в отдельный **boot.js** который хостится с web-remote'ового vite-dev-server'а или копируется в dist host-приложения.
+1. Прочитать bootstrap params из window globals (injected srcdoc'ом): `NAME`, `INSTANCE_ID`, `SESSION_ID`, `ENTRY` (manifest entry URL).
+2. Подписаться на `window.addEventListener('message')` → dispatch'ить по `eventName` через subscriber-Map; фильтр по `sessionId` (чужие отбрасывать) + `(to, toInstance)` (если адресовано не этому instance'у).
+3. Держать `propsStore` и `configStore` через Solid `createStore`. На каждый `__capsule_remote_props__` envelope → `setPropsStore(reconcile(payload))`; аналогично для `__capsule_remote_config__`.
+4. Построить `channel: IRemoteChannel`:
+   - `channel.send(event, payload)` → `window.parent.postMessage({ from: NAME, fromInstance: INSTANCE_ID, to: '__host__', sessionId: SESSION_ID, eventName: event, payload }, '*')`.
+   - `channel.request(event, payload, timeoutMs)` → присваивает `requestId`, ждёт `isResponse: true` message, timeout через `setTimeout`.
+   - `channel.on(event, cb)` → добавляет в subscriber-Map.
+   - **Reserved namespace guard**: `channel.on('__capsule_*')` / `channel.send('__capsule_*')` → `console.warn('[capsule/remote] __capsule_* namespace is reserved for shell envelopes')` + no-op.
+5. Построить `propsProxy` / `configProxy` через `new Proxy({}, { get, ownKeys, getOwnPropertyDescriptor })` поверх store'ов (см. ADR-053 Decision 4 для кода).
+6. Initial handshake:
+   - На load: `window.parent.postMessage({ eventName: '__capsule_remote_ready__', from: NAME, fromInstance: INSTANCE_ID, sessionId: SESSION_ID }, '*')`.
+   - Ждать `__capsule_remote_props__` + `__capsule_remote_config__` (host шлёт оба на ready) → setStore оба.
+   - `import(ENTRY).then(({ bootstrap }) => bootstrap(root, { props: propsProxy, config: configProxy, channel }))`.
+   - Если `bootstrap` отсутствует / не функция → `console.error('[capsule/remote] module entry must export named "bootstrap" function')`.
 
 ## Phase 1.d — `src/runtime/RemoteProvider.tsx`
 
 ```tsx
 export const RemoteProvider = (props: IRemoteProviderProps) => {
   const [modules, setModules] = createStore<Record<string, IRemoteModuleConfig>>({});
-  const transport = new IframeTransport();
+  const transports: ITransport[] = [new IframeTransport()];  // ADR-053 Decision 8 — array shape even with single
   const sessionId = createUniqueId();
+
+  const resolveTransport = (target: Parameters<ITransport['canReach']>[0]) =>
+    transports.find((t) => t.canReach(target));
 
   createEffect(() => {
     const next = Object.fromEntries(props.modules.map((m) => [m.name, m]));
     setModules(reconcile(next));
   });
-  onCleanup(() => transport.dispose());
+  onCleanup(() => transports.forEach((t) => t.dispose()));
 
   const ctx: IRemoteContext = {
-    Remote: (cp) => <RemoteComponent {...cp} transport={transport} sessionId={sessionId} modules={modules} />,
-    remote: (name, instanceId) => createHostHandle(name, instanceId, transport, sessionId),
+    Remote: (cp) => <RemoteComponent {...cp}
+      transports={transports}
+      sessionId={sessionId}
+      modules={modules}
+      providerConfig={props.config}
+    />,
+    remote: (name, instanceId) => createHostHandle(name, instanceId, transports, resolveTransport, sessionId),
     updateModule: (name, patch) => setModules(name, patch),
     modules,
   };
@@ -188,22 +153,43 @@ export const RemoteProvider = (props: IRemoteProviderProps) => {
 };
 ```
 
-`createHostHandle` — host-side `IRemoteHandle`: `send/request/on` через `transport`, `openStandalone` = `console.warn` + no-op (Phase 2 feature).
+`createHostHandle` — host-side `IRemoteHandle`:
+- `send` / `request` / `on` через `resolveTransport({ name, instanceId, isStandalone: false, sameOrigin: true }) ?? transports[0]`.
+- `openStandalone(props?)` → `console.warn('[capsule/remote] openStandalone — Phase 2 feature (BroadcastChannel + standalone window not yet implemented)'); return undefined`. **NO throw** — acceptance gate.
 
 ## Phase 1.e — `src/runtime/RemoteComponent.tsx`
 
+Различает **четыре класса входных props** (ADR-053 Decision 6 — пятый класс `children` забанен на TS-уровне):
+
+| Class | Pattern | Action |
+|---|---|---|
+| **System** | `name`, `instanceId`, `fallback` + internal `transports`/`sessionId`/`modules`/`providerConfig` | host-side wire, не forward |
+| **Config** | `config` | host-side merge `provider.config ⊕ modules[name].config ⊕ props.config`, шлёт `__capsule_remote_config__` |
+| **Events** | `/^on[A-Z]/` (regex; `online`/`onclick` НЕ matches) | host-side `transport.onMessage` subscription, кэлл cb на match'е `(from=name, fromInstance=instanceId, eventName=propName[2].toLowerCase()+propName.slice(3))` |
+| **Runtime props** | всё остальное | host-side `stripReserved(props)`, шлёт `__capsule_remote_props__` |
+
+Skeleton:
+
 ```tsx
-const RemoteComponent = (props: IRemoteComponentProps & { transport, sessionId, modules }) => {
+const RemoteComponent = (props: IRemoteComponentProps & {
+  transports: ITransport[];
+  sessionId: string;
+  modules: Record<string, IRemoteModuleConfig>;
+  providerConfig?: Record<string, unknown>;
+}) => {
   const module = () => props.modules[props.name];
   const instanceId = props.instanceId ?? createUniqueId();
   let iframeRef: HTMLIFrameElement | undefined;
 
+  const transport = createMemo(() =>
+    props.transports.find((t) => t.canReach({
+      name: props.name, instanceId, isStandalone: false, sameOrigin: true,
+    })) ?? props.transports[0]
+  );
+
   const manifest = createResource(
     () => module()?.url,
-    async (url) => {
-      const res = await fetch(`${url}/capsule.manifest.json`);
-      return res.json() as Promise<IRemoteManifest>;
-    },
+    async (url) => (await fetch(`${url}/capsule.manifest.json`)).json() as Promise<IRemoteManifest>,
   );
 
   const srcdoc = createMemo(() => {
@@ -213,23 +199,65 @@ const RemoteComponent = (props: IRemoteComponentProps & { transport, sessionId, 
     return buildSrcdoc({ name: props.name, instanceId, sessionId: props.sessionId, module: m, manifest: mf });
   });
 
-  // Register iframe, listen for ready, post initial props.
+  // Register / unregister iframe
   createEffect(() => {
     if (!iframeRef || !srcdoc()) return;
-    props.transport.register(props.name, instanceId, iframeRef);
-    const onReady = (msg: IRemoteMessage) => {
-      if (msg.eventName === '__capsule_remote_ready__' && msg.from === props.name && msg.fromInstance === instanceId) {
-        const initialProps = { ...module()?.props, ...stripInternalProps(props) };
-        props.transport.send({
-          from: '__host__', fromInstance: '__host__', to: props.name, toInstance: instanceId,
-          sessionId: props.sessionId, eventName: '__capsule_remote_props__', payload: initialProps,
-        });
-      }
+    transport().register(props.name, instanceId, iframeRef);
+    onCleanup(() => transport().unregister(props.name, instanceId));
+  });
+
+  // Ready handshake — on __capsule_remote_ready__ → push initial props + config envelopes
+  createEffect(() => {
+    const unsub = transport().onMessage((msg) => {
+      if (msg.eventName !== '__capsule_remote_ready__' || msg.from !== props.name || msg.fromInstance !== instanceId) return;
+      // Trigger the two reactive effects below by reading them (already running via createEffect — handshake just marks "ready").
+      // Implementation: shell waits for both envelopes before calling bootstrap; host always sends both on ready.
+      sendPropsEnvelope();
+      sendConfigEnvelope();
+    });
+    onCleanup(unsub);
+  });
+
+  // Reactive props envelope
+  const sendPropsEnvelope = () => {
+    const runtime = stripReserved(props);
+    transport().send({
+      from: '__host__', fromInstance: '__host__',
+      to: props.name, toInstance: instanceId,
+      sessionId: props.sessionId,
+      eventName: '__capsule_remote_props__', payload: runtime,
+    });
+  };
+  createEffect(sendPropsEnvelope);  // reactive — re-sends on any non-reserved prop change
+
+  // Reactive config envelope (merge order: provider → module → instance)
+  const sendConfigEnvelope = () => {
+    const merged = {
+      ...props.providerConfig,
+      ...module()?.config,
+      ...props.config,  // undefined → spread skips, NOT clears (ADR-053 Decision 3)
     };
-    const unsub = props.transport.onMessage(onReady);
-    onCleanup(() => {
-      unsub();
-      props.transport.unregister(props.name, instanceId);
+    transport().send({
+      from: '__host__', fromInstance: '__host__',
+      to: props.name, toInstance: instanceId,
+      sessionId: props.sessionId,
+      eventName: '__capsule_remote_config__', payload: merged,
+    });
+  };
+  createEffect(sendConfigEnvelope);
+
+  // Auto-subscribe on* props (ADR-053 Decision 5)
+  createEffect(() => {
+    const eventProps = Object.keys(props).filter((k) => /^on[A-Z]/.test(k));
+    eventProps.forEach((propName) => {
+      const cb = props[propName] as ((payload?: unknown) => void) | undefined;
+      if (!cb) return;
+      const eventName = propName[2].toLowerCase() + propName.slice(3);
+      const unsub = transport().onMessage((msg) => {
+        if (msg.from !== props.name || msg.fromInstance !== instanceId || msg.eventName !== eventName) return;
+        cb(msg.payload);
+      });
+      onCleanup(unsub);
     });
   });
 
@@ -241,152 +269,304 @@ const RemoteComponent = (props: IRemoteComponentProps & { transport, sessionId, 
         <iframe
           ref={iframeRef}
           srcdoc={srcdoc()}
-          style="width:100%; height:100%; border:0; display:block"
+          style="width:100%;height:100%;border:0;display:block"
           sandbox="allow-scripts allow-same-origin"
         />
       </Match>
     </Switch>
   );
 };
+
+const RESERVED_KEYS = new Set(['name', 'instanceId', 'fallback', 'config', 'children']);
+const stripReserved = (p: Record<string, unknown>) => {
+  const out: Record<string, unknown> = {};
+  for (const k of Object.keys(p)) {
+    if (RESERVED_KEYS.has(k)) continue;
+    if (/^on[A-Z]/.test(k)) continue;
+    // also skip internal props (transports/sessionId/modules/providerConfig) — they're attached via destructuring, not passed by consumer
+    if (['transports', 'sessionId', 'modules', 'providerConfig'].includes(k)) continue;
+    out[k] = p[k];
+  }
+  return out;
+};
 ```
 
-- `sandbox="allow-scripts allow-same-origin"` — нужны оба, чтобы parent.postMessage работал same-origin (без `allow-same-origin` srcdoc-iframe считается opaque-origin → нет postMessage пары).
-- `srcdoc` пересчитывается реактивно — изменение `module.url` через `updateModule()` ремоунтит iframe.
-- Реактивные prop-обновления (props на `<Remote>` после mount'а) **в Phase 1 не делаются автоматически** — initial props один раз на ready handshake; runtime-апдейты host'ы шлют через `useRemote().remote(name).send(...)`. Это явно задокументировать.
+**`sandbox="allow-scripts allow-same-origin"`** — оба токена нужны (без `allow-same-origin` srcdoc-iframe считается opaque-origin → postMessage не парится с parent'ом). ADR-053 risk #2: это не security boundary, документировано.
 
-## Phase 1.f — `src/runtime/useRemote.ts` + barrel
+**`<Remote config={undefined}>`** ≡ отсутствие prop'а — spread skips, provider+module merge применяется. Это **не** «обнулить ambient config».
+
+**`children` через any-cast** — runtime silent ignore (TS-ban на `IRemoteComponentProps`).
+
+## Phase 1.f — `src/runtime/buildSrcdoc.ts`
+
+Pure function — генерит **короткий** srcdoc template, инжектит bootstrap-параметры:
+
+```ts
+export const buildSrcdoc = (params: {
+  name: string;
+  instanceId: string;
+  sessionId: string;
+  module: IRemoteModuleConfig;
+  manifest: IRemoteManifest;
+  bootUrl: string;  // resolved at module-load via import bootUrl from '@capsuletech/web-remote/boot.js?url'
+}) => `<!DOCTYPE html>
+<html><head>
+  ${(params.manifest.styles ?? []).map((s) => `<link rel="stylesheet" href="${new URL(s, params.module.url).href}">`).join('\n  ')}
+</head><body style="margin:0">
+  <div id="capsule-remote-root"></div>
+  <script>
+    window.__CAPSULE_REMOTE__ = ${JSON.stringify({
+      name: params.name,
+      instanceId: params.instanceId,
+      sessionId: params.sessionId,
+      entry: new URL(params.manifest.entry, params.module.url).href,
+    })};
+  </script>
+  <script type="module" src="${params.bootUrl}"></script>
+</body></html>`;
+```
+
+`JSON.stringify` escapes значения — защита от inline-injection если в `name` чужой контент (host-only, но дисциплина). `bootUrl` инжектится в `RemoteComponent` через Vite `?url`-resolved import.
+
+## Phase 1.g — `src/runtime/useRemote.ts` + barrel
 
 ```ts
 export const useRemote = (): IRemoteContext => {
   const ctx = useContext(RemoteContext);
-  if (!ctx) throw new Error('useRemote() must be used inside <RemoteProvider>');
+  if (!ctx) throw new Error('[capsule/web-remote] useRemote() must be used inside <RemoteProvider>');
   return ctx;
 };
 ```
 
-`src/index.ts` barrel — add runtime exports:
+`src/index.ts`:
 
 ```ts
 export type {
-  IRemoteBootstrap, IRemoteChannel, IRemoteDispose,  // ← новые типы lifecycle
+  IRemoteBootstrap, IRemoteChannel, IRemoteDispose,
   IRemoteComponentProps, IRemoteContext, IRemoteHandle, IRemoteManifest,
   IRemoteMessage, IRemoteModuleConfig, IRemoteProviderProps, IRemoteResponse,
   ITransport, TransportKind,
 } from './interfaces';
 export { RemoteProvider } from './runtime/RemoteProvider';
 export { useRemote } from './runtime/useRemote';
+// boot.js exposed via package.json#exports: "./boot.js": "./dist/boot.js"
 ```
 
-## Phase 1.g — Tests
+## Phase 1.h — Tests
 
-Все в `packages/web/runtime/remote/src/**/__tests__/*.test.{ts,tsx}`:
+`packages/web/runtime/remote/src/**/__tests__/*.test.{ts,tsx}`:
 
 1. **IframeTransport** (jsdom):
-   - `register` + `send` — `postMessage` вызван на правильном iframe.contentWindow.
+   - `register` + `send` → `postMessage` вызван на правильном `iframe.contentWindow`.
    - `onMessage` фильтрует по `sessionId` (чужие игнорируются).
-   - `unregister` снимает iframe из registry.
-   - Broadcast (`toInstance === undefined`) → доставляется всем подписчикам с тем же `to`.
+   - `unregister` снимает iframe.
+   - Broadcast (`toInstance === undefined`) → всем подписчикам с тем же `to`.
    - `dispose` снимает `message` listener.
-2. **createHostHandle** (jsdom):
-   - `send`/`request`/`on` правильно конструируют envelope с `from='__host__'`.
-   - `request` resolve'ит на `isResponse: true` сообщении.
-   - `request` timeout'ит.
-3. **buildSrcdoc** (unit, pure):
-   - Шаблон содержит правильные `NAME`/`INSTANCE_ID`/`SESSION_ID`/`ENTRY`.
-   - JSON.stringify escapes значения (защита от inline-XSS если в `name` чужой контент — на самом деле host-only, но дисциплина).
+
+2. **buildSrcdoc** (pure unit):
+   - Template содержит `name` / `instanceId` / `sessionId` / `entry` правильно escape'd через JSON.stringify.
+   - `<link rel="stylesheet">` строится для каждого `manifest.styles[i]` с правильным base URL.
+   - bootUrl инжектится как `<script type="module" src>`.
+
+3. **createHostHandle** (jsdom):
+   - `send` / `request` envelope shape — `from='__host__'`, правильные `to/toInstance/sessionId`.
+   - `request` resolve'ит на `isResponse: true`.
+   - `request` timeout'ит через `timeoutMs`.
+   - `openStandalone` — не throw'ает, warn + undefined.
+
 4. **RemoteProvider + useRemote** (jsdom):
    - `useRemote()` вне Provider'а throw'ает.
-   - `modules` реактивны.
+   - `modules` реактивен на `props.modules` мутации.
    - `updateModule('x', { url: '...' })` обновляет store.
-5. **`<Remote>` mount** (jsdom):
-   - Mock `fetch` для manifest.
-   - Рендерит `fallback('loading')` пока manifest загружается.
-   - Рендерит iframe после load, `srcdoc` содержит правильные шаблонные значения.
-   - Симулируем `__capsule_remote_ready__` message от iframe (через `postMessage` в jsdom) → host шлёт `__capsule_remote_props__` обратно с правильным payload.
+   - `transports` — array shape, single `IframeTransport` в Phase 1 (assertion).
+
+5. **RemoteComponent** (jsdom):
+   - Mock `fetch` для manifest; mock `bootUrl`.
+   - Render `fallback('loading')` пока manifest load'ится.
+   - Render iframe после manifest load, `srcdoc` содержит правильные параметры.
+   - **Reserved-props classification**: проверить что `name`/`instanceId`/`config`/`onX` НЕ попадают в `__capsule_remote_props__` envelope; обычные props попадают.
+   - **Two envelopes on ready**: симулировать `__capsule_remote_ready__` от iframe → host шлёт `__capsule_remote_props__` + `__capsule_remote_config__`, проверить payloads.
+   - **Config merge order**: `provider.config = { a: 'p' }`, `module.config = { a: 'm', b: 'm' }`, `props.config = { a: 'i' }` → envelope payload = `{ a: 'i', b: 'm' }`.
+   - **`config={undefined}`** ≡ нет prop'а: envelope = `{ a: 'm', b: 'm' }` (provider+module merge).
+   - **Reactive props** — изменение non-reserved prop → новый envelope.
+   - **Reactive config** — изменение `props.config` или `providerConfig` → новый envelope.
+   - **Auto-subscribe `onX`** — симулировать `channel.send('x', payload)` от iframe → host вызывает `onX(payload)`.
+   - **`onclick`/`online` non-collision** — props `online: true` НЕ wrap'ится auto-subscribe, попадает в runtime envelope.
+   - **`children` ban** — TS test (compilation error при `<Remote children={...}>`); runtime — silent ignore.
    - `onCleanup` снимает iframe registration.
    - Изменение `module.url` → новый srcdoc, iframe ремоунтится.
 
-**Что НЕ покрываем unit-тестами в Phase 1:**
-- Реальный `import(url)` внутри iframe — jsdom модулей нет; полноценная проверка идёт через demo-app (E2E, follow-up PR).
-- CSS isolation — это property iframe'а, не наша логика; тестить нечего.
+6. **boot.js shell** (опционально в Phase 1 — может быть E2E в demo вместо unit'ов):
+   - propsProxy / configProxy reactive — Solid `createEffect` пере-fire'ится на изменение store'а через property access.
+   - `channel.on('__capsule_*')` → warn + no-op.
+   - `channel.send('__capsule_*')` → warn + no-op.
+   - Ready handshake шлёт `__capsule_remote_ready__`, ждёт `__capsule_remote_props__` + `__capsule_remote_config__`, потом import(entry) + bootstrap.
 
-## Phase 1.h — Demo (отдельный PR, не блокирующий runtime PR)
+**Что НЕ покрываем unit-тестами:**
+- Реальный `import(url)` внутри iframe — jsdom не загружает modules; covered в demo (E2E real browser).
+- CSS isolation — property iframe'а, не наша логика.
+- DnD across iframe boundary — explicit non-feature (ADR-053 risk #3).
 
-Создать `apps/remote-demo/` через CLI (`capsule create-app`):
+## Phase 1.i — Demo (отдельный PR, не блокирующий runtime PR)
 
-- Host: `<RemoteProvider modules={[{ name: 'hello', url: '/remote-hello' }]}>` + `<Remote name="hello" greeting="World" />` в Widget'е.
-- Remote-модуль `apps/remote-hello/` — builds в `dist/remote/` с `capsule.manifest.json` + ESM entry, экспозит `bootstrap(root, props, channel)`. Минимальный Solid `render()` рисующий `<button>{greeting}</button>` + `channel.send('clicked', timestamp)` на click.
-- Host подписывается через `useRemote().remote('hello').on('clicked', ...)`.
+**Два полноценных capsule app'а через CLI** — ADR-053 Decision 7.
 
-**Critical для use-case validation:**
-- Host body красит фон **синим**, remote — **красным**. Iframe-контент красный — подтверждает CSS isolation (Tailwind utility-классы host'а не наследуются).
-- Click внутри remote (`<button>`) триггерит channel.send → host получает event. Подтверждает event-delegation работает внутри iframe (это то что не работало через MountProvider-подход).
-- `updateModule('hello', { url: '/remote-hello-v2' })` из host'а — iframe ремоунтится, новая версия модуля загружается. Подтверждает реактивную смену URL.
+### `apps/remote-host`
 
-Demo — **доказательство** что MVP runtime отвечает на ключевые требования renderer use-case'а. Без demo нельзя считать Phase 1 закрытой.
+Создаётся через `pnpm capsule create-app remote-host`. Содержит:
 
-## Phase 1.i — Docs
+- `main.tsx` → `<RemoteProvider config={{ theme: signal() }} modules={[{ name: 'hello', url: helloUrl(), config: { apiUrl: 'default' } }]}>`.
+- В Widget'е:
+  ```tsx
+  <Remote name="hello" greeting={signal()} onClicked={(ts) => console.log('host got click at', ts)} />
+  ```
+- Toggle theme: `signal()` переключает `'red'` / `'green'` → проверка reactive config.
+- Toggle greeting: signal переключает `'World'` / `'Universe'` → проверка reactive props.
+- Кнопка «add second instance with explicit ids»:
+  ```tsx
+  <Remote name="hello" instanceId="a" config={{ apiUrl: 'A' }} />
+  <Remote name="hello" instanceId="b" config={{ apiUrl: 'B' }} />
+  ```
 
-1. `packages/web/runtime/remote/OWNERSHIP.md`:
+CSS: host body фон **синий**.
+
+### `apps/remote-hello`
+
+Создаётся через `pnpm capsule create-app remote-hello`. Содержит:
+
+- `main.tsx` (standalone entry) — обычный app, рендерит контент.
+- **`src/standalone.ts`** (embedded entry, новый файл) — `export const bootstrap: IRemoteBootstrap`:
+  ```ts
+  import { render } from 'solid-js/web';
+  import { Hello } from './widgets/hello';
+
+  export const bootstrap: IRemoteBootstrap = (root, { props, config, channel }) => {
+    return render(() => <Hello greeting={props.greeting} apiUrl={config.apiUrl} onClick={() => channel.send('clicked', Date.now())} />, root);
+  };
+  ```
+- `public/capsule.manifest.json` (написан руками, vite-plugin Phase 4 — followup):
+  ```json
+  {
+    "name": "hello",
+    "version": "0.0.0",
+    "entry": "/src/standalone.ts",
+    "styles": ["/src/styles.css"]
+  }
+  ```
+  (dev: entry указывает на raw source, Vite SSR'ит; prod: путь меняется на built артефакт после `pnpm build`.)
+- CSS: body фон **красный**, текст реагирует на `config.apiUrl`.
+- `<Hello>` widget — отображает `props.greeting` + `config.apiUrl`, кнопка эмиттит `onClick`.
+
+### Demo flow
+
+- `cd apps/remote-hello && pnpm dev` → :3001 — работает как standalone app.
+- `cd apps/remote-host && pnpm dev` → :3000 — содержит iframe на :3001.
+- `helloUrl()` в host: `import.meta.env.DEV ? 'http://localhost:3001' : '/remote-hello'`.
+
+### Six validation checks (ADR-053 Decision 7) — **все обязательны для acceptance**
+
+1. ✅ **CSS isolation** — host body синий, hello iframe красный. Подтверждает изоляцию.
+2. ✅ **Event delegation внутри own-root** — click `<button>` внутри hello → `channel.send('clicked', ts)` → host получает через `onClicked` prop. Подтверждает own-root + auto-subscribe `on*`.
+3. ✅ **Reactive props** — переключение `greeting` signal'а на host'е → hello перерисовывается без manual `.send('greeting', ...)`. Подтверждает proxy-accessor reactivity.
+4. ✅ **Reactive config + ambient channel** — переключение `theme` signal'а в `<RemoteProvider config={{ theme }}>` → hello перекрашивается. Подтверждает two-channel + provider-level config.
+5. ✅ **Per-instance config** — два instance'а с **explicit `instanceId="a"/"b"`** + разный `config.apiUrl` → каждый видит свой `apiUrl`. Подтверждает merge order + per-instance override.
+6. ✅ **Symmetry** — `apps/remote-hello` на :3001 без iframe — работает идентично embedded-режиму (модуло host-injected config). Подтверждает app-as-remote.
+
+**Verify в реальном браузере** (jsdom не валидирует event delegation внутри iframe и CSS isolation). Memory `feedback_verify_in_browser_dont_guess`.
+
+## Phase 1.j — Docs
+
+1. **`packages/web/runtime/remote/OWNERSHIP.md`**:
    - Status: `scaffold` → `alpha`.
-   - Roadmap: Phase 1 → `[x]` (с updated формулировкой — IframeTransport, не LocalTransport).
+   - Roadmap: Phase 1 → `[x]` с amended формулировкой (IframeTransport + two-channel + ADR-053).
    - Публичный API: добавить `RemoteProvider`, `useRemote`, новые types (`IRemoteBootstrap`, `IRemoteChannel`, `IRemoteDispose`).
-2. `docs/01-architecture/adr/015-remote-modules.md`:
-   - Apply ADR amendment 2026-06-19 (architect готовит amendment параллельно).
-   - Status: `proposed` → `partially-implemented` после landing Phase 1.
-3. Создать / обновить `docs/_meta/web-remote.md` (AI-anchor) — следовать `docs/_meta/OWNERSHIP-template.md` стилю, добавить секцию "Module entry contract — `bootstrap(root, props, channel)`".
-4. User-guide (`docs/<...>/web-remote.md`) — **не в этом скопе**. Followup после Phase 2 (multi-window / standalone).
+   - Reserved-props таблица + reserved namespace `__capsule_*`.
+   - Acceptance gate про transport-array shape (страховка от single-transport hardcode).
+
+2. **ADR-015** статус → `partially-implemented` (Phase 1 done). Amendment 2026-06-19 уже landed.
+
+3. **`docs/_meta/web-remote.md`** AI-anchor:
+   - Two-channel contract таблица.
+   - Reserved props 5 classes.
+   - Bootstrap signature + named-export rule.
+   - Reactive tracking caveat (direct property access only — enumeration ≠ reactive).
+   - Serialization boundary caveat (functions/Symbols/DOM nodes/class instances не выживают postMessage; callbacks → `on*` props канонический путь).
+   - `__capsule_*` reserved namespace.
+   - Phase 1a dependency-readiness checkpoints (createCapsuleApp, EmitProvider, useAppConfig override, CLI scaffolding).
+
+4. **User-guide** (`docs/<...>/web-remote.md`) — **НЕ в этом скопе**. Followup после Phase 2 (multi-window / standalone).
 
 # Чего НЕ делать
 
-- НЕ реализовывать BroadcastChannel / socket транспорты — Phase 2-4.
-- НЕ реализовывать local-inline transport — отложен (см. ADR amendment); вернёмся при появлении consumer'а.
-- НЕ делать `openStandalone` — Phase 2 (нужен `router.openInWindow` от `owner-web-router`). Phase 1 — `console.warn` + no-op.
-- НЕ писать `RemoteManifestPlugin` write-side — Phase 4 (`owner-builders`). Demo-модуль публикует manifest руками (статичный JSON рядом с bundle).
-- НЕ инжектить `remote` сервис в Feature через `createLogicWrapper` — Phase 5 (`owner-web-core`). Host пользуется `useRemote()` напрямую.
-- НЕ менять existing `src/interfaces.ts` types ломающе — только additive (`IRemoteBootstrap`, `IRemoteChannel`, `IRemoteDispose`).
-- НЕ трогать `@capsuletech/web-renderer` чтобы превратить в remote-модуль — отдельный followup, координирует architect через owner-web-renderer.
-- НЕ решать DnD-через-iframe-boundary в Phase 1. Drop из палитры в `<Remote name="renderer">` — отдельный архитектурный вопрос (PointerEvent forwarding через channel или host-overlay drop-zone), не блокирующий Phase 1 acceptance.
-- НЕ публиковать на Verdaccio (pkg 0.0.0, не в release-группах nx.json).
+- НЕ реализовывать BroadcastChannel / socket / cross-origin postMessage — Phase 2-4.
+- НЕ реализовывать local-inline transport — отложен (ADR-015 amendment).
+- НЕ делать `openStandalone` — Phase 2. В Phase 1: `console.warn` + return `undefined` (NO throw).
+- НЕ писать `RemoteManifestPlugin` write-side — Phase 4 (owner-builders). Demo-модуль пишет manifest руками.
+- НЕ инжектить `remote` сервис в Feature через `createLogicWrapper` — Phase 5 (owner-web-core).
+- НЕ создавать `createCapsuleApp` helper в web-core — Phase 1a (owner-web-core), demo пишет `startApp` руками per-app.
+- НЕ создавать `EmitProvider` для `useEmit → channel` routing — Phase 1a. Demo-hello шлёт через прямой `channel.send`, не через `useEmit`.
+- НЕ создавать `useAppConfig({ override })` API — Phase 1a (owner-web-query). Demo делает manual merge inside `startApp`.
+- НЕ менять existing Phase 0 types ломающе — только additive.
+- НЕ трогать `@capsuletech/web-renderer` чтобы превратить в remote-модуль — Phase 1a followup, **ЗАВИСИТ от DnD-через-iframe ADR** (ADR-053 roadmap Phase 1a).
+- НЕ решать DnD через iframe boundary — это **отдельный архитектурный ADR**, эскалируется на architect.
+- НЕ публиковать на Verdaccio (pkg 0.0.0, не в release-группах).
+- НЕ scaffold'ить `standalone.ts` через CLI — Phase 1a (owner-cli + owner-builders). Demo пишет руками.
 
-# Acceptance
+# Acceptance gates (мирорные ADR-053 §Phase 1 Acceptance)
 
-- ✅ `packages/web/runtime/remote/src/interfaces.ts` — добавлены `IRemoteBootstrap`, `IRemoteChannel`, `IRemoteDispose` (additive).
-- ✅ `packages/web/runtime/remote/src/transport/IframeTransport.ts` — реализован.
-- ✅ `packages/web/runtime/remote/src/runtime/{RemoteProvider.tsx, useRemote.ts, RemoteComponent.tsx, iframeBootstrap.ts (или buildSrcdoc.ts), createHostHandle.ts}` — реализованы.
-- ✅ `packages/web/runtime/remote/src/index.ts` — экспозит runtime + новые types.
-- ✅ Unit + integration тесты — green (см. Phase 1.g).
+- ✅ `src/interfaces.ts` — additive types `IRemoteBootstrap`, `IRemoteDispose`, `IRemoteChannel`; расширение `IRemoteModuleConfig.config?`, `IRemoteProviderProps.config?`, `IRemoteComponentProps.config?` (все `Record<string, unknown>` untyped — Phase 4 codegen даст shape).
+- ✅ `RemoteProvider` принимает `config?` prop; merge order (provider → module → instance) реализован **host-side в `RemoteComponent`** и unit-протестирован. `<Remote config={undefined}>` ≡ отсутствие prop'а.
+- ✅ `RemoteComponent` различает 4 класса props + `children` TS-ban; reserved name'а недопустимы как runtime props.
+- ✅ `RemoteComponent` `createEffect`-шлёт `__capsule_remote_props__` и `__capsule_remote_config__` envelope'ы реактивно (включая initial на ready handshake).
+- ✅ `RemoteComponent` auto-subscribe-ит `^on[A-Z]` props через `transport.onMessage`; convention — camelCase event names.
+- ✅ Iframe-shell — **`boot.js` как dist-asset** (`@capsuletech/web-remote/boot.js?url`); короткий srcdoc inject'ит только bootstrap-параметры. Shell держит два Solid store'а, передаёт в `bootstrap` proxy-accessor объекты для props/config. Reserved namespace `__capsule_*` для shell-internal events (user `channel.on/send('__capsule_*')` → warn + no-op).
+- ✅ `useRemote().remote(name).openStandalone({})` — НЕ throw'ает, `console.warn` + return `undefined`.
+- ✅ Transports — array shape (`transports: ITransport[]`), resolved через `canReach()`, даже если в Phase 1 ровно один (`new IframeTransport()`). Single-transport hardcode запрещён.
+- ✅ Six validation checks demo пройдены в **реальном браузере** (см. Phase 1.i).
 - ✅ `pnpm --filter @capsuletech/web-remote build` + `test` + `typecheck` — green.
-- ✅ `OWNERSHIP.md` status `alpha`, Phase 1 checkbox done с amended формулировкой, public API таблица обновлена.
-- ✅ ADR-015 amendment 2026-06-19 — landed (architect зону); status `partially-implemented` после Phase 1.
-- ✅ Demo app (`apps/remote-demo` + `apps/remote-hello`) — **отдельный PR**, валидирует CSS isolation + event delegation + reactive URL change.
+- ✅ `pnpm nx affected -t test build` — green pre-push.
+- ✅ ADR-015 status переходит в `partially-implemented` после Phase 1 merge.
 
 # Workflow
 
-- **Новая ветка** `feat/web-remote-phase1` от `main`.
-- Commit-only, без push (gate-3 — push делает architect/user после verify).
+- **Ветка уже создана** — `feat/web-remote-app-as-remote-foundation` (existing, ADR-053 + amendment + brief уже закоммитчены).
+- **Commit-only, без push** (gate-3 — push делает architect/user после verify). Memory `feedback_agents_commit_only_user_pushes`.
+- Pre-commit hook `Direct commits to main blocked` НЕ active на этой ветке (не main).
+- Если pre-commit / hook блокирует — **STOP + return state**, не делать `--no-verify` (memory `feedback_agent_hook_block_escalate`).
 - Conventional commits по подзадачам:
-  - `feat(web-remote): add bootstrap lifecycle types (IRemoteBootstrap/Channel/Dispose)`
-  - `feat(web-remote): IframeTransport with iframe-registry + postMessage envelope`
-  - `feat(web-remote): RemoteProvider + useRemote + Remote component (iframe srcdoc)`
-  - `test(web-remote): Phase 1 runtime coverage`
-  - `docs(web-remote): mark Phase 1 done in OWNERSHIP + AI-anchor`
+  - `feat(web-remote): add additive types (IRemoteBootstrap/Channel/Dispose) + config? on configs`
+  - `feat(web-remote): IframeTransport with iframe registry + postMessage envelope`
+  - `feat(web-remote): boot.js shell with proxy-accessor stores + reserved __capsule_* namespace`
+  - `feat(web-remote): RemoteProvider + useRemote + RemoteComponent (two-channel + on*-auto-subscribe + transport-array)`
+  - `test(web-remote): Phase 1 runtime coverage (~25 cases per Phase 1.h)`
+  - `docs(web-remote): mark Phase 1 done in OWNERSHIP + AI-anchor + ADR-015 partially-implemented`
+- Demo (`apps/remote-host` + `apps/remote-hello`) — **отдельный PR** после landing'а runtime PR. Если scope раздувается — эскалировать (architect делегирует через owner-cli или сам пишет).
 
-# Followups (НЕ в этом брифе, отдельная координация)
+# Followups (НЕ в этом брифе)
 
-- **ADR-015 amendment 2026-06-19** — architect (параллельно).
-- **Renderer как remote-модуль.** `@capsuletech/web-renderer` экспозит `bootstrap()` entry; build emit'ит `capsule.manifest.json`; добавляется sub-export `/standalone`. Координирует architect через owner-web-renderer.
-- **Studio creator-mode переезжает на `<Remote name="renderer">`.** Координирует architect через owner-web-studio (после landing'а Phase 1 + renderer-as-remote).
-- **DnD через iframe boundary.** Pointer-forwarding host → iframe через channel, или host-overlay drop-zone. Архитектурный ADR (отдельный).
-- **Phase 2 — BroadcastChannel + standalone window.** Multi-window same-origin. Нужен `router.openInWindow` от owner-web-router.
-- **Phase 3+ — cross-origin postMessage / socket / возврат local-inline (если найдётся consumer).** Roadmap в ADR-015 amended-секции.
+- **Phase 1a backfill** (canon-полнота, не блокирует Phase 1 merge):
+  - `createCapsuleApp` helper в `@capsuletech/web-core/bootstrap` subpath (owner-web-core).
+  - `EmitProvider` для `useEmit → channel` routing (owner-web-core).
+  - `capsule create-app` генерит `src/standalone.ts` шаблон (owner-cli + owner-builders).
+  - `useAppConfig({ override })` canonical API (owner-web-query, `/app-config` subpath).
+- **Renderer-as-remote landing** — ЗАВИСИТ от DnD-through-iframe решения. Эскалируется на architect. Координирует через owner-web-renderer + owner-web-studio.
+- **DnD-через-iframe ADR** — отдельный архитектурный документ (pointer-forwarding via channel или host-overlay drop-zone).
+- **Phase 2** — BroadcastChannel + standalone window (`router.openInWindow`, owner-web-router).
+- **Phase 3+** — cross-origin postMessage, socket transport, manifest plugin (owner-builders), HCA-injection compliance (owner-web-core).
+- **Optimization** — diff-shipping для envelope'ов (если метрика покажет).
 
 # Связанное
 
-- `docs/01-architecture/adr/015-remote-modules.md` + amendment 2026-06-19 — авторитативный design doc.
+- `docs/01-architecture/adr/053-app-as-remote-symmetry-and-config-channel.md` — **PRIMARY SOURCE OF TRUTH** для consumer model.
+- `docs/01-architecture/adr/015-remote-modules.md` + amendment 2026-06-19 — транспортный контракт + phase ordering.
 - `packages/web/runtime/remote/src/interfaces.ts` — Phase 0 type contracts (additive only).
-- `packages/web/runtime/remote/OWNERSHIP.md` — owner-агент source of truth.
-- `docs/_meta/briefs/web-ui-mount-provider-revert.md` — parallel revert (отказ от MountProvider workaround'а).
+- `packages/web/runtime/remote/OWNERSHIP.md` — owner-agent source of truth.
+- `docs/_meta/web-remote.md` — AI-anchor (создаётся в этом же PR).
+- `docs/_meta/briefs/_discussion-web-remote-phase1-2026-06-19.md` — discussion summary который привёл к ADR-053.
+- `docs/_meta/briefs/_polish-adr-053-2026-06-19.md` — polish notes на ADR-053.
+- `docs/_meta/briefs/web-ui-mount-provider-revert.md` — parallel revert (отказ от kit-уровня iframe workaround'а).
 - memory `feedback_canon_modules_no_crutches` — §0 эталон + general-purpose контракт.
-- memory `feedback_packages_adapt_to_architecture` — runtime поддерживает host-сценарии без app-escape-hatches.
-- memory `project_renderer_convergence` — main UI собирается через renderer-схемы (long-term motivator).
+- memory `feedback_packages_adapt_to_architecture` — symmetry standalone/embedded = адаптация пакета под архитектуру app'а.
+- memory `feedback_agents_commit_only_user_pushes` — gate-3 push gate.
+- memory `feedback_verify_in_browser_dont_guess` — demo verify в реальном браузере.
+- memory `project_renderer_convergence` — renderer-as-remote = естественное продолжение convergence.
