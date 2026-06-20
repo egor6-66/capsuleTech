@@ -11,6 +11,7 @@ export default defineAppConfig({
     '@capsuletech/web-shell',
     '@capsuletech/boost-layout',
     '@capsuletech/web-studio',
+    '@capsuletech/web-remote',
   ],
   docs: {
     rootVault: false,

@@ -20,6 +20,7 @@
     "@capsuletech/web-ui": "workspace:*",
     "@capsuletech/web-profiler": "workspace:*",
     "@capsuletech/web-query": "workspace:*",
+    "@capsuletech/web-remote": "workspace:*",
     "@capsuletech/web-renderer": "workspace:*",
     "@capsuletech/web-studio": "workspace:*",
     "@capsuletech/web-docs": "workspace:*",
