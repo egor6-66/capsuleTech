@@ -4,7 +4,6 @@ import { Resizable } from './resizable';
 
 export * from './flex';
 export * from './grid';
-// Resizable types exported via namespace only (avoid conflict with wrappers/Resizable deprecated alias)
 export type * as IResizable from './resizable/interfaces';
 
 /**

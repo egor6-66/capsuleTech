@@ -3,7 +3,9 @@ import { type Component, createMemo, For, splitProps } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 
 import { Flex } from '../layout/flex';
-import type { FlexOrientation, IFlexItem } from '../layout/flex/interfaces';
+import { Resizable } from '../layout/resizable';
+import type { FlexOrientation } from '../layout/flex/interfaces';
+import type { IResizableItem } from '../layout/resizable/interfaces';
 import type { IGroupProps, IGroupSeparatorProps } from './interfaces';
 import { groupSeparatorVariants } from './variants';
 
@@ -89,8 +91,8 @@ export function Group<T = unknown>(props: IGroupProps<T>) {
 
   const gap = () => (isAttached() ? 0 : (local.gap ?? 2));
 
-  // Batch + spaced/resizable: items-array for Flex (keeps resizable support)
-  const batchItems = createMemo<IFlexItem[]>(() =>
+  // Batch + spaced/resizable: items-array for Resizable (corvu handles resize)
+  const batchItems = createMemo<IResizableItem[]>(() =>
     visible().map((item) => ({
       children: <Dynamic component={local.item!.use as Component<any>} {...getItemProps(item)} />,
       resizable: !!local.resizable,
@@ -120,11 +122,10 @@ export function Group<T = unknown>(props: IGroupProps<T>) {
       );
     }
 
-    // spaced or resizable: delegate to Flex (items-mode, gap, corvu handles resize)
+    // spaced or resizable: delegate to Resizable (corvu handles resize)
     return (
-      <Flex
+      <Resizable
         orientation={orientation()}
-        gap={gap()}
         items={batchItems()}
         withHandle={local.withHandle}
         class={cn(variantClass(), local.class)}

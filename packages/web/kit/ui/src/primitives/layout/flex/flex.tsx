@@ -1,23 +1,18 @@
 import { cn } from '@capsuletech/web-style';
 import {
   children,
-  createMemo,
-  For,
   type JSX,
-  Show,
   splitProps,
   type ValidComponent,
 } from 'solid-js';
 import { Slot } from '../../slot';
 import { mergeStyle, toGap } from '../grid/utils';
-import { ResizableHandle, ResizablePanel, ResizableRoot } from './_resize/primitives';
 import type {
   FlexAlign,
   FlexDirection,
   FlexJustify,
   FlexOrientation,
   FlexWrap,
-  IFlexItem,
   IFlexProps,
 } from './interfaces';
 
@@ -52,136 +47,27 @@ const JUSTIFY: Record<FlexJustify, string> = {
   evenly: 'justify-evenly',
 };
 
-/** orientation → flex-direction class (для CSS-flex-mode) */
+/** orientation → flex-direction class */
 const ORIENTATION_DIR: Record<FlexOrientation, FlexDirection> = {
   horizontal: 'row',
   vertical: 'col',
 };
 
 // ---------------------------------------------------------------------------
-// fillInitialSizes — равномерно раздаёт остаток между panels без declared size
-// ---------------------------------------------------------------------------
-
-const fillInitialSizes = (items: IFlexItem[]): number[] => {
-  const declared = items.map((it) => it.initialSize);
-  const sum = declared.reduce<number>((s, v) => s + (v ?? 0), 0);
-  const missing = declared.filter((v) => v === undefined).length;
-  const remainder = Math.max(0, 1 - sum);
-  const auto = missing > 0 ? remainder / missing : 0;
-  return declared.map((v) => v ?? auto);
-};
-
-// ---------------------------------------------------------------------------
-// ResizableFlex — внутренний компонент для items-mode с resizable
-// ---------------------------------------------------------------------------
-
-interface IResizableFlexProps {
-  items: IFlexItem[];
-  orientation: FlexOrientation;
-  withHandle?: boolean;
-  /** Disable handle pointer interaction (layout still applies). */
-  handleDisabled?: boolean;
-  class?: string;
-  /** Forwarded to corvu ResizableRoot — fires whenever panel sizes change. */
-  onSizesChange?: (sizes: number[]) => void;
-}
-
-const ResizableFlex = (props: IResizableFlexProps) => {
-  // Snapshot items via memo so the getter from the outer component (e.g. matrix's
-  // `get items() { return buildHorizontalItems(...); }`) is called at most ONCE per
-  // reactive update rather than once per access-site.  Multiple accesses within the
-  // same computation return the identical array reference, preventing repeated
-  // JSX-node creation that would move slot-children DOM nodes out of their panels.
-  const items = createMemo(() => props.items);
-  const sizes = createMemo(() => fillInitialSizes(items()));
-
-  return (
-    <ResizableRoot
-      orientation={props.orientation}
-      class={props.class}
-      onSizesChange={props.onSizesChange}
-    >
-      <For each={items()}>
-        {(item, index) => (
-          <>
-            <ResizablePanel
-              initialSize={sizes()[index()]}
-              minSize={item.minSize}
-              maxSize={item.maxSize}
-              collapsible={item.collapsible}
-              class="min-h-0 min-w-0 overflow-hidden"
-            >
-              {item.children}
-            </ResizablePanel>
-            <Show
-              when={(() => {
-                const next = items()[index() + 1];
-                return !!next && item.resizable !== false && next.resizable !== false;
-              })()}
-            >
-              <ResizableHandle
-                withHandle={props.withHandle}
-                disabled={props.handleDisabled}
-                classList={{ 'pointer-events-none': !!props.handleDisabled }}
-              />
-            </Show>
-          </>
-        )}
-      </For>
-    </ResizableRoot>
-  );
-};
-
-// ---------------------------------------------------------------------------
-// StaticItemsFlex — items-mode без resize (CSS flex)
-// ---------------------------------------------------------------------------
-
-interface IStaticItemsFlexProps {
-  items: IFlexItem[];
-  orientation: FlexOrientation;
-  class?: string;
-  style?: JSX.CSSProperties | string;
-}
-
-const StaticItemsFlex = (props: IStaticItemsFlexProps) => {
-  const dirClass = props.orientation === 'vertical' ? 'flex flex-col' : 'flex flex-row';
-
-  return (
-    <div class={cn(dirClass, props.class)} style={props.style as JSX.CSSProperties | undefined}>
-      <For each={props.items}>{(item) => <div>{item.children}</div>}</For>
-    </div>
-  );
-};
-
-// ---------------------------------------------------------------------------
-// Flex — public component
+// Flex — public component (CSS-flex only)
 // ---------------------------------------------------------------------------
 
 /**
  * Flex — низкоуровневая Flexbox-обёртка для страниц и виджетов.
  *
- * **Два режима:**
+ * Передавай `children` как обычно:
+ * ```tsx
+ * <Flex gap={2} align="center">
+ *   <Icon /> <span>Label</span>
+ * </Flex>
+ * ```
  *
- * 1. **CSS-flex mode** (default): передавай `children` как обычно.
- *    ```tsx
- *    <Flex gap={2} align="center">
- *      <Icon /> <span>Label</span>
- *    </Flex>
- *    ```
- *
- * 2. **Resizable mode**: передай `items` вместо `children`.
- *    Если хотя бы один item имеет `resizable: true` — рендерится через corvu.
- *    Иначе — обычный CSS flex.
- *    ```tsx
- *    <Flex
- *      orientation="horizontal"
- *      items={[
- *        { children: <A />, resizable: true, initialSize: 0.3, minSize: 0.1 },
- *        { children: <B />, resizable: true, initialSize: 0.7 },
- *      ]}
- *      withHandle
- *    />
- *    ```
+ * Для resize-раскладок используй `<Layout.Resizable items={[...]} />`.
  */
 export const Flex = <T extends ValidComponent = 'div'>(props: IFlexProps<T>) => {
   const [own, polyAndRest] = splitProps(props, [
@@ -196,10 +82,6 @@ export const Flex = <T extends ValidComponent = 'div'>(props: IFlexProps<T>) => 
     'inline',
     'class',
     'style',
-    'items',
-    'withHandle',
-    'handleDisabled',
-    'onSizesChange',
     'h',
     'minH',
     'maxH',
@@ -209,82 +91,6 @@ export const Flex = <T extends ValidComponent = 'div'>(props: IFlexProps<T>) => 
     'fluid',
   ]);
   const [poly, others] = splitProps(polyAndRest, ['as']);
-
-  // ---------------------------------------------------------------------------
-  // Items-mode: `items` prop provided
-  // ---------------------------------------------------------------------------
-
-  const orientation = (): FlexOrientation => own.orientation ?? 'horizontal';
-
-  if (own.items !== undefined) {
-    // Snapshot to a typed local so TS can resolve element type without
-    // fighting the generic `IFlexProps<T>["items"]` opaque union.
-    const arr: IFlexItem[] = own.items as IFlexItem[];
-    const hasElements = arr.length > 0;
-
-    /**
-     * True when the array is non-empty AND at least one item carries the
-     * expected IFlexItem shape (`children` or `resizable`).
-     * An all-plain-objects array (no `children`, no `resizable`) is treated
-     * as an accidental prop-name collision and falls back to children-mode.
-     */
-    const isValidItems =
-      hasElements &&
-      arr.some((it) => 'children' in (it as object) || (it as IFlexItem).resizable === true);
-
-    /**
-     * True only when items-mode is active AND at least one item explicitly
-     * opts into resize (`resizable: true`).  Plain items without the flag
-     * render as CSS flex, not corvu.
-     */
-    const hasResizable = isValidItems && arr.some((it) => it.resizable === true);
-
-    if (hasElements && !isValidItems) {
-      // Guard: consumer accidentally passed a domain data array under `items`.
-      // The array is non-empty but none of the objects have `.children` or
-      // `.resizable` — this is not a valid IFlexItem array.  Warn, then fall
-      // through to children-mode below.
-      // Use (import.meta as any).env?.DEV to stay compatible with library
-      // tsconfigs that do not include `vite/client` types.
-      if ((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV !== false) {
-        console.warn(
-          '[Flex] `items` prop received but no item has `.children` or `.resizable`. ' +
-            'This looks like a domain data array accidentally bound to the `items` prop. ' +
-            'Falling back to `children`. ' +
-            'If you intended items-mode, ensure each IFlexItem has a `children` field.',
-        );
-      }
-      // Fall through to children-mode below.
-    } else if (isValidItems) {
-      // Rendered as items-mode — ignore as/polyProps (no polymorphic in this mode)
-      return (
-        <Show
-          when={hasResizable}
-          fallback={
-            <StaticItemsFlex
-              items={own.items!}
-              orientation={orientation()}
-              class={own.class}
-              style={own.style as JSX.CSSProperties | undefined}
-            />
-          }
-        >
-          <ResizableFlex
-            items={own.items!}
-            orientation={orientation()}
-            withHandle={own.withHandle}
-            handleDisabled={own.handleDisabled}
-            class={own.class}
-            onSizesChange={own.onSizesChange}
-          />
-        </Show>
-      );
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // CSS-flex mode: children (original behaviour)
-  // ---------------------------------------------------------------------------
 
   // `orientation` maps to a direction class if `direction` is not explicitly set
   const effectiveDirection = (): FlexDirection | undefined => {
