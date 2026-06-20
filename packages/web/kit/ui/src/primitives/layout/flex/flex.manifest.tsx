@@ -1,6 +1,13 @@
-import { z } from '@capsuletech/shared-zod';
+import { type ZodObject, type ZodTypeAny, z } from '@capsuletech/shared-zod';
+import { propsSchemaOf } from '@capsuletech/web-contract';
 import { Rows3 } from '../../../icons';
 import type { IPrimitiveManifestEntry } from '../../../manifest/types';
+import { FlexContract } from './flex.contract';
+import { flexPresets } from './flex.presets';
+
+// Contract = root for props. Manifest extends with Inspector-only fields (class, style).
+const baseProps = propsSchemaOf<ZodObject<Record<string, ZodTypeAny>>>(FlexContract);
+if (!baseProps) throw new Error('FlexContract has no props schema — add rule.props(...)');
 
 export const FlexManifest: IPrimitiveManifestEntry = {
   type: 'ui.Layout.Flex',
@@ -8,30 +15,26 @@ export const FlexManifest: IPrimitiveManifestEntry = {
   category: 'container',
   icon: () => <Rows3 size={16} />,
   description: 'Flexbox-контейнер: направление, выравнивание, gap',
+  // НЕ ставим isLeaf — Flex принимает детей.
   canBeRoot: true,
+  contract: FlexContract,
+  docSlug: 'web-ui/primitives/layout/flex',
   defaultProps: {
     direction: 'col',
-    // gap: --space-component — стандартный шаг между компонентами в колонке/строке.
+    // gap токеном — стандартный шаг между компонентами в колонке/строке.
     gap: 'var(--space-component)',
     class: 'w-full',
-    // padding через инлайн-стиль с CSS-токеном — всегда применяется, не требует
-    // content-scan Tailwind в приложении-консьюмере. --space-card = отступ карточки/секции.
+    // padding через инлайн-стиль с CSS-токеном — не требует Tailwind content-scan
+    // в приложении-консьюмере.
     style: { padding: 'var(--space-card)' },
   },
-  styleSlots: ['root'],
-  propsSchema: z.object({
-    direction: z.enum(['row', 'row-reverse', 'col', 'col-reverse']).optional().default('col'),
-    align: z.enum(['start', 'center', 'end', 'stretch', 'baseline']).optional(),
-    justify: z.enum(['start', 'center', 'end', 'between', 'around', 'evenly']).optional(),
-    wrap: z.enum(['wrap', 'nowrap', 'wrap-reverse']).optional(),
-    // gap: string (CSS value) или number (× 0.25rem). Предпочтителен токен-строкой.
-    gap: z.union([z.number(), z.string()]).optional().default('var(--space-component)'),
-    // h/w: число (spacing-шкала) или 'full' (100%).
-    h: z.union([z.number(), z.literal('full')]).optional(),
-    w: z.union([z.number(), z.literal('full')]).optional(),
-    // fluid: responsive basis (px). flex: 1 1 Npx — растёт/сжимается, basis = N.
-    fluid: z.number().optional(),
+  propsSchema: baseProps.extend({
     class: z.string().optional().default('w-full'),
     style: z.record(z.string()).optional().default({ padding: 'var(--space-card)' }),
   }),
+  presets: flexPresets,
+  // styleSlots приходят из contract.surface (rule.styleSlots(['root'])).
+  // fieldRule: НЕ добавляем. Возможный будущий кейс — скрывать `direction`,
+  //            когда `orientation` задан (overlap), но это hint, не constraint;
+  //            решим когда появится UX-боль.
 };
