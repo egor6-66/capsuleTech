@@ -27,7 +27,7 @@ import type { IWebUiManifest } from '../types';
 // Calibrated limits (kB gzip) — L0 only.
 // L1 has no size cap (consumer brings the Kobalte peer dep).
 // ---------------------------------------------------------------------------
-const L0_SIZE_LIMIT_KB = 12;
+const L0_SIZE_LIMIT_KB = 13; // bumped: Layout.Resizable added Phase 1 (extract from Flex)
 
 // ---------------------------------------------------------------------------
 // Kobalte allowlist — featherweight role-bearing subpaths permitted in L0 graph.

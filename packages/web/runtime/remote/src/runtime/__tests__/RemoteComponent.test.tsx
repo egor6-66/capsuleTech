@@ -24,8 +24,9 @@ import type {
 } from '../../interfaces';
 import { type IRemoteComponentInternalProps, RemoteComponent } from '../RemoteComponent';
 
-// ─── Mock bootUrl (Vite ?url import) ─────────────────────────────────────────
-vi.mock('../shell/boot?url', () => ({ default: 'http://test/boot.mjs' }));
+// bootUrl is now resolved via new URL('./boot.mjs', import.meta.url).href at module level.
+// In jsdom, import.meta.url is 'about:blank' → bootUrl resolves to 'about:boot.mjs' (harmless string).
+// These tests do NOT inspect srcdoc content, so the exact bootUrl value is irrelevant.
 
 // ─── Mock fetch for manifest ──────────────────────────────────────────────────
 const MANIFEST: IRemoteManifest = {

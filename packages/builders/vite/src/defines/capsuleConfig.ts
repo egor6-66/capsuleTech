@@ -11,6 +11,7 @@ import {
   createDevDiagnosticsPlugin,
   EnsureScaffoldPlugin,
   HMRWrappingPlugin,
+  RemoteManifestPlugin,
   RouterPlugin,
   solidPlugin,
 } from '../plugins';
@@ -279,6 +280,7 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
       }),
       HMRWrappingPlugin(),
       EnsureScaffoldPlugin(capsuleRoot),
+      RemoteManifestPlugin({ appRoot: root }),
       CapsuleRegistryPlugin({
         capsuleRoot,
         watchDir,
@@ -366,6 +368,10 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
     },
     server: {
       port: config.devServerPort || 3000,
+      // ADR-053 app-as-remote: iframe-srcdoc имеет Origin: null. Vite 6+ default
+      // server.cors допускает только localhost-origins → cross-port ESM-import
+      // из srcdoc-iframe блочится (репортируется браузером как «MIME video/mp2t»).
+      cors: { origin: "*" },
     },
     esbuild: {
       tsconfigRaw: readFileSync(join(root, 'tsconfig.json'), 'utf-8'),

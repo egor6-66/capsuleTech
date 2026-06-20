@@ -8,19 +8,21 @@
 
 const WebStudioLayout = Page((Ui) => (
   <WebStudio.CreatorRoot>
-    <Layouts.Matrix
-      mode="view"
-      preset="app-shell"
-      slots={{
-        header: {
-          children: <Widgets.Studio.Header />,
-          initialSize: 0.04,
-        },
-        main: {
-          children: <Ui.Outlet />,
-        },
-      }}
-    />
+    <Remote.Provider modules={[{ name: 'universal-canvas', url: 'http://localhost:3000' }]}>
+      <Layouts.Matrix
+        mode="view"
+        preset="app-shell"
+        slots={{
+          header: {
+            children: <Widgets.Studio.Header />,
+            initialSize: 0.04,
+          },
+          main: {
+            children: <Ui.Outlet />,
+          },
+        }}
+      />
+    </Remote.Provider>
   </WebStudio.CreatorRoot>
 ));
 export const meta = { can: 'studio' };

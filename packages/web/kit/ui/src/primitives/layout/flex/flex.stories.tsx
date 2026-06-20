@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
-import { MockBlock, MockMain, MockRightBar, MockSidebar } from '../../_mocks';
+import { MockBlock } from '../../_mocks';
 import { Flex } from './flex';
 
 const meta = {
@@ -75,57 +75,6 @@ export const Wrap: Story = {
 };
 
 /**
- * Resizable horizontal — два panel'я с drag-handle между ними.
- * Sum sizes = 100%. Drag the handle to redistribute.
- */
-export const ResizableHorizontal: Story = {
-  name: 'resizable · horizontal',
-  parameters: { layout: 'fullscreen' },
-  decorators: [
-    (Story) => (
-      <div class="h-[520px] w-full border border-dashed border-white/15 overflow-hidden">
-        <Story />
-      </div>
-    ),
-  ],
-  render: () => (
-    <Flex
-      orientation="horizontal"
-      items={[
-        { children: <MockSidebar />, resizable: true, initialSize: 0.28, minSize: 0.15 },
-        { children: <MockMain />, resizable: true },
-      ]}
-      withHandle
-    />
-  ),
-};
-
-/**
- * Resizable vertical — два panel'я по вертикали с drag-handle.
- */
-export const ResizableVertical: Story = {
-  name: 'resizable · vertical',
-  parameters: { layout: 'fullscreen' },
-  decorators: [
-    (Story) => (
-      <div class="h-[520px] w-full border border-dashed border-white/15 overflow-hidden">
-        <Story />
-      </div>
-    ),
-  ],
-  render: () => (
-    <Flex
-      orientation="vertical"
-      items={[
-        { children: <MockSidebar />, resizable: true, initialSize: 0.3, minSize: 0.15 },
-        { children: <MockMain />, resizable: true },
-      ]}
-      withHandle
-    />
-  ),
-};
-
-/**
  * Sizing props: `minH`, `h`, `w` через spacing-шкалу.
  * `minH={24}` → `min-height: calc(var(--spacing) * 24)` (≡ Tailwind `min-h-24`).
  * Позволяет задавать размеры без сырых Tailwind-классов снаружи.
@@ -154,33 +103,5 @@ export const SizingProps: Story = {
         <MockBlock label="w={64} minH={12}" />
       </Flex>
     </Flex>
-  ),
-};
-
-/**
- * Mixed: один panel fixed (resizable: false), два resizable.
- * Handle появляется только между resizable соседями — у right (resizable:false)
- * handle справа нет.
- */
-export const MixedFixedAndResizable: Story = {
-  name: 'resizable · mixed (fixed right panel)',
-  parameters: { layout: 'fullscreen' },
-  decorators: [
-    (Story) => (
-      <div class="h-[520px] w-full border border-dashed border-white/15 overflow-hidden">
-        <Story />
-      </div>
-    ),
-  ],
-  render: () => (
-    <Flex
-      orientation="horizontal"
-      items={[
-        { children: <MockSidebar />, resizable: true, initialSize: 0.22, minSize: 0.12 },
-        { children: <MockMain />, resizable: true },
-        { children: <MockRightBar />, resizable: false, initialSize: 0.25 },
-      ]}
-      withHandle
-    />
   ),
 };

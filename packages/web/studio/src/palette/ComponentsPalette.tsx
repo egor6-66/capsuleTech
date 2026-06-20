@@ -32,6 +32,7 @@ import {
   type IPreset,
   type IPrimitiveManifestEntry,
 } from '@capsuletech/web-ui/manifest';
+import { Typography } from '@capsuletech/web-ui/typography';
 import { For, Show } from 'solid-js';
 import { useStudioMode } from '../navigation/useStudioMode';
 import { useSelectedPreset } from '../selection';
@@ -45,7 +46,7 @@ const PresetItem = (props: { p: IPreset }) => {
     <button
       type="button"
       onClick={() => setSelected(props.p)}
-      class="flex w-full items-center gap-2 rounded-sm px-2 py-1 text-left text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+      class="cursor-pointer flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground"
       classList={{ 'bg-accent text-accent-foreground': isSelected() }}
       data-testid={`preset-${props.p.id}`}
     >
@@ -55,10 +56,10 @@ const PresetItem = (props: { p: IPreset }) => {
 };
 
 const ComponentLabel = (props: { m: IPrimitiveManifestEntry }) => (
-  <span class="inline-flex items-center gap-2">
-    <span class="shrink-0 text-muted-foreground">{props.m.icon()}</span>
-    <span>{props.m.label}</span>
-  </span>
+  <Flex gap={2} align={'center'}>
+    <Typography>{props.m.icon()}</Typography>
+    <Typography variant={'muted'}>{props.m.label}</Typography>
+  </Flex>
 );
 
 /**
@@ -79,13 +80,13 @@ const ComponentNode = (props: {
   <Show
     when={hasPresets(props.m.type)}
     fallback={
-      <div class="flex items-center gap-2 px-2 py-1 text-sm">
+      <div class="flex items-center gap-2 px-2 py-2 text-sm">
         <ComponentLabel m={props.m} />
       </div>
     }
   >
     <Accordion.Item value={props.m.type}>
-      <Accordion.Trigger>
+      <Accordion.Trigger class={'py-2'}>
         <ComponentLabel m={props.m} />
       </Accordion.Trigger>
       <Accordion.Content>

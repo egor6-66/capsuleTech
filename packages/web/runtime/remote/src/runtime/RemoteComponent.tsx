@@ -28,11 +28,12 @@ import type {
   IRemoteModuleConfig,
   ITransport,
 } from '../interfaces';
-// Vite resolves this at build time — boot.js is a dist-asset of this package.
-// The ?url suffix turns the import into a string URL (not executed inline).
-// At test time this is mocked via vi.mock.
-// eslint-disable-next-line import/no-unresolved
-import bootUrl from '../shell/boot?url';
+// dist/boot.mjs — built sibling-asset (separate vite entry). At runtime
+// import.meta.url points to dist/chunks/*.mjs → `../boot.mjs` resolves to dist/boot.mjs.
+// Previous form (?url) inlined src/shell/boot.ts as data:video/mp2t base64,
+// which browsers refuse to load as an ESM module.
+// At test time this is mocked via vi.mock('../runtime/RemoteComponent').
+const bootUrl = new URL('../boot.mjs', import.meta.url).href;
 import { buildSrcdoc } from './buildSrcdoc';
 
 /** Internal props added by RemoteProvider — not part of the public API. */
