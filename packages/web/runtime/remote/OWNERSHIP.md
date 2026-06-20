@@ -55,7 +55,7 @@ Phase 1: IframeTransport + two-channel contract (ADR-053).
 
 ## Публичный API
 
-Два entrypoint: `.` (runtime) + `./boot.js` (iframe-side shell dist-asset).
+Три entrypoint: `.` (runtime) + `./boot.js` (iframe-side shell dist-asset) + `./capsule` (ADR 033 registration manifest).
 
 **Phase 0 types (unchanged):**
 
@@ -86,8 +86,11 @@ Phase 1: IframeTransport + two-channel contract (ADR-053).
 |---|---|---|
 | `RemoteProvider` | component | Root provider. `config?` + `modules` + `children`. |
 | `useRemote()` | hook | Returns `IRemoteContext`. Throws outside provider. |
+| `RemoteView` | component | Thin wrapper over `useRemote().Remote`. Used as `Remote.View` global (ADR 033). |
 
 **`./boot.js`** — iframe-side shell. Accessed via `import bootUrl from '@capsuletech/web-remote/boot.js?url'`. NOT imported directly.
+
+**`./capsule`** — ADR 033 registration manifest. Registers `Remote.Provider` and `Remote.View` globals. Import: `import CapsuleRemote from '@capsuletech/web-remote/capsule'`.
 
 ## Reserved props (ADR-053 Decision 6)
 

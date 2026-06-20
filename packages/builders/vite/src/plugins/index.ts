@@ -47,4 +47,5 @@ export { createDevDiagnosticsPlugin } from './devDiagnostics';
 export { HMRWrappingPlugin } from './HMRWrapping';
 export { RouterPlugin } from './router';
 export { EnsureScaffoldPlugin } from './scaffold';
+export { RemoteManifestPlugin } from './remoteManifest';
 export { staticCopyPlugin } from './staticCopy';
