@@ -4,7 +4,7 @@
  * Standard corvu-flex render-path for rows.
  */
 import type { ISortableZone } from '@capsuletech/web-dnd';
-import { Flex, type IFlex } from '@capsuletech/web-ui';
+import { type IResizable, Layout } from '@capsuletech/web-ui';
 import type { Accessor, JSX } from 'solid-js';
 import { For } from 'solid-js';
 import { type ICellDndState, NOOP_REF, renderCell } from '../cell';
@@ -26,7 +26,7 @@ export const rowToFlexItems = (
   savedSizes: number[] | undefined,
   isDragging: Accessor<boolean>,
   _resizeEnabled: Accessor<boolean>,
-): IFlex.IFlexItem[] => {
+): IResizable.IResizableItem[] => {
   const rowIsAutoHeight = row.height === 'auto';
   return row.cells.map((cell, i) => {
     const widthIsNumber = typeof cell.width === 'number';
@@ -137,7 +137,7 @@ export const renderRow = (
         }}
       >
         <div class="absolute inset-0">
-          <Flex
+          <Layout.Resizable
             orientation="horizontal"
             items={items}
             withHandle={resizeEnabled()}

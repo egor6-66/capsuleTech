@@ -5,7 +5,7 @@
  */
 import type { ISortableZone } from '@capsuletech/web-dnd';
 import { useDnD } from '@capsuletech/web-dnd';
-import { Flex, type IFlex } from '@capsuletech/web-ui';
+import { type IResizable, Layout } from '@capsuletech/web-ui';
 import type { Accessor, JSX } from 'solid-js';
 import { createMemo, createSignal, For, Match, Show, Suspense, Switch } from 'solid-js';
 import { type ICellDndState, MatrixCellFallback, NOOP_REF } from './cell';
@@ -64,7 +64,7 @@ const rowsToVerticalItems = (
   setCellSize: (cellId: string, px: number) => void,
   /** ADR 026: Grid-zone bindings (insert mode only). */
   gridOpts?: IGridOpts,
-): IFlex.IFlexItem[] => {
+): IResizable.IResizableItem[] => {
   return rows.map((row, i) => {
     const heightIsNumber = typeof row.height === 'number';
     const isResizable = row.resizable ?? true;
@@ -329,7 +329,7 @@ export const MatrixContent = (props: IMatrixContentProps) => {
       <Match when={isHorizontal() && hasHorizontalResizableZones()}>
         {(() => {
           const rs = effectiveRows();
-          const zoneItems = rs.map((row, i): IFlex.IFlexItem => {
+          const zoneItems = rs.map((row, i): IResizable.IResizableItem => {
             const rowKey = row.id ?? `r${i}`;
             const getZoneFn = insertGetZone();
             const zone = getZoneFn && row.id ? getZoneFn(row.id) : undefined;
@@ -362,7 +362,7 @@ export const MatrixContent = (props: IMatrixContentProps) => {
           return (
             <div class="relative h-full w-full overflow-hidden">
               <div class="absolute inset-0">
-                <Flex
+                <Layout.Resizable
                   orientation="horizontal"
                   items={zoneItems}
                   withHandle={props.resizeEnabled()}
@@ -446,7 +446,7 @@ export const MatrixContent = (props: IMatrixContentProps) => {
           return (
             <div class="relative h-full w-full overflow-hidden">
               <div class="absolute inset-0">
-                <Flex
+                <Layout.Resizable
                   orientation="vertical"
                   items={verticalItems}
                   withHandle={props.resizeEnabled()}
@@ -511,7 +511,7 @@ export const MatrixContent = (props: IMatrixContentProps) => {
             return (
               <div class="relative min-h-0 flex-1 overflow-hidden">
                 <div class="absolute inset-0">
-                  <Flex
+                  <Layout.Resizable
                     orientation="vertical"
                     items={verticalItems}
                     withHandle={props.resizeEnabled()}
