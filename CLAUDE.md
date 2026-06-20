@@ -84,11 +84,13 @@ PreToolUse-хук `.claude/hooks/git-gate.mjs` физически режет wri
 - **Режется**: `git switch`, `git checkout <branch>`, `git checkout -b`, `git push` (любой), `git merge`, `git rebase`, `git reset --hard/--keep`, `git branch -D/-f/-m`, `git worktree add/remove/move`, `gh pr create/merge/close/reopen/edit`.
 - **Пускается**: read-only (`git status/log/diff/show/fetch`), `git add`, `git commit`, `git pull --ff-only`, `git checkout -- <path>` (path-restore форма с ` -- `), `gh pr view/list/diff`, `gh api` (read-only).
 
-**Хук режет ВСЕХ одинаково**, включая architect'а — никакого whitelist по subagent_type. Это фича: architect получает то же блокирующее сообщение и осознанно решает (либо делает сам в чистом контексте, либо вызывает user'а). Снять блок можно только правкой `.claude/settings.json` через user'а — редкий случай, ок ручной workflow.
+**Scope (2026-06-20):** main-сессия (architect) — **полный git-доступ**, включая destructive ops; subagent'ы (Agent tool — owner-*, view, widget, …) — гейт остаётся. Различение через marker-файл `.claude/.main-session-id`, который SessionStart-хук `main-session-marker.mjs` пишет один раз при старте main-сессии. `git-gate.mjs` читает маркер на каждом PreToolUse и сравнивает с `input.session_id`. SessionStart фаер только для main, не для subagent'ов — поэтому subagent'ы никогда не пройдут проверку.
+
+**Architect (main) теперь сам коммитит/мержит/пушит** там где раньше эскалировал к user'у. Memory `feedback_agents_commit_only_user_pushes` остаётся в силе для **owner-agent'ов** (они только commit, push делает architect), но не для самого architect'а.
 
 PostToolUse-хук `.claude/hooks/git-audit.mjs` на успешный `git commit` дописывает в context строку `[git-audit] commit <sha> on branch <branch>` — расхождение «должен был коммитить в X, а лёг в Y» ловится в момент.
 
-**Если хук сработал — не пытайся обойти** (через `bash -c`, `&&`, кавычки — хук видит полную команду). STOP + escalate.
+**Subagent'ам: если хук сработал — не пытайся обойти** (через `bash -c`, `&&`, кавычки — хук видит полную команду). STOP + escalate.
 
 ### 0.3. 📡 DEV-DIAGNOSTICS STREAM
 
