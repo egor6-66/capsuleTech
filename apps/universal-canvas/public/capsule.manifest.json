@@ -1,0 +1,5 @@
+{
+  "name": "universal-canvas",
+  "version": "0.0.1",
+  "entry": "/src/remote.ts"
+}
