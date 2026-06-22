@@ -1,16 +1,22 @@
 ---
-tags: [hca, adr, proposed, web-remote, module-federation, iframe, shared-deps]
-status: proposed
+tags: [hca, adr, superseded, web-remote, module-federation, iframe, shared-deps]
+status: superseded
 date: 2026-06-22
-last_updated: 2026-06-22
+last_updated: 2026-06-23
+superseded_by:
+  - 057-web-remote-import-maps-native-esm
 supersedes: []
 extends:
   - 015-remote-modules
   - 053-app-as-remote-symmetry-and-config-channel
 ---
 
-> [!warning] Status: proposed
-> Канон для внутренней архитектуры `@capsuletech/web-remote`: пакет построен над `@module-federation/vite` + кастомный iframe-transport runtime plugin. Public API (`<Remote.View>`, `<Remote.Provider>`, `useRemote()`, `IRemoteBootstrap`) — не меняется.
+> [!failure] Status: superseded by [[057-web-remote-import-maps-native-esm|ADR 057]]
+> **Direction отвергнут после Шага 0 (2026-06-23).** `@module-federation/vite` фундаментально несовместим с Solid: virtual shared-loader proxy module не re-exports полный API surface `solid-js/web` (захардкожено под React-style hot API surface). JSX-производный код падает с `SyntaxError: The requested module does not provide an export named 'setStyleProperty'`. Workaround через config (убрать `solid-js/web` из `shared:`) не работает — плагин шарит автоматически независимо от user config. См. [[057-web-remote-import-maps-native-esm#почему-adr-056-не-сработал|ADR 057 § rationale]].
+>
+> Документ оставлен как honest record направления, которое пробовали и отвергли. **НЕ implementing.**
+
+# ADR 056 — web-remote: Module Federation 2 + iframe-transport plugin (SUPERSEDED)
 
 # ADR 056 — web-remote: Module Federation 2 + iframe-transport plugin
 
