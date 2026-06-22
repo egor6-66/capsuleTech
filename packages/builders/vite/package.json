@@ -14,7 +14,7 @@
     "@babel/generator": "^7.29.1",
     "@babel/parser": "^7.29.3",
     "@babel/traverse": "^7.25.6",
-    "@babel/types": "^7.25.6",
+    "@babel/types": "^8.0.0",
     "@capsuletech/compliance": "workspace:*",
     "@capsuletech/lib-builder": "workspace:*",
     "@nx/devkit": "^22.7.0",
