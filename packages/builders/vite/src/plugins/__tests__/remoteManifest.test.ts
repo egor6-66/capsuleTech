@@ -102,33 +102,47 @@ describe('RemoteManifestPlugin -- user-aware entry (src/remote.ts present)', () 
     expect(c).not.toMatch(/\(root, _ctx\)/);
   });
 
-  it('calls createRoot(Bootstrap, { container: root })', () => {
+  // XOR-logic: user.bootstrap replaces default, no double-mount
+  it('XOR: calls if(typeof userBootstrap === function) guard', () => {
     const plugin = buildPlugin(); runConfigResolved(plugin); const c = runBuildStart(plugin);
-    expect(c).toContain('createRoot(Bootstrap, { container: root })');
+    expect(c).toMatch(/typeof userBootstrap === 'function'/);
+  });
+
+  it('XOR: returns userBootstrap(root, ctx) when user bootstrap present', () => {
+    const plugin = buildPlugin(); runConfigResolved(plugin); const c = runBuildStart(plugin);
+    expect(c).toContain('return userBootstrap(root, ctx);');
+  });
+
+  it('XOR: falls back to createRoot(Bootstrap) when no user bootstrap', () => {
+    const plugin = buildPlugin(); runConfigResolved(plugin); const c = runBuildStart(plugin);
+    expect(c).toContain('return createRoot(Bootstrap, { container: root });');
+  });
+
+  it('XOR: does NOT mount default Bootstrap unconditionally before user bootstrap', () => {
+    const plugin = buildPlugin(); runConfigResolved(plugin); const c = runBuildStart(plugin);
+    // In XOR logic createRoot must NOT appear before the if-guard (no unconditional mount)
+    const ifGuardIdx = c.indexOf("if (typeof userBootstrap === 'function')");
+    const createRootIdx = c.indexOf('createRoot(Bootstrap, { container: root })');
+    expect(ifGuardIdx).toBeGreaterThan(-1);
+    expect(createRootIdx).toBeGreaterThan(-1);
+    // createRoot must appear AFTER the if-guard (inside else-branch), not before it
+    expect(createRootIdx).toBeGreaterThan(ifGuardIdx);
+  });
+
+  it('XOR: no compose-dispose pattern (no double-dispose)', () => {
+    const plugin = buildPlugin(); runConfigResolved(plugin); const c = runBuildStart(plugin);
+    // Old pattern had 'return () => {' with composed dispose — new XOR does not
+    expect(c).not.toContain('return () => {');
   });
 
   it('calls user.bootstrap(root, ctx)', () => {
     const plugin = buildPlugin(); runConfigResolved(plugin); const c = runBuildStart(plugin);
-    expect(c).toContain('.bootstrap(root, ctx)');
+    expect(c).toContain('userBootstrap(root, ctx)');
   });
 
   it("typeof guard before user.bootstrap call", () => {
     const plugin = buildPlugin(); runConfigResolved(plugin); const c = runBuildStart(plugin);
-    expect(c).toMatch(/typeof.*bootstrap.*===.*'function'/);
-  });
-
-  it('returns composed dispose', () => {
-    const plugin = buildPlugin(); runConfigResolved(plugin); const c = runBuildStart(plugin);
-    expect(c).toContain('return () => {');
-  });
-
-  it('userDispose called before dispose', () => {
-    const plugin = buildPlugin(); runConfigResolved(plugin); const c = runBuildStart(plugin);
-    const userIdx = c.indexOf('userDispose()');
-    const dispIdx = c.lastIndexOf('dispose()');
-    expect(userIdx).toBeGreaterThan(-1);
-    expect(dispIdx).toBeGreaterThan(-1);
-    expect(userIdx).toBeLessThan(dispIdx);
+    expect(c).toMatch(/typeof userBootstrap === 'function'/);
   });
 });
 
