@@ -20,7 +20,7 @@
 import type { IAppConfig } from '@capsuletech/web-core/app-config';
 import { createCapsuleApp } from '@capsuletech/web-core/bootstrap';
 import type { IRemoteBootstrap } from '@capsuletech/web-remote';
-import { createEffect } from 'solid-js';
+import { createEffect, createRoot } from 'solid-js';
 import { routeTree } from '../.capsule/routes/routeTree.gen';
 import appConfigRaw from '../capsule.app';
 
@@ -34,8 +34,15 @@ export const bootstrap: IRemoteBootstrap = (root, ctx) => {
   // ITERATION 2 SMOKE — reactive props (Decision 4).
   // ctx.props.clickCount меняется когда host (canvas.tsx) поднимает clickCount signal.
   // Push через канал, не polling.
-  createEffect(() => {
-    console.log('[universal-canvas] received clickCount:', ctx.props.clickCount);
+  //
+  // Важно: createEffect должен жить ВНУТРИ Solid root. createCapsuleApp создаёт
+  // root через render() ниже, но эффект до этого вызова — bootstrap-time scope, где
+  // активного root ещё нет. Без createRoot эффект отработал бы один раз и не
+  // подписался бы на изменения store'а внутри ctx.props proxy.
+  createRoot(() => {
+    createEffect(() => {
+      console.log('[universal-canvas] received clickCount:', ctx.props.clickCount);
+    });
   });
 
   return createCapsuleApp(root, {
