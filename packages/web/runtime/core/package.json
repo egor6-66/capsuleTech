@@ -61,6 +61,11 @@
       "types": "./dist/ui-kit/index.d.ts",
       "import": "./dist/ui-kit.mjs",
       "default": "./dist/ui-kit.mjs"
+    },
+    "./bootstrap": {
+      "types": "./dist/bootstrap/index.d.ts",
+      "import": "./dist/bootstrap.mjs",
+      "default": "./dist/bootstrap.mjs"
     }
   },
   "publishConfig": {

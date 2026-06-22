@@ -41,6 +41,10 @@ last_updated: 2026-06-13
 | `packages/web/core/src/ui-kit/imports.tsx` | `Ui` — lazy-импорты всех web-ui примитивов через `createLazy` |
 | `packages/web/core/src/providers/base.tsx` | `BaseProviders` — RouterProvider + VitalsMonitoring |
 | `packages/web/core/src/create/createRoot.ts` | DOM bootstrap: `render(Bootstrap, container)` + theme `data-theme` |
+| `packages/web/core/src/bootstrap/index.ts` | subpath `/bootstrap`: barrel re-exports `createCapsuleApp` + `EmitProvider` + shim |
+| `packages/web/core/src/bootstrap/createCapsuleApp.tsx` | Unified bootstrap factory (standalone + embedded, ADR-053 7a) |
+| `packages/web/core/src/bootstrap/EmitProvider.tsx` | `EmitContext` + `EmitProvider` — маршрутизация useEmit → eventSink в embedded-режиме |
+| `packages/web/core/src/bootstrap/solidBundleShim.ts` | Вариант C: `buildSolidImportMap` / `renderSolidImportMapTag` для multi-Solid resolution |
 | `packages/web/core/src/wrappers/__tests__/view-props.test.tsx` | 7 характеризационных тестов нового `(Ui, props)` контракта |
 
 ## Public API {#public-api}
@@ -62,6 +66,18 @@ import {
 
 import { createRoot } from '@capsuletech/web-core/create';
 import { BaseProviders } from '@capsuletech/web-core/providers';
+
+// Unified bootstrap (standalone + embedded, ADR-053):
+import {
+  createCapsuleApp,
+  EmitProvider,
+  type ICreateCapsuleAppOptions,
+  type IEmitSink,
+  // Multi-Solid import-map shim (Вариант C):
+  buildSolidImportMap,
+  renderSolidImportMapTag,
+  SOLID_IMPORT_SPECIFIERS,
+} from '@capsuletech/web-core/bootstrap';
 
 // Access-gating seam (injected resolver, no import of web-access needed):
 import {
@@ -324,6 +340,12 @@ ControllerProxy резолвит `states[currentState][name]` → top-level → 
 32. **`registerAccessResolver` — access-gating seam (additive, non-breaking).** `engine/access-resolver.ts` хранит module-level slot `AccessResolver | null`. Экспортируется из main barrel. `@capsuletech/web-access` (или любой пакет) вызывает `registerAccessResolver(fn)` при инициализации — до монтирования компонентов с `meta.can`. `fn = (cap: string) => boolean` должна читать реактивный state (например `useAuth().role`) внутри себя; web-core вызывает её внутри реактивных scope (Shape getData, UiProxy render) без мемоизации. `null` очищает резолвер. Без зарегистрированного резолвера `hasAccessResolver()` → false → все `can`-проверки пропускаются (allow-all default). Два enforcement points: (A) Shape `getData()` фильтрует массив items по `item.can` реактивно; (B) `wrapComponent` проверяет `meta.can` перед регистрацией — `denied === 'disable'` → render+disabled, дефолт → render-null. `ITagMeta` дополнен `can?: string` и `denied?: 'disable'` (non-breaking). Источники: `src/engine/access-resolver.ts` (slot), `src/engine/ui-proxy.tsx` (point B), `src/wrappers/shape/wrapper.tsx` (point A), `src/engine/__tests__/access-resolver.test.ts` (18 тестов).
 
 31. **`useEmit` — намеренное исключение из «engine/* не public»** (ADR 032). `src/engine/use-emit.ts` экспортируется в публичный barrel — единственный способ дать внешним пакетам (`web-dnd/controllers`, `web-renderer/controllers`) доступ к dispatch-механизму без дублирования engine-логики. Контракт: только `useEmit` + `normalizeTarget` (последняя нужна для тестов и package entry-points). Если появляется соблазн добавить туда другие engine-exports — остановись и задай вопрос: это симптом, что нужен другой механизм или ADR. `normalizeTarget` не экспортируется из barrel (только из файла), она internal-helper для пакетов, работающих через subpath.
+
+33. **`createCapsuleApp` — unified bootstrap (ADR-053 consequences 7a, Phase 1a).** `@capsuletech/web-core/bootstrap` субпуть. Заменяет `createRoot(Bootstrap, { container })` в embedded-режиме на `createCapsuleApp(root, { routeTree, appConfig, configOverride, runtimeProps, eventSink })`. В standalone-режиме: `createCapsuleApp(document.getElementById('root')!, { routeTree, appConfig })` (без трёх optional-полей). HCA-слои не знают в каком режиме работает приложение — это свойство `createCapsuleApp`. Источник: `packages/web/core/src/bootstrap/createCapsuleApp.tsx`. Тесты: `src/bootstrap/__tests__/createCapsuleApp.test.tsx`.
+
+34. **`EmitProvider` + `useEmit` — embedded routing (Phase 1a fix).** `EmitContext` определён в `src/engine/emit-context.ts` (нижний слой); `EmitProvider` (bootstrap/) импортирует и реэкспортирует его — граф: bootstrap → engine (верно, не наоборот). `useEmit()` теперь читает `EmitContext` через `useContext(EmitContext)` и при наличии sink выполняет **двойной dispatch**: сначала локальный `localEmit(eventName, partial)` (ControllerProxy FSM), затем `sink?.send(eventName, partial?.payload)` (forward к хосту). Возврат — от локального dispatch. В standalone-режиме (без `EmitProvider` или `EmitProvider` без `eventSink`) sink = undefined → no-op, поведение идентично предыдущему. Три случая: (1) с sink → локальный + sink; (2) без EmitProvider → только локальный; (3) EmitProvider без eventSink → только локальный. `IEmitSink = { send: (event, payload?) => void }` — structural compat с `IRemoteChannel` из web-remote (duck typing, нет circular dep). `createCapsuleApp` принимает `eventSink?: IEmitSink` и прокидывает в `EmitProvider`. Источники: `src/engine/emit-context.ts` (IEmitSink + EmitContext), `src/engine/use-emit.ts` (useEmit dispatch + sink forward), `src/bootstrap/EmitProvider.tsx` (Provider + реэкспорт). Тесты: `src/engine/__tests__/use-emit-sink.test.ts` (8 тестов), `src/bootstrap/__tests__/EmitProvider.test.tsx`.
+
+35. **Multi-Solid в iframe — Вариант C (import-map injection), Phase 1a.** Проблема: два Solid-инстанса в iframe (boot.mjs грузится с playground-origin, remote.ts — с canvas-origin) → `createStore` из boot не нотифицирует `createEffect` из remote.ts. Симптом: `console.warn '[capsule/solid] multiple instances'` + `createEffect(() => ctx.props.X)` не реагирует на `<Remote.View X={signal()}>`. Решение (Вариант C): инжектировать `<script type="importmap">` в iframe srcdoc ДО первого `<script type="module">` — все solid-js specifier'ы резолвятся к URL'ам хоста. Утилиты: `buildSolidImportMap(hostOrigin, paths?)` и `renderSolidImportMapTag(hostOrigin, paths?)` из `@capsuletech/web-core/bootstrap`. **ТРЕБУЕТ ИЗМЕНЕНИЙ В `buildSrcdoc.ts` (зона owner-web-remote)** — это follow-up PR. Без этого fix'а multi-Solid warning сохраняется (createCapsuleApp сам по себе не решает multi-Solid — он работает уже внутри iframe после загрузки entry). E2e-верификация: DevTools → iframe → Console → убедиться что `[capsule/solid] multiple instances` нет → `<Remote.View pingCount={signal()}>` → `createEffect(() => ctx.props.pingCount)` триггерится. Источник: `packages/web/core/src/bootstrap/solidBundleShim.ts`. Тесты: `src/bootstrap/__tests__/solidBundleShim.test.ts`.
 
 ## Что менять когда {#changes-guide}
 

@@ -199,6 +199,29 @@ Pointer events не пересекают frame. Studio palette drag → renderer
 - **Phase 4** — socket transport + manifest plugin (write-side + read-side codegen) + zod validation.
 - **Phase 5** — HCA-injection (`remote` в Feature services) + compliance rule.
 
+## Module instance singleton invariant {#singleton-invariant}
+
+**Правило:** `createContext()` и конструктор `IframeTransport` вызываются **ровно один раз** на app. Subpath-split (`./capsule`, `./boot.js`) не ломает singleton.
+
+**Почему важно:** `RemoteContext = createContext<IRemoteContext | undefined>(undefined)` живёт в `src/runtime/RemoteContext.ts`. Solid's `useContext(RemoteContext)` находит значение только если `RemoteContext` — тот **же объект**, что был передан `<RemoteContext.Provider value={...}>`. Если любой subpath entry загружает свою копию `RemoteContext` (через dist-chunk с отдельным `createContext()` вызовом), `useRemote()` всегда бросает «must be called inside RemoteProvider» даже внутри Provider-дерева.
+
+**Root cause инцидента (2026-06-22):** `tsconfig.base.json` не содержал записи для `@capsuletech/web-remote/capsule`. `AliasesPlugin.buildWorkspaceSrcAliases` создавал Vite resolve.alias только для root entry (`@capsuletech/web-remote` → `src/index.ts`, exact-match `^@capsuletech/web-remote$`). Subpath `/capsule` не матчил этот alias → Vite fallback на `package.json exports` → `dist/capsule.mjs` → внутри dist-chunk свой `createContext()` → два `RemoteContext` объекта.
+
+**Выбранный вариант фикса: Вариант B** (из brief `phase1a-web-remote-context-singleton.md`):
+- Добавлена строка в `tsconfig.base.json`: `"@capsuletech/web-remote/capsule": ["packages/web/runtime/remote/src/capsule.ts"]`
+- Оба entry теперь резолвятся через src → один `createContext()` → один `RemoteContext`.
+- Паттерн: аналогично `@capsuletech/web-core` у которого все subpath entries (`/create`, `/providers`, `/module`, etc.) явно прописаны в tsconfig.base.json.
+
+**Правило для будущих изменений:** при добавлении нового subpath export в `package.json#exports` — **обязательно** добавить соответствующую запись в `tsconfig.base.json`. Иначе Vite dev-server (workspace) будет загружать subpath через dist, а root entry через src — singleton нарушается. Проверка: `AliasesPlugin` создаёт alias ТОЛЬКО для записей из tsconfig.base.json (self-discriminating: только если src-файл существует на диске).
+
+**Юнит-тест (не Vite-регрессия):** `src/runtime/__tests__/dualImport.test.tsx` — 4 кейса:
+1. `RemoteProvider` из root entry и из capsule subpath — один и тот же объект.
+2. `useRemote()` работает под `<RemoteProvider>` из root entry.
+3. `useRemote()` работает под `<capsule.Provider>` (capsule subpath).
+4. `Remote.View` (из capsule subpath, вызывает `useRemote()` внутри) работает под `<RemoteProvider>` из root entry.
+
+**Важно:** Node ESM / jsdom deduplicate module instances по resolved file path — тест даёт ложно-зелёный при dual-dist-instance сценарии. Реальный regression guard — ручной smoke `apps/playground` под `capsule dev` (Vite dev-server): открыть `/workspace/web-studio`, убедиться что `<Remote.Provider>` монтируется без ошибки и `useRemote()` возвращает context. Эта гарантия НЕ автоматизирована до готовности Playwright e2e harness.
+
 ## Что НЕ делать (anti-patterns specific to this pkg) {#anti}
 
 - НЕ менять Phase 0 `interfaces.ts` ломающе — только additive.

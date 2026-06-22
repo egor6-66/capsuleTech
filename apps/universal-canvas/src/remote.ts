@@ -1,23 +1,34 @@
 // Remote bootstrap-entry. Импортируется boot.js'ом из iframe-srcdoc когда
 // universal-canvas embed'ится через @capsuletech/web-remote.
 //
-// Reuses генеренный <Bootstrap/> (BaseProviders + routeTree) — same code path,
-// что и обычный SPA-запуск (.capsule/index.ts). Отличается только container:
-// вместо #root отдаём DOM-ноду которую дал shell.
+// Использует `createCapsuleApp` (@capsuletech/web-core/bootstrap) — единая
+// bootstrap-цепочка для standalone и embedded режимов (ADR-053 consequence 7a).
 //
-// ITERATION 1 (smoke): шлём 'mounted' хосту через channel.send. Хост ловит
-// через `<Remote.View onMounted={cb}>` — auto-subscribe по /^on[A-Z]/ (ADR-053
-// Decision 5). Канон-флоу, никакого Solid reactivity на iframe boundary, никаких
-// app-импортов на хосте. Если log на хосте увидим — транспорт жив.
+// Три embedded-поля из ctx:
+//  - ctx.config     → configOverride  (host ambient config, Decision 3)
+//  - ctx.props      → runtimeProps    (reactive host props, Decision 4)
+//  - ctx.channel    → eventSink       (canvas→host events + useEmit routing, Decision 5)
+//
+// HCA-слои (Feature / Controller) не знают в каком режиме работает приложение.
 
-import { createRoot } from '@capsuletech/web-core/create';
+import type { IAppConfig } from '@capsuletech/web-core/app-config';
+import { createCapsuleApp } from '@capsuletech/web-core/bootstrap';
 import type { IRemoteBootstrap } from '@capsuletech/web-remote';
-import { Bootstrap } from '../.capsule/bootstrap';
+import { routeTree } from '../.capsule/routes/routeTree.gen';
+import appConfigRaw from '../capsule.app';
+
+const appConfig = appConfigRaw as IAppConfig;
 
 export const bootstrap: IRemoteBootstrap = (root, ctx) => {
-  console.log('[universal-canvas] bootstrap');
+  console.log('[universal-canvas] bootstrap (createCapsuleApp)');
 
   ctx.channel.send('mounted', { name: 'universal-canvas', ts: Date.now() });
 
-  return createRoot(Bootstrap, { container: root });
+  return createCapsuleApp(root, {
+    routeTree,
+    appConfig,
+    configOverride: ctx.config,
+    runtimeProps: ctx.props,
+    eventSink: ctx.channel,
+  });
 };
