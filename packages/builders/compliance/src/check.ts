@@ -104,6 +104,26 @@ export interface ICheckOptions {
   severity?: Partial<Record<ViolationKind, 'error' | 'warn' | 'off'>>;
 }
 
+/**
+ * Hook-импорты, разрешённые в app-коде (инжектятся как globals через unplugin-auto-import).
+ *
+ * Source of truth (вариант a из бриф phase1b): compliance — gate of rules;
+ * vite-builder импортирует отсюда. Dependency direction: vite-builder -> compliance
+ * (однонаправленно, без цикла).
+ *
+ * Семантика allowlist в check():
+ *   - Если import из source содержит ТОЛЬКО имена из allowlist -> пропустить.
+ *   - Mixed-import ({ useRemote, Provider }) -> app-package-import (Provider не в списке).
+ *   - Ручной import { useRemote } from '@capsuletech/web-remote' эквивалентен
+ *     AutoImport-инжекту — тоже проходит allowlist.
+ */
+export const HOOK_IMPORTS: Readonly<Record<string, readonly string[]>> = {
+  '@capsuletech/web-core': ['useCtx'],
+  '@capsuletech/web-router': ['useRouter'],
+  '@capsuletech/desktop/runtime': ['useDesktop'],
+  '@capsuletech/web-remote': ['useRemote'],
+};
+
 /** Паттерны для `no-app-package-imports` — запрет runtime-импортов наших namespace. */
 const APP_PKG_PREFIXES = [/^@capsuletech\//, /^@capsule\//];
 
@@ -147,13 +167,34 @@ export const check = (absPath: string, code: string, opts: ICheckOptions = {}): 
   const allowed = [...(RUNTIME_ALLOWED[layer] ?? []), ...extraAllowed];
   const fileGroup = extractGroup(absPath, layer);
 
-  const checkImport = (source: string, isTypeOnly: boolean, line: number, column: number) => {
+  /**
+   * Проверяет один import.
+   * @param importedNames — список value-specifiers (не type-only). null = dynamic import.
+   */
+  const checkImport = (
+    source: string,
+    isTypeOnly: boolean,
+    line: number,
+    column: number,
+    importedNames: readonly string[] | null = null,
+  ) => {
     if (isTypeOnly) return; // type-only не создаёт runtime-связи
     if (source.startsWith('.')) return; // относительный импорт — внутри пакета/группы, ок
 
     // Phase L: no-app-package-imports — runtime @capsuletech/* / @capsule/* запрещены в app-коде.
     // Перехватывает до cross-layer и allowlist проверок, чтобы дать точный message.
     if (APP_PKG_PREFIXES.some((rx) => rx.test(source))) {
+      // Hook-import allowlist: если ВСЕ imported names зарегистрированы в HOOK_IMPORTS
+      // для данного source — пропускаем. Mixed-import -> нарушение (часть имён не в allowlist).
+      // Применяется только к static ImportDeclaration (importedNames != null и длина > 0).
+      if (importedNames !== null && importedNames.length > 0) {
+        const allowedHooks = HOOK_IMPORTS[source];
+        if (allowedHooks) {
+          const allAllowed = importedNames.every((name) => allowedHooks.includes(name));
+          if (allAllowed) return;
+        }
+      }
+
       violations.push({
         file: absPath,
         line,
@@ -349,7 +390,27 @@ export const check = (absPath: string, code: string, opts: ICheckOptions = {}): 
       const isTypeOnly = node.importKind === 'type';
       const source = node.source.value;
       const loc = node.loc?.start;
-      checkImport(source, isTypeOnly, loc?.line ?? 0, loc?.column ?? 0);
+
+      // Собираем value-specifiers для hook-allowlist.
+      // Default/namespace import — не named hooks, передаём null.
+      const hasNonNamed = node.specifiers.some(
+        (s) => t.isImportDefaultSpecifier(s) || t.isImportNamespaceSpecifier(s),
+      );
+      const importedNames: string[] | null = hasNonNamed
+        ? null
+        : node.specifiers.flatMap((s) => {
+            if (t.isImportSpecifier(s) && s.importKind !== 'type') {
+              const imported = s.imported;
+              return t.isIdentifier(imported)
+                ? [imported.name]
+                : t.isStringLiteral(imported)
+                  ? [imported.value]
+                  : [];
+            }
+            return [];
+          });
+
+      checkImport(source, isTypeOnly, loc?.line ?? 0, loc?.column ?? 0, importedNames);
     },
 
     CallExpression(path) {
@@ -363,7 +424,8 @@ export const check = (absPath: string, code: string, opts: ICheckOptions = {}): 
       ) {
         const source = node.arguments[0].value;
         const loc = node.loc?.start;
-        checkImport(source, false, loc?.line ?? 0, loc?.column ?? 0);
+        // Dynamic import не передаёт importedNames (null) — allowlist не применяется.
+        checkImport(source, false, loc?.line ?? 0, loc?.column ?? 0, null);
         return;
       }
 
