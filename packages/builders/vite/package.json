@@ -13,7 +13,7 @@
   "dependencies": {
     "@babel/generator": "^7.29.1",
     "@babel/parser": "^7.29.3",
-    "@babel/traverse": "^7.25.6",
+    "@babel/traverse": "^8.0.0",
     "@babel/types": "^7.25.6",
     "@capsuletech/compliance": "workspace:*",
     "@capsuletech/lib-builder": "workspace:*",
