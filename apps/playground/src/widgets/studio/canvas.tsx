@@ -24,14 +24,7 @@ const Canvas = Widget((Ui) => {
   const [clickCount, setClickCount] = createSignal(0);
 
   return (
-    <Ui.Layout.Flex
-      direction={'column'}
-      gap={'sm'}
-      justify={'center'}
-      align={'center'}
-      h={'full'}
-      w={'full'}
-    >
+    <Ui.Layout.Flex gap={'sm'} justify={'center'} align={'center'} h={'full'} w={'full'}>
       <Ui.Button onClick={() => setClickCount((c) => c + 1)}>
         Send to canvas (current: {clickCount()})
       </Ui.Button>
