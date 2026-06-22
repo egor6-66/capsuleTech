@@ -1,12 +1,19 @@
 #!/usr/bin/env node
-// main-session-marker.mjs — SessionStart hook: writes main session_id to a marker file.
+// main-session-marker.mjs — SessionStart hook: writes session_id to marker ONLY for "main" scope.
 //
-// Subagents (Agent tool) run with their OWN session_id. SessionStart fires only for
-// the main interactive session, never for subagents. We capture that session_id once
-// at session start; git-gate.mjs reads it on every PreToolUse and allows write-ops
-// only when input.session_id === marker (i.e. caller is the main session).
+// Канон (2026-06-22): user запускает каждую Claude-сессию в отдельном scope через
+// `claude-scope.ps1 -Scope <name>`. Скрипт ставит env CAPSULE_SCOPE. Доступ к destructive
+// git ops по канону имеет ТОЛЬКО scope "main" (architect). Любой другой scope
+// (owners, telemetry, отладочные) не должен трогать marker — иначе их SessionStart
+// перезапишет main marker'ом своего id и main lose-нёт git access.
 //
-// Effect: main session gets full git access; spawned subagents stay gated by DENY_RULES.
+// Поэтому хук пишет marker ТОЛЬКО если CAPSULE_SCOPE === 'main'. Любой другой scope —
+// silent no-op. Это reinforces canon на уровне harness'а, а не промпта.
+//
+// Subagents (Agent tool) — отдельная история: они наследуют env от parent session,
+// но SessionStart для них не фаер (per Claude Code design). Так что они никогда сюда
+// не попадут. Если бы попали — их CAPSULE_SCOPE был бы 'main' (наследовано) — было бы
+// нештатно; не покрываем.
 //
 // Contract (Claude Code SessionStart):
 //   stdin  = JSON { session_id, transcript_path, cwd, source, hook_event_name }
@@ -26,6 +33,14 @@ function main() {
   try {
     input = JSON.parse(readFileSync(0, 'utf8'));
   } catch {
+    silent();
+    return;
+  }
+
+  // Канон: marker пишет ТОЛЬКО main scope. Любой другой scope (или отсутствие scope)
+  // — silent no-op, чтобы не перезаписать main marker своим session_id.
+  const scope = process.env.CAPSULE_SCOPE;
+  if (scope !== 'main') {
     silent();
     return;
   }

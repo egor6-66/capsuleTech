@@ -49,16 +49,28 @@ function deny(reason) {
 // Это ловит и `git switch foo`, и `bash -c "git switch foo"`, и `git status && git switch foo`.
 const PFX = '(?:^|[\\s;|&"\'`])';
 
+// `git` может идти с любым количеством global-options перед командой:
+//   git <verb>
+//   git -C <path> <verb>
+//   git -C <path> --no-pager <verb>
+//   git --no-pager <verb>
+// Поэтому между `git` и verb разрешаем произвольную последовательность токенов
+// которые НЕ совпадают с известными verb'ами. Реализация: `git\s+(?:\S+\s+){0,N}<verb>`
+// where N — разумный лимит чтобы не дать обходить через множество фейк-опций.
+// Каждый промежуточный token — non-whitespace + whitespace. Лимит 6 покрывает
+// типичные комбинации (-C path --no-pager --git-dir=... и т.д.).
+const GIT_PFX = `${PFX}git\\s+(?:[^\\s]+\\s+){0,6}`;
+
 const DENY_RULES = [
-  { rx: new RegExp(`${PFX}git\\s+switch(?:\\s|$)`, 'i'), label: 'git switch' },
-  { rx: new RegExp(`${PFX}git\\s+checkout\\s+-b\\b`, 'i'), label: 'git checkout -b' },
-  { rx: new RegExp(`${PFX}git\\s+push(?:\\s|$)`, 'i'), label: 'git push' },
-  { rx: new RegExp(`${PFX}git\\s+merge(?:\\s|$)`, 'i'), label: 'git merge' },
-  { rx: new RegExp(`${PFX}git\\s+rebase(?:\\s|$)`, 'i'), label: 'git rebase' },
-  { rx: new RegExp(`${PFX}git\\s+reset\\s+--(?:hard|keep)\\b`, 'i'), label: 'git reset --hard/--keep' },
-  { rx: new RegExp(`${PFX}git\\s+branch\\s+-(?:D|f|m|M)\\b`), label: 'git branch -D/-f/-m' },
+  { rx: new RegExp(`${GIT_PFX}switch(?:\\s|$)`, 'i'), label: 'git switch' },
+  { rx: new RegExp(`${GIT_PFX}checkout\\s+-b\\b`, 'i'), label: 'git checkout -b' },
+  { rx: new RegExp(`${GIT_PFX}push(?:\\s|$)`, 'i'), label: 'git push' },
+  { rx: new RegExp(`${GIT_PFX}merge(?:\\s|$)`, 'i'), label: 'git merge' },
+  { rx: new RegExp(`${GIT_PFX}rebase(?:\\s|$)`, 'i'), label: 'git rebase' },
+  { rx: new RegExp(`${GIT_PFX}reset\\s+--(?:hard|keep)\\b`, 'i'), label: 'git reset --hard/--keep' },
+  { rx: new RegExp(`${GIT_PFX}branch\\s+-(?:D|f|m|M)\\b`), label: 'git branch -D/-f/-m' },
   {
-    rx: new RegExp(`${PFX}git\\s+worktree\\s+(?:add|remove|move)\\b`, 'i'),
+    rx: new RegExp(`${GIT_PFX}worktree\\s+(?:add|remove|move)\\b`, 'i'),
     label: 'git worktree add/remove/move',
   },
   { rx: new RegExp(`${PFX}gh\\s+pr\\s+(?:create|merge|close|reopen|edit)\\b`, 'i'), label: 'gh pr write' },
@@ -67,7 +79,7 @@ const DENY_RULES = [
 // `git checkout <branch>` режется ТОЛЬКО если в команде нет ` -- ` (path-restore форма).
 // `git checkout -b` режется всегда — обрабатывается отдельным правилом выше.
 function matchesCheckoutBranch(cmd) {
-  const rx = new RegExp(`${PFX}git\\s+checkout(?!\\s+-b\\b)\\b`, 'i');
+  const rx = new RegExp(`${GIT_PFX}checkout(?!\\s+-b\\b)\\b`, 'i');
   if (!rx.test(cmd)) return null;
   if (/\s--(?:\s|$)/.test(cmd)) return null; // ` -- ` присутствует → path-restore, пускаем
   return 'git checkout <branch>';
