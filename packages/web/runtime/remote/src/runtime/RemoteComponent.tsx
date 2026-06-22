@@ -12,6 +12,17 @@
  * including immediately when the shell signals ready (__capsule_remote_ready__).
  */
 
+// boot.mjs is built as a separate Vite library entry (vite.config.mts) and
+// exposed via package.json#exports './boot.js' → dist/boot.mjs. Importing
+// through the subpath + ?url makes Vite resolve via package exports — NOT
+// relative to import.meta.url — so RemoteComponent works the same whether
+// it is loaded from src (dev, after PR #413 alias for /capsule) or from
+// dist (prod). No layout assumption.
+// Historical note: a previous attempt used relative `?url` on the .ts
+// SOURCE (`../shell/boot.ts?url`) which returned a data:video/mp2t URL —
+// Vite/esbuild treats .ts as a TS module. That regression does NOT apply
+// here because the subpath points at the BUILT .mjs artifact.
+import bootUrl from '@capsuletech/web-remote/boot.js?url';
 import {
   createEffect,
   createMemo,
@@ -28,14 +39,6 @@ import type {
   IRemoteModuleConfig,
   ITransport,
 } from '../interfaces';
-
-// dist/boot.mjs — built sibling-asset (separate vite entry). At runtime
-// import.meta.url points to dist/chunks/*.mjs → `../boot.mjs` resolves to dist/boot.mjs.
-// Previous form (?url) inlined src/shell/boot.ts as data:video/mp2t base64,
-// which browsers refuse to load as an ESM module.
-// At test time this is mocked via vi.mock('../runtime/RemoteComponent').
-const bootUrl = new URL('../boot.mjs', import.meta.url).href;
-
 import { buildSrcdoc } from './buildSrcdoc';
 
 /** Internal props added by RemoteProvider — not part of the public API. */

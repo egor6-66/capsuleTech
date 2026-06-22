@@ -132,6 +132,32 @@ Applied host-side in `RemoteComponent`. Module receives finalized snapshot.
 
 Юнит-тест: `src/runtime/__tests__/dualImport.test.tsx` (4 cases). Node/jsdom не воспроизводит Vite-resolve грань — тест документирует API-инвариант, но НЕ является регрессионным smoke для dist-vs-src сценария. Реальный guard: ручной smoke `/workspace/web-studio` в `apps/playground` под `capsule dev`.
 
+## Boot URL resolution {#boot-url-resolution}
+
+`bootUrl` (iframe `<script type="module" src="${bootUrl}">`) **обязан** резолвиться через subpath + `?url`:
+
+```ts
+import bootUrl from '@capsuletech/web-remote/boot.js?url';
+```
+
+Vite резолвит через `package.json#exports './boot.js' → ./dist/boot.mjs`. URL указывает на built `.mjs` artifact независимо от того, откуда грузится сам `RemoteComponent` (`src` в dev — после singleton alias, `dist` в prod). Никаких layout-предположений.
+
+**ЗАПРЕЩЕНО возвращать** runtime URL construction:
+```ts
+// ❌ layout-assumption: предполагает что RemoteComponent живёт в dist/chunks/
+const bootUrl = new URL('../boot.mjs', import.meta.url).href;
+```
+Работало случайно до 2026-06-22 потому что `/capsule` subpath fallback'ил на `dist/capsule.mjs` → `RemoteComponent` приходил из dist. После singleton-фикса (tsconfig alias `/capsule → src/capsule.ts`) — `import.meta.url` указывает на src, относительный `../boot.mjs` резолвится в несуществующий `src/boot.mjs` → 404 в Vite dev-server.
+
+**ЗАПРЕЩЕНО `?url` на TS source:**
+```ts
+// ❌ esbuild транспилит .ts и возвращает data:video/mp2t URL — браузер refuse'ит как ESM
+import bootUrl from '../shell/boot.ts?url';
+```
+Это историческая regression (зафиксирована в comment'ах до 2026-06-22). Subpath через exports указывает на `.mjs` BUILT artifact — этот regression не применим.
+
+**Invariant**: `boot.js` subpath НЕ должен получать alias в `tsconfig.base.json` (как `/capsule` — там alias нужен для singleton invariant). Без alias Vite резолвит через package exports → dist artifact, что и требуется.
+
 ## Quirks / gotchas
 
 - **`@module-federation/*` not used.** See ADR-015 Alternatives.
