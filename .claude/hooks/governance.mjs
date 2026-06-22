@@ -18,8 +18,8 @@
 // scope передаётся ПЛОШ env-переменной CAPSULE_SCOPE (НЕ через OTEL_* — те Claude
 // Code не пробрасывает в subprocess). Выставляется враппером claude-scope.
 
-import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
 
 const EDIT_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit']);
 const COLLECTOR_LOGS = 'http://localhost:4318/v1/logs';
@@ -114,10 +114,9 @@ function resolvePackage(targetPath) {
   return null;
 }
 
-/** Был ли в транскрипте Read указанного файла. */
-function transcriptHasRead(transcriptPath, wantedFile) {
+/** Был ли в одном транскрипте Read указанного файла. */
+function fileHasRead(transcriptPath, wantedNorm) {
   if (!transcriptPath || !existsSync(transcriptPath)) return false;
-  const want = norm(wantedFile).toLowerCase();
   let raw;
   try {
     raw = readFileSync(transcriptPath, 'utf8');
@@ -138,8 +137,46 @@ function transcriptHasRead(transcriptPath, wantedFile) {
       if (block?.type !== 'tool_use') continue;
       if (block?.name !== 'Read') continue;
       const fp = norm(block?.input?.file_path ?? '').toLowerCase();
-      if (fp && (fp === want || fp.endsWith(want) || want.endsWith(fp))) return true;
+      if (fp && (fp === wantedNorm || fp.endsWith(wantedNorm) || wantedNorm.endsWith(fp))) {
+        return true;
+      }
     }
+  }
+  return false;
+}
+
+/**
+ * Был ли в транскрипте (parent или любом subagent рядом) Read указанного файла.
+ *
+ * Claude Code передаёт хуку `transcript_path` ПАРЕНТА даже когда PreToolUse
+ * инициирован subagent'ом. Транскрипты subagent'ов живут рядом:
+ *   <dir>/<session_id>.jsonl          (parent)
+ *   <dir>/<session_id>/subagents/agent-*.jsonl  (subagents)
+ * Скан обходит и parent, и активные subagent-файлы.
+ */
+function transcriptHasRead(transcriptPath, wantedFile) {
+  if (!transcriptPath) return false;
+  const want = norm(wantedFile).toLowerCase();
+
+  if (fileHasRead(transcriptPath, want)) return true;
+
+  // Доскан subagent-транскриптов рядом с parent'ом.
+  try {
+    const base = basename(transcriptPath).replace(/\.jsonl$/i, '');
+    const subDir = join(dirname(transcriptPath), base, 'subagents');
+    if (!existsSync(subDir)) return false;
+    for (const name of readdirSync(subDir)) {
+      if (!name.endsWith('.jsonl')) continue;
+      const full = join(subDir, name);
+      try {
+        if (!statSync(full).isFile()) continue;
+      } catch {
+        continue;
+      }
+      if (fileHasRead(full, want)) return true;
+    }
+  } catch {
+    /* ignore — fail-open наружу */
   }
   return false;
 }
@@ -172,7 +209,11 @@ async function main() {
 
   // 2) ownership-gate
   const ownership = join(pkg.root, 'OWNERSHIP.md');
-  if (existsSync(ownership) && !transcriptHasRead(input.transcript_path, ownership)) {
+  const hasRead = transcriptHasRead(input.transcript_path, ownership);
+  dbg(
+    `tool=${tool} target=${target} pkg=${pkg.scope} ownership=${ownership} transcript_path=${input.transcript_path} transcript_exists=${input.transcript_path ? existsSync(input.transcript_path) : false} hasRead=${hasRead} session_id=${input.session_id}`,
+  );
+  if (existsSync(ownership) && !hasRead) {
     await logDeviation('ownership-gate', scope, `edit ${pkg.scope} without reading OWNERSHIP.md`);
     deny(
       `Ownership-gate: прежде чем править пакет "${pkg.scope}", прочитай его канон — ` +
