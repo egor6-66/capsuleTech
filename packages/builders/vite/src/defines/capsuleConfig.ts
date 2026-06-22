@@ -11,6 +11,7 @@ import {
   createDevDiagnosticsPlugin,
   EnsureScaffoldPlugin,
   HMRWrappingPlugin,
+  ImportMapPlugin,
   RemoteManifestPlugin,
   RouterPlugin,
   solidPlugin,
@@ -280,6 +281,11 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
       }),
       HMRWrappingPlugin(),
       EnsureScaffoldPlugin(capsuleRoot),
+      // ADR 057 Phase 1A: inject <script type="importmap"> into .capsule/index.html,
+      // serve /_shared/<pkg>@<version>/<file> in dev, copy shared pkg dirs to
+      // dist/_shared/ at build time. Paired with RemoteManifestPlugin (shared/exposes
+      // fields). See docs/_meta/briefs/adr-057-phase1-vite-builder.md.
+      ImportMapPlugin({ appRoot: root, workspaceRoot }),
       RemoteManifestPlugin({ appRoot: root }),
       CapsuleRegistryPlugin({
         capsuleRoot,
