@@ -28,6 +28,7 @@ import type { EmitFn, ITarget } from '../wrappers/interfaces';
 import type { ICtx } from './ctx';
 import { Context } from './ctx';
 import { deriveName, getTargetData } from './derivation';
+import { EmitContext } from './emit-context';
 
 /**
  * Нормализует `Partial<ITarget>` до полного `ITarget` с дефолтами.
@@ -102,6 +103,13 @@ export const createEmit =
  * ControllerProxy резолвит `states[currentState][eventName]` → top-level → `next()` автобаблинг —
  * полностью идентично DOM-dispatch'у. Handler может быть async — возврат/Promise пробрасываются.
  *
+ * В embedded-режиме (когда `EmitProvider eventSink={...}` присутствует в дереве):
+ * ПОСЛЕ локального dispatch дополнительно вызывает `sink.send(eventName, partial?.payload)` —
+ * пересылает событие хосту. Локальный dispatch всегда идёт первым; sink-forward — параллельный
+ * side-channel, не заменяет ControllerProxy. Возврат берётся от локального dispatch.
+ *
+ * В standalone-режиме (без EmitProvider или EmitProvider без eventSink): sink = undefined → no-op.
+ *
  * @throws {Error} если вызван вне Controller/Feature-scope (нет ControllerContext).
  */
 export const useEmit = (): EmitFn => {
@@ -114,5 +122,17 @@ export const useEmit = (): EmitFn => {
     );
   }
 
-  return createEmit(ctx);
+  // Embedded mode: читаем sink из EmitContext (undefined в standalone — no-op forward).
+  const sink = useContext(EmitContext);
+
+  const localEmit = createEmit(ctx);
+
+  return (eventName: string, partial?: Partial<ITarget>): unknown => {
+    const result = localEmit(eventName, partial);
+    // Embedded mode: дополнительно пересылаем событие хосту.
+    // ControllerProxy продолжает работать параллельно (не заменяем — добавляем).
+    // Локальный dispatch первый (per ADR event-ordering: sink после local — fire-and-forget).
+    sink?.send(eventName, partial?.payload);
+    return result;
+  };
 };

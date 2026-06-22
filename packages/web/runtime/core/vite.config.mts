@@ -8,6 +8,7 @@ export default libConfig({
     'app-config': 'src/app-config.ts',
     module: 'src/module.ts',
     'ui-kit': 'src/ui-kit/index.tsx',
+    bootstrap: 'src/bootstrap/index.ts',
   },
   name: 'CapsuleCore',
   runtime: 'isomorphic',

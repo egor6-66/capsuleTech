@@ -122,6 +122,16 @@ provider.config → modules[name].config → <Remote config={...}>
 Applied host-side in `RemoteComponent`. Module receives finalized snapshot.
 `<Remote config={undefined}>` ≡ no prop (does NOT clear ambient config).
 
+## Module instance singleton invariant {#singleton-invariant}
+
+`RemoteContext = createContext()` вызывается **ровно один раз** на app. Subpath-split (`./capsule`, `./boot.js`) не должен создавать второй экземпляр.
+
+**Правило:** каждый новый subpath в `package.json#exports` **обязан** получить запись в `tsconfig.base.json`. Без этого `AliasesPlugin.buildWorkspaceSrcAliases` не создаст Vite alias для subpath → Vite dev-server fallback на `dist/` → отдельный `createContext()` в dist-chunk → два `RemoteContext` объекта → `useRemote()` бросает «must be called inside RemoteProvider» даже внутри Provider.
+
+Зафиксировано 2026-06-22: инцидент «host-side useRemote throws» — root cause именно missing tsconfig.base.json subpath alias. Фикс: Вариант B, PR `feat/remote-phase1a-singleton-fix`. Подробности: `docs/_meta/web-remote.md#singleton-invariant`.
+
+Юнит-тест: `src/runtime/__tests__/dualImport.test.tsx` (4 cases). Node/jsdom не воспроизводит Vite-resolve грань — тест документирует API-инвариант, но НЕ является регрессионным smoke для dist-vs-src сценария. Реальный guard: ручной smoke `/workspace/web-studio` в `apps/playground` под `capsule dev`.
+
 ## Quirks / gotchas
 
 - **`@module-federation/*` not used.** See ADR-015 Alternatives.

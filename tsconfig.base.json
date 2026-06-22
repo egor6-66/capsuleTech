@@ -87,6 +87,7 @@
       "@capsuletech/web-query": ["packages/web/runtime/query/src/index.ts"],
       "@capsuletech/web-query/stream": ["packages/web/runtime/query/src/stream/index.ts"],
       "@capsuletech/web-remote": ["packages/web/runtime/remote/src/index.ts"],
+      "@capsuletech/web-remote/capsule": ["packages/web/runtime/remote/src/capsule.ts"],
       "@capsuletech/web-router": ["packages/web/runtime/router/src/index.ts"],
       "@capsuletech/web-style": ["packages/web/runtime/style/src/index.ts"],
       "@capsuletech/web-style/editor": ["packages/web/runtime/style/src/editor/index.ts"],
