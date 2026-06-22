@@ -14,10 +14,14 @@
 //   stdout = JSON { hookSpecificOutput: { hookEventName, permissionDecision, permissionDecisionReason } }
 //   exit 0 всегда; решение — через permissionDecision (deny|allow). FAIL-OPEN на внутренних ошибках.
 //
-// Режем ВСЕХ одинаково (включая architect'а). Снять блок можно только правкой
-// settings.json через user'а в отдельной ветке — это редкий случай, ок ручной workflow.
+// Main session (architect) — full git access. Subagents (Agent tool, owner-*) — gated.
+// Различение через marker-file `.claude/.main-session-id`, который main-session-marker.mjs
+// пишет в SessionStart-хуке (SessionStart фаер только для main, не для subagent'ов).
+// Если input.session_id совпадает с маркером → main → allow всё (включая destructive).
+// Если не совпадает / маркера нет → subagent или maint до первого session restart → DENY_RULES.
 
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 function allow() {
   process.stdout.write(
@@ -92,6 +96,18 @@ function buildMessage(cmd, label) {
   ].join('\n');
 }
 
+function isMainSession(input) {
+  const sessionId = input?.session_id;
+  if (!sessionId) return false;
+  const cwd = input.cwd || process.cwd();
+  try {
+    const marker = readFileSync(join(cwd, '.claude', '.main-session-id'), 'utf8').trim();
+    return marker.length > 0 && marker === String(sessionId);
+  } catch {
+    return false;
+  }
+}
+
 function main() {
   let input;
   try {
@@ -114,6 +130,12 @@ function main() {
 
   const reason = blockReason(cmd);
   if (!reason) {
+    allow();
+    return;
+  }
+
+  // Main session — full git access (including destructive). Subagents stay gated.
+  if (isMainSession(input)) {
     allow();
     return;
   }

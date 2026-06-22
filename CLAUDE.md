@@ -92,6 +92,16 @@ PostToolUse-хук `.claude/hooks/git-audit.mjs` на успешный `git comm
 
 **Subagent'ам: если хук сработал — не пытайся обойти** (через `bash -c`, `&&`, кавычки — хук видит полную команду). STOP + escalate.
 
+**🚨 КАНОН — `.claude/` живёт ТОЛЬКО в `docker/observability/.claude/` (priority 0).**
+
+Все сессии Claude Code в этом проекте **обязаны** стартовать из `docker/observability/` (memory `project_sessions_cwd_docker_observability`). Это значит:
+
+- `.claude/hooks/`, `.claude/settings.json`, `.claude/.main-session-id` — **существуют ТОЛЬКО** в `docker/observability/.claude/`.
+- В **репо-руте** `D:/.../capsule/.claude/` живёт **ИСКЛЮЧИТЕЛЬНО** `agents/` (tracked, shared agent prompts) + `worktrees/` (gitignored runtime) + `launch.json`. Никаких `hooks/`, `settings.json`, `settings.local.json`, `.main-session-id` тут быть НЕ должно.
+- Если кто-то (человек, agent, install-скрипт, бэкап-восстановление) положит в репо-рут `.claude/hooks/` или `settings.json` — это **break harness'а**: репо-рут settings перекроет observability settings для любой сессии запущенной из репо-рута, и старая deny-all версия `git-gate.mjs` без `main-session-marker` гейта позволит subagent'ам делать destructive git ops (источник инцидента 2026-06-22: owner-builders switch'нул ветку на shared tree).
+
+**Если видишь `.claude/hooks/` или `.claude/settings.json` в репо-руте — это аномалия. Удалить немедленно. Не пытаться «синхронизировать» с observability.** Канон один: hooks/settings — только в observability.
+
 ### 0.3. 📡 DEV-DIAGNOSTICS STREAM
 
 Когда работаешь с app — **запусти `capsule dev`** (в директории app'а). `DevDiagnosticsPlugin` в vite-builder пишет TS-ошибки, compliance-violations и Vite resolve/transform errors как JSONL в `apps/<app>/.capsule/dev-diagnostics.log` (truncate при старте, dedup при записи, cleanup при clean compile, шум HMR-update'ов отфильтрован на источнике).
