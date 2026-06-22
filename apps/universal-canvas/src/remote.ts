@@ -10,10 +10,17 @@
 //  - ctx.channel    → eventSink       (canvas→host events + useEmit routing, Decision 5)
 //
 // HCA-слои (Feature / Controller) не знают в каком режиме работает приложение.
+//
+// ITERATION 2 SMOKE (2026-06-22): подписка на reactive prop ctx.props.clickCount
+// через createEffect. Хост шлёт <Remote.View clickCount={signal()}> — framework
+// пушит изменения через канал — здесь createEffect триггерится и логирует.
+// Это event-driven push, никаких polling / интервалов. Лог должен появляться в
+// iframe console при каждом клике на кнопку host-side.
 
 import type { IAppConfig } from '@capsuletech/web-core/app-config';
 import { createCapsuleApp } from '@capsuletech/web-core/bootstrap';
 import type { IRemoteBootstrap } from '@capsuletech/web-remote';
+import { createEffect } from 'solid-js';
 import { routeTree } from '../.capsule/routes/routeTree.gen';
 import appConfigRaw from '../capsule.app';
 
@@ -23,6 +30,13 @@ export const bootstrap: IRemoteBootstrap = (root, ctx) => {
   console.log('[universal-canvas] bootstrap (createCapsuleApp)');
 
   ctx.channel.send('mounted', { name: 'universal-canvas', ts: Date.now() });
+
+  // ITERATION 2 SMOKE — reactive props (Decision 4).
+  // ctx.props.clickCount меняется когда host (canvas.tsx) поднимает clickCount signal.
+  // Push через канал, не polling.
+  createEffect(() => {
+    console.log('[universal-canvas] received clickCount:', ctx.props.clickCount);
+  });
 
   return createCapsuleApp(root, {
     routeTree,
