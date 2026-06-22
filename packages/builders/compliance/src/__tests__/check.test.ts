@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { check, DEFAULT_SEVERITY } from '../check';
+import { check, DEFAULT_SEVERITY, HOOK_IMPORTS } from '../check';
 
 /**
  * `check(absPath, code, opts)` парсит code как TS+JSX, проходит AST и возвращает
@@ -625,5 +625,94 @@ describe('DEFAULT_SEVERITY mapping (L7 canon)', () => {
   it('structural HCA kinds (upward/horizontal) remain "warn" (not yet flipped)', () => {
     expect(DEFAULT_SEVERITY['upward-import']).toBe('warn');
     expect(DEFAULT_SEVERITY['horizontal-import']).toBe('warn');
+  });
+});
+
+// ─── HOOK_IMPORTS allowlist (Phase 1b, 2026-06-22) ───────────────────────────
+
+describe('HOOK_IMPORTS export', () => {
+  it('contains useRemote for @capsuletech/web-remote', () => {
+    expect(HOOK_IMPORTS['@capsuletech/web-remote']).toContain('useRemote');
+  });
+
+  it('contains useCtx for @capsuletech/web-core', () => {
+    expect(HOOK_IMPORTS['@capsuletech/web-core']).toContain('useCtx');
+  });
+
+  it('contains useRouter for @capsuletech/web-router', () => {
+    expect(HOOK_IMPORTS['@capsuletech/web-router']).toContain('useRouter');
+  });
+});
+
+describe('check — hook-imports allowlist in app-package-import (Phase 1b)', () => {
+  // Тест-кейс 1: allowlisted hook solo -> OK
+  it('widget importing { useRemote } from @capsuletech/web-remote -> ok (allowlisted hook)', () => {
+    const v = check(WIDGET_PATH, "import { useRemote } from '@capsuletech/web-remote';");
+    expect(v).toHaveLength(0);
+  });
+
+  // Тест-кейс 2: non-allowed symbol -> app-package-import
+  it('widget importing { Provider } from @capsuletech/web-remote -> app-package-import', () => {
+    const v = check(WIDGET_PATH, "import { Provider } from '@capsuletech/web-remote';");
+    expect(v).toHaveLength(1);
+    expect(v[0].kind).toBe('app-package-import');
+    expect(v[0].source).toBe('@capsuletech/web-remote');
+  });
+
+  // Тест-кейс 3: mixed-import -> app-package-import (RemoteContext не в allowlist)
+  it('widget importing { useRemote, RemoteContext } from @capsuletech/web-remote -> app-package-import (mixed)', () => {
+    const v = check(
+      WIDGET_PATH,
+      "import { useRemote, RemoteContext } from '@capsuletech/web-remote';",
+    );
+    expect(v).toHaveLength(1);
+    expect(v[0].kind).toBe('app-package-import');
+    expect(v[0].source).toBe('@capsuletech/web-remote');
+  });
+
+  // Тест-кейс 4 (risk #2): ручной import { useRemote } тоже проходит allowlist
+  // AutoImport не инжектит если import уже есть — но compliance должен пропускать оба случая.
+  it('manual import { useRemote } from @capsuletech/web-remote -> ok (equivalent to AutoImport inject)', () => {
+    const v = check(
+      WIDGET_PATH,
+      `// user explicitly wrote this import (AutoImport precedence: no inject if already present)
+import { useRemote } from '@capsuletech/web-remote';
+const { remote } = useRemote();
+`,
+    );
+    // Только hook-import, без других нарушений
+    const appPkgViolations = v.filter((x) => x.kind === 'app-package-import');
+    expect(appPkgViolations).toHaveLength(0);
+  });
+
+  // Тест на другие существующие hooks — не должны регрессировать
+  it('widget importing { useCtx } from @capsuletech/web-core -> ok (existing hook)', () => {
+    const v = check(WIDGET_PATH, "import { useCtx } from '@capsuletech/web-core';");
+    expect(v).toHaveLength(0);
+  });
+
+  it('widget importing { useRouter } from @capsuletech/web-router -> ok (existing hook)', () => {
+    const v = check(WIDGET_PATH, "import { useRouter } from '@capsuletech/web-router';");
+    expect(v).toHaveLength(0);
+  });
+
+  // Dynamic import() useRemote — НЕ проходит allowlist (importedNames=null)
+  it('dynamic import() of @capsuletech/web-remote -> app-package-import (allowlist does not apply to dynamic)', () => {
+    const v = check(WIDGET_PATH, "const m = await import('@capsuletech/web-remote');");
+    expect(v).toHaveLength(1);
+    expect(v[0].kind).toBe('app-package-import');
+  });
+
+  // Default import useRemote — не named import, не проходит allowlist
+  it('default import from @capsuletech/web-remote -> app-package-import (only named allowed)', () => {
+    const v = check(WIDGET_PATH, "import useRemote from '@capsuletech/web-remote';");
+    expect(v).toHaveLength(1);
+    expect(v[0].kind).toBe('app-package-import');
+  });
+
+  // type-only imports всё ещё разрешены (существующее поведение)
+  it('type-only import { IRemoteHandle } from @capsuletech/web-remote -> ok (type-only)', () => {
+    const v = check(WIDGET_PATH, "import type { IRemoteHandle } from '@capsuletech/web-remote';");
+    expect(v).toHaveLength(0);
   });
 });

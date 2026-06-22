@@ -1,3 +1,7 @@
+import { HOOK_IMPORTS } from '@capsuletech/compliance';
+
+export { HOOK_IMPORTS };
+
 /**
  * ⚠ SINGLE SOURCE OF TRUTH для HCA-слоёв.
  *
@@ -50,16 +54,14 @@ export type WrapperName = (typeof WRAPPER_NAMES)[number];
  * В отличие от `WRAPPER_NAMES` это не component-wrapper'ы (нет HMR-обёртки),
  * а runtime-функции для доступа к контексту и сервисам.
  *
- * Используется в Views/Widgets/Controllers/Features/Pages:
- *  - `useCtx()` — доступ к `ControllerContext` (store + state + controller methods)
- *  - `useRouter()` — доступ к ICapsuleRouter в Page/Widget/View (см. ADR 003)
- *  - `useDesktop()` — доступ к Tauri runtime: invoke/listen/dialog (ADR 023)
+ * Source of truth перенесён в `@capsuletech/compliance` (HOOK_IMPORTS там).
+ * vite-builder реэкспортирует для удобства потребителей constants.ts.
+ * Dependency direction: vite-builder -> compliance (без цикла).
+ *
+ * Добавить новый hook: правь `packages/builders/compliance/src/check.ts > HOOK_IMPORTS`.
+ * Здесь только реэкспорт.
  */
-export const HOOK_IMPORTS = {
-  '@capsuletech/web-core': ['useCtx'],
-  '@capsuletech/web-router': ['useRouter'],
-  '@capsuletech/desktop/runtime': ['useDesktop'],
-} as const;
+// HOOK_IMPORTS реэкспортируется вверху файла (import + export { HOOK_IMPORTS })
 
 /**
  * Config-time фабрики, инжектящиеся в TSX-файлы через AutoImport. В отличие от
