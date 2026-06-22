@@ -46,6 +46,10 @@
           },
           {
             "type": "command",
+            "command": "node .claude/hooks/scope-identity.mjs"
+          },
+          {
+            "type": "command",
             "command": "node .claude/hooks/dev-diagnostics-session-start.mjs"
           }
         ]
