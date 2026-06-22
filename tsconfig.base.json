@@ -23,6 +23,7 @@
       "@capsuletech/web-core/app-config": ["packages/web/runtime/core/src/app-config.ts"],
       "@capsuletech/web-core/module": ["packages/web/runtime/core/src/module.ts"],
       "@capsuletech/web-core/ui-kit": ["packages/web/runtime/core/src/ui-kit/index.tsx"],
+      "@capsuletech/web-core/bootstrap": ["packages/web/runtime/core/src/bootstrap/index.ts"],
       "@capsuletech/web-core": ["packages/web/runtime/core/src/index.ts"],
       "@capsuletech/web-state": ["packages/web/runtime/state/src/index.ts"],
       "@capsuletech/web-renderer": ["packages/web/runtime/renderer/src/index.ts"],
