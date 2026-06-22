@@ -108,6 +108,7 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
       module: m,
       manifest: mf,
       bootUrl: url,
+      hostOrigin: window.location.origin,
     });
   });
 

@@ -18,6 +18,7 @@ const MANIFEST: IRemoteManifest = {
 };
 
 const BOOT_URL = 'http://localhost:5173/@capsuletech/web-remote/dist/boot.mjs';
+const HOST_ORIGIN = 'http://localhost:5173';
 
 describe('buildSrcdoc', () => {
   it('injects name into __CAPSULE_REMOTE__ via JSON.stringify', () => {
@@ -28,6 +29,7 @@ describe('buildSrcdoc', () => {
       module: MODULE,
       manifest: MANIFEST,
       bootUrl: BOOT_URL,
+      hostOrigin: HOST_ORIGIN,
     });
 
     expect(html).toContain('"name":"hello"');
@@ -43,6 +45,7 @@ describe('buildSrcdoc', () => {
       module: MODULE,
       manifest: { ...MANIFEST, entry: '/src/standalone.ts' },
       bootUrl: BOOT_URL,
+      hostOrigin: HOST_ORIGIN,
     });
 
     // entry should be absolute: http://localhost:3001/src/standalone.ts
@@ -57,6 +60,7 @@ describe('buildSrcdoc', () => {
       module: MODULE,
       manifest: MANIFEST,
       bootUrl: BOOT_URL,
+      hostOrigin: HOST_ORIGIN,
     });
 
     expect(html).toContain(`<script type="module" src="${BOOT_URL}">`);
@@ -70,6 +74,7 @@ describe('buildSrcdoc', () => {
       module: MODULE,
       manifest: { ...MANIFEST, styles: ['/assets/style.css', '/assets/extra.css'] },
       bootUrl: BOOT_URL,
+      hostOrigin: HOST_ORIGIN,
     });
 
     expect(html).toContain('<link rel="stylesheet" href="http://localhost:3001/assets/style.css">');
@@ -84,6 +89,7 @@ describe('buildSrcdoc', () => {
       module: MODULE,
       manifest: MANIFEST, // no styles field
       bootUrl: BOOT_URL,
+      hostOrigin: HOST_ORIGIN,
     });
 
     expect(html).not.toContain('<link rel="stylesheet"');
@@ -97,6 +103,7 @@ describe('buildSrcdoc', () => {
       module: MODULE,
       manifest: MANIFEST,
       bootUrl: BOOT_URL,
+      hostOrigin: HOST_ORIGIN,
     });
 
     // JSON.stringify escapes < and " — raw injection should not appear
@@ -115,6 +122,7 @@ describe('buildSrcdoc', () => {
       module: MODULE,
       manifest: MANIFEST,
       bootUrl: BOOT_URL,
+      hostOrigin: HOST_ORIGIN,
     });
 
     expect(html).toContain('id="capsule-remote-root"');
