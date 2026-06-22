@@ -40,22 +40,33 @@ Phase 1 acceptance в брифе `web-remote-phase1-renderer-mvp.md` не про
 
 Гарантировать что `RemoteContext` (и любые другие module-level singleton'ы — `IframeTransport` если bundling меняется) — **один объект** независимо от того, через какой subpath entry consumer импортит `RemoteProvider` / `useRemote` / `Remote.View`.
 
-Возможные пути реализации (выбрать):
+## Step 0 — диагностика ДО выбора варианта (обязательно)
 
-**Вариант A (preferred)** — `optimizeDeps.include` оба entry в `@capsuletech/vite-builder/capsuleConfig`. Сейчас `@capsuletech/web-remote` сидит в `exclude`. Перенос в `include` с явными `entries: ['@capsuletech/web-remote', '@capsuletech/web-remote/capsule']` заставит esbuild pre-bundle'ить оба entry в **общий** dep-граф → shared chunk через одну URL. Smoke: после изменения `useRemote()` под Provider не бросает.
+Гипотеза «cache-busting query на excluded workspace-package → два module instance» **сама требует верификации**. У `@capsuletech/web-remote` сейчас `exclude` в optimizeDeps — Vite на excluded deps обычно НЕ добавляет cache-bust query, эта query прилетает для pre-bundled deps. Перед фиксом подтвердить или опровергнуть:
 
-**Вариант B** — упростить `dist/` — собрать всё в один файл `dist/index.mjs`, который экспортирует и `RemoteProvider`/`useRemote` (для прямого импорта) и default-export для `capsule` registration. Subpath `./capsule` exports мапить туда же или удалить subpath, registry просит default-export из root. Меньше chunks → меньше шансов на dual-instance.
+1. **DevTools Network tab** — посмотреть конкретные URL-ы chunk'а `useRemote-XXXX.mjs` при загрузке через оба subpath. Если URL'ы одинаковые → гипотеза неверна, корень в другом.
+2. **Identity check** — `console.log(RemoteContext)` в `Provider` (capsule.mjs) и в `useRemote` (index.mjs) на host'е, сравнить object identity и `Symbol.for` если есть.
+3. **Физическая раздвоенность пакета** — `ls node_modules/@capsuletech/web-remote/` + проверить нет ли двух копий пакета через pnpm hoisting (особенно если apps/playground vs root install).
+4. **Альтернативные причины** если (1)-(3) опровергают cache-bust: HMR-перезагрузка одного entry без другого; разная нормализация относительных импортов внутри chunks/.
 
-**Вариант C** — экспортировать сам `RemoteContext` из публичного API и хранить его в `globalThis.__CAPSULE_REMOTE_CONTEXT__` singleton-pattern'ом. Не идеально (global pollution), но bullet-proof против любых bundling-нюансов. Использовать только если A и B не работают.
+Выбор варианта реализации **после** того как root cause подтверждён.
+
+## Возможные пути реализации
+
+**Вариант A** — `optimizeDeps.include` оба entry в `@capsuletech/vite-builder/capsuleConfig` с явными `entries: ['@capsuletech/web-remote', '@capsuletech/web-remote/capsule']`. Заставит esbuild pre-bundle'ить оба entry в общий dep-граф. **Caveat:** workspace-пакеты обычно сидят в `exclude` именно потому что pre-bundle замораживает их при правках src (см. грабля vite-builder dist в `CLAUDE.md`). Применять только если диагностика подтвердила что cache-bust на excluded entries реален и нет способа победить иначе. Возможна регрессия в dev-цикле web-remote (правки src не подхватываются без рестарта).
+
+**Вариант B (равноценный кандидат — потенциально корневой фикс)** — схлопнуть `dist/` в один `index.mjs` (re-export и `RemoteProvider`/`useRemote`, и registration-default), либо удалить subpath `./capsule` и просить registry дёргать default из root. Если subpath-split физически ломает singleton invariant — это корневое лечение, не workaround. Bundle-size loss минимальный (RemoteView маленький), interop с registry — один edit в capsule.ts. По умолчанию рассматривать наравне с A после диагностики, не как fallback.
+
+**Вариант C (fallback)** — экспортировать `RemoteContext` и хранить в `globalThis.__CAPSULE_REMOTE_CONTEXT__` singleton-pattern'ом. Global pollution, но bullet-proof против любых bundling-нюансов. Только если A и B не сработали или несовместимы с другими constraint'ами.
 
 # Acceptance
 
-- [ ] **Прямой smoke**: в любом app-коде, вложенном в `<Remote.Provider>` (через global registration), `useRemote()` (импортированный напрямую из `@capsuletech/web-remote`) возвращает context без ошибки. Тест-fixture в `packages/web/runtime/remote/src/runtime/__tests__/` симулирует двух-entry загрузку через JSdom mount, ловит regression.
+- [ ] **Прямой smoke (e2e через Playwright против `apps/playground` под `capsule dev`)**: в любом app-коде, вложенном в `<Remote.Provider>` (через global registration), `useRemote()` (импортированный напрямую из `@capsuletech/web-remote`) возвращает context без ошибки. **Важно:** Vite-resolve артефакт НЕ воспроизводится в Node ESM / JSdom (там один URL = один instance гарантированно) — unit-test через JSdom даст ложно-зелёный. Регрессия ловится только через реальный Vite dev-server. Если e2e harness ещё не готов — допустимо TODO с явным skip и упоминанием в OWNERSHIP.md (но НЕ выдавать unit-test за регресс этого бага).
 - [ ] **`<Remote.View>` (зарегистрированный через capsule subpath) внутри Provider tree работает** (regression-cover текущего behavior — это сейчас тоже работает, нужно не сломать).
 - [ ] **canvas→host smoke** (PR #398 baseline) продолжает работать.
 - [ ] **host→canvas через `useRemote()`**: `apps/playground/src/widgets/studio/canvas.tsx` (или новый bridge) вызывает `const { remote } = useRemote(); remote('universal-canvas').send('ping', payload)`. Канвас ловит через `ctx.channel.on('ping', cb)` в bootstrap'е. Работает.
-- [ ] **Документация**: AI-anchor `docs/_meta/web-remote.md` + OWNERSHIP.md обновлены — секция «module instance singleton invariant» с явным правилом: «`createContext` / `IframeTransport` ctor вызываются ровно один раз на app; subpath split не ломает».
-- [ ] Юнит-тесты regress: dual-import scenario explicit (один тест импортит `RemoteProvider` из `index.mjs`, `useRemote` — тоже, проверяет shared context; другой тест импортит `Provider` из `capsule.mjs` default, `useRemote` — из root, тоже shared).
+- [ ] **Документация**: AI-anchor `docs/_meta/web-remote.md` + OWNERSHIP.md обновлены — секция «module instance singleton invariant» с явным правилом: «`createContext` / `IframeTransport` ctor вызываются ровно один раз на app; subpath split не ломает». Зафиксировать выбранный вариант (A/B/C) и почему именно он, чтобы будущие правки exports/optimizeDeps не откатили фикс.
+- [ ] **Юнит-тесты (дополнительно, не вместо e2e)**: dual-import scenario через Node ESM — один тест импортит `RemoteProvider` из `index.mjs`, `useRemote` — тоже, проверяет shared context; другой тест импортит `Provider` из `capsule.mjs` default, `useRemote` — из root, тоже shared. Это санити-чек публичного API, но НЕ покрывает Vite-resolve грань.
 
 # Что НЕ в этом PR
 
@@ -66,6 +77,6 @@ Phase 1 acceptance в брифе `web-remote-phase1-renderer-mvp.md` не про
 
 # Контекст для root cause
 
-См. memory `feedback_check_generated_entry_first` + `project_remote_manifest_phase1a` — история инцидента 2026-06-22. Bridge-эксперимент (`RemoteHostBridge` непосредственно как child Provider'а с `useRemote()` внутри) показал что throw происходит даже на расстоянии одного компонента — single Provider, single useRemote, всё равно outside. Это единственная гипотеза, совместимая с фактами.
+См. memory `feedback_check_generated_entry_first` + `project_remote_manifest_phase1a` — история инцидента 2026-06-22. Bridge-эксперимент (`RemoteHostBridge` непосредственно как child Provider'а с `useRemote()` внутри) показал что throw происходит даже на расстоянии одного компонента — single Provider, single useRemote, всё равно outside. Dual-instance — наиболее вероятная гипотеза, но НЕ единственная возможная (см. Step 0 пункт 4 — альтернативные причины).
 
-Перед началом работы — **верифицировать** dual-instance гипотезу через DevTools Network tab (URL-ы chunks по двум subpath resolve) ИЛИ через инструментацию (`console.log(RemoteContext)` в Provider и в useRemote, сравнить object identity). Если гипотеза не подтверждается — копать дальше с конкретными фактами, не лечить «на удачу». См. memory `feedback_no_hypotheses_diagnose_with_tools`.
+Диагностика обязательна **до выбора варианта реализации** — см. Step 0 в секции «Скоп». Если гипотеза не подтверждается — копать дальше с конкретными фактами, не лечить «на удачу». См. memory `feedback_no_hypotheses_diagnose_with_tools`.
