@@ -37,6 +37,10 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node .claude/hooks/main-session-marker.mjs"
+          },
+          {
+            "type": "command",
             "command": "node .claude/hooks/dev-diagnostics-session-start.mjs"
           }
         ]
