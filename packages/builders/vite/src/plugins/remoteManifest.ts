@@ -1,35 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Plugin } from 'vite';
-import { resolveShared, SHARED_DEPS } from './importMap';
-
-const MANIFEST_SCHEMA_URL = 'https://capsuletech.dev/schemas/remote-manifest-v1.json';
-
-/**
- * Phase 1 exposes: single `./remote` mapped to the entry URL. Multi-expose
- * is Phase 2 (extend with `capsule.config.ts:remote.exposes?:` declaration).
- */
-function buildExposesDecl(entryUrl: string): Record<string, string> {
-  return { './remote': entryUrl };
-}
-
-/**
- * Build the `shared` block of the manifest by resolving each entry in
- * {@link SHARED_DEPS} to its installed version in `appRoot`. Singleton flag
- * is canonical-true (ADR 057 §D1). Unresolvable entries are skipped silently
- * — Phase 1A is non-validating per architect Q3; Phase 1B runtime check is
- * the validator on the consumer side.
- */
-function buildSharedDecl(
-  appRoot: string,
-): Record<string, { version: string; singleton: true }> {
-  const out: Record<string, { version: string; singleton: true }> = {};
-  for (const entry of SHARED_DEPS) {
-    const resolved = resolveShared(entry, appRoot);
-    if (resolved) out[entry] = { version: resolved.version, singleton: true };
-  }
-  return out;
-}
 
 export const RemoteManifestPlugin = (opts: { appRoot: string }): Plugin => {
   let capsuleRoot = '';
@@ -63,15 +34,7 @@ export const RemoteManifestPlugin = (opts: { appRoot: string }): Plugin => {
         }
         const rawName = pkg.name ?? '';
         const name = rawName.includes('/') ? rawName.split('/').pop()! : rawName;
-        const entry = '/remote-entry.ts';
-        const manifest = {
-          $schema: MANIFEST_SCHEMA_URL,
-          name,
-          version: pkg.version ?? '0.0.0',
-          entry,
-          exposes: buildExposesDecl(entry),
-          shared: buildSharedDecl(opts.appRoot),
-        };
+        const manifest = { name, version: pkg.version ?? '0.0.0', entry: '/remote-entry.ts' };
         const body = JSON.stringify(manifest, null, 2);
         res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) });
         res.end(body);
@@ -94,14 +57,7 @@ export const RemoteManifestPlugin = (opts: { appRoot: string }): Plugin => {
           (chunk.facadeModuleId?.endsWith('remote-entry.ts') || chunk.name === 'remote-entry'),
       );
       const entry = entryChunk ? `/${entryChunk.fileName}` : '/remote-entry.js';
-      const manifest = {
-        $schema: MANIFEST_SCHEMA_URL,
-        name,
-        version: pkg.version ?? '0.0.0',
-        entry,
-        exposes: buildExposesDecl(entry),
-        shared: buildSharedDecl(opts.appRoot),
-      };
+      const manifest = { name, version: pkg.version ?? '0.0.0', entry };
       this.emitFile({ type: 'asset', fileName: 'capsule.manifest.json', source: JSON.stringify(manifest, null, 2) });
     },
   };

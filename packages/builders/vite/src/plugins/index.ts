@@ -45,16 +45,6 @@ export type {
 } from './devDiagnostics';
 export { createDevDiagnosticsPlugin } from './devDiagnostics';
 export { HMRWrappingPlugin } from './HMRWrapping';
-export {
-  buildImportMap,
-  ImportMapPlugin,
-  type IImportMapPluginOptions,
-  type IResolvedShared,
-  parseSharedUrl,
-  resolveShared,
-  SHARED_DEPS,
-  type SharedDep,
-} from './importMap';
 export { RouterPlugin } from './router';
 export { EnsureScaffoldPlugin } from './scaffold';
 export { RemoteManifestPlugin } from './remoteManifest';

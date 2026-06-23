@@ -63,10 +63,7 @@ export interface IRemoteProviderProps {
 
 /**
  * Manifest a remote module publishes alongside its built bundle.
- * Generated at build time by RemoteManifestPlugin (vite-builder).
- *
- * ADR 057 §D2 extends Phase 0 shape with `$schema`, `exposes`, `shared` (additive).
- * `name`/`version`/`entry`/`styles?`/`props?`/`events?` preserved verbatim.
+ * Generated at build time by the upcoming RemoteManifestPlugin (Phase 4).
  */
 export interface IRemoteManifest {
   name: string;
@@ -79,25 +76,6 @@ export interface IRemoteManifest {
   props?: unknown;
   /** Map of `eventName → zod-to-json-schema(payload)`. */
   events?: Record<string, unknown>;
-  /** Optional JSON-schema reference for tooling validation. ADR 057 §D2. */
-  $schema?: string;
-  /**
-   * Exposed entry map. Phase 1 hardcodes `{ "./remote": entry }` (single entry
-   * per ADR 053). Multi-expose lands in Phase 2.
-   */
-  exposes?: Record<string, string>;
-  /**
-   * Shared singleton dependencies the remote was built against. Host validates
-   * version compat against its own import-map (`validateSharedCompat`).
-   * ADR 057 §D2 + §D1.
-   */
-  shared?: Record<string, IRemoteSharedDep>;
-}
-
-/** One entry in {@link IRemoteManifest.shared}. */
-export interface IRemoteSharedDep {
-  version: string;
-  singleton: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -194,12 +172,7 @@ export interface IRemoteContext {
 // custom transports may be plugged in by consumers in Phase 3+)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type TransportKind =
-  | 'local'
-  | 'local-shadow-dom'
-  | 'broadcast-channel'
-  | 'post-message'
-  | 'socket';
+export type TransportKind = 'local' | 'broadcast-channel' | 'post-message' | 'socket';
 
 /**
  * Message envelope used uniformly across all transports.
@@ -293,15 +266,9 @@ export type IRemoteDispose = () => void;
  *   return render(() => <App greeting={props.greeting} theme={config.theme} />, root);
  * };
  * ```
- *
- * The `root` is `HTMLElement` for iframe-transport mount (boot.ts inside
- * iframe) and `ShadowRoot` for local-shadow-dom transport (ADR 057 §D4).
- * Solid's `render()` accepts both — module code that only forwards `root` to
- * `render` does not need to discriminate. Additive widening of the ADR 053
- * contract introduced in Phase 1B (ADR 057).
  */
 export type IRemoteBootstrap<Props = Record<string, unknown>, Config = Record<string, unknown>> = (
-  root: HTMLElement | ShadowRoot,
+  root: HTMLElement,
   ctx: {
     /** Reactive accessor object for runtime props from the host. */
     props: Props;
