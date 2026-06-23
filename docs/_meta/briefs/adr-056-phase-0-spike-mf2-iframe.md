@@ -4,7 +4,7 @@
 **Type**: spike / proof-of-concept (throwaway code)
 **Scope**: standalone `experiments/mf2-iframe-spike/` directory — НЕ трогает `packages/web/runtime/remote/`, `apps/playground/`, `apps/universal-canvas/`
 **Goal**: pass/fail gate для [[../01-architecture/adr/056-web-remote-mf2-iframe-transport-hybrid|ADR 056]] до начала миграции
-**Branch**: `spike/mf2-iframe-poc`
+**Tree**: main shared working tree (`D:/CODING/projects/my/capsule`), branch `main`. Никаких worktree, никаких feature-веток сейчас. Ветка + PR создаются в конце фичи (spike + Phase 1 + …) по сигналу user.
 
 ---
 
@@ -32,17 +32,25 @@ MF runtime в iframe получает host'ский shared scope (`solid-js` sin
 
 Host передаёт reactive prop в remote, изменение prop'а триггерит `createEffect` в remote (через shared Solid runtime). Это финальная цель — то что сегодня сломано в текущем custom Variant C.
 
-**Pass**: host меняет signal → `createEffect(() => sharedState.X)` в remote перезапускается → в iframe console видно лог с новым значением. **На каждое изменение, не только при mount.**
+**Acceptance (3 уровня):**
 
-**Fail**: shared scope работает на module-level (одна solid-js), но reactive store created в host не виден remote effect'ам. Тогда rework — например, runtime channel поверх MF для business-data, MF только для module-singleton'ов.
+| Result | Что наблюдается | Trade-off |
+|---|---|---|
+| **PASS** | `[count, setCount] = createSignal(0)` в host, передан как accessor → `createEffect(() => count())` в iframe-remote re-runs на КАЖДЫЙ `setCount(n)`. Pure MF shared, без channel. | ADR 056 D2 валиден, идём в Phase 1 как есть. |
+| **PARTIAL** | Signal-level cross-realm не работает, но `createMutable(obj)` / store через MF shared module-state + cross-realm subscription работает. | ADR 056 D1 amend — API surface сужается до store/mutable. Architect ревизует. |
+| **FAIL** | Reactive identity не пересекает realm вообще — нужен наш postMessage-channel с явной репликацией. Тогда это не "MF shared даёт реактивность", а наш channel поверх. | ADR 056 D2 amend — channel-broker поверх MF. Финальный архитектурный пересмотр. |
 
-### H4 — Vite + MF2 + capsule plugin stack совместимы
+Документируй явно какой из трёх. Не пытайся "подкрутить чтобы заработало" — нам нужен честный сигнал что именно работает в стоковой связке.
 
-`@module-federation/vite` работает в Vite-config вместе с capsule-specific plugins: `CompliancePlugin`, `HMRWrappingPlugin`, `RouterPlugin`, `ExportGeneratorPlugin`, `solidPlugin`.
+### H4 — Vite + MF2 + solidPlugin минимальный стек работает
 
-**Pass**: host и remote Vite-config'и (с полным capsule stack'ом + MF2) собираются (`vite build`) и стартуют (`vite dev`) без crash'ов / fatal warnings. HMR remote-кода работает (опционально — не блокер если не работает в spike, но note это).
+**Софт-claim (final):** `@module-federation/vite` + `solidPlugin` + наш `iframeTransportPlugin` runtime — host и remote Vite-конфиги собираются (`vite dev` достаточно) без crash. **БЕЗ** capsule plugins (Compliance/HMRWrapping/Router/ExportGenerator из `packages/builders/vite/src/plugins/`) — их интеграция переезжает в Phase 1.
 
-**Fail**: plugin conflict (например, MF2 манипуляция module-graph несовместима с capsule code-transforms). Тогда: ADR пересматривает strategy — возможно нужен fork plugin'а или собственный build-time integration вместо `@module-federation/vite`.
+**Pass**: оба сервера (host + remote) стартуют, host загружает remote через MF runtime, нет fatal errors в console.
+
+**Fail**: stock MF2 plugin несовместим с базовым solidPlugin (несовместимая module-graph манипуляция, неработающий JSX transform, etc.) — фундаментальная блокировка, ADR 056 пересматривается полностью.
+
+**Findings field**: всё что замечено как potential conflict с capsule plugins (например, MF2 эмиттит chunks которые HMRWrapping potentially нарушит) — фиксируй как **Phase 1 risk**, НЕ как H4 fail. Capsule integration валидируется в Phase 1.
 
 ## Setup (что строим в spike)
 
@@ -155,21 +163,25 @@ Evidence: ...
 
 ## Git workflow
 
-- Branch: `spike/mf2-iframe-poc` от main
-- WIP commits разрешены (`wip: H1 iframe loads`, `wip: H2 shared scope`, etc.) — это spike, не production code
-- **Финальный единый rollup commit** перед review: `spike(web-remote): MF2 + iframe-transport POC — ADR-056 Phase 0`
-- Commit-only, push делает architect. PR опциональный (можно отдать architect'у в виде branch + SPIKE-REPORT.md, без формального merge — spike не идёт в main, он живёт в feature-ветке как артефакт ADR'а).
+- **НЕ коммитить.** Работаешь в shared main tree (HEAD = main). Pre-commit hook режет direct commits на main — это намеренно. Оставляешь working tree в готовом-для-ревью состоянии.
+- Архитектор + user возвращаются, ревьюят SPIKE-REPORT.md + код в working tree, решают:
+  - Если GREEN — фича продолжается (Phase 1). Ветка + PR создаются позже по сигналу user (вся фича = один cross-package PR per `feedback_git_scope_by_change_shape`).
+  - Если RED — обсуждаем ADR revision, код spike может быть выкинут.
+- Если по ходу spike нужно сохранить промежуточное состояние — это в SPIKE-REPORT.md / WIP-notes в файлах spike'а, не через git stash/commit.
 
 ## После spike'а
 
-**Если GREEN** (4/4 H pass):
-- ADR 056 status `proposed` → `accepted`
+**Если GREEN** (4/4 H pass — H3 PASS или PARTIAL):
+- ADR 056 status `proposed` → `accepted` (architect)
 - Architect пишет следующий бриф: Phase 1 (core MF integration в `@capsuletech/web-remote`)
-- spike branch keep'ится как reference, или мержится в main под `experiments/` (gitignored для prod, доступно для контрибьютеров)
+- Owner-remote продолжает работу в той же shared main tree — Phase 1 коммитится в общий накопитель фичи, ветка/PR в конце по сигналу user
 
-**Если RED** (любой H fails):
-- ADR 056 пересматривается — architect анализирует findings и пишет либо revision (изменение D1/D2 декомпозиции) либо новый ADR с альтернативным подходом
-- Никакой Phase 1 не стартует пока root cause известен
+**Если PARTIAL** (H3 = (b) store/mutable, не signal):
+- ADR 056 D1 amend — API surface сужается до store/mutable. Architect ревизует.
+- Phase 1 стартует с обновлённого контракта.
+
+**Если RED** (H1/H2/H4 fail или H3 = (c) channel-only):
+- ADR 056 пересматривается полностью — findings + предложение revision/replacement ADR. Phase 1 НЕ стартует.
 
 ## Связанное
 

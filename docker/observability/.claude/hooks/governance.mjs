@@ -20,6 +20,12 @@
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
+// Canon (2026-06-22): scope = package.json#name минус @capsuletech/ минус
+// опциональный web- префикс. Один источник истины с scope-resolve.mjs.
+//   @capsuletech/web-ui      → ui
+//   @capsuletech/vite-builder → vite-builder
+//   @capsuletech/canvas-ui   → canvas-ui
+//   @capsuletech/web-remote  → remote
 
 const EDIT_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit']);
 const COLLECTOR_LOGS = 'http://localhost:4318/v1/logs';
@@ -91,6 +97,11 @@ async function logDeviation(kind, scope, detail) {
   }
 }
 
+/** Канонический scope-name из package.json#name. */
+function scopeFromName(pkgName) {
+  return (pkgName ?? '').replace(/^@[^/]+\//, '').replace(/^web-/, '');
+}
+
 /** Найти корень пакета (ближайший package.json вверх) + его scope-имя. */
 function resolvePackage(targetPath) {
   let dir = dirname(targetPath);
@@ -104,8 +115,7 @@ function resolvePackage(targetPath) {
       } catch {
         /* битый package.json — оставим name пустым */
       }
-      const scope = name.replace(/^@[^/]+\//, ''); // @capsuletech/web-ui → web-ui
-      return { root: dir, scope };
+      return { root: dir, scope: scopeFromName(name) };
     }
     const parent = dirname(dir);
     if (parent === dir) break;
