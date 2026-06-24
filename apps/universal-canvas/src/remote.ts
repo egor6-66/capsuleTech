@@ -4,10 +4,10 @@
 // Использует `createCapsuleApp` (@capsuletech/web-core/bootstrap) — единая
 // bootstrap-цепочка для standalone и embedded режимов (ADR-053 consequence 7a).
 //
-// Три embedded-поля из ctx:
-//  - ctx.config     → configOverride  (host ambient config, Decision 3)
-//  - ctx.props      → runtimeProps    (reactive host props, Decision 4)
-//  - ctx.channel    → eventSink       (canvas→host events + useEmit routing, Decision 5)
+// ADR 059: push-поля configOverride/runtimeProps удалены из createCapsuleApp —
+// host-override config'а теперь идёт через postMessage-handshake (web-core сам).
+// Здесь остаётся только eventSink (ctx.channel → canvas→host события / useEmit).
+// Полный перевод этого entry на self-mounting (без `bootstrap`/ctx) — Brief 2/3.
 //
 // HCA-слои (Feature / Controller) не знают в каком режиме работает приложение.
 //
@@ -48,8 +48,6 @@ export const bootstrap: IRemoteBootstrap = (root, ctx) => {
   return createCapsuleApp(root, {
     routeTree,
     appConfig,
-    configOverride: ctx.config,
-    runtimeProps: ctx.props,
     eventSink: ctx.channel,
   });
 };

@@ -207,6 +207,30 @@ export interface IAppConfig {
 }
 
 /**
+ * Runtime allowlist of top-level `IAppConfig` keys — SSOT для embed
+ * config-override schema-фильтра (ADR 059 Phase 1).
+ *
+ * Host-override патч (`__capsule_remote_config__`) может задавать ТОЛЬКО ключи
+ * из этого списка; ключи не из схемы `defineAppConfig` молча отбрасываются на
+ * приёме (хост может не знать, кого встраивает). `satisfies` гарантирует, что
+ * каждый элемент — валидный ключ `IAppConfig`; при добавлении поля в интерфейс
+ * TS заставит обновить и этот список.
+ *
+ * @see mergeConfigOverride / filterOverride в `bootstrap/embedConfig.ts`
+ */
+export const APP_CONFIG_KEYS = [
+  'meta',
+  'aliases',
+  'api',
+  'packages',
+  'intl',
+  'router',
+  'access',
+  'auth',
+  'docs',
+] as const satisfies ReadonlyArray<keyof IAppConfig>;
+
+/**
  * Identity-функция для `capsule.app.ts`. Используется для type inference.
  * AppConfigPlugin transform replace'нет вызов в browser bundle.
  */
