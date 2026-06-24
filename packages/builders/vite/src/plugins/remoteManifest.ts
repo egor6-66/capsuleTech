@@ -2,6 +2,22 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { Plugin } from 'vite';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ⚠️ RETIRE WITH ADR 059 / Brief 3 (web-remote → iframe-src).
+//
+// This whole plugin (`remote-entry.ts` generation + `capsule.manifest.json`)
+// belongs to the OLD srcdoc/boot embedding model. ADR 059 D1/D5 replaces it
+// with self-contained iframe-src: host loads the app's real URL, app mounts
+// itself via the embed-aware `index.ts` entry (generateIndexEntry), config flows
+// over postMessage. The manifest's `entry`-as-bundle is then dead — host needs
+// only URL + query + postMessage.
+//
+// NOT removed in Brief 2: the current host (web-remote on main, srcdoc/boot)
+// still fetches the manifest + imports `remote-entry.ts`, which imports
+// `{ Bootstrap } from './bootstrap'`. Removing this before the host moves to
+// iframe-src would break embedding. Delete this plugin + `remote-entry.ts` gen
+// + the kept `Bootstrap` export together with Brief 3.
+// ─────────────────────────────────────────────────────────────────────────────
 export const RemoteManifestPlugin = (opts: { appRoot: string }): Plugin => {
   let capsuleRoot = '';
   let remoteEntryPath = '';
@@ -36,7 +52,10 @@ export const RemoteManifestPlugin = (opts: { appRoot: string }): Plugin => {
         const name = rawName.includes('/') ? rawName.split('/').pop()! : rawName;
         const manifest = { name, version: pkg.version ?? '0.0.0', entry: '/remote-entry.ts' };
         const body = JSON.stringify(manifest, null, 2);
-        res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) });
+        res.writeHead(200, {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(body),
+        });
         res.end(body);
       });
     },
@@ -58,7 +77,11 @@ export const RemoteManifestPlugin = (opts: { appRoot: string }): Plugin => {
       );
       const entry = entryChunk ? `/${entryChunk.fileName}` : '/remote-entry.js';
       const manifest = { name, version: pkg.version ?? '0.0.0', entry };
-      this.emitFile({ type: 'asset', fileName: 'capsule.manifest.json', source: JSON.stringify(manifest, null, 2) });
+      this.emitFile({
+        type: 'asset',
+        fileName: 'capsule.manifest.json',
+        source: JSON.stringify(manifest, null, 2),
+      });
     },
   };
 };
