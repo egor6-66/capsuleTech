@@ -21,6 +21,7 @@
     "dev:agent:plugin": "cd plugins/webstorm-agent && ./gradlew runIde",
     "dev:backend": "node scripts/dev-backend.mjs",
     "verdaccio:registry": "pnpm nx local-registry",
+    "build:packages": "node scripts/build-packages.mjs",
     "release:local:cli": "node scripts/release-local.mjs --group=cli",
     "release:local:web": "node scripts/release-local.mjs --group=web_base",
     "release:local:all": "node scripts/release-local.mjs --group=all",
