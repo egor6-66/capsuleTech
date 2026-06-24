@@ -1,45 +1,35 @@
 /**
- * RemoteComponent — mounts a remote module inside an iframe.
+ * RemoteComponent — mounts a remote module as a self-contained app in an iframe.
  *
- * Four classes of input props (ADR-053 Decision 6):
- *  - System: name, instanceId, fallback (host-side wire, not forwarded)
- *  - Config: config (merged host-side, sent via __capsule_remote_config__ envelope)
- *  - Events: /^on[A-Z]/ (auto-subscribed via transport.onMessage)
- *  - Runtime props: everything else (forwarded via __capsule_remote_props__ envelope)
- *  - children: TypeScript-level ban — NOT in IRemoteComponentProps
+ * app-mode (ADR 059): `<iframe src="${module.url}/?__capsule_session=…&__capsule_name=…">`.
+ * The app boots itself (own solid/router) exactly like standalone — the host does NOT
+ * inject a boot shell, an import-map, or share its solid realm. The only channel is
+ * postMessage (ADR 058 D2). No srcdoc, no manifest fetch, no remote-entry bundle.
  *
- * The component reactively sends both envelopes on every relevant change,
- * including immediately when the shell signals ready (__capsule_remote_ready__).
+ * Host ↔ app protocol comes from EMBED_PROTOCOL (@capsuletech/web-core/bootstrap) —
+ * names are NOT hardcoded here:
+ *  - app → host: EMBED_PROTOCOL.readyEvent (`__capsule_app_ready__`) once it mounts.
+ *  - host → app: EMBED_PROTOCOL.configEvent (`__capsule_remote_config__`) override patch
+ *    (ADR 059 D4), sent on ready and re-sent reactively when the merged config changes.
+ *  - app → host: events via `on*` props (the only non-config vector — D4 removed props).
+ *
+ * There is NO host→app props channel — all host→app data is config (ADR 059 D4).
+ * Degradation: if the app never sends ready within MOUNT_TIMEOUT_MS, render the
+ * placeholder instead of the iframe (the host cannot reliably observe a cross-origin
+ * iframe load failure via onerror, so this is a timeout, not an onerror handler).
  */
 
-// boot.mjs is built as a separate Vite library entry (vite.config.mts) and
-// exposed via package.json#exports './boot.js' → dist/boot.mjs. Importing
-// through the subpath + ?url makes Vite resolve via package exports — NOT
-// relative to import.meta.url — so RemoteComponent works the same whether
-// it is loaded from src (dev, after PR #413 alias for /capsule) or from
-// dist (prod). No layout assumption.
-// Historical note: a previous attempt used relative `?url` on the .ts
-// SOURCE (`../shell/boot.ts?url`) which returned a data:video/mp2t URL —
-// Vite/esbuild treats .ts as a TS module. That regression does NOT apply
-// here because the subpath points at the BUILT .mjs artifact.
-import bootUrl from '@capsuletech/web-remote/boot.js?url';
+import { EMBED_PROTOCOL } from '@capsuletech/web-core/bootstrap';
 import {
   createEffect,
   createMemo,
-  createResource,
+  createSignal,
   createUniqueId,
   type JSX,
-  Match,
   onCleanup,
-  Switch,
+  Show,
 } from 'solid-js';
-import type {
-  IRemoteComponentProps,
-  IRemoteManifest,
-  IRemoteModuleConfig,
-  ITransport,
-} from '../interfaces';
-import { buildSrcdoc } from './buildSrcdoc';
+import type { IRemoteComponentProps, IRemoteModuleConfig, ITransport } from '../interfaces';
 
 /** Internal props added by RemoteProvider — not part of the public API. */
 export interface IRemoteComponentInternalProps extends IRemoteComponentProps {
@@ -49,28 +39,15 @@ export interface IRemoteComponentInternalProps extends IRemoteComponentProps {
   providerConfig?: Record<string, unknown>;
 }
 
-/** Reserved prop names — never forwarded as runtime props. */
-const SYSTEM_KEYS = new Set(['name', 'instanceId', 'fallback', 'config', 'mode', 'children']);
-/** Internal keys injected by RemoteProvider, not consumer-visible. */
-const INTERNAL_KEYS = new Set(['transports', 'sessionId', 'modules', 'providerConfig']);
-
 /** /^on[A-Z]/ — ADR-053 Decision 5. `online`/`onclick` do NOT match. */
 const EVENT_PROP_RE = /^on[A-Z]/;
 
 /**
- * Strip all reserved and internal props, returning only the runtime props
- * that should be forwarded to the remote module.
+ * Host-side wait for the app's ready signal before declaring it unavailable.
+ * Separate from web-core's app-config-wait (~1500ms) — this one is generous to
+ * cover network load + app bootstrap. ADR 059 degradation path.
  */
-const stripReserved = (p: Record<string, unknown>): Record<string, unknown> => {
-  const out: Record<string, unknown> = {};
-  for (const k of Object.keys(p)) {
-    if (SYSTEM_KEYS.has(k)) continue;
-    if (INTERNAL_KEYS.has(k)) continue;
-    if (EVENT_PROP_RE.test(k)) continue;
-    out[k] = p[k];
-  }
-  return out;
-};
+const MOUNT_TIMEOUT_MS = 5_000;
 
 export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.Element => {
   // Execution substrate (ADR 058 D3). Read once at mount — structural, not reactive.
@@ -96,62 +73,75 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
   // transport() callers stay untouched.
   const transport = createMemo(() => rawProps.transports[0]);
 
-  // Fetch manifest from ${module.url}/capsule.manifest.json
-  const [manifest] = createResource(
-    () => module()?.url,
-    async (url: string): Promise<IRemoteManifest> => {
-      const res = await fetch(`${url}/capsule.manifest.json`);
-      if (!res.ok) throw new Error(`[capsule/remote] manifest fetch failed: ${res.status} ${url}`);
-      return res.json() as Promise<IRemoteManifest>;
-    },
-  );
-
-  // Build srcdoc only when both module config and manifest are available.
-  // IMPORTANT: reading manifest() re-throws when the resource entered error state
-  // (e.g. remote app offline → ERR_CONNECTION_REFUSED). Guard on .loading/.error
-  // BEFORE calling manifest() so the throw never escapes the memo and crashes the
-  // host — the <Switch> error Match renders the fallback/placeholder instead.
-  const srcdoc = createMemo(() => {
+  // app-mode iframe URL = app root index + identity query (ADR 059 D1, Brief 2 entry).
+  // module.url is the app origin; new URL() handles trailing-slash + encoding. Keys
+  // come from EMBED_PROTOCOL, never literals.
+  const appSrc = createMemo<string | undefined>(() => {
     const m = module();
-    if (!m || manifest.loading || manifest.error) return undefined;
-    const mf = manifest();
-    if (!mf) return undefined;
-    const url = bootUrl as string;
-    return buildSrcdoc({
-      name: rawProps.name,
-      instanceId,
-      sessionId: rawProps.sessionId,
-      module: m,
-      manifest: mf,
-      bootUrl: url,
-      hostOrigin: window.location.origin,
-    });
+    if (!m) return undefined;
+    const url = new URL('/', m.url);
+    url.searchParams.set(EMBED_PROTOCOL.query.session, rawProps.sessionId);
+    url.searchParams.set(EMBED_PROTOCOL.query.name, rawProps.name);
+    return url.href;
   });
 
-  // ─── Ready handshake ──────────────────────────────────────────────────────
-  // When the shell signals __capsule_remote_ready__, push both envelopes
-  // immediately. The reactive effects below will also fire — ready handshake
-  // ensures the first delivery even if effects already ran before iframe mounted.
+  // Unavailable when the app never sends ready within MOUNT_TIMEOUT_MS.
+  const [failed, setFailed] = createSignal(false);
+
+  // ─── Helpers ─────────────────────────────────────────────────────────────
+
+  const sendConfigEnvelope = (t: ITransport = transport()!) => {
+    // Override patch (ADR 059 D4). Merge order (ADR-053 Decision 3): provider → module
+    // → instance. undefined config props are skipped by spread — does NOT clear ambient.
+    const merged: Record<string, unknown> = {
+      ...rawProps.providerConfig,
+      ...module()?.config,
+      ...(rawProps.config ?? {}),
+    };
+    t.send({
+      from: EMBED_PROTOCOL.hostTarget,
+      fromInstance: EMBED_PROTOCOL.hostTarget,
+      to: rawProps.name,
+      toInstance: instanceId,
+      sessionId: rawProps.sessionId,
+      eventName: EMBED_PROTOCOL.configEvent,
+      payload: merged,
+    });
+  };
+
+  // ─── Ready handshake + mount timeout ───────────────────────────────────────
+  // The app posts EMBED_PROTOCOL.readyEvent (from === name; the self-contained app
+  // does not know the host-side instanceId, so we match by name — sessionId is
+  // already filtered by the transport). On ready: push the config override and cancel
+  // the timeout. On timeout without ready: mark failed → placeholder.
   createEffect(() => {
     const t = transport();
-    if (!t) return;
+    const src = appSrc();
+    if (!t || !src) return;
+    setFailed(false);
+    let ready = false;
+    const timer = setTimeout(() => {
+      if (!ready) setFailed(true);
+    }, MOUNT_TIMEOUT_MS);
     const unsub = t.onMessage((msg) => {
-      if (
-        msg.eventName === '__capsule_remote_ready__' &&
-        msg.from === rawProps.name &&
-        msg.fromInstance === instanceId
-      ) {
-        sendPropsEnvelope(t);
+      if (msg.eventName === EMBED_PROTOCOL.readyEvent && msg.from === rawProps.name) {
+        ready = true;
+        clearTimeout(timer);
         sendConfigEnvelope(t);
       }
     });
-    onCleanup(unsub);
+    onCleanup(() => {
+      clearTimeout(timer);
+      unsub();
+    });
   });
 
   // ─── Register / unregister iframe with transport ──────────────────────────
+  // Registration lets IframeTransport.send postMessage to this iframe's contentWindow
+  // (works cross-origin — postMessage does not require same-origin).
   createEffect(() => {
     const t = transport();
-    if (!t || !iframeRef || !srcdoc()) return;
+    if (!t || failed() || !appSrc() || !iframeRef) return;
     // Downcast to IframeTransport shape: transport has register/unregister
     const iframeTransport = t as typeof t & {
       register: (name: string, instanceId: string, el: HTMLIFrameElement) => void;
@@ -163,50 +153,9 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
     }
   });
 
-  // ─── Helpers ─────────────────────────────────────────────────────────────
-
-  const sendPropsEnvelope = (t: ITransport = transport()!) => {
-    const runtime = stripReserved(rawProps as unknown as Record<string, unknown>);
-    t.send({
-      from: '__host__',
-      fromInstance: '__host__',
-      to: rawProps.name,
-      toInstance: instanceId,
-      sessionId: rawProps.sessionId,
-      eventName: '__capsule_remote_props__',
-      payload: runtime,
-    });
-  };
-
-  const sendConfigEnvelope = (t: ITransport = transport()!) => {
-    // Merge order (ADR-053 Decision 3): provider → module → instance
-    // undefined config props are skipped by spread — does NOT clear ambient config
-    const merged: Record<string, unknown> = {
-      ...rawProps.providerConfig,
-      ...module()?.config,
-      ...(rawProps.config ?? {}),
-    };
-    t.send({
-      from: '__host__',
-      fromInstance: '__host__',
-      to: rawProps.name,
-      toInstance: instanceId,
-      sessionId: rawProps.sessionId,
-      eventName: '__capsule_remote_config__',
-      payload: merged,
-    });
-  };
-
-  // ─── Reactive props envelope ───────────────────────────────────────────────
-  // Re-sends on any non-reserved prop change (Solid tracks all prop reads here)
-  createEffect(() => {
-    const t = transport();
-    if (!t) return;
-    sendPropsEnvelope(t);
-  });
-
   // ─── Reactive config envelope ─────────────────────────────────────────────
-  // Re-sends when providerConfig, module config, or instance config changes
+  // Re-sends when providerConfig, module config, or instance config changes (D4
+  // runtime override). The initial delivery is the ready-handshake send above.
   createEffect(() => {
     const t = transport();
     if (!t) return;
@@ -242,29 +191,28 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
   });
 
   return (
-    <Switch>
-      <Match when={manifest.loading}>{rawProps.fallback?.('loading')}</Match>
-      <Match when={manifest.error}>
-        {rawProps.fallback?.('error') ?? (
-          <div
-            data-capsule-remote-error={rawProps.name}
-            style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#888;font:13px system-ui;padding:8px;text-align:center"
-          >
-            remote "{rawProps.name}" unavailable
-          </div>
-        )}
-      </Match>
-      <Match when={srcdoc()}>
-        <iframe
-          ref={(el) => {
-            iframeRef = el;
-          }}
-          title={rawProps.name}
-          srcdoc={srcdoc()}
-          style="width:100%;height:100%;border:0;display:block"
-          sandbox="allow-scripts allow-same-origin"
-        />
-      </Match>
-    </Switch>
+    <Show
+      when={!failed() && appSrc()}
+      fallback={
+        <div
+          data-capsule-remote-error={rawProps.name}
+          style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#888;font:13px system-ui;padding:8px;text-align:center"
+        >
+          remote "{rawProps.name}" unavailable
+        </div>
+      }
+    >
+      <iframe
+        ref={(el) => {
+          iframeRef = el;
+        }}
+        title={rawProps.name}
+        src={appSrc()}
+        style="width:100%;height:100%;border:0;display:block"
+        // TODO (ADR 059 open question #1): cross-origin hardening — tighten sandbox
+        // and postMessage targetOrigin from '*' to the known app origin.
+        sandbox="allow-scripts allow-same-origin"
+      />
+    </Show>
   );
 };

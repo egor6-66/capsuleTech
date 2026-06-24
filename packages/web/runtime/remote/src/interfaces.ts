@@ -85,15 +85,15 @@ export interface IRemoteManifest {
 /**
  * Props of the <Remote /> component returned from useRemote().
  *
- * Reserved props (ADR-053 Decision 6):
- *  - System: `name`, `instanceId`, `fallback` — host-side wire, not forwarded.
+ * Prop classes (ADR-053 Decision 6, amended by ADR 059 D4):
+ *  - System: `name`, `instanceId`, `fallback`, `mode` — host-side wire, not sent across.
  *  - Config: `config` — merged host-side, sent via __capsule_remote_config__ envelope.
- *  - Events: props matching /^on[A-Z]/ — auto-subscribed via transport.onMessage.
- *  - Runtime props: everything else — forwarded via __capsule_remote_props__ envelope.
+ *  - Events: props matching /^on[A-Z]/ — auto-subscribed via transport.onMessage (app → host).
  *  - children: BANNED at TypeScript level (composition across frame boundary = future ADR).
  *
- * Extra props (non-reserved, non-on*) are forwarded to the remote module via
- * __capsule_remote_props__ envelope (validated against zod schema once Phase 4 lands).
+ * There is NO host→app props channel (ADR 059 D4: all host→app data is config). Extra
+ * non-reserved, non-on* props are accepted by the type but ignored at runtime — pass
+ * such data through `config` instead.
  */
 export interface IRemoteComponentProps {
   /** Module name as registered in <RemoteProvider modules>. */
@@ -122,7 +122,7 @@ export interface IRemoteComponentProps {
   // children: INTENTIONALLY ABSENT — composition across iframe frame boundary
   // requires a separate architectural ADR (ADR-053 Decision 6 / risk #3).
   // Runtime silently ignores children if passed via any-cast.
-  /** Anything else (non-reserved, non-on*) is forwarded to the remote module. */
+  /** on* event handlers (subscribed app→host). Other extra keys are accepted but ignored — use `config`. */
   [key: string]: unknown;
 }
 

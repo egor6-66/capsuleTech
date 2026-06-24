@@ -11,7 +11,6 @@ import {
   createDevDiagnosticsPlugin,
   EnsureScaffoldPlugin,
   HMRWrappingPlugin,
-  RemoteManifestPlugin,
   RouterPlugin,
   solidPlugin,
 } from '../plugins';
@@ -280,7 +279,6 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
       }),
       HMRWrappingPlugin(),
       EnsureScaffoldPlugin(capsuleRoot),
-      RemoteManifestPlugin({ appRoot: root }),
       CapsuleRegistryPlugin({
         capsuleRoot,
         watchDir,
