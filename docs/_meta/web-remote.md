@@ -194,10 +194,16 @@ Pointer events не пересекают frame. Studio palette drag → renderer
 - **Phase 0** (`PR #77`) — Skeleton + types. ✅ landed.
 - **Phase 1** (this brief) — IframeTransport + Provider + Remote + useRemote + two-channel + auto-on + boot.js + demo (6 validation checks). **Current.**
 - **Phase 1a backfill** — `createCapsuleApp`, `EmitProvider`, CLI scaffolding, `useAppConfig({ override })`, renderer-as-remote (depends on DnD-ADR).
-- **Phase 2** — `BroadcastChannelTransport` + standalone window (`router.openInWindow`). Resolver array = 2 transports.
-- **Phase 3** — cross-origin postMessage (origin checks).
-- **Phase 4** — socket transport + manifest plugin (write-side + read-side codegen) + zod validation.
-- **Phase 5** — HCA-injection (`remote` в Feature services) + compliance rule.
+- **`component`-режим (shadow-DOM)** — отложенный seam (`mode: 'component'`, ADR 058 D3). Типизирован, не реализован. Реализуем только когда появится реальный кейс визуального слияния с CSS/DOM хоста.
+- **manifest plugin** (write-side + read-side codegen) + zod validation props/events.
+- **HCA-injection** (`remote` в Feature services) + compliance rule.
+
+> [!warning] Изменено ADR 058 (2026-06-24)
+> Прежний roadmap планировал `BroadcastChannelTransport` (Phase 2), cross-origin postMessage (Phase 3),
+> socket transport (Phase 4). По [[../01-architecture/adr/058-web-remote-message-only-mode-by-intent|ADR 058 D2]]
+> это **YAGNI**, не запланированные фазы — транспорт один (`post-message`/iframe). `local`/`broadcast-channel`/
+> `socket` возвращаются в `TransportKind` только если придёт реальный cross-realm/cross-device кейс. Субстрат
+> выбирается явным `mode` (D3), не origin-probing — `canReach`-резолвер удалён.
 
 ## Module instance singleton invariant {#singleton-invariant}
 
@@ -226,7 +232,7 @@ Pointer events не пересекают frame. Studio palette drag → renderer
 
 - НЕ менять Phase 0 `interfaces.ts` ломающе — только additive.
 - НЕ `throw` в `openStandalone()` — `console.warn` + return `undefined`.
-- НЕ хардкодить single transport — `transports: ITransport[]` array + `canReach()` resolver.
+- Сохраняй `transports: ITransport[]` array-форму (seam для будущего транспорта), но НЕ возвращай `canReach()`-резолвер — субстрат выбирается явным `mode` (ADR 058 D2/D3), резолвер удалён.
 - НЕ inline-srcdoc shell — `boot.js` dist-asset (см. Decisions).
 - НЕ ловить `children` в runtime forward'е — TS-level ban на `IRemoteComponentProps`.
 - НЕ делать diff-shipping envelope'ов в Phase 1 — full snapshot OK (Phase N optimization).

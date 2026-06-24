@@ -61,7 +61,6 @@ const makeMockTransport = (): MockTransport => {
     triggerMessage: (msg: IRemoteMessage) => {
       for (const cb of subscribers) cb(msg);
     },
-    canReach: () => true,
     send: (msg) => sent.push(msg),
     onMessage: (cb) => {
       subscribers.add(cb);
@@ -413,5 +412,45 @@ describe('RemoteComponent', () => {
     await new Promise((r) => setTimeout(r, 10));
 
     expect(fallback).toHaveBeenCalledWith('loading');
+  });
+
+  // ─── mode seam (ADR 058 D3) ────────────────────────────────────────────────
+
+  it('mode absent / "app" → mounts the iframe (active path)', async () => {
+    renderRemote({ mode: 'app' } as Partial<IRemoteComponentInternalProps>);
+    // Wait for manifest resource to resolve so srcdoc memo produces a value
+    await new Promise((r) => setTimeout(r, 10));
+
+    expect(container.querySelector('iframe')).not.toBeNull();
+  });
+
+  it('mode "component" → console.error + renders fallback("error"), no iframe', async () => {
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const fallback = vi.fn((status: string) => <div data-status={status}>fb</div>);
+
+    renderRemote({
+      mode: 'component',
+      fallback,
+    } as unknown as Partial<IRemoteComponentInternalProps>);
+    await new Promise((r) => setTimeout(r, 10));
+
+    expect(errorSpy).toHaveBeenCalledOnce();
+    expect(errorSpy.mock.calls[0]![0]).toContain('mode="component"');
+    expect(fallback).toHaveBeenCalledWith('error');
+    expect(container.querySelector('iframe')).toBeNull();
+    // No manifest fetch — early return before createResource
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    errorSpy.mockRestore();
+  });
+
+  it('mode is NOT forwarded as a runtime prop (absent from __capsule_remote_props__)', async () => {
+    renderRemote({ mode: 'app' } as Partial<IRemoteComponentInternalProps>);
+    await Promise.resolve();
+
+    const propEnvelopes = transport.sent.filter((m) => m.eventName === '__capsule_remote_props__');
+    expect(propEnvelopes.length).toBeGreaterThan(0);
+    const payload = propEnvelopes[0]!.payload as Record<string, unknown>;
+    expect('mode' in payload).toBe(false);
   });
 });

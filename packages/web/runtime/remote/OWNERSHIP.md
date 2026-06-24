@@ -24,9 +24,11 @@ Phase 1: IframeTransport + two-channel contract (ADR-053).
   - `createCapsuleApp` in `@capsuletech/web-core/bootstrap` (owner-web-core, Phase 1a).
   - `EmitProvider` for `useEmit → channel` routing (owner-web-core, Phase 1a).
   - `useAppConfig({ override })` (owner-web-query, Phase 1a).
-- **Transport array assertion:** `transports: ITransport[]` array shape REQUIRED even with a single
-  transport. Single-transport hardcode is forbidden — Phase 2+ adds BroadcastChannelTransport
-  to the array without changing consumer API. See ADR-053 Decision 8.
+- **Transport array assertion:** `transports: ITransport[]` array shape kept even with a single
+  transport — the shape is the seam, so a future transport can be appended without changing
+  consumer API. But `broadcast-channel` / `socket` are **YAGNI now** (ADR 058 D2), NOT a planned
+  "Phase 2" — re-add only when a real cross-realm/cross-device case lands. Substrate is chosen by
+  the explicit `mode` prop (ADR 058 D3), not by origin probing — there is no `canReach` resolver.
 
 ## Vendor stack (ADR 047 D3)
 
@@ -66,11 +68,11 @@ Phase 1: IframeTransport + two-channel contract (ADR-053).
 | `IRemoteContext` | interface | `Remote`, `remote`, `updateModule`, `modules` |
 | `IRemoteHandle` | interface | `send`, `request`, `on`, `openStandalone` |
 | `IRemoteResponse<T>` | interface | `status`, `payload?`, `error?` |
-| `IRemoteComponentProps` | interface | `name`, `instanceId?`, `fallback?`, `config?`, `[key]` |
+| `IRemoteComponentProps` | interface | `name`, `instanceId?`, `fallback?`, `config?`, `mode?`, `[key]` |
 | `IRemoteManifest` | interface | `name`, `version`, `entry`, `styles?`, `props?`, `events?` |
 | `IRemoteMessage` | interface | Envelope; routing key `(to, toInstance, sessionId)` |
-| `ITransport` | interface | `kind`, `canReach`, `send`, `onMessage`, `dispose` |
-| `TransportKind` | type | `'local' \| 'broadcast-channel' \| 'post-message' \| 'socket'` |
+| `ITransport` | interface | `kind`, `send`, `onMessage`, `dispose` (no `canReach` — ADR 058 D3) |
+| `TransportKind` | type | `'post-message'` (single transport — ADR 058 D2) |
 
 **Phase 1 additive types (ADR-053):**
 
@@ -96,7 +98,8 @@ Phase 1: IframeTransport + two-channel contract (ADR-053).
 
 | Class | Pattern | Action |
 |---|---|---|
-| **System** | `name`, `instanceId`, `fallback` | Host-side wire — NOT forwarded |
+| **System** | `name`, `instanceId`, `fallback`, `mode` | Host-side wire — NOT forwarded |
+| **Substrate** | `mode` | `'app'` (default, iframe) \| `'component'` (shadow-DOM seam, not impl — ADR 058 D3) |
 | **Config** | `config` | Merged host-side, sent via `__capsule_remote_config__` envelope |
 | **Events** | `/^on[A-Z]/` | Auto-subscribed via `transport.onMessage` |
 | **Runtime props** | Everything else | Forwarded via `__capsule_remote_props__` envelope |

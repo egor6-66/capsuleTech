@@ -48,19 +48,6 @@ export class IframeTransport implements ITransport {
   }
 
   /**
-   * Returns true when this transport can reach the target.
-   * Phase 1: same-origin embedded only (not standalone, sameOrigin required).
-   */
-  canReach(target: {
-    name: string;
-    instanceId?: string;
-    isStandalone: boolean;
-    sameOrigin: boolean;
-  }): boolean {
-    return !target.isStandalone && target.sameOrigin;
-  }
-
-  /**
    * Register an iframe element for a given (name, instanceId) pair.
    * Called by RemoteComponent on mount (after iframe ref is available).
    */

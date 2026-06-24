@@ -50,7 +50,7 @@ export interface IRemoteComponentInternalProps extends IRemoteComponentProps {
 }
 
 /** Reserved prop names — never forwarded as runtime props. */
-const SYSTEM_KEYS = new Set(['name', 'instanceId', 'fallback', 'config', 'children']);
+const SYSTEM_KEYS = new Set(['name', 'instanceId', 'fallback', 'config', 'mode', 'children']);
 /** Internal keys injected by RemoteProvider, not consumer-visible. */
 const INTERNAL_KEYS = new Set(['transports', 'sessionId', 'modules', 'providerConfig']);
 
@@ -73,6 +73,17 @@ const stripReserved = (p: Record<string, unknown>): Record<string, unknown> => {
 };
 
 export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.Element => {
+  // Execution substrate (ADR 058 D3). Read once at mount — structural, not reactive.
+  // 'component' (shadow-DOM) is a reserved seam, not implemented in Phase 1: log once
+  // and render the error fallback instead of throwing (a throw rips the render tree).
+  const mode = rawProps.mode ?? 'app';
+  if (mode === 'component') {
+    console.error(
+      '[capsule/remote] mode="component" (shadow-DOM) not implemented yet — ADR 058 D3. Use mode="app" (iframe).',
+    );
+    return rawProps.fallback?.('error') ?? null;
+  }
+
   // Stable instanceId: use provided or generate
   // Note: createUniqueId() is called at render time (stable per-mount)
   const instanceId = rawProps.instanceId ?? createUniqueId();
@@ -80,13 +91,10 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
 
   const module = (): IRemoteModuleConfig | undefined => rawProps.modules[rawProps.name];
 
-  // Resolve transport via canReach — array shape required even with single transport
-  const transport = createMemo(
-    () =>
-      rawProps.transports.find((t) =>
-        t.canReach({ name: rawProps.name, instanceId, isStandalone: false, sameOrigin: true }),
-      ) ?? rawProps.transports[0],
-  );
+  // Single transport (ADR 058 D2). Array shape kept in internal props — RemoteProvider
+  // still passes [new IframeTransport(...)]. createMemo retained so downstream
+  // transport() callers stay untouched.
+  const transport = createMemo(() => rawProps.transports[0]);
 
   // Fetch manifest from ${module.url}/capsule.manifest.json
   const [manifest] = createResource(

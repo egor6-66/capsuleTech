@@ -30,26 +30,6 @@ describe('IframeTransport', () => {
     transport.dispose();
   });
 
-  // ── canReach ─────────────────────────────────────────────────────────────
-
-  it('canReach returns true for non-standalone same-origin', () => {
-    expect(
-      transport.canReach({ name: 'x', instanceId: 'a', isStandalone: false, sameOrigin: true }),
-    ).toBe(true);
-  });
-
-  it('canReach returns false for standalone', () => {
-    expect(
-      transport.canReach({ name: 'x', instanceId: 'a', isStandalone: true, sameOrigin: true }),
-    ).toBe(false);
-  });
-
-  it('canReach returns false for cross-origin', () => {
-    expect(
-      transport.canReach({ name: 'x', instanceId: 'a', isStandalone: false, sameOrigin: false }),
-    ).toBe(false);
-  });
-
   // ── register + send ───────────────────────────────────────────────────────
 
   it('send calls postMessage on registered iframe contentWindow', () => {
