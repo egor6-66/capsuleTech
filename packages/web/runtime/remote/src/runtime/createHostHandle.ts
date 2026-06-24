@@ -17,12 +17,8 @@ export const createHostHandle = (
   transports: ITransport[],
   sessionId: string,
 ): IRemoteHandle => {
-  const resolveTransport = (): ITransport => {
-    const t = transports.find((tr) =>
-      tr.canReach({ name, instanceId, isStandalone: false, sameOrigin: true }),
-    );
-    return t ?? transports[0]!;
-  };
+  // Single transport (ADR 058 D2). Array shape kept; no origin-based resolution.
+  const resolveTransport = (): ITransport => transports[0]!;
 
   const buildOutbound = (
     eventName: string,

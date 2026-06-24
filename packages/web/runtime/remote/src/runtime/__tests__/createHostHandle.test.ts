@@ -23,7 +23,6 @@ const makeMockTransport = (): ITransport & {
     triggerMessage: (msg: IRemoteMessage) => {
       for (const cb of subscribers) cb(msg);
     },
-    canReach: () => true,
     send: (msg) => sent.push(msg),
     onMessage: (cb) => {
       subscribers.add(cb);

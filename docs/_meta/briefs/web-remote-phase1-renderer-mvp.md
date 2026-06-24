@@ -1,6 +1,9 @@
 ---
 title: '@capsuletech/web-remote Phase 1 MVP — IframeTransport + Provider + Remote + useRemote + two-channel contract (app-as-remote foundation)'
-status: ready
+status: superseded
+superseded_by:
+  - docs/01-architecture/adr/058-web-remote-message-only-mode-by-intent.md
+  - docs/_meta/briefs/adr-058-phase1-web-remote.md
 audience: owner-web-remote
 last_updated: 2026-06-19
 adr:
@@ -8,6 +11,13 @@ adr:
   - docs/01-architecture/adr/053-app-as-remote-symmetry-and-config-channel.md (consumer model — primary source of truth)
 ai-anchor: docs/_meta/web-remote.md
 ---
+
+> [!warning] SUPERSEDED by ADR 058 (2026-06-24)
+> Этот бриф построен на `ITransport` + `canReach()`-резолвере, array-of-transports и плановых
+> `BroadcastChannel`/`socket`/cross-origin фазах. [[../01-architecture/adr/058-web-remote-message-only-mode-by-intent|ADR 058]]
+> отменил это: один транспорт (`post-message`/iframe), `canReach` удалён, субстрат по явному `mode`,
+> прочие транспорты — YAGNI. Актуальный Phase-1-бриф — [[adr-058-phase1-web-remote]]. Документ оставлен
+> как исторический контекст; не использовать как руководство.
 
 # Контекст
 

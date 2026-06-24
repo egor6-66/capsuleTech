@@ -113,6 +113,12 @@ export interface IRemoteComponentProps {
    * ADR-053 Decision 3.
    */
   config?: Record<string, unknown>;
+  /**
+   * Execution substrate (ADR 058 D3). Explicit host-side declaration, orthogonal to origin.
+   *  - 'app'       — iframe realm (own window/location/router). DEFAULT. Phase 1 active path.
+   *  - 'component' — shadow-DOM realm. RESERVED SEAM — not implemented in Phase 1.
+   */
+  mode?: 'app' | 'component';
   // children: INTENTIONALLY ABSENT — composition across iframe frame boundary
   // requires a separate architectural ADR (ADR-053 Decision 6 / risk #3).
   // Runtime silently ignores children if passed via any-cast.
@@ -172,7 +178,9 @@ export interface IRemoteContext {
 // custom transports may be plugged in by consumers in Phase 3+)
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type TransportKind = 'local' | 'broadcast-channel' | 'post-message' | 'socket';
+// Phase 1: single transport. local/broadcast-channel/socket = YAGNI (ADR 058 D2),
+// re-add here when a real cross-realm/cross-device case lands.
+export type TransportKind = 'post-message';
 
 /**
  * Message envelope used uniformly across all transports.
@@ -198,18 +206,12 @@ export interface IRemoteMessage {
 }
 
 /**
- * Pluggable transport contract. Each transport advertises which (from, to)
- * pairs it can route; the resolver picks the lightest one available.
+ * Pluggable transport contract. Phase 1 ships a single transport (post-message);
+ * substrate is chosen by the explicit `mode` prop, not by origin probing, so the
+ * former `canReach` resolver is gone (ADR 058 D2/D3).
  */
 export interface ITransport {
   kind: TransportKind;
-  /** Can this transport deliver to the given target? */
-  canReach: (target: {
-    name: string;
-    instanceId?: string;
-    isStandalone: boolean;
-    sameOrigin: boolean;
-  }) => boolean;
   send: (msg: IRemoteMessage) => void;
   onMessage: (cb: (msg: IRemoteMessage) => void) => () => void;
   dispose: () => void;
