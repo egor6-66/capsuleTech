@@ -1,43 +1,34 @@
 /**
  * createCapsuleApp — унифицированная точка входа для standalone и embedded apps.
  *
- * Решает две проблемы (ADR-053 consequences 7a + 7b):
+ * Приложение монтирует себя своим обычным entry'ем. Embed-режим невидим для
+ * app-разработчика: если приложение оказалось внутри хост-iframe, фреймворк сам
+ * делает postMessage-handshake, принимает host-override config'а и мержит его в
+ * реактивный config-store ДО mount'а (ADR 059 Phase 1). App-разработчик пишет
+ * только `capsule.app.ts` и читает `config.X` — никакого embedding-кода.
  *
- * 1. **Единая bootstrap-цепочка** (7a):
- *    Сейчас `.capsule/bootstrap.tsx` и `.capsule/remote-entry.ts` — два разрозненных
- *    генерированных файла. `createCapsuleApp` собирает их в один вызов:
- *    - standalone: `createCapsuleApp(container, { routeTree, appConfig })`
- *    - embedded:   `createCapsuleApp(root, { routeTree, appConfig, configOverride, runtimeProps, eventSink })`
- *    HCA-слои (Feature / Controller) не знают в каком режиме работает приложение.
+ * Поток:
+ *  - **standalone** (`window.parent === window`): сразу mount на app-config.
+ *  - **embedded** (`window.parent !== window`): читаем identity из query URL iframe →
+ *    шлём `__capsule_app_ready__` хосту → ждём `__capsule_remote_config__` (или таймаут
+ *    ~1500мс) → merge патча в config-store → mount. Последующие патчи в рантайме →
+ *    реактивный ре-мерж store (D4). HCA-слои (Feature / Controller) не знают о режиме.
  *
- * 2. **EmitProvider routing** (7b):
- *    В embedded-режиме `useEmit`-события дополнительно маршрутизируются в
- *    `eventSink.send` (канал к хосту) через `EmitProvider`.
+ * Единственный источник override = postMessage-handshake (ADR 059, вариант A2).
+ * Push-поля `configOverride`/`runtimeProps` (ADR-053) удалены — модель заменена.
  *
- * 3. **Multi-Solid (ADR-053 Вариант C)**:
- *    Проблема решается инъекцией import-map в iframe srcdoc (зона web-remote,
- *    buildSrcdoc.ts). Этот файл предоставляет утилиты в `solidBundleShim.ts`.
- *    `createCapsuleApp` сам по себе multi-Solid не устраняет — он предназначен
- *    для кода ВНУТРИ iframe (после того как import-map уже применён).
+ * EmitProvider routing (ADR-053 7b): в embedded-режиме `useEmit`-события дополнительно
+ * маршрутизируются в `eventSink.send` (канал к хосту). `eventSink` остаётся.
  *
  * @example
- * // Standalone (apps/<app>/src/main.tsx или .capsule/index.ts):
+ * // Standalone (apps/<app>/.capsule/index.ts):
  * import { createCapsuleApp } from '@capsuletech/web-core/bootstrap';
  * createCapsuleApp(document.getElementById('root')!, { routeTree, appConfig });
  *
  * @example
- * // Embedded (apps/<app>/src/remote.ts):
- * import { createCapsuleApp } from '@capsuletech/web-core/bootstrap';
- * import type { IRemoteBootstrap } from '@capsuletech/web-remote';
- *
- * export const bootstrap: IRemoteBootstrap = (root, ctx) =>
- *   createCapsuleApp(root, {
- *     routeTree,
- *     appConfig,
- *     configOverride: ctx.config,
- *     runtimeProps: ctx.props,
- *     eventSink: ctx.channel,
- *   });
+ * // Embedded: тот же вызов. Handshake включается сам, если app внутри iframe.
+ * // `eventSink` (опц.) — канал useEmit-событий к хосту:
+ * createCapsuleApp(root, { routeTree, appConfig, eventSink: hostChannel });
  *
  * @module
  */
@@ -47,6 +38,13 @@ import { type JSX, Suspense } from 'solid-js';
 import { render } from 'solid-js/web';
 import type { IAppConfig } from '../app-config';
 import { BaseProviders } from '../providers/base';
+import { createConfigStore } from './embedConfig';
+import {
+  DEFAULT_HANDSHAKE_TIMEOUT_MS,
+  isEmbedded,
+  readEmbedParams,
+  startHandshake,
+} from './embedHandshake';
 import { EmitProvider, type IEmitSink } from './EmitProvider';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -57,7 +55,6 @@ import { EmitProvider, type IEmitSink } from './EmitProvider';
  * Опции `createCapsuleApp`.
  *
  * Поля без `?` обязательны в обоих режимах (standalone + embedded).
- * Поля с `?` активируют embedded-режим ADR-053.
  */
 export interface ICreateCapsuleAppOptions {
   /**
@@ -67,15 +64,13 @@ export interface ICreateCapsuleAppOptions {
   routeTree: AnyRoute;
 
   /**
-   * Конфиг приложения из `capsule.app.ts`.
-   * Содержит `router`, `api`, `intl` и прочие секции.
+   * Конфиг приложения из `capsule.app.ts` — база config-store.
+   * В embedded-режиме host-override-патчи мержатся поверх него.
    */
   appConfig: IAppConfig;
 
   /**
    * Базовый путь приложения (Vite `BASE_URL`).
-   * В standalone: обычно `import.meta.env.BASE_URL`.
-   * В embedded: обычно `'/'` или явно задан конфигом.
    * @default '/'
    */
   basepath?: string;
@@ -86,39 +81,22 @@ export interface ICreateCapsuleAppOptions {
    */
   defaultTheme?: string;
 
-  // ── Embedded-only (ADR-053 Decision 3 + 4) ─────────────────────────────────
-
-  /**
-   * Host-side config envelope (ADR-053 Decision 3).
-   * Reactive proxy-object: direct property access is tracked by Solid.
-   * Передаётся из `bootstrap(root, ctx)` как `ctx.config`.
-   *
-   * В standalone-режиме не задавать — конфиг берётся из `appConfig`.
-   */
-  configOverride?: Record<string, unknown>;
-
-  /**
-   * Host-side props envelope (ADR-053 Decision 4).
-   * Reactive proxy-object: `createEffect(() => runtimeProps.X)` реагирует
-   * на изменения `<Remote.View X={signal()}>` на хосте.
-   * Передаётся из `bootstrap(root, ctx)` как `ctx.props`.
-   *
-   * В standalone-режиме не задавать.
-   */
-  runtimeProps?: Record<string, unknown>;
-
   /**
    * Канал для embedded useEmit routing (ADR-053 Decision 5).
    * Структурно совместим с `IRemoteChannel` из @capsuletech/web-remote.
-   * Передаётся из `bootstrap(root, ctx)` как `ctx.channel`.
    *
-   * Если задан — `useEmit`-события дополнительно пересылаются хосту
-   * через `eventSink.send(event, payload)`. Локальный dispatch через
-   * ControllerProxy продолжает работать параллельно.
-   *
-   * В standalone-режиме не задавать.
+   * Если задан — `useEmit`-события дополнительно пересылаются хосту через
+   * `eventSink.send(event, payload)`. Локальный dispatch через ControllerProxy
+   * продолжает работать параллельно. В standalone-режиме не задавать.
    */
   eventSink?: IEmitSink;
+
+  /**
+   * Таймаут ожидания первого host config-патча в embedded-режиме (мс).
+   * По истечении — mount на app-дефолтах (медленный хост не вешает app).
+   * @default 1500
+   */
+  handshakeTimeoutMs?: number;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -135,18 +113,34 @@ const ensureTheme = (theme: string): void => {
   }
 };
 
+const resolveContainer = (container: HTMLElement | string): HTMLElement => {
+  if (typeof container !== 'string') return container;
+  const found = document.getElementById(container);
+  if (!found) {
+    throw new Error(
+      `[createCapsuleApp] container element #${container} not found. ` +
+        `Make sure index.html has <div id="${container}"></div> or pass an HTMLElement directly.`,
+    );
+  }
+  return found;
+};
+
 /**
  * Строит корневой компонент приложения.
  *
  * Обёртки снаружи внутрь:
  *   Suspense → EmitProvider (если eventSink) → BaseProviders (router + vitals)
  *
- * EmitProvider должен быть снаружи BaseProviders (RouterProvider),
- * потому что emit-события могут происходить из любого места дерева,
- * включая Route-компоненты.
+ * Router-настройки читаются из реактивного `config` (merged base ⊕ override).
+ * Mount происходит ПОСЛЕ merge (или таймаута), поэтому значения уже учитывают
+ * host-патч. EmitProvider снаружи BaseProviders — emit может происходить из
+ * Route-компонентов.
  */
-const buildAppComponent = (opts: ICreateCapsuleAppOptions): (() => JSX.Element) => {
-  const { routeTree, appConfig, basepath, eventSink } = opts;
+const buildAppComponent = (
+  opts: ICreateCapsuleAppOptions,
+  config: IAppConfig,
+): (() => JSX.Element) => {
+  const { routeTree, basepath, eventSink } = opts;
 
   return () => (
     <Suspense>
@@ -154,9 +148,9 @@ const buildAppComponent = (opts: ICreateCapsuleAppOptions): (() => JSX.Element) 
         <BaseProviders
           routeTree={routeTree}
           basepath={basepath ?? '/'}
-          notFoundRedirect={appConfig.router?.notFoundRedirect}
-          beforeLoad={appConfig.router?.beforeLoad}
-          transition={appConfig.router?.transition}
+          notFoundRedirect={config.router?.notFoundRedirect}
+          beforeLoad={config.router?.beforeLoad}
+          transition={config.router?.transition}
         />
       </EmitProvider>
     </Suspense>
@@ -167,14 +161,12 @@ const buildAppComponent = (opts: ICreateCapsuleAppOptions): (() => JSX.Element) 
  * Unified Capsule app bootstrap.
  *
  * Рендерит приложение в `container` и возвращает disposer для unmount'а.
- * В embedded-режиме disposer должен быть вызван при unmount iframe'а
- * (shell вызовет его автоматически через `IRemoteBootstrap` contract).
+ * В embedded-режиме mount отложен до первого config-патча или таймаута; disposer
+ * возвращается синхронно и корректно отменяет отложенный mount + handshake-слушатель.
  *
  * @param container - DOM-элемент или id контейнера.
- *   В embedded-режиме: `root` из `bootstrap(root, ctx)`.
- *   В standalone-режиме: `document.getElementById('root')` или аналог.
- * @param opts - Опции (routeTree, appConfig, + embedded-only поля).
- * @returns Disposer `() => void` — вызвать при unmount для cleanup reactive roots.
+ * @param opts - Опции (routeTree, appConfig, + опциональные поля).
+ * @returns Disposer `() => void` — вызвать при unmount для cleanup.
  *
  * @throws {Error} если container — строка и элемент с таким id не найден.
  */
@@ -182,23 +174,49 @@ export const createCapsuleApp = (
   container: HTMLElement | string,
   opts: ICreateCapsuleAppOptions,
 ): (() => void) => {
-  // Resolve container element
-  let el: HTMLElement;
-  if (typeof container === 'string') {
-    const found = document.getElementById(container);
-    if (!found) {
-      throw new Error(
-        `[createCapsuleApp] container element #${container} not found. ` +
-          `Make sure index.html has <div id="${container}"></div> or pass an HTMLElement directly.`,
-      );
-    }
-    el = found;
-  } else {
-    el = container;
-  }
-
+  const el = resolveContainer(container);
   ensureTheme(opts.defaultTheme ?? DEFAULT_THEME);
 
-  const AppComponent = buildAppComponent(opts);
-  return render(AppComponent, el);
+  const { config, applyOverride } = createConfigStore(opts.appConfig);
+
+  let disposed = false;
+  let rootDispose: (() => void) | undefined;
+  let detachHandshake: (() => void) | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
+  const mount = (): void => {
+    if (disposed || rootDispose) return; // идемпотентно: монтируем один раз
+    rootDispose = render(buildAppComponent(opts, config), el);
+  };
+
+  if (!isEmbedded()) {
+    mount();
+  } else {
+    const params = readEmbedParams();
+    if (!params) {
+      // Embedded, но хост не передал identity в URL → handshake невозможен,
+      // монтируемся на app-дефолтах.
+      mount();
+    } else {
+      timer = setTimeout(mount, opts.handshakeTimeoutMs ?? DEFAULT_HANDSHAKE_TIMEOUT_MS);
+      detachHandshake = startHandshake({
+        params,
+        onConfig: (patch) => {
+          applyOverride(patch); // реактивный merge (initial + runtime патчи)
+          if (timer !== undefined) {
+            clearTimeout(timer);
+            timer = undefined;
+          }
+          mount(); // первый патч снимает таймаут и монтирует; далее no-op
+        },
+      });
+    }
+  }
+
+  return () => {
+    disposed = true;
+    if (timer !== undefined) clearTimeout(timer);
+    detachHandshake?.();
+    rootDispose?.();
+  };
 };
