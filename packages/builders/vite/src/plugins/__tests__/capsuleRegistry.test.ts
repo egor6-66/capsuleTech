@@ -31,7 +31,7 @@
  * ── Bootstrap (generateBootstrap) ────────────────────────────────────────────
  *  - packages (globals) imported before app-config (subsystems).
  *  - routeTree named import present.
- *  - styles.css and BaseProviders are present.
+ *  - styles.css import present; BaseProviders / Bootstrap retired (ADR 059 Phase 3).
  *  - No wrappers side-effect import (ADR-034 — no globalThis assign).
  *  - No editable user content in the file.
  *
@@ -546,17 +546,18 @@ describe('generateBootstrap — structure', () => {
     expect(out).toContain("import './styles.css';");
   });
 
-  it('contains BaseProviders import', () => {
+  // ADR 059 Phase 3: the srcdoc/boot embedding model is retired. bootstrap.tsx
+  // no longer imports BaseProviders nor emits the `Bootstrap` component — it only
+  // re-exports appConfig + routeTree for the index.ts entry (createCapsuleApp).
+  it('does NOT import BaseProviders (retired with srcdoc/boot model)', () => {
     const out = generateBootstrap();
-    expect(out).toContain("import { BaseProviders } from '@capsuletech/web-core/providers';");
+    expect(out).not.toContain('BaseProviders');
   });
 
-  it('contains Bootstrap component export', () => {
+  it('does NOT contain Bootstrap component export (retired with srcdoc/boot model)', () => {
     const out = generateBootstrap();
-    expect(out).toContain('export const Bootstrap = () => {');
-    expect(out).toContain('<BaseProviders');
-    expect(out).toContain('routeTree={routeTree}');
-    expect(out).toContain('basepath={import.meta.env.BASE_URL}');
+    expect(out).not.toContain('export const Bootstrap');
+    expect(out).not.toContain('<BaseProviders');
   });
 
   it('starts with generated comment (not user-editable)', () => {
@@ -575,16 +576,6 @@ describe('generateBootstrap — structure', () => {
     expect(out).toContain('const appConfig = appConfigRaw as IAppConfig;');
   });
 
-  it('passes notFoundRedirect from appConfig.router to BaseProviders', () => {
-    const out = generateBootstrap();
-    expect(out).toContain('notFoundRedirect={appConfig.router?.notFoundRedirect}');
-  });
-
-  it('passes beforeLoad from appConfig.router to BaseProviders', () => {
-    const out = generateBootstrap();
-    expect(out).toContain('beforeLoad={appConfig.router?.beforeLoad}');
-  });
-
   it('does NOT import wrappers side-effect (ADR-034: no globalThis assign)', () => {
     const out = generateBootstrap();
     expect(out).not.toContain("import './registry/wrappers'");
@@ -598,13 +589,12 @@ describe('generateBootstrap — structure', () => {
   });
 });
 
-// ADR 059 Phase 2 — embed-aware entry: the standalone index.ts switches from
-// `createRoot(Bootstrap)` to `createCapsuleApp('root', { routeTree, appConfig })`,
-// which carries the embed-handshake (web-core). For that, bootstrap.tsx must
-// expose `routeTree` + `appConfig` as named exports. The `Bootstrap` component
-// export STAYS — the legacy `.capsule/remote-entry.ts` (srcdoc/boot model)
-// imports `{ Bootstrap } from './bootstrap'` and must survive until Brief 3.
-describe('generateBootstrap — embed-aware named exports (ADR 059 Phase 2)', () => {
+// ADR 059 — embed-aware entry: the standalone index.ts mounts via
+// `createCapsuleApp('root', { routeTree, appConfig })`, which carries the
+// embed-handshake (web-core). For that, bootstrap.tsx must expose `routeTree` +
+// `appConfig` as named exports. Phase 3 retired the `Bootstrap` component export
+// together with the srcdoc/boot RemoteManifestPlugin.
+describe('generateBootstrap — embed-aware named exports (ADR 059)', () => {
   it('re-exports routeTree (consumed by createCapsuleApp in index.ts)', () => {
     const out = generateBootstrap();
     expect(out).toContain('export { routeTree };');
@@ -615,9 +605,9 @@ describe('generateBootstrap — embed-aware named exports (ADR 059 Phase 2)', ()
     expect(out).toContain('export const appConfig = appConfigRaw as IAppConfig;');
   });
 
-  it('KEEPS Bootstrap export — legacy remote-entry depends on it until Brief 3', () => {
+  it('does NOT export Bootstrap (srcdoc/boot model retired in Phase 3)', () => {
     const out = generateBootstrap();
-    expect(out).toContain('export const Bootstrap = () => {');
+    expect(out).not.toContain('export const Bootstrap');
   });
 });
 

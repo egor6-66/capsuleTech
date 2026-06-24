@@ -1,7 +1,3 @@
-const Index = Page((Ui) => (
-  <Ui.Layout.Flex class="min-h-screen items-center justify-center">
-    <Ui.Typography>Capsule Appвв</Ui.Typography>
-  </Ui.Layout.Flex>
-));
+const Index = Page((Ui) => <Ui.Typography>Universal Canvas — embedded ✓</Ui.Typography>);
 
 export default Index;
