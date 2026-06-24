@@ -15,7 +15,6 @@
   "packageManager": "pnpm@9.0.0",
   "scripts": {
     "prepare": "husky",
-    "build": "pnpm -r --filter \"./packages/**\" build",
     "start:workspace": "node packages/cli/bin/capsule.mjs",
     "storybook:ui": "pnpm --filter @capsuletech/web-ui storybook",
     "storybook:ui:build": "pnpm --filter @capsuletech/web-ui storybook:build",

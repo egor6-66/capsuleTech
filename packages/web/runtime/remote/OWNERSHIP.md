@@ -5,35 +5,28 @@ group: web_base
 zone: runtime
 status: alpha
 priority: P2
-last-updated: 2026-06-23
+last-updated: 2026-06-19
 ---
 
 # @capsuletech/web-remote
 
 Universal wrapper making any capsule app embeddable as a module inside another app.
 Own runtime (no `@module-federation/*`), pluggable transport layer, reactive registry.
-Phase 1A: IframeTransport + two-channel contract (ADR-053).
-Phase 1B: LocalShadowDomTransport + native ESM + shared-singleton import-map (ADR-057).
+Phase 1: IframeTransport + two-channel contract (ADR-053).
 
 ## Состояние (читать ПЕРВЫМ)
 
 - **Zone:** `runtime` — module federation alternative.
-- **Status:** `alpha` (0.0.0) — Phase 1B: dual transport (shadow-DOM default + iframe fallback) + manifest extension (ADR 057 §D2) + import-map validate-on-mount.
+- **Status:** `alpha` (0.0.0) — Phase 1: IframeTransport + RemoteProvider + useRemote + two-channel.
 - **Priority:** **P2** — renderer-as-remote landing depends on this (Phase 1a).
 - **Active blockers:**
   - DnD-through-iframe ADR (architect zone) — blocks renderer-as-remote embedding.
   - `createCapsuleApp` in `@capsuletech/web-core/bootstrap` (owner-web-core, Phase 1a).
   - `EmitProvider` for `useEmit → channel` routing (owner-web-core, Phase 1a).
   - `useAppConfig({ override })` (owner-web-query, Phase 1a).
-- **Transport array assertion:** `transports: ITransport[]` array shape REQUIRED. Phase 1B
-  populates `[LocalShadowDomTransport, IframeTransport]` (order = resolver priority — shadow-DOM
-  wins for same-origin embedded; iframe is the fallback for cases shadow-DOM declines via
-  `canReach`, currently standalone window / cross-origin — both Phase 2).
-- **ADR 053 contract widening (Phase 1B).** `IRemoteBootstrap.root` widened from `HTMLElement`
-  to `HTMLElement | ShadowRoot`. Additive — existing iframe-path bootstrap implementations
-  type-check unchanged; shadow-DOM mount passes a `ShadowRoot` directly to `bootstrap()`.
-  Both forms are valid `MountableElement` for Solid's `render()`. Flag to architect — minor
-  ADR-053 amend pending.
+- **Transport array assertion:** `transports: ITransport[]` array shape REQUIRED even with a single
+  transport. Single-transport hardcode is forbidden — Phase 2+ adds BroadcastChannelTransport
+  to the array without changing consumer API. See ADR-053 Decision 8.
 
 ## Vendor stack (ADR 047 D3)
 
@@ -74,11 +67,10 @@ Phase 1B: LocalShadowDomTransport + native ESM + shared-singleton import-map (AD
 | `IRemoteHandle` | interface | `send`, `request`, `on`, `openStandalone` |
 | `IRemoteResponse<T>` | interface | `status`, `payload?`, `error?` |
 | `IRemoteComponentProps` | interface | `name`, `instanceId?`, `fallback?`, `config?`, `[key]` |
-| `IRemoteManifest` | interface | `name`, `version`, `entry`, `styles?`, `props?`, `events?` + Phase 1B additive: `$schema?`, `exposes?`, `shared?` (ADR 057 §D2) |
-| `IRemoteSharedDep` | interface | One entry in `IRemoteManifest.shared`: `version`, `singleton` |
+| `IRemoteManifest` | interface | `name`, `version`, `entry`, `styles?`, `props?`, `events?` |
 | `IRemoteMessage` | interface | Envelope; routing key `(to, toInstance, sessionId)` |
 | `ITransport` | interface | `kind`, `canReach`, `send`, `onMessage`, `dispose` |
-| `TransportKind` | type | `'local' \| 'local-shadow-dom' \| 'broadcast-channel' \| 'post-message' \| 'socket'` |
+| `TransportKind` | type | `'local' \| 'broadcast-channel' \| 'post-message' \| 'socket'` |
 
 **Phase 1 additive types (ADR-053):**
 
@@ -166,47 +158,6 @@ import bootUrl from '../shell/boot.ts?url';
 
 **Invariant**: `boot.js` subpath НЕ должен получать alias в `tsconfig.base.json` (как `/capsule` — там alias нужен для singleton invariant). Без alias Vite резолвит через package exports → dist artifact, что и требуется.
 
-## Transport (ADR 057 Phase 1B) {#transport-adr-057}
-
-Internal mechanism. Two `ITransport` impls live in `src/transport/`, both registered by
-`RemoteProvider` into the resolver pool. RemoteComponent picks per-mount via
-`find(canReach)`; the picked transport's `kind` then dictates the mount path inside
-RemoteComponent's dispatcher.
-
-| Transport | `kind` | When picked | Mount path |
-|---|---|---|---|
-| `LocalShadowDomTransport` | `local-shadow-dom` | Same-origin, non-standalone (Phase 1B default) | Shadow-DOM: `await import(entry)` → `containerEl.attachShadow` → `manifest.styles[]` inject via `<link>` → `bootstrap(shadowRoot, { props, config, channel })` |
-| `IframeTransport` | `post-message` | Fallback (Phase 2: standalone window, cross-origin) | Iframe srcdoc + `boot.ts` shell + `__capsule_remote_*` envelopes |
-
-**Shadow-DOM substrate (Phase 1B canonical).**
-- No iframe, no postMessage, no JSON serialization.
-- Host + remote share one JS realm — shared singleton deps resolved via host's
-  `<script type="importmap">` (ADR 057 §D1). Native ESM cache dedups module instances.
-- Reactive props/config: Solid `createStore` reactively populated from `rawProps` at the
-  dispatcher; module receives `Proxy` accessor objects (same shape as `boot.ts`
-  `makeProxy`). Direct property reads tracked by Solid — enumeration is snapshot-only
-  (ADR-053 Decision 4 caveat unchanged).
-- Module-side `IRemoteChannel` built via `createModuleChannel(transport, ...)` —
-  symmetric to `boot.ts` channel but dispatches in-realm. Reserved namespace guard
-  (`__capsule_*`) preserved.
-- CSS isolation via shadow root. `manifest.styles[]` inserted as `<link rel="stylesheet">`
-  children of the shadow root — module's own CSS does not leak host-wards.
-
-**Manifest extension (ADR 057 §D2).**
-- Three additive fields read by Phase 1B fetcher: `$schema?`, `exposes?`, `shared?`.
-- `RemoteProvider` validates each `manifest.shared` entry against the host's
-  `<script type="importmap">` on mount (`validateSharedCompat`). Phase 1: strict
-  version equality; mismatches surfaced as `console.error` (no throw — RemoteComponent's
-  own resource controls user-visible fallback).
-- Host import-map reading is DOM-side only — `@capsuletech/vite-builder` `SHARED_DEPS`
-  const is build-time, never imported at runtime (it would drag node-only deps into
-  the browser bundle).
-
-**Iframe-flow envelopes (preserved verbatim).** Same `__capsule_remote_ready__` →
-`__capsule_remote_props__` + `__capsule_remote_config__` → on* event-name protocol from
-Phase 1A. Effects mounted at the dispatcher level so they fire before manifest resolves
-(handshake-first); the shadow-DOM path skips them by gating on `kind === 'local-shadow-dom'`.
-
 ## Quirks / gotchas
 
 - **`@module-federation/*` not used.** See ADR-015 Alternatives.
@@ -218,36 +169,12 @@ Phase 1A. Effects mounted at the dispatcher level so they fire before manifest r
 - **DnD across iframe boundary — NOT supported in Phase 1.** Pointer events don't cross frame. Studio palette drag → renderer canvas drop requires a separate ADR. Escalate to architect. ADR-053 risk #3.
 - **`openStandalone()` — Phase 2 feature.** Returns `undefined`, logs `console.warn`. Does NOT throw. Acceptance gate.
 - **`boot.js` dist-asset, NOT inline srcdoc.** Import via `import bootUrl from '@capsuletech/web-remote/boot.js?url'`. Separate Vite entry in vite.config.mts.
-- **Shadow-DOM mount needs working host import-map.** Phase 1B path expects
-  `<script type="importmap">` injected by `@capsuletech/vite-builder` `ImportMapPlugin`
-  (Phase 1A artifact). Without it, native `import 'solid-js'` inside the remote bundle
-  falls back to default resolution → likely a second Solid instance → reactivity drop.
-  `validateSharedCompat` surfaces the missing-pin case via `console.error` on
-  Provider mount.
-- **`createModuleChannel` is in-realm, not envelope-based.** Shadow-DOM channel
-  dispatches via the same `LocalShadowDomTransport` subscriber set the host uses.
-  Reserved-namespace guard (`__capsule_*`) preserved; user code calling
-  `channel.send('__capsule_foo', ...)` warns and is a no-op, matching `boot.ts`.
-- **`IRemoteBootstrap.root` widened to `HTMLElement | ShadowRoot`.** Existing
-  bootstrap implementations that only forward `root` to Solid's `render()` are
-  unaffected. Bootstraps that call DOM methods exclusive to `HTMLElement` (e.g.
-  `.style`, `.click()`) without a runtime check would break on shadow-DOM mount —
-  but those weren't legal under ADR-053 to begin with (root is the mount slot, not
-  a regular element). Architect amend pending (see Состояние above).
 - **Package not in release groups `nx.json`.** Version `0.0.0`, releases enabled after Phase 4. Do not `pnpm publish` without user agreement.
 
 ## Plan / Roadmap
 
 - [x] **Phase 0 — type-contracts skeleton** — `src/interfaces.ts`, PR #77, merged 2026-05-19.
-- [x] **Phase 1A — IframeTransport + two-channel + Provider + useRemote + boot.js** — ADR-053 consumer model.
-- [x] **Phase 1B — LocalShadowDomTransport + native ESM + import-map validate** — ADR-057. This PR (working-tree, awaiting architect PR).
-  - `LocalShadowDomTransport` ITransport impl (`src/transport/LocalShadowDomTransport.ts`).
-  - `manifestFetcher` helpers (`src/runtime/manifestFetcher.ts`): `fetchManifest`,
-    `readHostImportMap`, `parseSharedUrl`, `validateSharedCompat`.
-  - `IRemoteManifest` additive: `$schema?`, `exposes?`, `shared?`.
-  - `IRemoteBootstrap.root` widened to `HTMLElement | ShadowRoot` (minor ADR-053 amend, escalated).
-  - RemoteComponent dual-path dispatcher: shadow-DOM mount (default) + iframe mount (fallback).
-  - RemoteProvider populates both transports + runs `validateSharedCompat` on mount.
+- [x] **Phase 1 — IframeTransport + two-channel + Provider + useRemote + boot.js** — ADR-053 consumer model. This PR.
 - [ ] **Phase 1a — followup (NOT blocking Phase 1 merge):**
   - `createCapsuleApp` helper in `@capsuletech/web-core/bootstrap` (owner-web-core)
   - `EmitProvider` for `useEmit → channel` routing (owner-web-core)
@@ -255,14 +182,9 @@ Phase 1A. Effects mounted at the dispatcher level so they fire before manifest r
   - `useAppConfig({ override })` canonical API (owner-web-query)
   - DnD-through-iframe ADR (architect zone)
   - Renderer-as-remote landing (depends on DnD ADR)
-- [ ] **Phase 2 — iframe transport polish + multi-expose + semver compat + standalone window**
-  - Force `isolation` opt-in for hardened iframe per-view selection.
-  - Multi-expose manifest support (`exposes: { './a': '...', './b': '...' }`).
-  - Semver compat in `validateSharedCompat` (replaces strict equality).
-  - `openStandalone` polish (multi-Solid singleton in standalone window).
-  - BroadcastChannelTransport + `routerService.openInWindow` (owner-web-router).
+- [ ] **Phase 2 — BroadcastChannel + standalone window** — `routerService.openInWindow` (owner-web-router).
 - [ ] **Phase 3 — cross-origin postMessage** — origin checks, stricter sandbox.
-- [ ] **Phase 4 — socket transport** — `socket` transport, `backend/mf-bus/` Rust crate.
+- [ ] **Phase 4 — socket transport + RemoteManifestPlugin** — `socket` transport, `backend/mf-bus/` Rust crate. `RemoteManifestPlugin` for remote module builds.
 - [ ] **Phase 5 — Compliance rule** — `no-remote-in-controller` in `@capsuletech/compliance` (owner-builders).
 
 ## Test coverage
@@ -270,22 +192,12 @@ Phase 1A. Effects mounted at the dispatcher level so they fire before manifest r
 | Type | Location | Coverage |
 |---|---|---|
 | Unit | `src/transport/__tests__/IframeTransport.test.ts` | IframeTransport (9 cases) |
-| Unit | `src/transport/__tests__/LocalShadowDomTransport.test.ts` | LocalShadowDomTransport canReach + dispatch + sessionId isolation + dispose (9 cases) |
 | Unit | `src/runtime/__tests__/buildSrcdoc.test.ts` | buildSrcdoc pure fn (7 cases) |
 | Unit | `src/runtime/__tests__/createHostHandle.test.ts` | createHostHandle (7 cases) |
-| Unit | `src/runtime/__tests__/manifestFetcher.test.ts` | fetchManifest + readHostImportMap + parseSharedUrl + validateSharedCompat (19 cases) |
 | Unit | `src/runtime/__tests__/RemoteProvider.test.tsx` | RemoteProvider + useRemote (6 cases) |
-| Unit | `src/runtime/__tests__/RemoteComponent.test.tsx` | RemoteComponent 4-class props + merge + reactive (19 cases, iframe path) |
-| Unit | `src/runtime/__tests__/RemoteComponentShadowDom.test.tsx` | RemoteComponent shadow-DOM mount path: branch selection + envelope-skip + on* subscribe (4 cases) |
-| Unit | `src/runtime/__tests__/dualImport.test.tsx` | RemoteContext singleton invariant (4 cases) |
-| Unit | `src/transport/__tests__/IframeTransport.test.ts` | smoke (additional, included above) |
+| Unit | `src/runtime/__tests__/RemoteComponent.test.tsx` | RemoteComponent 4-class props + merge + reactive (19 cases) |
 
-Total: 86 unit tests. All green (verified Phase 1B 2026-06-23).
-
-End-to-end shadow-DOM mount (real `await import(http://...)`, actual shadow root attach,
-manifest.styles[] link injection, full bootstrap call) is verified by architect's real-browser
-smoke per brief §Acceptance — not covered by jsdom unit tests because jsdom can't resolve
-network URLs through native `import()`.
+Total: 48 unit tests. All green.
 
 Phase 1 shell (boot.ts) — covered via E2E in demo (apps/remote-host + apps/remote-hello, separate PR). jsdom does not load real modules via dynamic import(url), so boot.ts is validated in real browser.
 

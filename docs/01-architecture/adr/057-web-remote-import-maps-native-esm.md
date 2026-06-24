@@ -1,14 +1,23 @@
 ---
-tags: [hca, adr, accepted, web-remote, import-maps, native-esm, shared-deps, css-isolation]
-status: accepted
+tags: [hca, adr, superseded, web-remote, import-maps, native-esm, shared-deps, css-isolation]
+status: superseded
 date: 2026-06-23
-last_updated: 2026-06-23
+last_updated: 2026-06-24
+superseded_by:
+  - 058-web-remote-message-only-mode-by-intent
 supersedes:
   - 056-web-remote-mf2-iframe-transport-hybrid
 extends:
   - 015-remote-modules
   - 053-app-as-remote-symmetry-and-config-channel
 ---
+
+> [!warning] Status: superseded by [[058-web-remote-message-only-mode-by-intent|ADR 058]]
+> Принят на основе vanilla-POC, но в capsule-интеграции в реальном браузере не проверялся, в
+> main не мержился. Разбор 2026-06-23 ([[adr-057-remote-reconsideration]]) показал: shared-realm
+> live-by-reference — второй механизм на ту же задачу (props через канал уже работают), а выбор
+> субстрата по origin порождал редирект-баг. ADR 058 отменяет D1/D4 (import-map + shared-realm),
+> переходит на message-only контракт + `mode` по намерению. Документ сохранён как запись направления.
 
 > [!success] Status: accepted (browser-level feasibility подтверждена)
 > Канон для внутренней архитектуры `@capsuletech/web-remote`: shared deps через **browser-native `<script type="importmap">` + native ESM dedup**, без посредников. Никакого Module Federation, никаких runtime plugin'ов, никакого vendor codegen. CSS isolation — отдельная декларация (shadow DOM default), orthogonal к module loading. Public API (`<Remote.View>`, `<Remote.Provider>`, `useRemote()`, `IRemoteBootstrap`) не меняется.
