@@ -27,5 +27,6 @@ export type {
 export { RemoteProvider } from './runtime/RemoteProvider';
 export { useRemote } from './runtime/useRemote';
 
-// boot.js exposed via package.json#exports: "./boot.js": "./dist/boot.js"
-// Import in host code: import bootUrl from '@capsuletech/web-remote/boot.js?url'
+// ADR 059: app-mode loads the app via <iframe src> (self-contained). No host-side
+// boot shell / import-map — the app boots itself like standalone. The former
+// './boot.js' subpath export is removed.

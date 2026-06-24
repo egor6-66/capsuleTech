@@ -11,19 +11,22 @@ last-updated: 2026-06-19
 # @capsuletech/web-remote
 
 Universal wrapper making any capsule app embeddable as a module inside another app.
-Own runtime (no `@module-federation/*`), pluggable transport layer, reactive registry.
-Phase 1: IframeTransport + two-channel contract (ADR-053).
+Own runtime (no `@module-federation/*`), postMessage transport, reactive registry.
+app-mode (ADR 059) = `<iframe src>` on the app's own URL: the app boots itself
+(own solid/router), the host talks only via postMessage — no srcdoc, no boot shell,
+no import-map, no manifest fetch.
 
 ## Состояние (читать ПЕРВЫМ)
 
 - **Zone:** `runtime` — module federation alternative.
-- **Status:** `alpha` (0.0.0) — Phase 1: IframeTransport + RemoteProvider + useRemote + two-channel.
+- **Status:** `alpha` (0.0.0) — IframeTransport + RemoteProvider + useRemote; app-mode = iframe-src (ADR 059).
 - **Priority:** **P2** — renderer-as-remote landing depends on this (Phase 1a).
+- **Landed (Brief 1, web-core):** `createCapsuleApp` + embed-handshake (`EMBED_PROTOCOL`,
+  `startHandshake`, config-override store) + `EmitProvider` — in `@capsuletech/web-core/bootstrap`.
+  web-remote imports `EMBED_PROTOCOL` from there as the protocol source of truth.
 - **Active blockers:**
+  - Browser-verify of iframe-src app-mode (owner-tests, real browser) — gates the cross-zone cleanup below.
   - DnD-through-iframe ADR (architect zone) — blocks renderer-as-remote embedding.
-  - `createCapsuleApp` in `@capsuletech/web-core/bootstrap` (owner-web-core, Phase 1a).
-  - `EmitProvider` for `useEmit → channel` routing (owner-web-core, Phase 1a).
-  - `useAppConfig({ override })` (owner-web-query, Phase 1a).
 - **Transport array assertion:** `transports: ITransport[]` array shape kept even with a single
   transport — the shape is the seam, so a future transport can be appended without changing
   consumer API. But `broadcast-channel` / `socket` are **YAGNI now** (ADR 058 D2), NOT a planned
@@ -57,7 +60,8 @@ Phase 1: IframeTransport + two-channel contract (ADR-053).
 
 ## Публичный API
 
-Три entrypoint: `.` (runtime) + `./boot.js` (iframe-side shell dist-asset) + `./capsule` (ADR 033 registration manifest).
+Два entrypoint: `.` (runtime) + `./capsule` (ADR 033 registration manifest). `./boot.js`
+shell удалён (ADR 059 — app грузится по `<iframe src>`, host-injected shell не нужен).
 
 **Phase 0 types (unchanged):**
 
@@ -90,8 +94,6 @@ Phase 1: IframeTransport + two-channel contract (ADR-053).
 | `useRemote()` | hook | Returns `IRemoteContext`. Throws outside provider. |
 | `RemoteView` | component | Thin wrapper over `useRemote().Remote`. Used as `Remote.View` global (ADR 033). |
 
-**`./boot.js`** — iframe-side shell. Accessed via `import bootUrl from '@capsuletech/web-remote/boot.js?url'`. NOT imported directly.
-
 **`./capsule`** — ADR 033 registration manifest. Registers `Remote.Provider` and `Remote.View` globals. Import: `import CapsuleRemote from '@capsuletech/web-remote/capsule'`.
 
 ## Reserved props (ADR-053 Decision 6)
@@ -100,19 +102,19 @@ Phase 1: IframeTransport + two-channel contract (ADR-053).
 |---|---|---|
 | **System** | `name`, `instanceId`, `fallback`, `mode` | Host-side wire — NOT forwarded |
 | **Substrate** | `mode` | `'app'` (default, iframe) \| `'component'` (shadow-DOM seam, not impl — ADR 058 D3) |
-| **Config** | `config` | Merged host-side, sent via `__capsule_remote_config__` envelope |
-| **Events** | `/^on[A-Z]/` | Auto-subscribed via `transport.onMessage` |
-| **Runtime props** | Everything else | Forwarded via `__capsule_remote_props__` envelope |
+| **Config** | `config` | Merged host-side, sent via `__capsule_remote_config__` override patch (ADR 059 D4) |
+| **Events** | `/^on[A-Z]/` | Auto-subscribed via `transport.onMessage` (app → host) |
+| **Other keys** | Everything else | Accepted by the type but **ignored at runtime** — no props channel (ADR 059 D4); pass via `config` |
 | **children** | `children` | **TS-level ban** — composition across frame = future ADR |
 
 Note: `online`, `onclick` (lowercase after `on`) do NOT match `/^on[A-Z]/` — safe as boolean props.
 
 ## Reserved namespace `__capsule_*`
 
-Shell-internal envelope names:
-- `__capsule_remote_ready__` — module → host ready handshake
-- `__capsule_remote_props__` — host → module props envelope
-- `__capsule_remote_config__` — host → module config envelope
+Envelope names (protocol source of truth = `EMBED_PROTOCOL` in `@capsuletech/web-core/bootstrap` — import, don't hardcode):
+- `__capsule_app_ready__` (`EMBED_PROTOCOL.readyEvent`) — app → host ready signal (app posts on mount).
+- `__capsule_remote_config__` (`EMBED_PROTOCOL.configEvent`) — host → app config override patch (ADR 059 D4).
+- ~~`__capsule_remote_props__`~~ — **removed (ADR 059 D4: host→app = config only, no props channel).**
 
 User code `channel.on/send('__capsule_*', ...)` → `console.warn` + no-op.
 
@@ -127,39 +129,13 @@ Applied host-side in `RemoteComponent`. Module receives finalized snapshot.
 
 ## Module instance singleton invariant {#singleton-invariant}
 
-`RemoteContext = createContext()` вызывается **ровно один раз** на app. Subpath-split (`./capsule`, `./boot.js`) не должен создавать второй экземпляр.
+`RemoteContext = createContext()` вызывается **ровно один раз** на app. Subpath-split (`./capsule`) не должен создавать второй экземпляр.
 
 **Правило:** каждый новый subpath в `package.json#exports` **обязан** получить запись в `tsconfig.base.json`. Без этого `AliasesPlugin.buildWorkspaceSrcAliases` не создаст Vite alias для subpath → Vite dev-server fallback на `dist/` → отдельный `createContext()` в dist-chunk → два `RemoteContext` объекта → `useRemote()` бросает «must be called inside RemoteProvider» даже внутри Provider.
 
 Зафиксировано 2026-06-22: инцидент «host-side useRemote throws» — root cause именно missing tsconfig.base.json subpath alias. Фикс: Вариант B, PR `feat/remote-phase1a-singleton-fix`. Подробности: `docs/_meta/web-remote.md#singleton-invariant`.
 
 Юнит-тест: `src/runtime/__tests__/dualImport.test.tsx` (4 cases). Node/jsdom не воспроизводит Vite-resolve грань — тест документирует API-инвариант, но НЕ является регрессионным smoke для dist-vs-src сценария. Реальный guard: ручной smoke `/workspace/web-studio` в `apps/playground` под `capsule dev`.
-
-## Boot URL resolution {#boot-url-resolution}
-
-`bootUrl` (iframe `<script type="module" src="${bootUrl}">`) **обязан** резолвиться через subpath + `?url`:
-
-```ts
-import bootUrl from '@capsuletech/web-remote/boot.js?url';
-```
-
-Vite резолвит через `package.json#exports './boot.js' → ./dist/boot.mjs`. URL указывает на built `.mjs` artifact независимо от того, откуда грузится сам `RemoteComponent` (`src` в dev — после singleton alias, `dist` в prod). Никаких layout-предположений.
-
-**ЗАПРЕЩЕНО возвращать** runtime URL construction:
-```ts
-// ❌ layout-assumption: предполагает что RemoteComponent живёт в dist/chunks/
-const bootUrl = new URL('../boot.mjs', import.meta.url).href;
-```
-Работало случайно до 2026-06-22 потому что `/capsule` subpath fallback'ил на `dist/capsule.mjs` → `RemoteComponent` приходил из dist. После singleton-фикса (tsconfig alias `/capsule → src/capsule.ts`) — `import.meta.url` указывает на src, относительный `../boot.mjs` резолвится в несуществующий `src/boot.mjs` → 404 в Vite dev-server.
-
-**ЗАПРЕЩЕНО `?url` на TS source:**
-```ts
-// ❌ esbuild транспилит .ts и возвращает data:video/mp2t URL — браузер refuse'ит как ESM
-import bootUrl from '../shell/boot.ts?url';
-```
-Это историческая regression (зафиксирована в comment'ах до 2026-06-22). Subpath через exports указывает на `.mjs` BUILT artifact — этот regression не применим.
-
-**Invariant**: `boot.js` subpath НЕ должен получать alias в `tsconfig.base.json` (как `/capsule` — там alias нужен для singleton invariant). Без alias Vite резолвит через package exports → dist artifact, что и требуется.
 
 ## Quirks / gotchas
 
@@ -171,13 +147,17 @@ import bootUrl from '../shell/boot.ts?url';
 - **`sandbox="allow-scripts allow-same-origin"` is NOT a security boundary.** Iframe with this pair sees parent cookies/localStorage. For same-origin trusted capsule apps — OK. Untrusted third-party → stricter sandbox + cross-origin (Phase 3+). ADR-053 risk #2.
 - **DnD across iframe boundary — NOT supported in Phase 1.** Pointer events don't cross frame. Studio palette drag → renderer canvas drop requires a separate ADR. Escalate to architect. ADR-053 risk #3.
 - **`openStandalone()` — Phase 2 feature.** Returns `undefined`, logs `console.warn`. Does NOT throw. Acceptance gate.
-- **`boot.js` dist-asset, NOT inline srcdoc.** Import via `import bootUrl from '@capsuletech/web-remote/boot.js?url'`. Separate Vite entry in vite.config.mts.
+- **app-mode = `<iframe src>`, NOT srcdoc/boot (ADR 059).** The app loads itself from its own URL (`${module.url}/?__capsule_session=…&__capsule_name=…`) and boots via `createCapsuleApp` (web-core). No host-injected shell / import-map / manifest fetch.
+- **Unavailable degradation = timeout, not `onerror`.** Host can't reliably observe a cross-origin iframe load failure via `onerror`; falls back to `[data-capsule-remote-error]` placeholder after `MOUNT_TIMEOUT_MS` (5s) without `__capsule_app_ready__`.
+- **One sessionId per provider.** The iframe query carries the provider sessionId; host→app config is routed to the right iframe by the `(name, instanceId)` registry (postMessage to its contentWindow), the app accepts by `sessionId`+`name`. Multiple instances of the same module name aren't disambiguated on the app→host ready/event direction — known limit, fine for current single-instance cases.
 - **Package not in release groups `nx.json`.** Version `0.0.0`, releases enabled after Phase 4. Do not `pnpm publish` without user agreement.
 
 ## Plan / Roadmap
 
 - [x] **Phase 0 — type-contracts skeleton** — `src/interfaces.ts`, PR #77, merged 2026-05-19.
-- [x] **Phase 1 — IframeTransport + two-channel + Provider + useRemote + boot.js** — ADR-053 consumer model. This PR.
+- [x] **Phase 1 — IframeTransport + Provider + useRemote** — ADR-053 consumer model.
+- [x] **ADR 058 — message-only + mode-by-intent seam; drop canReach resolver.**
+- [x] **ADR 059 — app-mode = iframe-src self-contained + config-override.** srcdoc/boot/import-map/manifest-fetch removed from app-path. Browser-verify pending (owner-tests).
 - [ ] **Phase 1a — followup (NOT blocking Phase 1 merge):**
   - `createCapsuleApp` helper in `@capsuletech/web-core/bootstrap` (owner-web-core)
   - `EmitProvider` for `useEmit → channel` routing (owner-web-core)
@@ -194,15 +174,17 @@ import bootUrl from '../shell/boot.ts?url';
 
 | Type | Location | Coverage |
 |---|---|---|
-| Unit | `src/transport/__tests__/IframeTransport.test.ts` | IframeTransport (9 cases) |
-| Unit | `src/runtime/__tests__/buildSrcdoc.test.ts` | buildSrcdoc pure fn (7 cases) |
-| Unit | `src/runtime/__tests__/createHostHandle.test.ts` | createHostHandle (7 cases) |
-| Unit | `src/runtime/__tests__/RemoteProvider.test.tsx` | RemoteProvider + useRemote (6 cases) |
-| Unit | `src/runtime/__tests__/RemoteComponent.test.tsx` | RemoteComponent 4-class props + merge + reactive (19 cases) |
+| Unit | `src/transport/__tests__/IframeTransport.test.ts` | IframeTransport register/send/broadcast/dispose |
+| Unit | `src/runtime/__tests__/createHostHandle.test.ts` | createHostHandle send/request/on |
+| Unit | `src/runtime/__tests__/RemoteProvider.test.tsx` | RemoteProvider + useRemote |
+| Unit | `src/runtime/__tests__/RemoteComponent.test.tsx` | iframe-src URL + prop-classification + config-override + on* + mode seam + degradation |
+| Unit | `src/runtime/__tests__/dualImport.test.tsx` | RemoteContext singleton API invariant |
 
-Total: 48 unit tests. All green.
+Total: 47 unit tests. All green.
 
-Phase 1 shell (boot.ts) — covered via E2E in demo (apps/remote-host + apps/remote-hello, separate PR). jsdom does not load real modules via dynamic import(url), so boot.ts is validated in real browser.
+**Browser-verify (ADR 059, owner-tests, real browser — jsdom insufficient):** `apps/universal-canvas`
+embeds via iframe-src, renders (not a white screen), host config-override applies, canvas→host events
+flow, no redirect. Memory `feedback_verify_in_browser_dont_guess`.
 
 ## Cross-package dependencies
 
