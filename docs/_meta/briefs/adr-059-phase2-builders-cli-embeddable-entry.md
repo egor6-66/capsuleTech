@@ -43,9 +43,21 @@ related:
    доступен как **база** для config-override merge (Brief 1). Если генерация registry/entry
    требует прокинуть config-схему в рантайм для фильтра — сделать (фильтр живёт на приёме у app,
    Brief 1).
-4. **Манифест (открытый вопрос ADR 059).** Решить с архитектором: нужен ли `capsule.manifest.json`
-   в app-режиме вообще (entry = URL приложения, не bundle). Возможно — только метаданные
-   (name/version). Не тащить старую `entry`-as-bundle модель.
+4. **Манифест — РЕШЕНО (architect 2026-06-24): убрать из app-режима полностью, НО не в Brief 2.**
+   Единственный потребитель `capsule.manifest.json` — host-side web-remote (fetch `entry`). В
+   iframe-src модели хосту он не нужен (URL + query + postMessage). Metadata-only = мёртвый scaffold.
+   **Цель — полное удаление, но координированно с Brief 3:** текущий web-remote (на main, srcdoc/boot)
+   ещё fetch'ит манифест + импортит remote-entry, поэтому снос `RemoteManifestPlugin`/`remote-entry.ts`/
+   `IRemoteBootstrap`-ген в Brief 2 сломает embedding до перехода хоста на iframe-src (§1). **В Brief 2
+   их НЕ трогаешь** (только пометь к ретайру). Удаление — в/с Brief 3, когда хост уедет на iframe-src.
+   Связка: `.capsule/remote-entry.ts` импортит `{ Bootstrap } from './bootstrap'` — не сломай этот
+   импорт, меняя `generateBootstrap` (старый remote-entry должен дожить до Brief 3).
+
+5. **owner-cli — координация НЕ нужна (проверено architect).** Mount-entry генерит builders:
+   `generateBootstrap` (codegen) + `packages/builders/vite/src/plugins/scaffold/template/index.ts.template`
+   — обе твоя зона. CLI'шный `index.ts.template` (`packages/cli/.../templates/lib/`) — для библиотек,
+   не app. `cli/templates/app` mount-entry не содержит. Нужда в cli-template правке не ожидается;
+   всплывёт — эскалируй.
 
 ## Что НЕ трогать
 
