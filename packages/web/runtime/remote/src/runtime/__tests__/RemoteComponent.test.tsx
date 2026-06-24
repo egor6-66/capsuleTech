@@ -453,4 +453,43 @@ describe('RemoteComponent', () => {
     const payload = propEnvelopes[0]!.payload as Record<string, unknown>;
     expect('mode' in payload).toBe(false);
   });
+
+  // ─── manifest fetch failure (remote offline) ───────────────────────────────
+  // Reading an errored createResource re-throws; the srcdoc memo must guard on
+  // .loading/.error so the throw never escapes and crashes the host.
+
+  describe('manifest fetch failure (remote offline)', () => {
+    beforeEach(() => {
+      // Simulate ERR_CONNECTION_REFUSED — fetch rejects rather than resolving.
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    });
+
+    it('does NOT crash the host (render survives, container alive)', async () => {
+      expect(() => renderRemote()).not.toThrow();
+      await new Promise((r) => setTimeout(r, 20));
+      expect(container.isConnected).toBe(true);
+    });
+
+    it('does NOT mount an iframe when manifest fetch rejects', async () => {
+      renderRemote();
+      await new Promise((r) => setTimeout(r, 20));
+      expect(container.querySelector('iframe')).toBeNull();
+    });
+
+    it('renders the default placeholder when no fallback is provided', async () => {
+      renderRemote();
+      await new Promise((r) => setTimeout(r, 20));
+      expect(container.querySelector('[data-capsule-remote-error="hello"]')).not.toBeNull();
+    });
+
+    it('renders the consumer fallback("error") instead of the default placeholder', async () => {
+      const fallback = vi.fn((status: string) => <div data-fb={status}>custom</div>);
+      renderRemote({ fallback } as unknown as Partial<IRemoteComponentInternalProps>);
+      await new Promise((r) => setTimeout(r, 20));
+
+      expect(fallback).toHaveBeenCalledWith('error');
+      expect(container.querySelector('[data-fb="error"]')).not.toBeNull();
+      expect(container.querySelector('[data-capsule-remote-error="hello"]')).toBeNull();
+    });
+  });
 });

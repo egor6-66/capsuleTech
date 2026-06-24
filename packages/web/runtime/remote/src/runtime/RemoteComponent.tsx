@@ -106,11 +106,16 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
     },
   );
 
-  // Build srcdoc only when both module config and manifest are available
+  // Build srcdoc only when both module config and manifest are available.
+  // IMPORTANT: reading manifest() re-throws when the resource entered error state
+  // (e.g. remote app offline → ERR_CONNECTION_REFUSED). Guard on .loading/.error
+  // BEFORE calling manifest() so the throw never escapes the memo and crashes the
+  // host — the <Switch> error Match renders the fallback/placeholder instead.
   const srcdoc = createMemo(() => {
     const m = module();
+    if (!m || manifest.loading || manifest.error) return undefined;
     const mf = manifest();
-    if (!m || !mf) return undefined;
+    if (!mf) return undefined;
     const url = bootUrl as string;
     return buildSrcdoc({
       name: rawProps.name,
@@ -239,7 +244,16 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
   return (
     <Switch>
       <Match when={manifest.loading}>{rawProps.fallback?.('loading')}</Match>
-      <Match when={manifest.error}>{rawProps.fallback?.('error')}</Match>
+      <Match when={manifest.error}>
+        {rawProps.fallback?.('error') ?? (
+          <div
+            data-capsule-remote-error={rawProps.name}
+            style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#888;font:13px system-ui;padding:8px;text-align:center"
+          >
+            remote "{rawProps.name}" unavailable
+          </div>
+        )}
+      </Match>
       <Match when={srcdoc()}>
         <iframe
           ref={(el) => {
