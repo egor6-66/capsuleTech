@@ -41,6 +41,8 @@ import { BaseProviders } from '../providers/base';
 import { createConfigStore } from './embedConfig';
 import {
   DEFAULT_HANDSHAKE_TIMEOUT_MS,
+  EMBED_PROTOCOL,
+  type IEmbedParams,
   isEmbedded,
   readEmbedParams,
   startHandshake,
@@ -182,11 +184,30 @@ export const createCapsuleApp = (
   let disposed = false;
   let rootDispose: (() => void) | undefined;
   let detachHandshake: (() => void) | undefined;
+  let detachPageHide: (() => void) | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
+  // Identity встроенного app'а — резолвится в embedded-ветке; нужна в mount() для
+  // mounted-сигнала. null в standalone и embedded-без-params → сигнал не постится.
+  let embedParams: IEmbedParams | null = null;
 
   const mount = (): void => {
     if (disposed || rootDispose) return; // идемпотентно: монтируем один раз
     rootDispose = render(buildAppComponent(opts, config), el);
+    if (embedParams && typeof window !== 'undefined') {
+      // app→host: «я отрисовался» → хост снимает loader-overlay (web-remote).
+      // Постится РОВНО раз — mount() идемпотентен (гард выше).
+      // targetOrigin='*' — cross-origin hardening отложен (ADR 059 open question #1).
+      window.parent.postMessage(
+        {
+          from: embedParams.name,
+          fromInstance: embedParams.name,
+          to: EMBED_PROTOCOL.hostTarget,
+          sessionId: embedParams.sessionId,
+          eventName: EMBED_PROTOCOL.mountedEvent,
+        },
+        '*',
+      );
+    }
   };
 
   if (!isEmbedded()) {
@@ -198,6 +219,26 @@ export const createCapsuleApp = (
       // монтируемся на app-дефолтах.
       mount();
     } else {
+      embedParams = params; // mount() пошлёт mounted-сигнал после render()
+      if (typeof window !== 'undefined') {
+        const onPageHide = (): void => {
+          // app→host: «я выгружаюсь» (t0 reparent/reload) → хост ставит loader-overlay.
+          // postMessage во время pagehide внутрипроцессно доставляется. targetOrigin='*'
+          // (cross-origin hardening отложен, ADR 059 open question #1).
+          window.parent.postMessage(
+            {
+              from: params.name,
+              fromInstance: params.name,
+              to: EMBED_PROTOCOL.hostTarget,
+              sessionId: params.sessionId,
+              eventName: EMBED_PROTOCOL.unloadEvent,
+            },
+            '*',
+          );
+        };
+        window.addEventListener('pagehide', onPageHide);
+        detachPageHide = () => window.removeEventListener('pagehide', onPageHide);
+      }
       timer = setTimeout(mount, opts.handshakeTimeoutMs ?? DEFAULT_HANDSHAKE_TIMEOUT_MS);
       detachHandshake = startHandshake({
         params,
@@ -217,6 +258,7 @@ export const createCapsuleApp = (
     disposed = true;
     if (timer !== undefined) clearTimeout(timer);
     detachHandshake?.();
+    detachPageHide?.();
     rootDispose?.();
   };
 };

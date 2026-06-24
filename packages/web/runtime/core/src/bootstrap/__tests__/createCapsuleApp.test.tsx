@@ -49,6 +49,8 @@ vi.mock('../embedHandshake', () => ({
   EMBED_PROTOCOL: {
     readyEvent: '__capsule_app_ready__',
     configEvent: '__capsule_remote_config__',
+    mountedEvent: '__capsule_app_mounted__',
+    unloadEvent: '__capsule_app_unloading__',
     hostTarget: '__host__',
     query: { session: '__capsule_session', name: '__capsule_name' },
   },
@@ -271,6 +273,169 @@ describe('createCapsuleApp — embedded mode', () => {
 
     dispose();
     expect(h.detached).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// mounted-signal (__capsule_app_mounted__) — posted after render() in embedded mode
+// ---------------------------------------------------------------------------
+
+describe('createCapsuleApp — mounted signal', () => {
+  it('posts __capsule_app_mounted__ to window.parent after mount (embedded)', () => {
+    h.embedded = true;
+    h.params = { sessionId: 'sess-9', name: 'my-app' };
+    const postMessage = vi.fn();
+    const originalParent = Object.getOwnPropertyDescriptor(window, 'parent');
+    Object.defineProperty(window, 'parent', { value: { postMessage }, configurable: true });
+    try {
+      const dispose = createCapsuleApp(container, {
+        routeTree: makeRouteTree(),
+        appConfig: makeAppConfig(),
+      });
+
+      // Not mounted yet → no signal.
+      expect(postMessage).not.toHaveBeenCalled();
+
+      h.onConfig?.({ router: {} }); // first patch → mount() → render → signal
+      expect(mountedCount(container)).toBe(1);
+
+      expect(postMessage).toHaveBeenCalledTimes(1);
+      const [envelope, targetOrigin] = postMessage.mock.calls[0];
+      expect(envelope).toEqual({
+        from: 'my-app',
+        fromInstance: 'my-app',
+        to: '__host__',
+        sessionId: 'sess-9',
+        eventName: '__capsule_app_mounted__',
+      });
+      expect(targetOrigin).toBe('*');
+      dispose();
+    } finally {
+      if (originalParent) Object.defineProperty(window, 'parent', originalParent);
+    }
+  });
+
+  it('does NOT post mounted signal in standalone mode', () => {
+    // h.embedded stays false (standalone).
+    const postMessage = vi.fn();
+    const originalParent = Object.getOwnPropertyDescriptor(window, 'parent');
+    Object.defineProperty(window, 'parent', { value: { postMessage }, configurable: true });
+    try {
+      const dispose = createCapsuleApp(container, {
+        routeTree: makeRouteTree(),
+        appConfig: makeAppConfig(),
+      });
+      expect(mountedCount(container)).toBe(1);
+      expect(postMessage).not.toHaveBeenCalled();
+      dispose();
+    } finally {
+      if (originalParent) Object.defineProperty(window, 'parent', originalParent);
+    }
+  });
+
+  it('posts the mounted signal exactly once (mount is idempotent)', () => {
+    h.embedded = true;
+    h.params = { sessionId: 'sess-1', name: 'app' };
+    const postMessage = vi.fn();
+    const originalParent = Object.getOwnPropertyDescriptor(window, 'parent');
+    Object.defineProperty(window, 'parent', { value: { postMessage }, configurable: true });
+    try {
+      const dispose = createCapsuleApp(container, {
+        routeTree: makeRouteTree(),
+        appConfig: makeAppConfig(),
+      });
+
+      h.onConfig?.({ router: { notFoundRedirect: '/a' } }); // mounts + signals
+      h.onConfig?.({ router: { notFoundRedirect: '/b' } }); // runtime re-merge, no remount
+
+      expect(mountedCount(container)).toBe(1);
+      expect(postMessage).toHaveBeenCalledTimes(1);
+      dispose();
+    } finally {
+      if (originalParent) Object.defineProperty(window, 'parent', originalParent);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// unload-signal (__capsule_app_unloading__) — posted on pagehide in embedded mode
+// ---------------------------------------------------------------------------
+
+describe('createCapsuleApp — unload signal', () => {
+  const unloadEnvelopes = (postMessage: ReturnType<typeof vi.fn>) =>
+    postMessage.mock.calls.filter(
+      ([m]) => m && m.eventName === '__capsule_app_unloading__',
+    );
+
+  it('posts __capsule_app_unloading__ to window.parent on pagehide (embedded)', () => {
+    h.embedded = true;
+    h.params = { sessionId: 'sess-7', name: 'my-app' };
+    const postMessage = vi.fn();
+    const originalParent = Object.getOwnPropertyDescriptor(window, 'parent');
+    Object.defineProperty(window, 'parent', { value: { postMessage }, configurable: true });
+    try {
+      const dispose = createCapsuleApp(container, {
+        routeTree: makeRouteTree(),
+        appConfig: makeAppConfig(),
+      });
+
+      window.dispatchEvent(new Event('pagehide'));
+
+      const unloads = unloadEnvelopes(postMessage);
+      expect(unloads).toHaveLength(1);
+      expect(unloads[0][0]).toEqual({
+        from: 'my-app',
+        fromInstance: 'my-app',
+        to: '__host__',
+        sessionId: 'sess-7',
+        eventName: '__capsule_app_unloading__',
+      });
+      expect(unloads[0][1]).toBe('*');
+      dispose();
+    } finally {
+      if (originalParent) Object.defineProperty(window, 'parent', originalParent);
+    }
+  });
+
+  it('does NOT post unload signal in standalone mode', () => {
+    // h.embedded stays false → no pagehide listener attached.
+    const postMessage = vi.fn();
+    const originalParent = Object.getOwnPropertyDescriptor(window, 'parent');
+    Object.defineProperty(window, 'parent', { value: { postMessage }, configurable: true });
+    try {
+      const dispose = createCapsuleApp(container, {
+        routeTree: makeRouteTree(),
+        appConfig: makeAppConfig(),
+      });
+
+      window.dispatchEvent(new Event('pagehide'));
+
+      expect(unloadEnvelopes(postMessage)).toHaveLength(0);
+      dispose();
+    } finally {
+      if (originalParent) Object.defineProperty(window, 'parent', originalParent);
+    }
+  });
+
+  it('disposer removes the pagehide listener (no unload after dispose)', () => {
+    h.embedded = true;
+    h.params = { sessionId: 'sess-1', name: 'app' };
+    const postMessage = vi.fn();
+    const originalParent = Object.getOwnPropertyDescriptor(window, 'parent');
+    Object.defineProperty(window, 'parent', { value: { postMessage }, configurable: true });
+    try {
+      const dispose = createCapsuleApp(container, {
+        routeTree: makeRouteTree(),
+        appConfig: makeAppConfig(),
+      });
+
+      dispose();
+      window.dispatchEvent(new Event('pagehide'));
+
+      expect(unloadEnvelopes(postMessage)).toHaveLength(0);
+    } finally {
+      if (originalParent) Object.defineProperty(window, 'parent', originalParent);
+    }
   });
 });
 
