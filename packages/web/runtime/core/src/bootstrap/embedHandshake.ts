@@ -30,6 +30,10 @@ export const EMBED_PROTOCOL = {
   readyEvent: '__capsule_app_ready__',
   /** host→app: override-патч конфига (не полный config). */
   configEvent: '__capsule_remote_config__',
+  /** app→host: «я реально отрисовался» — постится ПОСЛЕ `render()` (loader-overlay снимается). */
+  mountedEvent: '__capsule_app_mounted__',
+  /** app→host: «я выгружаюсь» — постится на pagehide (хост СТАВИТ loader-overlay). */
+  unloadEvent: '__capsule_app_unloading__',
   /** Routing-target в envelope для сообщений к хосту. */
   hostTarget: '__host__',
   /** Query-ключи в URL iframe, через которые хост передаёт identity. */
@@ -62,6 +66,32 @@ export interface IAppReadyMessage {
   to: string;
   sessionId: string;
   eventName: typeof EMBED_PROTOCOL.readyEvent;
+}
+
+/**
+ * Outgoing mounted-envelope. Тот же shape, что `IAppReadyMessage`, но постится ПОСЛЕ
+ * реального `render()` (app→host: «я отрисовался»). Хост матчит по `from` + `eventName`
+ * и снимает loader-overlay (web-remote). Структурно совместим с `IRemoteMessage`.
+ */
+export interface IAppMountedMessage {
+  from: string;
+  fromInstance: string;
+  to: string;
+  sessionId: string;
+  eventName: typeof EMBED_PROTOCOL.mountedEvent;
+}
+
+/**
+ * Outgoing unloading-envelope. Тот же shape, постится на `pagehide` (app→host: «я выгружаюсь»,
+ * t0 reparent/reload). Хост матчит по `from` + `eventName` и СТАВИТ loader-overlay (web-remote).
+ * Парный к `IAppMountedMessage` (тот снимает overlay). Структурно совместим с `IRemoteMessage`.
+ */
+export interface IAppUnloadingMessage {
+  from: string;
+  fromInstance: string;
+  to: string;
+  sessionId: string;
+  eventName: typeof EMBED_PROTOCOL.unloadEvent;
 }
 
 /**

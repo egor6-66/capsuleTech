@@ -11,6 +11,10 @@
  *  - app → host: EMBED_PROTOCOL.readyEvent (`__capsule_app_ready__`) once it mounts.
  *  - host → app: EMBED_PROTOCOL.configEvent (`__capsule_remote_config__`) override patch
  *    (ADR 059 D4), sent on ready and re-sent reactively when the merged config changes.
+ *  - app → host: EMBED_PROTOCOL.mountedEvent (`__capsule_app_mounted__`) once it really
+ *    rendered — drops the loader overlay shown over the iframe until then.
+ *  - app → host: EMBED_PROTOCOL.unloadEvent (`__capsule_app_unloading__`) at unload (t0 of a
+ *    reparent/reload) — re-shows the loader immediately, before the new document loads.
  *  - app → host: events via `on*` props (the only non-config vector — D4 removed props).
  *
  * There is NO host→app props channel — all host→app data is config (ADR 059 D4).
@@ -88,6 +92,11 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
   // Unavailable when the app never sends ready within MOUNT_TIMEOUT_MS.
   const [failed, setFailed] = createSignal(false);
 
+  // Loader-overlay gate: false until the app posts EMBED_PROTOCOL.mountedEvent (it
+  // really rendered) — or, for `external` non-capsule sites, until native iframe load.
+  // While !mounted() && !failed() an overlay covers the iframe to hide the boot flash.
+  const [mounted, setMounted] = createSignal(false);
+
   // ─── Helpers ─────────────────────────────────────────────────────────────
 
   const sendConfigEnvelope = (t: ITransport = transport()!) => {
@@ -114,20 +123,32 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
   // does not know the host-side instanceId, so we match by name — sessionId is
   // already filtered by the transport). On ready: push the config override and cancel
   // the timeout. On timeout without ready: mark failed → placeholder.
+  // mountedEvent (post-render) drops the loader overlay — matched by name for the same
+  // reason. Re-runs on appSrc change (new remote/session) → both gates reset → loader
+  // shows again.
   createEffect(() => {
     const t = transport();
     const src = appSrc();
     if (!t || !src) return;
     setFailed(false);
+    setMounted(false);
     let ready = false;
     const timer = setTimeout(() => {
       if (!ready) setFailed(true);
     }, MOUNT_TIMEOUT_MS);
     const unsub = t.onMessage((msg) => {
-      if (msg.eventName === EMBED_PROTOCOL.readyEvent && msg.from === rawProps.name) {
+      if (msg.from !== rawProps.name) return;
+      if (msg.eventName === EMBED_PROTOCOL.readyEvent) {
         ready = true;
         clearTimeout(timer);
         sendConfigEnvelope(t);
+      } else if (msg.eventName === EMBED_PROTOCOL.mountedEvent) {
+        setMounted(true);
+      } else if (msg.eventName === EMBED_PROTOCOL.unloadEvent) {
+        // App is unloading (t0 of a DnD reparent / reload) → re-show the loader
+        // immediately; it drops again on the next mountedEvent. This catches the
+        // flash at its start, before the native `load` of the new document.
+        setMounted(false);
       }
     });
     onCleanup(() => {
@@ -190,6 +211,14 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
     }
   });
 
+  // Native iframe load handler — only for external (foreign) sites that don't post
+  // our signals: there, `load` is the only "ready" we get. Our own apps drive the
+  // loader purely via mountedEvent (drop) / unloadEvent (re-show) — a DnD reparent
+  // re-show is caught at t0 by unloadEvent, so `load` no longer needs to touch it.
+  const handleIframeLoad = () => {
+    if (module()?.external) setMounted(true);
+  };
+
   return (
     <Show
       when={!failed() && appSrc()}
@@ -202,17 +231,58 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
         </div>
       }
     >
-      <iframe
-        ref={(el) => {
-          iframeRef = el;
-        }}
-        title={rawProps.name}
-        src={appSrc()}
-        style="width:100%;height:100%;border:0;display:block"
-        // TODO (ADR 059 open question #1): cross-origin hardening — tighten sandbox
-        // and postMessage targetOrigin from '*' to the known app origin.
-        sandbox="allow-scripts allow-same-origin"
-      />
+      <div style="position:relative;width:100%;height:100%">
+        <iframe
+          ref={(el) => {
+            iframeRef = el;
+          }}
+          title={rawProps.name}
+          src={appSrc()}
+          // background = theme var so the blank frame between reparent-reload and the
+          // next `load` shows the theme colour, not white (ADR 059 polish 2a).
+          style="width:100%;height:100%;border:0;display:block;background:var(--background)"
+          onLoad={handleIframeLoad}
+          // TODO (ADR 059 open question #1): cross-origin hardening — tighten sandbox
+          // and postMessage targetOrigin from '*' to the known app origin.
+          sandbox="allow-scripts allow-same-origin"
+        />
+        <Show when={!mounted()}>
+          {rawProps.fallback?.('loading') ?? (
+            <div
+              data-capsule-remote-loading={rawProps.name}
+              style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--background);color:var(--primary)"
+            >
+              {/* SMIL-animated spinner — no CSS keyframes / Tailwind (can't assume the
+                  host has `animate-spin`). Track + rotating arc, themed via CSS vars. */}
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-label="loading">
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="9"
+                  stroke="var(--border)"
+                  stroke-width="2.5"
+                  opacity="0.25"
+                />
+                <path
+                  d="M12 3 a9 9 0 0 1 9 9"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                >
+                  <animateTransform
+                    attributeName="transform"
+                    type="rotate"
+                    from="0 12 12"
+                    to="360 12 12"
+                    dur="0.8s"
+                    repeatCount="indefinite"
+                  />
+                </path>
+              </svg>
+            </div>
+          )}
+        </Show>
+      </div>
     </Show>
   );
 };

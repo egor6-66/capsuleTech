@@ -34,6 +34,13 @@ export interface IRemoteModuleConfig {
   config?: Record<string, unknown>;
   /** Optional explicit standalone-route URL (defaults to `${url}/standalone`). */
   standaloneUrl?: string;
+  /**
+   * Third-party site (NOT a Capsule app). Such a site never posts
+   * `__capsule_app_mounted__`, so the loader overlay is removed on the native
+   * iframe `load` event instead of on `EMBED_PROTOCOL.mountedEvent`. ADR 059
+   * loader-overlay brief.
+   */
+  external?: boolean;
 }
 
 /**
