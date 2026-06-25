@@ -1,6 +1,6 @@
 ---
-tags: [hca, adr, proposed, web-remote, contract, zod, codegen, studio, module-federation]
-status: proposed
+tags: [hca, adr, accepted, web-remote, contract, zod, codegen, studio, module-federation]
+status: accepted
 date: 2026-06-25
 last_updated: 2026-06-25
 extends:
@@ -12,11 +12,14 @@ extends:
   - 015-remote-modules
 ---
 
-> [!warning] Status: proposed (2026-06-25)
-> Направление согласовано в дизайн-сессии + сделан research-homework (MF dts / ts-rest / Zodios /
-> tRPC / typed-postMessage). НО перед Phase 1 нужен **code-POC** (Phase 0): эмит контракт-артефакта
-> из Zod + рендер контракта через zod-интроспекцию + vendoring-спайк. Канон `feedback_homework_before_adr`:
-> ADR на механизме без feasibility-POC = риск. Принимаем (`accepted`) только после Phase 0.
+> [!success] Status: accepted (2026-06-25)
+> Homework по канону `feedback_homework_before_adr` сделан полностью: research (MF dts / ts-rest /
+> Zodios / tRPC / typed-postMessage) **+ code-POC**. Phase 0 POC (vanilla, Zod 3 + `zod-to-json-schema`)
+> доказал ядро (D3/D7): одна Zod-схема → точный JSON Schema (с min/max) + walkable render-спека +
+> runtime-валидация с путём/сообщением + `z.infer`-типы. **Нюанс импла:** в `zod-to-json-schema` НЕ
+> передавать опцию `name` (иначе `$ref`+`definitions` прячет поля; без неё — инлайн, walkable).
+> Технический риск снят. Остаток Phase 0 (vendoring D4, studio-инспектор-интеграция) — низкорисковый
+> процесс/реюз, складывается в Phase 1-2.
 
 # ADR 060 — web-remote: типизированный контракт ремоута (Zod public-interface → vendored артефакт) + root-event-bus мост + studio-store
 
