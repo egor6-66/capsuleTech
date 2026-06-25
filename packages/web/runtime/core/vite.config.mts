@@ -6,6 +6,7 @@ export default libConfig({
     create: 'src/create/index.ts',
     providers: 'src/providers/index.ts',
     'app-config': 'src/app-config.ts',
+    contract: 'src/contract.ts',
     module: 'src/module.ts',
     'ui-kit': 'src/ui-kit/index.tsx',
     bootstrap: 'src/bootstrap/index.ts',

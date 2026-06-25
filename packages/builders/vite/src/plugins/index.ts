@@ -36,6 +36,21 @@ export {
   type SubGenerator,
 } from './codegen';
 export { CompliancePlugin } from './compliance';
+// ADR 060 Phase 1 — remote-app contract artifact emitter.
+export {
+  buildContractDts,
+  buildManifestJson,
+  buildSchemaJson,
+  CONTRACT_ARTIFACT_NAMES,
+  CONTRACT_URL_PREFIX,
+  ContractArtifactPlugin,
+  ensureDefineContractImport,
+  type IContractArtifactPluginOpts,
+  type IContractLike,
+  jsonSchemaToTs,
+  matchContractRequest,
+  produceArtifacts,
+} from './contractArtifact';
 export type {
   DiagnosticSeverity,
   DiagnosticType,

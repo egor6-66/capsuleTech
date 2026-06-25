@@ -8,6 +8,7 @@ import {
   AppSourceServePlugin,
   CapsuleRegistryPlugin,
   CompliancePlugin,
+  ContractArtifactPlugin,
   createDevDiagnosticsPlugin,
   EnsureScaffoldPlugin,
   HMRWrappingPlugin,
@@ -294,6 +295,10 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
       // like `/src/standalone.tsx` are stable and portable (no /@fs/D:/... hacks).
       // TEMPORARY — remove when Variant B ADR (Vite root = appRoot) lands.
       AppSourceServePlugin({ appRoot: root }),
+      // ADR 060 Phase 1 — эмит контракт-артефакта ремоут-аппа из apps/<app>/contract.ts.
+      // build → dist/.capsule/contract/*; dev → middleware /.capsule/contract/*.
+      // No-op, если contract.ts нет (не все аппы — ремоуты).
+      ContractArtifactPlugin({ appRoot: root }),
       // Dev-diagnostics stream → .capsule/dev-diagnostics.log (JSONL).
       // SessionStart hook агента подцепит файл через Monitor; каждая запись = notification.
       // Только в serve-режиме (apply: 'serve' внутри плагина); в build игнорируется.

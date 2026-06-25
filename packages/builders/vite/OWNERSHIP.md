@@ -3,7 +3,7 @@ name: @capsuletech/vite-builder
 owner-agent: owner-builders
 group: cli
 status: pre-1.0
-last-updated: 2026-05-20
+last-updated: 2026-06-25
 ---
 
 # @capsuletech/vite-builder
@@ -51,6 +51,7 @@ Vite-конфиг и 9 плагинов для dev-сервера HCA-apps. Дё
 | `tailwindcss()` | `capsuleConfig.ts` (inline) | Tailwind v4 через `@tailwindcss/vite` |
 | `AliasesPlugin` | `plugins/aliases.ts` | Мержит paths → `.capsule/tsconfig.paths.json` + Vite `resolve.alias` |
 | `AppSourceServePlugin` | `plugins/appSourceServe.ts` | **TEMPORARY** — rewrite `/src/*` → `/@fs/<appRoot>/src/*` (см. ниже) |
+| `ContractArtifactPlugin` | `plugins/contractArtifact.ts` | ADR 060 Phase 1 — эмит контракт-артефакта из `apps/<app>/contract.ts` (manifest/schema/d.ts/mjs) → build: `dist/.capsule/contract/*`, dev: middleware `/.capsule/contract/*`. No-op без `contract.ts` |
 | `CompliancePlugin` | `plugins/compliance.ts` | pre-transform: `check()` на каждый файл, режим `warn` |
 | `RouterPlugin` | `plugins/router/index.ts` | ensureRootRoutePlugin + page-mirror generator + TanStackRouterVite |
 | `solidPlugin` | `capsuleConfig.ts` (inline) | Solid.js JSX transform |
@@ -108,6 +109,8 @@ Vite-конфиг и 9 плагинов для dev-сервера HCA-apps. Дё
 
 - **`AppSourceServePlugin` — temporary middleware, Variant A.** Перехватывает `/src/*` запросы и rewrite'ит в `/@fs/<appRoot>/src/*`. Нужен потому что Vite root = `.capsule/` → `/src/...` URL'ы не резолвятся к реальным source-файлам. **Удалить при landing'е Variant B ADR («Vite root = appRoot»).** До тех пор не добавляй альтернативных механизмов для той же цели — duplicate middleware ломает `/src/*` chain.
 
+- **`ContractArtifactPlugin` — esbuild bundle + data-URL eval (ADR 060 Phase 1).** Эмиттер контракт-артефакта ремоут-аппа. Один конвейер `produceArtifacts(appRoot)`: (1) esbuild-бандлит `apps/<app>/contract.ts` через `stdin` (`resolveDir = appRoot`, чтобы `@capsuletech/*` и `zod` резолвились из app-node_modules) в self-contained ESM (zod инлайнится) — это `contract.mjs`; (2) eval бандла через `import('data:text/javascript;base64,...')` → живой объект контракта; (3) из объекта генерятся `manifest.json` / `schema.json` / `contract.d.ts`. Build → `this.emitFile({ type:'asset', fileName:'.capsule/contract/<name>' })` (попадает в `dist/.capsule/contract/*`). Dev → middleware отдаёт `/.capsule/contract/*` из памяти, rebuild на change `contract.ts`. **Deps:** `esbuild` (external — нативные бинарники, в `vite.config.mts → external`), `zod-to-json-schema` (external) + `zod` (peer для zod-to-json-schema; external через BROWSER_EXTERNAL). **POC-нюанс:** `zodToJsonSchema(schema, { $refStrategy:'none', target:'jsonSchema7' })` БЕЗ опции `name` — иначе `$ref`+`definitions` прячут top-level `properties`. **`defineContract` инжект:** автор может писать `defineContract` как bare-глобал (зарегистрирован в `DEFINE_FACTORIES`), конвейер инжектит `import` перед bundling (как defineEndpoint-инжект) — поэтому contract.ts работает и в Vite-графе (auto-import), и вне его (esbuild/eval). **Phase 2** (host vendoring / `remotes.d.ts`) и **Phase 3** (root-event-bus) — НЕ здесь.
+
 - **`solidPlugin` exclude для `entities/`.** `vite-plugin-solid` внутри использует `solid-refresh`, который оборачивает любой `const X = SomeCall(...)` в `.tsx`-файле в `(props) => SomeCall(...)(props)` для поддержки HMR компонентов. `Entity` возвращает plain config object (`{ schema, defaults }`), а не Solid-компонент — после такой обёртки `Entities.Users` становится функцией, и любой доступ к `.schema`/`.defaults` падает TypeError. `HMRWrappingPlugin` entity уже скипает (использует только `RENDER_WRAPPER_NAMES`), но `solid-refresh` — отдельный babel-pass внутри `solidPlugin`. Поэтому `solidPlugin` получает `exclude: [/[\\/]entities[\\/]/]`. Регекс покрывает оба сепаратора (Win/Unix). При добавлении других data-layer слоёв (не возвращающих Solid-компонент) — добавлять в этот же exclude-список.
 
 - **`desktop?: IDesktopConfig` — type-only без peerDep.** Vite-builder секцию НЕ читает в runtime — только тип. CLI читает её через `importModule('capsule.config.ts')` и передаёт в `runDev`/`runBuild` пакета `@capsuletech/desktop` (PR 5). **Никакого peerDep на `@capsuletech/desktop`** — пробовали, ловили Nx circular dependency (`vite-builder → desktop → vite-builder`, т.к. desktop сам использует vite-builder для сборки). Type-only `import type` работает через `tsconfigPaths` в workspace; Verdaccio consumers защищены `skipLibCheck: true` в `tsconfig.base.json` (apps без install'а `@capsuletech/desktop` не получают TS error на transitive reference).
@@ -132,6 +135,7 @@ Vite-конфиг и 9 плагинов для dev-сервера HCA-apps. Дё
 |---|---|---|
 | Unit | `src/plugins/__tests__/capsuleRegistry.test.ts` | CapsuleRegistryPlugin — generateWrappersRuntime/Types (включая `interface + const` для всех 6 NS), generateEndpointsRuntime/Types, generateAppConfigRuntime, generateBootstrap, LAYER_INIT_ORDER контракт, transform hooks; **resolvePackageEntries** (packages[]-кодген сквозной тест через parseManifestSource mock-source — закрывает дыру e2e smoke); generatePackagesRuntime/Types с controllerKeys |
 | Unit | `src/plugins/__tests__/hmrWrapping.test.ts` | HMRWrappingPlugin — babel-AST transforms для всех wrapper-типов, export default injection, Entity skip |
+| Unit | `src/plugins/__tests__/contractArtifact.test.ts` | ContractArtifactPlugin (ADR 060 Phase 1) — чистые генераторы (`buildManifestJson`/`buildSchemaJson`/`buildContractDts`/`jsonSchemaToTs`), POC-нюанс (schema top-level `properties`, не `$ref`), `ensureDefineContractImport` (идемпотентный инжект), `matchContractRequest` (URL→имя файла), `produceArtifacts` no-op без contract.ts + **end-to-end** (esbuild bundle + data-URL eval → 4 файла на tmp-фикстуре) |
 | Unit | `src/plugins/__tests__/loadAppConfig.test.ts` | **jiti globals injection** (Fix 1) — `defineAppConfig/defineCapsuleConfig/defineEndpoint` не бросают ReferenceError, cleanup globalThis; **`loadAppConfig` три-стейтовый API** (Fix 2) — `ok/missing/error` states через реальные tmp-файлы; **docs-sources resilience** — `status:error` → не удаляет файл, логирует; `status:missing` → cleanup OK; **Fix 3** — info-лог при успешной генерации |
 
 Перед изменением любого плагина: `pnpm --filter @capsuletech/vite-builder test`.
