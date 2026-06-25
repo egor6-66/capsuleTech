@@ -1,0 +1,10 @@
+{
+  "name": "@capsuletech/universal-canvas",
+  "version": "0.0.1",
+  "in": [
+    "setMarkers"
+  ],
+  "out": [
+    "mounted"
+  ]
+}

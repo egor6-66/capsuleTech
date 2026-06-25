@@ -23,4 +23,5 @@ export { nxAffected, nxGraph, nxProjects, nxReleaseTags, nxReport, nxRun } from 
 export { goToRoot, openProject } from './open-project';
 export { previewServer } from './preview-server';
 export { release, releasePlan } from './release';
+export { remoteSync, syncRemotes } from './remote-sync';
 export { workspaceInfo } from './workspace-info';

@@ -28,6 +28,7 @@ export const CATEGORY_ICONS: Record<Category, string> = {
   git: '🌿',
   release: '📦',
   nx: '🧩',
+  remote: '📡',
   navigation: '🧭',
 };
 
@@ -73,6 +74,9 @@ export const ICONS = {
   plan: '🔍',
   release: '📦',
   tags: '🔖',
+
+  // remote
+  remoteSync: '🔄',
 
   // navigation
   navApp: '📱',

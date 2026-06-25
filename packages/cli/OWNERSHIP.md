@@ -60,6 +60,7 @@ Bin:
 | `git` | `git commit`, `git pr`, `git push`, `git pull`, `git branch`, `git checkout`, `git status`, `git log`, `git stash` |
 | `release` | `release local`, `release prod` |
 | `nx` | `nx graph`, `nx affected`, `nx run` |
+| `remote` | `remote sync` (вендоринг контракта ремоута, ADR 060 D4) |
 | `navigation` | `open.app.<name>`, `open.root` (динамические, строятся по контексту) |
 
 ## Quirks / gotchas
@@ -108,6 +109,8 @@ Bin:
 
 20. **`@capsuletech/cli` в app-template использует `<%= cap %>`, не `"latest"`.** Переменная `cap` вычисляется в `_scaffold.ts` как `mode === 'dev' ? 'workspace:*' : 'latest'`. Mode приходит из `ctx.mode` → `detectMode` в `context/detect.ts` — ищет `packages/builders/vite/package.json` для детекта capsule monorepo. Внутри capsule: `workspace:*`. Снаружи: `latest`. Web-* deps уже корректно используют `cap` — cli devDep был единственным исключением (hardcode `"latest"`, пофиксен PR feat/cli-template-workspace-detect).
 
+21. **`remote sync` читает `capsule.app.ts` (НЕ `capsule.config.ts`) через jiti.** `remotes`-реестр живёт в app-config (`IAppConfig.remotes`, web-core), не в build-config. Action фетчит контракт-артефакт (4 файла: `manifest.json`/`schema.json`/`contract.d.ts`/`contract.mjs`) и пишет в **коммитимую** `apps/<name>/remotes/<name>/` — НЕ в `.capsule/` (gitignored). Vendored snapshot = lockfile (ADR 060 D4): build от живого ремоута не зависит, sync — explicit user-action. Atomic: все 4 файла фетчатся в память до первой записи — недоступный источник/404 throw'ит до `mkdir`, битого частичного состояния не остаётся. Core `syncRemotes` инъектирует `fetchFile`/`log` для тестов.
+
 ## План рефакторинга / оптимизаций
 
 - [ ] **CI bypass для всех команд с prompts** — `git commit`, `git pr`, `release local/prod`, `desktop dev/build`, `create *` с обязательными params. Проверять `isCi()` перед каждым `kit.select/confirm` и падать с понятным сообщением вместо зависания. (priority: high)
@@ -126,6 +129,7 @@ Bin:
 | Тип | Где | Что покрывает |
 |---|---|---|
 | Unit | `src/cli/__tests__/runner.test.ts` | `isCi()` — CAPSULE_CI, CI env vars |
+| Unit | `src/actions/__tests__/remote-sync.test.ts` | `syncRemotes` — vendoring (4 файла, default-source vs `contract`-override, atomic partial-write, version-skew, `only`-фильтр, default-fetcher по реальному HTTP, 404) |
 | E2E | `e2e/smoke.mjs` | self-contained scenarios (create-workspace, dev smoke) |
 
 Перед изменением runner.ts / resolveParams — unit tests должны быть green:

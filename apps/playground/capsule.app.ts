@@ -13,6 +13,8 @@ export default defineAppConfig({
     '@capsuletech/web-studio',
     '@capsuletech/web-remote',
   ],
+  // ADR 060 D5 — единый источник регистрации ремоутов (Provider + тип-codegen отсюда).
+  remotes: [{ name: 'universal-canvas', url: 'http://localhost:3000' }],
   docs: {
     rootVault: false,
     packages: ['@capsuletech/web-ui'],
