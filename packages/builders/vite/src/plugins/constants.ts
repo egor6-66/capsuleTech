@@ -72,6 +72,11 @@ export type WrapperName = (typeof WRAPPER_NAMES)[number];
 export const DEFINE_FACTORIES = {
   '@capsuletech/web-core/app-config': ['defineAppConfig'],
   '@capsuletech/web-query': ['defineEndpoint'],
+  // ADR 060 Phase 1 — remote-app публичный контракт. Автор пишет `apps/<app>/contract.ts`
+  // через `defineContract((z) => ({ in, out }))` как bare-глобал (как defineAppConfig).
+  // Артефакт-эмит читает contract.ts отдельным конвейером (ContractArtifactPlugin),
+  // инжектя import — поэтому contract.ts работает и с auto-import'ом, и в jiti/esbuild.
+  '@capsuletech/web-core/contract': ['defineContract'],
 } as const;
 
 /**

@@ -52,6 +52,11 @@
       "import": "./dist/app-config.mjs",
       "default": "./dist/app-config.mjs"
     },
+    "./contract": {
+      "types": "./dist/contract.d.ts",
+      "import": "./dist/contract.mjs",
+      "default": "./dist/contract.mjs"
+    },
     "./module": {
       "types": "./dist/module.d.ts",
       "import": "./dist/module.mjs",

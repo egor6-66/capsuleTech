@@ -15,6 +15,12 @@ export default libConfig({
     '@solidjs/vite-plugin',
     'solid-refresh',
     /^solid-refresh\//,
+    // esbuild — нативные бинарники, НИКОГДА не бандлить (резолвится у consumer'а,
+    // обычно уже стоит транзитивно через vite). zod-to-json-schema — pure JS,
+    // оставляем external'ом, резолвится из declared dependency. Оба нужны
+    // ContractArtifactPlugin'у (ADR 060 Phase 1).
+    'esbuild',
+    'zod-to-json-schema',
   ],
   // Бандлим `@capsuletech/compliance` внутрь dist, иначе возникает реальный цикл:
   // vite-builder -> compliance (runtime через CompliancePlugin), а
