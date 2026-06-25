@@ -9,6 +9,7 @@ import { gitCommands } from './git';
 import { buildNavigationCommands } from './navigation';
 import { nxCommands } from './nx';
 import { releaseCommands } from './release';
+import { remoteCommands } from './remote';
 import { type Category, type Command, matchesScope } from './types';
 import { workspaceCommands } from './workspace';
 
@@ -25,6 +26,7 @@ export const staticCommands: Command[] = [
   ...gitCommands,
   ...releaseCommands,
   ...nxCommands,
+  ...remoteCommands,
 ];
 
 /** Все команды для данного ctx, включая динамически собранные (open project). */
@@ -40,7 +42,8 @@ export const CATEGORY_META: Record<Category, { icon: string; label: string; orde
   git: { icon: CATEGORY_ICONS.git, label: 'Git', order: 4 },
   release: { icon: CATEGORY_ICONS.release, label: 'Release', order: 5 },
   nx: { icon: CATEGORY_ICONS.nx, label: 'Nx', order: 6 },
-  navigation: { icon: CATEGORY_ICONS.navigation, label: 'Navigate', order: 7 },
+  remote: { icon: CATEGORY_ICONS.remote, label: 'Remote', order: 7 },
+  navigation: { icon: CATEGORY_ICONS.navigation, label: 'Navigate', order: 8 },
 };
 
 export const groupByCategory = (cmds: Command[]): Map<Category, Command[]> => {

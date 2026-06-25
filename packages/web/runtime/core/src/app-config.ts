@@ -204,6 +204,32 @@ export interface IAppConfig {
      */
     packages?: ReadonlyArray<string>;
   };
+
+  /**
+   * Встраиваемые ремоут-приложения (ADR 060 D5).
+   *
+   * Единый источник регистрации ремоута — `capsule.app.ts` хоста. Из него
+   * производятся И Provider-modules (runtime), И тип-codegen (`remotes.d.ts`,
+   * build) — убирает рассинхрон с inline `<Remote.Provider modules={...}>`.
+   *
+   * Это host-side реестр, НЕ app-data: в `APP_CONFIG_KEYS` (whitelist
+   * override-ключей) намеренно НЕ входит — ремоут не может переопределить его
+   * через config-override (ADR 059 D4).
+   *
+   * Структурный тип, без рантайм-импортов (как `access`/`router`):
+   * `capsule.app.ts` eval'ится build-time в node.
+   */
+  remotes?: ReadonlyArray<{
+    /** Имя ремоута — ключ `<Remote.View name="...">` + имя vendored-папки. */
+    name: string;
+    /** Origin/URL приложения (iframe src + источник contract-артефакта). */
+    url: string;
+    /**
+     * Источник контракт-артефакта для vendoring (`capsule remote sync`).
+     * По умолчанию `${url}/.capsule/contract`. Можно указать иной путь/URL.
+     */
+    contract?: string;
+  }>;
 }
 
 /**

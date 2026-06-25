@@ -11,6 +11,12 @@
  */
 
 import type { JSX } from 'solid-js';
+// CapsuleRemotes is DECLARED in the public barrel ('./index') — the module that a
+// consumer augments as `declare module '@capsuletech/web-remote'`. Reading it from
+// the same public point (not re-declaring here) is what makes augment → reader →
+// consumer point at ONE merged symbol across the package boundary (ADR 060 D6 fix;
+// TanStack Router `Register` pattern). A type-only import → no runtime cycle.
+import type { CapsuleRemotes } from './index';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Configuration (input to <RemoteProvider>)
@@ -132,6 +138,48 @@ export interface IRemoteComponentProps {
   /** on* event handlers (subscribed app→host). Other extra keys are accepted but ignored — use `config`. */
   [key: string]: unknown;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Typed remote contracts (ADR 060 D6) — typed <Remote.View> props
+//
+// The augmentable `CapsuleRemotes` registry + `IRemoteContract` entry-shape live in
+// the public barrel ('./index'), NOT here — see the import note at the top.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** `'markerClick'` → `'MarkerClick'` (capitalize the first char). */
+type PascalCase<S extends string> = S extends `${infer H}${infer T}`
+  ? `${Uppercase<H>}${T}`
+  : S;
+
+/**
+ * `on<Event>` handler props derived from a remote's `out` map:
+ * `{ markerClick: P }` → `{ onMarkerClick?: (payload: P) => void }`. Matches the
+ * runtime auto-subscribe convention in RemoteComponent (`onSelectionChange` ↔ event
+ * `selectionChange`) — out-event keys are bare camelCase, the host prop adds `on`.
+ */
+export type RemoteOutHandlers<Out extends Record<string, unknown>> = {
+  [K in keyof Out & string as `on${PascalCase<K>}`]?: (payload: Out[K]) => void;
+};
+
+/**
+ * Props of `<Remote.View>` for a remote `name`:
+ *  - known name (present in {@link CapsuleRemotes}) → literal `name` + typed
+ *    `on<Out>` handlers; an unknown `on*` / a wrong payload is a TS error;
+ *  - unknown name → loose {@link IRemoteComponentProps} (back-compat, no errors).
+ *
+ * The `[N]`/`[keyof…]` tuple-wrap prevents distribution when `N` is a union.
+ */
+export type IRemoteViewProps<N extends string> = [N] extends [keyof CapsuleRemotes]
+  ? {
+      name: N;
+      instanceId?: string;
+      fallback?: (status: 'loading' | 'error' | 'success') => JSX.Element;
+      config?: Record<string, unknown>;
+      mode?: 'app' | 'component';
+    } & (CapsuleRemotes[N] extends { out: infer Out extends Record<string, unknown> }
+      ? RemoteOutHandlers<Out>
+      : Record<never, never>)
+  : IRemoteComponentProps;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Communication API (useRemote / remote(...))
