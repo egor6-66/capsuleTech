@@ -936,6 +936,25 @@ export interface IServices extends CapsuleServices {
    * Пример: `utils.includes(target.meta?.tags ?? [], 'logout')`
    */
   utils: typeof UtilsNamespace;
+  /**
+   * Статичный run-режим запуска: `true` если приложение встроено в хост-iframe.
+   *
+   * Источник правды — bootstrap iframe-check (`isEmbedded()` = `window.parent !== window`),
+   * НЕ наличие host-bridge контракта: апп может быть embedded и без `contract`.
+   * Фиксирован на сессию (не реактивный). `standalone === !embedded`.
+   *
+   * Кейс: при embed апп уступает хосту автономные триггеры (`if (standalone) seed()`) —
+   * данные придут от хоста через `contract.in`, а не самосевом на `onInit`.
+   */
+  embedded: boolean;
+  /**
+   * Статичный run-режим запуска: `true` если приложение запущено автономно (не в хост-iframe).
+   * Зеркало `embedded` (`standalone === !embedded`) — удобный позитивный гейт автономных
+   * триггеров: `Controller(({ standalone }) => ({ states: { idle: {
+   *   onInit: ({ emit }) => { if (standalone) emit('addItems', { payload: localData }) },
+   * }}}))`.
+   */
+  standalone: boolean;
   [k: string]: any;
 }
 

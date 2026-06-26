@@ -40,6 +40,7 @@ import type { IAppConfig } from '../app-config';
 import { type IContract, validateEvent } from '../contract';
 import {
   createHostInbound,
+  EmbedModeContext,
   HostInboundContext,
   type IHostInbound,
   type IRootForward,
@@ -230,9 +231,14 @@ export const buildHostInboundHandler =
  * Строит корневой компонент приложения.
  *
  * Обёртки снаружи внутрь:
- *   Suspense → RootForwardContext (app→host forward-gate корня)
- *   → HostInboundContext (host→app inject) → EmitProvider (legacy useEmit sink)
- *   → BaseProviders (router + vitals)
+ *   Suspense → EmbedModeContext (статичный run-режим) → RootForwardContext (app→host
+ *   forward-gate корня) → HostInboundContext (host→app inject) → EmitProvider (legacy
+ *   useEmit sink) → BaseProviders (router + vitals)
+ *
+ * `EmbedModeContext` несёт статичный `{ embedded }` (источник — `isEmbedded()` в bootstrap)
+ * — его читает logic-wrapper и выдаёт `embedded`/`standalone` в services. Оборачивает
+ * `BaseProviders`, где монтируются Feature/Controller. В отличие от host-bridge контекстов
+ * он ставится ВСЕГДА (включая standalone и embedded-без-contract) — режим не зависит от моста.
  *
  * Router-настройки читаются из реактивного `config` (merged base ⊕ override).
  * Mount происходит ПОСЛЕ merge (или таймаута), поэтому значения уже учитывают
@@ -241,6 +247,7 @@ export const buildHostInboundHandler =
 const buildAppComponent = (
   opts: ICreateCapsuleAppOptions,
   config: IAppConfig,
+  embedded: boolean,
   hostInbound: IHostInbound | undefined,
   rootForward: IRootForward | undefined,
 ): (() => JSX.Element) => {
@@ -248,19 +255,21 @@ const buildAppComponent = (
 
   return () => (
     <Suspense>
-      <RootForwardContext.Provider value={rootForward}>
-        <HostInboundContext.Provider value={hostInbound}>
-          <EmitProvider eventSink={opts.eventSink}>
-            <BaseProviders
-              routeTree={routeTree}
-              basepath={basepath ?? '/'}
-              notFoundRedirect={config.router?.notFoundRedirect}
-              beforeLoad={config.router?.beforeLoad}
-              transition={config.router?.transition}
-            />
-          </EmitProvider>
-        </HostInboundContext.Provider>
-      </RootForwardContext.Provider>
+      <EmbedModeContext.Provider value={{ embedded }}>
+        <RootForwardContext.Provider value={rootForward}>
+          <HostInboundContext.Provider value={hostInbound}>
+            <EmitProvider eventSink={opts.eventSink}>
+              <BaseProviders
+                routeTree={routeTree}
+                basepath={basepath ?? '/'}
+                notFoundRedirect={config.router?.notFoundRedirect}
+                beforeLoad={config.router?.beforeLoad}
+                transition={config.router?.transition}
+              />
+            </EmitProvider>
+          </HostInboundContext.Provider>
+        </RootForwardContext.Provider>
+      </EmbedModeContext.Provider>
     </Suspense>
   );
 };
@@ -285,6 +294,10 @@ export const createCapsuleApp = (
   const el = resolveContainer(container);
   ensureTheme(opts.defaultTheme ?? DEFAULT_THEME);
 
+  // Статичный run-режим: источник правды — iframe-check, НЕ наличие contract-моста.
+  // Резолвится один раз; прокидывается в дерево через EmbedModeContext (services flag).
+  const embedded = isEmbedded();
+
   const { config, applyOverride } = createConfigStore(opts.appConfig);
 
   let disposed = false;
@@ -303,7 +316,7 @@ export const createCapsuleApp = (
 
   const mount = (): void => {
     if (disposed || rootDispose) return; // идемпотентно: монтируем один раз
-    rootDispose = render(buildAppComponent(opts, config, hostInbound, rootForward), el);
+    rootDispose = render(buildAppComponent(opts, config, embedded, hostInbound, rootForward), el);
     if (embedParams && typeof window !== 'undefined') {
       // app→host: «я отрисовался» → хост снимает loader-overlay (web-remote).
       // Постится РОВНО раз — mount() идемпотентен (гард выше).
@@ -321,7 +334,7 @@ export const createCapsuleApp = (
     }
   };
 
-  if (!isEmbedded()) {
+  if (!embedded) {
     mount();
   } else {
     const params = readEmbedParams();

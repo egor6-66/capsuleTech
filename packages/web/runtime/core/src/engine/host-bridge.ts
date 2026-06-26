@@ -64,6 +64,36 @@ export const RootForwardContext = createContext<IRootForward | undefined>(undefi
  */
 export const useRootForward = (): IRootForward | undefined => useContext(RootForwardContext);
 
+/**
+ * Run-режим встраивания приложения (ADR 060 / embedded flag).
+ *
+ * Источник правды — `isEmbedded()` (iframe-check `window.parent !== window`) в bootstrap,
+ * НЕ наличие host-bridge контрактов: апп может быть embedded и без `contract` (тогда
+ * inbound/forward мосты `undefined`, но режим всё равно embedded). Дефолт `{ embedded: false }`
+ * = standalone — корректен для standalone-аппов, тестов и любого дерева без provider'а.
+ *
+ * Поле статично на сессию (режим фиксируется один раз на bootstrap), поэтому несётся
+ * простым объектом, не реактивным сигналом.
+ */
+export interface IEmbedMode {
+  /** true если приложение запущено внутри хост-iframe; false = автономный (standalone) запуск. */
+  embedded: boolean;
+}
+
+/**
+ * Per-instance run-режим. Дефолт `{ embedded: false }` = standalone (нет provider'а / тесты).
+ * Bootstrap оборачивает дерево provider'ом с реальным значением из `isEmbedded()`.
+ */
+export const EmbedModeContext = createContext<IEmbedMode>({ embedded: false });
+
+/**
+ * Hook для logic-wrapper'а: отдаёт статичный run-режим запуска приложения.
+ * Без provider'а → дефолт `{ embedded: false }` (standalone).
+ *
+ * @internal Используется в `logic-wrapper.tsx` для прокидывания `embedded`/`standalone` в services.
+ */
+export const useEmbedMode = (): IEmbedMode => useContext(EmbedModeContext);
+
 /** Context, несущий `IHostInbound`. `undefined` = standalone / мост выключен. */
 export const HostInboundContext = createContext<IHostInbound | undefined>(undefined);
 
