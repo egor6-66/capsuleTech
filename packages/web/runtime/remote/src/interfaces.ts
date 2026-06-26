@@ -162,6 +162,17 @@ export type RemoteOutHandlers<Out extends Record<string, unknown>> = {
 };
 
 /**
+ * host→app dispatch signature derived from a remote's `in` map (ADR 060 D1): a
+ * typed call `dispatch(eventName, payload)` where `eventName ∈ keyof In` and
+ * `payload` is `In[eventName]`. Symmetric counterpart of {@link RemoteOutHandlers}
+ * (which derives the app→host `on<Out>` handlers).
+ */
+export type RemoteInDispatch<In extends Record<string, unknown>> = <E extends keyof In & string>(
+  eventName: E,
+  payload: In[E],
+) => void;
+
+/**
  * Props of `<Remote.View>` for a remote `name`:
  *  - known name (present in {@link CapsuleRemotes}) → literal `name` + typed
  *    `on<Out>` handlers; an unknown `on*` / a wrong payload is a TS error;
@@ -197,12 +208,22 @@ export interface IRemoteResponse<T = unknown> {
 /**
  * Per-module communication handle. Returned from `remote(name, instanceId?)`.
  *
- * - `send(event, payload)` — fire-and-forget, no return value
+ * - `dispatch(eventName, payload)` — host→app: dispatch a named contract `in` event
+ *   into the embedded app (ADR 060 D1). Typed by `CapsuleRemotes[name]['in']` for a
+ *   known `name`, loose otherwise.
+ * - `send(event, payload)` — raw fire-and-forget (low-level; also used by `request`)
  * - `request(event, payload, timeoutMs?)` — awaitable, default 5s timeout
  * - `on(event, cb)` — subscribe, returns unsubscribe function
  * - `openStandalone(props)` — open this module in a separate window
+ *
+ * `N` = remote name (drives the typed `dispatch`); defaults to `string` (loose).
  */
-export interface IRemoteHandle {
+export interface IRemoteHandle<N extends string = string> {
+  dispatch: [N] extends [keyof CapsuleRemotes]
+    ? CapsuleRemotes[N] extends { in: infer In extends Record<string, unknown> }
+      ? RemoteInDispatch<In>
+      : (eventName: string, payload?: unknown) => void
+    : (eventName: string, payload?: unknown) => void;
   send: (event: string, payload?: unknown) => void;
   request: <T = unknown>(
     event: string,
@@ -220,8 +241,8 @@ export interface IRemoteHandle {
 export interface IRemoteContext {
   /** Component to mount a remote module by name. */
   Remote: (props: IRemoteComponentProps) => JSX.Element;
-  /** Get a communication handle for a remote module. */
-  remote: (name: string, instanceId?: string) => IRemoteHandle;
+  /** Get a communication handle for a remote module (typed by `name` when known). */
+  remote: <N extends string = string>(name: N, instanceId?: string) => IRemoteHandle<N>;
   /** Mutate a module entry at runtime (e.g. swap URL after receiving a "new version" notification). */
   updateModule: (name: string, patch: Partial<IRemoteModuleConfig>) => void;
   /** Currently registered modules (reactive snapshot). */

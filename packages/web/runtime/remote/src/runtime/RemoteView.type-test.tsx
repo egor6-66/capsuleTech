@@ -18,8 +18,8 @@
  */
 
 import type { JSX } from 'solid-js';
-// Read the type through the PUBLIC barrel — same module the augmentation targets.
-import type { IRemoteViewProps } from '@capsuletech/web-remote';
+// Read the types through the PUBLIC barrel — same module the augmentation targets.
+import type { IRemoteHandle, IRemoteViewProps } from '@capsuletech/web-remote';
 import { RemoteView } from './RemoteView';
 
 // Fake augmentation — mimics what `.capsule/@types/remotes.d.ts` (vite-builder
@@ -81,6 +81,22 @@ const _badEvent: JSX.Element = (
 
 // ✓ unknown name → falls back to the loose typing (arbitrary on* accepted, no error).
 const _fallback: JSX.Element = <RemoteView name="unregistered" onAnything={() => {}} />;
+
+// ── host→app dispatch typing (ADR 060 D1) ─────────────────────────────────────
+// IRemoteHandle<'map'>.dispatch is typed by CapsuleRemotes['map']['in'].
+declare const mapHandle: IRemoteHandle<'map'>;
+// ✓ known in-event + correct payload
+mapHandle.dispatch('setView', { lat: 1, lng: 2 });
+// ✗ wrong payload shape
+// @ts-expect-error — payload must be { lat: number; lng: number }.
+mapHandle.dispatch('setView', { lat: 'nope' });
+// ✗ unknown in-event
+// @ts-expect-error — 'bogus' is not an in event of "map".
+mapHandle.dispatch('bogus', {});
+
+// ✓ unknown name → loose dispatch (any eventName, optional payload).
+declare const looseHandle: IRemoteHandle<'unregistered'>;
+looseHandle.dispatch('whatever', { anything: true });
 
 // Keep this a module under stricter unused-checks.
 export type _TypeTests = [

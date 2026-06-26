@@ -641,6 +641,24 @@ describe('generateIndexEntry — embed-aware mount entry (ADR 059 Phase 2)', () 
   it('does NOT use the retired createRoot(Bootstrap) model', () => {
     expect(generateIndexEntry()).not.toContain('createRoot');
   });
+
+  // ADR 060 Phase 3 / D1 — прокидывание контракта аппа в createCapsuleApp.
+  it('no contract.ts (default) → contract NOT imported nor passed', () => {
+    const out = generateIndexEntry();
+    expect(out).not.toContain("import contract from '../contract';");
+    expect(out).not.toContain(', contract });');
+    expect(out).toContain(
+      "createCapsuleApp('root', { routeTree, appConfig, basepath: import.meta.env.BASE_URL });",
+    );
+  });
+
+  it('contract.ts present → imports default + passes contract to createCapsuleApp', () => {
+    const out = generateIndexEntry(true);
+    expect(out).toContain("import contract from '../contract';");
+    expect(out).toContain(
+      "createCapsuleApp('root', { routeTree, appConfig, basepath: import.meta.env.BASE_URL, contract });",
+    );
+  });
 });
 
 describe('generateBootstrap — import order matches LAYER_INIT_ORDER', () => {

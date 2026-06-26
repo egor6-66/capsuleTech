@@ -22,6 +22,7 @@ export type {
   // ADR 060 D6 — typed <Remote.View> props (reads CapsuleRemotes declared below)
   IRemoteViewProps,
   ITransport,
+  RemoteInDispatch,
   RemoteOutHandlers,
   TransportKind,
 } from './interfaces';

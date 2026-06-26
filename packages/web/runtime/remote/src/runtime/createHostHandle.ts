@@ -11,12 +11,12 @@ import type { IRemoteHandle, IRemoteMessage, IRemoteResponse, ITransport } from 
 
 const DEFAULT_TIMEOUT_MS = 5_000;
 
-export const createHostHandle = (
-  name: string,
+export const createHostHandle = <N extends string = string>(
+  name: N,
   instanceId: string,
   transports: ITransport[],
   sessionId: string,
-): IRemoteHandle => {
+): IRemoteHandle<N> => {
   // Single transport (ADR 058 D2). Array shape kept; no origin-based resolution.
   const resolveTransport = (): ITransport => transports[0]!;
 
@@ -35,7 +35,16 @@ export const createHostHandle = (
     requestId,
   });
 
+  // host→app fire-and-forget. Same wire as `send`, but exposed as the explicit
+  // `dispatch` host→app API (ADR 060 D1) — typed by CapsuleRemotes[name]['in'] at the
+  // call-site; runtime is name-agnostic, so the conditional type is cast here.
+  const dispatch = ((eventName: string, payload?: unknown): void => {
+    resolveTransport().send(buildOutbound(eventName, payload));
+  }) as IRemoteHandle<N>['dispatch'];
+
   return {
+    dispatch,
+
     send(event: string, payload?: unknown): void {
       resolveTransport().send(buildOutbound(event, payload));
     },

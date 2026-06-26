@@ -191,7 +191,7 @@ describe('RemoteComponent', () => {
     await Promise.resolve();
     transport.triggerMessage({
       from: 'hello',
-      fromInstance: 'inst-1',
+      fromInstance: 'hello',
       to: EMBED_PROTOCOL.hostTarget,
       sessionId: SESSION,
       eventName: 'clicked',
@@ -206,7 +206,7 @@ describe('RemoteComponent', () => {
     await Promise.resolve();
     transport.triggerMessage({
       from: 'hello',
-      fromInstance: 'inst-1',
+      fromInstance: 'hello',
       to: EMBED_PROTOCOL.hostTarget,
       sessionId: SESSION,
       eventName: 'selectionChange',
@@ -215,7 +215,7 @@ describe('RemoteComponent', () => {
     expect(onSelectionChange).toHaveBeenCalledWith({ rows: [1, 2] });
   });
 
-  it('does NOT fire on* for events from the wrong instance', async () => {
+  it('does NOT fire on* for events from a different module name', async () => {
     const onClicked = vi.fn();
     renderRemote({
       instanceId: 'correct-instance',
@@ -223,12 +223,50 @@ describe('RemoteComponent', () => {
     } as unknown as Partial<IRemoteComponentInternalProps>);
     await Promise.resolve();
     transport.triggerMessage({
-      from: 'hello',
-      fromInstance: 'wrong-instance',
+      from: 'other-module',
+      fromInstance: 'other-module',
       to: EMBED_PROTOCOL.hostTarget,
       sessionId: SESSION,
       eventName: 'clicked',
     });
+    expect(onClicked).not.toHaveBeenCalled();
+  });
+
+  // ─── app→host: events land ONLY in on* props (ADR 060 D1) ────────────────────
+
+  it('an event WITHOUT a matching on* prop is dropped (no throw, loose coupling)', async () => {
+    renderRemote();
+    await Promise.resolve();
+    expect(() =>
+      transport.triggerMessage({
+        from: 'hello',
+        fromInstance: 'hello',
+        to: EMBED_PROTOCOL.hostTarget,
+        sessionId: SESSION,
+        eventName: 'componentClick',
+        payload: { id: 'c1' },
+      }),
+    ).not.toThrow();
+  });
+
+  it('does NOT deliver handshake/config envelopes to on* handlers', async () => {
+    const onClicked = vi.fn();
+    renderRemote({ onClicked } as unknown as Partial<IRemoteComponentInternalProps>);
+    await Promise.resolve();
+    for (const eventName of [
+      EMBED_PROTOCOL.readyEvent,
+      EMBED_PROTOCOL.mountedEvent,
+      EMBED_PROTOCOL.unloadEvent,
+      EMBED_PROTOCOL.configEvent,
+    ]) {
+      transport.triggerMessage({
+        from: 'hello',
+        fromInstance: 'hello',
+        to: EMBED_PROTOCOL.hostTarget,
+        sessionId: SESSION,
+        eventName,
+      });
+    }
     expect(onClicked).not.toHaveBeenCalled();
   });
 

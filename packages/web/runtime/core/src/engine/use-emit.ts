@@ -112,6 +112,24 @@ export const createEmit =
  *
  * @throws {Error} если вызван вне Controller/Feature-scope (нет ControllerContext).
  */
+/**
+ * Строит `emit`-функцию по готовому `ICtx`, читая sink из `EmitContext`.
+ *
+ * ⚠️ Вызывать ТОЛЬКО из render/hook-scope (читает `useContext(EmitContext)`).
+ * Локальный dispatch первый; sink-forward (legacy embedded, ADR-053) — параллельный
+ * fire-and-forget side-channel.
+ */
+const buildEmitFromCtx = (ctx: ICtx): EmitFn => {
+  const sink = useContext(EmitContext);
+  const localEmit = createEmit(ctx);
+
+  return (eventName: string, partial?: Partial<ITarget>): unknown => {
+    const result = localEmit(eventName, partial);
+    sink?.send(eventName, partial?.payload);
+    return result;
+  };
+};
+
 export const useEmit = (): EmitFn => {
   const ctx = useContext(Context);
 
@@ -122,17 +140,5 @@ export const useEmit = (): EmitFn => {
     );
   }
 
-  // Embedded mode: читаем sink из EmitContext (undefined в standalone — no-op forward).
-  const sink = useContext(EmitContext);
-
-  const localEmit = createEmit(ctx);
-
-  return (eventName: string, partial?: Partial<ITarget>): unknown => {
-    const result = localEmit(eventName, partial);
-    // Embedded mode: дополнительно пересылаем событие хосту.
-    // ControllerProxy продолжает работать параллельно (не заменяем — добавляем).
-    // Локальный dispatch первый (per ADR event-ordering: sink после local — fire-and-forget).
-    sink?.send(eventName, partial?.payload);
-    return result;
-  };
+  return buildEmitFromCtx(ctx);
 };

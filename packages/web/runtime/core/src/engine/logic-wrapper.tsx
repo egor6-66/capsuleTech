@@ -15,12 +15,32 @@ import type {
   IWrapperProps,
 } from '../wrappers/interfaces';
 import { ControllerProxy } from './controller-proxy';
-import { Context, useCtx } from './ctx';
+import { Context, type IControllerHandle, useCtx } from './ctx';
+import { type IRootForward, useHostInbound, useRootForward } from './host-bridge';
 import { getPackageServices } from './package-services';
 import { bindEvents } from './ui-proxy';
 import { createEmit } from './use-emit';
 
 type Kind = 'controller' | 'feature';
+
+/**
+ * Оборачивает controller КОРНЯ forward-gate'ом (ADR 060 D1): событие, дошедшее до корня
+ * и заявленное в `contract.out`, форвардится хосту ВМЕСТО локального хендлера (return null).
+ * Применяется ТОЛЬКО на корне (parent === undefined) в embedded+contract; вложенные слои и
+ * standalone используют исходный controller. Незаявленные имена проходят к base-dispatch'у.
+ */
+const applyRootForward = (base: IControllerHandle, fwd: IRootForward): IControllerHandle =>
+  new Proxy(base, {
+    get(target, prop, receiver) {
+      if (typeof prop === 'string' && fwd.shouldForward(prop)) {
+        return (t?: { payload?: unknown }) => {
+          fwd.forward(prop, t?.payload);
+          return null;
+        };
+      }
+      return Reflect.get(target, prop, receiver);
+    },
+  });
 
 export const createLogicWrapper =
   // `IDefineStateSchema<any>` — нижняя граница, open-форма (принимает любой TCtx).
@@ -35,12 +55,18 @@ export const createLogicWrapper =
       // z и utils — capabilities, инжектируются в оба слоя (Controller и Feature).
       //
       // Пакетные services (web-auth, web-dnd, …) добавляются через спред
-      // getPackageServices(): { [namespace]: services }. Базовые поля идут ПЕРВЫМИ,
-      // зарегистрированные namespace'ы — ПОСЛЕ, что гарантирует: пакет не может
-      // перезаписать router / api / zod / utils (namespace'ы по контракту уникальны).
+      // getPackageServices(): { [namespace]: services }. Базовые поля идут
+      // ПОСЛЕДНИМИ, что гарантирует: пакетный namespace не может перезаписать
+      // router / api / zod / utils (namespace'ы по контракту уникальны).
       const services: IServices =
         kind === 'feature'
-          ? { ...getPackageServices(), router, api: getApiClient(), zod: Zod, utils: Utils }
+          ? {
+              ...getPackageServices(),
+              router,
+              api: getApiClient(),
+              zod: Zod,
+              utils: Utils,
+            }
           : { ...getPackageServices(), router, zod: Zod, utils: Utils };
 
       const schema = defineStateSchema(services);
@@ -64,7 +90,7 @@ export const createLogicWrapper =
       const proxyEmit: ReturnType<typeof createEmit> = (eventName, partial) =>
         ctxEmit!(eventName, partial);
 
-      const controller = ControllerProxy({
+      const baseController = ControllerProxy({
         schema,
         state,
         send,
@@ -75,6 +101,13 @@ export const createLogicWrapper =
         // proxyEmit — ленивое замыкание, ctxEmit присваивается ниже до первого вызова.
         emit: proxyEmit,
       });
+
+      // App→host forward-gate (ADR 060 D1): ТОЛЬКО на корне (parent === undefined) в
+      // embedded+contract событие ∈ contract.out форвардится хосту вместо локального
+      // хендлера. Вложенные слои / standalone / нет contract → исходный controller.
+      const rootForward = useRootForward();
+      const controller =
+        !parent && rootForward ? applyRootForward(baseController, rootForward) : baseController;
 
       // controller готов — теперь создаём ctxEmit (ctx.controller уже присвоен).
       ctx.controller = controller;
@@ -88,6 +121,18 @@ export const createLogicWrapper =
       // до ctx.controller, поэтому emit в services работает только при ленивом вызове
       // (внутри хендлера, не на верхнем уровне factory). Это задокументировано в IServices.emit.
       services.emit = ctxEmit;
+
+      // Host→app bridge (ADR 060 D1): ТОЛЬКО корневой логик-слой (parent === undefined)
+      // подписывается на inbound host-события — вложенные иначе получали бы дубликат.
+      // Валидированное host-событие инжектится как обычный HCA-dispatch через ctxEmit;
+      // апп обрабатывает его штатно, БЕЗ embedding-кода. В standalone hostInbound = undefined.
+      const hostInbound = useHostInbound();
+      if (!parent && hostInbound) {
+        const unregister = hostInbound.register((eventName, payload) =>
+          ctxEmit!(eventName, { payload }),
+        );
+        onCleanup(unregister);
+      }
 
       const stateApi: IStateApi = {
         get current() {
