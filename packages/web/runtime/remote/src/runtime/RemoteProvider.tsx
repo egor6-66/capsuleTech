@@ -56,8 +56,8 @@ export const RemoteProvider = (props: IRemoteProviderProps): JSX.Element => {
       />
     ),
 
-    remote: (name: string, instanceId?: string) =>
-      createHostHandle(name, instanceId ?? '', transports, sessionId),
+    remote: <N extends string = string>(name: N, instanceId?: string) =>
+      createHostHandle<N>(name, instanceId ?? '', transports, sessionId),
 
     updateModule: (name: string, patch: Partial<IRemoteModuleConfig>) => {
       setModules(name, patch);

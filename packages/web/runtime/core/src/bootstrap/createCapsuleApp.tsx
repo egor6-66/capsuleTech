@@ -37,6 +37,14 @@ import type { AnyRoute } from '@capsuletech/web-router';
 import { type JSX, Suspense } from 'solid-js';
 import { render } from 'solid-js/web';
 import type { IAppConfig } from '../app-config';
+import { type IContract, validateEvent } from '../contract';
+import {
+  createHostInbound,
+  HostInboundContext,
+  type IHostInbound,
+  type IRootForward,
+  RootForwardContext,
+} from '../engine/host-bridge';
 import { BaseProviders } from '../providers/base';
 import { createConfigStore } from './embedConfig';
 import {
@@ -84,12 +92,25 @@ export interface ICreateCapsuleAppOptions {
   defaultTheme?: string;
 
   /**
-   * Канал для embedded useEmit routing (ADR-053 Decision 5).
-   * Структурно совместим с `IRemoteChannel` из @capsuletech/web-remote.
+   * Публичный контракт приложения (ADR 060). Прокидывается генерируемым
+   * bootstrap'ом (builders) из `apps/<app>/contract.ts`.
    *
-   * Если задан — `useEmit`-события дополнительно пересылаются хосту через
-   * `eventSink.send(event, payload)`. Локальный dispatch через ControllerProxy
-   * продолжает работать параллельно. В standalone-режиме не задавать.
+   * В embedded-режиме включает root-event-bus мост (ADR 060 D1):
+   *  - **app→host:** событие, дошедшее до КОРНЕВОГО Feature/Controller, чьё имя ∈
+   *    `contract.out`, форвардится хосту ВМЕСТО локального хендлера (forward-instead-of-handle);
+   *    payload валидируется по схеме. Триггер — корневой dispatch, НЕ `useEmit`.
+   *  - **host→app:** входящий dispatch валидируется по `contract.in` и инжектится
+   *    в корневую HCA-шину аппа.
+   *
+   * Нет contract (или standalone) → мост выключен, апп работает как обычно.
+   */
+  contract?: IContract;
+
+  /**
+   * Legacy-канал embedded useEmit routing (ADR-053 Decision 5). Опциональный явный sink:
+   * `useEmit`-события дополнительно пересылаются хосту через `eventSink.send(event, payload)`.
+   * НЕ связан с contract-форвардом (ADR 060 D1 форвардит с корня, а не через `useEmit`).
+   * В standalone-режиме не задавать.
    */
   eventSink?: IEmitSink;
 
@@ -128,33 +149,118 @@ const resolveContainer = (container: HTMLElement | string): HTMLElement => {
 };
 
 /**
+ * Строит app→host event-sink, **gated контрактом** (ADR 060 D1).
+ *
+ * `send(eventName, payload)` форвардит хосту ТОЛЬКО если `eventName ∈ contract.out`
+ * (снимает прошлую утечку «форвардим все useEmit» — held-back инфра 2026-06-24);
+ * payload дополнительно валидируется по `contract.out[eventName]` — невалид → warn + drop.
+ *
+ * Envelope идентичен mounted/unload-сигналам: `{ from, fromInstance, to:'__host__',
+ * sessionId, eventName, payload }`. Host матчит по `from` + `eventName`.
+ *
+ * @internal exported for unit-testing only
+ */
+export const buildContractGatedSink = (params: IEmbedParams, contract: IContract): IEmitSink => ({
+  send: (eventName: string, payload?: unknown): void => {
+    if (typeof window === 'undefined') return;
+    // Gate: незаявленное out-событие молча не уходит (loose coupling, принцип 5).
+    if (!Object.hasOwn(contract.out, eventName)) return;
+
+    const res = validateEvent(contract, 'out', eventName, payload);
+    if (!res.ok) {
+      console.warn(`[capsule] outbound event "${eventName}" dropped (contract): ${res.error}`);
+      return;
+    }
+
+    // targetOrigin='*' — cross-origin hardening отложен (ADR 059 open question #1).
+    window.parent.postMessage(
+      {
+        from: params.name,
+        fromInstance: params.name,
+        to: EMBED_PROTOCOL.hostTarget,
+        sessionId: params.sessionId,
+        eventName,
+        payload,
+      },
+      '*',
+    );
+  },
+});
+
+/**
+ * Строит обработчик host→app dispatch-сообщений (ADR 060 D1).
+ *
+ * Конверт host→app (согласован с web-remote 3-of-3): `{ to: <appName>, sessionId,
+ * eventName: <name ∈ contract.in>, payload }`. `eventName` несёт имя контракт-события
+ * напрямую — контракт и есть фильтр (принцип 6). От config/handshake-сигналов отличается
+ * именем события (зарезервированные `__capsule_*` не входят в `contract.in`).
+ *
+ * Фильтр+защита (принцип 5):
+ *  - чужой `sessionId` / не-наш `to` → игнор;
+ *  - незаявленное `in`-событие → молчаливый drop (loose coupling);
+ *  - заявленное, но невалидный payload → drop + warn;
+ *  - валидное → `inbound.emit(name, parsedValue)` → инжект в корень аппа.
+ *
+ * @internal exported for unit-testing only
+ */
+export const buildHostInboundHandler =
+  (params: IEmbedParams, contract: IContract, inbound: IHostInbound) =>
+  (event: MessageEvent): void => {
+    const data = event.data;
+    if (!data || typeof data !== 'object') return;
+    const msg = data as { sessionId?: string; eventName?: string; to?: string; payload?: unknown };
+
+    if (msg.sessionId !== params.sessionId) return;
+    if (typeof msg.eventName !== 'string') return;
+    // Опциональное сужение по адресату: если хост проставил `to` — требуем наше имя.
+    if (msg.to !== undefined && params.name !== '' && msg.to !== params.name) return;
+    // Gate: только заявленные in-события (исключает config/handshake-имена). Молча.
+    if (!Object.hasOwn(contract.in, msg.eventName)) return;
+
+    const res = validateEvent(contract, 'in', msg.eventName, msg.payload);
+    if (!res.ok) {
+      console.warn(`[capsule] inbound event "${msg.eventName}" dropped (contract): ${res.error}`);
+      return;
+    }
+
+    inbound.emit(msg.eventName, res.value);
+  };
+
+/**
  * Строит корневой компонент приложения.
  *
  * Обёртки снаружи внутрь:
- *   Suspense → EmitProvider (если eventSink) → BaseProviders (router + vitals)
+ *   Suspense → RootForwardContext (app→host forward-gate корня)
+ *   → HostInboundContext (host→app inject) → EmitProvider (legacy useEmit sink)
+ *   → BaseProviders (router + vitals)
  *
  * Router-настройки читаются из реактивного `config` (merged base ⊕ override).
  * Mount происходит ПОСЛЕ merge (или таймаута), поэтому значения уже учитывают
- * host-патч. EmitProvider снаружи BaseProviders — emit может происходить из
- * Route-компонентов.
+ * host-патч. Контексты снаружи BaseProviders — корневой Feature монтируется внутри.
  */
 const buildAppComponent = (
   opts: ICreateCapsuleAppOptions,
   config: IAppConfig,
+  hostInbound: IHostInbound | undefined,
+  rootForward: IRootForward | undefined,
 ): (() => JSX.Element) => {
-  const { routeTree, basepath, eventSink } = opts;
+  const { routeTree, basepath } = opts;
 
   return () => (
     <Suspense>
-      <EmitProvider eventSink={eventSink}>
-        <BaseProviders
-          routeTree={routeTree}
-          basepath={basepath ?? '/'}
-          notFoundRedirect={config.router?.notFoundRedirect}
-          beforeLoad={config.router?.beforeLoad}
-          transition={config.router?.transition}
-        />
-      </EmitProvider>
+      <RootForwardContext.Provider value={rootForward}>
+        <HostInboundContext.Provider value={hostInbound}>
+          <EmitProvider eventSink={opts.eventSink}>
+            <BaseProviders
+              routeTree={routeTree}
+              basepath={basepath ?? '/'}
+              notFoundRedirect={config.router?.notFoundRedirect}
+              beforeLoad={config.router?.beforeLoad}
+              transition={config.router?.transition}
+            />
+          </EmitProvider>
+        </HostInboundContext.Provider>
+      </RootForwardContext.Provider>
     </Suspense>
   );
 };
@@ -185,14 +291,19 @@ export const createCapsuleApp = (
   let rootDispose: (() => void) | undefined;
   let detachHandshake: (() => void) | undefined;
   let detachPageHide: (() => void) | undefined;
+  let detachHostMessage: (() => void) | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
   // Identity встроенного app'а — резолвится в embedded-ветке; нужна в mount() для
   // mounted-сигнала. null в standalone и embedded-без-params → сигнал не постится.
   let embedParams: IEmbedParams | null = null;
+  // Root-event-bus мост (ADR 060 D1) — резолвятся в embedded+contract ветке.
+  // undefined → мост off (standalone / нет contract): апп работает как обычно.
+  let hostInbound: IHostInbound | undefined;
+  let rootForward: IRootForward | undefined;
 
   const mount = (): void => {
     if (disposed || rootDispose) return; // идемпотентно: монтируем один раз
-    rootDispose = render(buildAppComponent(opts, config), el);
+    rootDispose = render(buildAppComponent(opts, config, hostInbound, rootForward), el);
     if (embedParams && typeof window !== 'undefined') {
       // app→host: «я отрисовался» → хост снимает loader-overlay (web-remote).
       // Постится РОВНО раз — mount() идемпотентен (гард выше).
@@ -220,6 +331,26 @@ export const createCapsuleApp = (
       mount();
     } else {
       embedParams = params; // mount() пошлёт mounted-сигнал после render()
+
+      // Root-event-bus мост (ADR 060 D1): включается только при наличии contract.
+      // out — forward-from-root (gate+валидация); in — валидация+инжект host→app.
+      const contract = opts.contract;
+      if (contract && typeof window !== 'undefined') {
+        // app→host: форвард с КОРНЯ (НЕ через useEmit). Sink переиспользуется как
+        // forward; shouldForward (имя ∈ out) решает skip-handler на корне.
+        const sink = buildContractGatedSink(params, contract);
+        rootForward = {
+          shouldForward: (eventName) => Object.hasOwn(contract.out, eventName),
+          forward: (eventName, payload) => sink.send(eventName, payload),
+        };
+        // host→app: per-instance inbound-канал + postMessage listener.
+        hostInbound = createHostInbound();
+        const onHostMessage = buildHostInboundHandler(params, contract, hostInbound);
+        window.addEventListener('message', onHostMessage as EventListener);
+        detachHostMessage = () =>
+          window.removeEventListener('message', onHostMessage as EventListener);
+      }
+
       if (typeof window !== 'undefined') {
         const onPageHide = (): void => {
           // app→host: «я выгружаюсь» (t0 reparent/reload) → хост ставит loader-overlay.
@@ -259,6 +390,7 @@ export const createCapsuleApp = (
     if (timer !== undefined) clearTimeout(timer);
     detachHandshake?.();
     detachPageHide?.();
+    detachHostMessage?.();
     rootDispose?.();
   };
 };

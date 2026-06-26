@@ -51,6 +51,27 @@ describe('createHostHandle', () => {
     });
   });
 
+  it('dispatch produces a host→app envelope (ADR 060 D1)', () => {
+    const transport = makeMockTransport();
+    const handle = createHostHandle(NAME, INSTANCE_ID, [transport], SESSION);
+
+    handle.dispatch('setMarkers', { markers: [{ id: 'a' }] });
+
+    expect(transport.sent).toHaveLength(1);
+    expect(transport.sent[0]).toMatchObject({
+      from: '__host__',
+      fromInstance: '__host__',
+      to: NAME,
+      toInstance: INSTANCE_ID,
+      sessionId: SESSION,
+      eventName: 'setMarkers',
+      payload: { markers: [{ id: 'a' }] },
+    });
+    // Distinct from the config / handshake channels — a plain contract eventName,
+    // not a reserved `__capsule_*` name.
+    expect(transport.sent[0]!.eventName.startsWith('__capsule_')).toBe(false);
+  });
+
   it('on subscribes and receives matching messages', () => {
     const transport = makeMockTransport();
     const handle = createHostHandle(NAME, INSTANCE_ID, [transport], SESSION);

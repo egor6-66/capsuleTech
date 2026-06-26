@@ -64,10 +64,22 @@ vi.mock('../embedHandshake', () => ({
   },
 }));
 
-import { createCapsuleApp } from '../createCapsuleApp';
+import { defineContract } from '../../contract';
+import { createHostInbound } from '../../engine/host-bridge';
+import {
+  buildContractGatedSink,
+  buildHostInboundHandler,
+  createCapsuleApp,
+} from '../createCapsuleApp';
 
 const makeRouteTree = () => ({ id: 'root' }) as any;
 const makeAppConfig = (overrides?: any) => ({ router: {}, ...overrides });
+
+const makeContract = () =>
+  defineContract((z) => ({
+    in: { setMarkers: z.array(z.object({ id: z.number() })) },
+    out: { markerClick: z.object({ id: z.number() }) },
+  }));
 
 const mountedCount = (root: HTMLElement) =>
   root.querySelectorAll('[data-testid="base-providers"]').length;
@@ -462,5 +474,189 @@ describe('createCapsuleApp — multiple instances', () => {
     dispose1();
     dispose2();
     document.body.removeChild(container2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ADR 060 D1 — app→host contract-gated sink (outbound)
+// ---------------------------------------------------------------------------
+
+describe('buildContractGatedSink (app→host, ADR 060 D1)', () => {
+  const params = { sessionId: 'sess-1', name: 'my-app' };
+
+  const withParentSpy = (fn: (postMessage: ReturnType<typeof vi.fn>) => void) => {
+    const postMessage = vi.fn();
+    const originalParent = Object.getOwnPropertyDescriptor(window, 'parent');
+    Object.defineProperty(window, 'parent', { value: { postMessage }, configurable: true });
+    try {
+      fn(postMessage);
+    } finally {
+      if (originalParent) Object.defineProperty(window, 'parent', originalParent);
+    }
+  };
+
+  it('forwards a declared out event with a valid payload', () => {
+    withParentSpy((postMessage) => {
+      const sink = buildContractGatedSink(params, makeContract());
+      sink.send('markerClick', { id: 7 });
+
+      expect(postMessage).toHaveBeenCalledTimes(1);
+      const [envelope, targetOrigin] = postMessage.mock.calls[0];
+      expect(envelope).toEqual({
+        from: 'my-app',
+        fromInstance: 'my-app',
+        to: '__host__',
+        sessionId: 'sess-1',
+        eventName: 'markerClick',
+        payload: { id: 7 },
+      });
+      expect(targetOrigin).toBe('*');
+    });
+  });
+
+  it('does NOT forward an undeclared event (gate)', () => {
+    withParentSpy((postMessage) => {
+      const sink = buildContractGatedSink(params, makeContract());
+      sink.send('notInContract', { id: 1 });
+      expect(postMessage).not.toHaveBeenCalled();
+    });
+  });
+
+  it('drops a declared event with an invalid payload (+warn)', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    withParentSpy((postMessage) => {
+      const sink = buildContractGatedSink(params, makeContract());
+      sink.send('markerClick', { id: 'not-a-number' });
+      expect(postMessage).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalled();
+    });
+    warn.mockRestore();
+  });
+
+  it('is a no-op when window is undefined (SSR guard)', () => {
+    const sink = buildContractGatedSink(params, makeContract());
+    const originalWindow = globalThis.window;
+    // @ts-expect-error — simulate SSR (no window)
+    delete globalThis.window;
+    try {
+      expect(() => sink.send('markerClick', { id: 1 })).not.toThrow();
+    } finally {
+      globalThis.window = originalWindow;
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ADR 060 D1 — host→app inbound handler
+// ---------------------------------------------------------------------------
+
+describe('buildHostInboundHandler (host→app, ADR 060 D1)', () => {
+  const params = { sessionId: 'sess-1', name: 'my-app' };
+
+  const makeInbound = () => {
+    const dispatch = vi.fn();
+    const inbound = createHostInbound();
+    inbound.register(dispatch);
+    return { inbound, dispatch };
+  };
+
+  const msg = (data: unknown) => ({ data }) as MessageEvent;
+
+  it('injects a valid declared in event into the inbound channel (parsed value)', () => {
+    const { inbound, dispatch } = makeInbound();
+    const handler = buildHostInboundHandler(params, makeContract(), inbound);
+
+    handler(msg({ sessionId: 'sess-1', to: 'my-app', eventName: 'setMarkers', payload: [{ id: 1 }] }));
+
+    expect(dispatch).toHaveBeenCalledWith('setMarkers', [{ id: 1 }]);
+  });
+
+  it('ignores a message with a foreign sessionId', () => {
+    const { inbound, dispatch } = makeInbound();
+    const handler = buildHostInboundHandler(params, makeContract(), inbound);
+    handler(msg({ sessionId: 'other', eventName: 'setMarkers', payload: [{ id: 1 }] }));
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it('silently drops an undeclared event (loose coupling)', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { inbound, dispatch } = makeInbound();
+    const handler = buildHostInboundHandler(params, makeContract(), inbound);
+    handler(msg({ sessionId: 'sess-1', eventName: 'unknownEvent', payload: {} }));
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(warn).not.toHaveBeenCalled(); // undeclared = silent, not a warning
+    warn.mockRestore();
+  });
+
+  it('drops a declared event with an invalid payload (+warn)', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { inbound, dispatch } = makeInbound();
+    const handler = buildHostInboundHandler(params, makeContract(), inbound);
+    handler(msg({ sessionId: 'sess-1', eventName: 'setMarkers', payload: 'not-an-array' }));
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ADR 060 D1 — bridge wiring in createCapsuleApp (embedded + contract)
+// ---------------------------------------------------------------------------
+
+describe('createCapsuleApp — root-event-bus wiring', () => {
+  const countMessageListeners = (spy: ReturnType<typeof vi.spyOn>) =>
+    spy.mock.calls.filter((call: any[]) => call[0] === 'message').length;
+
+  it('attaches a host→app message listener in embedded mode with a contract', () => {
+    h.embedded = true;
+    h.params = { sessionId: 's1', name: 'app' };
+    const addSpy = vi.spyOn(window, 'addEventListener');
+    const removeSpy = vi.spyOn(window, 'removeEventListener');
+    try {
+      const dispose = createCapsuleApp(container, {
+        routeTree: makeRouteTree(),
+        appConfig: makeAppConfig(),
+        contract: makeContract(),
+      });
+      expect(countMessageListeners(addSpy)).toBe(1);
+
+      dispose();
+      expect(countMessageListeners(removeSpy)).toBe(1);
+    } finally {
+      addSpy.mockRestore();
+      removeSpy.mockRestore();
+    }
+  });
+
+  it('does NOT attach a message listener without a contract (bridge off)', () => {
+    h.embedded = true;
+    h.params = { sessionId: 's1', name: 'app' };
+    const addSpy = vi.spyOn(window, 'addEventListener');
+    try {
+      const dispose = createCapsuleApp(container, {
+        routeTree: makeRouteTree(),
+        appConfig: makeAppConfig(),
+      });
+      expect(countMessageListeners(addSpy)).toBe(0);
+      dispose();
+    } finally {
+      addSpy.mockRestore();
+    }
+  });
+
+  it('does NOT attach a message listener in standalone mode (with contract)', () => {
+    // h.embedded stays false.
+    const addSpy = vi.spyOn(window, 'addEventListener');
+    try {
+      const dispose = createCapsuleApp(container, {
+        routeTree: makeRouteTree(),
+        appConfig: makeAppConfig(),
+        contract: makeContract(),
+      });
+      expect(countMessageListeners(addSpy)).toBe(0);
+      dispose();
+    } finally {
+      addSpy.mockRestore();
+    }
   });
 });

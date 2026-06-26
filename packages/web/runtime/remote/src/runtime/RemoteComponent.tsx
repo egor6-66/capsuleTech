@@ -43,8 +43,17 @@ export interface IRemoteComponentInternalProps extends IRemoteComponentProps {
   providerConfig?: Record<string, unknown>;
 }
 
-/** /^on[A-Z]/ — ADR-053 Decision 5. `online`/`onclick` do NOT match. */
-const EVENT_PROP_RE = /^on[A-Z]/;
+/**
+ * app→host envelopes handled by the handshake / config effects — these are NOT
+ * routed to `on*` props. Contract events carry bare camelCase names, so they never
+ * collide with these `__capsule_*` envelope names.
+ */
+const RESERVED_EVENTS = new Set<string>([
+  EMBED_PROTOCOL.readyEvent,
+  EMBED_PROTOCOL.mountedEvent,
+  EMBED_PROTOCOL.unloadEvent,
+  EMBED_PROTOCOL.configEvent,
+]);
 
 /**
  * Host-side wait for the app's ready signal before declaring it unavailable.
@@ -183,32 +192,31 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
     sendConfigEnvelope(t);
   });
 
-  // ─── Auto-subscribe on* props (ADR-053 Decision 5) ───────────────────────
-  // For each prop matching /^on[A-Z]/, subscribe to the corresponding event
-  // from the module. Convention: camelCase event names.
-  // `online`/`onclick` do NOT match (lowercase after 'on') — safe for boolean props.
+  // ─── Route incoming app→host events → on* props (ADR 060 D1) ─────────────────
+  // One listener for every app→host event from this remote. Matched by name only:
+  // the self-contained app knows only its `name` + `sessionId` from the iframe URL,
+  // not the host-side instanceId, so it posts fromInstance === name; sessionId is
+  // already filtered by the transport — consistent with the ready/mounted handshake.
+  // Known limit: multiple instances of the same `name` are indistinguishable in the
+  // app→host direction (single-instance use-cases fine; per-instance disambiguation =
+  // a separate ADR when component-mode lands).
+  //
+  // Delivery (ADR 060 D1): app→host events land ONLY in `on<Event>` props. If the
+  // matching `on<Event>` prop is provided it is called; otherwise the host is not
+  // subscribed to that event and it is dropped (loose coupling — no host-HCA forward).
+  // Handshake/config envelopes are filtered out via RESERVED_EVENTS.
   createEffect(() => {
     const t = transport();
     if (!t) return;
-    const eventProps = Object.keys(rawProps).filter((k) => EVENT_PROP_RE.test(k));
-    for (const propName of eventProps) {
-      const cb = (rawProps as Record<string, unknown>)[propName] as
-        | ((payload?: unknown) => void)
-        | undefined;
-      if (typeof cb !== 'function') continue;
-      // onSelectionChange → 'selectionChange'
-      const eventName = propName[2]!.toLowerCase() + propName.slice(3);
-      const unsub = t.onMessage((msg) => {
-        if (
-          msg.from === rawProps.name &&
-          msg.fromInstance === instanceId &&
-          msg.eventName === eventName
-        ) {
-          cb(msg.payload);
-        }
-      });
-      onCleanup(unsub);
-    }
+    const unsub = t.onMessage((msg) => {
+      if (msg.from !== rawProps.name || RESERVED_EVENTS.has(msg.eventName)) return;
+      // 'markerClick' → 'onMarkerClick' (inverse of the Phase 2 typing convention).
+      const handlerName = `on${msg.eventName[0]!.toUpperCase()}${msg.eventName.slice(1)}`;
+      const cb = (rawProps as Record<string, unknown>)[handlerName];
+      if (typeof cb === 'function') (cb as (payload?: unknown) => void)(msg.payload);
+      // no on* prop → host not subscribed → drop (loose coupling, ADR 060 D1)
+    });
+    onCleanup(unsub);
   });
 
   // Native iframe load handler — only for external (foreign) sites that don't post
