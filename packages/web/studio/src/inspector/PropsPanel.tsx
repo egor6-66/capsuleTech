@@ -1,10 +1,10 @@
 /**
- * WebStudio.Props — редактор пропсов выбранного пресета.
+ * PropsPanel — connected-редактор пропсов выбранного пресета.
  *
  * Читает редактируемую `schema()` из shared singleton'а (Solid Store).
  * Резолвит manifest корневой ноды (через `@capsuletech/web-ui/manifest`),
  * конвертирует `propsSchema` (zod) → categories для generic Inspector'а
- * и рендерит его.
+ * и рендерит его. Презентация полей — stateless `./Inspector`.
  *
  * **Field rules** — гибкий механизм условной видимости/блокировки полей
  * (`@capsuletech/web-ui/manifest` → `applyFieldRule`). Например, для Button: при `size === 'icon'`
@@ -19,6 +19,8 @@
  * Categories мемоизируются (createMemo) — пока тип ноды не меняется, ref
  * массива стабилен → Inspector не remount'ит поля → фокус input'ов
  * сохраняется при вводе.
+ *
+ * Регистрируется как `WebStudio.Props` через `../capsule` (ADR 033).
  */
 
 import { Flex } from '@capsuletech/web-ui/flex';
@@ -26,10 +28,10 @@ import { Icons } from '@capsuletech/web-ui/icons';
 import { applyFieldRule, getManifest } from '@capsuletech/web-ui/manifest';
 import { Typography } from '@capsuletech/web-ui/typography';
 import { createMemo, Show } from 'solid-js';
-import { Inspector } from '../inspector/Inspector';
-import type { ICategory, ISelectField } from '../inspector/types';
-import { schemaToInspectorCategories } from '../inspector/zod-to-categories';
 import { useSelectedPreset } from '../selection';
+import { Inspector } from './Inspector';
+import type { ICategory, ISelectField } from './types';
+import { schemaToInspectorCategories } from './zod-to-categories';
 
 const ICON_NAMES = Object.keys(Icons) as ReadonlyArray<keyof typeof Icons>;
 
@@ -40,7 +42,7 @@ const ICON_FIELD: ISelectField = {
   options: ICON_NAMES.map((n) => ({ value: n })),
 };
 
-export const WebStudioProps = () => {
+export const PropsPanel = () => {
   const { schema, patchProps, patchNodeType } = useSelectedPreset();
 
   const rootNode = () => {

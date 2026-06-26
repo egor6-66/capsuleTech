@@ -1,6 +1,6 @@
 /**
  * Info — 3-аккордионный композер info-панели студио. Stateless: получает
- * preset/type/manifest/contract через props (резолвит WebStudioInfo).
+ * preset/type/manifest/contract через props (резолвит InfoPanel).
  *
  * Структура зеркалит `ComponentsPalette` — три отдельных `<Accordion>` блока,
  * каждый с одним `Accordion.Item`, обёрнутые в `<Flex wrap>`.

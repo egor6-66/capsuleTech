@@ -17,8 +17,8 @@
  *                                                  через `@capsuletech/web-dnd`
  *                                                  для сборки композиции. `DnDProvider`
  *                                                  обязан быть выше по дереву — его
- *                                                  монтирует `WebStudio.CreatorRoot`
- *                                                  (общий с `WebStudio.Canvas`-drop-target'ом).
+ *                                                  монтирует `WebStudio.Provider`
+ *                                                  (общий с creator-mode drop-target'ом).
  *
  * Сейчас пресеты определены только для Button (`ui.Button`).
  */

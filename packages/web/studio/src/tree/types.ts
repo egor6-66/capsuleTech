@@ -1,7 +1,7 @@
 import type { IEditorNode } from '@capsuletech/web-renderer';
 
 /**
- * Stateless-пропсы для `<Tree>` — резолвятся в `WebStudioTree` controller'е из
+ * Stateless-пропсы для `<Tree>` — резолвятся в `TreePanel` connected-обёртке из
  * `useComposition()`. Tree сам не читает store, чтобы быть тестируемым с любым
  * shape'ом nodes/selection.
  */

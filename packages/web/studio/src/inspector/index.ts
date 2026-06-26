@@ -3,6 +3,7 @@ export type { IParsedUnit } from './fields/parse-unit';
 export { formatUnit, parseUnit } from './fields/parse-unit';
 export { Inspector } from './Inspector';
 export { DEFAULT_KIT } from './kit';
+export { PropsPanel } from './PropsPanel';
 export type {
   IBooleanField,
   ICategory,

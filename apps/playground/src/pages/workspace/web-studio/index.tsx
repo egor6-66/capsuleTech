@@ -7,7 +7,7 @@
  */
 
 const WebStudioLayout = Page((Ui) => (
-  <WebStudio.CreatorRoot>
+  <WebStudio.Provider>
     <Remote.Provider modules={[{ name: 'universal-canvas', url: 'http://localhost:3000' }]}>
       <Layouts.Matrix
         mode="view"
@@ -23,7 +23,7 @@ const WebStudioLayout = Page((Ui) => (
         }}
       />
     </Remote.Provider>
-  </WebStudio.CreatorRoot>
+  </WebStudio.Provider>
 ));
 export const meta = { can: 'studio' };
 
