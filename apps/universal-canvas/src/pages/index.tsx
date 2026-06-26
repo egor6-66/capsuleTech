@@ -1,3 +1,7 @@
-const Index = Page((Ui) => <Ui.Typography>Universal Canvas — embedded ✓</Ui.Typography>);
+const Index = Page(() => (
+  <Controllers.Canvas>
+    <Widgets.Display />
+  </Controllers.Canvas>
+));
 
 export default Index;
