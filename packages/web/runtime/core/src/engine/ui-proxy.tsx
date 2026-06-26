@@ -1,6 +1,7 @@
 import type { JSX } from 'solid-js';
-import { createEffect, createUniqueId, mergeProps, onCleanup, splitProps } from 'solid-js';
+import { createEffect, createUniqueId, mergeProps, onCleanup, splitProps, useContext } from 'solid-js';
 import { hasAccessResolver, resolveAccess } from './access-resolver';
+import { Context } from './ctx';
 import type { ICtx } from './ctx';
 import {
   type AnyEvent,
@@ -242,6 +243,10 @@ export const wrapComponent = (
     });
     const [local, props] = splitProps(merged, ['children']);
 
+    // POC: resolve ctx dynamically from the nearest enclosing Context provider.
+    // Fallback на захваченный `ctx`, когда внутреннего Controller/Feature нет.
+    const liveCtx = useContext(Context) ?? ctx;
+
     // Политика C: элемент попадает в реестр и получает event-binding ТОЛЬКО
     // если разработчик явно указал собственный meta на этом JSX-узле.
     // Унаследованный dynamicMeta (от Entity) — не повод регистрировать
@@ -288,17 +293,17 @@ export const wrapComponent = (
     createEffect(() => {
       const effectiveMeta = getEffectiveMeta();
       const name = deriveName(effectiveMeta);
-      ctx.store.registerComponent({
+      liveCtx.store.registerComponent({
         [id]: { ...props, meta: effectiveMeta, ...(name ? { name } : {}) },
       });
     });
 
     onCleanup(() => {
-      ctx.store.unregisterComponent(id);
+      liveCtx.store.unregisterComponent(id);
     });
 
     const eventBindings = buildEventBindings(
-      ctx,
+      liveCtx,
       getEffectiveMeta,
       () => props,
       (data) => {
@@ -306,14 +311,14 @@ export const wrapComponent = (
         // registerComponent (mount-time, единоразово). Раньше тут был ctx.store.update
         // (SET_DATA), который шумил весь target в user namespace `context.data` —
         // см. историю про разделение register/update в docs/09-packages/state.md.
-        ctx.store.updateComponent({ [id]: { value: data.value, type: data.type } });
+        liveCtx.store.updateComponent({ [id]: { value: data.value, type: data.type } });
       },
     );
 
     const dynamicProps = {
       get class() {
         const name = deriveName(getEffectiveMeta());
-        const custom = name ? ctx.store.styles?.[name] || '' : '';
+        const custom = name ? liveCtx.store.styles?.[name] || '' : '';
         return `${props.class || ''} ${custom}`.trim();
       },
       // name прокидывается под капотом — для нативных DOM-элементов (input/button/select),
@@ -337,7 +342,7 @@ export const wrapComponent = (
     // Patch-источник передан **функцией** — Solid'овский mergeProps вызывает её
     // на КАЖДОМ чтении и пробрасывает реактивность от @xstate/solid (createStore)
     // в потребителя (`splitProps` / JSX-spread).
-    const finalProps = mergeProps(props, dynamicProps, () => ctx.store.props?.[id] ?? {}, local);
+    const finalProps = mergeProps(props, dynamicProps, () => liveCtx.store.props?.[id] ?? {}, local);
     return <OriginalComponent {...finalProps} />;
   };
 

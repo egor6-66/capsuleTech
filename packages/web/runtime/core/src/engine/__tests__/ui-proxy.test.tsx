@@ -2,6 +2,7 @@
 import { For, Show } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Context } from '../ctx';
 import { UiProxy, wrapComponent } from '../ui-proxy';
 
 // UiProxy render-path тесты. Тестим `wrapComponent` напрямую (вынесен из
@@ -768,6 +769,61 @@ describe('UiProxy — Icons namespace is returned raw (not wrapped)', () => {
     cleanup = render(() => <Icon />, container);
 
     expect(ctx.store.registerComponent).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// POC (owner-web-core, brief poc-uiproxy-dynamic-ctx): UiProxy resolves ctx
+// DYNAMICALLY from the nearest enclosing Context.Provider — not the ctx captured
+// at proxy-creation time. This is the ONLY case the existing suite doesn't cover:
+// a meta-element wrapped against an OUTER ctx but rendered inside an INNER
+// Controller/Feature Provider must dispatch to the INNER ctx (enables next()
+// bubbling into a Feature nested in a Widget body).
+//
+// NOTE: this test asserts POC behaviour. If the POC is reverted, expect it to
+// fail (events would route to the captured outer ctx instead).
+
+describe('wrapComponent — dynamic ctx via enclosing Context.Provider (POC)', () => {
+  it('meta-button wrapped with OUTER ctx but rendered inside INNER Provider dispatches to INNER controller', () => {
+    const outer = mkCtx() as any;
+    const inner = mkCtx() as any;
+    // Wrapped is bound to `outer` at wrap-time...
+    const Wrapped = wrapComponent(outer, {}, StubButton);
+
+    // ...but rendered inside a Provider exposing `inner`.
+    cleanup = render(
+      () => (
+        <Context.Provider value={inner}>
+          <Wrapped meta={{ tags: ['ping'] }}>Ping</Wrapped>
+        </Context.Provider>
+      ),
+      container,
+    );
+
+    // Registration goes to the inner store (live ctx), not the captured outer one.
+    expect(inner.store.registerComponent).toHaveBeenCalledOnce();
+    expect(outer.store.registerComponent).not.toHaveBeenCalled();
+
+    const btn = container.querySelector('[data-testid="btn"]') as HTMLButtonElement;
+    btn.click();
+
+    // Event routes to the inner controller.
+    expect(inner.controller.onClick).toHaveBeenCalledOnce();
+    expect(outer.controller.onClick).not.toHaveBeenCalled();
+    const [target, context] = inner.controller.onClick.mock.calls[0];
+    expect(target.name).toBe('ping');
+    expect(context).toEqual({ foo: 'bar' });
+  });
+
+  it('falls back to captured ctx when no enclosing Provider (identical to legacy behaviour)', () => {
+    const ctx = mkCtx() as any;
+    const Wrapped = wrapComponent(ctx, {}, StubButton);
+    // No Context.Provider — useContext(Context) === undefined → fallback to captured ctx.
+    cleanup = render(() => <Wrapped meta={{ tags: ['submit'] }}>Go</Wrapped>, container);
+    const btn = container.querySelector('[data-testid="btn"]') as HTMLButtonElement;
+    btn.click();
+    expect(ctx.controller.onClick).toHaveBeenCalledOnce();
+    expect(ctx.store.registerComponent).toHaveBeenCalledOnce();
   });
 });
 
