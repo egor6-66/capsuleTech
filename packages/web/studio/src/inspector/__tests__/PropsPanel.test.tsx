@@ -4,16 +4,16 @@ import { getPresets } from '@capsuletech/web-ui/manifest';
 import { render } from 'solid-js/web';
 import { afterEach, describe, expect, it } from 'vitest';
 import { useSelectedPreset } from '../../selection';
-import { WebStudioProps } from '../WebStudioProps';
+import { PropsPanel } from '../PropsPanel';
 
 afterEach(() => {
   useSelectedPreset().setSelected(null);
 });
 
-describe('WebStudioProps', () => {
+describe('PropsPanel', () => {
   it('показывает fallback когда ничего не выбрано', () => {
     const host = document.createElement('div');
-    const dispose = render(() => <WebStudioProps />, host);
+    const dispose = render(() => <PropsPanel />, host);
     try {
       expect(host.textContent).toContain('Выберите пресет в палитре');
     } finally {
@@ -25,7 +25,7 @@ describe('WebStudioProps', () => {
     const host = document.createElement('div');
     const { setSelected } = useSelectedPreset();
     setSelected(getPresets('ui.Button').find((p) => p.id === 'default') ?? null);
-    const dispose = render(() => <WebStudioProps />, host);
+    const dispose = render(() => <PropsPanel />, host);
     try {
       // Button-manifest имеет propsSchema с variant/size/disabled/... — какие-то
       // поля должны отрендериться (label) либо «нет редактируемых пропсов».

@@ -15,11 +15,6 @@
       "import": "./dist/manifests.mjs",
       "default": "./dist/manifests.mjs"
     },
-    "./controllers": {
-      "types": "./dist/controllers/index.d.ts",
-      "import": "./dist/controllers.mjs",
-      "default": "./dist/controllers.mjs"
-    },
     "./capsule": {
       "types": "./dist/capsule.d.ts",
       "import": "./dist/capsule.mjs",

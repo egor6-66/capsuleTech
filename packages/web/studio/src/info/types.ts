@@ -1,5 +1,5 @@
 /**
- * Типы info-панели. Stateless props — controller (WebStudioInfo) резолвит
+ * Типы info-панели. Stateless props — connected-обёртка (InfoPanel) резолвит
  * данные из shared selection и прокидывает сюда.
  */
 

@@ -2,7 +2,7 @@
  * Tree — stateless дерево композиции creator-режима.
  *
  * Получает nodes/rootId/selectedNodeId/onSelect через props (резолвит
- * `WebStudioTree` controller). Структура зеркалит `Info` / `ComponentsPalette`:
+ * `TreePanel` connected-обёртка). Структура зеркалит `Info` / `ComponentsPalette`:
  * surface-компонент в `<Flex>`-обёртке, сам контент через рекурсивный
  * `<TreeRow>`. Раскрытие/сворачивание — kit `Accordion` per узел.
  *

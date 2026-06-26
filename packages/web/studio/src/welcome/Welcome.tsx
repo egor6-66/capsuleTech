@@ -1,9 +1,9 @@
 /**
  * Welcome — tier-2 connected блок welcome/index-fallback студии.
  *
- * Рендерится через контроллер `WebStudioWelcome` в `<Ui.Outlet/>` layout'а
- * студии, когда пользователь находится на голом `/workspace/web-studio` без
- * дочернего матча.
+ * Регистрируется напрямую как `WebStudio.Welcome` и рендерится в `<Ui.Outlet/>`
+ * layout'а студии, когда пользователь находится на голом `/workspace/web-studio`
+ * без дочернего матча.
  *
  * Tier-2 connected: обычный Solid-компонент (НЕ Controller-обёртка),
  * который рендерится ВНУТРИ родительского HCA-контекста и эмитит `onNavigate`
