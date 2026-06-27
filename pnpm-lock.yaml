@@ -1159,6 +1159,9 @@ importers:
 
   packages/web/runtime/router:
     dependencies:
+      '@capsuletech/web-profiler':
+        specifier: workspace:*
+        version: link:../profiler
       '@tanstack/solid-router':
         specifier: ^1.169.0
         version: 1.170.4(solid-js@1.9.12)

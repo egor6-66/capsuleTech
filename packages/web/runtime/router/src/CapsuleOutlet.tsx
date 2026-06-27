@@ -1,5 +1,7 @@
 import { Outlet } from '@tanstack/solid-router';
-import { type JSX, useContext } from 'solid-js';
+import { trace } from '@capsuletech/web-profiler/trace';
+import { type JSX, onCleanup, useContext } from 'solid-js';
+import { RouterContext } from './context';
 import { DepthContext } from './depthContext';
 
 /**
@@ -50,6 +52,21 @@ import { DepthContext } from './depthContext';
 export const CapsuleOutlet = (): JSX.Element => {
   const parent = useContext(DepthContext);
   const depth = parent + 1;
+
+  // ADR 062 — постоянная trace-инструментация жизненного цикла outlet-узла.
+  // No-op когда trace-канал выключен (мгновенный return до сборки события).
+  //
+  // ВАЖНО (граница): трейсит МОНТАЖ OUTLET-контейнера (структурная глубина в
+  // дереве маршрутов), а НЕ matched leaf-*компонента* — его рендерит TanStack
+  // ВНУТРИ `<Outlet/>`, мы его не оборачиваем. Поэтому trace показывает, какие
+  // outlet-уровни появляются/исчезают при навигации; per-leaf-дубль (две вкладки
+  // студии разом) виден здесь только если это два разных outlet-узла, а не
+  // прямая app-композиция Page-тел вне роут-Outlet'а.
+  const router = useContext(RouterContext);
+  const path = router?.current();
+  trace('router.route', 'mount', { depth, path });
+  onCleanup(() => trace('router.route', 'dispose', { depth, path }));
+
   return (
     <DepthContext.Provider value={depth}>
       <div

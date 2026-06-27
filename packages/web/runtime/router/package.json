@@ -20,7 +20,9 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@capsuletech/web-profiler": "workspace:*"
+  },
   "peerDependencies": {
     "@tanstack/router-core": "^1.169.0",
     "@tanstack/solid-router": "^1.169.0",
