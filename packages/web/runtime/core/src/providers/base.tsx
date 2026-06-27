@@ -1,4 +1,5 @@
-import { VitalsMonitoringProvider } from '@capsuletech/web-profiler';
+import { ProfilerProvider } from '@capsuletech/web-profiler/providers';
+import { TraceConsoleReporter } from '@capsuletech/web-profiler/reporters';
 import {
   type AnyRoute,
   createRouter,
@@ -20,22 +21,6 @@ interface IBaseProviderProps<TRouteTree extends AnyRoute = AnyRoute> {
    * Передаётся в роутер как `basepath` → клиентская навигация работает под под-путём.
    */
   basepath?: string;
-  /**
-   * Включить Vitals-мониторинг (Web Vitals + 4 доп. coll.). По умолчанию выключен,
-   * чтобы прод-бандлы apps/<app> не тянули overhead профайлера без необходимости.
-   *
-   *  - `true` — оборачивает дерево в `VitalsMonitoringProvider` с дашбордом.
-   *  - `false` / `undefined` — без обёртки.
-   *
-   * Для тонкой настройки (collectors / reporters / showDashboard=false) —
-   * используй `<ProfilerProvider>` из `@capsuletech/web-profiler/providers` напрямую.
-   */
-  vitals?: boolean;
-  /**
-   * Показывать ли встроенный Dashboard-оверлей. Игнорируется если `vitals !== true`.
-   * Default — `true` (вместе с `vitals`).
-   */
-  showDashboard?: boolean;
   /**
    * Путь редиректа при notFound. По умолчанию '/' — несовпавшие маршруты ведут
    * на корень basepath, откуда app-роутинг/auth решает дальше. Прокидывается
@@ -70,6 +55,12 @@ interface IBaseProviderProps<TRouteTree extends AnyRoute = AnyRoute> {
  * получит реальный тип (сейчас `@ts-nocheck`), `raw.navigate({ to: '...' })` сразу
  * заколосится автокомплитом. Если не передан — fallback к `AnyRoute` (поведение
  * старого `routeTree?: any`).
+ *
+ * Дерево **всегда** оборачивается в тонкий `ProfilerProvider` (хаб-шина + trace-sink,
+ * ADR 062/063 D5) + `TraceConsoleReporter` (читатель trace-bus в консоль). Тогл trace
+ * по умолчанию off → ноль аллокаций/событий, пока не включат через `?trace=` или
+ * `trace.enable()`. Тяжёлые collectors/Dashboard сюда НЕ тянутся — это app-level opt-in
+ * через гранулярные субпаты `@capsuletech/web-profiler/{collectors,widget}`.
  */
 export function BaseProviders<TRouteTree extends AnyRoute = AnyRoute>(
   props: IBaseProviderProps<TRouteTree>,
@@ -105,10 +96,9 @@ export function BaseProviders<TRouteTree extends AnyRoute = AnyRoute>(
   );
 
   return (
-    <Show when={props.vitals} fallback={tree}>
-      <VitalsMonitoringProvider showDashboard={props.showDashboard !== false}>
-        {tree}
-      </VitalsMonitoringProvider>
-    </Show>
+    <ProfilerProvider>
+      <TraceConsoleReporter />
+      {tree}
+    </ProfilerProvider>
   );
 }
