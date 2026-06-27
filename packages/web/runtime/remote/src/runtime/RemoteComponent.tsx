@@ -15,7 +15,11 @@
  *    rendered — drops the loader overlay shown over the iframe until then.
  *  - app → host: EMBED_PROTOCOL.unloadEvent (`__capsule_app_unloading__`) at unload (t0 of a
  *    reparent/reload) — re-shows the loader immediately, before the new document loads.
- *  - app → host: events via `on*` props (the only non-config vector — D4 removed props).
+ *  - app → host: contract events. Delivery (ADR 060 D1 / brief B): a matching `on<Event>`
+ *    prop is called if present (explicit escape hatch); otherwise the event falls through
+ *    into the nearest enclosing host logic-wrapper (Feature/Controller) via `useEmitOptional`
+ *    — symmetric to host→remote inbound (ADR 061). No `on<Event>` prop AND no enclosing
+ *    logic-scope → the event is silently dropped (loose coupling, as before).
  *
  * There is NO host→app props channel — all host→app data is config (ADR 059 D4).
  * Degradation: if the app never sends ready within MOUNT_TIMEOUT_MS, render the
@@ -24,6 +28,7 @@
  */
 
 import { EMBED_PROTOCOL } from '@capsuletech/web-core/bootstrap';
+import { useEmitOptional } from '@capsuletech/web-core/events';
 import {
   createEffect,
   createMemo,
@@ -78,6 +83,12 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
   // Note: createUniqueId() is called at render time (stable per-mount)
   const instanceId = rawProps.instanceId ?? createUniqueId();
   let iframeRef: HTMLIFrameElement | undefined;
+
+  // Forwarded app→host events fall through here when no `on<Event>` prop catches them
+  // (brief B / ADR 060 D1). `useEmitOptional` routes into the nearest enclosing host
+  // logic-wrapper; outside any logic-scope it is a no-op (event dropped). Read at
+  // hook-scope (reads ControllerContext) — NOT inside onMessage.
+  const emit = useEmitOptional();
 
   const module = (): IRemoteModuleConfig | undefined => rawProps.modules[rawProps.name];
 
@@ -192,7 +203,7 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
     sendConfigEnvelope(t);
   });
 
-  // ─── Route incoming app→host events → on* props (ADR 060 D1) ─────────────────
+  // ─── Route incoming app→host events → on* prop OR enclosing host-logic (ADR 060 D1 / B) ──
   // One listener for every app→host event from this remote. Matched by name only:
   // the self-contained app knows only its `name` + `sessionId` from the iframe URL,
   // not the host-side instanceId, so it posts fromInstance === name; sessionId is
@@ -201,9 +212,12 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
   // app→host direction (single-instance use-cases fine; per-instance disambiguation =
   // a separate ADR when component-mode lands).
   //
-  // Delivery (ADR 060 D1): app→host events land ONLY in `on<Event>` props. If the
-  // matching `on<Event>` prop is provided it is called; otherwise the host is not
-  // subscribed to that event and it is dropped (loose coupling — no host-HCA forward).
+  // Delivery (ADR 060 D1 / brief B), precedence — no double delivery:
+  //  1. matching `on<Event>` prop present → call it (explicit escape hatch, original behaviour);
+  //  2. else → `emit(eventName, { payload })` routes into the nearest enclosing host
+  //     logic-wrapper (Feature/Controller), symmetric to host→remote inbound (ADR 061);
+  //  3. else (no prop AND no logic-scope: `Remote.View` in a bare page) → `useEmitOptional`
+  //     is a no-op → event silently dropped (loose coupling, as before).
   // Handshake/config envelopes are filtered out via RESERVED_EVENTS.
   createEffect(() => {
     const t = transport();
@@ -213,8 +227,13 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
       // 'markerClick' → 'onMarkerClick' (inverse of the Phase 2 typing convention).
       const handlerName = `on${msg.eventName[0]!.toUpperCase()}${msg.eventName.slice(1)}`;
       const cb = (rawProps as Record<string, unknown>)[handlerName];
-      if (typeof cb === 'function') (cb as (payload?: unknown) => void)(msg.payload);
-      // no on* prop → host not subscribed → drop (loose coupling, ADR 060 D1)
+      if (typeof cb === 'function') {
+        // on<Event> prop wins (explicit host subscription, ADR 060 D1).
+        (cb as (payload?: unknown) => void)(msg.payload);
+        return;
+      }
+      // No on<Event> prop → fall through into the enclosing host logic-wrapper (brief B).
+      emit(msg.eventName, { payload: msg.payload });
     });
     onCleanup(unsub);
   });
