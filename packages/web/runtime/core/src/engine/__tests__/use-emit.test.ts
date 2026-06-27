@@ -18,7 +18,7 @@ import { createRoot } from 'solid-js';
 import { describe, expect, it, vi } from 'vitest';
 import type { ITarget } from '../../wrappers/interfaces';
 import { Context } from '../ctx';
-import { normalizeTarget, useEmit } from '../use-emit';
+import { normalizeTarget, useEmit, useEmitOptional } from '../use-emit';
 
 // ---------------------------------------------------------------------------
 // Вспомогательные factory-функции
@@ -166,6 +166,46 @@ describe('useEmit — outside Controller scope', () => {
 // ---------------------------------------------------------------------------
 // useEmit — dispatch
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// useEmitOptional — non-throwing вариант (brief remote-host-autoroute Part 1)
+// ---------------------------------------------------------------------------
+
+describe('useEmitOptional', () => {
+  it('вне Controller scope → возвращает no-op, НЕ кидает', () => {
+    let emit: ReturnType<typeof useEmitOptional> | undefined;
+    expect(() =>
+      createRoot((dispose) => {
+        try {
+          emit = useEmitOptional();
+        } finally {
+          dispose();
+        }
+      }),
+    ).not.toThrow();
+
+    // no-op: вызов безопасен и возвращает undefined
+    expect(emit).toBeTypeOf('function');
+    expect(emit?.('canvasClick', { payload: { value: 1 } })).toBeUndefined();
+  });
+
+  it('внутри scope → диспатчит идентично useEmit', () => {
+    const handler = vi.fn(async () => 'ok');
+    const controller = makeController({ canvasClick: handler });
+    const store = makeStore({ userId: 7 });
+    const ctx = { controller, store, state: { value: 'idle' } };
+
+    runInCtx(ctx, () => {
+      const emit = useEmitOptional();
+      emit('canvasClick', { payload: { value: 99 } });
+    });
+
+    expect(handler).toHaveBeenCalledOnce();
+    const [target, context] = handler.mock.calls[0] as unknown as [ITarget, unknown];
+    expect(target.payload).toEqual({ value: 99 });
+    expect(context).toEqual({ userId: 7 });
+  });
+});
 
 describe('useEmit — dispatch через ctx.controller[name]', () => {
   it('emit("onClick", target) → вызывает ctx.controller.onClick с нормализованным target', () => {
