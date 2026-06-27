@@ -1,8 +1,2 @@
-export type { IProfilerCollectorsOpt, IProfilerProviderProps } from './profiler';
+export type { IProfilerProviderProps, IProfilerTraceConfig } from './profiler';
 export { ProfilerProvider } from './profiler';
-export type { IMonitoringContextType, VitalsMonitoringProviderProps } from './vitalsMonitor';
-export {
-  useVitalsContext,
-  VitalsMonitoringContext,
-  VitalsMonitoringProvider,
-} from './vitalsMonitor';

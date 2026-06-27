@@ -4,7 +4,7 @@ export default libConfig({
   entry: {
     index: 'src/index.ts',
     providers: 'src/providers/index.ts',
-    components: 'src/components/index.ts',
+    widget: 'src/widget/index.ts',
     core: 'src/core/index.ts',
     collectors: 'src/collectors/index.ts',
     reporters: 'src/reporters/index.ts',

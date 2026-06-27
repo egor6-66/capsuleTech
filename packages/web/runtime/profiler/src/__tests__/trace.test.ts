@@ -1,13 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createTraceBus, type ITraceEvent } from '../core/trace';
-import {
-  __resetTrace,
-  configureTrace,
-  registerTraceSink,
-  span,
-  startTrace,
-  trace,
-} from '../trace';
+import { __resetTrace, configureTrace, registerTraceSink, span, startTrace, trace } from '../trace';
 
 describe('traceBus', () => {
   const ev = (over: Partial<ITraceEvent> = {}): ITraceEvent => ({

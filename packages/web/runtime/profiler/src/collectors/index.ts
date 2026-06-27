@@ -1,3 +1,23 @@
+// ── Само-регистрирующиеся компоненты (публичная capability, ADR 063 D2) ──
+export {
+  Collectors,
+  ConnectionCollector,
+  DomStatsCollector,
+  ErrorsCollector,
+  EventTimingCollector,
+  FpsCollector,
+  type ICollectorsProps,
+  LoafCollector,
+  LongTasksCollector,
+  MemoryCollector,
+  NavigationCollector,
+  NetworkCollector,
+  NetworkDeepCollector,
+  UserTimingCollector,
+  WebVitalsCollector,
+} from './components';
+
+// ── Сырые `ICollector`-фабрики (примитивы под компонентами / ручную композицию) ──
 export { connectionCollector } from './connection';
 export type { IDomStatsOpts } from './domStats';
 export { domStatsCollector } from './domStats';

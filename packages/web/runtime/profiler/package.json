@@ -15,10 +15,10 @@
       "import": "./dist/providers.mjs",
       "default": "./dist/providers.mjs"
     },
-    "./components": {
-      "types": "./dist/components/index.d.ts",
-      "import": "./dist/components.mjs",
-      "default": "./dist/components.mjs"
+    "./widget": {
+      "types": "./dist/widget/index.d.ts",
+      "import": "./dist/widget.mjs",
+      "default": "./dist/widget.mjs"
     },
     "./core": {
       "types": "./dist/core/index.d.ts",
@@ -64,7 +64,9 @@
   },
   "devDependencies": {
     "@capsuletech/lib-builder": "workspace:*",
-    "@capsuletech/vite-builder": "workspace:*"
+    "@capsuletech/vite-builder": "workspace:*",
+    "jsdom": "~29.1.1",
+    "vite-plugin-solid": "^2.11.12"
   },
   "publishConfig": {
     "access": "public",
