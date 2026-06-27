@@ -4,6 +4,15 @@ export { hasPO, isBrowser, supportsEntryType } from './env';
 export { getRating } from './ratings';
 export type { IRingBuffer } from './ringBuffer';
 export { createRingBuffer } from './ringBuffer';
+export { createTraceBus } from './trace';
+export type {
+  ICreateTraceBusOpts,
+  ITraceBus,
+  ITraceEvent,
+  ITraceLevel,
+  ITraceListener,
+  ITraceSink,
+} from './trace';
 export type {
   IBuiltinMetricId,
   ICollector,

@@ -1,5 +1,6 @@
 import { type JSX, onCleanup, onMount, Show } from 'solid-js';
 import { ProfilerContext } from '../api/useProfiler';
+import { TraceContext } from '../api/useTraceBus';
 import {
   connectionCollector,
   domStatsCollector,
@@ -17,9 +18,20 @@ import {
 } from '../collectors';
 import { createMetricsBus } from '../core/bus';
 import type { ICollector, IMetricsBus, IReporter } from '../core/schema';
+import { createTraceBus, type ITraceBus } from '../core/trace';
+import type { ITraceReporter } from '../reporters/trace';
+import { configureTrace, type ITraceConfig, registerTraceSink } from '../trace';
 import { ProfilerDashboard } from '../widget';
 
 export type IProfilerCollectorsOpt = 'all' | 'all-except-deep' | 'legacy' | ICollector[];
+
+/** Конфиг trace-канала (ADR 062). Тогл также управляем рантаймом через `trace.*`. */
+export interface IProfilerTraceConfig extends ITraceConfig {
+  /** Размер кольца trace-событий. По умолчанию 500. */
+  capacity?: number;
+  /** Trace-reporters (console/beacon/callback). */
+  reporters?: ITraceReporter[];
+}
 
 export interface IProfilerProviderProps {
   children: JSX.Element;
@@ -28,6 +40,10 @@ export interface IProfilerProviderProps {
   bus?: IMetricsBus;
   historySize?: number;
   showDashboard?: boolean;
+  /** Trace-канал жизненного цикла. Отсутствие = канал создаётся, но тогл off. */
+  trace?: IProfilerTraceConfig;
+  /** Готовый trace-bus (для тестов / переиспользования). */
+  traceBus?: ITraceBus;
 }
 
 function legacyCollectors(): ICollector[] {
@@ -63,6 +79,10 @@ function resolveCollectors(opt: IProfilerCollectorsOpt): ICollector[] {
 
 export function ProfilerProvider(props: IProfilerProviderProps) {
   const bus = props.bus ?? createMetricsBus({ historySize: props.historySize });
+  // Trace-bus создаётся всегда (дешёвый ring) — чтобы рантайм-тогл `trace.enable()`
+  // и панель Traces работали даже без явного `trace`-конфига. Тогл off по умолчанию
+  // → ноль событий, пока не включат.
+  const traceBus = props.traceBus ?? createTraceBus({ capacity: props.trace?.capacity });
 
   onMount(() => {
     const collectorOpt = props.collectors ?? 'all-except-deep';
@@ -72,6 +92,15 @@ export function ProfilerProvider(props: IProfilerProviderProps) {
     const cleanups: Array<() => void> = [];
     for (const c of collectors) cleanups.push(c.init(bus));
     for (const r of reporters) cleanups.push(r.init(bus));
+
+    // Trace-канал: регистрируем sink (module-level `trace()` потечёт в bus),
+    // применяем app-конфиг тогла, поднимаем trace-reporters.
+    cleanups.push(registerTraceSink({ emit: (e) => traceBus.push(e) }));
+    if (props.trace) {
+      const { capacity: _c, reporters: traceReporters, ...toggle } = props.trace;
+      configureTrace(toggle);
+      for (const r of traceReporters ?? []) cleanups.push(r.init(traceBus));
+    }
 
     onCleanup(() => {
       for (const fn of cleanups) {
@@ -86,10 +115,12 @@ export function ProfilerProvider(props: IProfilerProviderProps) {
 
   return (
     <ProfilerContext.Provider value={bus}>
-      {props.children}
-      <Show when={props.showDashboard}>
-        <ProfilerDashboard />
-      </Show>
+      <TraceContext.Provider value={traceBus}>
+        {props.children}
+        <Show when={props.showDashboard}>
+          <ProfilerDashboard />
+        </Show>
+      </TraceContext.Provider>
     </ProfilerContext.Provider>
   );
 }

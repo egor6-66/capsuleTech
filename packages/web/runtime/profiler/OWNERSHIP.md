@@ -15,7 +15,7 @@ Performance-monitoring package: MetricsBus ring-buffer, 13 built-in collectors, 
 ## Состояние (читать ПЕРВЫМ)
 
 - **Zone:** `runtime` — collector-pattern profiler, провайдер маунтится в BaseProviders.
-- **Status:** `beta` (0.1.1) — 13 collectors + 3 reporters + ProfilerDashboard (kobalte Tabs + sparklines), 29 tests. Legacy `VitalsMonitoringProvider` shim — deprecated.
+- **Status:** `beta` (0.1.1) — 13 collectors + 3 reporters + ProfilerDashboard (kobalte Tabs + sparklines) + **trace-канал** (ADR 062), 44 tests. Legacy `VitalsMonitoringProvider` shim — deprecated.
 - **Priority:** **P2** — обсервабилити, опциональный.
 - **Maturity bar (до stable):**
   - Legacy `VitalsMonitoringProvider` shim удалён.
@@ -69,7 +69,31 @@ Re-exports всего ниже плюс `MetricRating` type utility.
 - `createPerfApi(bus)` — фабрика perf-хелперов (mark/measure/count/gauge/time)
 - `usePerf()` — hook-обёртка над `createPerfApi(useProfiler())`
 - `ProfilerContext` — Solid Context объект
+- `useTraceBus()` — `ITraceBus` из контекста или `undefined` вне Provider
+- `TraceContext` — Solid Context объект trace-потока
 - Типы: `IPerfApi`, `IPerfTimer`
+
+### `./trace` — trace-канал (ADR 062), **тонкий leaf-субпатх**
+Push-канал трейсов жизненного цикла. **Module-level** (НЕ Solid-хук) — зовётся из не-компонентного кода (классы транспортов, фабрики). Субпатх лёгкий: zero runtime-deps (типы из `core/trace` через `import type`), потребитель (web-remote, web-core, …) импортит только `trace()`-контракт, не таща профайлер.
+- `trace(node, phase, data?, opts?)` — разовое событие; `.enable(cat)` / `.disable(cat)` / `.setLevel(lvl)` / `.isEnabled(node?)` — рантайм-тогл
+- `startTrace(): traceId` + `span(traceId, node, phase, data?)` — причинная цепочка birth→death под одним id
+- `registerTraceSink(sink)` — регистрация sink'а (вызывает `ProfilerProvider` на маунте); возвращает unregister
+- `configureTrace({ enabled?, nodes?, level? })` — app-baseline тогла (не перебивает URL `?trace=`)
+- `useTrace()` — опц. сахар для компонент-скоупа
+- `__resetTrace()` — test-only сброс singleton'а
+- Типы: `ITraceEvent`, `ITraceLevel`, `ITraceSink`, `ITraceConfig`, `ITraceFn`, `ITraceOpts`
+
+### `./core` (trace-часть)
+- `createTraceBus({ capacity? })` — упорядоченный причинный поток (ring), группировка по `traceId`: `push/all/byTrace/traceIds/subscribe/clear`. Отдельный от `MetricsBus` (тот дедупит по значению).
+- Типы: `ITraceBus`, `ITraceEvent`, `ITraceLevel`, `ITraceSink`, `ITraceListener`, `ICreateTraceBusOpts`
+
+### `./reporters` (trace-часть)
+- `traceConsoleReporter(opts?)` / `traceCallbackReporter(fn)` / `traceBeaconReporter({ url, on?, serializer? })` — синки поверх `ITraceBus` (console=dev, beacon=prod-ship, callback=generic)
+- Типы: `ITraceReporter`, `ITraceConsoleReporterOpts`, `ITraceBeaconReporterOpts`
+
+### `./providers` (trace-часть)
+- `ProfilerProvider` принимает `trace?: { enabled?, nodes?, level?, capacity?, reporters? }` — создаёт trace-bus (всегда, дешёвый ring), регистрирует sink, применяет тогл, поднимает trace-reporters. Тогл off по умолчанию → ноль событий пока не включат.
+- Типы: `IProfilerTraceConfig`
 
 ### `./providers`
 - `ProfilerProvider` — root provider; принимает `collectors`, `reporters`, `showDashboard`, `historySize`
@@ -125,13 +149,19 @@ Low-level UI (Sparkline и пр.) — используются внутри Dash
 
 - **`getRating` default `'info'`** для неизвестного id или нечислового значения. Не throws.
 
+- **Trace singleton якорится на `globalThis`** (`Symbol.for('@capsuletech/web-profiler/trace.registry')`). Это намеренно: sink, зарегистрированный из `providers`-чанка, должен быть виден `trace()` из `trace`-чанка и из независимо собранных пакетов-потребителей (web-remote/web-core) в одном app-бандле. Rolldown к тому же выделяет shared trace-chunk (импортится и `/trace`, и `/providers` entry) → один инстанс. Не заменяй на module-local `let` — потеряешь видимость sink'а между субпатхами. Источник: `src/trace/index.ts`.
+
+- **Trace-тогл off по умолчанию** — `trace()` делает мгновенный return ДО сборки события (ноль аллокаций), пока не включат через `ProfilerProvider trace={{ enabled }}`, рантайм `trace.enable('remote')`, localStorage `capsule.trace`, или URL `?trace=remote`. URL перебивает app-config (явный debug-намерение). Источник: `src/trace/index.ts` (`hydrate`/`configureTrace`).
+
+- **`createTraceBus` отдельный от `MetricsBus`** — трейсам нужен упорядоченный причинный лог (ring по времени, группировка по `traceId`), а `MetricsBus` дедупит по значению и хранит per-metric. Не сливать. Источник: `src/core/trace.ts` (ADR 062 D5).
+
 ## План рефакторинга / оптимизаций
 
 - [ ] **`dom.listeners` collector** — реализовать monkey-patch `addEventListener`. Аккуратно с performance impact. (priority: low)
 - [ ] **Reset на route change** — auto-clear metrics между навигациями (opt-in через router subscribe). (priority: medium)
 - [ ] **Sentry/datadog reporter** — production-grade APM integration. (priority: medium)
-- [ ] **`web-query` traces** — request lifecycle в profiler (координация с owner-web-query). (priority: low)
-- [ ] **`web-renderer` traces** — render-tree performance (координация с owner-web-renderer). (priority: low)
+- [x] **Trace-канал (фундамент, ADR 062)** — `createTraceBus` + `/trace` субпатх (module-level emit, рантайм-тогл, корреляция) + trace-reporters + Traces-панель. (2026-06-27) Обобщает идею `web-query/web-renderer traces` в первоклассный канал — теперь любой узел инструментируется `trace()`, не нужен отдельный per-пакет механизм.
+- [ ] **Инструментация узлов (next, ADR 062 D6)** — пилот remote (`IframeTransport`/`RemoteComponent`/forward/host-bridge), затем HCA-engine. Каждый owner размечает свою зону; `traceId` в конверте remote-протокола — owner-web-remote + owner-web-core. **НЕ моя зона** (фундамент закрыт).
 - [ ] **Историческое сохранение через IndexedDB** — post-mortem analysis. (priority: low)
 - [ ] **Remove legacy VitalsMonitoringProvider** — после миграции всех apps (координация с owner-web-core). (priority: low, P3)
 - [x] **Phase 2a: MetricsBus + 13 collectors** — реализованы. (2026-05)
@@ -147,8 +177,9 @@ Low-level UI (Sparkline и пр.) — используются внутри Dash
 | Unit | `src/__tests__/ratings.test.ts` | getRating таблица, HIGHER_IS_BETTER edge cases |
 | Unit | `src/__tests__/reporters.test.ts` | consoleReporter, beaconReporter, callbackReporter |
 | Unit | `src/__tests__/perfApi.test.ts` | usePerf mark/measure/count/gauge/time |
+| Unit | `src/__tests__/trace.test.ts` | traceBus (order/byTrace/traceIds/ring/subscribe/clear) + субпатх (no-op off/no-sink, per-node фильтр, level-gate, корреляция startTrace+span, enable/disable) |
 
-Итого 29 тестов (vitest).
+Итого 44 теста (vitest).
 
 **Перед изменением:** `pnpm --filter @capsuletech/web-profiler test` должен быть green.
 **При breaking change:** обновить tests + добавить новые для нового contract.

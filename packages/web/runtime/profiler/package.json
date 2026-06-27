@@ -39,6 +39,11 @@
       "types": "./dist/api/index.d.ts",
       "import": "./dist/api.mjs",
       "default": "./dist/api.mjs"
+    },
+    "./trace": {
+      "types": "./dist/trace/index.d.ts",
+      "import": "./dist/trace.mjs",
+      "default": "./dist/trace.mjs"
     }
   },
   "files": [
