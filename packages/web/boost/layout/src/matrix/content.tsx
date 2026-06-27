@@ -15,6 +15,7 @@ import { createSwapEngine } from './dnd/swap';
 import type { ICell, IRow, LayoutChangeEvent, MatrixDndKind } from './interfaces';
 import { renderRow } from './rows/flex-row';
 import type { IGridOpts } from './rows/grid-row';
+import { MatrixPresetContext, MatrixSlot } from './slot';
 
 // ---------------------------------------------------------------------------
 // SizesMap — session-only persistence of user-resized panel sizes.
@@ -36,6 +37,11 @@ export interface IMatrixContentProps {
    * Matrix-level outer axis (ADR 022).
    */
   direction: 'vertical' | 'horizontal';
+  /**
+   * Preset name (or undefined for raw-rows mode) — ambient tag for slot traces
+   * (ADR 062). Instrumentation only; does not affect rendering.
+   */
+  preset: string | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -278,8 +284,9 @@ export const MatrixContent = (props: IMatrixContentProps) => {
   // ---------------------------------------------------------------------------
 
   return (
-    <Switch>
-      <Match when={effectiveRows().length === 0}>{null}</Match>
+    <MatrixPresetContext.Provider value={props.preset}>
+      <Switch>
+        <Match when={effectiveRows().length === 0}>{null}</Match>
 
       {/* Branch 1: centroid shortcut (single non-resizable cell). */}
       <Match when={isCentroid()}>
@@ -299,7 +306,11 @@ export const MatrixContent = (props: IMatrixContentProps) => {
                 class="absolute inset-0 overflow-auto flex items-center justify-center"
                 classList={{ 'pointer-events-none': isDragging() }}
               >
-                <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{children()}</Suspense>
+                <MatrixSlot slot={cell.id}>
+                  <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>
+                    {children()}
+                  </Suspense>
+                </MatrixSlot>
               </div>
               <Show
                 when={dndState && (dndState.canAccept() || dndState.canDrop() || dndState.isOver())}
@@ -575,6 +586,7 @@ export const MatrixContent = (props: IMatrixContentProps) => {
           </For>
         </div>
       </Match>
-    </Switch>
+      </Switch>
+    </MatrixPresetContext.Provider>
   );
 };

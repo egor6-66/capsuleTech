@@ -9,6 +9,7 @@ import { For, Suspense } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import { MatrixCellFallback, NOOP_REF } from '../cell';
 import type { ICell, IRow } from '../interfaces';
+import { MatrixSlot } from '../slot';
 import { matrixSlots } from '../variants';
 
 // ---------------------------------------------------------------------------
@@ -246,7 +247,9 @@ export const renderPackingRow = (
                   class="absolute inset-0 overflow-auto"
                   classList={{ 'pointer-events-none': isDragging() }}
                 >
-                  <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+                  <MatrixSlot slot={cell.id}>
+                    <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+                  </MatrixSlot>
                 </div>
                 {resizeHandle()}
               </Dynamic>

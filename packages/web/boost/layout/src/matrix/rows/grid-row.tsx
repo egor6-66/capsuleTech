@@ -10,6 +10,7 @@ import { For, Suspense } from 'solid-js';
 import { MatrixCellFallback } from '../cell';
 import type { IInsertEngine } from '../dnd/insert';
 import type { IRow } from '../interfaces';
+import { MatrixSlot } from '../slot';
 
 // ---------------------------------------------------------------------------
 // Grid-zone bindings threaded from MatrixContent → renderRow → renderGridRow.
@@ -200,7 +201,9 @@ export const renderGridRow = (
                 class="absolute inset-0 overflow-auto"
                 classList={{ 'pointer-events-none': isDragging() }}
               >
-                <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+                <MatrixSlot slot={cell.id}>
+                  <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+                </MatrixSlot>
               </div>
               {gridResizeHandles()}
             </div>

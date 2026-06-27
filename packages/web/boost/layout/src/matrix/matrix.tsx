@@ -67,6 +67,7 @@ const MatrixImpl = (props: IMatrixProps) => {
           dndKind={dndKind}
           onLayoutChange={local.onLayoutChange}
           direction={local.direction ?? 'vertical'}
+          preset={local.preset as string | undefined}
         />
       </div>
     </DnDProvider>

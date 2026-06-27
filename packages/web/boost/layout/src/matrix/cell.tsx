@@ -6,6 +6,7 @@ import { Show, Suspense } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import { DragBadge } from './dnd/drag-badge';
 import type { ICell } from './interfaces';
+import { MatrixSlot } from './slot';
 import { matrixSlots } from './variants';
 
 // ---------------------------------------------------------------------------
@@ -113,7 +114,9 @@ export const renderCell = (
           class={`${innerClass} scrollbar-hover`}
           classList={{ 'pointer-events-none': isDragging() }}
         >
-          <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+          <MatrixSlot slot={cell.id}>
+            <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+          </MatrixSlot>
         </div>
         {/* Absolute overlay renders above canvas / GPU layers — ring/box-shadow do not. */}
         <Show when={dndState.canAccept() || dndState.canDrop() || dndState.isOver()}>
@@ -146,7 +149,9 @@ export const renderCell = (
       class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative`}
     >
       <div class="absolute inset-0 overflow-auto">
-        <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+        <MatrixSlot slot={cell.id}>
+          <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+        </MatrixSlot>
       </div>
     </Dynamic>
   );
