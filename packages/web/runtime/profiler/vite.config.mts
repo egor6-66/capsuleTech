@@ -9,6 +9,7 @@ export default libConfig({
     collectors: 'src/collectors/index.ts',
     reporters: 'src/reporters/index.ts',
     api: 'src/api/index.ts',
+    trace: 'src/trace/index.ts',
   },
   name: 'CapsuleProfiler',
 });
