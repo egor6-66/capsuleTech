@@ -140,6 +140,16 @@ import { BaseProviders } from '@capsuletech/web-core/providers';
 
 **НЕТ** `./css` — CSS был удалён из этого пакета. Bootstrap-стили теперь живут в `.capsule/styles.css`, который генерится builders scaffold и импортируется в `bootstrap.tsx` приложения.
 
+### `./events` (`src/events/index.ts`)
+
+Лёгкий event-channel субпатч для пакетов-потребителей (web-remote и т.п.) — только `useEmit` / `useEmitOptional` без втягивания барла (`.` тянет wrappers/providers/bootstrap).
+
+```ts
+import { useEmitOptional } from '@capsuletech/web-core/events';
+```
+
+Транзитив минимален: `events.mjs` (0.11 KB) → `use-emit` chunk (~1.9 KB, `ctx`/`derivation` инлайнены) → `emit-context` (227 B) → solid-js. Не тащит `wrappers/`/`providers/`. `useEmit`/`useEmitOptional` также остаются в главном барле (back-compat).
+
 ### Access-resolver injection (additive, non-breaking)
 
 ```ts
