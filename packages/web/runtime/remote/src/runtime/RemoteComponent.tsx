@@ -29,6 +29,7 @@
 
 import { EMBED_PROTOCOL } from '@capsuletech/web-core/bootstrap';
 import { useEmitOptional } from '@capsuletech/web-core/events';
+import { trace } from '@capsuletech/web-profiler/trace';
 import {
   createEffect,
   createMemo,
@@ -83,6 +84,12 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
   // Note: createUniqueId() is called at render time (stable per-mount)
   const instanceId = rawProps.instanceId ?? createUniqueId();
   let iframeRef: HTMLIFrameElement | undefined;
+
+  // Lifecycle pair: mount/dispose must balance. A `mount` with no matching
+  // `dispose` on a route-swap = a leaked component owner — the upstream cause of
+  // a leaked transport subscription (brief hypothesis 2).
+  trace('remote.component', 'mount', { name: rawProps.name, instanceId });
+  onCleanup(() => trace('remote.component', 'dispose', { name: rawProps.name, instanceId }));
 
   // Forwarded app→host events fall through here when no `on<Event>` prop catches them
   // (brief B / ADR 060 D1). `useEmitOptional` routes into the nearest enclosing host
@@ -227,6 +234,14 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
       // 'markerClick' → 'onMarkerClick' (inverse of the Phase 2 typing convention).
       const handlerName = `on${msg.eventName[0]!.toUpperCase()}${msg.eventName.slice(1)}`;
       const cb = (rawProps as Record<string, unknown>)[handlerName];
+      // One `receive` per contract event this component actually delivers. Two
+      // receives for one inbound postMessage = the double we are hunting (which
+      // branch each took also surfaces here).
+      trace('remote.component', 'receive', {
+        eventName: msg.eventName,
+        instanceId,
+        branch: typeof cb === 'function' ? 'on-prop' : 'emit-host',
+      });
       if (typeof cb === 'function') {
         // on<Event> prop wins (explicit host subscription, ADR 060 D1).
         (cb as (payload?: unknown) => void)(msg.payload);

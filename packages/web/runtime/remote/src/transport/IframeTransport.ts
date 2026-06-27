@@ -8,6 +8,7 @@
  * ADR-015 amendment 2026-06-19 + ADR-053 Decision 8.
  */
 
+import { trace } from '@capsuletech/web-profiler/trace';
 import type { IRemoteMessage, ITransport, TransportKind } from '../interfaces';
 
 /** Routing key: `${name}:${instanceId}` */
@@ -32,6 +33,10 @@ export class IframeTransport implements ITransport {
   constructor(sessionId: string) {
     this.sessionId = sessionId;
 
+    // Two ctor traces on one app = duplicate transport (two window listeners) →
+    // root cause of double-delivery is a duplicated Provider, not a leaked sub.
+    trace('remote.transport', 'ctor', { sessionId });
+
     this.messageHandler = (event: MessageEvent) => {
       // Ignore non-plain-object messages (e.g. browser extensions)
       if (!event.data || typeof event.data !== 'object') return;
@@ -39,6 +44,12 @@ export class IframeTransport implements ITransport {
       // Filter by sessionId — cross-Provider messages are silently dropped
       if (msg.sessionId !== this.sessionId) return;
 
+      // Fan-out trace: subscribers > 1 for one inbound message = the double — a
+      // single Set with two delivery subscriptions (leaked onCleanup or remount).
+      trace('remote.transport', 'deliver', {
+        eventName: msg.eventName,
+        subscribers: this.subscribers.size,
+      });
       for (const cb of this.subscribers) {
         cb(msg);
       }
@@ -83,8 +94,12 @@ export class IframeTransport implements ITransport {
 
   onMessage(cb: (msg: IRemoteMessage) => void): () => void {
     this.subscribers.add(cb);
+    // size logged AFTER add: a growing count across mounts with no matching
+    // unsubscribe = the leaked-subscription mechanism (brief hypothesis 2).
+    trace('remote.transport', 'subscribe', { subscribers: this.subscribers.size });
     return () => {
       this.subscribers.delete(cb);
+      trace('remote.transport', 'unsubscribe', { subscribers: this.subscribers.size });
     };
   }
 
@@ -92,5 +107,6 @@ export class IframeTransport implements ITransport {
     window.removeEventListener('message', this.messageHandler);
     this.registry.clear();
     this.subscribers.clear();
+    trace('remote.transport', 'dispose', { sessionId: this.sessionId });
   }
 }
