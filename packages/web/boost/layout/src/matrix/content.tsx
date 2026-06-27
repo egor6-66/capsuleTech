@@ -15,7 +15,7 @@ import { createSwapEngine } from './dnd/swap';
 import type { ICell, IRow, LayoutChangeEvent, MatrixDndKind } from './interfaces';
 import { renderRow } from './rows/flex-row';
 import type { IGridOpts } from './rows/grid-row';
-import { MatrixPresetContext, MatrixSlot } from './slot';
+import { MatrixPresetContext, MatrixSlot, traceSlotRender } from './slot';
 
 // ---------------------------------------------------------------------------
 // SizesMap — session-only persistence of user-resized panel sizes.
@@ -297,6 +297,7 @@ export const MatrixContent = (props: IMatrixContentProps) => {
           const cellRef = cell.draggable !== false ? swapBind(cell, row.id) : NOOP_REF;
           const dndState = cell.draggable !== false ? cellDndState(cell) : undefined;
           const children = (): JSX.Element => {
+            traceSlotRender(cell.id);
             const getSwapped = swapGetChildren();
             return getSwapped ? getSwapped(cell.id) : cell.children;
           };

@@ -43,3 +43,26 @@ export const MatrixSlot = (props: IMatrixSlotProps): JSX.Element => {
   onCleanup(() => trace('boost-layout.matrix.slot', 'dispose', { slot: props.slot }));
   return props.children;
 };
+
+/**
+ * traceSlotRender — emits node `boost-layout.matrix.slot`, phase `render`
+ * (level `debug`) at the exact site where a render-path instantiates a slot's
+ * content (`slot.children`) — ADR 062, addendum to `e411e0bd`.
+ *
+ * `mount`/`dispose` (MatrixSlot above) cover the slot **container** lifecycle —
+ * one owner per surviving subtree. `render` fires synchronously each time a
+ * render-path *materializes* the content expression, BEFORE it is committed to
+ * the DOM. The two counts diverge exactly when Matrix instantiates a slot's
+ * content more than once (measure-pass / dnd-ghost / two render sites): every
+ * materialization emits `render`, but only the surviving one(s) emit `mount`.
+ *
+ * Bug A hunt: `render` ×2 for slot `main` → Matrix double-instantiates the slot
+ * content (root here); `render` ×1 → content materialized once, dubль выше
+ * (Outlet/route — app-узел, отдельный трейс).
+ *
+ * `trace()` is a no-op (and allocates nothing) while the trace toggle is off,
+ * so these calls stay in permanently.
+ */
+export const traceSlotRender = (slot: string): void => {
+  trace('boost-layout.matrix.slot', 'render', { slot });
+};

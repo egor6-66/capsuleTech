@@ -6,7 +6,7 @@ import { Show, Suspense } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import { DragBadge } from './dnd/drag-badge';
 import type { ICell } from './interfaces';
-import { MatrixSlot } from './slot';
+import { MatrixSlot, traceSlotRender } from './slot';
 import { matrixSlots } from './variants';
 
 // ---------------------------------------------------------------------------
@@ -74,6 +74,7 @@ export const renderCell = (
   const tag = cell.tag ?? 'div';
   const children = getSwappedChildren ? getSwappedChildren(cell.id) : cell.children;
   const content = children;
+  traceSlotRender(cell.id);
 
   // Cells with DnD need `position: relative` to host the absolute badge.
   // The badge must live outside the scroll container so it stays pinned to
