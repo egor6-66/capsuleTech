@@ -23,7 +23,7 @@ const Canvas = Controller(({ utils, standalone }) => ({
 
   states: {
     idle: {
-      // ЕДИНСТВЕННОЕ тело. payload приходит и от хоста, и от локального emit — без разницы.
+      // host→app + локально: ЕДИНСТВЕННОЕ тело, payload одинаков от обоих источников.
       ping: ({ target, store }) => {
         const p = target.payload as { value: string; ts: number };
         // eslint-disable-next-line no-console
@@ -31,10 +31,14 @@ const Canvas = Controller(({ utils, standalone }) => ({
         store.update({ text: `${p.value} @ ${p.ts} (standalone=${standalone})` });
       },
 
-      // своя кнопка → переиспускаем то же именованное действие со своими данными.
+      // своя кнопка → один клик бьёт в оба имени:
+      //  - ping (∈ in)  → локально (flag-демо: standalone?);
+      //  - canvasClick (∈ out) → standalone локально / embedded форвард хосту.
       onClick: ({ target, emit }) => {
         if (utils.includes(target.meta?.tags ?? [], 'canvas-btn')) {
-          emit('ping', { payload: { value: 'local click', ts: Date.now() } });
+          const ts = Date.now();
+          emit('ping', { payload: { value: 'local click', ts } });
+          emit('canvasClick', { payload: { value: 'from canvas', ts } });
         }
       },
     },

@@ -8,10 +8,12 @@ export default defineContract((z) => ({
       ts: z.number(),
     }),
   },
-  // app → host: событие собственной кнопки канваса. Standalone — обрабатывается
-  // локально; embedded — форвардится хосту ВМЕСТО локального хендлера (ADR 060 D1).
+  // app → host: событие собственной кнопки канваса с данными. Standalone —
+  // обрабатывается локально; embedded — форвардится хосту ВМЕСТО локального
+  // хендлера (ADR 060 D1), хост ловит у себя.
   out: {
     canvasClick: z.object({
+      value: z.string(),
       ts: z.number(),
     }),
   },
