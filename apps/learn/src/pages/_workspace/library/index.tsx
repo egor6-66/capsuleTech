@@ -6,10 +6,22 @@
  * `_index` = Explorer (дефолт).
  */
 const Library = Page((Ui) => (
-  <Ui.Layout.Flex orientation="vertical" gapY={4} class="min-h-full flex-col p-8">
-    <Learn.LibraryNav />
-    <Ui.Outlet />
-  </Ui.Layout.Flex>
+  <Features.Library>
+    <Layouts.Matrix
+      preset="app-shell"
+      slots={{
+        header: {
+          children: <Learn.LibraryNav />,
+          resizable: false,
+          initialSize: 0.04,
+        },
+        main: {
+          children: <Ui.Outlet />,
+          resizable: false,
+        },
+      }}
+    />
+  </Features.Library>
 ));
 
 export default Library;

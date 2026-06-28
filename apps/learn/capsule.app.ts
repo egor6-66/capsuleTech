@@ -9,4 +9,9 @@ export default defineAppConfig({
   router: {
     transition: true,
   },
+  // API → backend/learn (ADR 055 D2). DEV: абсолютный localhost-base (бэк на :8003);
+  // браузер ходит cross-origin → бэку нужен CORS-middleware. PROD-base — конфигом позже.
+  api: () => ({
+    bases: { default: 'http://127.0.0.1:8003' },
+  }),
 });

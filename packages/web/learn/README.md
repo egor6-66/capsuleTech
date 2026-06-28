@@ -20,7 +20,7 @@ packages: ['@capsuletech/web-learn']
 ```
 
 После регистрации доступны глобалы `Learn.*`:
-`Learn.Provider` · `Learn.Welcome` · `Learn.LessonView` · `Learn.Exercise` · `Learn.Progress` · `Learn.VocabList` · `Learn.Tour` · `Learn.SentenceBuilder` · `Learn.LibraryNav` · `Learn.WordExplorer` · `Learn.Collections`.
+`Learn.Provider` · `Learn.Welcome` · `Learn.LessonView` · `Learn.Exercise` · `Learn.Progress` · `Learn.VocabList` · `Learn.Tour` · `Learn.SentenceBuilder` · `Learn.LibraryNav` · `Learn.LibraryWelcome` · `Learn.WordExplorer` · `Learn.Collections`.
 
 ## Subpath exports
 
@@ -28,7 +28,7 @@ packages: ['@capsuletech/web-learn']
 - `./lesson` — `LessonView` / `Concept` / `CodeBlock` / `TypeErrorBadge`.
 - `./exercise` — `Exercise` (dispatch по type) + 4 под-типа.
 - `./progress` — `Progress` / `SkillTree`.
-- `./library` — `WordExplorer` / `Collections` / `Navigation` (под-навигация explorer↔collections, useEmit `onLibraryNavigate`) / `VocabList` / `BookmarkButton`.
+- `./library` — `LibraryWelcome` (landing раздела) / `Navigation` (под-навигация explorer↔collections, useEmit `onLibraryNavigate`) / `WordExplorer` / `Collections` / `VocabList` / `BookmarkButton`.
 - `./guides` — `Tour` / `Step` / `Spotlight` / `Hint`.
 - `./sentence-builder` — `SentenceBuilder`.
 - `./welcome` — `Welcome` (tier-2 connected, useEmit `onNavigate`) + `LEARN_SEGMENTS`.

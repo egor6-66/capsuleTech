@@ -14,6 +14,17 @@ const Header = Widget(() => (
     <Shapes.ShellNavigation />
     <Shell.Header.Menu>
       <Shell.Appearance />
+
+      <Shell.Header.Menu.Separator />
+      <Shell.Header.Menu.Group>
+        {/*<Ui.Layout.Flex orientation={'vertical'} gapY={2}>*/}
+        <Shell.Header.Menu.Label>Режим</Shell.Header.Menu.Label>
+        <Shell.ModeToggle mode="resize" />
+        <Shell.ModeToggle mode="dnd" />
+        {/*</Ui.Layout.Flex>*/}
+      </Shell.Header.Menu.Group>
+
+      <Shell.Header.Menu.Separator />
     </Shell.Header.Menu>
   </Shell.Header>
 ));

@@ -19,7 +19,11 @@ const Workspace = Page((Ui) => (
           initialSize: 0.04,
         },
         main: {
-          children: <Ui.Outlet />,
+          children: (
+            <Ui.Layout.Flex h={'full'} class={'p-2'}>
+              <Ui.Outlet />
+            </Ui.Layout.Flex>
+          ),
           resizable: false,
         },
       }}

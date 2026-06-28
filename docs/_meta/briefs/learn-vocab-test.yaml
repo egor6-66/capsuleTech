@@ -1,0 +1,126 @@
+# Тестовый батч лексики (5 слов) для проверки переходника.
+# Формат по брифу learn-content-format-teacher-reply.md.
+# Покрывает крайние случаи:
+#   - happy : synset + connotation + intensity + antonym (relation) + comparative forms
+#   - drive : irregular forms + traits + valency + domain-тег
+#   - child : irregular plural + hypernym (relation)
+#   - think : phonetic-тег (θ) + irregular verb
+#   - bank  : МНОГОЗНАЧНОСТЬ — 2 sense на одно слово (главный тест sense-as-unit)
+
+- word: happy
+  lang: en_US
+  gloss: feeling or showing pleasure
+  pos: adjective
+  level: A1                       # CEFR
+  register: neutral
+  frequency: high
+  pron_ru: "хэпи"
+  ipa: "/ˈhæpi/"
+  image: "улыбка до ушей, солнечно внутри"
+  connotation: positive
+  intensity: 2                    # glad(1) → happy(2) → ecstatic(4)
+  forms: {comparative: happier, superlative: happiest}
+  synset: glad
+  nuance: "базовое повседневное «рад/счастлив»"
+  tags:
+    - {name: emotion, kind: field}
+  relations:
+    - {type: antonym, target: "sad (not happy)"}
+  collocations: ["happy with", "happy to (do sth)"]
+  examples:
+    - {text: "I'm happy with it.", pron_ru: "айм хэпи уиз ит", ru: "я доволен"}
+
+- word: drive
+  lang: en_US
+  gloss: operate a motor vehicle
+  pos: verb
+  level: A1
+  register: neutral
+  frequency: high
+  pron_ru: "драйв (-ing «драйвин»)"
+  ipa: "/draɪv/"
+  image: "руки на руле, дорога летит навстречу"
+  forms: {past: drove, participle: driven}
+  traits: [irregular, transitive]
+  valency: "глагол несёт транспорт = авто; объект 'car' опускается"
+  synset: operate
+  tags:
+    - {name: motion, kind: field}
+    - {name: transport, kind: domain}
+  collocations: ["drive to (place)", "drive a car"]
+  examples:
+    - {text: "I'm driving right now.", pron_ru: "айм драйвин райт нау", ru: "я за рулём"}
+
+- word: child
+  lang: en_US
+  gloss: a young human being
+  pos: noun
+  level: A1
+  register: neutral
+  frequency: high
+  pron_ru: "чайлд"
+  ipa: "/tʃaɪld/"
+  image: "маленький человек, держит за руку взрослого"
+  forms: {plural: children}       # irregular plural — мн.ч. НЕ через -s
+  traits: [irregular, countable]
+  tags:
+    - {name: family, kind: field}
+  relations:
+    - {type: hypernym, target: "person (human being)"}
+  collocations: ["have a child", "a child of (age)"]
+  examples:
+    - {text: "The children played.", pron_ru: "зэ чилдрэн плэйд", ru: "дети играли"}
+
+- word: think
+  lang: en_US
+  gloss: have a thought or opinion
+  pos: verb
+  level: A1
+  register: neutral
+  frequency: high
+  pron_ru: "синк"                 # θ передаём как «с» (костыль), не «пф»
+  ipa: "/θɪŋk/"
+  image: "лампочка над головой, шестерёнки крутятся"
+  forms: {past: thought, participle: thought}
+  traits: [irregular]
+  synset: consider
+  tags:
+    - {name: cognition, kind: field}
+    - {name: "θ", kind: phonetic}
+  collocations: ["think about", "think of", "I think (that)"]
+  examples:
+    - {text: "I think so.", pron_ru: "ай синк соу", ru: "думаю да"}
+
+# --- bank: два значения на одно слово (тест sense-as-unit) ---
+- word: bank
+  lang: en_US
+  gloss: land along the side of a river
+  pos: noun
+  level: B1
+  register: neutral
+  frequency: medium
+  pron_ru: "бэнк"
+  ipa: "/bæŋk/"
+  image: "пологий берег, вода у ног"
+  tags:
+    - {name: nature, kind: field}
+  collocations: ["river bank", "on the bank"]
+  examples:
+    - {text: "We sat on the bank.", pron_ru: "уи сэт он зэ бэнк", ru: "мы сидели на берегу"}
+
+- word: bank
+  lang: en_US
+  gloss: institution that keeps money
+  pos: noun
+  level: A2
+  register: neutral
+  frequency: high
+  pron_ru: "бэнк"
+  ipa: "/bæŋk/"
+  image: "стеклянное здание, сейф, очередь к кассе"
+  synset: institution
+  tags:
+    - {name: finance, kind: domain}
+  collocations: ["go to the bank", "bank account"]
+  examples:
+    - {text: "I'm at a bank.", pron_ru: "айм эт э бэнк", ru: "я в банке"}

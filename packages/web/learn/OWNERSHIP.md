@@ -56,7 +56,7 @@ last-updated: 2026-06-28
 | `./lesson` | `LessonView` / `Concept` / `CodeBlock` / `TypeErrorBadge` |
 | `./exercise` | `Exercise` (dispatch по type) + `FillBlank`/`BuildClause`/`FixTypeError`/`Translate` |
 | `./progress` | `Progress` / `SkillTree` |
-| `./library` | `WordExplorer` / `Collections` / `Navigation` (под-навигация, useEmit `onLibraryNavigate`) / `VocabList` / `BookmarkButton`. Internal `LIBRARY_SEGMENTS` + `LIBRARY_BASE` (не реэкспортятся) |
+| `./library` | `LibraryWelcome` (landing раздела, useEmit `onLibraryNavigate`) / `Navigation` (под-навигация, тот же `onLibraryNavigate`) / `WordExplorer` / `Collections` / `VocabList` / `BookmarkButton`. Internal `LIBRARY_SEGMENTS` (не реэкспортится; active-state в Navigation derived route-prefix-агностично — пакет НЕ хардкодит app-URL) |
 | `./guides` | `Tour` / `Step` / `Spotlight` / `Hint` |
 | `./sentence-builder` | `SentenceBuilder` |
 | `./welcome` | `Welcome` (tier-2 connected, useEmit `onNavigate`) + `LEARN_SEGMENTS` |
