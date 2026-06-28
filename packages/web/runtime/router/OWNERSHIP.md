@@ -88,8 +88,8 @@ notFound                      // re-export @tanstack/solid-router (для throw 
 | `src/index.ts` | barrel + ре-экспорт `redirect`/`notFound` из `@tanstack/solid-router` |
 | `src/useRouteDepth.ts` | `useRouteDepth()` — `useContext(DepthContext)`, normalize sentinel `-1`→`0` (ADR 046 D4) |
 | `src/depthContext.ts` | `DepthContext` — Solid-context для per-Outlet depth (sentinel `-1`) |
-| `src/CapsuleOutlet.tsx` | `CapsuleOutlet` — wrapper над TanStack `<Outlet/>`, владеет `view-transition-name: capsule-content-${depth}` (per-depth, для разделения регионов) + `view-transition-class: capsule-route` (depth-agnostic CSS-таргетинг — `::view-transition-*(.capsule-route)` матчит любую глубину, никакого hardcoded потолка) (ADR 046 D4) |
-| `src/__tests__/` | 48 тестов: wrap (14), normalizeBase (8), context (2), notFoundRedirect (5), beforeLoad (6), viewTransition (4), useRouteDepth (5 Provider-based), CapsuleOutlet (4 DOM) — jsdom-env |
+| `src/CapsuleOutlet.tsx` | `CapsuleOutlet` — wrapper над TanStack `<Outlet/>`, владеет `view-transition-name: capsule-content-${depth}` (per-depth, для разделения регионов) + `view-transition-class: capsule-route` (depth-agnostic CSS-таргетинг — `::view-transition-*(.capsule-route)` матчит любую глубину, никакого hardcoded потолка) (ADR 046 D4). **Trace-инструментация (ADR 062):** эмиттит `router.route` mount/dispose `{ depth, path }` через `@capsuletech/web-profiler/trace` (no-op когда off). Трейсит OUTLET-узел (структурная глубина), НЕ matched leaf-компонент (его рендерит TanStack внутри `<Outlet/>`). |
+| `src/__tests__/` | 51 тест: wrap (14), normalizeBase (8), context (2), notFoundRedirect (5), beforeLoad (6), viewTransition (4), useRouteDepth (5 Provider-based), CapsuleOutlet (4 DOM), CapsuleOutlet.trace (3 mount/dispose/soft-dep) — jsdom-env |
 
 ## Ключевые инварианты
 
@@ -114,6 +114,7 @@ notFound                      // re-export @tanstack/solid-router (для throw 
 - ADR 030 — `notFoundRedirect` + generic `beforeLoad`-хук
 - ADR 045 #3 — depth-scoped `view-transition-name` (foundation, реализация заменена)
 - ADR 046 Decision 4 — `CapsuleOutlet` владеет vt-name; `useRouteDepth` impl на `useContext(DepthContext)` (signature сохранён)
+- ADR 062 — runtime observability trace-канал; `CapsuleOutlet` несёт постоянную `router.route` mount/dispose инструментацию (dep `@capsuletech/web-profiler`)
 
 ## Release group
 

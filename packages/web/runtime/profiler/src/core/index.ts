@@ -19,3 +19,12 @@ export type {
   IRatingLabel,
   IReporter,
 } from './schema';
+export type {
+  ICreateTraceBusOpts,
+  ITraceBus,
+  ITraceEvent,
+  ITraceLevel,
+  ITraceListener,
+  ITraceSink,
+} from './trace';
+export { createTraceBus } from './trace';

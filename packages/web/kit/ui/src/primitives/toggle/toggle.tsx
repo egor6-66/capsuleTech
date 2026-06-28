@@ -1,5 +1,6 @@
 import { cn } from '@capsuletech/web-style';
 import { createSignal, createUniqueId, Show } from 'solid-js';
+import { useTrace } from '../../internal/useTrace';
 import type { IToggleProps } from './interfaces';
 import { toggleLabelCva, toggleThumbCva, toggleTrackCva } from './variants';
 
@@ -16,6 +17,7 @@ import { toggleLabelCva, toggleThumbCva, toggleTrackCva } from './variants';
  * визуально остаётся консистентным.
  */
 export const Toggle = (props: IToggleProps) => {
+  useTrace('web-ui.toggle'); // ADR 062
   const id = createUniqueId();
   const [internal, setInternal] = createSignal(!!props.defaultChecked);
   const isControlled = () => props.checked !== undefined;

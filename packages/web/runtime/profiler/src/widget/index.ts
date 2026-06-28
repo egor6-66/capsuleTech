@@ -3,6 +3,7 @@ export { CustomPanel } from './panels/custom';
 export { ErrorsPanel } from './panels/errors';
 export { NetworkPanel } from './panels/network';
 export { RuntimePanel } from './panels/runtime';
+export { TracesPanel } from './panels/traces';
 export { VitalsPanel } from './panels/vitals';
 export { MetricRow } from './primitives/row';
 export { Sparkline } from './primitives/sparkline';

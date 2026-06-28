@@ -10,6 +10,7 @@ import { For, Suspense } from 'solid-js';
 import { MatrixCellFallback } from '../cell';
 import type { IInsertEngine } from '../dnd/insert';
 import type { IRow } from '../interfaces';
+import { MatrixSlot, traceSlotRender } from '../slot';
 
 // ---------------------------------------------------------------------------
 // Grid-zone bindings threaded from MatrixContent → renderRow → renderGridRow.
@@ -82,6 +83,7 @@ export const renderGridRow = (
 
           const children = getSwappedChildren ? getSwappedChildren(cell.id) : cell.children;
           const content = children;
+          traceSlotRender(cell.id);
 
           const gridCoords = (): { x: number; y: number; w: number; h: number } =>
             gridOpts.getLiveGridCoords(cell.id) ?? cell.grid!;
@@ -200,7 +202,9 @@ export const renderGridRow = (
                 class="absolute inset-0 overflow-auto"
                 classList={{ 'pointer-events-none': isDragging() }}
               >
-                <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+                <MatrixSlot slot={cell.id}>
+                  <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+                </MatrixSlot>
               </div>
               {gridResizeHandles()}
             </div>

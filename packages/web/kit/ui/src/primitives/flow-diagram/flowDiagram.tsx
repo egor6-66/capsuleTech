@@ -1,5 +1,6 @@
 import { cn } from '@capsuletech/web-style';
 import { mergeProps, splitProps } from 'solid-js';
+import { useTrace } from '../../internal/useTrace';
 import type { IUiFlowDiagramProps } from './interfaces';
 import { flowDiagramCva } from './variants';
 
@@ -12,6 +13,7 @@ import { flowDiagramCva } from './variants';
  * <Ui.FlowDiagram size="lg" />
  */
 export const FlowDiagram = (props: IUiFlowDiagramProps) => {
+  useTrace('web-ui.flow-diagram'); // ADR 062
   const merged = mergeProps({ ariaLabel: 'Flow diagram placeholder' }, props);
   const [local, others] = splitProps(merged, ['size', 'class', 'children', 'ariaLabel']);
 

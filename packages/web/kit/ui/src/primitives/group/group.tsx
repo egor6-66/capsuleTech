@@ -2,6 +2,7 @@ import { cn } from '@capsuletech/web-style';
 import { type Component, createMemo, For, splitProps } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 
+import { useTrace } from '../../internal/useTrace';
 import { Flex } from '../layout/flex';
 import { Resizable } from '../layout/resizable';
 import type { FlexOrientation } from '../layout/flex/interfaces';
@@ -35,6 +36,7 @@ import { groupSeparatorVariants } from './variants';
  *   borders объединяются через -ml-px / -mt-px.
  */
 export function Group<T = unknown>(props: IGroupProps<T>) {
+  useTrace('web-ui.group'); // ADR 062
   const [local] = splitProps(props, [
     'orientation',
     'variant',
@@ -158,6 +160,7 @@ export function Group<T = unknown>(props: IGroupProps<T>) {
  * ```
  */
 export function GroupSeparator(props: IGroupSeparatorProps) {
+  useTrace('web-ui.group-separator'); // ADR 062
   const [local] = splitProps(props, ['orientation', 'class', 'style']);
 
   return (

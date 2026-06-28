@@ -1,5 +1,6 @@
+import { trace } from '@capsuletech/web-profiler/trace';
 import { Zod } from '@capsuletech/shared-zod';
-import { mergeProps, splitProps } from 'solid-js';
+import { createUniqueId, mergeProps, onCleanup, splitProps } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import { hasAccessResolver, resolveAccess } from '../../engine/access-resolver';
 import { useShapeUi } from './context';
@@ -58,6 +59,13 @@ const shape = (bind: (...args: unknown[]) => unknown, config?: unknown) => {
   const { schema: _schema, as: defaultAs, defaults: bindDefaults, ...bindExtras } = bindResult;
 
   return (consumerProps: IShapeComponentProps<unknown>) => {
+    // ADR 062 — постоянная trace-инструментация жизненного цикла Shape-инстанса
+    // (per-mount; `id` парит mount↔dispose). No-op когда trace-канал off.
+    // Стоит до early-return (`!Template`) — mount↔dispose всегда парны.
+    const __traceId = createUniqueId();
+    trace('web-core.shape', 'mount', { id: __traceId });
+    onCleanup(() => trace('web-core.shape', 'dispose', { id: __traceId }));
+
     const realUi = useShapeUi();
 
     // --- Резолв template ---

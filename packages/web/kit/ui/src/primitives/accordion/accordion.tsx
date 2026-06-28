@@ -3,6 +3,7 @@ import { Accordion as KobalteAccordion } from '@kobalte/core/accordion';
 import { ChevronDown } from 'lucide-solid';
 import { splitProps } from 'solid-js';
 
+import { useTrace } from '../../internal/useTrace';
 import type {
   IAccordionContentProps,
   IAccordionItemProps,
@@ -44,6 +45,7 @@ import {
  * ```
  */
 const AccordionImpl = (props: IAccordionProps) => {
+  useTrace('web-ui.accordion'); // ADR 062
   const [local, others] = splitProps(props, ['class', 'fluid']);
 
   const rootClass = () =>

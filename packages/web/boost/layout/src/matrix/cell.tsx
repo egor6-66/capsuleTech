@@ -6,6 +6,7 @@ import { Show, Suspense } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import { DragBadge } from './dnd/drag-badge';
 import type { ICell } from './interfaces';
+import { MatrixSlot, traceSlotRender } from './slot';
 import { matrixSlots } from './variants';
 
 // ---------------------------------------------------------------------------
@@ -73,6 +74,7 @@ export const renderCell = (
   const tag = cell.tag ?? 'div';
   const children = getSwappedChildren ? getSwappedChildren(cell.id) : cell.children;
   const content = children;
+  traceSlotRender(cell.id);
 
   // Cells with DnD need `position: relative` to host the absolute badge.
   // The badge must live outside the scroll container so it stays pinned to
@@ -113,7 +115,9 @@ export const renderCell = (
           class={`${innerClass} scrollbar-hover`}
           classList={{ 'pointer-events-none': isDragging() }}
         >
-          <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+          <MatrixSlot slot={cell.id}>
+            <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+          </MatrixSlot>
         </div>
         {/* Absolute overlay renders above canvas / GPU layers — ring/box-shadow do not. */}
         <Show when={dndState.canAccept() || dndState.canDrop() || dndState.isOver()}>
@@ -146,7 +150,9 @@ export const renderCell = (
       class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative`}
     >
       <div class="absolute inset-0 overflow-auto">
-        <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+        <MatrixSlot slot={cell.id}>
+          <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+        </MatrixSlot>
       </div>
     </Dynamic>
   );

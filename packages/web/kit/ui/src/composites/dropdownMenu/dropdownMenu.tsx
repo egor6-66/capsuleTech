@@ -1,6 +1,7 @@
 import type { JSX } from 'solid-js';
 import { For, Show, splitProps } from 'solid-js';
 
+import { useTrace } from '../../internal/useTrace';
 import { Dropdown } from '../../primitives/dropdown';
 import type { IDropdownMenuItem, IDropdownMenuProps } from './interfaces';
 
@@ -77,6 +78,7 @@ function renderItems(items: IDropdownMenuItem[]): JSX.Element {
  * ```
  */
 export function DropdownMenu(props: IDropdownMenuProps): JSX.Element {
+  useTrace('web-ui.dropdown-menu'); // ADR 062
   const [own, rest] = splitProps(props, ['trigger', 'data']);
   return (
     <Dropdown {...rest}>

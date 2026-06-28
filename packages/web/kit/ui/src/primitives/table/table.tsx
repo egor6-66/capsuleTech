@@ -1,10 +1,12 @@
 import { cn } from '@capsuletech/web-style';
 import { splitProps } from 'solid-js';
 
+import { useTrace } from '../../internal/useTrace';
 import type { ITableProps } from './interfaces';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from './parts';
 
 const TableImpl = (props: ITableProps) => {
+  useTrace('web-ui.table'); // ADR 062
   const [local, others] = splitProps(props, ['class']);
   return (
     <div class="relative w-full">

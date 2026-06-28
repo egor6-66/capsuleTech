@@ -1,5 +1,6 @@
 import { type ComponentStatus, STATUS_VARIABLES } from '@capsuletech/web-style';
 import { children, type JSX } from 'solid-js';
+import { useTrace } from '../../internal/useTrace';
 
 interface StatusProps {
   status?: ComponentStatus;
@@ -7,6 +8,7 @@ interface StatusProps {
 }
 
 export const Status = (props: StatusProps) => {
+  useTrace('web-ui.status'); // ADR 062
   // Получаем реактивный доступ к детям
   const resolved = children(() => props.children);
 

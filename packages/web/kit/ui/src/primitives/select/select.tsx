@@ -3,6 +3,7 @@ import { Select as KobalteSelect } from '@kobalte/core/select';
 import { Check, ChevronDown } from 'lucide-solid';
 import { splitProps } from 'solid-js';
 
+import { useTrace } from '../../internal/useTrace';
 import { createFinish } from '../../lib/finish';
 import { useMountTarget } from '../../lib/mountTarget';
 
@@ -147,6 +148,7 @@ const Content = (props: ISelectContentProps) => {
  * `gutter` to override.
  */
 const SelectImpl = (props: ISelectProps) => {
+  useTrace('web-ui.select'); // ADR 062
   const [local, kobalteProps] = splitProps(props, [
     'options',
     'placeholder',

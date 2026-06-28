@@ -10,8 +10,8 @@
  *  3. transition='none' → createRouter вызывается с { viewTransition: false }
  *  4. transition=undefined → createRouter вызывается с { viewTransition: false }
  *
- * Мокаем @capsuletech/web-router, @capsuletech/web-profiler и solid-js/web
- * — хотим изолированный unit-тест без DOM.
+ * Мокаем @capsuletech/web-router, тонкие субпаты @capsuletech/web-profiler
+ * (/providers + /reporters) и solid-js/web — хотим изолированный unit-тест без DOM.
  */
 
 import type { createRouter } from '@capsuletech/web-router';
@@ -24,14 +24,22 @@ const createRouterMock = vi.fn<typeof createRouter>(() => ({
   capsuleRouter: {} as any,
 }));
 
+// Тонкий хаб профайлера (ADR 063 D5) — мок просто прокидывает children, чтобы
+// убедиться что дерево ВСЕГДА обёрнуто в ProfilerProvider.
+const profilerProviderMock = vi.fn((props: any) => props.children);
+
 vi.mock('@capsuletech/web-router', () => ({
   createRouter: createRouterMock,
   RouterContext: { Provider: (props: any) => props.children },
   RouterProvider: () => null,
 }));
 
-vi.mock('@capsuletech/web-profiler', () => ({
-  VitalsMonitoringProvider: (props: any) => props.children,
+vi.mock('@capsuletech/web-profiler/providers', () => ({
+  ProfilerProvider: profilerProviderMock,
+}));
+
+vi.mock('@capsuletech/web-profiler/reporters', () => ({
+  TraceConsoleReporter: () => null,
 }));
 
 // Мокаем Solid — BaseProviders использует Show / JSX; в node-env рендер не нужен,
@@ -89,5 +97,17 @@ describe('BaseProviders — viewTransition проводка в createRouter', ()
     BaseProviders({ routeTree: fakeRouteTree });
     expect(createRouterMock).toHaveBeenCalledOnce();
     expect(createRouterMock.mock.calls[0][0]).toMatchObject({ viewTransition: false });
+  });
+});
+
+describe('BaseProviders — тонкий профайлер-хаб всегда смонтирован', () => {
+  it('оборачивает дерево в ProfilerProvider без флага (trace-канал во всех аппах)', () => {
+    BaseProviders({ routeTree: fakeRouteTree });
+    expect(profilerProviderMock).toHaveBeenCalledOnce();
+  });
+
+  it('обёртка не зависит от роута — хаб монтится и на fallback-ветке (нет routeTree)', () => {
+    BaseProviders({ children: null });
+    expect(profilerProviderMock).toHaveBeenCalledOnce();
   });
 });

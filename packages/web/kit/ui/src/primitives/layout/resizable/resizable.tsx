@@ -1,5 +1,6 @@
 import { children, createMemo, For, type JSX, Show } from 'solid-js';
 import { cn } from '@capsuletech/web-style';
+import { useTrace } from '../../../internal/useTrace';
 import { ResizableHandle, ResizablePanel, ResizableRoot } from './_resize/primitives';
 import type { IResizableItem, IResizableProps, ResizableOrientation } from './interfaces';
 
@@ -116,6 +117,7 @@ const StaticInner = (props: {
  * Если задан `items` — он source-of-truth, `children` игнорируются.
  */
 export const Resizable = (props: IResizableProps) => {
+  useTrace('web-ui.resizable'); // ADR 062
   const orientation = (): ResizableOrientation => props.orientation ?? 'horizontal';
 
   // children → items если items не задан.

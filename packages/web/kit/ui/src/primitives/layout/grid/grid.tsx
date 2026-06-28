@@ -1,5 +1,6 @@
 import { cn } from '@capsuletech/web-style';
 import { children, type JSX, splitProps, type ValidComponent } from 'solid-js';
+import { useTrace } from '../../../internal/useTrace';
 import { Slot } from '../../slot';
 import type { IGridProps } from './interfaces';
 import { Item } from './item';
@@ -29,6 +30,7 @@ import { mergeStyle, toAreas, toGap, toTrack } from './utils';
  * ```
  */
 const GridImpl = <T extends ValidComponent = 'div'>(props: IGridProps<T>) => {
+  useTrace('web-ui.grid'); // ADR 062
   const [own, polyAndRest] = splitProps(props, [
     'cols',
     'rows',
@@ -43,7 +45,11 @@ const GridImpl = <T extends ValidComponent = 'div'>(props: IGridProps<T>) => {
     'class',
     'style',
   ]);
-  const [poly, others] = splitProps(polyAndRest, ['as']);
+  // `children` выделяем В `poly` (а не в `others`), иначе он утёк бы в
+  // `<Slot {...others}>` ВТОРЫМ потребителем ленивого getter'а — параллельно
+  // с `children(() => …)` для isEmpty ниже это давало двойную инстанциацию
+  // потомка (тот же bug A, что и во `flex.tsx`; ADR 062).
+  const [poly, others] = splitProps(polyAndRest, ['as', 'children']);
 
   const computed = (): JSX.CSSProperties => {
     const s: JSX.CSSProperties = {};
@@ -76,6 +82,7 @@ const GridImpl = <T extends ValidComponent = 'div'>(props: IGridProps<T>) => {
   };
 
   // See note in flex.tsx — generic Slot props get coerced via `any`.
+  // `children` вне `others` → единственный резолвнутый инстанс через `{resolved()}`.
   return (
     <Slot
       {...({
@@ -84,7 +91,9 @@ const GridImpl = <T extends ValidComponent = 'div'>(props: IGridProps<T>) => {
         style: mergeStyle(computedWithEmpty(), own.style) as never,
         ...(others as object),
       } as any)}
-    />
+    >
+      {resolved()}
+    </Slot>
   );
 };
 

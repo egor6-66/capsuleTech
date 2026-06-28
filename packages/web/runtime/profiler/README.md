@@ -9,6 +9,7 @@ Performance monitoring and profiling utilities for SolidJS applications.
 - Typed `MetricsBus` (no string keys, no `.includes()` matching)
 - 13 built-in collectors: Web Vitals (CLS/FCP/LCP/INP/TTFB), memory, network (transfer/decoded/inflight/failed), navigation, connection, long tasks, LoAF, event timing, FPS, DOM stats, errors, user timing, deep network (monkey-patch fetch/XHR/WS — opt-in)
 - 3 reporters: console, sendBeacon (on `visibilitychange='hidden'`/`pagehide`), callback
+- **Trace channel** (ADR 062): module-level `trace()` for lifecycle observability (birth→death), correlated by `traceId`, runtime-toggleable in any mode (dev & prod) — `/trace` is a zero-dep leaf subpath consumers import without pulling the profiler
 - Public read+write API: `useProfiler()`, `usePerf()` (`mark/measure/count/gauge/time`)
 - Per-metric ring-buffer history (default 60 samples) for sparklines
 - SSR-safe (no-ops on the server)
@@ -69,6 +70,37 @@ function MyComponent() {
 }
 ```
 
+### Trace channel — lifecycle observability (ADR 062)
+
+Push structured lifecycle events from **any** code (classes, factories — not just components) and retrace a causal chain by `traceId`. Off by default (zero overhead until enabled).
+
+```ts
+// In a package/node you own (e.g. a transport class) — light leaf subpath:
+import { trace, startTrace, span } from '@capsuletech/web-profiler/trace';
+
+class IframeTransport {
+  constructor() {
+    trace('remote.transport', 'ctor', { subscribers: this.subs.size });
+  }
+  deliver(msg) {
+    // correlate the whole chain under one id propagated via the protocol envelope
+    span(msg.traceId, 'remote.transport', 'deliver', { to: msg.target });
+  }
+}
+```
+
+```tsx
+// Wire the sink + toggle once, at the provider:
+<ProfilerProvider
+  showDashboard
+  trace={{ enabled: true, nodes: ['remote'], reporters: [traceConsoleReporter()] }}
+>
+  <YourApp />
+</ProfilerProvider>
+```
+
+Toggle at runtime in any mode: `trace.enable('remote')` / `trace.disable('*')`, or via URL `?trace=remote` / `localStorage['capsule.trace']`. Inspect chains in the **Traces** dashboard tab (waterfall grouped by `traceId`).
+
 ### Legacy compat (still works)
 
 ```tsx
@@ -95,7 +127,7 @@ Enable with `showDashboard`:
 </ProfilerProvider>
 ```
 
-Draggable, collapsible, 5 tabs (Vitals / Runtime / Network / Errors / Custom), sparklines from ring-buffer history. Position, collapsed state, and active tab persist to `localStorage` under `capsule:profiler:dashboard`. Built on `@kobalte/core` Tabs (peer dependency).
+Draggable, collapsible, 6 tabs (Vitals / Runtime / Network / Errors / Traces / Custom), sparklines from ring-buffer history. Position, collapsed state, and active tab persist to `localStorage` under `capsule:profiler:dashboard`. Built on `@kobalte/core` Tabs (peer dependency).
 
 ## Known limitations
 

@@ -9,6 +9,7 @@ import { For, Suspense } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import { MatrixCellFallback, NOOP_REF } from '../cell';
 import type { ICell, IRow } from '../interfaces';
+import { MatrixSlot, traceSlotRender } from '../slot';
 import { matrixSlots } from '../variants';
 
 // ---------------------------------------------------------------------------
@@ -139,6 +140,7 @@ export const renderPackingRow = (
           })();
           const children = getSwappedChildren ? getSwappedChildren(cell.id) : cell.children;
           const content = children;
+          traceSlotRender(cell.id);
 
           // Reactive cell style: explicit px size when set via handle,
           // otherwise flex:1 with min constraints applied.
@@ -246,7 +248,9 @@ export const renderPackingRow = (
                   class="absolute inset-0 overflow-auto"
                   classList={{ 'pointer-events-none': isDragging() }}
                 >
-                  <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+                  <MatrixSlot slot={cell.id}>
+                    <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+                  </MatrixSlot>
                 </div>
                 {resizeHandle()}
               </Dynamic>

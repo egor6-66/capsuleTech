@@ -1,9 +1,11 @@
 import { createStyle } from '@capsuletech/web-style';
 import { splitProps } from 'solid-js';
+import { useTrace } from '../../internal/useTrace';
 import type { ILabelProps } from './interfaces';
 import { labelCva } from './variants';
 
 export const Label = (props: ILabelProps) => {
+  useTrace('web-ui.label'); // ADR 062
   const [local, others] = splitProps(props, ['class', 'style']);
 
   const { className, style } = createStyle(labelCva, {

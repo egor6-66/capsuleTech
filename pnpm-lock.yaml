@@ -570,6 +570,9 @@ importers:
       '@capsuletech/web-dnd':
         specifier: workspace:*
         version: link:../../runtime/dnd
+      '@capsuletech/web-profiler':
+        specifier: workspace:*
+        version: link:../../runtime/profiler
       '@capsuletech/web-style':
         specifier: workspace:*
         version: link:../../runtime/style
@@ -802,6 +805,9 @@ importers:
       '@capsuletech/web-contract':
         specifier: workspace:*
         version: link:../../runtime/contract
+      '@capsuletech/web-profiler':
+        specifier: workspace:*
+        version: link:../../runtime/profiler
       '@capsuletech/web-style':
         specifier: workspace:*
         version: link:../../runtime/style
@@ -1081,6 +1087,12 @@ importers:
       '@capsuletech/vite-builder':
         specifier: workspace:*
         version: link:../../../builders/vite
+      jsdom:
+        specifier: ~29.1.1
+        version: 29.1.1
+      vite-plugin-solid:
+        specifier: ^2.11.12
+        version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
 
   packages/web/runtime/query:
     dependencies:
@@ -1153,6 +1165,9 @@ importers:
 
   packages/web/runtime/router:
     dependencies:
+      '@capsuletech/web-profiler':
+        specifier: workspace:*
+        version: link:../profiler
       '@tanstack/solid-router':
         specifier: ^1.169.0
         version: 1.170.4(solid-js@1.9.12)

@@ -20,6 +20,7 @@ import {
   splitProps,
   useContext,
 } from 'solid-js';
+import { useTrace } from '../../internal/useTrace';
 import { createInfiniteScroll } from '../../lib/infiniteScroll';
 import { Button } from '../../primitives/button';
 import { Table } from '../../primitives/table';
@@ -350,6 +351,7 @@ function InfiniteTable<TData>(props: {
 }
 
 export function DataTable<TData>(rawProps: IDataTableProps<TData>) {
+  useTrace('web-ui.data-table'); // ADR 062
   const { wrap } = useContext(CompositeProxyContext);
 
   // Wrap the inner DataRow component once at construction time (not per render).

@@ -1,6 +1,7 @@
 import { cn, createStyle } from '@capsuletech/web-style';
 import { createMemo, mergeProps, splitProps } from 'solid-js';
 
+import { useTrace } from '../../internal/useTrace';
 import { createFinish } from '../../lib/finish';
 import type { ICardProps } from './interfaces';
 import { CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './parts';
@@ -18,6 +19,7 @@ const ELEVATION: Record<NonNullable<ICardProps['elevation']>, string> = {
 const toSpacing = (n: number) => `calc(var(--spacing) * ${n})`;
 
 const CardImpl = (props: ICardProps) => {
+  useTrace('web-ui.card'); // ADR 062
   const [local, variants, sizing, others] = splitProps(
     props,
     ['class', 'style'],

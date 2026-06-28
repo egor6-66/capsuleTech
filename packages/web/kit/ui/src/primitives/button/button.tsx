@@ -2,6 +2,7 @@ import { cn, createStyle } from '@capsuletech/web-style';
 import type { ValidComponent } from 'solid-js';
 import { mergeProps, Show, splitProps } from 'solid-js';
 
+import { useTrace } from '../../internal/useTrace';
 import { Slot } from '../slot';
 import { Spinner } from '../spinner';
 import type { IButtonProps } from './interfaces';
@@ -23,6 +24,7 @@ import { buttonCva } from './variants';
  * ```
  */
 export const Button = <T extends ValidComponent = 'button'>(props: IButtonProps<T>) => {
+  useTrace('web-ui.button'); // ADR 062
   const [local, variantProps, loadingProps, presentational, others] = splitProps(
     props,
     ['class', 'style'],

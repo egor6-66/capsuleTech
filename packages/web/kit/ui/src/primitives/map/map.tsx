@@ -1,5 +1,6 @@
 import { cn } from '@capsuletech/web-style';
 import { mergeProps, splitProps } from 'solid-js';
+import { useTrace } from '../../internal/useTrace';
 import type { IUiMapProps } from './interfaces';
 import { mapCva } from './variants';
 
@@ -19,6 +20,7 @@ import { mapCva } from './variants';
  * </Ui.MapView>
  */
 export const MapView = (props: IUiMapProps) => {
+  useTrace('web-ui.map'); // ADR 062
   const merged = mergeProps({ ariaLabel: 'Map placeholder' }, props);
   const [local, others] = splitProps(merged, ['size', 'class', 'children', 'ariaLabel']);
 

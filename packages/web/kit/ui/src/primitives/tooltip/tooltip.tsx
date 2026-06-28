@@ -2,6 +2,7 @@ import { cn } from '@capsuletech/web-style';
 import { Tooltip as KobalteTooltip } from '@kobalte/core/tooltip';
 import { createContext, createSignal, splitProps, useContext } from 'solid-js';
 
+import { useTrace } from '../../internal/useTrace';
 import { useMountTarget } from '../../lib/mountTarget';
 
 import type {
@@ -46,6 +47,7 @@ const TooltipCursorContext = createContext<ITooltipCursorContext>({
  *    at the cursor — the panel appears just below/above the cursor.
  */
 const TooltipImpl = (props: ITooltipProps) => {
+  useTrace('web-ui.tooltip'); // ADR 062
   const [local, kobalteProps] = splitProps(props, ['cursorTracking', 'children', 'onOpenChange']);
 
   const tracking = () => local.cursorTracking !== false;

@@ -1,6 +1,7 @@
 import { createStyle } from '@capsuletech/web-style';
 import { createMemo, createSignal, type JSX, mergeProps, splitProps } from 'solid-js';
 
+import { useTrace } from '../../internal/useTrace';
 import type { ITextareaProps } from './interfaces';
 import { textareaCva } from './variants';
 
@@ -21,6 +22,7 @@ import { textareaCva } from './variants';
  * ```
  */
 export const Textarea = (props: ITextareaProps) => {
+  useTrace('web-ui.textarea'); // ADR 062
   const [local, variants, others] = splitProps(
     props,
     ['class', 'style', 'resize', 'value', 'defaultValue', 'onInput'],

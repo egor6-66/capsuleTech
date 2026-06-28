@@ -1,6 +1,7 @@
 import { cn, createStyle } from '@capsuletech/web-style';
 import { mergeProps, splitProps } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
+import { useTrace } from '../../internal/useTrace';
 import type { ITypographyProps } from './interfaces';
 import { typographyCva } from './variants';
 
@@ -32,6 +33,7 @@ const SIZE: Record<NonNullable<ITypographyProps['size']>, string> = {
 };
 
 export const Typography = (props: ITypographyProps) => {
+  useTrace('web-ui.typography'); // ADR 062
   // 1. Устанавливаем дефолты
   const merged = mergeProps({ variant: 'p' }, props);
 

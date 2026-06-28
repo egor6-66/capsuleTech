@@ -2,6 +2,7 @@ import { cn } from '@capsuletech/web-style';
 import { Slider as KobalteSlider } from '@kobalte/core/slider';
 import { Show, splitProps } from 'solid-js';
 
+import { useTrace } from '../../internal/useTrace';
 import type { ISliderProps } from './interfaces';
 import {
   sliderFillCva,
@@ -37,6 +38,7 @@ import {
  * ```
  */
 export const Slider = (props: ISliderProps) => {
+  useTrace('web-ui.slider'); // ADR 062
   const [local, others] = splitProps(props, [
     'value',
     'defaultValue',

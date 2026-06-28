@@ -4,10 +4,11 @@ import { CustomPanel } from './panels/custom';
 import { ErrorsPanel } from './panels/errors';
 import { NetworkPanel } from './panels/network';
 import { RuntimePanel } from './panels/runtime';
+import { TracesPanel } from './panels/traces';
 import { VitalsPanel } from './panels/vitals';
 import { ProfilerWindow, persistTab, readPersistedTab } from './primitives/window';
 
-type TabKey = 'vitals' | 'runtime' | 'network' | 'errors' | 'custom';
+type TabKey = 'vitals' | 'runtime' | 'network' | 'errors' | 'traces' | 'custom';
 
 interface ITab {
   key: TabKey;
@@ -20,6 +21,7 @@ const TABS: readonly ITab[] = [
   { key: 'runtime', label: 'Runtime', Panel: RuntimePanel },
   { key: 'network', label: 'Network', Panel: NetworkPanel },
   { key: 'errors', label: 'Errors', Panel: ErrorsPanel },
+  { key: 'traces', label: 'Traces', Panel: TracesPanel },
   { key: 'custom', label: 'Custom', Panel: CustomPanel },
 ];
 
