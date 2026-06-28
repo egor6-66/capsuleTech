@@ -3,7 +3,7 @@
 // Имя `Ui.Outlet` для consumer'ов сохраняется (re-export через alias).
 import { CapsuleOutlet as Outlet } from '@capsuletech/web-router';
 import { useSettingsMode } from '@capsuletech/web-style';
-import { For, Show } from 'solid-js';
+import { children, For, Show } from 'solid-js';
 import { useCtx } from '../engine/ctx';
 import { UiProxy } from '../engine/ui-proxy';
 import { Ui as BaseUi } from '../ui-kit';
@@ -82,31 +82,50 @@ export const WidgetWrapper: IWidgetWrapper = ((
       </div>
     );
 
+    // Single content instance — created ONCE per (non-loading) mount via Solid's
+    // children() helper, then shared between the normal and settings-overlay
+    // branches. Referencing content() in both inner-<Show> branches makes the
+    // SAME instance move between them on a settings-toggle (no remount).
+    //
+    // Why this matters: the previous code called Component(...) at TWO separate
+    // call-sites (the inner-Show `fallback` AND the settings <div>). Under the
+    // nested reactive <Show> the factory was evaluated twice on mount → content
+    // instantiated ×2 / disposed ×1 (churn, net 1). This double-mount was the
+    // root of bug A: Widget(Canvas) spawned two <Remote.View> → two
+    // RemoteComponent → doubled transport subscriptions → one message delivered
+    // twice. See ADR 062 trace diagnosis.
+    //
+    // Defined as a local component so the content lives INSIDE the loader <Show>:
+    // while store.loading is true the loader branch is shown, WidgetContent is
+    // never mounted, and Component (e.g. MapView) is never instantiated — the
+    // loader contract (content not built behind the loader) is preserved. A
+    // top-level children() call would eager-instantiate the content via its
+    // memo and break that contract.
+    const WidgetContent = () => {
+      const content = children(
+        () => (Component as IWidgetRenderer)(proxiedUi, store, wrapperProps),
+      );
+      return (
+        <Show when={showSettings()} fallback={content()}>
+          {/*
+            Settings-active path: root must be `relative` to host the absolute strip.
+            Content wrapper uses `absolute inset-0 overflow-auto` so it gets a definite
+            height synchronously — critical for DataTable virtualizer (same pattern as
+            Matrix cell with settings). The content instance MOVES here from the
+            fallback (it is not remounted), thanks to the shared children() memo.
+          */}
+          <div class="relative h-full w-full">
+            {settingsStrip()}
+            <div class="absolute inset-0 overflow-auto">{content()}</div>
+          </div>
+        </Show>
+      );
+    };
+
     return (
       <ShapeUiContext.Provider value={proxiedUi}>
         <Show when={!isLoading()} fallback={Loader && (Loader(proxiedUi, wrapperProps) as any)}>
-          <Show
-            when={showSettings()}
-            fallback={
-              // Normal path — no settings strip: render content directly as before.
-              // No wrapper added here to avoid disturbing existing layout (flex, grid, h-full, etc.).
-              (Component as IWidgetRenderer)(proxiedUi, store, wrapperProps)
-            }
-          >
-            {/*
-              Settings-active path: root must be `relative` to host the absolute strip.
-              Content wrapper uses `absolute inset-0 overflow-auto` so it gets a definite
-              height synchronously — critical for DataTable virtualizer (same pattern as
-              Matrix cell with settings). settingsMode is a rare editing-mode toggle; the
-              content remounts on toggle which is acceptable.
-            */}
-            <div class="relative h-full w-full">
-              {settingsStrip()}
-              <div class="absolute inset-0 overflow-auto">
-                {(Component as IWidgetRenderer)(proxiedUi, store, wrapperProps)}
-              </div>
-            </div>
-          </Show>
+          <WidgetContent />
         </Show>
       </ShapeUiContext.Provider>
     );
