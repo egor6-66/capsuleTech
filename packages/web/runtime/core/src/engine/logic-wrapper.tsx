@@ -17,7 +17,7 @@ import type {
 } from '../wrappers/interfaces';
 import { ControllerProxy } from './controller-proxy';
 import { Context, type IControllerHandle, useCtx } from './ctx';
-import { type IRootForward, useHostInbound, useRootForward } from './host-bridge';
+import { type IRootForward, useEmbedMode, useHostInbound, useRootForward } from './host-bridge';
 import { getPackageServices } from './package-services';
 import { bindEvents } from './ui-proxy';
 import { createEmit } from './use-emit';
@@ -58,6 +58,11 @@ export const createLogicWrapper =
       const parent = useCtx();
       const router = useRouter();
 
+      // Статичный run-режим запуска (источник — bootstrap iframe-check). Поля
+      // фиксированы на сессию (не реактивные): апп гейтит автономные триггеры через
+      // `if (standalone) …`. `standalone === !embedded` по построению.
+      const { embedded } = useEmbedMode();
+
       // Feature получает `api` (typed proxy из createApi) дополнительно. Controller
       // — только `router`: compliance запрещает IO в Controller'е, а api именно про IO.
       // z и utils — capabilities, инжектируются в оба слоя (Controller и Feature).
@@ -74,8 +79,17 @@ export const createLogicWrapper =
               api: getApiClient(),
               zod: Zod,
               utils: Utils,
+              embedded,
+              standalone: !embedded,
             }
-          : { ...getPackageServices(), router, zod: Zod, utils: Utils };
+          : {
+              ...getPackageServices(),
+              router,
+              zod: Zod,
+              utils: Utils,
+              embedded,
+              standalone: !embedded,
+            };
 
       const schema = defineStateSchema(services);
 

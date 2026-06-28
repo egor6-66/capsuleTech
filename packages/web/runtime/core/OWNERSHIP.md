@@ -84,7 +84,8 @@ import {
   Providers,                                        // namespace: { BaseProviders }
   useCtx,                                           // hook для доступа к ControllerContext
   useShapeUi,                                       // hook для Shape consumer'ов
-  useEmit,                                          // программный HCA-event dispatch (ADR 032)
+  useEmit,                                          // программный HCA-event dispatch (ADR 032), throw вне scope
+  useEmitOptional,                                  // то же, но no-op вне Controller/Feature-scope (для пакетов)
   type ITarget, type IHandlerApi,                   // user-facing типы
   type IDefineStateSchema, type IStateHandlers,     // schema-типы
   type IServices, type IWrapperProps,               // injected types
@@ -138,6 +139,16 @@ import { BaseProviders } from '@capsuletech/web-core/providers';
 `transition?: boolean | 'none'` — включатель нативного View Transitions API. Дефолт — выключено (`undefined` или `'none'`). При `true` BaseProviders передаёт `viewTransition: true` в `createRouter` → TanStack Router вызывает `document.startViewTransition()` на каждом переходе. Внешний вид задаётся через CSS `::view-transition-old/new(root)` в `@capsuletech/web-style`. `AnimatedOutlet` и `RouterTransitionContext` удалены. `Ui.Outlet` в Widget/Page — сырой TanStack `<Outlet/>`.
 
 **НЕТ** `./css` — CSS был удалён из этого пакета. Bootstrap-стили теперь живут в `.capsule/styles.css`, который генерится builders scaffold и импортируется в `bootstrap.tsx` приложения.
+
+### `./events` (`src/events/index.ts`)
+
+Лёгкий event-channel субпатч для пакетов-потребителей (web-remote и т.п.) — только `useEmit` / `useEmitOptional` без втягивания барла (`.` тянет wrappers/providers/bootstrap).
+
+```ts
+import { useEmitOptional } from '@capsuletech/web-core/events';
+```
+
+Транзитив минимален: `events.mjs` (0.11 KB) → `use-emit` chunk (~1.9 KB, `ctx`/`derivation` инлайнены) → `emit-context` (227 B) → solid-js. Не тащит `wrappers/`/`providers/`. `useEmit`/`useEmitOptional` также остаются в главном барле (back-compat).
 
 ### Access-resolver injection (additive, non-breaking)
 
@@ -194,6 +205,8 @@ Both points are no-ops when no resolver is registered (`hasAccessResolver()` fas
 
 ## План рефакторинга / оптимизаций
 
+- [x] **`useEmitOptional` — non-throwing вариант `useEmit`** — вне Controller/Feature-scope возвращает no-op (`() => undefined`), а не throw'ает (как `useEmit`). Внутри scope диспатчит идентично через `buildEmitFromCtx`. Для пакетных компонентов, рендерящихся в **опциональном** логик-контексте: кейс `@capsuletech/web-remote` `<Remote.View>` (ADR 060 D1 / remote→host auto-route B) — forwarded app→host событие роутится в ближайший оборачивающий host-Feature через `emit(name, { payload })`; без enclosing-логики (голая страница) emit просто дропается. `useEmit` НЕ тронут (app-код, где scope обязателен). Экспорт из `wrappers/index.ts` → main barrel. 2 новых теста в `engine/__tests__/use-emit.test.ts` (вне scope → no-op без throw; внутри scope → dispatch как useEmit). web-remote зависит от этого экспорта (Part 2 брифа, чужая зона) (2026-06-27).
+- [x] **`embedded` / `standalone` run-mode флаги в `services`** — `IServices` получил два статичных булевых поля: `embedded` (`true` если апп в хост-iframe) и `standalone` (`!embedded`). Источник правды — bootstrap iframe-check `isEmbedded()` (`window.parent !== window`), **НЕ** наличие host-bridge `contract` (апп может быть embedded и без контракта). Прокидывается через новый `EmbedModeContext` (`engine/host-bridge.ts`, дефолт `{ embedded: false }` = standalone) + хук `useEmbedMode`; `createCapsuleApp` оборачивает дерево `<EmbedModeContext.Provider value={{ embedded }}>` (всегда, не только при contract-мосте); `logic-wrapper` читает хук и кладёт оба поля в services (обе ветки — controller и feature). Поля **статичные** (режим фиксирован на сессию), не реактивные. Кейс: апп уступает хосту автономные триггеры — `Controller(({ standalone }) => ({ states: { idle: { onInit: ({ emit }) => { if (standalone) emit('addItems', { payload: localData }) } }}}))`. `contract.in`/`out` поведение НЕ менялось — это чисто экспозиция флага. 4 новых теста в `engine/__tests__/embed-mode.test.tsx` (services несёт оба флага; standalone-дефолт; provider embedded:true; mirror-инвариант). `services-capabilities.test.ts` моки дополнены полями (2026-06-27).
 - [x] **`Ui.Animate` удалён** — routing/popover-анимации переведены на нативный CSS (View Transitions + Kobalte data-attrs); `Animate` убран из `import type` в `interfaces.ts`, из `UniversalUiRaw`, из `page.tsx rawUi`, из `ui-kit/imports.tsx` (lazy export). `solid-motionone` удаляет owner-web-ui следующим шагом. 391 тест green (2026-06-08).
 - [x] **View Transitions API — config-driven route transitions** — `IAppConfig.router.transition: boolean | 'none'`; при `true` BaseProviders передаёт `viewTransition: true` в `createRouter` → TanStack Router вызывает `document.startViewTransition()`; внешний вид — CSS в web-style; `AnimatedOutlet`/`RouterTransitionContext`/`solid-motionone` удалены; `Ui.Outlet` = сырой TanStack `<Outlet/>`; 4 новых теста в `base-providers-view-transition.test.ts`. 392 теста green (2026-06-08).
 - [ ] **Завести `docs/_meta/web-core.md` AI anchor** — без него Claude-инстансы каждый раз перечитывают весь README. (priority: high)

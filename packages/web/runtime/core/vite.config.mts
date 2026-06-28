@@ -10,6 +10,7 @@ export default libConfig({
     module: 'src/module.ts',
     'ui-kit': 'src/ui-kit/index.tsx',
     bootstrap: 'src/bootstrap/index.ts',
+    events: 'src/events/index.ts',
   },
   name: 'CapsuleCore',
   runtime: 'isomorphic',

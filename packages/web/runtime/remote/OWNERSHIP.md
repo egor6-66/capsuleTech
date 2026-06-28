@@ -147,6 +147,7 @@ Applied host-side in `RemoteComponent`. Module receives finalized snapshot.
 - **`sandbox="allow-scripts allow-same-origin"` is NOT a security boundary.** Iframe with this pair sees parent cookies/localStorage. For same-origin trusted capsule apps — OK. Untrusted third-party → stricter sandbox + cross-origin (Phase 3+). ADR-053 risk #2.
 - **DnD across iframe boundary — NOT supported in Phase 1.** Pointer events don't cross frame. Studio palette drag → renderer canvas drop requires a separate ADR. Escalate to architect. ADR-053 risk #3.
 - **`openStandalone()` — Phase 2 feature.** Returns `undefined`, logs `console.warn`. Does NOT throw. Acceptance gate.
+- **app→host delivery precedence (ADR 060 D1 / brief B).** A forwarded contract event is delivered by `RemoteComponent`'s routing effect with strict precedence, no double-delivery: (1) a matching `on<Event>` prop → called (explicit escape hatch); (2) else → `emit(eventName, { payload })` via `useEmitOptional` (`@capsuletech/web-core/events` — the **light** subpath, NOT the `.` barrel which drags wrappers/web-ui), routing into the nearest enclosing host logic-wrapper (Feature/Controller), symmetric to host→remote inbound (ADR 061); (3) else (no prop AND no logic-scope, e.g. `Remote.View` in a bare page) → no-op, dropped. RESERVED_EVENTS (handshake/config) never route.
 - **app-mode = `<iframe src>`, NOT srcdoc/boot (ADR 059).** The app loads itself from its own URL (`${module.url}/?__capsule_session=…&__capsule_name=…`) and boots via `createCapsuleApp` (web-core). No host-injected shell / import-map / manifest fetch.
 - **Unavailable degradation = timeout, not `onerror`.** Host can't reliably observe a cross-origin iframe load failure via `onerror`; falls back to `[data-capsule-remote-error]` placeholder after `MOUNT_TIMEOUT_MS` (5s) without `__capsule_app_ready__`.
 - **One sessionId per provider.** The iframe query carries the provider sessionId; host→app config is routed to the right iframe by the `(name, instanceId)` registry (postMessage to its contentWindow), the app accepts by `sessionId`+`name`. Multiple instances of the same module name aren't disambiguated on the app→host ready/event direction — known limit, fine for current single-instance cases.
@@ -178,9 +179,10 @@ Applied host-side in `RemoteComponent`. Module receives finalized snapshot.
 | Unit | `src/runtime/__tests__/createHostHandle.test.ts` | createHostHandle send/request/on |
 | Unit | `src/runtime/__tests__/RemoteProvider.test.tsx` | RemoteProvider + useRemote |
 | Unit | `src/runtime/__tests__/RemoteComponent.test.tsx` | iframe-src URL + prop-classification + config-override + on* + mode seam + degradation |
+| Unit | `src/runtime/__tests__/RemoteComponent.autoroute.test.tsx` | app→host delivery precedence (brief B): on\<Event\> prop wins, else `emit` fallthrough into enclosing host-logic, RESERVED_EVENTS + name filter |
 | Unit | `src/runtime/__tests__/dualImport.test.tsx` | RemoteContext singleton API invariant |
 
-Total: 47 unit tests. All green.
+Total: 55 unit tests. All green.
 
 **Browser-verify (ADR 059, owner-tests, real browser — jsdom insufficient):** `apps/universal-canvas`
 embeds via iframe-src, renders (not a white screen), host config-override applies, canvas→host events

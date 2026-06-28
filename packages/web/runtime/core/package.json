@@ -71,6 +71,11 @@
       "types": "./dist/bootstrap/index.d.ts",
       "import": "./dist/bootstrap.mjs",
       "default": "./dist/bootstrap.mjs"
+    },
+    "./events": {
+      "types": "./dist/events/index.d.ts",
+      "import": "./dist/events.mjs",
+      "default": "./dist/events.mjs"
     }
   },
   "publishConfig": {

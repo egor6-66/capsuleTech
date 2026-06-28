@@ -26,6 +26,8 @@ const controllerServices: IServices = {
   router: mockRouter,
   zod: Zod,
   utils: Utils,
+  embedded: false,
+  standalone: true,
 };
 
 const featureServices: IServices = {
@@ -33,6 +35,8 @@ const featureServices: IServices = {
   api: undefined,
   zod: Zod,
   utils: Utils,
+  embedded: false,
+  standalone: true,
 };
 
 describe('services capabilities — zod', () => {

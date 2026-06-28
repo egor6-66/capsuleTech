@@ -26,7 +26,8 @@
     "dist"
   ],
   "dependencies": {
-    "@capsuletech/web-core": "workspace:*"
+    "@capsuletech/web-core": "workspace:*",
+    "@capsuletech/web-profiler": "workspace:*"
   },
   "peerDependencies": {
     "solid-js": "^1.9.12"

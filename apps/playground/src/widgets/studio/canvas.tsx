@@ -6,9 +6,12 @@
  * `onMounted` типизирован из vendored-контракта (`out.mounted` → `{ name, ts }`), без импортов (D6).
  */
 const Canvas = Widget((Ui) => (
-  <Ui.Layout.Flex h={'full'} w={'full'}>
-    <Remote.View name="universal-canvas" onMounted={(p) => console.log('[canvas mounted]', p.name, p.ts)} />
-  </Ui.Layout.Flex>
+  <Features.Canvas>
+    <Ui.Layout.Flex direction={'col'} h={'full'} w={'full'}>
+      <Ui.Button meta={{ tags: ['ping'] }}>Ping remote</Ui.Button>
+      <Remote.View name="universal-canvas" instanceId="main" />
+    </Ui.Layout.Flex>
+  </Features.Canvas>
 ));
 
 export default Canvas;

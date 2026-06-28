@@ -1121,6 +1121,9 @@ importers:
       '@capsuletech/web-core':
         specifier: workspace:*
         version: link:../core
+      '@capsuletech/web-profiler':
+        specifier: workspace:*
+        version: link:../profiler
       solid-js:
         specifier: 1.9.12
         version: 1.9.12

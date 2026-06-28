@@ -18,7 +18,7 @@ export { createUseCtx, useCtx } from '../engine/ctx';
  * единственный способ дать внешним пакетам (web-dnd, web-renderer, etc.)
  * доступ к dispatch-механизму без дублирования engine-логики. См. use-emit.ts.
  */
-export { useEmit } from '../engine/use-emit';
+export { useEmit, useEmitOptional } from '../engine/use-emit';
 export { ControllerWrapper as Controller } from './controller';
 export { Entity } from './entity';
 export { FeatureWrapper as Feature } from './feature';

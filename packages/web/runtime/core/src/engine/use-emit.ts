@@ -142,3 +142,23 @@ export const useEmit = (): EmitFn => {
 
   return buildEmitFromCtx(ctx);
 };
+
+/**
+ * Non-throwing близнец `useEmit`: вне Controller/Feature-scope возвращает no-op
+ * (а не бросает). Внутри scope диспатчит идентично `useEmit`.
+ *
+ * Предназначен для пакетных компонентов, которые рендерятся в **необязательном**
+ * логик-контексте и хотят форвардить событие в ближайший оборачивающий host-логик-враппер,
+ * не требуя его наличия. Кейс — `@capsuletech/web-remote` `<Remote.View>` (ADR 060 D1 / B):
+ * forwarded app→host событие роутится в enclosing host-Feature через `emit(name, { payload })`;
+ * если `Remote.View` стоит в голой странице без Feature — emit просто дропается (как сегодня).
+ *
+ * Контраст с `useEmit`: тот throw'ает вне scope (app-код, где логик-родитель обязателен).
+ * `useEmitOptional` — для библиотечного кода, где scope опционален.
+ */
+export const useEmitOptional = (): EmitFn => {
+  const ctx = useContext(Context);
+  // Вне Controller/Feature-scope — no-op (НЕ throw). Событие тихо дропается.
+  if (!ctx) return () => undefined;
+  return buildEmitFromCtx(ctx);
+};

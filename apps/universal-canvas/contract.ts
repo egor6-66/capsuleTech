@@ -1,20 +1,20 @@
-// Публичный контракт universal-canvas (ADR 060). Агностичен к встраиванию —
-// это интерфейс аппа, не remote-схема. defineContract — глобал (auto-import).
+// Публичный контракт universal-canvas (ADR 060). Интерфейс аппа, агностичен к встраиванию.
+// defineContract — глобал (auto-import).
 export default defineContract((z) => ({
-  // host → app: события, диспатчащиеся в корень канваса
+  // host → app: данные, инжектируемые в корневую HCA-шину канваса
   in: {
-    setMarkers: z.object({
-      markers: z.array(
-        z.object({
-          id: z.string(),
-          lat: z.number().min(-90).max(90),
-          lng: z.number().min(-180).max(180),
-        }),
-      ),
+    ping: z.object({
+      value: z.string(),
+      ts: z.number(),
     }),
   },
-  // app → host: корневой surface канваса
+  // app → host: событие собственной кнопки канваса с данными. Standalone —
+  // обрабатывается локально; embedded — форвардится хосту ВМЕСТО локального
+  // хендлера (ADR 060 D1), хост ловит у себя.
   out: {
-    mounted: z.object({ name: z.string(), ts: z.number() }),
+    canvasClick: z.object({
+      value: z.string(),
+      ts: z.number(),
+    }),
   },
 }));
