@@ -11,5 +11,10 @@ class Settings(BaseSettings):
     port: int = 8003
     default_lang: str = "en_US"
 
+    # voice (TTS) — pluggable engine; model paths optional for air-gapped/prod.
+    voice_engine: str = "kokoro"
+    kokoro_model_path: str | None = None
+    kokoro_voices_path: str | None = None
+
 
 settings = Settings()

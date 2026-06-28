@@ -11,7 +11,7 @@ adr_refs: [055, 064, "064-A", 054]
 
 # OWNERSHIP — backend/learn (`capsule-learn`)
 
-**Зона:** `backend/learn/` — BFF learn-сервис (ADR 055 D1). Plugin-модули; первый — `lang` (лексическая библиотека, ADR 064).
+**Зона:** `backend/learn/` — BFF learn-сервис (ADR 055 D1). Plugin-модули: `lang` (лексическая библиотека, ADR 064), `voice` (TTS, pluggable engine — seam под вынос в `backend/voice`).
 
 > [!note] Governance — scope `backend-learn`
 > `backend/**` **покрыт** scope-fence (`governance.mjs` расширен на backend; `scope-resolve.mjs` индексирует backend-проекты по `project.json#name`). Owner-сессия: **`.\claude-scope.ps1 -Scope backend-learn`** — заперта в `backend/learn` (правки в `packages/*` и чужие зоны режутся), git **commit-only** (нет main-маркера → git-gate активен). Перед первой правкой обязателен **Read этого OWNERSHIP** (ownership-gate хука). Рабочий контракт — бриф `docs/_meta/briefs/learn-iter2-backend-learn.md`.
@@ -45,6 +45,8 @@ adr_refs: [055, 064, "064-A", 054]
 ## Публичный API (library-2)
 
 `GET /health` · `GET /learn/lang/senses` (фасетный фильтр: +`connotation`/`tier`/`synset`) · `GET /learn/lang/sense/{id}` (rich: +pron_ru/image/examples/relations/...) · `GET /learn/lang/senses/related?sense={id}` (synset-aware ранжирование). Контракты — бриф `learn-iter3-backend-importer.md`.
+
+**voice:** `GET /learn/voice/speak?text=&lang=&voice=&speed=` → `audio/wav` (TTS). Движок pluggable (`engine.py` Protocol + lazy registry, свап через `VOICE_ENGINE`); Kokoro = первый impl. **Voice-deps — opt-in extra `[voice]`** (`uv sync --extra voice`), ленивый импорт → базовый сервис/CI без torch. Air-gapped: `KOKORO_MODEL_PATH`. Бриф `learn-voice-tts-kokoro.md`.
 
 ## Roadmap
 

@@ -22,6 +22,13 @@ dev = [
     "ruff>=0.5",
     "mypy>=1.10",
 ]
+# TTS engine — heavy (torch via kokoro). Opt-in so the base service + CI stay
+# light: `uv sync --extra voice`. Engine is lazy-imported (see modules/voice).
+voice = [
+    "kokoro>=0.8",
+    "soundfile>=0.12",
+    "numpy>=1.26",
+]
 
 [build-system]
 requires = ["hatchling"]
