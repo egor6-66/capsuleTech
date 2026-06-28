@@ -36,11 +36,23 @@ def _make_kokoro() -> TTSEngine:
     return KokoroEngine()
 
 
+def _make_styletts2() -> TTSEngine:
+    from .engines.styletts2 import StyleTTS2Engine
+
+    return StyleTTS2Engine()
+
+
 # name -> lazy factory. Adding an engine = one entry + one file in engines/.
 _FACTORIES: dict[str, Callable[[], TTSEngine]] = {
     "kokoro": _make_kokoro,
+    "styletts2": _make_styletts2,
 }
 _INSTANCES: dict[str, TTSEngine] = {}
+
+
+def list_engines() -> list[str]:
+    """Registered engine names (no model load — just the registry keys)."""
+    return sorted(_FACTORIES)
 
 
 def get_engine(name: str | None = None) -> TTSEngine:

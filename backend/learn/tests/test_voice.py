@@ -25,6 +25,18 @@ def test_get_engine_unknown_raises():
         voice_engine.get_engine("does-not-exist")
 
 
+def test_engines_endpoint(client):
+    body = client.get("/learn/voice/engines").json()
+    assert set(body["engines"]) >= {"kokoro", "styletts2"}
+    assert body["default"]
+
+
+def test_speak_unknown_engine_400(client):
+    r = client.get("/learn/voice/speak", params={"text": "hi", "engine": "bogus"})
+    assert r.status_code == 400
+    assert "unknown TTS engine" in r.json()["detail"]
+
+
 def test_speak_empty_text_400(client):
     r = client.get("/learn/voice/speak", params={"text": "   "})
     assert r.status_code == 400
@@ -43,6 +55,15 @@ def test_speak_returns_wav(client, monkeypatch):
     not os.getenv("VOICE_MODEL_AVAILABLE"),
     reason="Kokoro model not installed (set VOICE_MODEL_AVAILABLE to run)",
 )
-def test_voice_engine_real():
+def test_voice_engine_kokoro_real():
     audio = voice_engine.get_engine("kokoro").synthesize("hi")
+    assert audio[:4] == b"RIFF"
+
+
+@pytest.mark.skipif(
+    not os.getenv("VOICE_STYLETTS2_AVAILABLE"),
+    reason="StyleTTS2 model/espeak-ng not installed (set VOICE_STYLETTS2_AVAILABLE)",
+)
+def test_voice_engine_styletts2_real():
+    audio = voice_engine.get_engine("styletts2").synthesize("hi")
     assert audio[:4] == b"RIFF"

@@ -46,7 +46,7 @@ adr_refs: [055, 064, "064-A", 054]
 
 `GET /health` · `GET /learn/lang/senses` (фасетный фильтр: +`connotation`/`tier`/`synset`) · `GET /learn/lang/sense/{id}` (rich: +pron_ru/image/examples/relations/...) · `GET /learn/lang/senses/related?sense={id}` (synset-aware ранжирование). Контракты — бриф `learn-iter3-backend-importer.md`.
 
-**voice:** `GET /learn/voice/speak?text=&lang=&voice=&speed=` → `audio/wav` (TTS). Движок pluggable (`engine.py` Protocol + lazy registry, свап через `VOICE_ENGINE`); Kokoro = первый impl. **Voice-deps — opt-in extra `[voice]`** (`uv sync --extra voice`), ленивый импорт → базовый сервис/CI без torch. Air-gapped: `KOKORO_MODEL_PATH`. Бриф `learn-voice-tts-kokoro.md`.
+**voice:** `GET /learn/voice/speak?text=&engine=&lang=&voice=&speed=` → `audio/wav` (TTS) · `GET /learn/voice/engines` → `{engines, default}`. Движок pluggable (`engine.py` Protocol + lazy registry); свап **per-request** (`?engine=`) или глобально (`VOICE_ENGINE`); unknown → 400. Impl: Kokoro + StyleTTS2. **Voice-deps — раздельные opt-in extras** (`--extra voice` / `--extra voice-styletts2`), ленивый импорт → базовый сервис/CI без torch. Air-gapped: `KOKORO_MODEL_PATH`. StyleTTS2 требует system-бинарь `espeak-ng`. Брифы `learn-voice-tts-kokoro.md`, `learn-voice-styletts2-switch.md`.
 
 ## Roadmap
 

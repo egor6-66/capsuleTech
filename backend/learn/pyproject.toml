@@ -22,10 +22,17 @@ dev = [
     "ruff>=0.5",
     "mypy>=1.10",
 ]
-# TTS engine — heavy (torch via kokoro). Opt-in so the base service + CI stay
-# light: `uv sync --extra voice`. Engine is lazy-imported (see modules/voice).
+# TTS engines — heavy (torch). Opt-in, separate per engine so they install
+# independently: `uv sync --extra voice` (Kokoro) / `--extra voice-styletts2`.
+# Engines are lazy-imported (see modules/voice), so the base service + CI stay
+# light. StyleTTS2 also needs the espeak-ng system binary (see README).
 voice = [
     "kokoro>=0.8",
+    "soundfile>=0.12",
+    "numpy>=1.26",
+]
+voice-styletts2 = [
+    "styletts2>=0.1",
     "soundfile>=0.12",
     "numpy>=1.26",
 ]
