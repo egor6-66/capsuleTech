@@ -36,12 +36,30 @@ class Register(StrEnum):
     NEUTRAL = "neutral"
 
 
+class Frequency(StrEnum):
+    """Band facet (ADR 064-A A2). Numeric rank (wordfreq) is a later auto-column."""
+
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+class Connotation(StrEnum):
+    """Synset discriminator (ADR 064-A A2) — colours a swap choice."""
+
+    POSITIVE = "positive"
+    NEUTRAL = "neutral"
+    NEGATIVE = "negative"
+
+
 class TagKind(StrEnum):
-    SEMANTIC = "semantic"
-    LEXICAL = "lexical"
-    CONTEXT = "context"
+    """Orthogonal tag axis v2 (ADR 064-A A3). synset moved to a sense column."""
+
+    FIELD = "field"
     DOMAIN = "domain"
+    TIER = "tier"
     PHONETIC = "phonetic"
+    LEXICAL = "lexical"
 
 
 class RelationType(StrEnum):

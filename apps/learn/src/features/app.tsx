@@ -1,28 +1,34 @@
 /**
- * App — root feature обучающего app'а.
+ * App — root feature learn-app'а.
  *
- * RouterPlugin авто-детектит `src/features/app.tsx` и монтирует его в `__root`
- * ВЫШЕ `<Outlet/>` (mount-once) → даёт логик-контекст всем страницам. Именно
- * поэтому `Learn.Welcome` может эмитить `onNavigate` через `useEmit`.
+ * RouterPlugin монтирует `src/features/app.tsx` в `__root` выше `<Outlet/>` (mount-once)
+ * → даёт логик-контекст всем страницам (Learn.Welcome эмитит `onNavigate` через useEmit).
  *
- * Ловит именованное событие `Learn.Welcome.Events.onNavigate` (ADR 032; payload
- * типизирован через codegen-namespace пакета) → роутинг по сегменту.
- *
- * SKELETON: единственный стейт `idle`, без domain-логики. Реальные states
- * (загрузка прогресса, текущий концепт и т.п.) — последующие итерации.
+ * Без авторизации (пока): один стейт `idle`.
+ *   onInit  — на голом `/` редиректим в `/workspace` (шелл-каркас).
+ *   onNavigate (Learn.Welcome.Events) — переход в раздел `/workspace/<segment>`.
  */
 
-const App = Feature<Learn.Welcome.Events>(({ router }) => ({
+const App = Feature<Learn.Welcome.Events & Learn.LibraryNav.Events>(({ router }) => ({
   initial: 'idle',
 
   states: {
-    idle: {},
+    idle: {
+      onInit: () => {
+        // Голый корень → в workspace-шелл. Deep-link (/workspace/library) не трогаем.
+        if (router.current() === '/') router.goTo('/workspace');
+      },
+    },
   },
 
-  // Навигация из welcome-карточек: payload — id сегмента
-  // ('lessons' | 'exercises' | 'progress' | 'library').
+  // Навигация из welcome-карточек: payload — id раздела (lessons/exercises/progress/library/guides).
   onNavigate: ({ target }) => {
-    router.goTo(`/${target.payload}`);
+    router.goTo(`/workspace/${target.payload}`);
+  },
+
+  // Под-навигация library (Learn.LibraryNav, ADR 032): payload — explorer|collections.
+  onLibraryNavigate: ({ target }) => {
+    router.goTo(`/workspace/library/${target.payload}`);
   },
 }));
 

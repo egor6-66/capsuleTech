@@ -36,6 +36,21 @@ def db(session_factory) -> Session:
 
 
 @pytest.fixture()
+def blank_db() -> Session:
+    """Empty schema, no seed — for importer unit tests."""
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(engine)
+    factory = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+    with factory() as s:
+        yield s
+    Base.metadata.drop_all(engine)
+
+
+@pytest.fixture()
 def client(session_factory) -> TestClient:
     def _override():
         with session_factory() as s:

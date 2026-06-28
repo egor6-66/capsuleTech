@@ -28,8 +28,9 @@ last-updated: 2026-06-28
 ## Vendor stack (ADR 047 D3)
 
 - **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
-- **`@capsuletech/web-core`** (workspace, dep) — HCA: `useEmit` (Welcome → `onNavigate`), `defineCapsuleModule` (регистрация).
-- **`@capsuletech/web-ui`** (workspace, dep) — chrome модулей (Typography / Card / Layout / Button).
+- **`@capsuletech/web-core`** (workspace, dep) — HCA: `useEmit` (Welcome → `onNavigate`, LibraryNav → `onLibraryNavigate`), `defineCapsuleModule` (регистрация).
+- **`@capsuletech/web-router`** (workspace, dep) — `useRouter().current()` для derived-active в `LibraryNav` (URL = single source of truth, как studio Navigation).
+- **`@capsuletech/web-ui`** (workspace, dep) — chrome модулей (Typography / Card / Layout / Button / Group / Input / Toggle).
 
 > `@capsuletech/web-query` добавится при backend-интеграции — сейчас НЕ зависимость.
 
@@ -55,7 +56,7 @@ last-updated: 2026-06-28
 | `./lesson` | `LessonView` / `Concept` / `CodeBlock` / `TypeErrorBadge` |
 | `./exercise` | `Exercise` (dispatch по type) + `FillBlank`/`BuildClause`/`FixTypeError`/`Translate` |
 | `./progress` | `Progress` / `SkillTree` |
-| `./library` | `VocabList` / `BookmarkButton` |
+| `./library` | `WordExplorer` / `Collections` / `Navigation` (под-навигация, useEmit `onLibraryNavigate`) / `VocabList` / `BookmarkButton`. Internal `LIBRARY_SEGMENTS` + `LIBRARY_BASE` (не реэкспортятся) |
 | `./guides` | `Tour` / `Step` / `Spotlight` / `Hint` |
 | `./sentence-builder` | `SentenceBuilder` |
 | `./welcome` | `Welcome` (tier-2 connected, useEmit `onNavigate`) + `LEARN_SEGMENTS` |
