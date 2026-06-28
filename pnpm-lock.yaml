@@ -112,6 +112,64 @@ importers:
         specifier: ~4.1.0
         version: 4.1.6(@types/node@25.9.0)(@vitest/browser-playwright@4.1.6)(@vitest/ui@4.1.6)(jsdom@29.1.1)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
 
+  apps/learn:
+    dependencies:
+      '@capsuletech/shared-zod':
+        specifier: workspace:*
+        version: link:../../packages/shared/zod
+      '@capsuletech/web-core':
+        specifier: workspace:*
+        version: link:../../packages/web/runtime/core
+      '@capsuletech/web-learn':
+        specifier: workspace:*
+        version: link:../../packages/web/learn
+      '@capsuletech/web-profiler':
+        specifier: workspace:*
+        version: link:../../packages/web/runtime/profiler
+      '@capsuletech/web-query':
+        specifier: workspace:*
+        version: link:../../packages/web/runtime/query
+      '@capsuletech/web-renderer':
+        specifier: workspace:*
+        version: link:../../packages/web/runtime/renderer
+      '@capsuletech/web-router':
+        specifier: workspace:*
+        version: link:../../packages/web/runtime/router
+      '@capsuletech/web-state':
+        specifier: workspace:*
+        version: link:../../packages/web/runtime/state
+      '@capsuletech/web-style':
+        specifier: workspace:*
+        version: link:../../packages/web/runtime/style
+      '@capsuletech/web-ui':
+        specifier: workspace:*
+        version: link:../../packages/web/kit/ui
+      '@kobalte/core':
+        specifier: ^0.13.0
+        version: 0.13.11(solid-js@1.9.12)
+      '@tanstack/router-core':
+        specifier: ^1.169.0
+        version: 1.171.2
+      '@tanstack/solid-router':
+        specifier: ^1.169.0
+        version: 1.170.4(solid-js@1.9.12)
+      '@xstate/solid':
+        specifier: ^2.0.0
+        version: 2.0.0(solid-js@1.9.12)(xstate@5.31.1)
+      solid-js:
+        specifier: 1.9.12
+        version: 1.9.12
+      xstate:
+        specifier: ^5.0.0
+        version: 5.31.1
+      zod:
+        specifier: ^3.23.8
+        version: 3.25.76
+    devDependencies:
+      '@capsuletech/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
+
   apps/playground:
     dependencies:
       '@capsuletech/boost-layout':
@@ -881,6 +939,34 @@ importers:
       vite-tsconfig-paths:
         specifier: ^6.1.1
         version: 6.1.1(typescript@5.9.3)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
+
+  packages/web/learn:
+    dependencies:
+      '@capsuletech/web-core':
+        specifier: workspace:*
+        version: link:../runtime/core
+      '@capsuletech/web-ui':
+        specifier: workspace:*
+        version: link:../kit/ui
+      solid-js:
+        specifier: 1.9.12
+        version: 1.9.12
+    devDependencies:
+      '@capsuletech/lib-builder':
+        specifier: workspace:*
+        version: link:../../builders/lib
+      '@capsuletech/vite-builder':
+        specifier: workspace:*
+        version: link:../../builders/vite
+      '@testing-library/jest-dom':
+        specifier: ^6.9.1
+        version: 6.9.1
+      jsdom:
+        specifier: ~29.1.1
+        version: 29.1.1
+      vite-plugin-solid:
+        specifier: ^2.11.12
+        version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
 
   packages/web/runtime/access:
     dependencies:

@@ -210,6 +210,7 @@ export const capsuleConfig = ({ config, root, workspaceRoot, isDev }: IProps) =>
         '@capsuletech/boost-layout',
         '@capsuletech/boost-chart',
         '@capsuletech/web-studio',
+        '@capsuletech/web-learn',
         '@capsuletech/boost-map',
         '@capsuletech/web-profiler',
         '@capsuletech/web-query',
