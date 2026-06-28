@@ -1,10 +1,10 @@
+/// <reference types="vite/client" />
 import { type Accessor, createSignal } from 'solid-js';
 
 const STORAGE_KEY = 'capsule-theme';
 const MODE_STORAGE_KEY = 'capsule-theme-mode';
 
 // Eager-import all theme CSS files — same glob as legacy ThemeSwitcher.
-// @ts-expect-error
 const themeModules = import.meta.glob('../themes/*.css', { eager: true });
 export const DISCOVERED_THEMES: readonly string[] = Object.keys(themeModules)
   .map((p) => p.match(/([^/]+)\.css$/)?.[1] ?? '')
