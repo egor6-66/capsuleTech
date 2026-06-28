@@ -160,3 +160,27 @@ jobs:
           pnpm --filter @capsuletech/lib-builder build
       - name: Build docs registry
         run: pnpm docs:build
+
+  python:
+    name: Python tests
+    runs-on: ubuntu-latest
+    # Первый Python-сервис монорепо — backend/learn (ADR 055/064). Лёгкий джоб через
+    # uv напрямую (без node/pnpm/nx — для одного сервиса достаточно). Когда появятся
+    # backend/voice + backend/lang — перевести на `pnpm nx run-many -t test:py lint:py`
+    # (матрица по сервисам, foundation-00).
+    defaults:
+      run:
+        working-directory: backend/learn
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install uv
+        run: pip install uv
+      - name: Sync deps
+        run: uv sync --extra dev
+      - name: Lint (ruff)
+        run: uv run ruff check .
+      - name: Test (pytest)
+        run: uv run pytest -q

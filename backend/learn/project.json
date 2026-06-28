@@ -1,0 +1,44 @@
+{
+  "name": "backend-learn",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "backend/learn/src",
+  "tags": ["backend", "python", "learn"],
+  "targets": {
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/learn",
+        "command": "uv run uvicorn capsule_learn.main:app --port 8003 --reload"
+      }
+    },
+    "migrate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/learn",
+        "command": "uv run alembic upgrade head"
+      }
+    },
+    "seed": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/learn",
+        "command": "uv run python -m capsule_learn.seed"
+      }
+    },
+    "test:py": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/learn",
+        "command": "uv run pytest"
+      }
+    },
+    "lint:py": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/learn",
+        "command": "uv run ruff check ."
+      }
+    }
+  }
+}
