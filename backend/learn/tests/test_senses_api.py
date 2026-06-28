@@ -67,6 +67,22 @@ def test_filter_new_facets(client):
     assert {s["text"] for s in synset_glad} == {"happy", "glad", "joyful"}
 
 
+def test_senses_q_matches_word_text_only(client):
+    # q searches spelling, not the gloss/definition.
+    assert {
+        s["text"]
+        for s in client.get("/learn/lang/senses", params={"q": "gla"}).json()["senses"]
+    } == {"glad"}
+    assert (
+        len(client.get("/learn/lang/senses", params={"q": "bank"}).json()["senses"])
+        == 2
+    )
+    # "ase" lives in glosses ("pleased"/"pleasure") but no word spelling → empty.
+    assert (
+        client.get("/learn/lang/senses", params={"q": "ase"}).json()["senses"] == []
+    )
+
+
 def test_sense_detail_rich(client):
     sid = _id_by_text(client, "happy", pos="adj")
     body = client.get(f"/learn/lang/sense/{sid}").json()

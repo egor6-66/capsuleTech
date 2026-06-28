@@ -42,8 +42,9 @@ def filter_senses(
     if synset is not None:
         stmt = stmt.where(Sense.synset == synset)
     if q:
-        like = f"%{q}%"
-        stmt = stmt.where((Word.text.ilike(like)) | (Sense.gloss.ilike(like)))
+        # Search by spelling only (word.text). Matching gloss too surprises
+        # users (e.g. q=ase hitting "pleased"); gloss-search is a future opt-in.
+        stmt = stmt.where(Word.text.ilike(f"%{q}%"))
 
     # Each required tag must be present -> one EXISTS subquery per tag (AND).
     required: list[tuple[str, TagKind | None]] = []
