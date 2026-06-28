@@ -92,7 +92,12 @@ export const Flex = <T extends ValidComponent = 'div'>(props: IFlexProps<T>) => 
     'maxW',
     'fluid',
   ]);
-  const [poly, others] = splitProps(polyAndRest, ['as']);
+  // `children` выделяем В `poly` (а не оставляем в `others`), иначе он
+  // утечёт в `<Slot {...others}>` ВТОРЫМ потребителем ленивого getter'а —
+  // параллельно с `children(() => …)` ниже это давало двойную инстанциацию
+  // потомка (bug A, ADR 062): два onMount/подписки у effectful-ребёнка
+  // (RemoteComponent, MapView, …). Резолвим ровно один раз через `resolved`.
+  const [poly, others] = splitProps(polyAndRest, ['as', 'children']);
 
   // `orientation` maps to a direction class if `direction` is not explicitly set
   const effectiveDirection = (): FlexDirection | undefined => {
@@ -149,6 +154,10 @@ export const Flex = <T extends ValidComponent = 'div'>(props: IFlexProps<T>) => 
   // `Omit<ComponentProps<T>, 'as'>` is opaque for an unresolved T. Casting the
   // whole props bag to `any` matches the same shortcut used inside Slot for
   // the `{...others}` spread.
+  //
+  // `children` НЕ в `others` (выделен в `poly` выше) → передаём ровно один,
+  // уже резолвнутый инстанс через JSX-ребёнка `{resolved()}`. Так isEmpty и
+  // рендер делят один и тот же `children()`-мемо — одна инстанциация потомка.
   return (
     <Slot
       {...({
@@ -157,6 +166,8 @@ export const Flex = <T extends ValidComponent = 'div'>(props: IFlexProps<T>) => 
         style: mergeStyle(computed(), own.style) as never,
         ...(others as object),
       } as any)}
-    />
+    >
+      {resolved()}
+    </Slot>
   );
 };

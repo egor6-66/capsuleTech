@@ -6,6 +6,7 @@
  * - Non-empty Grid → no such inline style.
  */
 /* @vitest-environment jsdom */
+import { onMount } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Grid } from '../grid';
@@ -26,6 +27,36 @@ afterEach(() => {
   cleanup?.();
   cleanup = undefined;
   document.body.removeChild(container);
+});
+
+// ---------------------------------------------------------------------------
+// 0. single instantiation (bug A, ADR 062)
+// ---------------------------------------------------------------------------
+
+describe('Grid — instantiates an effectful child exactly once (bug A)', () => {
+  it('mounts a child with onMount side-effect a single time', () => {
+    let mounts = 0;
+    const Probe = () => {
+      onMount(() => {
+        mounts += 1;
+      });
+      return <div data-testid="probe">probe</div>;
+    };
+
+    cleanup = render(
+      () => (
+        <Grid>
+          <Probe />
+        </Grid>
+      ),
+      container,
+    );
+
+    // Регрессия bug A: до фикса `children` утекал в `<Slot {...others}>`
+    // параллельно с `children(() => …)` → потомок инстанцировался дважды.
+    expect(mounts).toBe(1);
+    expect(container.querySelectorAll('[data-testid="probe"]').length).toBe(1);
+  });
 });
 
 // ---------------------------------------------------------------------------
