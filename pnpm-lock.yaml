@@ -570,6 +570,9 @@ importers:
       '@capsuletech/web-dnd':
         specifier: workspace:*
         version: link:../../runtime/dnd
+      '@capsuletech/web-profiler':
+        specifier: workspace:*
+        version: link:../../runtime/profiler
       '@capsuletech/web-style':
         specifier: workspace:*
         version: link:../../runtime/style
@@ -802,6 +805,9 @@ importers:
       '@capsuletech/web-contract':
         specifier: workspace:*
         version: link:../../runtime/contract
+      '@capsuletech/web-profiler':
+        specifier: workspace:*
+        version: link:../../runtime/profiler
       '@capsuletech/web-style':
         specifier: workspace:*
         version: link:../../runtime/style
