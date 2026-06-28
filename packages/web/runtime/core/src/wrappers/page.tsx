@@ -4,7 +4,9 @@
 // уникальный vt-name → нативный View Transitions API анимирует сегменты
 // независимо: смена под-роута на глубине N не триггерит анимацию у родителей.
 // Имя `Ui.Outlet` для consumer'ов сохраняется (re-export через alias).
+import { trace } from '@capsuletech/web-profiler/trace';
 import { CapsuleOutlet as Outlet } from '@capsuletech/web-router';
+import { createUniqueId, onCleanup } from 'solid-js';
 import { useCtx } from '../engine/ctx';
 import { UiProxy } from '../engine/ui-proxy';
 import { Ui as BaseUi } from '../ui-kit';
@@ -13,6 +15,16 @@ import { ShapeUiContext } from './shape';
 
 export const PageWrapper: IPageWrapper = (Component) => {
   return function Page(wrapperProps) {
+    // ADR 062 — постоянная trace-инструментация жизненного цикла leaf-Page.
+    // Срабатывает per-mount (тело Solid-компонента исполняется один раз на инстанс),
+    // `id` парит mount↔dispose. No-op когда trace-канал выключен (быстрый return
+    // в самом `trace` до сборки события). Эта точка — единственный узел между
+    // router.route (CapsuleOutlet трейсит OUTLET-контейнер) и слотами Matrix;
+    // позволяет различить «Page-leaf инстанцируется дважды сверху» vs «двоит ниже».
+    const __traceId = createUniqueId();
+    trace('web-core.page', 'mount', { id: __traceId });
+    onCleanup(() => trace('web-core.page', 'dispose', { id: __traceId }));
+
     const ctx = useCtx();
     const store = ctx?.store;
     const rawUi = {
