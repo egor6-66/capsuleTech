@@ -1,11 +1,12 @@
 import { Utils } from '@capsuletech/shared-utils';
 import { Zod } from '@capsuletech/shared-zod';
+import { trace } from '@capsuletech/web-profiler/trace';
 import { getApiClient } from '@capsuletech/web-query';
 import { useRouter } from '@capsuletech/web-router';
 import { createBridge, createState } from '@capsuletech/web-state';
 import { CompositeProxyContext } from '@capsuletech/web-ui/compositeProxy';
 import { useMachine } from '@xstate/solid';
-import { createEffect, onCleanup, Suspense } from 'solid-js';
+import { createEffect, createUniqueId, onCleanup, Suspense } from 'solid-js';
 import type {
   IDefineStateSchema,
   IHandlerApi,
@@ -47,6 +48,13 @@ export const createLogicWrapper =
   // generic-инференс для TCtx/TEvents происходит на стороне IControllerWrapper/IFeatureWrapper при вызове.
   (kind: Kind) => (defineStateSchema: (services: IServices) => IDefineStateSchema<any>) =>
     function LogicWrapper(props: IWrapperProps) {
+      // ADR 062 — постоянная trace-инструментация жизненного цикла логик-слоя
+      // (per-mount; `id` парит mount↔dispose). Node по kind: `web-core.controller`
+      // / `web-core.feature`. No-op когда trace-канал off.
+      const __traceId = createUniqueId();
+      trace(`web-core.${kind}`, 'mount', { id: __traceId });
+      onCleanup(() => trace(`web-core.${kind}`, 'dispose', { id: __traceId }));
+
       const parent = useCtx();
       const router = useRouter();
 

@@ -1,9 +1,10 @@
 // Outlet — capsule-обёртка над TanStack <Outlet/> через @capsuletech/web-router.
 // CapsuleOutlet владеет view-transition-name через DepthContext (ADR 046 D4).
 // Имя `Ui.Outlet` для consumer'ов сохраняется (re-export через alias).
+import { trace } from '@capsuletech/web-profiler/trace';
 import { CapsuleOutlet as Outlet } from '@capsuletech/web-router';
 import { useSettingsMode } from '@capsuletech/web-style';
-import { children, For, Show } from 'solid-js';
+import { children, createUniqueId, For, onCleanup, Show } from 'solid-js';
 import { useCtx } from '../engine/ctx';
 import { UiProxy } from '../engine/ui-proxy';
 import { Ui as BaseUi } from '../ui-kit';
@@ -17,6 +18,14 @@ export const WidgetWrapper: IWidgetWrapper = ((
   options?: IWidgetOptions<any>,
 ) => {
   return function Widget(wrapperProps) {
+    // ADR 062 — постоянная trace-инструментация жизненного цикла Widget-инстанса
+    // (per-mount; `id` парит mount↔dispose). No-op когда trace-канал off.
+    // Трейсит сам Widget-узел, а не его контент — `web-core.widget:mount ×2` без
+    // парного dispose сразу выявил бы дубль-инстанциацию слоя в одном дампе.
+    const __traceId = createUniqueId();
+    trace('web-core.widget', 'mount', { id: __traceId });
+    onCleanup(() => trace('web-core.widget', 'dispose', { id: __traceId }));
+
     const ctx = useCtx();
     const store = ctx?.store;
     const rawUi = { ...(BaseUi as any), Outlet } as any;
