@@ -80,6 +80,13 @@ class SenseIn(BaseModel):
             return POS_SYNONYMS.get(v.strip().lower(), v.strip().lower())
         return v
 
+    @field_validator("level", "register_", "frequency", "connotation", mode="before")
+    @classmethod
+    def _normalize_enum_case(cls, v: object) -> object:
+        # Teachers write CEFR (A1) and may capitalise enum values — accept any
+        # case; the canonical enum values are lowercase.
+        return v.strip().lower() if isinstance(v, str) else v
+
 
 # --- response contract ------------------------------------------------------
 

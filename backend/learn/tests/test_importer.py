@@ -62,6 +62,34 @@ def test_importer_validation(blank_db, tmp_path):
     assert blank_db.scalar(select(Word.text)) == "ok"
 
 
+def test_importer_normalizes_enum_case(blank_db, tmp_path):
+    # CEFR is conventionally uppercase; enum values are lowercase.
+    p = tmp_path / "case.yml"
+    p.write_text(
+        "\n".join(
+            [
+                "- word: Big",
+                "  pos: ADJECTIVE",
+                "  gloss: large",
+                "  level: A1",
+                "  register: Neutral",
+                "  frequency: High",
+                "  connotation: Positive",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    report = import_file(p, db=blank_db)
+    assert report.imported == 1
+    assert report.skipped == 0
+    sense = blank_db.scalar(select(Sense))
+    assert sense.level.value == "a1"
+    assert sense.pos.value == "adj"
+    assert sense.register.value == "neutral"
+    assert sense.frequency.value == "high"
+    assert sense.connotation.value == "positive"
+
+
 def test_importer_relations(blank_db, tmp_path):
     # `up` references `down` defined LATER → two-pass must still resolve it.
     # `lonely` references an absent target → reported as unresolved, not fatal.
