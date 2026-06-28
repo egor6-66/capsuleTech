@@ -102,18 +102,23 @@ function scopeFromName(pkgName) {
   return (pkgName ?? '').replace(/^@[^/]+\//, '').replace(/^web-/, '');
 }
 
-/** Найти корень пакета (ближайший package.json вверх) + его scope-имя. */
+/** Найти корень проекта (ближайший манифест вверх) + его scope-имя.
+ * Манифест: package.json (TS-пакеты в packages/) или project.json (backend-проекты
+ * Python/Rust в backend/ без package.json). Имя из package.json#name (приоритет),
+ * иначе project.json#name. */
 function resolvePackage(targetPath) {
   let dir = dirname(targetPath);
-  // не выходим выше сегмента packages/
-  while (norm(dir).includes('/packages/')) {
-    const pj = join(dir, 'package.json');
-    if (existsSync(pj)) {
+  // не выходим выше сегмента packages/ или backend/
+  while (norm(dir).includes('/packages/') || norm(dir).includes('/backend/')) {
+    const pkgJson = join(dir, 'package.json');
+    const projJson = join(dir, 'project.json');
+    const manifest = existsSync(pkgJson) ? pkgJson : existsSync(projJson) ? projJson : null;
+    if (manifest) {
       let name = '';
       try {
-        name = JSON.parse(readFileSync(pj, 'utf8')).name ?? '';
+        name = JSON.parse(readFileSync(manifest, 'utf8')).name ?? '';
       } catch {
-        /* битый package.json — оставим name пустым */
+        /* битый манифест — оставим name пустым */
       }
       return { root: dir, scope: scopeFromName(name) };
     }
@@ -200,8 +205,8 @@ async function main() {
   if (!targetRaw) allow();
   const target = norm(targetRaw);
 
-  // Гейтим только правки в packages/** — apps/docs/прочее свободно.
-  if (!target.includes('/packages/')) allow();
+  // Гейтим правки в packages/** и backend/** — apps/docs/прочее свободно.
+  if (!target.includes('/packages/') && !target.includes('/backend/')) allow();
 
   const pkg = resolvePackage(target);
   if (!pkg) allow(); // не нашли package.json — не наш кейс

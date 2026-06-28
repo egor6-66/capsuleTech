@@ -38,10 +38,12 @@ export function scopeFromName(pkgName) {
 }
 
 /**
- * Рекурсивный обход packages/.
- * Canon: если в директории есть package.json — это пакет, ВНУТРЬ не рекурсим
- * (пакеты не вложены друг в друга). Это автоматически отсекает e2e/verdaccio-storage,
- * test-фикстуры и прочий мусор внутри пакетов.
+ * Рекурсивный обход директории с проектами (packages/ и backend/).
+ * Canon: если в директории есть манифест (package.json — TS-пакеты; project.json —
+ * backend-проекты Python/Rust без package.json) — это проект, ВНУТРЬ не рекурсим
+ * (проекты не вложены друг в друга). Это автоматически отсекает e2e/verdaccio-storage,
+ * test-фикстуры, alembic/versions и прочий мусор внутри проектов.
+ * Имя берётся из package.json#name (приоритет), иначе project.json#name.
  */
 function* walkPackages(dir) {
   let entries;
@@ -55,20 +57,22 @@ function* walkPackages(dir) {
     if (ent.name.startsWith('.')) continue; // .nx, .turbo, .capsule, etc.
     if (ent.name === 'node_modules' || ent.name === 'dist') continue;
     const sub = join(dir, ent.name);
-    const pj = join(sub, 'package.json');
-    if (existsSync(pj)) {
+    const pkgJson = join(sub, 'package.json');
+    const projJson = join(sub, 'project.json');
+    const manifest = existsSync(pkgJson) ? pkgJson : existsSync(projJson) ? projJson : null;
+    if (manifest) {
       try {
-        if (statSync(pj).isFile()) {
+        if (statSync(manifest).isFile()) {
           let name = '';
           try {
-            name = JSON.parse(readFileSync(pj, 'utf8')).name ?? '';
+            name = JSON.parse(readFileSync(manifest, 'utf8')).name ?? '';
           } catch {
-            /* битый pj — пропускаем */
+            /* битый манифест — пропускаем */
           }
           if (name) {
             yield { path: sub, name, scope: scopeFromName(name) };
           }
-          continue; // не рекурсим внутрь найденного пакета
+          continue; // не рекурсим внутрь найденного проекта
         }
       } catch {
         /* ignore */
@@ -78,14 +82,15 @@ function* walkPackages(dir) {
   }
 }
 
-/** Построить index scope-name → пакет. */
+/** Построить index scope-name → проект (packages/ + backend/). */
 export function buildIndex(root = repoRoot()) {
-  const packagesDir = join(root, 'packages');
   const byScope = new Map();
-  for (const pkg of walkPackages(packagesDir)) {
-    if (!byScope.has(pkg.scope)) byScope.set(pkg.scope, pkg);
-    // дубль scope — должно быть архитектурно невозможно при canon
-    // (package.json#name уникальны в monorepo). Игнорируем второй match.
+  for (const baseDir of ['packages', 'backend']) {
+    for (const pkg of walkPackages(join(root, baseDir))) {
+      if (!byScope.has(pkg.scope)) byScope.set(pkg.scope, pkg);
+      // дубль scope — должно быть архитектурно невозможно при canon
+      // (манифест#name уникальны в monorepo). Игнорируем второй match.
+    }
   }
   return byScope;
 }

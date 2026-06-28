@@ -214,7 +214,24 @@ backend/
     server/                bin `capsule-server`: axum HTTP/SSE
 ```
 
-`pnpm dev:backend` поднимает `capsule-server` (агентский). В будущем рядом со `scriber/` появится отдельный crate для web-test endpoints — `backend/` это Rust-код агента.
+`pnpm dev:backend` поднимает `capsule-server` (агентский, Rust).
+
+### Backend (Python services — FastAPI + uv)
+
+`backend/` — мульти-язычный (ADR 054): рядом с Rust-агентом живут Python-сервисы. Первый — `backend/learn/` (`backend-learn`, ADR 055/064) — sense-центричная lexical-БД (SQLAlchemy + Alembic, SQLite→Postgres drop-in).
+
+**Тулчейн — `uv`** (не pip напрямую). Если нет: `pip install uv`. Команды из директории сервиса (`backend/learn/`):
+
+```bash
+uv sync --extra dev                          # установить deps (создаёт .venv + uv.lock)
+uv run alembic upgrade head                  # миграции
+uv run python -m capsule_learn.seed          # сид (идемпотентный)
+uv run uvicorn capsule_learn.main:app --port 8003 --reload   # dev-сервер
+uv run pytest                                # тесты
+uv run ruff check .                          # lint
+```
+
+nx-таргеты (`nx run backend-learn:serve|migrate|seed|test:py|lint:py`) дёргают те же `uv run`-команды. CI гоняет `test:py`+`lint:py` (job `Python tests`). Owner-сессия зоны: `claude-scope -Scope backend-learn`.
 
 ### Desktop (Tauri 2) — `@capsuletech/desktop`
 

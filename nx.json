@@ -21,6 +21,14 @@
       "cache": false,
       "inputs": ["default", "^default"]
     },
+    "test:py": {
+      "cache": true,
+      "inputs": ["pythonSources", "^pythonSources"]
+    },
+    "lint:py": {
+      "cache": true,
+      "inputs": ["pythonSources"]
+    },
     "nx-release-publish": {
       "executor": "nx:run-commands",
       "options": {
@@ -32,6 +40,12 @@
   },
   "namedInputs": {
     "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "pythonSources": [
+      "{projectRoot}/**/*.py",
+      "{projectRoot}/pyproject.toml",
+      "{projectRoot}/uv.lock",
+      "{projectRoot}/project.json"
+    ],
     "production": [
       "default",
       "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",

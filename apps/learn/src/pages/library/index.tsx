@@ -1,12 +1,13 @@
 /**
- * /library — словарь и закладки (скелет).
+ * /library — лексическая библиотека (word-explorer).
  *
- * `Learn.VocabList` — список слов; bookmarking появится при наполнении.
+ * Тянет `Widgets.Library.Explorer` (пока placeholder-шелл). View внутри позже
+ * переедет в `@capsuletech/web-learn/library`; данные — с backend/learn (ADR 064).
  */
 const Library = Page((Ui) => (
-  <Ui.Layout.Flex class="min-h-screen flex-col gap-6 p-8">
+  <Ui.Layout.Flex orientation="vertical" align="center" gapY={6} class="min-h-screen p-8">
     <Ui.Typography variant="h1">Library</Ui.Typography>
-    <Learn.VocabList words={['dog', 'cat', 'house']} />
+    <Widgets.Library.Explorer />
   </Ui.Layout.Flex>
 ));
 
