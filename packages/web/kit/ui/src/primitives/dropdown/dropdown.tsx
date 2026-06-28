@@ -4,6 +4,7 @@ import type { ValidComponent } from 'solid-js';
 import { Match, Show, Switch, splitProps } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 
+import { useTrace } from '../../internal/useTrace';
 import { createFinish } from '../../lib/finish';
 import { useMountTarget } from '../../lib/mountTarget';
 
@@ -33,7 +34,10 @@ import {
  * Manages open/close state. Accepts all Kobalte root props (open, defaultOpen,
  * onOpenChange, placement, gutter, …).
  */
-const DropdownImpl = (props: IDropdownProps) => <KobalteDropdown {...props} />;
+const DropdownImpl = (props: IDropdownProps) => {
+  useTrace('web-ui.dropdown'); // ADR 062
+  return <KobalteDropdown {...props} />;
+};
 
 /**
  * Button (or any element via `as`) that opens the dropdown on click.

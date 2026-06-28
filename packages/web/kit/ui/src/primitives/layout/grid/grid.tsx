@@ -1,5 +1,6 @@
 import { cn } from '@capsuletech/web-style';
 import { children, type JSX, splitProps, type ValidComponent } from 'solid-js';
+import { useTrace } from '../../../internal/useTrace';
 import { Slot } from '../../slot';
 import type { IGridProps } from './interfaces';
 import { Item } from './item';
@@ -29,6 +30,7 @@ import { mergeStyle, toAreas, toGap, toTrack } from './utils';
  * ```
  */
 const GridImpl = <T extends ValidComponent = 'div'>(props: IGridProps<T>) => {
+  useTrace('web-ui.grid'); // ADR 062
   const [own, polyAndRest] = splitProps(props, [
     'cols',
     'rows',

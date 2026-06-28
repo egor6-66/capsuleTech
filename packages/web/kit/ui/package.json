@@ -360,6 +360,7 @@
   "dependencies": {
     "@capsuletech/shared-zod": "workspace:*",
     "@capsuletech/web-contract": "workspace:*",
+    "@capsuletech/web-profiler": "workspace:*",
     "@corvu/resizable": "^0.2.5",
     "class-variance-authority": "^0.7.1",
     "lucide-solid": "^1.16.0"

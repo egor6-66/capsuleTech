@@ -1,10 +1,12 @@
 import { createStyle } from '@capsuletech/web-style';
 import { createMemo, createSignal, type JSX, mergeProps, splitProps } from 'solid-js';
 
+import { useTrace } from '../../internal/useTrace';
 import type { IInputProps } from './interfaces';
 import { inputCva } from './variants';
 
 export const Input = (props: IInputProps) => {
+  useTrace('web-ui.input'); // ADR 062
   const [local, variants, others] = splitProps(
     props,
     ['class', 'style', 'type', 'value', 'defaultValue', 'onInput'],

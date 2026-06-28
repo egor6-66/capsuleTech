@@ -1,5 +1,6 @@
 import { cn } from '@capsuletech/web-style';
 import { mergeProps, Show, splitProps } from 'solid-js';
+import { useTrace } from '../../internal/useTrace';
 import type { IUiChartProps } from './interfaces';
 import { chartCva } from './variants';
 
@@ -13,6 +14,7 @@ import { chartCva } from './variants';
  * <Ui.Chart variant="line" />
  */
 export const Chart = (props: IUiChartProps) => {
+  useTrace('web-ui.chart'); // ADR 062
   const merged = mergeProps({ ariaLabel: 'Chart placeholder', variant: 'bar' as const }, props);
   const [local, others] = splitProps(merged, ['size', 'class', 'children', 'ariaLabel', 'variant']);
 

@@ -1,10 +1,12 @@
 import { createStyle } from '@capsuletech/web-style';
 import { Separator as SeparatorPrimitive } from '@kobalte/core/separator';
 import { mergeProps, splitProps } from 'solid-js';
+import { useTrace } from '../../internal/useTrace';
 import type { ISeparatorProps } from './interfaces';
 import { separatorCva } from './variants';
 
 export const Separator = (props: ISeparatorProps) => {
+  useTrace('web-ui.separator'); // ADR 062
   // Устанавливаем дефолты через mergeProps, чтобы сохранить реактивность
   const merged = mergeProps({ orientation: 'horizontal', decorative: true }, props);
 

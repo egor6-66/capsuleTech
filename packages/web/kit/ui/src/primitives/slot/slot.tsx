@@ -1,6 +1,7 @@
 import { Polymorphic } from '@kobalte/core/polymorphic';
 import type { ValidComponent } from 'solid-js';
 import { splitProps } from 'solid-js';
+import { useTrace } from '../../internal/useTrace';
 import type { ISlotProps } from './interfaces';
 
 /**
@@ -25,6 +26,7 @@ import type { ISlotProps } from './interfaces';
  * ```
  */
 export const Slot = <T extends ValidComponent = 'div'>(props: ISlotProps<T>) => {
+  useTrace('web-ui.slot'); // ADR 062 — shared-чокпойнт всех полиморфных обёрток
   // Достаём `as` из props
   const [polyProps, others] = splitProps(props, ['as']);
 

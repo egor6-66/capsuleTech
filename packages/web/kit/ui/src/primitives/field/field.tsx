@@ -1,10 +1,12 @@
 import { createStyle } from '@capsuletech/web-style';
 import { mergeProps, splitProps } from 'solid-js';
 
+import { useTrace } from '../../internal/useTrace';
 import type { IFieldProps } from './interfaces';
 import { fieldCva } from './variants';
 
 export function Field(props: IFieldProps) {
+  useTrace('web-ui.field'); // ADR 062
   const [local, variants, others] = splitProps(props, ['class', 'style'], ['orientation']);
 
   const styleProps = mergeProps(variants, {

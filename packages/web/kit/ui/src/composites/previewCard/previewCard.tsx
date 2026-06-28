@@ -1,6 +1,7 @@
 import { cn } from '@capsuletech/web-style';
 import { For, Show, splitProps } from 'solid-js';
 
+import { useTrace } from '../../internal/useTrace';
 import { Typography } from '../../primitives/typography';
 import type { IFieldDef, IPreviewCardProps, PreviewCardTemplate } from './interfaces';
 
@@ -63,6 +64,7 @@ function fieldKey<TData>(field: IFieldDef<TData>): string | undefined {
  * read only from .d.ts by Shape's type machinery.
  */
 function PreviewCardComponent<TData>(rawProps: IPreviewCardProps<TData>) {
+  useTrace('web-ui.preview-card'); // ADR 062
   const [local] = splitProps(rawProps, ['data', 'fields', 'emptyMessage', 'class', 'flat']);
 
   const chromeClass = () =>

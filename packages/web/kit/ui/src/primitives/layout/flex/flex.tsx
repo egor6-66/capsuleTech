@@ -5,6 +5,7 @@ import {
   splitProps,
   type ValidComponent,
 } from 'solid-js';
+import { useTrace } from '../../../internal/useTrace';
 import { Slot } from '../../slot';
 import { mergeStyle, toGap } from '../grid/utils';
 import type {
@@ -70,6 +71,7 @@ const ORIENTATION_DIR: Record<FlexOrientation, FlexDirection> = {
  * Для resize-раскладок используй `<Layout.Resizable items={[...]} />`.
  */
 export const Flex = <T extends ValidComponent = 'div'>(props: IFlexProps<T>) => {
+  useTrace('web-ui.flex'); // ADR 062
   const [own, polyAndRest] = splitProps(props, [
     'orientation',
     'direction',

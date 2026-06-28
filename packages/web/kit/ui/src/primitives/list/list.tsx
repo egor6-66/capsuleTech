@@ -2,6 +2,7 @@ import { createStyle } from '@capsuletech/web-style';
 import { createVirtualizer } from '@tanstack/solid-virtual';
 import type { JSX } from 'solid-js';
 import { For, splitProps } from 'solid-js';
+import { useTrace } from '../../internal/useTrace';
 import type {
   IListBatchProps,
   IListProps,
@@ -25,6 +26,7 @@ function isRenderMode<T>(props: IListProps<T>): props is IListRenderProps<T> {
 }
 
 export function List<T = unknown>(props: IListProps<T>) {
+  useTrace('web-ui.list'); // ADR 062
   // --- batch mode ---
   if (isBatchMode(props)) {
     const [local, variants, others] = splitProps(
@@ -133,6 +135,7 @@ export function List<T = unknown>(props: IListProps<T>) {
 }
 
 function VirtualList<T>(props: IVirtualListProps<T>) {
+  useTrace('web-ui.list-virtual'); // ADR 062
   let parentRef: HTMLDivElement | undefined;
 
   const [local, variants, others] = splitProps(

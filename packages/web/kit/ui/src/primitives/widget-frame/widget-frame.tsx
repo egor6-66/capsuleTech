@@ -1,6 +1,7 @@
 import { Maximize2, Move } from 'lucide-solid';
 import { Show, splitProps } from 'solid-js';
 
+import { useTrace } from '../../internal/useTrace';
 import { createFinish } from '../../lib/finish';
 
 import type {
@@ -84,6 +85,7 @@ export const WidgetFrameGrip = (props: IWidgetFrameGripProps) => {
 const RIM_WIDTH = 1.5; // px — thickness of accent rim
 
 export const WidgetFrame = (props: IWidgetFrameProps) => {
+  useTrace('web-ui.widget-frame'); // ADR 062
   const [local, others] = splitProps(props, [
     'active',
     'children',

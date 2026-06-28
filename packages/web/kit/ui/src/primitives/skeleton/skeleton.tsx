@@ -2,6 +2,7 @@ import { cn } from '@capsuletech/web-style';
 import { Root as SkeletonRoot } from '@kobalte/core/skeleton';
 import { For, mergeProps, splitProps } from 'solid-js';
 
+import { useTrace } from '../../internal/useTrace';
 import type { ISkeletonProps } from './interfaces';
 import { skeletonBlockCva, skeletonWrapperCva } from './variants';
 
@@ -137,6 +138,7 @@ const VARIANTS = {
  * ```
  */
 export const Skeleton = (props: ISkeletonProps) => {
+  useTrace('web-ui.skeleton'); // ADR 062
   const merged = mergeProps({ variant: 'text' as const }, props);
   const [local, others] = splitProps(merged, ['variant', 'rows', 'class', 'style']);
 

@@ -1,6 +1,7 @@
 import type { JSX } from 'solid-js';
 import { For, Match, Switch, splitProps, useContext } from 'solid-js';
 
+import { useTrace } from '../../internal/useTrace';
 import { resolveIcon } from '../../icons';
 import { Dropdown } from '../../primitives/dropdown';
 import { Toggle } from '../../primitives/toggle';
@@ -148,6 +149,7 @@ function renderItems(items: MenuItem[], ActionRow: WrappedActionRow): JSX.Elemen
  * ```
  */
 function MenuList(props: IMenuProps): JSX.Element {
+  useTrace('web-ui.menu'); // ADR 062
   const { wrap } = useContext(CompositeProxyContext);
   const ActionRow: WrappedActionRow = wrap ? wrap(MenuActionRow, 'MenuActionRow') : MenuActionRow;
   return <>{renderItems(props.items, ActionRow)}</>;
@@ -165,6 +167,7 @@ function MenuList(props: IMenuProps): JSX.Element {
  * ```
  */
 function MenuDropdown(props: IMenuDropdownProps): JSX.Element {
+  useTrace('web-ui.menu-dropdown'); // ADR 062
   const [own, rest] = splitProps(props, ['trigger', 'items']);
   return (
     <Dropdown {...rest}>
