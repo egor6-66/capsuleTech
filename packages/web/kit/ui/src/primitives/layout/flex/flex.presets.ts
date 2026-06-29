@@ -4,32 +4,58 @@
  * Каждый preset — JSON-схема для Renderer'а (`@capsuletech/web-renderer`);
  * палитра рендерит превью через `<Renderer schema mode="static" />`.
  *
- * Контейнерные пресеты — это «формы layout'а». Без детей Flex-блок невидим
- * (прозрачный), поэтому каждый preset несёт `placeholderStyle`: пунктирный
- * бордер + приглушённый фон + min-height — «пустой контейнер виден как
- * контейнер» в канвасе/палитре. Юзер после DnD'а наполняет его детьми
- * (и чистит scaffold-стиль через инспектор).
+ * Контейнерные пресеты — это «формы layout'а», и суть layout'а (`direction` /
+ * `wrap` / `gap` / `align` / `justify`) видна ТОЛЬКО по детям — на пустом
+ * контейнере кручение инспектора не даёт визуального эффекта. Поэтому каждый
+ * preset наполнен тремя плитками-плейсхолдерами (`tileNode`): при изменении
+ * настроек реально видно перестроение (gap-зазор, перенос при `wrap`, смена
+ * оси при `direction`, расталкивание при `justify`).
+ *
+ * Плитки — `ui.Card` с фиксированным размером (`min-width` фиксирует ширину,
+ * чтобы `wrap` срабатывал в узком контейнере). Сам контейнер несёт лёгкий
+ * пунктирный бордер, чтобы границы Flex читались.
  *
  * Стиль — инлайн через CSS-токены (НЕ Tailwind-классы): не требует
  * content-scan в приложении-консьюмере. Тот же приём, что в `flex.manifest`
  * (`defaultProps.style.padding = var(--space-card)`).
  */
 
+import type { IEditorNode } from '@capsuletech/web-contract';
 import type { IPreset } from '../../../manifest/types';
 
 /**
- * Scaffold-стиль пустого контейнера — делает dropped/selected Flex видимым.
- * Все значения — themed CSS-токены, поэтому корректны в любой теме без
- * Tailwind-сканирования у консьюмера.
+ * Лёгкий каркас самого контейнера — пунктирный бордер + min-height + padding,
+ * чтобы границы Flex читались. Без фона: плитки (`bg-card`) должны
+ * контрастировать. Все значения — themed CSS-токены (без Tailwind-скана).
  */
-const placeholderStyle: Record<string, string> = {
+const containerStyle: Record<string, string> = {
   width: '100%',
   'min-height': 'var(--size-slot)',
   padding: 'var(--space-card)',
   border: '1px dashed var(--color-border)',
   'border-radius': 'var(--radius-md)',
-  background: 'var(--color-muted)',
 };
+
+const TILE_IDS = ['tile-1', 'tile-2', 'tile-3'] as const;
+
+/**
+ * Плитка-плейсхолдер фиксированного размера. `min-width` не даёт ужиматься —
+ * так `wrap` визуально срабатывает в узком контейнере, а `gap` читается.
+ */
+const tileNode = (id: string): IEditorNode => ({
+  id,
+  type: 'ui.Card',
+  parentId: 'flex',
+  children: [],
+  props: {
+    style: {
+      width: '96px',
+      'min-width': '96px',
+      height: '56px',
+      background: 'var(--color-muted)',
+    } as Record<string, string>,
+  },
+});
 
 const singleFlex = (props: Record<string, unknown>): IPreset['schema'] => ({
   components: {
@@ -39,9 +65,10 @@ const singleFlex = (props: Record<string, unknown>): IPreset['schema'] => ({
         id: 'flex',
         type: 'ui.Layout.Flex',
         parentId: null,
-        children: [],
-        props: { ...props, style: placeholderStyle },
+        children: [...TILE_IDS],
+        props: { ...props, style: containerStyle },
       },
+      ...Object.fromEntries(TILE_IDS.map((id) => [id, tileNode(id)])),
     },
   },
 });
