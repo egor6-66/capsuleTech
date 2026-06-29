@@ -18,9 +18,9 @@ interface IWordListProps {
   selectedId: number | null;
 }
 
-const WordList = View(({ Layout, Card, Typography, Input }, props: IWordListProps) => (
+const WordList = View(({ Layout, Card, Typography, Input, Button }, props: IWordListProps) => (
   <Layout.Flex orientation="vertical" gapY={1} h="full">
-    <Layout.Flex class={'p-1'}>
+    <Layout.Flex class={'p-1 pb-0'}>
       <Input meta={{ tags: ['search'] }} placeholder="Поиск слова…" />
     </Layout.Flex>
     <Layout.Flex
@@ -40,8 +40,19 @@ const WordList = View(({ Layout, Card, Typography, Input }, props: IWordListProp
             aria-selected={props.selectedId === w.id}
             class="cursor-pointer px-2 py-1 transition-colors hover:bg-accent aria-[selected=true]:bg-primary aria-[selected=true]:text-primary-foreground"
           >
-            <Typography>{w.text}</Typography>
-            <Typography tone="muted" size="sm">
+            <Layout.Flex align={'center'}>
+              <Typography align={'center'}>{w.text}</Typography>
+              <Button
+                variant="ghost"
+                meta={{ tags: ['speak'] }}
+                payload={{ speak: w.text }}
+                class="h-5 px-1 text-xs"
+              >
+                🔊
+              </Button>
+            </Layout.Flex>
+
+            <Typography tone="muted" size="sm" align={'center'}>
               {w.translation}
             </Typography>
           </Card>

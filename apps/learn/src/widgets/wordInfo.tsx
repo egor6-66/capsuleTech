@@ -12,7 +12,8 @@ const WordInfo = Widget(() => {
     return ((data?.senses as any[]) ?? []).find((s) => s.id === id) ?? null;
   };
 
-  return <Views.WordInfo sense={selected()} />;
+  const engine = () => ctx.store?.ctx?.data?.engine ?? 'kokoro';
+  return <Views.WordInfo sense={selected()} engine={engine()} />;
 });
 
 export default WordInfo;

@@ -12,7 +12,11 @@ const Library = Feature(({ api }) => ({
   initial: 'loading',
 
   // На уровне страницы — кормит и сетку слов (Words), и инфо-панель (WordInfo).
-  context: { senses: [] as unknown[], selectedId: null as number | null },
+  context: {
+    senses: [] as unknown[],
+    selectedId: null as number | null,
+    engine: 'kokoro' as string, // выбранный TTS-движок (свитчер)
+  },
 
   states: {
     loading: {
@@ -32,10 +36,25 @@ const Library = Feature(({ api }) => ({
     store.update({ senses: res.senses });
   },
 
-  // Выбор слова: тайл несёт payload={ id } → UiProxy кладёт в target.payload → селектим.
-  onClick: ({ target, store }) => {
-    const id = (target.payload as { id?: number } | undefined)?.id;
-    if (id != null) store.update({ selectedId: id });
+  // Клик: setEngine (свитчер движка) / speak (озвучка выбранным движком) / select (выбор).
+  // dedup bubbling разводит вложенные кнопки и тайл. Base — dev-хардкод (позже из конфига).
+  onClick: ({ target, store, context }) => {
+    const p = target.payload as
+      | { id?: number; speak?: string; setEngine?: string }
+      | undefined;
+    if (p?.setEngine) {
+      store.update({ engine: p.setEngine });
+      return;
+    }
+    if (p?.speak) {
+      const c = context as any;
+      const engine = c?.data?.engine ?? c?.engine ?? 'kokoro';
+      void new Audio(
+        `http://127.0.0.1:8003/learn/voice/speak?text=${encodeURIComponent(p.speak)}&engine=${engine}`,
+      ).play();
+      return;
+    }
+    if (p?.id != null) store.update({ selectedId: p.id });
   },
 }));
 

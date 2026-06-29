@@ -9,9 +9,10 @@ import { For, Show } from 'solid-js';
 
 interface IWordInfoProps {
   sense: any | null;
+  engine: string;
 }
 
-const WordInfo = View(({ Layout, Typography, Card }, props: IWordInfoProps) => (
+const WordInfo = View(({ Layout, Typography, Card, Button }, props: IWordInfoProps) => (
   <Show
     when={props.sense}
     fallback={
@@ -21,7 +22,30 @@ const WordInfo = View(({ Layout, Typography, Card }, props: IWordInfoProps) => (
     }
   >
     <Layout.Flex orientation="vertical" gapY={3} class="p-6">
-      <Typography variant="h2">{props.sense.text}</Typography>
+      <Layout.Flex orientation="horizontal" gapX={2} align="center">
+        <Typography variant="h2">{props.sense.text}</Typography>
+        <Button variant="ghost" meta={{ tags: ['speak'] }} payload={{ speak: props.sense.text }}>
+          🔊
+        </Button>
+      </Layout.Flex>
+
+      {/* Свитчер TTS-движка — A/B озвучки (применяется ко всем 🔊). */}
+      <Layout.Flex orientation="horizontal" gapX={1}>
+        <For each={['kokoro', 'styletts2']}>
+          {(e) => (
+            <Button
+              variant="ghost"
+              meta={{ tags: ['engine'] }}
+              payload={{ setEngine: e }}
+              aria-selected={props.engine === e}
+              class="px-2 text-xs aria-[selected=true]:bg-primary aria-[selected=true]:text-primary-foreground"
+            >
+              {e}
+            </Button>
+          )}
+        </For>
+      </Layout.Flex>
+
       <Show when={props.sense.pron_ru}>
         <Typography tone="muted">{props.sense.pron_ru}</Typography>
       </Show>
