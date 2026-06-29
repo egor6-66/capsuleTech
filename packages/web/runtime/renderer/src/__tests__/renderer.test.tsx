@@ -1221,3 +1221,28 @@ describe('Renderer — editOverlay (ADR 031)', () => {
     expect(container.querySelector('[data-testid="overlay-mynode"]')).not.toBeNull();
   });
 });
+
+describe('Renderer — undefined / empty schema (граничный кадр)', () => {
+  it('schema={undefined} — не бросает, рендерит пусто, без warn-флуда', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(() => {
+      dispose = render(() => <Renderer schema={undefined} registry={{}} />, container);
+    }).not.toThrow();
+    // Ничего не отрендерено (нет нод).
+    expect(container.textContent).toBe('');
+    expect(container.querySelector('*')).toBeNull();
+    // Пустая схема — легитимна, не предупреждаем (иначе пустой root '' даст
+    // ложный root-missing warn).
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+
+  it('schema={ EMPTY_SCHEMA-эквивалент } — то же поведение, что и undefined', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const empty: ISchema = { components: { root: '', nodes: {} } };
+    expect(() => {
+      dispose = render(() => <Renderer schema={empty} registry={{}} />, container);
+    }).not.toThrow();
+    expect(container.querySelector('*')).toBeNull();
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+});
