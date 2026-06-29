@@ -57,11 +57,15 @@ const Display = Widget((Ui) => {
   const activeSchema = () => (ctx.store.ctx.data?.schema ?? demoSchema) as typeof demoSchema;
 
   return (
-    <Ui.Layout.Flex direction={'col'} gap={2} p={4}>
-      <Ui.Typography>Universal Canvas — embedded ✓</Ui.Typography>
-      <Ui.Button meta={{ tags: ['canvas-btn'] }}>Canvas own button</Ui.Button>
-      <Ui.Typography>last: {ctx.store.ctx.data?.text ?? '—'}</Ui.Typography>
-
+    <Ui.Layout.Flex
+      direction={'col'}
+      h={'full'}
+      w={'full'}
+      gap={2}
+      justify={'center'}
+      align={'center'}
+      class={'p-1'}
+    >
       <Renderer.View schema={activeSchema()} registry={{ ui: Ui }} mode="static" />
     </Ui.Layout.Flex>
   );

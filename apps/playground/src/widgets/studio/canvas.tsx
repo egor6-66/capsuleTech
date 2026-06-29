@@ -8,8 +8,7 @@
 // Features.Canvas обёртка переехала на уровень студийной страницы (web-studio/index.tsx),
 // чтобы обнимать и палитру, и канвас (сток баблинга onPresetSelect). Здесь — только embed.
 const Canvas = Widget((Ui) => (
-  <Ui.Layout.Flex direction={'col'} h={'full'} w={'full'}>
-    <Ui.Button meta={{ tags: ['ping'] }}>Ping remote</Ui.Button>
+  <Ui.Layout.Flex h={'full'} w={'full'}>
     <Remote.View name="universal-canvas" instanceId="main" />
   </Ui.Layout.Flex>
 ));
