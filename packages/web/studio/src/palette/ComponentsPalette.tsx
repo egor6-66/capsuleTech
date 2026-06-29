@@ -23,6 +23,8 @@
  * Сейчас пресеты определены только для Button (`ui.Button`).
  */
 
+import type { ISchema } from '@capsuletech/web-contract';
+import { useEmitOptional } from '@capsuletech/web-core';
 import { Accordion } from '@capsuletech/web-ui/accordion';
 import { Flex } from '@capsuletech/web-ui/flex';
 import {
@@ -39,13 +41,29 @@ import { useSelectedPreset } from '../selection';
 import { DraggablePresetItem } from './DraggablePresetItem';
 import { groupManifests } from './groups';
 
+/** HCA-события, которые эмитит палитра вверх (ADR 032, useEmit-канал). */
+export interface IComponentsPaletteEvents {
+  /** Выбран пресет (клик в store-режиме). Payload — схема для Renderer'а. */
+  onPresetSelect: { schema: ISchema };
+}
+
 const PresetItem = (props: { p: IPreset }) => {
   const { selected, setSelected } = useSelectedPreset();
+  // useEmitOptional (НЕ useEmit): палитра рендерится и standalone (store-mode,
+  // без host logic-wrapper'а — см. useStudioMode/тесты). Вне scope — no-op,
+  // внутри — баббл к ближайшему host-Feature. useEmit() тут бросил бы.
+  const emit = useEmitOptional();
   const isSelected = () => selected()?.id === props.p.id;
   return (
     <button
       type="button"
-      onClick={() => setSelected(props.p)}
+      onClick={() => {
+        setSelected(props.p);
+        emit('onPresetSelect', {
+          source: 'WebStudio.ComponentsPalette',
+          payload: { schema: props.p.schema },
+        });
+      }}
       class="cursor-pointer flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground"
       classList={{ 'bg-accent text-accent-foreground': isSelected() }}
       data-testid={`preset-${props.p.id}`}
@@ -107,7 +125,7 @@ const ComponentList = (props: {
   </Accordion>
 );
 
-export const ComponentsPalette = () => {
+const ComponentsPaletteComponent = () => {
   const groups = groupManifests(getAllManifests());
   const mode = useStudioMode();
 
@@ -133,3 +151,15 @@ export const ComponentsPalette = () => {
     </Flex>
   );
 };
+
+/**
+ * WebStudio.ComponentsPalette — палитра компонентов студии.
+ *
+ * Phantom `__events?: IComponentsPaletteEvents` нужен codegen-у для генерации
+ * `WebStudio.ComponentsPalette.Events` (namespace-merge), чтобы host
+ * `Feature<WebStudio.ComponentsPalette.Events>` типизировал `target.payload`
+ * в `onPresetSelect` без per-handler аннотации. На runtime не используется.
+ */
+export const ComponentsPalette: (() => any) & {
+  readonly __events?: IComponentsPaletteEvents;
+} = ComponentsPaletteComponent;
