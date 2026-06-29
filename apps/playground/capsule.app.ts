@@ -11,10 +11,9 @@ export default defineAppConfig({
     '@capsuletech/web-shell',
     '@capsuletech/boost-layout',
     '@capsuletech/web-studio',
-    '@capsuletech/web-remote',
   ],
-  // ADR 060 D5 — единый источник регистрации ремоутов (Provider + тип-codegen отсюда).
-  remotes: [{ name: 'universal-canvas', url: 'http://localhost:3000' }],
+  // remote-механика канваса теперь ВНУТРИ web-studio (WebStudio.Provider canvasUrl) —
+  // апп больше не регистрирует web-remote / remotes напрямую.
   docs: {
     rootVault: false,
     packages: ['@capsuletech/web-ui'],
