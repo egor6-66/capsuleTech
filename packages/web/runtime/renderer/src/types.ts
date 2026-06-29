@@ -65,7 +65,12 @@ export interface IEditOverlayProps {
 }
 
 export interface IRendererProps {
-  schema: ISchema;
+  /**
+   * Дерево нод + interactions. Опционален: потребитель легитимно может передать
+   * `undefined` в первый кадр (данные ещё не пришли — напр. канвас до первой
+   * `setComposition`). Renderer коалесит в пустую схему и рендерит ничего, молча.
+   */
+  schema?: ISchema;
   registry: Registry;
   /** Default: `'controlled'`. */
   mode?: RenderMode;

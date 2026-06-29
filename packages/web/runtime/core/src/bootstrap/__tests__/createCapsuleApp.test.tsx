@@ -29,8 +29,18 @@ const h = vi.hoisted(() => ({
   embedded: false,
   params: { sessionId: 's1', name: 'app' } as { sessionId: string; name: string } | null,
   onConfig: undefined as ((p: Record<string, unknown>) => void) | undefined,
+  onTheme: undefined as ((p: { theme?: string; dark?: boolean }) => void) | undefined,
   detached: false,
   baseProps: [] as Array<Record<string, unknown>>,
+  setTheme: vi.fn(),
+  setDarkMode: vi.fn(),
+}));
+
+// web-style is used ONLY for onTheme application here (ensureTheme sets data-theme
+// directly via setAttribute, not via web-style) → safe to fully spy.
+vi.mock('@capsuletech/web-style', () => ({
+  setTheme: h.setTheme,
+  setDarkMode: h.setDarkMode,
 }));
 
 vi.mock('../../providers/base', () => ({
@@ -49,6 +59,7 @@ vi.mock('../embedHandshake', () => ({
   EMBED_PROTOCOL: {
     readyEvent: '__capsule_app_ready__',
     configEvent: '__capsule_remote_config__',
+    themeEvent: '__capsule_theme__',
     mountedEvent: '__capsule_app_mounted__',
     unloadEvent: '__capsule_app_unloading__',
     hostTarget: '__host__',
@@ -58,6 +69,7 @@ vi.mock('../embedHandshake', () => ({
   readEmbedParams: () => h.params,
   startHandshake: (opts: any) => {
     h.onConfig = opts.onConfig;
+    h.onTheme = opts.onTheme;
     return () => {
       h.detached = true;
     };
@@ -94,8 +106,11 @@ beforeEach(() => {
   h.embedded = false;
   h.params = { sessionId: 's1', name: 'app' };
   h.onConfig = undefined;
+  h.onTheme = undefined;
   h.detached = false;
   h.baseProps = [];
+  h.setTheme.mockClear();
+  h.setDarkMode.mockClear();
 });
 
 afterEach(() => {
@@ -130,13 +145,19 @@ describe('createCapsuleApp — container resolution', () => {
 
   it('throws when string id not found', () => {
     expect(() =>
-      createCapsuleApp('nonexistent-id', { routeTree: makeRouteTree(), appConfig: makeAppConfig() }),
+      createCapsuleApp('nonexistent-id', {
+        routeTree: makeRouteTree(),
+        appConfig: makeAppConfig(),
+      }),
     ).toThrow('nonexistent-id');
   });
 
   it('throw message mentions createCapsuleApp', () => {
     expect(() =>
-      createCapsuleApp('ghost-container', { routeTree: makeRouteTree(), appConfig: makeAppConfig() }),
+      createCapsuleApp('ghost-container', {
+        routeTree: makeRouteTree(),
+        appConfig: makeAppConfig(),
+      }),
     ).toThrow('[createCapsuleApp]');
   });
 });
@@ -289,6 +310,67 @@ describe('createCapsuleApp — embedded mode', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Theme-sync (__capsule_theme__) — host theme applied via web-style in embedded mode
+// ---------------------------------------------------------------------------
+
+describe('createCapsuleApp — theme-sync (embedded)', () => {
+  it('wires onTheme in embedded mode', () => {
+    h.embedded = true;
+    const dispose = createCapsuleApp(container, {
+      routeTree: makeRouteTree(),
+      appConfig: makeAppConfig(),
+    });
+    expect(typeof h.onTheme).toBe('function');
+    dispose();
+  });
+
+  it('applies host theme + dark via web-style on __capsule_theme__', () => {
+    h.embedded = true;
+    const dispose = createCapsuleApp(container, {
+      routeTree: makeRouteTree(),
+      appConfig: makeAppConfig(),
+    });
+
+    h.onTheme?.({ theme: 'rose', dark: true });
+    expect(h.setTheme).toHaveBeenCalledWith('rose');
+    expect(h.setDarkMode).toHaveBeenCalledWith(true);
+    dispose();
+  });
+
+  it('applies only the provided fields (theme-only / dark-only)', () => {
+    h.embedded = true;
+    const dispose = createCapsuleApp(container, {
+      routeTree: makeRouteTree(),
+      appConfig: makeAppConfig(),
+    });
+
+    h.onTheme?.({ theme: 'mint' }); // no dark
+    expect(h.setTheme).toHaveBeenCalledWith('mint');
+    expect(h.setDarkMode).not.toHaveBeenCalled();
+
+    h.setTheme.mockClear();
+    h.onTheme?.({ dark: false }); // no theme
+    expect(h.setTheme).not.toHaveBeenCalled();
+    expect(h.setDarkMode).toHaveBeenCalledWith(false);
+    dispose();
+  });
+
+  it('re-applies on a subsequent host theme change (runtime re-send)', () => {
+    h.embedded = true;
+    const dispose = createCapsuleApp(container, {
+      routeTree: makeRouteTree(),
+      appConfig: makeAppConfig(),
+    });
+
+    h.onTheme?.({ theme: 'rose', dark: true });
+    h.onTheme?.({ theme: 'mint', dark: false });
+    expect(h.setTheme).toHaveBeenLastCalledWith('mint');
+    expect(h.setDarkMode).toHaveBeenLastCalledWith(false);
+    dispose();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // mounted-signal (__capsule_app_mounted__) — posted after render() in embedded mode
 // ---------------------------------------------------------------------------
 
@@ -375,9 +457,7 @@ describe('createCapsuleApp — mounted signal', () => {
 
 describe('createCapsuleApp — unload signal', () => {
   const unloadEnvelopes = (postMessage: ReturnType<typeof vi.fn>) =>
-    postMessage.mock.calls.filter(
-      ([m]) => m && m.eventName === '__capsule_app_unloading__',
-    );
+    postMessage.mock.calls.filter(([m]) => m && m.eventName === '__capsule_app_unloading__');
 
   it('posts __capsule_app_unloading__ to window.parent on pagehide (embedded)', () => {
     h.embedded = true;
@@ -566,7 +646,9 @@ describe('buildHostInboundHandler (host→app, ADR 060 D1)', () => {
     const { inbound, dispatch } = makeInbound();
     const handler = buildHostInboundHandler(params, makeContract(), inbound);
 
-    handler(msg({ sessionId: 'sess-1', to: 'my-app', eventName: 'setMarkers', payload: [{ id: 1 }] }));
+    handler(
+      msg({ sessionId: 'sess-1', to: 'my-app', eventName: 'setMarkers', payload: [{ id: 1 }] }),
+    );
 
     expect(dispatch).toHaveBeenCalledWith('setMarkers', [{ id: 1 }]);
   });

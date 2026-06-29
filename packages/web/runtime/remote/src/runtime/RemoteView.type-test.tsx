@@ -17,9 +17,9 @@
  * (dist resolution) — architect re-runs it.
  */
 
-import type { JSX } from 'solid-js';
 // Read the types through the PUBLIC barrel — same module the augmentation targets.
 import type { IRemoteHandle, IRemoteViewProps } from '@capsuletech/web-remote';
+import type { JSX } from 'solid-js';
 import { RemoteView } from './RemoteView';
 
 // Fake augmentation — mimics what `.capsule/@types/remotes.d.ts` (vite-builder

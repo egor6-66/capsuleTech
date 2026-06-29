@@ -34,6 +34,7 @@
  */
 
 import type { AnyRoute } from '@capsuletech/web-router';
+import { setDarkMode, setTheme } from '@capsuletech/web-style';
 import { type JSX, Suspense } from 'solid-js';
 import { render } from 'solid-js/web';
 import type { IAppConfig } from '../app-config';
@@ -47,6 +48,7 @@ import {
   RootForwardContext,
 } from '../engine/host-bridge';
 import { BaseProviders } from '../providers/base';
+import { EmitProvider, type IEmitSink } from './EmitProvider';
 import { createConfigStore } from './embedConfig';
 import {
   DEFAULT_HANDSHAKE_TIMEOUT_MS,
@@ -56,7 +58,6 @@ import {
   readEmbedParams,
   startHandshake,
 } from './embedHandshake';
-import { EmitProvider, type IEmitSink } from './EmitProvider';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public API types
@@ -393,6 +394,11 @@ export const createCapsuleApp = (
             timer = undefined;
           }
           mount(); // первый патч снимает таймаут и монтирует; далее no-op
+        },
+        onTheme: (p) => {
+          // Применяется к documentElement iframe'а (setTheme/setDarkMode default target).
+          if (typeof p.theme === 'string') setTheme(p.theme); // no-op на unknown theme (guard внутри)
+          if (typeof p.dark === 'boolean') setDarkMode(p.dark);
         },
       });
     }

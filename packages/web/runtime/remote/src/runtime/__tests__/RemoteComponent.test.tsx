@@ -11,6 +11,7 @@
  */
 
 import { EMBED_PROTOCOL } from '@capsuletech/web-core/bootstrap';
+import { setDarkMode, useDarkMode, useTheme } from '@capsuletech/web-style';
 import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -181,6 +182,100 @@ describe('RemoteComponent', () => {
     await Promise.resolve();
     expect(configEnvelopes().length).toBeGreaterThan(before);
     expect((configEnvelopes().at(-1)!.payload as Record<string, unknown>).theme).toBe('dark');
+  });
+
+  // ─── Theme envelope (host→app theme-sync, brief 2/2) ────────────────────────
+
+  const themeEnvelopes = () =>
+    transport.sent.filter((m) => m.eventName === EMBED_PROTOCOL.themeEvent);
+
+  describe('theme envelope', () => {
+    // Host theme/dark are module-level signals in web-style — snapshot+restore so
+    // a flip in one case does not leak into the rest of the suite.
+    let darkBefore: boolean;
+    beforeEach(() => {
+      darkBefore = useDarkMode()();
+    });
+    afterEach(() => {
+      setDarkMode(darkBefore);
+    });
+
+    it('default (no override prop): forwards the host global theme on ready', async () => {
+      renderRemote({ instanceId: 'theme-inst' });
+      await Promise.resolve();
+      transport.sent.length = 0; // clear initial reactive envelopes
+
+      transport.triggerMessage({
+        from: 'hello',
+        fromInstance: 'hello',
+        to: EMBED_PROTOCOL.hostTarget,
+        sessionId: SESSION,
+        eventName: EMBED_PROTOCOL.readyEvent,
+      });
+
+      const env = themeEnvelopes();
+      expect(env.length).toBeGreaterThan(0);
+      const payload = env.at(-1)!.payload as { theme: string; dark: boolean };
+      expect(payload.theme).toBe(useTheme()());
+      expect(payload.dark).toBe(useDarkMode()());
+    });
+
+    it('default: re-sends when the host theme signal changes', async () => {
+      renderRemote();
+      await Promise.resolve();
+      const before = themeEnvelopes().length;
+      setDarkMode(!useDarkMode()()); // flip host dark signal
+      await Promise.resolve();
+      const env = themeEnvelopes();
+      expect(env.length).toBeGreaterThan(before);
+      expect((env.at(-1)!.payload as { dark: boolean }).dark).toBe(useDarkMode()());
+    });
+
+    it('override props: forwards the override theme/dark, NOT the host theme', async () => {
+      renderRemote({
+        theme: 'override-theme',
+        dark: true,
+      } as unknown as Partial<IRemoteComponentInternalProps>);
+      await Promise.resolve();
+      transport.sent.length = 0;
+
+      transport.triggerMessage({
+        from: 'hello',
+        fromInstance: 'hello',
+        to: EMBED_PROTOCOL.hostTarget,
+        sessionId: SESSION,
+        eventName: EMBED_PROTOCOL.readyEvent,
+      });
+
+      const payload = themeEnvelopes().at(-1)!.payload as { theme: string; dark: boolean };
+      expect(payload.theme).toBe('override-theme');
+      expect(payload.theme).not.toBe(useTheme()()); // not the host theme
+      expect(payload.dark).toBe(true);
+    });
+
+    it('override: re-sends when the override prop changes', async () => {
+      const [theme, setTheme] = createSignal('theme-a');
+      disposeRoot = render(
+        () => (
+          <RemoteComponent
+            name="hello"
+            instanceId="i1"
+            transports={[transport as ITransport]}
+            sessionId={SESSION}
+            modules={makeModules()}
+            theme={theme()}
+          />
+        ),
+        container,
+      );
+      await Promise.resolve();
+      const before = themeEnvelopes().length;
+      setTheme('theme-b');
+      await Promise.resolve();
+      const env = themeEnvelopes();
+      expect(env.length).toBeGreaterThan(before);
+      expect((env.at(-1)!.payload as { theme: string }).theme).toBe('theme-b');
+    });
   });
 
   // ─── Auto-subscribe on* props (app → host events) ──────────────────────────

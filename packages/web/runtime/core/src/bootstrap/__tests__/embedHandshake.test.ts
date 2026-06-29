@@ -13,12 +13,7 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
-import {
-  EMBED_PROTOCOL,
-  isEmbedded,
-  readEmbedParams,
-  startHandshake,
-} from '../embedHandshake';
+import { EMBED_PROTOCOL, isEmbedded, readEmbedParams, startHandshake } from '../embedHandshake';
 
 describe('isEmbedded', () => {
   it('is false in standalone (jsdom has no distinct parent)', () => {
@@ -48,15 +43,16 @@ describe('startHandshake', () => {
     const source = new EventTarget();
     const host = { postMessage: vi.fn() };
     const received: Array<Record<string, unknown>> = [];
+    const themes: Array<{ theme?: string; dark?: boolean }> = [];
     const detach = startHandshake({
       params: { sessionId: 's1', name },
       onConfig: (p) => received.push(p),
+      onTheme: (p) => themes.push(p),
       host,
       source: source as unknown as Window,
     });
-    const dispatch = (data: unknown) =>
-      source.dispatchEvent(new MessageEvent('message', { data }));
-    return { source, host, received, detach, dispatch };
+    const dispatch = (data: unknown) => source.dispatchEvent(new MessageEvent('message', { data }));
+    return { source, host, received, themes, detach, dispatch };
   };
 
   it('posts __capsule_app_ready__ to the host with targetOrigin "*"', () => {
@@ -88,8 +84,41 @@ describe('startHandshake', () => {
     const { received, dispatch } = makeRig();
     dispatch({ sessionId: 'WRONG', eventName: EMBED_PROTOCOL.configEvent, payload: { a: 1 } });
     dispatch({ sessionId: 's1', eventName: '__capsule_other__', payload: { a: 1 } });
-    dispatch({ sessionId: 's1', eventName: EMBED_PROTOCOL.configEvent, to: 'someone-else', payload: { a: 1 } });
+    dispatch({
+      sessionId: 's1',
+      eventName: EMBED_PROTOCOL.configEvent,
+      to: 'someone-else',
+      payload: { a: 1 },
+    });
     expect(received).toHaveLength(0);
+  });
+
+  it('routes a __capsule_theme__ payload to onTheme (matching sessionId)', () => {
+    const { themes, received, dispatch } = makeRig();
+    dispatch({
+      sessionId: 's1',
+      eventName: EMBED_PROTOCOL.themeEvent,
+      payload: { theme: 'rose', dark: true },
+    });
+    expect(themes).toEqual([{ theme: 'rose', dark: true }]);
+    // theme-событие НЕ попадает в config-канал
+    expect(received).toHaveLength(0);
+  });
+
+  it('ignores a __capsule_theme__ with wrong sessionId', () => {
+    const { themes, dispatch } = makeRig();
+    dispatch({
+      sessionId: 'WRONG',
+      eventName: EMBED_PROTOCOL.themeEvent,
+      payload: { theme: 'rose', dark: true },
+    });
+    expect(themes).toHaveLength(0);
+  });
+
+  it('ignores a __capsule_theme__ with non-object payload', () => {
+    const { themes, dispatch } = makeRig();
+    dispatch({ sessionId: 's1', eventName: EMBED_PROTOCOL.themeEvent, payload: 'nope' });
+    expect(themes).toHaveLength(0);
   });
 
   it('ignores non-object message data', () => {
@@ -102,7 +131,12 @@ describe('startHandshake', () => {
   it('cleanup detaches the listener', () => {
     const { received, detach, dispatch } = makeRig();
     detach();
-    dispatch({ sessionId: 's1', eventName: EMBED_PROTOCOL.configEvent, to: 'app', payload: { x: 1 } });
+    dispatch({
+      sessionId: 's1',
+      eventName: EMBED_PROTOCOL.configEvent,
+      to: 'app',
+      payload: { x: 1 },
+    });
     expect(received).toHaveLength(0);
   });
 });

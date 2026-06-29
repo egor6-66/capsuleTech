@@ -30,6 +30,8 @@ export const EMBED_PROTOCOL = {
   readyEvent: '__capsule_app_ready__',
   /** host→app: override-патч конфига (не полный config). */
   configEvent: '__capsule_remote_config__',
+  /** host→app: тема хоста (data-theme + dark). Системное, вне contract-шины. */
+  themeEvent: '__capsule_theme__',
   /** app→host: «я реально отрисовался» — постится ПОСЛЕ `render()` (loader-overlay снимается). */
   mountedEvent: '__capsule_app_mounted__',
   /** app→host: «я выгружаюсь» — постится на pagehide (хост СТАВИТ loader-overlay). */
@@ -98,8 +100,7 @@ export interface IAppUnloadingMessage {
  * Приложение исполняется внутри хост-iframe (родительское окно отлично от self).
  * `false` в standalone и в не-DOM окружениях (SSR/тесты).
  */
-export const isEmbedded = (): boolean =>
-  typeof window !== 'undefined' && window.parent !== window;
+export const isEmbedded = (): boolean => typeof window !== 'undefined' && window.parent !== window;
 
 /**
  * Читает identity из query URL iframe. Синхронно, доступно до первого host-сообщения
@@ -129,6 +130,8 @@ export interface IStartHandshakeOptions {
    * Получает сырой payload — schema-фильтр/merge живут в `applyOverride` (embedConfig).
    */
   onConfig: (patch: Record<string, unknown>) => void;
+  /** Вызывается на каждый __capsule_theme__ (initial + runtime). Применение — у вызывающего (createCapsuleApp). */
+  onTheme?: (payload: { theme?: string; dark?: boolean }) => void;
   /** Окно хоста для ready-сигнала. По умолчанию `window.parent`. */
   host?: MessageHost;
   /** Источник host-сообщений. По умолчанию `window`. */
@@ -161,6 +164,12 @@ export const startHandshake = (opts: IStartHandshakeOptions): (() => void) => {
       payload?: unknown;
     };
     if (msg.sessionId !== params.sessionId) return;
+    if (msg.eventName === EMBED_PROTOCOL.themeEvent) {
+      if (msg.payload && typeof msg.payload === 'object') {
+        opts.onTheme?.(msg.payload as { theme?: string; dark?: boolean });
+      }
+      return;
+    }
     if (msg.eventName !== EMBED_PROTOCOL.configEvent) return;
     // Опциональное сужение по адресату: если хост проставил `to` — требуем наше имя.
     if (msg.to !== undefined && params.name !== '' && msg.to !== params.name) return;

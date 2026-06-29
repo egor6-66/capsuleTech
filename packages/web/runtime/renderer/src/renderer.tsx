@@ -46,6 +46,13 @@ import type {
  * Список расширяем: хост может передать свой `voidTypes` (не реализовано
  * в v1 — достаточно hard-coded реестра базовых примитивов).
  */
+/**
+ * Пустой schema-дефолт: root указывает в никуда, нод нет → рендерит ничего.
+ * Коалес-таргет для undefined/absent schema, чтобы первый кадр потребителя
+ * (данные ещё не пришли) не ронял рендерер.
+ */
+const EMPTY_SCHEMA: ISchema = { components: { root: '', nodes: {} } };
+
 const VOID_NODE_TYPES = new Set([
   'ui.Input',
   'ui.Separator',
@@ -150,6 +157,8 @@ const getKindMarker = (Wrapper: unknown): 'controller' | 'feature' | undefined =
  */
 const validateSchema = (schema: ISchema, warned: Set<string>) => {
   const { root, nodes } = schema.components;
+  // Пустая схема (нет нод) — легитимное «рендерить ничего», не предупреждаем.
+  if (Object.keys(nodes).length === 0) return;
   const warn = (key: string, msg: string) => {
     if (warned.has(key)) return;
     warned.add(key);
@@ -543,6 +552,9 @@ const RenderNode: Component<IRenderNodeProps> = (props) => {
  * (production-render), что гарантирует идентичный рендер в обоих контекстах.
  */
 export const Renderer: Component<IRendererProps> = (props) => {
+  // Коалесинг undefined/absent schema в пустую — первый кадр потребителя
+  // (данные ещё не пришли) рендерит ничего, молча, без краша.
+  const schema = () => props.schema ?? EMPTY_SCHEMA;
   const mode = () => props.mode ?? 'controlled';
   const fallback = () => props.fallback ?? DefaultFallback;
   const errorFallback = () => props.errorFallback ?? DefaultErrorFallback;
@@ -559,12 +571,12 @@ export const Renderer: Component<IRendererProps> = (props) => {
   // DEV-validation. Запускается на каждое изменение `props.schema`, но
   // warn'ит каждую уникальную проблему только один раз.
   createEffect(() => {
-    validateSchema(props.schema, warnedSchemaIssues);
+    validateSchema(schema(), warnedSchemaIssues);
   });
 
   const interactionsByNode = createMemo(() => {
     const idx: Record<NodeId, IInteraction[]> = {};
-    for (const it of activeInteractions(props.schema.interactions, mode(), warnedInline)) {
+    for (const it of activeInteractions(schema().interactions, mode(), warnedInline)) {
       if (!idx[it.nodeId]) idx[it.nodeId] = [];
       idx[it.nodeId].push(it);
     }
@@ -574,8 +586,8 @@ export const Renderer: Component<IRendererProps> = (props) => {
   return (
     <Suspense fallback={props.loadingFallback}>
       <RenderNode
-        nodeId={props.schema.components.root}
-        schema={props.schema}
+        nodeId={schema().components.root}
+        schema={schema()}
         registry={props.registry}
         mode={mode()}
         fallback={fallback()}
