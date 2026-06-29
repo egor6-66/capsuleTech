@@ -28,12 +28,12 @@ const demoSchema = {
         id: 'hint',
         type: 'ui.Typography',
         parentId: 'root',
-        children: [],
+        children: [] as string[],
         props: { variant: 'muted', children: 'web-renderer · Renderer.View' },
       },
     },
   },
-} as const;
+};
 
 /**
  * Display — читает контекст сверху (Controllers.Canvas) и логирует при изменении.
@@ -52,13 +52,17 @@ const Display = Widget((Ui) => {
     console.log('[canvas:display] text from context →', ctx.store.ctx.data?.text);
   });
 
+  // Схема для рендерера: присланная хостом (setComposition) → она, иначе demoSchema.
+  // Реактивно — приход schema в контекст перерисует Renderer.View.
+  const activeSchema = () => (ctx.store.ctx.data?.schema ?? demoSchema) as typeof demoSchema;
+
   return (
     <Ui.Layout.Flex direction={'col'} gap={2} p={4}>
       <Ui.Typography>Universal Canvas — embedded ✓</Ui.Typography>
       <Ui.Button meta={{ tags: ['canvas-btn'] }}>Canvas own button</Ui.Button>
       <Ui.Typography>last: {ctx.store.ctx.data?.text ?? '—'}</Ui.Typography>
 
-      <Renderer.View schema={demoSchema} registry={{ ui: Ui }} mode="static" />
+      <Renderer.View schema={activeSchema()} registry={{ ui: Ui }} mode="static" />
     </Ui.Layout.Flex>
   );
 });
