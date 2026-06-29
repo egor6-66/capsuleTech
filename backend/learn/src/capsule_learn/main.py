@@ -3,6 +3,7 @@
 from fastapi import FastAPI
 
 from .modules.lang import router as lang_router
+from .modules.voice import router as voice_router
 
 app = FastAPI(title="capsule-learn", version="0.1.0")
 
@@ -13,3 +14,4 @@ def health() -> dict[str, str]:
 
 
 app.include_router(lang_router)
+app.include_router(voice_router)

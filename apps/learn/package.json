@@ -21,6 +21,8 @@
     "@capsuletech/web-query": "workspace:*",
     "@capsuletech/web-renderer": "workspace:*",
     "@capsuletech/web-learn": "workspace:*",
+    "@capsuletech/boost-layout": "workspace:*",
+    "@capsuletech/web-shell": "workspace:*",
     "@capsuletech/shared-zod": "workspace:*",
     "@kobalte/core": "^0.13.0",
     "@tanstack/router-core": "^1.169.0",

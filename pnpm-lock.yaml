@@ -114,6 +114,9 @@ importers:
 
   apps/learn:
     dependencies:
+      '@capsuletech/boost-layout':
+        specifier: workspace:*
+        version: link:../../packages/web/boost/layout
       '@capsuletech/shared-zod':
         specifier: workspace:*
         version: link:../../packages/shared/zod
@@ -135,6 +138,9 @@ importers:
       '@capsuletech/web-router':
         specifier: workspace:*
         version: link:../../packages/web/runtime/router
+      '@capsuletech/web-shell':
+        specifier: workspace:*
+        version: link:../../packages/web/domain/shell
       '@capsuletech/web-state':
         specifier: workspace:*
         version: link:../../packages/web/runtime/state
@@ -945,6 +951,9 @@ importers:
       '@capsuletech/web-core':
         specifier: workspace:*
         version: link:../runtime/core
+      '@capsuletech/web-router':
+        specifier: workspace:*
+        version: link:../runtime/router
       '@capsuletech/web-ui':
         specifier: workspace:*
         version: link:../kit/ui

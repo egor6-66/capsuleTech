@@ -9,19 +9,29 @@ DEFINED here but has no endpoints this iteration.
 from __future__ import annotations
 
 from sqlalchemy import (
-    Enum as SAEnum,
-)
-from sqlalchemy import (
+    JSON,
     ForeignKey,
     Index,
     Integer,
     String,
     UniqueConstraint,
 )
+from sqlalchemy import (
+    Enum as SAEnum,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
-from .enums import Level, Pos, Register, RelationType, Source, TagKind
+from .enums import (
+    Connotation,
+    Frequency,
+    Level,
+    Pos,
+    Register,
+    RelationType,
+    Source,
+    TagKind,
+)
 
 
 def _enum(enum_cls: type, name: str) -> SAEnum:
@@ -84,14 +94,53 @@ class Sense(Base):
     register: Mapped[Register | None] = mapped_column(
         _enum(Register, "register"), nullable=True
     )
-    frequency: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    frequency: Mapped[Frequency | None] = mapped_column(
+        _enum(Frequency, "frequency"), nullable=True
+    )
     lang: Mapped[str] = mapped_column(String, nullable=False, index=True)
     source: Mapped[Source] = mapped_column(
         _enum(Source, "source"), nullable=False, default=Source.AUTO
     )
 
+    # Rich lexical entry (ADR 064-A A2) — all nullable/optional.
+    pron_ru: Mapped[str | None] = mapped_column(String, nullable=True)
+    ipa: Mapped[str | None] = mapped_column(String, nullable=True)
+    image: Mapped[str | None] = mapped_column(String, nullable=True)
+    connotation: Mapped[Connotation | None] = mapped_column(
+        _enum(Connotation, "connotation"), nullable=True
+    )
+    intensity: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    synset: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    forms: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    collocations: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    nuance: Mapped[str | None] = mapped_column(String, nullable=True)
+    valency: Mapped[str | None] = mapped_column(String, nullable=True)
+
     word: Mapped[Word] = relationship(back_populates="senses")
     tags: Mapped[list[Tag]] = relationship(secondary=SenseTag.__table__, lazy="selectin")
+    examples: Mapped[list[SenseExample]] = relationship(
+        back_populates="sense", cascade="all, delete-orphan", lazy="selectin"
+    )
+
+
+class SenseExample(Base):
+    """First-class contextual example with its own phonetics (ADR 064-A A2)."""
+
+    __tablename__ = "sense_examples"
+    __table_args__ = (
+        UniqueConstraint("sense_id", "text", name="uq_sense_examples_sense_text"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    sense_id: Mapped[int] = mapped_column(
+        ForeignKey("senses.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    text: Mapped[str] = mapped_column(String, nullable=False)
+    pron_ru: Mapped[str | None] = mapped_column(String, nullable=True)
+    ru: Mapped[str | None] = mapped_column(String, nullable=True)
+    ipa: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    sense: Mapped[Sense] = relationship(back_populates="examples")
 
 
 class SenseRelation(Base):
