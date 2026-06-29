@@ -96,11 +96,8 @@ export const selectTriggerCva = cva(
  * viewport edges — a detached panel tolerates that offset; a seamless single-block
  * would not (visible seam misalignment).
  *
- * All four corners are rounded. NO border: on dark themes `--border` sits a
- * notch lighter than `--popover`, so a 1px `border-border` read as a bright
- * (≈white) rim around the floating panel. Separation is carried by `shadow-md`
- * alone (the panel floats with a gutter, so it never needs an edge line). No
- * top-edge tricks.
+ * All four corners are rounded, full border uses `border-border` (matching
+ * `Dropdown.Content` canon). No top-edge tricks.
  *
  * No panel padding — items run edge-to-edge so their highlight background spans the
  * full width; content spacing lives on the item (see `selectItemCva`).
@@ -118,7 +115,7 @@ export const selectContentCva = cva(
     // overflow-hidden: clip the rounded corners + clip the grid-rows collapse;
     // the scroll + max-height live on the inner content wrapper (see select.tsx).
     'overflow-hidden rounded-md',
-    'bg-popover text-popover-foreground shadow-md outline-none',
+    'border border-border bg-popover text-popover-foreground shadow-md outline-none',
   ].join(' '),
   {
     variants: {},
