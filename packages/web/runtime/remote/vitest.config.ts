@@ -9,9 +9,11 @@ export default defineConfig({
     // jsdom required for Solid render + IframeTransport (window.dispatchEvent, MessageEvent).
     environment: 'jsdom',
     globals: false,
-    // Explicit empty setupFiles prevents vite-plugin-solid from auto-adding
-    // @testing-library/jest-dom/vitest which is not installed in this package.
-    setupFiles: [],
+    // vitest.setup.ts stubs window.matchMedia (jsdom omits it). web-style's
+    // theme switcher reads matchMedia at module-load — pulled transitively by
+    // RemoteComponent (host-theme forwarding) and web-core/bootstrap. The setup
+    // file does NOT import @testing-library/jest-dom (not installed here).
+    setupFiles: ['./vitest.setup.ts'],
     // Several deps ship .jsx/.tsx source files — inline so Vite transforms them.
     server: {
       deps: {

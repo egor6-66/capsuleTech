@@ -132,6 +132,14 @@ export interface IRemoteComponentProps {
    *  - 'component' — shadow-DOM realm. RESERVED SEAM — not implemented in Phase 1.
    */
   mode?: 'app' | 'component';
+  /**
+   * Опц. оверрайд темы remote'а. НЕ задан → remote наследует глобальную тему
+   * хоста (useTheme/useDarkMode). Задан → форвардится вместо неё (per-remote
+   * оверрайд, напр. студия задаёт тему канваса отдельно от темы своего хрома).
+   * Host-side wire (как `config`) — НЕ часть config-envelope, едет в __capsule_theme__.
+   */
+  theme?: string;
+  dark?: boolean;
   // children: INTENTIONALLY ABSENT — composition across iframe frame boundary
   // requires a separate architectural ADR (ADR-053 Decision 6 / risk #3).
   // Runtime silently ignores children if passed via any-cast.
@@ -147,9 +155,7 @@ export interface IRemoteComponentProps {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** `'markerClick'` → `'MarkerClick'` (capitalize the first char). */
-type PascalCase<S extends string> = S extends `${infer H}${infer T}`
-  ? `${Uppercase<H>}${T}`
-  : S;
+type PascalCase<S extends string> = S extends `${infer H}${infer T}` ? `${Uppercase<H>}${T}` : S;
 
 /**
  * `on<Event>` handler props derived from a remote's `out` map:
@@ -187,6 +193,11 @@ export type IRemoteViewProps<N extends string> = [N] extends [keyof CapsuleRemot
       fallback?: (status: 'loading' | 'error' | 'success') => JSX.Element;
       config?: Record<string, unknown>;
       mode?: 'app' | 'component';
+      // Theme override (System-class host-side wire, как config/mode) — keeps the
+      // typed known-name path consistent with IRemoteComponentProps so a studio can
+      // set a known remote's theme independently of its own chrome (brief 2/2).
+      theme?: string;
+      dark?: boolean;
     } & (CapsuleRemotes[N] extends { out: infer Out extends Record<string, unknown> }
       ? RemoteOutHandlers<Out>
       : Record<never, never>)

@@ -30,6 +30,7 @@
 import { EMBED_PROTOCOL } from '@capsuletech/web-core/bootstrap';
 import { useEmitOptional } from '@capsuletech/web-core/events';
 import { trace } from '@capsuletech/web-profiler/trace';
+import { useDarkMode, useTheme } from '@capsuletech/web-style';
 import {
   createEffect,
   createMemo,
@@ -104,6 +105,14 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
   // transport() callers stay untouched.
   const transport = createMemo(() => rawProps.transports[0]);
 
+  // Theme source = optional per-remote override ?? host global theme (ADR, brief 2/2).
+  // useTheme/useDarkMode are reactive host signals; the getters track BOTH the prop
+  // (override) and the signal, so sendThemeEnvelope re-runs on either change.
+  const hostTheme = useTheme(); // Accessor<string>
+  const hostDark = useDarkMode(); // Accessor<boolean>
+  const theme = () => rawProps.theme ?? hostTheme();
+  const dark = () => rawProps.dark ?? hostDark();
+
   // app-mode iframe URL = app root index + identity query (ADR 059 D1, Brief 2 entry).
   // module.url is the app origin; new URL() handles trailing-slash + encoding. Keys
   // come from EMBED_PROTOCOL, never literals.
@@ -145,6 +154,21 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
     });
   };
 
+  // Theme envelope — same wire as config, separate event (EMBED_PROTOCOL.themeEvent).
+  // Host→app: the embedded app applies it (web-core in the iframe). Carries the
+  // override-or-host theme; NOT part of the config-override patch (ADR 059 D4).
+  const sendThemeEnvelope = (t: ITransport = transport()!) => {
+    t.send({
+      from: EMBED_PROTOCOL.hostTarget,
+      fromInstance: EMBED_PROTOCOL.hostTarget,
+      to: rawProps.name,
+      toInstance: instanceId,
+      sessionId: rawProps.sessionId,
+      eventName: EMBED_PROTOCOL.themeEvent,
+      payload: { theme: theme(), dark: dark() },
+    });
+  };
+
   // ─── Ready handshake + mount timeout ───────────────────────────────────────
   // The app posts EMBED_PROTOCOL.readyEvent (from === name; the self-contained app
   // does not know the host-side instanceId, so we match by name — sessionId is
@@ -169,6 +193,7 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
         ready = true;
         clearTimeout(timer);
         sendConfigEnvelope(t);
+        sendThemeEnvelope(t); // initial theme, as soon as the app-listener is up
       } else if (msg.eventName === EMBED_PROTOCOL.mountedEvent) {
         setMounted(true);
       } else if (msg.eventName === EMBED_PROTOCOL.unloadEvent) {
@@ -208,6 +233,17 @@ export const RemoteComponent = (rawProps: IRemoteComponentInternalProps): JSX.El
     const t = transport();
     if (!t) return;
     sendConfigEnvelope(t);
+  });
+
+  // ─── Reactive theme envelope ──────────────────────────────────────────────
+  // Re-sends on host-theme change OR override-prop change (post-ready updates
+  // land). Mirror of the reactive config effect — reads theme()/dark() so it
+  // subscribes to both the prop and the host signal. Pre-ready reactive sends are
+  // lost harmlessly; the initial theme is guaranteed by the ready-send above.
+  createEffect(() => {
+    const t = transport();
+    if (!t) return;
+    sendThemeEnvelope(t);
   });
 
   // ─── Route incoming app→host events → on* prop OR enclosing host-logic (ADR 060 D1 / B) ──
