@@ -4059,21 +4059,32 @@ var t = (t2) => t2(Zod);
 
 // contract.ts
 var contract_default = t((z2) => ({
-  // host → app: события, диспатчащиеся в корень канваса
+  // host → app: данные, инжектируемые в корневую HCA-шину канваса
   in: {
-    setMarkers: z2.object({
-      markers: z2.array(
-        z2.object({
-          id: z2.string(),
-          lat: z2.number().min(-90).max(90),
-          lng: z2.number().min(-180).max(180)
+    ping: z2.object({
+      value: z2.string(),
+      ts: z2.number()
+    }),
+    // host → app: композиция для рендера. Хост (студия/палитра) шлёт JSON-схему,
+    // канвас кормит ею Renderer.View. Schema валидируется loosely (envelope) —
+    // глубокая типизация дерева нод в Zod дорогая, рендерер сам устойчив к форме.
+    setComposition: z2.object({
+      schema: z2.object({
+        components: z2.object({
+          root: z2.string(),
+          nodes: z2.record(z2.any())
         })
-      )
+      })
     })
   },
-  // app → host: корневой surface канваса
+  // app → host: событие собственной кнопки канваса с данными. Standalone —
+  // обрабатывается локально; embedded — форвардится хосту ВМЕСТО локального
+  // хендлера (ADR 060 D1), хост ловит у себя.
   out: {
-    mounted: z2.object({ name: z2.string(), ts: z2.number() })
+    canvasClick: z2.object({
+      value: z2.string(),
+      ts: z2.number()
+    })
   }
 }));
 export {

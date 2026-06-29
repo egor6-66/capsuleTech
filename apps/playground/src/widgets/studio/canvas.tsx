@@ -5,13 +5,13 @@
  * ADR 060: ремоут зарегистрирован в `capsule.app.ts → remotes` (D5, Provider читает реестр);
  * `onMounted` типизирован из vendored-контракта (`out.mounted` → `{ name, ts }`), без импортов (D6).
  */
+// Features.Canvas обёртка переехала на уровень студийной страницы (web-studio/index.tsx),
+// чтобы обнимать и палитру, и канвас (сток баблинга onPresetSelect). Здесь — только embed.
 const Canvas = Widget((Ui) => (
-  <Features.Canvas>
-    <Ui.Layout.Flex direction={'col'} h={'full'} w={'full'}>
-      <Ui.Button meta={{ tags: ['ping'] }}>Ping remote</Ui.Button>
-      <Remote.View name="universal-canvas" instanceId="main" />
-    </Ui.Layout.Flex>
-  </Features.Canvas>
+  <Ui.Layout.Flex direction={'col'} h={'full'} w={'full'}>
+    <Ui.Button meta={{ tags: ['ping'] }}>Ping remote</Ui.Button>
+    <Remote.View name="universal-canvas" instanceId="main" />
+  </Ui.Layout.Flex>
 ));
 
 export default Canvas;

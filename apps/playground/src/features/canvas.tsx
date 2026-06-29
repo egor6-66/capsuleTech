@@ -30,6 +30,20 @@ const Canvas = Feature(({ utils }) => {
           // eslint-disable-next-line no-console
           console.log('[host:canvas] ← remote canvasClick:', p);
         },
+
+        // палитра студио (WebStudio.ComponentsPalette) эмитнула onPresetSelect (useEmit,
+        // баббл к этому Feature) → переправляем схему в канвас как host→app setComposition.
+        // Канвас не знает про палитру — получает «вот схема, рисуй». Это точка внешних
+        // сайд-эффектов аппа на студийное событие.
+        onPresetSelect: ({ target }) => {
+          // payload.schema — ISchema от палитры; форма совместима с contract.in.setComposition.
+          const p = target.payload as {
+            schema: { components: { root: string; nodes: Record<string, never> } };
+          };
+          // eslint-disable-next-line no-console
+          console.log('[host:canvas] ← palette onPresetSelect → dispatch setComposition');
+          canvas.dispatch('setComposition', { schema: p.schema });
+        },
       },
     },
   };

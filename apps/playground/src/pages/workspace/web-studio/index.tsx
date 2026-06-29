@@ -18,7 +18,15 @@ const WebStudioLayout = Page((Ui) => (
             initialSize: 0.04,
           },
           main: {
-            children: <Ui.Outlet />,
+            // Features.Canvas обнимает весь студийный фрейм (палитра + канвас под Outlet'ом) —
+            // он сток баблинга для onPresetSelect палитры И держит remote-handle для dispatch
+            // в канвас. Раньше обёртка была в Widgets.Studio.Canvas (только канвас) — палитра,
+            // соседний слот, до неё не добабблывалась.
+            children: (
+              <Features.Canvas>
+                <Ui.Outlet />
+              </Features.Canvas>
+            ),
           },
         }}
       />

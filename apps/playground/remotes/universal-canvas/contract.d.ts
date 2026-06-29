@@ -1,17 +1,22 @@
 // generated contract artifact (ADR 060 Phase 1) — do not edit
 export interface InEvents {
-  "setMarkers": {
-    "markers": {
-      "id": string;
-      "lat": number;
-      "lng": number;
-    }[];
+  "ping": {
+    "value": string;
+    "ts": number;
+  };
+  "setComposition": {
+    "schema": {
+      "components": {
+        "root": string;
+        "nodes": Record<string, never>;
+      };
+    };
   };
 }
 
 export interface OutEvents {
-  "mounted": {
-    "name": string;
+  "canvasClick": {
+    "value": string;
     "ts": number;
   };
 }

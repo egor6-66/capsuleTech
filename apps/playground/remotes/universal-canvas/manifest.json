@@ -2,9 +2,10 @@
   "name": "@capsuletech/universal-canvas",
   "version": "0.0.1",
   "in": [
-    "setMarkers"
+    "ping",
+    "setComposition"
   ],
   "out": [
-    "mounted"
+    "canvasClick"
   ]
 }
