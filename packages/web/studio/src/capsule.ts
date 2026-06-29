@@ -8,11 +8,12 @@
  *
  * Vite-плагин (CapsuleRegistryPlugin) читает этот файл через jiti и генерирует
  * глобалы:
+ *   - `WebStudio.Canvas`             → тонкий remote-embed канваса (`<Remote.View>`)
  *   - `WebStudio.ComponentsPalette`  → палитра компонентов (click в store / drag в creator)
  *   - `WebStudio.Info`               → info-панель (контракт / манифест / readme)
  *   - `WebStudio.Navigation`         → навигация по разделам студии
  *   - `WebStudio.Props`              → редактор пропсов выбранного пресета
- *   - `WebStudio.Provider`           → провайдер студии (общий DnDProvider)
+ *   - `WebStudio.Provider`           → провайдер студии (DnD + Remote + связка палитра→канвас)
  *   - `WebStudio.Tree`               → иерархия композиции (creator-mode)
  *   - `WebStudio.Welcome`            → welcome/index-fallback для /workspace/web-studio
  *
@@ -21,6 +22,7 @@
  */
 
 import { defineCapsuleModule } from '@capsuletech/web-core/module';
+import { Canvas } from './canvas';
 import { InfoPanel } from './info';
 import { PropsPanel } from './inspector';
 import { Navigation } from './navigation';
@@ -32,6 +34,7 @@ import { Welcome } from './welcome';
 export default defineCapsuleModule({
   name: 'WebStudio',
   components: {
+    Canvas,
     ComponentsPalette,
     Info: InfoPanel,
     Navigation,

@@ -1377,6 +1377,9 @@ importers:
       '@capsuletech/web-docs':
         specifier: workspace:*
         version: link:../docs
+      '@capsuletech/web-remote':
+        specifier: workspace:*
+        version: link:../runtime/remote
       '@capsuletech/web-renderer':
         specifier: workspace:*
         version: link:../runtime/renderer
