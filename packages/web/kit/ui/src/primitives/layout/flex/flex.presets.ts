@@ -4,18 +4,44 @@
  * Каждый preset — JSON-схема для Renderer'а (`@capsuletech/web-renderer`);
  * палитра рендерит превью через `<Renderer schema mode="static" />`.
  *
- * Контейнерные пресеты — это «формы layout'а»; превью показывает пустой
- * Flex-блок с min-height (через `var(--size-slot)` в пустом состоянии), юзер
- * после DnD'а наполняет его детьми.
+ * Контейнерные пресеты — это «формы layout'а». Без детей Flex-блок невидим
+ * (прозрачный), поэтому каждый preset несёт `placeholderStyle`: пунктирный
+ * бордер + приглушённый фон + min-height — «пустой контейнер виден как
+ * контейнер» в канвасе/палитре. Юзер после DnD'а наполняет его детьми
+ * (и чистит scaffold-стиль через инспектор).
+ *
+ * Стиль — инлайн через CSS-токены (НЕ Tailwind-классы): не требует
+ * content-scan в приложении-консьюмере. Тот же приём, что в `flex.manifest`
+ * (`defaultProps.style.padding = var(--space-card)`).
  */
 
 import type { IPreset } from '../../../manifest/types';
+
+/**
+ * Scaffold-стиль пустого контейнера — делает dropped/selected Flex видимым.
+ * Все значения — themed CSS-токены, поэтому корректны в любой теме без
+ * Tailwind-сканирования у консьюмера.
+ */
+const placeholderStyle: Record<string, string> = {
+  width: '100%',
+  'min-height': 'var(--size-slot)',
+  padding: 'var(--space-card)',
+  border: '1px dashed var(--color-border)',
+  'border-radius': 'var(--radius-md)',
+  background: 'var(--color-muted)',
+};
 
 const singleFlex = (props: Record<string, unknown>): IPreset['schema'] => ({
   components: {
     root: 'flex',
     nodes: {
-      flex: { id: 'flex', type: 'ui.Layout.Flex', parentId: null, children: [], props },
+      flex: {
+        id: 'flex',
+        type: 'ui.Layout.Flex',
+        parentId: null,
+        children: [],
+        props: { ...props, style: placeholderStyle },
+      },
     },
   },
 });
