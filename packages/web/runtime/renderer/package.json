@@ -9,6 +9,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "default": "./dist/index.mjs"
+    },
+    "./capsule": {
+      "types": "./dist/capsule.d.ts",
+      "import": "./dist/capsule.mjs",
+      "default": "./dist/capsule.mjs"
     }
   },
   "files": [
@@ -21,7 +26,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@capsuletech/web-contract": "workspace:*"
+    "@capsuletech/web-contract": "workspace:*",
+    "@capsuletech/web-core": "workspace:*"
   },
   "peerDependencies": {
     "solid-js": "^1.9.12"

@@ -102,7 +102,15 @@ const Content = (props: ISelectContentProps) => {
       >
         <div class="overflow-hidden">
           <div class="overflow-auto max-h-[var(--kb-popper-content-available-height)]">
-            <KobalteSelect.Listbox />
+            {/*
+              outline-none: on open Kobalte auto-focuses the Listbox, so the
+              global base rule `* { outline-ring/50 }` (web-style index.css)
+              paints a square (no-radius) focus outline on it — `--ring` is a
+              light grey, so on dark themes it reads as a white rim that clears
+              once focus resolves. The highlighted item (data-[highlighted]) is
+              the real focus affordance, so the Listbox needs no outline.
+            */}
+            <KobalteSelect.Listbox class="outline-none" />
           </div>
         </div>
       </KobalteSelect.Content>

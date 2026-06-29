@@ -1241,6 +1241,9 @@ importers:
       '@capsuletech/web-contract':
         specifier: workspace:*
         version: link:../contract
+      '@capsuletech/web-core':
+        specifier: workspace:*
+        version: link:../core
       solid-js:
         specifier: 1.9.12
         version: 1.9.12
@@ -1374,6 +1377,9 @@ importers:
       '@capsuletech/web-docs':
         specifier: workspace:*
         version: link:../docs
+      '@capsuletech/web-remote':
+        specifier: workspace:*
+        version: link:../runtime/remote
       '@capsuletech/web-renderer':
         specifier: workspace:*
         version: link:../runtime/renderer

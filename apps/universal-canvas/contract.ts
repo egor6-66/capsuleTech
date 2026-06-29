@@ -7,6 +7,17 @@ export default defineContract((z) => ({
       value: z.string(),
       ts: z.number(),
     }),
+    // host → app: композиция для рендера. Хост (студия/палитра) шлёт JSON-схему,
+    // канвас кормит ею Renderer.View. Schema валидируется loosely (envelope) —
+    // глубокая типизация дерева нод в Zod дорогая, рендерер сам устойчив к форме.
+    setComposition: z.object({
+      schema: z.object({
+        components: z.object({
+          root: z.string(),
+          nodes: z.record(z.any()),
+        }),
+      }),
+    }),
   },
   // app → host: событие собственной кнопки канваса с данными. Standalone —
   // обрабатывается локально; embedded — форвардится хосту ВМЕСТО локального

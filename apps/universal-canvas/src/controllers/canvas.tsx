@@ -19,6 +19,8 @@ const Canvas = Controller(({ utils, standalone }) => ({
 
   context: {
     text: null as string | null,
+    // схема для рендерера: null → Display показывает demoSchema-fallback.
+    schema: null as unknown,
   },
 
   states: {
@@ -29,6 +31,16 @@ const Canvas = Controller(({ utils, standalone }) => ({
         // eslint-disable-next-line no-console
         console.log(`[canvas:ping] standalone=${standalone} ← ${p.value} @ ${p.ts}`);
         store.update({ text: `${p.value} @ ${p.ts} (standalone=${standalone})` });
+      },
+
+      // host→app (contract.in.setComposition): хост прислал JSON-схему → кладём в
+      // контекст, Display кормит ею Renderer.View. Источник у хоста — палитра
+      // студии (onPresetSelect), но канвас этого не знает: просто «вот схема, рисуй».
+      setComposition: ({ target, store }) => {
+        const p = target.payload as { schema: unknown };
+        // eslint-disable-next-line no-console
+        console.log('[canvas:setComposition] ← schema received');
+        store.update({ schema: p.schema });
       },
 
       // своя кнопка → один клик бьёт в оба имени:

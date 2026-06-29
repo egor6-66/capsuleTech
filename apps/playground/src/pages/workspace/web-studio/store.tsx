@@ -8,8 +8,7 @@ const Store = Page((_Ui) => (
         initialSize: 0.25,
       },
       main: {
-        // children: <Remote.View name="universal-canvas" instanceId="main" />,
-        children: <Widgets.Studio.Canvas />,
+        children: <WebStudio.Canvas />,
         swapGroup: 'widgets',
       },
       rightBar: {

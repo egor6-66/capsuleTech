@@ -8,7 +8,7 @@ const Creator = Page((Ui) => (
         initialSize: 0.25,
       },
       main: {
-        children: <Widgets.Studio.Canvas />,
+        children: <WebStudio.Canvas />,
         swapGroup: 'widgets',
       },
       rightBar: {
