@@ -1,0 +1,32 @@
+import { z } from '@capsuletech/shared-zod';
+import { defineContract, rule } from '@capsuletech/web-contract';
+
+/**
+ * ListContract — декларативный контракт List-контейнера для studio inspector,
+ * palette preview, DnD-валидации.
+ *
+ * List — container, НЕ leaf. Палитра использует СЕМАНТИЧЕСКИЙ режим (plain
+ * children-ноды). Batch (`data` + `item.use`) и render-prop (`items` + fn) —
+ * runtime-режимы, в сериализуемый палитра-контракт не входят. `class` / `style` —
+ * inspector-only, расширяются в propsSchema манифеста.
+ *
+ * @see list.manifest.tsx — propsSchemaOf
+ * @see list.presets.ts — пресеты для палитры студио
+ */
+export const ListContract = defineContract({ name: 'List', kind: 'primitive' }, [
+  rule.props(
+    z.object({
+      // Ось списка: vertical = колонка (default), horizontal = строка.
+      orientation: z.enum(['vertical', 'horizontal']).optional(),
+      // default — с padding/gap; flush — edge-to-edge (p-0 gap-0) для вложения в Card/Panel.
+      variant: z.enum(['default', 'flush']).optional(),
+    }),
+  ),
+  rule.variants(['default', 'flush']),
+  rule.styleSlots(['root']),
+  rule.examples([
+    { name: 'vertical', props: { orientation: 'vertical', variant: 'default' } },
+    { name: 'horizontal', props: { orientation: 'horizontal', variant: 'default' } },
+    { name: 'flush', props: { orientation: 'vertical', variant: 'flush' } },
+  ]),
+]);
