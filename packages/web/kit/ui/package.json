@@ -363,7 +363,7 @@
     "@capsuletech/web-profiler": "workspace:*",
     "@corvu/resizable": "^0.2.5",
     "class-variance-authority": "^0.7.1",
-    "lucide-solid": "^1.16.0"
+    "lucide-solid": "^1.22.0"
   },
   "peerDependencies": {
     "@capsuletech/web-style": "workspace:*",
@@ -377,17 +377,17 @@
     "@capsuletech/lib-builder": "workspace:*",
     "@capsuletech/vite-builder": "workspace:*",
     "@capsuletech/web-router": "workspace:*",
-    "@tailwindcss/vite": "^4.2.4",
+    "@tailwindcss/vite": "^4.3.2",
     "@tanstack/solid-table": "^8.21.3",
     "@testing-library/jest-dom": "^6.9.1",
-    "@vitest/browser": "4.1.6",
-    "@vitest/browser-playwright": "4.1.6",
-    "esbuild": "0.27.7",
+    "@vitest/browser": "4.1.9",
+    "@vitest/browser-playwright": "4.1.9",
+    "esbuild": "0.28.1",
     "jsdom": "~29.1.1",
-    "playwright": "^1.52.0",
+    "playwright": "^1.61.1",
     "storybook": "^10",
     "storybook-solidjs-vite": "^10",
-    "vite": "^8.0.13",
+    "vite": "^8.1.0",
     "vite-plugin-solid": "^2.11.12",
     "vite-tsconfig-paths": "^6.1.1"
   }
