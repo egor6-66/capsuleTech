@@ -5,7 +5,7 @@ group: web_base
 zone: studio
 status: alpha
 priority: P1
-last-updated: 2026-06-12
+last-updated: 2026-06-30
 ---
 
 # OWNERSHIP — @capsuletech/web-studio
@@ -158,6 +158,33 @@ HCA-integration subpath. Зависит на `@capsuletech/web-core`.
 Регистрация в app: `packages: ['@capsuletech/web-studio']` в `capsule.app.ts`.
 После регистрации доступны: `WebStudio.Overlay` (компонент), `Controllers.WebStudio` (HCA-Controller).
 
+Connected-панели регистрируются как `WebStudio.*` глобалы через `src/capsule.ts`
+(не subpath): `Canvas`, `ComponentsPalette`, `Info`, `Navigation`, `Props`,
+`Provider`, `Styles`, `Tree`, `Welcome`.
+
+### `src/styles/` — canvas-local theme override (модуль `WebStudio.Styles`)
+
+Панель переключения темы **канваса** (remote `universal-canvas`) независимо от
+темы хрома самой студии. Не subpath — connected-модуль через `capsule.ts`.
+
+| Экспорт (`src/styles/index.ts`) | Описание |
+|---|---|
+| `useCanvasTheme()` | Shared singleton (паттерн `selection.ts`): `theme()` / `dark()` / `setTheme(name\|undefined)` / `setDark(v\|undefined)` / `reset()`. `undefined` = наследовать host. |
+| `StylesPanel` | Connected-панель (структура как `inspector/Inspector.tsx`): always-visible switcher (dark-toggle + reset, не сворачивается) + `Accordion` со списком тем (свой item, чек-маркер на активной). Зарегистрирована как `WebStudio.Styles`. |
+| `type ICanvasThemeState` / `IWebStudioCanvasTheme` | Типы override-state и hook'а. |
+
+**Отражение host-стейта (no-inversion):** активная тема / режим панели считаются
+как `override ?? host` (`useTheme()` / `useDarkMode()` из web-style). Иначе при
+пустом override (наследуем host) тоггл показывал бы `false`, хотя канвас на
+тёмном host'е — визуальная инверсия (баг-репорт 2026-06-30). Чек-маркер тоже на
+реально активной (host) теме, когда override не задан.
+
+**Провод:** `Canvas.tsx` рендерит `<Remote theme={ct.theme()} dark={ct.dark()} />`.
+`undefined`-проп → `RemoteComponent` делает `?? hostTheme()` (наследует host).
+Override **не персистится** (v1, in-memory как `selection`), **не трогает**
+`capsule-theme` localStorage и **не зовёт** `web-style.setTheme` (иначе
+перекрасился бы хром студии). web-remote трогать не нужно — провод готов (#453).
+
 ## Известные ограничения / quirks
 
 1. **Multi-entry vite build** — все subpaths обязаны присутствовать в dist.
@@ -165,6 +192,7 @@ HCA-integration subpath. Зависит на `@capsuletech/web-core`.
 3. **`/generators` — детерминизм через seed** — mulberry32 RNG, никакого `Math.random`.
 4. **`canvasIntent`/`treeIntent` используют DOM** — framework-agnostic (DOM, не web-core). Тесты через jsdom с моком `elementFromPoint`.
 5. **`rules.ts` — composite-строгость**: composite-части (Card.Header и т.п.) принимаются только контейнером с явным `accepts` — иначе могут потеряться в чужом дереве.
+6. **`styles/` — `DISCOVERED_THEMES` = темы host-бандла** (`@capsuletech/web-style`). Если canvas-app бандлит другой набор тем, список панели может разойтись с реально доступными в канвасе. В v1 принимаем (оба используют один web-style glob). Future: тянуть доступные темы из манифеста canvas-remote.
 
 ## Тест-покрытие
 
@@ -176,6 +204,8 @@ HCA-integration subpath. Зависит на `@capsuletech/web-core`.
 | `generators/__tests__/` | engine, form, fuzzer, rng, templates |
 | `controllers/__tests__/WebStudioController.test.ts` | onSelect toggle, onDrop mutates tree, onMark set/unset, onDragEnd clear, drag-cycle |
 | `controllers/__tests__/WebStudioOverlay.test.tsx` | chrome по ctx, emit onSelect на клик, pointer-events drag, линия вставки, цветная метка |
+| `styles/__tests__/canvas-theme.test.ts` | singleton: set/reset/undefined-fallback семантика, общий стейт |
+| `styles/__tests__/StylesPanel.test.tsx` | рендер списка из мок-DISCOVERED_THEMES, no-inversion (override пуст → отражает host), active-checkmark, клик→setTheme, toggle→setDark, reset→undefined (jsdom) |
 
 ## Roadmap
 
