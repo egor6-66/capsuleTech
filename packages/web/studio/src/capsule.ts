@@ -14,6 +14,7 @@
  *   - `WebStudio.Navigation`         → навигация по разделам студии
  *   - `WebStudio.Props`              → редактор пропсов выбранного пресета
  *   - `WebStudio.Provider`           → провайдер студии (DnD + Remote + связка палитра→канвас)
+ *   - `WebStudio.Styles`             → canvas-local theme/dark override (панель, не дропдаун)
  *   - `WebStudio.Tree`               → иерархия композиции (creator-mode)
  *   - `WebStudio.Welcome`            → welcome/index-fallback для /workspace/web-studio
  *
@@ -28,6 +29,7 @@ import { PropsPanel } from './inspector';
 import { Navigation } from './navigation';
 import { ComponentsPalette } from './palette';
 import { StudioProvider } from './providers';
+import { StylesPanel } from './styles';
 import { TreePanel } from './tree';
 import { Welcome } from './welcome';
 
@@ -40,6 +42,7 @@ export default defineCapsuleModule({
     Navigation,
     Props: PropsPanel,
     Provider: StudioProvider,
+    Styles: StylesPanel,
     Tree: TreePanel,
     Welcome,
   },

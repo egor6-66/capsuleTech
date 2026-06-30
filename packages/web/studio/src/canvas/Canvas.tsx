@@ -13,6 +13,11 @@
  * `instanceId="main"` совпадает с `remote(canvasName, 'main')` в `CanvasBinding`
  * → IframeTransport роутит dispatch в нужный iframe.
  *
+ * `theme`/`dark` — canvas-local override из `useCanvasTheme()` (singleton). При
+ * `undefined` `RemoteComponent` наследует host-тему (`?? hostTheme()`); смена
+ * override реактивна — getter'ы трекаются, web-remote ре-шлёт envelope в iframe.
+ * Так тема канваса меняется независимо от хрома студии.
+ *
  * Регистрируется как `WebStudio.Canvas` через `../capsule` (ADR 033).
  */
 
@@ -20,14 +25,16 @@ import { useRemote } from '@capsuletech/web-remote';
 import { Flex } from '@capsuletech/web-ui/flex';
 import type { JSX } from 'solid-js';
 import { useCanvasName } from '../providers/canvasContext';
+import { useCanvasTheme } from '../styles/canvas-theme';
 
 const CanvasComponent = (): JSX.Element => {
   const canvasName = useCanvasName();
   const { Remote } = useRemote();
+  const ct = useCanvasTheme();
 
   return (
     <Flex h={'full'} w={'full'}>
-      <Remote name={canvasName} instanceId="main" />
+      <Remote name={canvasName} instanceId="main" theme={ct.theme()} dark={ct.dark()} />
     </Flex>
   );
 };
