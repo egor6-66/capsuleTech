@@ -1,7 +1,14 @@
+import { z } from '@capsuletech/shared-zod';
 import { defineContract, rule } from '@capsuletech/web-contract';
 
 export const CardContract = defineContract({ name: 'Card', kind: 'composition' }, [
   rule.accepts(['Card.Header', 'Card.Title', 'Card.Description', 'Card.Content', 'Card.Footer']),
+  rule.props(
+    z.object({
+      // Тень-возвышение карточки (shadow-{level}). Default 'sm' = текущая тень.
+      elevation: z.enum(['none', 'sm', 'md', 'lg', 'xl']).optional(),
+    }),
+  ),
   rule.styleSlots(['root', 'header', 'title', 'description', 'content', 'footer']),
   rule.examples([
     {

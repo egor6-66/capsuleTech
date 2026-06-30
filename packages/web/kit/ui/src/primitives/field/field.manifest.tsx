@@ -1,6 +1,13 @@
-import { z } from '@capsuletech/shared-zod';
+import { type ZodObject, type ZodTypeAny, z } from '@capsuletech/shared-zod';
+import { propsSchemaOf } from '@capsuletech/web-contract';
 import { AlertCircle, FormInput, Inbox, Info, Tag } from '../../icons';
 import type { IPrimitiveManifestEntry } from '../../manifest/types';
+import { FieldContract } from './field.contract';
+import { fieldPresets } from './field.presets';
+
+// Contract = root for props (orientation). Manifest extends with Inspector-only field (class).
+const fieldBaseProps = propsSchemaOf<ZodObject<Record<string, ZodTypeAny>>>(FieldContract);
+if (!fieldBaseProps) throw new Error('FieldContract has no props schema — add rule.props(...)');
 
 const FIELD_DIRECT_CHILDREN = new Set([
   'ui.Field.Label',
@@ -18,10 +25,15 @@ export const FieldManifest: IPrimitiveManifestEntry = {
   icon: () => <FormInput size={16} />,
   description: 'Form-field: метка + ввод + описание/ошибка',
   accepts: (childType) => FIELD_DIRECT_CHILDREN.has(childType),
-  defaultProps: {},
-  propsSchema: z.object({
+  contract: FieldContract,
+  defaultProps: {
+    orientation: 'vertical',
+  },
+  styleSlots: ['root'],
+  propsSchema: fieldBaseProps.extend({
     class: z.string().optional(),
   }),
+  presets: fieldPresets,
 };
 
 export const FieldLabelManifest: IPrimitiveManifestEntry = {

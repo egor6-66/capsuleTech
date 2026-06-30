@@ -1,7 +1,13 @@
-import { z } from '@capsuletech/shared-zod';
+import { type ZodObject, type ZodTypeAny, z } from '@capsuletech/shared-zod';
+import { propsSchemaOf } from '@capsuletech/web-contract';
 import { AlignJustify, AlignLeft, CreditCard, Heading1, PanelBottom, Type } from '../../icons';
 import type { IPrimitiveManifestEntry } from '../../manifest/types';
 import { CardContract } from './card.contract';
+import { cardPresets } from './card.presets';
+
+// Contract = root for props (elevation). Manifest extends with Inspector-only field (class).
+const cardBaseProps = propsSchemaOf<ZodObject<Record<string, ZodTypeAny>>>(CardContract);
+if (!cardBaseProps) throw new Error('CardContract has no props schema — add rule.props(...)');
 
 const CARD_DIRECT_CHILDREN = new Set([
   'ui.Card.Header',
@@ -25,9 +31,10 @@ export const CardManifest: IPrimitiveManifestEntry = {
     class: 'w-full max-w-sm',
   },
   styleSlots: ['root'],
-  propsSchema: z.object({
+  propsSchema: cardBaseProps.extend({
     class: z.string().optional(),
   }),
+  presets: cardPresets,
 };
 
 export const CardHeaderManifest: IPrimitiveManifestEntry = {
