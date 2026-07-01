@@ -24,8 +24,10 @@ import {
   type IPreset,
   type IPrimitiveManifestEntry,
 } from '@capsuletech/web-ui/manifest';
+import { Tooltip } from '@capsuletech/web-ui/tooltip';
 import { Typography } from '@capsuletech/web-ui/typography';
 import { For, Show } from 'solid-js';
+import { PresetPreview } from './PresetPreview';
 
 export interface IComponentSegmentsProps {
   /** Манифесты для показа — уже отфильтрованы потребителем (группа / accepted). */
@@ -38,22 +40,33 @@ export interface IComponentSegmentsProps {
   testIdPrefix?: string;
 }
 
-/** Action-agnostic leaf пресета: визуал один, действие инжектится сверху. */
+/**
+ * Action-agnostic leaf пресета: визуал один, действие инжектится сверху.
+ * На ховере — тултип с живым превью компонента (`<PresetPreview>`), чтобы не
+ * гадать «что это за компонент» без перехода в store / вставки в композицию.
+ */
 const PresetItem = (props: {
   p: IPreset;
   onSelect: (preset: IPreset) => void;
   selectedId?: string | null;
   testIdPrefix: string;
 }) => (
-  <button
-    type="button"
-    onClick={() => props.onSelect(props.p)}
-    class="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-    classList={{ 'bg-accent text-accent-foreground': props.selectedId === props.p.id }}
-    data-testid={`${props.testIdPrefix}-${props.p.id}`}
-  >
-    {props.p.label}
-  </button>
+  <Tooltip cursorTracking={false} openDelay={250}>
+    <Tooltip.Trigger as="div" class="w-full">
+      <button
+        type="button"
+        onClick={() => props.onSelect(props.p)}
+        class="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+        classList={{ 'bg-accent text-accent-foreground': props.selectedId === props.p.id }}
+        data-testid={`${props.testIdPrefix}-${props.p.id}`}
+      >
+        {props.p.label}
+      </button>
+    </Tooltip.Trigger>
+    <Tooltip.Content class="p-0">
+      <PresetPreview schema={props.p.schema} />
+    </Tooltip.Content>
+  </Tooltip>
 );
 
 const ComponentLabel = (props: { m: IPrimitiveManifestEntry }) => (
