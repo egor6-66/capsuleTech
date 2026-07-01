@@ -8,18 +8,24 @@
  * Тот же клик через `Row.onSelect` обновляет selection — один клик = select +
  * toggle, без cancel/stopPropagation.
  *
+ * **Корень (`nodeId === rootId`) — всегда открыт, БЕЗ сворачивания** (мандат
+ * USER): рендерится как статическая строка (без Accordion/chevron) + дети +
+ * мини-палитра всегда видны. Корень — точка входа всей сборки, скрывать его
+ * незачем.
+ *
  * Внутри контейнера после детей — мини-палитра вставки (`<NodePalette>`): клик по
  * пресету вставляет ребёнка ИМЕННО в этот узел (creator-mode, вставка кликом).
- * Поэтому контейнер рисуется как Accordion ДАЖЕ пустым — иначе пустой корневой
+ * Поэтому контейнер рисуется как контейнер ДАЖЕ пустым — иначе пустой корневой
  * Flex не получил бы первую вставку (бриф §3).
  *
  * Лист (тип не принимает детей) рендерится напрямую через `<Row>` — без
  * Accordion-обёртки и без мини-палитры.
  *
- * Open-состояние — **controlled** через `isExpanded`/`onToggleExpand` (persist в
- * document-сторе, не в Kobalte): по дефолту закрыто; при сворачивании родителя
- * Kobalte анмаунтит контент, но состояние ребёнка живёт в сторе → при ремаунте
- * восстанавливается (свернул родителя — ребёнок сохранил открыт/закрыт).
+ * Open-состояние не-корневых контейнеров — **controlled** через `isExpanded`/
+ * `onToggleExpand` (persist в document-сторе, не в Kobalte): по дефолту закрыто;
+ * при сворачивании родителя Kobalte анмаунтит контент, но состояние ребёнка
+ * живёт в сторе → при ремаунте восстанавливается (свернул родителя — ребёнок
+ * сохранил открыт/закрыт).
  */
 
 import { Accordion } from '@capsuletech/web-ui/accordion';
@@ -39,6 +45,35 @@ export const TreeRow = (props: ITreeRowProps) => {
   const hasChildren = () => (node()?.children.length ?? 0) > 0;
   const isContainer = () => acceptsChildren(node()?.type);
   const isSelected = () => props.selectedNodeId === props.nodeId;
+  const isRoot = () => props.nodeId === props.rootId;
+
+  // Дети + мини-палитра — общий блок для accordion-контента и корневой строки.
+  const childrenBlock = () => (
+    <>
+      <For each={node()?.children ?? []}>
+        {(childId) => (
+          <TreeRow
+            nodes={props.nodes}
+            rootId={props.rootId}
+            selectedNodeId={props.selectedNodeId}
+            onSelect={props.onSelect}
+            onInsert={props.onInsert}
+            isExpanded={props.isExpanded}
+            onToggleExpand={props.onToggleExpand}
+            nodeId={childId}
+            depth={props.depth + 1}
+          />
+        )}
+      </For>
+      <Show when={isContainer()}>
+        <NodePalette
+          nodeType={node()!.type}
+          depth={props.depth}
+          onInsert={(preset) => props.onInsert(preset, props.nodeId)}
+        />
+      </Show>
+    </>
+  );
 
   return (
     <Show
@@ -54,49 +89,46 @@ export const TreeRow = (props: ITreeRowProps) => {
         />
       }
     >
-      <Accordion
-        multiple
-        value={props.isExpanded(props.nodeId) ? [props.nodeId] : []}
-        onChange={(v) => props.onToggleExpand(props.nodeId, (v as string[]).includes(props.nodeId))}
-        class="w-full divide-y-0"
-      >
-        <Accordion.Item value={props.nodeId} class="border-0">
-          <Accordion.Trigger class="px-0 py-0 text-xs font-normal">
-            <Row
-              nodeId={props.nodeId}
-              nodeType={node()?.type}
-              manifest={manifest()}
-              depth={props.depth}
-              selected={isSelected()}
-              onSelect={() => props.onSelect(props.nodeId)}
-            />
-          </Accordion.Trigger>
-          <Accordion.Content>
-            <For each={node()?.children ?? []}>
-              {(childId) => (
-                <TreeRow
-                  nodes={props.nodes}
-                  rootId={props.rootId}
-                  selectedNodeId={props.selectedNodeId}
-                  onSelect={props.onSelect}
-                  onInsert={props.onInsert}
-                  isExpanded={props.isExpanded}
-                  onToggleExpand={props.onToggleExpand}
-                  nodeId={childId}
-                  depth={props.depth + 1}
+      <Show
+        when={isRoot()}
+        fallback={
+          <Accordion
+            multiple
+            value={props.isExpanded(props.nodeId) ? [props.nodeId] : []}
+            onChange={(v) =>
+              props.onToggleExpand(props.nodeId, (v as string[]).includes(props.nodeId))
+            }
+            class="w-full divide-y-0"
+          >
+            <Accordion.Item value={props.nodeId} class="border-0">
+              <Accordion.Trigger class="px-0 py-0 text-xs font-normal">
+                <Row
+                  nodeId={props.nodeId}
+                  nodeType={node()?.type}
+                  manifest={manifest()}
+                  depth={props.depth}
+                  selected={isSelected()}
+                  onSelect={() => props.onSelect(props.nodeId)}
                 />
-              )}
-            </For>
-            <Show when={isContainer()}>
-              <NodePalette
-                nodeType={node()!.type}
-                depth={props.depth}
-                onInsert={(preset) => props.onInsert(preset, props.nodeId)}
-              />
-            </Show>
-          </Accordion.Content>
-        </Accordion.Item>
-      </Accordion>
+              </Accordion.Trigger>
+              <Accordion.Content>{childrenBlock()}</Accordion.Content>
+            </Accordion.Item>
+          </Accordion>
+        }
+      >
+        {/* Корень: всегда открыт, без Accordion/chevron. */}
+        <div class="w-full">
+          <Row
+            nodeId={props.nodeId}
+            nodeType={node()?.type}
+            manifest={manifest()}
+            depth={props.depth}
+            selected={isSelected()}
+            onSelect={() => props.onSelect(props.nodeId)}
+          />
+          {childrenBlock()}
+        </div>
+      </Show>
     </Show>
   );
 };

@@ -43,3 +43,17 @@ export const acceptsChildren = (type: string | undefined): boolean => {
  */
 export const manifestsForNode = (nodeType: string): readonly IPrimitiveManifestEntry[] =>
   getAllManifests().filter((m) => hasPresets(m.type) && canAcceptChild(nodeType, m.type));
+
+/**
+ * «Layout-контейнер» (Flex/Grid/Group/List, `category === 'container'`) — в
+ * creator вставляется ПУСТЫМ: дети-плейсхолдеры пресета нужны только для
+ * store-превью (см. flex.presets — три плитки, чтобы виден был layout), а в
+ * creator контейнер наполняет юзер через узловую мини-палитру.
+ *
+ * `composition` (Card/Field) и leaf — НЕ layout-контейнеры: вставляются как есть
+ * (Card без частей бессмыслен, и part-пресетов для наполнения нет).
+ */
+export const isLayoutContainer = (type: string | undefined): boolean => {
+  if (!type) return false;
+  return getManifest(type)?.category === 'container';
+};

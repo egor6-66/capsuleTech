@@ -25,6 +25,7 @@
 import type { IEditorNode, ISchema } from '@capsuletech/web-renderer';
 import type { IPreset } from '@capsuletech/web-ui/manifest';
 import { createStore, produce } from 'solid-js/store';
+import { isLayoutContainer } from './manifests';
 
 /** Режим-слайс: store (активный пресет) / creator (композиция). */
 export type DocMode = 'store' | 'creator';
@@ -106,12 +107,42 @@ const loadPreset = (mode: DocMode, preset: IPreset): void => {
 };
 
 /**
- * creator: клон нод пресета с ремапом id → append ребёнком в `parentId` (дефолт
- * — актуальный корень слайса). Ремап id избегает коллизий при повторной вставке.
+ * creator: вставка пресета ребёнком в `parentId` (дефолт — актуальный корень).
+ *
+ * **Layout-контейнер** (Flex/Grid/Group/List) вставляется ПУСТЫМ — только root,
+ * без детей-плейсхолдеров пресета (они для store-превью; в creator наполняет
+ * юзер, `isLayoutContainer`). Остальное (leaf + composition Card/Field) —
+ * полный клон с ремапом id (избегает коллизий при повторной вставке).
  */
 const insertPreset = (mode: DocMode, preset: IPreset, parentId?: string): void => {
   const src = preset.schema;
+  const srcRootId = src.components.root;
+  const rootNode = src.components.nodes[srcRootId];
+  if (!rootNode) return;
 
+  // Layout-контейнер → пустой root (одна нода, без поддерева пресета).
+  if (isLayoutContainer(rootNode.type)) {
+    const newRootId = nextNodeId();
+    setState(
+      mode,
+      produce((s) => {
+        const targetParentId = parentId ?? s.schema.components.root;
+        const targetParent = s.schema.components.nodes[targetParentId];
+        if (!targetParent) return; // parentId невалиден — no-op
+        s.schema.components.nodes[newRootId] = {
+          ...rootNode,
+          id: newRootId,
+          parentId: targetParentId,
+          children: [],
+          props: rootNode.props ? structuredClone(rootNode.props) : rootNode.props,
+        };
+        targetParent.children.push(newRootId);
+      }),
+    );
+    return;
+  }
+
+  // Полный клон (leaf + composition): все ноды пресета с ремапом id.
   const oldToNew: Record<string, string> = {};
   for (const oldId of Object.keys(src.components.nodes)) {
     oldToNew[oldId] = nextNodeId();
@@ -124,7 +155,7 @@ const insertPreset = (mode: DocMode, preset: IPreset, parentId?: string): void =
       const targetParent = s.schema.components.nodes[targetParentId];
       if (!targetParent) return; // parentId невалиден — no-op
 
-      const newPresetRootId = oldToNew[src.components.root];
+      const newPresetRootId = oldToNew[srcRootId];
 
       for (const [oldId, node] of Object.entries(src.components.nodes)) {
         const newId = oldToNew[oldId];

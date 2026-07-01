@@ -6,6 +6,8 @@ import { COMPOSITION_ROOT_ID, useDocument } from '../document';
 
 const buttonPreset = () => getPresets('ui.Button').find((p) => p.id === 'default')!;
 const iconPreset = () => getPresets('ui.Button').find((p) => p.id === 'icon')!;
+const flexPreset = () => getPresets('ui.Layout.Flex')[0];
+const cardPreset = () => getPresets('ui.Card')[0];
 
 afterEach(() => {
   useDocument('store').reset();
@@ -147,6 +149,40 @@ describe('document — removeNode', () => {
     selectNode(childId);
     removeNode(childId);
     expect(selectedNodeId()).toBeNull();
+  });
+});
+
+describe('document — insertPreset: layout-контейнер пустой в creator', () => {
+  it('Flex-пресет вставляется БЕЗ детей-плейсхолдеров (root пустой)', () => {
+    const doc = useDocument('creator');
+    const p = flexPreset();
+    // сам пресет несёт детей (store-превью-плитки).
+    expect(p.schema.components.nodes[p.schema.components.root].children.length).toBeGreaterThan(0);
+
+    doc.insertPreset(p);
+    const childId = doc.schema().components.nodes[COMPOSITION_ROOT_ID].children[0];
+    const inserted = doc.schema().components.nodes[childId];
+    expect(inserted.type).toBe('ui.Layout.Flex');
+    expect(inserted.children).toEqual([]);
+    // плитки-плейсхолдеры не протекли: только creator-root + пустой flex.
+    expect(Object.keys(doc.schema().components.nodes).length).toBe(2);
+  });
+
+  it('composition (Card) вставляется целиком — части сохранены', () => {
+    const doc = useDocument('creator');
+    const p = cardPreset();
+    if (!p) return;
+    const partCount = p.schema.components.nodes[p.schema.components.root].children.length;
+    doc.insertPreset(p);
+    const childId = doc.schema().components.nodes[COMPOSITION_ROOT_ID].children[0];
+    expect(doc.schema().components.nodes[childId].children.length).toBe(partCount);
+  });
+
+  it('loadPreset (store) сохраняет детей layout-контейнера', () => {
+    const doc = useDocument('store');
+    doc.loadPreset(flexPreset());
+    const root = doc.schema().components.nodes[doc.schema().components.root];
+    expect(root.children.length).toBeGreaterThan(0);
   });
 });
 
