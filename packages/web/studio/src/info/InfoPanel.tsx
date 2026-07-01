@@ -19,6 +19,7 @@ import type { IEditorNode } from '@capsuletech/web-renderer';
 import { getContract, getManifest, getPresets, type IPreset } from '@capsuletech/web-ui/manifest';
 import { Show } from 'solid-js';
 import { useDocument } from '../document';
+import { useStudioMode } from '../navigation/useStudioMode';
 import { EmptyState } from './EmptyState';
 import { Info } from './Info';
 
@@ -30,7 +31,8 @@ const nodeAsPreset = (node: IEditorNode): IPreset => ({
 });
 
 export const InfoPanel = () => {
-  const doc = useDocument();
+  // Активный режим (URL) — info рисует слайс текущего режима.
+  const doc = useDocument(useStudioMode());
 
   const node = () => doc.selectedNode();
   const type = () => node()?.type ?? null;

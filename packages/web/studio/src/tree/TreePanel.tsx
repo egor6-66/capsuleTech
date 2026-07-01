@@ -1,10 +1,11 @@
 /**
  * TreePanel — connected-обёртка над деревом композиции creator-режима.
  *
- * Читает schema + selection из единого document-стора (`useDocument`),
- * пробрасывает в stateless `<Tree>`. Клик строки → `selectNode`; клик пресета
- * в мини-палитре узла → `insertPreset(preset, nodeId)`. Презентация
- * (рекурсивные строки + Accordion-обёртки + мини-палитра) — чистая в `./Tree`.
+ * Читает `creator`-слайс document-стора (`useDocument('creator')`) — дерево
+ * живёт только в creator и не мешается со store-слайсом (переход store↔creator
+ * его не обнуляет). Клик строки → `selectNode`; клик пресета в мини-палитре узла
+ * → `insertPreset(preset, nodeId)`; раскрытие/сворачивание → `setExpanded`
+ * (persist open-состояния). Презентация — чистая в `./Tree`.
  *
  * Регистрируется как `WebStudio.Tree` через `../capsule` (ADR 033).
  */
@@ -13,7 +14,8 @@ import { useDocument } from '../document';
 import { Tree } from './Tree';
 
 export const TreePanel = () => {
-  const { schema, selectedNodeId, selectNode, insertPreset } = useDocument();
+  const { schema, selectedNodeId, selectNode, insertPreset, isExpanded, setExpanded } =
+    useDocument('creator');
   return (
     <Tree
       nodes={schema().components.nodes}
@@ -21,6 +23,8 @@ export const TreePanel = () => {
       selectedNodeId={selectedNodeId()}
       onSelect={selectNode}
       onInsert={(preset, parentId) => insertPreset(preset, parentId)}
+      isExpanded={isExpanded}
+      onToggleExpand={setExpanded}
     />
   );
 };

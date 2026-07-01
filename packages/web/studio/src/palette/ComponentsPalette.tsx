@@ -34,7 +34,7 @@ export interface IComponentsPaletteEvents {
 
 const ComponentsPaletteComponent = () => {
   const groups = groupManifests(getAllManifests());
-  const { loadedPresetId, loadPreset } = useDocument();
+  const { loadedPresetId, loadPreset } = useDocument('store');
   // useEmitOptional (НЕ useEmit): палитра рендерится и standalone (store-mode,
   // без host logic-wrapper'а — см. тесты). Вне scope — no-op, внутри — баббл к
   // ближайшему host-Feature. useEmit() тут бросил бы.

@@ -32,6 +32,7 @@ import { applyFieldRule, getManifest } from '@capsuletech/web-ui/manifest';
 import { Typography } from '@capsuletech/web-ui/typography';
 import { createMemo, Show } from 'solid-js';
 import { useDocument } from '../document';
+import { useStudioMode } from '../navigation/useStudioMode';
 import { Inspector } from './Inspector';
 import type { ICategory, ISelectField } from './types';
 import { schemaToInspectorCategories } from './zod-to-categories';
@@ -46,7 +47,8 @@ const ICON_FIELD: ISelectField = {
 };
 
 export const PropsPanel = () => {
-  const { schema, selectedNode, patchProps, patchNodeType } = useDocument();
+  // Активный режим (URL) — rightbar рисует слайс текущего режима.
+  const { schema, selectedNode, patchProps, patchNodeType } = useDocument(useStudioMode());
 
   const manifest = () => {
     const node = selectedNode();

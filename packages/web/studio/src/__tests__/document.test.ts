@@ -8,7 +8,8 @@ const buttonPreset = () => getPresets('ui.Button').find((p) => p.id === 'default
 const iconPreset = () => getPresets('ui.Button').find((p) => p.id === 'icon')!;
 
 afterEach(() => {
-  useDocument().reset();
+  useDocument('store').reset();
+  useDocument('creator').reset();
 });
 
 describe('document — initial', () => {
@@ -146,5 +147,72 @@ describe('document — removeNode', () => {
     selectNode(childId);
     removeNode(childId);
     expect(selectedNodeId()).toBeNull();
+  });
+});
+
+describe('document — expand state (persist, default closed)', () => {
+  it('по дефолту всё закрыто', () => {
+    const { isExpanded } = useDocument('creator');
+    expect(isExpanded(COMPOSITION_ROOT_ID)).toBe(false);
+    expect(isExpanded('anything')).toBe(false);
+  });
+
+  it('setExpanded запоминает open/closed', () => {
+    const { setExpanded, isExpanded } = useDocument('creator');
+    setExpanded('n1', true);
+    expect(isExpanded('n1')).toBe(true);
+    setExpanded('n1', false);
+    expect(isExpanded('n1')).toBe(false);
+  });
+
+  it('removeNode чистит open-состояние удалённых нод', () => {
+    const doc = useDocument('creator');
+    doc.insertPreset(buttonPreset());
+    const childId = doc.schema().components.nodes[COMPOSITION_ROOT_ID].children[0];
+    doc.setExpanded(childId, true);
+    doc.removeNode(childId);
+    expect(doc.isExpanded(childId)).toBe(false);
+  });
+
+  it('open-состояние живёт в слайсе своего режима', () => {
+    useDocument('creator').setExpanded('x', true);
+    expect(useDocument('creator').isExpanded('x')).toBe(true);
+    // store-слайс не видит creator open-состояния.
+    expect(useDocument('store').isExpanded('x')).toBe(false);
+  });
+});
+
+describe('document — режимы независимы (store ↔ creator)', () => {
+  it('loadPreset(store) и insertPreset(creator) не мешают друг другу', () => {
+    const store = useDocument('store');
+    const creator = useDocument('creator');
+    const p = buttonPreset();
+
+    store.loadPreset(p);
+    creator.insertPreset(p);
+
+    // store: активный пресет, root выбран, provenance зафиксирован.
+    expect(store.loadedPresetId()).toBe('default');
+    expect(store.schema().components.root).toBe(p.schema.components.root);
+    expect(store.selectedNodeId()).toBe(p.schema.components.root);
+
+    // creator: композиция в COMPOSITION_ROOT, store'ом НЕ обнулена.
+    expect(creator.schema().components.root).toBe(COMPOSITION_ROOT_ID);
+    expect(creator.schema().components.nodes[COMPOSITION_ROOT_ID].children.length).toBe(1);
+    expect(creator.loadedPresetId()).toBeNull();
+  });
+
+  it('смена store-пресета не трогает creator-дерево', () => {
+    const store = useDocument('store');
+    const creator = useDocument('creator');
+    creator.insertPreset(buttonPreset());
+    const treeChildren = creator.schema().components.nodes[COMPOSITION_ROOT_ID].children.length;
+
+    store.loadPreset(buttonPreset());
+    store.loadPreset(iconPreset());
+
+    expect(creator.schema().components.nodes[COMPOSITION_ROOT_ID].children.length).toBe(
+      treeChildren,
+    );
   });
 });

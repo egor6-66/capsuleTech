@@ -17,6 +17,10 @@ export interface ITreeProps {
   onSelect: (id: string) => void;
   /** Вставка пресета ребёнком в узел `parentId` (мини-палитра, creator-mode). */
   onInsert: (preset: IPreset, parentId: string) => void;
+  /** Открыта ли строка-контейнер `id` (persist вне Kobalte; дефолт закрыто). */
+  isExpanded: (id: string) => boolean;
+  /** Сменить open-состояние строки-контейнера. */
+  onToggleExpand: (id: string, open: boolean) => void;
 }
 
 export interface ITreeRowProps extends ITreeProps {

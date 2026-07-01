@@ -24,6 +24,7 @@ import { Feature } from '@capsuletech/web-core';
 import { useRemote } from '@capsuletech/web-remote';
 import { createEffect } from 'solid-js';
 import { useDocument } from '../document';
+import { useStudioMode } from '../navigation/useStudioMode';
 import { useCanvasName } from './canvasContext';
 
 const CanvasBinding = Feature(() => {
@@ -31,7 +32,9 @@ const CanvasBinding = Feature(() => {
   const { remote } = useRemote();
   // instanceId 'main' совпадает с `<Remote.View instanceId="main">` в WebStudio.Canvas.
   const canvas = remote(canvasName, 'main');
-  const { schema } = useDocument(); // SSOT студии
+  // Активный режим (URL): в store-странице канвас рисует активный пресет,
+  // в creator-странице — собираемую композицию. Слайсы независимы.
+  const { schema } = useDocument(useStudioMode()); // SSOT студии
 
   // Канвас реактивно зеркалит весь editable document (не одиночный пресет).
   // JSON-снимок: (1) глубокое чтение → эффект трекает ЛЮБУЮ вложенную правду

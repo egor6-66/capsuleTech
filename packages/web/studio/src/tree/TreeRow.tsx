@@ -16,8 +16,10 @@
  * Лист (тип не принимает детей) рендерится напрямую через `<Row>` — без
  * Accordion-обёртки и без мини-палитры.
  *
- * Per-row `defaultValue={[nodeId]}` → новые ноды по умолчанию раскрыты
- * (UX: вставка в Flex root — сразу видишь куда упало).
+ * Open-состояние — **controlled** через `isExpanded`/`onToggleExpand` (persist в
+ * document-сторе, не в Kobalte): по дефолту закрыто; при сворачивании родителя
+ * Kobalte анмаунтит контент, но состояние ребёнка живёт в сторе → при ремаунте
+ * восстанавливается (свернул родителя — ребёнок сохранил открыт/закрыт).
  */
 
 import { Accordion } from '@capsuletech/web-ui/accordion';
@@ -52,7 +54,12 @@ export const TreeRow = (props: ITreeRowProps) => {
         />
       }
     >
-      <Accordion multiple defaultValue={[props.nodeId]} class="w-full divide-y-0">
+      <Accordion
+        multiple
+        value={props.isExpanded(props.nodeId) ? [props.nodeId] : []}
+        onChange={(v) => props.onToggleExpand(props.nodeId, (v as string[]).includes(props.nodeId))}
+        class="w-full divide-y-0"
+      >
         <Accordion.Item value={props.nodeId} class="border-0">
           <Accordion.Trigger class="px-0 py-0 text-xs font-normal">
             <Row
@@ -73,6 +80,8 @@ export const TreeRow = (props: ITreeRowProps) => {
                   selectedNodeId={props.selectedNodeId}
                   onSelect={props.onSelect}
                   onInsert={props.onInsert}
+                  isExpanded={props.isExpanded}
+                  onToggleExpand={props.onToggleExpand}
                   nodeId={childId}
                   depth={props.depth + 1}
                 />

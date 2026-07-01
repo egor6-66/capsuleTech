@@ -1,38 +1,39 @@
 /**
- * Document — единый singleton-стор редактируемого UI-дерева студии.
+ * Document — singleton-стор редактируемого UI-дерева студии, РАЗДЕЛЁННЫЙ по
+ * режимам (`store` / `creator`).
  *
  * Абсорбирует роли, которые раньше делили `selection.ts` (preview одиночного
- * пресета в store-режиме) и `composition.ts` (ручная сборка в creator-режиме).
- * Оба хранили один и тот же editable `ISchema` + нодовые ops — это и порождало
- * «два флоу». Теперь стор ОДИН, а режим (`store` / `creator`) — только
- * authoring-поверхность над одной моделью (см. бриф §1, §9).
+ * пресета) и `composition.ts` (ручная сборка) — API и модель ноды одни. Но
+ * держит ДВА независимых слайса, по одному на режим:
+ *  - **store**: активный пресет (loadPreset заменяет весь слайс);
+ *  - **creator**: собираемая композиция (insertPreset инкрементально).
  *
- * Хранилище — Solid Store: granular reactivity на глубокие мутации
- * (Renderer читает `node().props.variant` реактивно и применяет CVA-классы без
- * re-mount; Inspector видит изменения полей без потери фокуса input'а).
+ * Слайсы не мешают друг другу — переход creator↔store НЕ обнуляет дерево
+ * creator'а и НЕ сбрасывает активный компонент store'а (мандат USER). Каждый
+ * потребитель читает/пишет слайс своего режима: палитра → `store`, дерево →
+ * `creator`; rightbar/канвас → активный режим (URL) через `useStudioMode`.
  *
- * Семантика режимов над одним стором:
- *  - **store-mode**: клик пресета → `loadPreset` (document := единственный
- *    пресет, root выбран); смена пресета = replace.
- *  - **creator-mode**: `insertPreset(preset, nodeId)` инкрементально в узел;
- *    `selectNode` по клику строки дерева.
+ * Хранилище — Solid Store: granular reactivity на глубокие мутации (Renderer
+ * читает `node().props.variant` без re-mount; Inspector — без потери фокуса).
  *
- * Все три будущих вида — store (document из одного пресета), creator
- * (многокорневой document), custom-comp («сохранить document как пресет») —
- * это виды над одной моделью. Канвас всегда рисует `schema()`; rightbar всегда
- * по `selectedNode()`.
+ * `expandedIds` — персист open-состояния строк дерева (creator): по дефолту всё
+ * закрыто, состояние живёт ВНЕ Kobalte (его `Accordion.Content` анмаунтит
+ * контент при сворачивании), поэтому при сворачивании родителя ребёнок сохраняет
+ * своё открыт/закрыт — читается обратно из этого мапа при ремаунте.
  */
 
 import type { IEditorNode, ISchema } from '@capsuletech/web-renderer';
 import type { IPreset } from '@capsuletech/web-ui/manifest';
 import { createStore, produce } from 'solid-js/store';
 
+/** Режим-слайс: store (активный пресет) / creator (композиция). */
+export type DocMode = 'store' | 'creator';
+
 /**
- * ID корневого Flex-контейнера пустого document'а. Стабильный — потребители
- * (creator-mode дерево, insertPreset default parent) могут на него ссылаться.
- * В store-режиме `loadPreset` заменяет весь document → root становится корнем
- * пресета; поэтому root-guard в `removeNode` смотрит на актуальный
- * `schema.components.root`, а не на эту константу.
+ * ID корневого Flex-контейнера пустого слайса. Стабильный — потребители
+ * (creator-дерево, insertPreset default parent) могут на него ссылаться. В
+ * store-режиме `loadPreset` заменяет слайс → root становится корнем пресета;
+ * поэтому root-guard в `removeNode` смотрит на актуальный `schema.components.root`.
  */
 export const COMPOSITION_ROOT_ID = 'creator-root';
 
@@ -40,8 +41,7 @@ const makeRoot = (): IEditorNode => ({
   id: COMPOSITION_ROOT_ID,
   // Канонический dot-path Flex — `ui.Layout.Flex` (совпадает с манифестом и
   // flex-пресетами; renderer его резолвит). Legacy `ui.Flex` не имел манифеста,
-  // из-за чего container-gate `acceptsChildren` не видел root'а и мини-палитра
-  // не появлялась на пустом дереве.
+  // из-за чего container-gate `acceptsChildren` не видел root'а.
   type: 'ui.Layout.Flex',
   parentId: null,
   children: [],
@@ -59,47 +59,57 @@ const initialSchema = (): ISchema => ({
   },
 });
 
-interface IDocumentState {
+interface IDocSlice {
   schema: ISchema;
   /** ID выбранной ноды. Null = ничего не выбрано. Root всегда selectable. */
   selectedNodeId: string | null;
   /**
-   * ID пресета, из которого загружен document (store-mode provenance).
-   * Нужен только палитре для подсветки активного пресета и info-панели для
-   * показа реального описания пресета. `null` в creator-mode (document
-   * собран инкрементально, не из одного пресета).
+   * ID пресета, из которого загружен слайс (store-провенанс). Нужен палитре для
+   * подсветки активного пресета и info-панели для реального описания пресета.
+   * `null` в creator (собран инкрементально, не из одного пресета).
    */
   loadedPresetId: string | null;
+  /**
+   * Open-состояние строк дерева по nodeId (creator). Отсутствие ключа / `false`
+   * = закрыто (дефолт). Map, а не Set — Solid Store трекает ключи гранулярно.
+   */
+  expandedIds: Record<string, boolean>;
 }
 
-const [state, setState] = createStore<IDocumentState>({
+const makeSlice = (): IDocSlice => ({
   schema: initialSchema(),
   selectedNodeId: null,
   loadedPresetId: null,
+  expandedIds: {},
+});
+
+const [state, setState] = createStore<Record<DocMode, IDocSlice>>({
+  store: makeSlice(),
+  creator: makeSlice(),
 });
 
 let idCounter = 0;
 const nextNodeId = (): string => `n${Date.now().toString(36)}_${idCounter++}`;
 
 /**
- * store-mode: document := независимая editable копия схемы пресета, root выбран.
+ * store: слайс := независимая editable копия схемы пресета, root выбран.
  * `structuredClone` — пресет в registry иммутабелен. `loadedPresetId` фиксирует
- * провенанс (подсветка палитры + описание в info-панели).
+ * провенанс. `expandedIds` сбрасывается (новый контент).
  */
-const loadPreset = (preset: IPreset): void => {
-  setState({
+const loadPreset = (mode: DocMode, preset: IPreset): void => {
+  setState(mode, {
     schema: structuredClone(preset.schema),
     selectedNodeId: preset.schema.components.root,
     loadedPresetId: preset.id,
+    expandedIds: {},
   });
 };
 
 /**
- * creator-mode: клон нод пресета с ремапом id → append ребёнком в `parentId`
- * (дефолт — актуальный корень document'а). Ремап id избегает коллизий при
- * повторной вставке того же пресета.
+ * creator: клон нод пресета с ремапом id → append ребёнком в `parentId` (дефолт
+ * — актуальный корень слайса). Ремап id избегает коллизий при повторной вставке.
  */
-const insertPreset = (preset: IPreset, parentId?: string): void => {
+const insertPreset = (mode: DocMode, preset: IPreset, parentId?: string): void => {
   const src = preset.schema;
 
   const oldToNew: Record<string, string> = {};
@@ -108,6 +118,7 @@ const insertPreset = (preset: IPreset, parentId?: string): void => {
   }
 
   setState(
+    mode,
     produce((s) => {
       const targetParentId = parentId ?? s.schema.components.root;
       const targetParent = s.schema.components.nodes[targetParentId];
@@ -120,12 +131,9 @@ const insertPreset = (preset: IPreset, parentId?: string): void => {
         s.schema.components.nodes[newId] = {
           ...node,
           id: newId,
-          // Корень пресета цепляется к targetParent; остальные сохраняют свою
-          // preset-вложенность через oldToNew-map.
           parentId:
             node.parentId === null ? targetParentId : (oldToNew[node.parentId] ?? targetParentId),
           children: node.children.map((c) => oldToNew[c] ?? c),
-          // structuredClone на props — preset.schema иммутабельна (registry).
           props: node.props ? structuredClone(node.props) : node.props,
         };
       }
@@ -135,20 +143,18 @@ const insertPreset = (preset: IPreset, parentId?: string): void => {
   );
 };
 
-const selectNode = (id: string | null): void => {
-  setState('selectedNodeId', id);
+const selectNode = (mode: DocMode, id: string | null): void => {
+  setState(mode, 'selectedNodeId', id);
 };
 
 /** Патчит пропсы конкретной ноды (granular reactive update — per-key set). */
-const patchProps = (nodeId: string, props: Record<string, unknown>): void => {
+const patchProps = (mode: DocMode, nodeId: string, props: Record<string, unknown>): void => {
   setState(
+    mode,
     produce((s) => {
       const node = s.schema.components.nodes[nodeId];
       if (!node) return;
       if (!node.props) node.props = {};
-      // Per-key set вместо `node.props = {...new}` — Solid Store трекает каждый
-      // ключ гранулярно, Renderer'овский mergeProps thunk на конкретный prop
-      // (например, `variant`) ре-эвалюэйтит → CVA-класс обновляется без re-mount.
       const target = node.props as Record<string, unknown>;
       for (const [k, v] of Object.entries(props)) {
         target[k] = v;
@@ -158,8 +164,9 @@ const patchProps = (nodeId: string, props: Record<string, unknown>): void => {
 };
 
 /** Меняет тип ноды (для icon-picker'а: `ui.Icons.Plus` → `ui.Icons.Settings`). */
-const patchNodeType = (nodeId: string, type: string): void => {
+const patchNodeType = (mode: DocMode, nodeId: string, type: string): void => {
   setState(
+    mode,
     produce((s) => {
       const node = s.schema.components.nodes[nodeId];
       if (!node) return;
@@ -169,17 +176,18 @@ const patchNodeType = (nodeId: string, type: string): void => {
 };
 
 /**
- * Удаляет ноду + всё её поддерево. Корень document'а удалить нельзя (silent
- * no-op). Если удалённая ветка содержала текущий selection — сбрасываем.
+ * Удаляет ноду + всё её поддерево. Корень слайса удалить нельзя (silent no-op).
+ * Если удалённая ветка содержала текущий selection — сбрасываем. Open-состояние
+ * удалённых нод чистим.
  */
-const removeNode = (id: string): void => {
+const removeNode = (mode: DocMode, id: string): void => {
   setState(
+    mode,
     produce((s) => {
       if (id === s.schema.components.root) return;
       const node = s.schema.components.nodes[id];
       if (!node) return;
 
-      // Соберём все ID для удаления (нода + дети + потомки).
       const toDelete: string[] = [];
       const collect = (nid: string) => {
         toDelete.push(nid);
@@ -188,15 +196,16 @@ const removeNode = (id: string): void => {
       };
       collect(id);
 
-      // Отвяжем от родителя.
       if (node.parentId) {
         const parent = s.schema.components.nodes[node.parentId];
         if (parent) parent.children = parent.children.filter((c) => c !== id);
       }
 
-      for (const did of toDelete) delete s.schema.components.nodes[did];
+      for (const did of toDelete) {
+        delete s.schema.components.nodes[did];
+        delete s.expandedIds[did];
+      }
 
-      // Если selection попал в удалённую ветку — сбрасываем.
       if (s.selectedNodeId && toDelete.includes(s.selectedNodeId)) {
         s.selectedNodeId = null;
       }
@@ -204,8 +213,13 @@ const removeNode = (id: string): void => {
   );
 };
 
-const reset = (): void => {
-  setState({ schema: initialSchema(), selectedNodeId: null, loadedPresetId: null });
+/** Явно задать open-состояние строки дерева (persist вне Kobalte). */
+const setExpanded = (mode: DocMode, id: string, open: boolean): void => {
+  setState(mode, 'expandedIds', id, open);
+};
+
+const reset = (mode: DocMode): void => {
+  setState(mode, makeSlice());
 };
 
 export interface IWebStudioDocument {
@@ -213,31 +227,46 @@ export interface IWebStudioDocument {
   selectedNodeId: () => string | null;
   /** Резолв `nodes[selectedNodeId]` — источник rightbar'а (props/contract/readme). */
   selectedNode: () => IEditorNode | null;
-  /** Провенанс store-mode: id пресета, из которого загружен document (или null). */
+  /** Провенанс store: id пресета, из которого загружен слайс (или null). */
   loadedPresetId: () => string | null;
+  /** Открыта ли строка дерева `id` (дефолт закрыто). */
+  isExpanded: (id: string) => boolean;
   loadPreset: (preset: IPreset) => void;
   insertPreset: (preset: IPreset, parentId?: string) => void;
   selectNode: (id: string | null) => void;
   patchProps: (nodeId: string, props: Record<string, unknown>) => void;
   patchNodeType: (nodeId: string, type: string) => void;
   removeNode: (id: string) => void;
+  setExpanded: (id: string, open: boolean) => void;
   reset: () => void;
 }
 
-export const useDocument = (): IWebStudioDocument => ({
-  schema: () => state.schema,
-  selectedNodeId: () => state.selectedNodeId,
-  selectedNode: () => {
-    const id = state.selectedNodeId;
-    if (!id) return null;
-    return state.schema.components.nodes[id] ?? null;
-  },
-  loadedPresetId: () => state.loadedPresetId,
-  loadPreset,
-  insertPreset,
-  selectNode,
-  patchProps,
-  patchNodeType,
-  removeNode,
-  reset,
-});
+/**
+ * @param mode — слайс режима: строка (`'store'` / `'creator'`) для фикс-режимных
+ *   потребителей (палитра=store, дерево=creator) ИЛИ accessor `() => DocMode`
+ *   для потребителей активного режима (rightbar/канвас через `useStudioMode`).
+ *   Дефолт `'store'`. Accessor держит селекторы реактивными к смене URL-режима.
+ */
+export const useDocument = (mode: DocMode | (() => DocMode) = 'store'): IWebStudioDocument => {
+  const m = typeof mode === 'function' ? mode : () => mode;
+  return {
+    schema: () => state[m()].schema,
+    selectedNodeId: () => state[m()].selectedNodeId,
+    selectedNode: () => {
+      const slice = state[m()];
+      const id = slice.selectedNodeId;
+      if (!id) return null;
+      return slice.schema.components.nodes[id] ?? null;
+    },
+    loadedPresetId: () => state[m()].loadedPresetId,
+    isExpanded: (id) => state[m()].expandedIds[id] === true,
+    loadPreset: (preset) => loadPreset(m(), preset),
+    insertPreset: (preset, parentId) => insertPreset(m(), preset, parentId),
+    selectNode: (id) => selectNode(m(), id),
+    patchProps: (nodeId, props) => patchProps(m(), nodeId, props),
+    patchNodeType: (nodeId, type) => patchNodeType(m(), nodeId, type),
+    removeNode: (id) => removeNode(m(), id),
+    setExpanded: (id, open) => setExpanded(m(), id, open),
+    reset: () => reset(m()),
+  };
+};
