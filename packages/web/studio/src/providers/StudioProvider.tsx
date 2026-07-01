@@ -16,11 +16,12 @@
  * Регистрируется как `WebStudio.Provider` через `../capsule` (ADR 033).
  */
 
-import { DnDProvider } from '@capsuletech/web-dnd';
+import { DnDProvider, DragOverlay } from '@capsuletech/web-dnd';
 import { RemoteProvider } from '@capsuletech/web-remote';
 import type { JSX } from 'solid-js';
 import CanvasBinding from './CanvasBinding';
 import { CanvasNameContext, DEFAULT_CANVAS_NAME } from './canvasContext';
+import { DragChip } from './DragChip';
 
 export interface IStudioProviderProps {
   children: JSX.Element;
@@ -34,12 +35,15 @@ export const StudioProvider = (props: IStudioProviderProps) => {
   const canvasName = () => props.canvasName ?? DEFAULT_CANVAS_NAME;
 
   return (
-    <DnDProvider showDefaultOverlay>
+    // Дефолтный ghost выключен — вместо еле заметного клона рендерим кастомный
+    // <DragChip> (иконка + название узла) через <DragOverlay>, читаемый оверрайд.
+    <DnDProvider overlayMode="none">
       <RemoteProvider modules={[{ name: canvasName(), url: props.canvasUrl }]}>
         <CanvasNameContext.Provider value={canvasName()}>
           <CanvasBinding>{props.children}</CanvasBinding>
         </CanvasNameContext.Provider>
       </RemoteProvider>
+      <DragOverlay offset={{ x: 16, y: 16 }}>{(data) => <DragChip data={data} />}</DragOverlay>
     </DnDProvider>
   );
 };

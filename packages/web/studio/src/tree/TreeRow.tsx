@@ -65,14 +65,20 @@ export const TreeRow = (props: ITreeRowProps) => {
       class="relative"
       classList={{
         'opacity-40': dnd.isDragging(),
-        'rounded-sm ring-2 ring-inset ring-primary': dnd.zone() === 'inside',
+        'rounded-sm bg-primary/10 ring-2 ring-inset ring-primary': dnd.zone() === 'inside',
       }}
     >
       <Show when={dnd.zone() === 'before'}>
-        <div class="pointer-events-none absolute inset-x-0 -top-px z-10 h-0.5 rounded bg-primary" />
+        <div class="pointer-events-none absolute inset-x-0 -top-[3px] z-20 flex items-center">
+          <span class="h-2 w-2 shrink-0 rounded-full bg-primary ring-2 ring-background" />
+          <span class="-ml-1 h-[3px] flex-1 rounded-full bg-primary" />
+        </div>
       </Show>
       <Show when={dnd.zone() === 'after'}>
-        <div class="pointer-events-none absolute inset-x-0 -bottom-px z-10 h-0.5 rounded bg-primary" />
+        <div class="pointer-events-none absolute inset-x-0 -bottom-[3px] z-20 flex items-center">
+          <span class="h-2 w-2 shrink-0 rounded-full bg-primary ring-2 ring-background" />
+          <span class="-ml-1 h-[3px] flex-1 rounded-full bg-primary" />
+        </div>
       </Show>
       <Row
         nodeId={props.nodeId}
