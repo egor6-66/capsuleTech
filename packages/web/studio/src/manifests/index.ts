@@ -12,7 +12,7 @@ export {
   listByCategory,
   summarize,
 } from './registry';
-export { acceptsChildren, presetsForNode } from './rules';
+export { acceptsChildren, manifestsForNode } from './rules';
 export type {
   ComponentCategory,
   IManifestSummary,

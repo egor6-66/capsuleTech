@@ -1,10 +1,6 @@
-import { canAcceptChild } from '@capsuletech/web-ui/manifest';
+import { canAcceptChild, hasPresets } from '@capsuletech/web-ui/manifest';
 import { describe, expect, it } from 'vitest';
-import { acceptsChildren, presetsForNode } from '../rules';
-
-const rootType = (schema: {
-  components: { root: string; nodes: Record<string, { type: string }> };
-}) => schema.components.nodes[schema.components.root].type;
+import { acceptsChildren, manifestsForNode } from '../rules';
 
 describe('acceptsChildren — container-gate (реальный isLeaf-сигнал)', () => {
   it('контейнеры принимают детей', () => {
@@ -27,21 +23,21 @@ describe('acceptsChildren — container-gate (реальный isLeaf-сигна
   });
 });
 
-describe('presetsForNode — accept-фильтрация пресетов', () => {
-  it('leaf-узел не принимает никаких пресетов', () => {
-    expect(presetsForNode('ui.Button')).toEqual([]);
+describe('manifestsForNode — accept-фильтрация компонентов (с пресетами)', () => {
+  it('leaf-узел не принимает никаких компонентов', () => {
+    expect(manifestsForNode('ui.Button')).toEqual([]);
   });
 
-  it('Flex принимает пресеты, и все они реально accepted', () => {
-    const list = presetsForNode('ui.Layout.Flex');
+  it('Flex принимает компоненты, все — с пресетами и реально accepted', () => {
+    const list = manifestsForNode('ui.Layout.Flex');
     expect(list.length).toBeGreaterThan(0);
-    expect(list.every((p) => canAcceptChild('ui.Layout.Flex', rootType(p.schema)))).toBe(true);
+    expect(list.every((m) => hasPresets(m.type))).toBe(true);
+    expect(list.every((m) => canAcceptChild('ui.Layout.Flex', m.type))).toBe(true);
   });
 
-  it('Card фильтрует по своему accepts (только Card-parts) — все возвращённые accepted', () => {
-    const list = presetsForNode('ui.Card');
-    expect(list.every((p) => canAcceptChild('ui.Card', rootType(p.schema)))).toBe(true);
-    // Card принимает строго меньше, чем Flex (accepts-предикат уже общего).
-    expect(list.length).toBeLessThan(presetsForNode('ui.Layout.Flex').length);
+  it('Card фильтрует по своему accepts — строго уже Flex', () => {
+    const card = manifestsForNode('ui.Card');
+    expect(card.every((m) => canAcceptChild('ui.Card', m.type))).toBe(true);
+    expect(card.length).toBeLessThan(manifestsForNode('ui.Layout.Flex').length);
   });
 });
