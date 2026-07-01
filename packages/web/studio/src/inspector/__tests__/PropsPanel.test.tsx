@@ -3,32 +3,30 @@
 import { getPresets } from '@capsuletech/web-ui/manifest';
 import { render } from 'solid-js/web';
 import { afterEach, describe, expect, it } from 'vitest';
-import { useSelectedPreset } from '../../selection';
+import { useDocument } from '../../document';
 import { PropsPanel } from '../PropsPanel';
 
 afterEach(() => {
-  useSelectedPreset().setSelected(null);
+  useDocument().reset();
 });
 
 describe('PropsPanel', () => {
-  it('показывает fallback когда ничего не выбрано', () => {
+  it('показывает fallback когда узел не выбран', () => {
     const host = document.createElement('div');
     const dispose = render(() => <PropsPanel />, host);
     try {
-      expect(host.textContent).toContain('Выберите пресет в палитре');
+      expect(host.textContent).toContain('Выберите компонент');
     } finally {
       dispose();
     }
   });
 
-  it('рендерит поля Inspector для выбранного Button-пресета', () => {
+  it('рендерит поля Inspector для выбранного узла (Button-пресет загружен)', () => {
     const host = document.createElement('div');
-    const { setSelected } = useSelectedPreset();
-    setSelected(getPresets('ui.Button').find((p) => p.id === 'default') ?? null);
+    const { loadPreset } = useDocument();
+    loadPreset(getPresets('ui.Button').find((p) => p.id === 'default')!);
     const dispose = render(() => <PropsPanel />, host);
     try {
-      // Button-manifest имеет propsSchema с variant/size/disabled/... — какие-то
-      // поля должны отрендериться (label) либо «нет редактируемых пропсов».
       const text = host.textContent ?? '';
       const hasFields = host.querySelector('input, select, button[role="switch"]') !== null;
       const hasFallback = text.includes('нет редактируемых пропсов');
@@ -38,28 +36,27 @@ describe('PropsPanel', () => {
     }
   });
 
-  it('patchProps обновляет schema в singleton (изменение виден в schema())', () => {
-    const { setSelected, schema, patchProps } = useSelectedPreset();
-    const def = getPresets('ui.Button').find((p) => p.id === 'default');
-    setSelected(def ?? null);
-    const before = schema();
-    expect(before).not.toBeNull();
-    const rootId = before?.components.root ?? '';
-    patchProps(rootId, { children: 'New label' });
-    const after = schema();
-    const newProps = after?.components.nodes[rootId]?.props as Record<string, unknown> | undefined;
+  it('patchProps обновляет schema выбранного узла', () => {
+    const { loadPreset, schema, selectedNodeId, patchProps } = useDocument();
+    const def = getPresets('ui.Button').find((p) => p.id === 'default')!;
+    loadPreset(def);
+    const nodeId = selectedNodeId() ?? '';
+    expect(nodeId).toBe(def.schema.components.root);
+    patchProps(nodeId, { children: 'New label' });
+    const newProps = schema().components.nodes[nodeId]?.props as Record<string, unknown>;
     expect(newProps?.children).toBe('New label');
     // Исходный пресет НЕ мутирован (immutable registry).
-    const originalProps = def?.schema.components.nodes[def.schema.components.root]?.props as
-      | Record<string, unknown>
-      | undefined;
+    const originalProps = def.schema.components.nodes[def.schema.components.root]?.props as Record<
+      string,
+      unknown
+    >;
     expect(originalProps?.children).toBe('Default');
   });
 
-  it('patchProps — no-op если ничего не выбрано', () => {
-    const { schema, patchProps } = useSelectedPreset();
-    expect(schema()).toBeNull();
-    patchProps('whatever', { foo: 'bar' });
-    expect(schema()).toBeNull();
+  it('patchProps — no-op для несуществующего узла', () => {
+    const { schema, patchProps } = useDocument();
+    const before = JSON.stringify(schema());
+    patchProps('does-not-exist', { foo: 'bar' });
+    expect(JSON.stringify(schema())).toBe(before);
   });
 });

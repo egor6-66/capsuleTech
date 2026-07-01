@@ -1,10 +1,13 @@
 /**
- * PropsPanel — connected-редактор пропсов выбранного пресета.
+ * PropsPanel — connected-редактор пропсов ВЫБРАННОГО УЗЛА.
  *
- * Читает редактируемую `schema()` из shared singleton'а (Solid Store).
- * Резолвит manifest корневой ноды (через `@capsuletech/web-ui/manifest`),
- * конвертирует `propsSchema` (zod) → categories для generic Inspector'а
- * и рендерит его. Презентация полей — stateless `./Inspector`.
+ * Читает `selectedNode()` из единого document-стора (Solid Store). Работает
+ * идентично в store-mode (выбран root загруженного пресета) и creator-mode
+ * (выбран любой узел дерева) — это и есть «один флоу» (бриф §2).
+ *
+ * Резолвит manifest узла (через `@capsuletech/web-ui/manifest`), конвертирует
+ * `propsSchema` (zod) → categories для generic Inspector'а и рендерит его.
+ * Презентация полей — stateless `./Inspector`.
  *
  * **Field rules** — гибкий механизм условной видимости/блокировки полей
  * (`@capsuletech/web-ui/manifest` → `applyFieldRule`). Например, для Button: при `size === 'icon'`
@@ -28,7 +31,7 @@ import { Icons } from '@capsuletech/web-ui/icons';
 import { applyFieldRule, getManifest } from '@capsuletech/web-ui/manifest';
 import { Typography } from '@capsuletech/web-ui/typography';
 import { createMemo, Show } from 'solid-js';
-import { useSelectedPreset } from '../selection';
+import { useDocument } from '../document';
 import { Inspector } from './Inspector';
 import type { ICategory, ISelectField } from './types';
 import { schemaToInspectorCategories } from './zod-to-categories';
@@ -43,16 +46,10 @@ const ICON_FIELD: ISelectField = {
 };
 
 export const PropsPanel = () => {
-  const { schema, patchProps, patchNodeType } = useSelectedPreset();
-
-  const rootNode = () => {
-    const s = schema();
-    if (!s) return null;
-    return s.components.nodes[s.components.root] ?? null;
-  };
+  const { schema, selectedNode, patchProps, patchNodeType } = useDocument();
 
   const manifest = () => {
-    const node = rootNode();
+    const node = selectedNode();
     return node ? getManifest(node.type) : undefined;
   };
 
@@ -62,20 +59,20 @@ export const PropsPanel = () => {
   });
 
   const ruleResult = () => {
-    const node = rootNode();
+    const node = selectedNode();
     if (!node) return {};
     return applyFieldRule(node.type, (node.props ?? {}) as Record<string, unknown>);
   };
 
-  // Icon-child: child-нода `ui.Icons.<Name>` корневой ноды (если есть).
+  // Icon-child: child-нода `ui.Icons.<Name>` выбранного узла (если есть).
   // Для Button size=icon это единственный child; имя иконки = «proxy-prop»
   // самой кнопки, поэтому редактируется через тот же Inspector.
   const iconChild = () => {
-    const s = schema();
-    const root = rootNode();
-    if (!s || !root || root.children.length === 0) return null;
-    for (const childId of root.children) {
-      const child = s.components.nodes[childId];
+    const node = selectedNode();
+    if (!node || node.children.length === 0) return null;
+    const nodes = schema().components.nodes;
+    for (const childId of node.children) {
+      const child = nodes[childId];
       if (child?.type.startsWith('ui.Icons.')) return child;
     }
     return null;
@@ -121,14 +118,14 @@ export const PropsPanel = () => {
   };
 
   const values = (): Record<string, unknown> => {
-    const props = (rootNode()?.props ?? {}) as Record<string, unknown>;
+    const props = (selectedNode()?.props ?? {}) as Record<string, unknown>;
     const ch = iconChild();
     if (!ch) return props;
     return { ...props, icon: ch.type.slice('ui.Icons.'.length) };
   };
 
   const onChange = (key: string, value: unknown) => {
-    const node = rootNode();
+    const node = selectedNode();
     if (!node) return;
     if (key === 'icon') {
       const ch = iconChild();
@@ -141,10 +138,10 @@ export const PropsPanel = () => {
   return (
     <Flex orientation="vertical" gap={2} class="h-full w-full overflow-y-auto">
       <Show
-        when={rootNode()}
+        when={selectedNode()}
         fallback={
           <Typography tone="muted" size="sm">
-            Выберите пресет в палитре чтобы редактировать пропсы
+            Выберите компонент чтобы редактировать пропсы
           </Typography>
         }
       >

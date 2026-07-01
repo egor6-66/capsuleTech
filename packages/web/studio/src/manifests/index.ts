@@ -12,6 +12,7 @@ export {
   listByCategory,
   summarize,
 } from './registry';
+export { acceptsChildren, presetsForNode } from './rules';
 export type {
   ComponentCategory,
   IManifestSummary,

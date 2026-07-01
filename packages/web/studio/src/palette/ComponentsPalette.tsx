@@ -36,8 +36,8 @@ import {
 } from '@capsuletech/web-ui/manifest';
 import { Typography } from '@capsuletech/web-ui/typography';
 import { For, Show } from 'solid-js';
+import { useDocument } from '../document';
 import { useStudioMode } from '../navigation/useStudioMode';
-import { useSelectedPreset } from '../selection';
 import { DraggablePresetItem } from './DraggablePresetItem';
 import { groupManifests } from './groups';
 
@@ -48,17 +48,17 @@ export interface IComponentsPaletteEvents {
 }
 
 const PresetItem = (props: { p: IPreset }) => {
-  const { selected, setSelected } = useSelectedPreset();
+  const { loadedPresetId, loadPreset } = useDocument();
   // useEmitOptional (НЕ useEmit): палитра рендерится и standalone (store-mode,
   // без host logic-wrapper'а — см. useStudioMode/тесты). Вне scope — no-op,
   // внутри — баббл к ближайшему host-Feature. useEmit() тут бросил бы.
   const emit = useEmitOptional();
-  const isSelected = () => selected()?.id === props.p.id;
+  const isSelected = () => loadedPresetId() === props.p.id;
   return (
     <button
       type="button"
       onClick={() => {
-        setSelected(props.p);
+        loadPreset(props.p);
         emit('onPresetSelect', {
           source: 'WebStudio.ComponentsPalette',
           payload: { schema: props.p.schema },

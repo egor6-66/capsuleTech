@@ -1,8 +1,9 @@
 import type { IEditorNode } from '@capsuletech/web-renderer';
+import type { IPreset } from '@capsuletech/web-ui/manifest';
 
 /**
  * Stateless-пропсы для `<Tree>` — резолвятся в `TreePanel` connected-обёртке из
- * `useComposition()`. Tree сам не читает store, чтобы быть тестируемым с любым
+ * `useDocument()`. Tree сам не читает store, чтобы быть тестируемым с любым
  * shape'ом nodes/selection.
  */
 export interface ITreeProps {
@@ -14,6 +15,8 @@ export interface ITreeProps {
   selectedNodeId: string | null;
   /** Callback при клике по строке — потребитель решает что писать в стор. */
   onSelect: (id: string) => void;
+  /** Вставка пресета ребёнком в узел `parentId` (мини-палитра, creator-mode). */
+  onInsert: (preset: IPreset, parentId: string) => void;
 }
 
 export interface ITreeRowProps extends ITreeProps {

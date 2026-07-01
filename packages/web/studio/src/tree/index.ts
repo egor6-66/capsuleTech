@@ -1,3 +1,4 @@
+export { type INodePaletteProps, NodePalette } from './NodePalette';
 export { type IRowProps, Row } from './Row';
 export { RowLabel } from './RowLabel';
 export { Tree } from './Tree';

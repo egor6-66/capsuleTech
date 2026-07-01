@@ -20,6 +20,7 @@ export const Tree = (props: ITreeProps) => (
       rootId={props.rootId}
       selectedNodeId={props.selectedNodeId}
       onSelect={props.onSelect}
+      onInsert={props.onInsert}
       nodeId={props.rootId}
       depth={0}
     />
