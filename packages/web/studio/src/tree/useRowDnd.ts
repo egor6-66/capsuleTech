@@ -1,23 +1,19 @@
 /**
- * useRowDnd — привязка DnD к строке дерева (creator).
+ * useRowDnd — доменный адаптер строки дерева над generic `createReorderable`
+ * (`@capsuletech/web-dnd`). Тонкий: даёт web-dnd-примитиву domain-предикаты —
+ * `accepts` (не в себя/потомка), `canInside` (цель принимает тип по манифесту),
+ * `data` (nodeId/nodeType) — а зона/индикатор/связка draggable+droppable живут
+ * в web-dnd. Сам DnD-визуал (`<DropIndicator>`) рисует TreeRow.
  *
- * Строка = одновременно **draggable** (тащим этот узел) и **droppable** (кладём
- * на него). Зона (before/after/inside) считается из вертикальной доли курсора
- * внутри строки. Корень не draggable (неподвижен), но остаётся droppable.
- *
- * Живой индикатор (`zone()`): пока курсор над строкой (`overId`), считаем зону
- * по live-`pointer` из `useDnD` + rect строки. Валидность (не в себя/потомка,
- * accept контейнера) уже отражена — невалидный inside падает в before/after.
- *
- * DnD-инфра (`DnDProvider`) монтируется в `WebStudio.Provider` выше дерева.
+ * Generic-часть (`zoneFromRatio`, draggable+droppable+zone) была перенесена в
+ * web-dnd (`createReorderable`) — студия больше не размазывает DnD-механику.
  */
 
-import { createDraggable, createDroppable, useDnD } from '@capsuletech/web-dnd';
+import { createReorderable, type DropZone, type IReorderable } from '@capsuletech/web-dnd';
 import type { IEditorNode } from '@capsuletech/web-renderer';
 import type { Accessor } from 'solid-js';
-import type { DropZone } from '../document';
 import { acceptsChildren, canAcceptChild } from '../manifests';
-import { isSelfOrDescendant, zoneFromRatio } from './dndHelpers';
+import { isSelfOrDescendant } from './dndHelpers';
 
 interface ITreeDragData {
   src: 'tree';
@@ -37,64 +33,16 @@ export interface IUseRowDndOptions {
   onMove: (dragId: string, targetId: string, zone: DropZone) => void;
 }
 
-export interface IRowDnd {
-  setRef: (el: HTMLElement) => void;
-  isDragging: Accessor<boolean>;
-  /** Активная зона под курсором (для индикатора) или null. */
-  zone: Accessor<DropZone | null>;
-}
-
-export const useRowDnd = (opts: IUseRowDndOptions): IRowDnd => {
-  // DnDProvider монтируется в WebStudio.Provider. Вне его (standalone-рендер
-  // дерева, unit-тесты) useDnD бросает — деградируем в no-op, дерево рендерится.
-  let dnd: ReturnType<typeof useDnD> | null;
-  try {
-    dnd = useDnD();
-  } catch {
-    dnd = null;
-  }
-  if (!dnd) {
-    return { setRef: () => {}, isDragging: () => false, zone: () => null };
-  }
-  const ctx = dnd;
-  let el: HTMLElement | undefined;
-
-  const canInsideFor = (dragType: string): boolean =>
-    acceptsChildren(opts.nodeType()) && canAcceptChild(opts.nodeType() ?? '', dragType);
-
-  const drag = createDraggable<ITreeDragData>({
-    id: `tree-drag:${opts.nodeId}`,
+export const useRowDnd = (opts: IUseRowDndOptions): IReorderable =>
+  createReorderable<ITreeDragData>({
+    id: `tree:${opts.nodeId}`,
     data: () => ({ src: 'tree', nodeId: opts.nodeId, nodeType: opts.nodeType() ?? '' }),
     disabled: () => opts.isRoot,
-  });
-
-  const drop = createDroppable<ITreeDragData>({
-    id: `tree-drop:${opts.nodeId}`,
+    // Доменный guard: tree-drag и не в себя/потомка.
     accepts: (data) =>
       data.src === 'tree' && !isSelfOrDescendant(opts.nodes(), data.nodeId, opts.nodeId),
-    onDrop: (data, info) => {
-      const zone = zoneFromRatio(info.ratio.y, canInsideFor(data.nodeType));
-      opts.onMove(data.nodeId, opts.nodeId, zone);
-    },
+    // Цель принимает как ребёнка → включает зону inside.
+    canInside: (data) =>
+      acceptsChildren(opts.nodeType()) && canAcceptChild(opts.nodeType() ?? '', data.nodeType),
+    onDrop: (data, zone) => opts.onMove(data.nodeId, opts.nodeId, zone),
   });
-
-  const setRef = (node: HTMLElement) => {
-    el = node;
-    drag.ref(node);
-    drop.ref(node);
-  };
-
-  const zone = (): DropZone | null => {
-    if (ctx.state.overId() !== `tree-drop:${opts.nodeId}`) return null;
-    const data = ctx.state.activeData() as ITreeDragData | null;
-    if (!data || data.src !== 'tree') return null;
-    if (isSelfOrDescendant(opts.nodes(), data.nodeId, opts.nodeId)) return null;
-    const p = ctx.state.pointer();
-    if (!p || !el) return null;
-    const r = el.getBoundingClientRect();
-    if (!r.height) return null;
-    return zoneFromRatio((p.y - r.top) / r.height, canInsideFor(data.nodeType));
-  };
-
-  return { setRef, isDragging: drag.isDragging, zone };
-};

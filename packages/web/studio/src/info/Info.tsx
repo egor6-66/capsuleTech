@@ -39,7 +39,7 @@ export const Info = (props: IInfoProps) => (
     </Accordion>
 
     <Show when={props.manifest?.docSlug}>
-      <Accordion defaultValue={[]} fluid={300} multiple>
+      <Accordion defaultValue={['readme']} fluid={300} multiple>
         <Accordion.Item value="readme">
           <Accordion.Trigger>Readme</Accordion.Trigger>
           <Accordion.Content>

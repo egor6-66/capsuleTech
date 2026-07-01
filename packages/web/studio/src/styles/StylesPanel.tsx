@@ -42,53 +42,48 @@ export const StylesPanel = () => {
   const activeDark = () => ct.dark() ?? hostDark();
 
   return (
-    <Flex direction="col" gap={2} w={'full'}>
-      {/* Switcher — виден всегда (не сворачивается). */}
-      <Flex direction="col" gap={2} class="px-1 pt-1">
-        <Toggle
-          checked={activeDark()}
-          label="Тёмный режим"
-          onChange={(value) => ct.setDark(value)}
-        />
-        <Button
-          variant="outline"
-          size="sm"
-          fullWidth
-          data-testid="canvas-theme-reset"
-          onClick={() => ct.reset()}
-        >
-          Наследовать тему хоста
-        </Button>
-      </Flex>
-
-      {/* Список тем — свой сворачиваемый аккордеон. */}
-      <Accordion multiple defaultValue={['theme']} class="w-full">
-        <Accordion.Item value="theme">
-          <Accordion.Trigger>Тема канваса</Accordion.Trigger>
-          <Accordion.Content>
-            <Flex direction="col" gap={1} w={'full'} class="px-1 py-2">
-              <For each={DISCOVERED_THEMES}>
-                {(name) => (
-                  <Button
-                    variant={activeTheme() === name ? 'secondary' : 'ghost'}
-                    size="sm"
-                    fullWidth
-                    class="justify-start"
-                    data-testid={`canvas-theme-${name}`}
-                    onClick={() => ct.setTheme(name)}
-                  >
-                    <span class="inline-block w-4 text-primary" aria-hidden="true">
-                      <Show when={activeTheme() === name}>&#x2713;</Show>
-                    </span>
-                    <span>{name}</span>
-                  </Button>
-                )}
-              </For>
-            </Flex>
-          </Accordion.Content>
-        </Accordion.Item>
-      </Accordion>
-    </Flex>
+    <Accordion multiple class="w-full">
+      <Accordion.Item value="theme">
+        <Accordion.Trigger>Тема канваса</Accordion.Trigger>
+        <Accordion.Content>
+          <Flex direction="col" gap={2} class="px-1 pt-1">
+            <Toggle
+              checked={activeDark()}
+              label="Тёмный режим"
+              onChange={(value) => ct.setDark(value)}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              fullWidth
+              data-testid="canvas-theme-reset"
+              onClick={() => ct.reset()}
+            >
+              Наследовать тему хоста
+            </Button>
+          </Flex>
+          <Flex direction="col" gap={1} w={'full'} class="px-1 py-2">
+            <For each={DISCOVERED_THEMES}>
+              {(name) => (
+                <Button
+                  variant={activeTheme() === name ? 'secondary' : 'ghost'}
+                  size="sm"
+                  fullWidth
+                  class="justify-start"
+                  data-testid={`canvas-theme-${name}`}
+                  onClick={() => ct.setTheme(name)}
+                >
+                  <span class="inline-block w-4 text-primary" aria-hidden="true">
+                    <Show when={activeTheme() === name}>&#x2713;</Show>
+                  </span>
+                  <span>{name}</span>
+                </Button>
+              )}
+            </For>
+          </Flex>
+        </Accordion.Content>
+      </Accordion.Item>
+    </Accordion>
   );
 };
 

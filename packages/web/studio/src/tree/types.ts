@@ -1,6 +1,6 @@
+import type { DropZone } from '@capsuletech/web-dnd';
 import type { IEditorNode } from '@capsuletech/web-renderer';
 import type { IPreset } from '@capsuletech/web-ui/manifest';
-import type { DropZone } from '../document';
 
 /**
  * Stateless-пропсы для `<Tree>` — резолвятся в `TreePanel` connected-обёртке из

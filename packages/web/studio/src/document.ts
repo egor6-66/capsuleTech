@@ -22,13 +22,11 @@
  * своё открыт/закрыт — читается обратно из этого мапа при ремаунте.
  */
 
+import type { DropZone } from '@capsuletech/web-dnd';
 import type { IEditorNode, ISchema } from '@capsuletech/web-renderer';
 import type { IPreset } from '@capsuletech/web-ui/manifest';
 import { createStore, produce } from 'solid-js/store';
 import { canAcceptChild, isLayoutContainer } from './manifests';
-
-/** Куда встаёт перетащенная нода относительно target-строки дерева. */
-export type DropZone = 'before' | 'after' | 'inside';
 
 /** Режим-слайс: store (активный пресет) / creator (композиция). */
 export type DocMode = 'store' | 'creator';

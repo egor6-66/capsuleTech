@@ -28,6 +28,7 @@
  * сохранил открыт/закрыт).
  */
 
+import { DropIndicator } from '@capsuletech/web-dnd';
 import { Accordion } from '@capsuletech/web-ui/accordion';
 import { getManifest } from '@capsuletech/web-ui/manifest';
 import { For, Show } from 'solid-js';
@@ -60,26 +61,10 @@ export const TreeRow = (props: ITreeRowProps) => {
   // линия, inside кольцо). Ровно один branch (leaf/container/root) монтируется,
   // поэтому setRef регистрирует DnD один раз.
   const renderRow = () => (
-    <div
-      ref={dnd.setRef}
-      class="relative"
-      classList={{
-        'opacity-40': dnd.isDragging(),
-        'rounded-sm bg-primary/10 ring-2 ring-inset ring-primary': dnd.zone() === 'inside',
-      }}
-    >
-      <Show when={dnd.zone() === 'before'}>
-        <div class="pointer-events-none absolute inset-x-0 -top-[3px] z-20 flex items-center">
-          <span class="h-2 w-2 shrink-0 rounded-full bg-primary ring-2 ring-background" />
-          <span class="-ml-1 h-[3px] flex-1 rounded-full bg-primary" />
-        </div>
-      </Show>
-      <Show when={dnd.zone() === 'after'}>
-        <div class="pointer-events-none absolute inset-x-0 -bottom-[3px] z-20 flex items-center">
-          <span class="h-2 w-2 shrink-0 rounded-full bg-primary ring-2 ring-background" />
-          <span class="-ml-1 h-[3px] flex-1 rounded-full bg-primary" />
-        </div>
-      </Show>
+    <div ref={dnd.setRef} class="relative" classList={{ 'opacity-40': dnd.isDragging() }}>
+      {/* Индикатор вставки (сепаратор before/after, кольцо inside) — visual owned
+          by web-dnd (инлайн-стили, видим без Tailwind-скана пакета). */}
+      <DropIndicator zone={dnd.zone()} />
       <Row
         nodeId={props.nodeId}
         nodeType={node()?.type}
