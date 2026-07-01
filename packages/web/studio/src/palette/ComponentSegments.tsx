@@ -51,7 +51,9 @@ const PresetItem = (props: {
   selectedId?: string | null;
   testIdPrefix: string;
 }) => (
-  <Tooltip cursorTracking={false} openDelay={250}>
+  // cursorTracking (дефолт kit) — панель анкорится к точке КУРСОРА; placement="right"
+  // кладёт её справа от курсора (gutter — зазор), чтобы не перекрывать список.
+  <Tooltip placement="right" gutter={12} openDelay={250}>
     <Tooltip.Trigger as="div" class="w-full">
       <button
         type="button"
