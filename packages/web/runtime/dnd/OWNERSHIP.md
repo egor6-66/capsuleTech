@@ -73,6 +73,10 @@ Leaf-пакет zone runtime. Никаких vendor'ов кроме Solid — р
 | `createDroppable(opts)` | Делает элемент drop-зоной |
 | `createSortable(opts)` | Sortable-pattern (items с reorder, tree-editor) |
 | `createSortableGroup(opts)` | Geometric live multi-zone sortable (ADR 025). Items are draggable-only; zone container is the sole droppable. Index computed geometrically from resting-position snapshots. |
+| `createReorderable(opts)` | **Per-element reorder** (draggable+droppable на одном элементе + live `zone()`). Для деревьев: reorder + reparent (before/after/inside). Домен-предикаты `accepts`/`canInside` от консюмера. Вне `<DnDProvider>` — no-op. |
+| `zoneFromRatio(ratioY, canInside, thresholds?)` | Pure: доля высоты → `DropZone`. leaf split 0.5; container 0.3/0.7 (override через thresholds). |
+| `<DropIndicator zone={} />` | Визуал позиции вставки (before/after линия-сепаратор, inside кольцо+заливка). **Инлайн-стили на `var(--primary)`** — НЕ Tailwind (см. quirk). |
+| Types: `DropZone`, `IReorderable`, `IReorderableOptions`, `IZoneThresholds` | Reorder-контракт |
 | `DragOverlay` | Render-prop для кастомного ghost |
 | Types: `IDnDProviderProps`, `IDraggableOptions`, `IDroppableOptions`, `DragData`, `IDropInfo`, `IDragEndResult`, `IDragSnapshot` | Основные типы |
 | Types: `ISortableGroupOptions`, `ISortableGroup`, `ISortableZoneOptions`, `ISortableDropEvent`, `ISortableZone`, `ISortableZoneItem`, `IRect` | Типы для createSortableGroup |
@@ -117,6 +121,8 @@ Leaf-пакет zone runtime. Никаких vendor'ов кроме Solid — р
 
 - **Pointer in Portal** — DefaultDragOverlay рендерится в `<Portal>`, но `pointer` signal реактивный в DnDProvider. Solid细致 reactive tracking здесь work'ает правильно.
 
+- **DropIndicator стиль — инлайн, не Tailwind (root-cause фикс «индикатор невидим»).** Консюмер-приложение сканирует Tailwind только по `src` + `web-ui` (`@source`), НЕ по web-dnd / web-studio. Arbitrary-классы (`h-[3px]`, `-top-[3px]`, `bg-primary/10`), использованные внутри пакета, НЕ попадали в билд → линия-сепаратор имела `height:auto` (визуально невидима), хотя `onDrop` отрабатывал (чистая JS-логика). Именно этот баг описан в брифе dnd-reorder-feedback-primitives §2.4. Фикс: `<DropIndicator>` рисует всё инлайн-стилями на `var(--primary)` (в capsule-темах это готовый oklch-цвет) + `color-mix` для полупрозрачной заливки → самодостаточно, видимо в любом консюмере без `@source`. Тот же принцип уже был в `DefaultDragOverlay` (overlay через inline-styles). Требование к консюмеру: обёртка = `position: relative` + `overflow: visible`.
+
 ## План рефакторинга / оптимизаций
 
 - [ ] **HTML5 Drag and Drop spec alternative** — если когда-то переходить на native DragEvent API, это будет breaking change всего пакета. Текущая реализация — намеренно простая, не привязана к spec. (priority: низкая, только если появится конкретный кейс)
@@ -127,6 +133,7 @@ Leaf-пакет zone runtime. Никаких vendor'ов кроме Solid — р
 - [x] **Grid-canvas pure math (ADR 026 Phase 1, 2026-06-02)** — `grid.ts`: pure functions `pointToCell`/`moveItem`/`resizeItem`/`placeItem` + helpers `collides`/`getCollisions`/`compactVertical`/`clampToCols`. Types `IGridItem`/`IGridLayout`. 56 unit tests; resizeItem never-moves-self invariant formally tested. Phase 2 (render + drag in Matrix) → owner-web-ui.
 - [x] **`/controllers` subpath — HCA-прослойка (ADR 032, фаза 4, 2026-06-04)** — `src/controllers/`: `createEmittingDroppable` (onDrop + onDragOver emit) + `createEmittingDraggable` (onDragStart + onDragEnd emit). Multi-entry build (vite.config.mts), package.json exports `./controllers`. 9 unit tests. tsconfig.base.json alias — запрошен у главного.
 - [x] **Разрыв цикла web-dnd → web-core (2026-06-04)** — EmitFn инжектируется консьюмером через `options.emit` вместо `useEmit()` внутри. Dep `@capsuletech/web-core` удалён из package.json. Цикл `web-core→web-ui→web-dnd→web-core` устранён. 102 тестов green.
+- [x] **Reorder-примитивы + DropIndicator (2026-07-02, brief dnd-reorder-feedback-primitives)** — generic per-элемент reorder-фидбек перенесён из web-studio (`tree/dndHelpers.ts` + `useRowDnd.ts` + `TreeRow.tsx`-разметка). Новое: `zoneFromRatio` (pure), `createReorderable` (draggable+droppable+live `zone()`), `<DropIndicator>` (инлайн-стиль, root-cause фикс невидимости). Домен (топология дерева, манифесты) остаётся в студии предикатами `accepts`/`canInside`. 122 теста green (+20). Студия мигрирует на эти примитивы отдельно (owner-studio, §6 брифа) — contract-change координирует architect.
 
 ## Test coverage
 
@@ -136,6 +143,9 @@ Leaf-пакет zone runtime. Никаких vendor'ов кроме Solid — р
 | Unit | `src/__tests__/provider-cleanup.test.tsx` (5/5) | window listeners lifecycle: no listeners before drag; startDrag attaches 4; unmount during drag removes all 4; pointerup removes all 4; Escape removes all 4 |
 | Unit | `src/__tests__/controllers.test.tsx` (10/10) | ADR 032: emit onDrop c { data, pointer, dropInfo }; emit onDrop + оригинальный callback; нет emit без ключа; emit onDragOver реактивно; emit onDragStart с payload; emit onDragEnd с data; нет emit для другого draggable-id; no-op без emit-fn (droppable + draggable); payload shape. EmitFn инжектируется через options — нет mock @capsuletech/web-core |
 | Unit | `src/__tests__/sortableZone.test.ts` (27/27) | Pure geometric helpers: `computeInsertIndex` (y/x/grid axes, empty/before/between/after/single cases); `findZoneAtPoint` (inside/outside/boundary/empty); `findNearestZone` (nearest/empty/single) |
+| Unit | `src/__tests__/zone.test.ts` (8/8) | `zoneFromRatio` pure: leaf split 0.5 (пороги игнор); container 0.3/0.7 + override через thresholds |
+| Unit | `src/__tests__/reorderable.test.tsx` (~10) | `createReorderable`: `zone()` реагирует на overId/pointer (leaf before/after, container inside); `accepts=false`→zone null + onDrop reject; `onDrop(data, zone)` по ratio; `disabled`→no drag; no-op вне провайдера |
+| Unit | `src/__tests__/DropIndicator.test.tsx` (4/4) | smoke-рендер по зоне: before/after сепаратор (2 span, straddle края), inside кольцо (box-shadow inset), null → пусто |
 | Unit | `src/__tests__/grid.test.ts` (56/56) | Pure grid-math (ADR 026 Phase 1): `collides` (overlap/adjacent/same-id); `getCollisions`; `clampToCols`; `compactVertical`; `pointToCell` (snap/clamp/offset); `moveItem` (position/neighbor-push/clamp); `resizeItem` (x/y-fixed invariant, neighbor-displaced, w-clamp, h-min); `placeItem` (insert/idempotent/overlap); formal bug-fix e2e (resize never moves self). |
 | Integration | [[Matrix v2|web-ui]] swap tests | `src/primitives/layout/matrix/__tests__/swap-dnd.test.tsx` (47/47 passing) |
 | E2E | `packages/cli/e2e/smoke.mjs` | косвенно через Matrix-using pages в sandbox |
