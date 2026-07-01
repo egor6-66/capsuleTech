@@ -35,6 +35,7 @@ import { acceptsChildren } from '../manifests';
 import { NodePalette } from './NodePalette';
 import { Row } from './Row';
 import type { ITreeRowProps } from './types';
+import { useRowDnd } from './useRowDnd';
 
 export const TreeRow = (props: ITreeRowProps) => {
   const node = () => props.nodes[props.nodeId];
@@ -46,6 +47,43 @@ export const TreeRow = (props: ITreeRowProps) => {
   const isContainer = () => acceptsChildren(node()?.type);
   const isSelected = () => props.selectedNodeId === props.nodeId;
   const isRoot = () => props.nodeId === props.rootId;
+
+  const dnd = useRowDnd({
+    nodeId: props.nodeId,
+    nodeType: () => node()?.type,
+    isRoot: props.nodeId === props.rootId,
+    nodes: () => props.nodes,
+    onMove: props.onMove,
+  });
+
+  // Строка + DnD-обёртка: draggable/droppable + индикатор зоны (before/after
+  // линия, inside кольцо). Ровно один branch (leaf/container/root) монтируется,
+  // поэтому setRef регистрирует DnD один раз.
+  const renderRow = () => (
+    <div
+      ref={dnd.setRef}
+      class="relative"
+      classList={{
+        'opacity-40': dnd.isDragging(),
+        'rounded-sm ring-2 ring-inset ring-primary': dnd.zone() === 'inside',
+      }}
+    >
+      <Show when={dnd.zone() === 'before'}>
+        <div class="pointer-events-none absolute inset-x-0 -top-px z-10 h-0.5 rounded bg-primary" />
+      </Show>
+      <Show when={dnd.zone() === 'after'}>
+        <div class="pointer-events-none absolute inset-x-0 -bottom-px z-10 h-0.5 rounded bg-primary" />
+      </Show>
+      <Row
+        nodeId={props.nodeId}
+        nodeType={node()?.type}
+        manifest={manifest()}
+        depth={props.depth}
+        selected={isSelected()}
+        onSelect={() => props.onSelect(props.nodeId)}
+      />
+    </div>
+  );
 
   // Дети + мини-палитра — общий блок для accordion-контента и корневой строки.
   const childrenBlock = () => (
@@ -60,6 +98,7 @@ export const TreeRow = (props: ITreeRowProps) => {
             onInsert={props.onInsert}
             isExpanded={props.isExpanded}
             onToggleExpand={props.onToggleExpand}
+            onMove={props.onMove}
             nodeId={childId}
             depth={props.depth + 1}
           />
@@ -76,19 +115,7 @@ export const TreeRow = (props: ITreeRowProps) => {
   );
 
   return (
-    <Show
-      when={isContainer() || hasChildren()}
-      fallback={
-        <Row
-          nodeId={props.nodeId}
-          nodeType={node()?.type}
-          manifest={manifest()}
-          depth={props.depth}
-          selected={isSelected()}
-          onSelect={() => props.onSelect(props.nodeId)}
-        />
-      }
-    >
+    <Show when={isContainer() || hasChildren()} fallback={renderRow()}>
       <Show
         when={isRoot()}
         fallback={
@@ -102,14 +129,7 @@ export const TreeRow = (props: ITreeRowProps) => {
           >
             <Accordion.Item value={props.nodeId} class="border-0">
               <Accordion.Trigger class="px-0 py-0 text-xs font-normal">
-                <Row
-                  nodeId={props.nodeId}
-                  nodeType={node()?.type}
-                  manifest={manifest()}
-                  depth={props.depth}
-                  selected={isSelected()}
-                  onSelect={() => props.onSelect(props.nodeId)}
-                />
+                {renderRow()}
               </Accordion.Trigger>
               <Accordion.Content>{childrenBlock()}</Accordion.Content>
             </Accordion.Item>
@@ -118,14 +138,7 @@ export const TreeRow = (props: ITreeRowProps) => {
       >
         {/* Корень: всегда открыт, без Accordion/chevron. */}
         <div class="w-full">
-          <Row
-            nodeId={props.nodeId}
-            nodeType={node()?.type}
-            manifest={manifest()}
-            depth={props.depth}
-            selected={isSelected()}
-            onSelect={() => props.onSelect(props.nodeId)}
-          />
+          {renderRow()}
           {childrenBlock()}
         </div>
       </Show>

@@ -25,7 +25,10 @@
 import type { IEditorNode, ISchema } from '@capsuletech/web-renderer';
 import type { IPreset } from '@capsuletech/web-ui/manifest';
 import { createStore, produce } from 'solid-js/store';
-import { isLayoutContainer } from './manifests';
+import { canAcceptChild, isLayoutContainer } from './manifests';
+
+/** Куда встаёт перетащенная нода относительно target-строки дерева. */
+export type DropZone = 'before' | 'after' | 'inside';
 
 /** Режим-слайс: store (активный пресет) / creator (композиция). */
 export type DocMode = 'store' | 'creator';
@@ -244,6 +247,54 @@ const removeNode = (mode: DocMode, id: string): void => {
   );
 };
 
+/**
+ * Перемещает узел `dragId` относительно `targetId` (DnD в дереве, creator).
+ *  - `inside` — ребёнком в target (если target принимает тип drag'а);
+ *  - `before`/`after` — соседом target'а в его родителе.
+ *
+ * Guard'ы: корень неподвижен; нельзя в себя; нельзя в собственное поддерево
+ * (цикл); родитель назначения должен принимать тип drag'а (`canAcceptChild`).
+ * No-op при нарушении — молча (валидность отражает индикатор в UI).
+ */
+const moveNode = (mode: DocMode, dragId: string, targetId: string, zone: DropZone): void => {
+  setState(
+    mode,
+    produce((s) => {
+      const nodes = s.schema.components.nodes;
+      const root = s.schema.components.root;
+      const drag = nodes[dragId];
+      const target = nodes[targetId];
+      if (!drag || !target) return;
+      if (dragId === root || dragId === targetId) return;
+
+      // Цикл: target не должен лежать внутри поддерева drag'а.
+      for (let a: string | null = targetId; a; a = nodes[a]?.parentId ?? null) {
+        if (a === dragId) return;
+      }
+
+      const newParentId = zone === 'inside' ? targetId : (target.parentId ?? root);
+      const newParent = nodes[newParentId];
+      if (!newParent) return;
+      if (!canAcceptChild(newParent.type, drag.type)) return;
+
+      // Отвязать от старого родителя.
+      const oldParent = drag.parentId ? nodes[drag.parentId] : null;
+      if (oldParent) oldParent.children = oldParent.children.filter((c) => c !== dragId);
+
+      // Индекс вставки в newParent.children (уже без drag'а).
+      let index: number;
+      if (zone === 'inside') {
+        index = newParent.children.length;
+      } else {
+        const ti = newParent.children.indexOf(targetId);
+        index = ti < 0 ? newParent.children.length : zone === 'after' ? ti + 1 : ti;
+      }
+      newParent.children.splice(index, 0, dragId);
+      drag.parentId = newParentId;
+    }),
+  );
+};
+
 /** Явно задать open-состояние строки дерева (persist вне Kobalte). */
 const setExpanded = (mode: DocMode, id: string, open: boolean): void => {
   setState(mode, 'expandedIds', id, open);
@@ -268,6 +319,8 @@ export interface IWebStudioDocument {
   patchProps: (nodeId: string, props: Record<string, unknown>) => void;
   patchNodeType: (nodeId: string, type: string) => void;
   removeNode: (id: string) => void;
+  /** DnD: переместить узел относительно target-строки (before/after/inside). */
+  moveNode: (dragId: string, targetId: string, zone: DropZone) => void;
   setExpanded: (id: string, open: boolean) => void;
   reset: () => void;
 }
@@ -297,6 +350,7 @@ export const useDocument = (mode: DocMode | (() => DocMode) = 'store'): IWebStud
     patchProps: (nodeId, props) => patchProps(m(), nodeId, props),
     patchNodeType: (nodeId, type) => patchNodeType(m(), nodeId, type),
     removeNode: (id) => removeNode(m(), id),
+    moveNode: (dragId, targetId, zone) => moveNode(m(), dragId, targetId, zone),
     setExpanded: (id, open) => setExpanded(m(), id, open),
     reset: () => reset(m()),
   };

@@ -23,6 +23,7 @@ export const Tree = (props: ITreeProps) => (
       onInsert={props.onInsert}
       isExpanded={props.isExpanded}
       onToggleExpand={props.onToggleExpand}
+      onMove={props.onMove}
       nodeId={props.rootId}
       depth={0}
     />

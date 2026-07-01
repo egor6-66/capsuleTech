@@ -23,6 +23,7 @@ const renderTree = (isExpanded: (id: string) => boolean) => {
         onInsert={() => {}}
         isExpanded={isExpanded}
         onToggleExpand={() => {}}
+        onMove={() => {}}
       />
     ),
     host,

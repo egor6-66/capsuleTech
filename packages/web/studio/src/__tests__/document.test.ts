@@ -8,6 +8,7 @@ const buttonPreset = () => getPresets('ui.Button').find((p) => p.id === 'default
 const iconPreset = () => getPresets('ui.Button').find((p) => p.id === 'icon')!;
 const flexPreset = () => getPresets('ui.Layout.Flex')[0];
 const cardPreset = () => getPresets('ui.Card')[0];
+const groupPreset = () => getPresets('ui.Group')[0];
 
 afterEach(() => {
   useDocument('store').reset();
@@ -183,6 +184,72 @@ describe('document — insertPreset: layout-контейнер пустой в c
     doc.loadPreset(flexPreset());
     const root = doc.schema().components.nodes[doc.schema().components.root];
     expect(root.children.length).toBeGreaterThan(0);
+  });
+});
+
+describe('document — moveNode (DnD)', () => {
+  const childrenOf = (doc: ReturnType<typeof useDocument>, id: string) =>
+    doc.schema().components.nodes[id].children;
+
+  it('reorder: before/after среди сиблингов', () => {
+    const doc = useDocument('creator');
+    doc.insertPreset(buttonPreset());
+    doc.insertPreset(buttonPreset());
+    const [a, b] = childrenOf(doc, COMPOSITION_ROOT_ID);
+    doc.moveNode(b, a, 'before');
+    expect(childrenOf(doc, COMPOSITION_ROOT_ID)).toEqual([b, a]);
+    doc.moveNode(b, a, 'after');
+    expect(childrenOf(doc, COMPOSITION_ROOT_ID)).toEqual([a, b]);
+  });
+
+  it('reparent: inside контейнер, принимающий тип', () => {
+    const doc = useDocument('creator');
+    doc.insertPreset(groupPreset()); // layout-контейнер, вставлен пустым
+    doc.insertPreset(buttonPreset());
+    const [grp, btn] = childrenOf(doc, COMPOSITION_ROOT_ID);
+    doc.moveNode(btn, grp, 'inside');
+    expect(childrenOf(doc, COMPOSITION_ROOT_ID)).toEqual([grp]);
+    expect(childrenOf(doc, grp)).toEqual([btn]);
+    expect(doc.schema().components.nodes[btn].parentId).toBe(grp);
+  });
+
+  it('guard: корень неподвижен', () => {
+    const doc = useDocument('creator');
+    doc.insertPreset(groupPreset());
+    const grp = childrenOf(doc, COMPOSITION_ROOT_ID)[0];
+    doc.moveNode(COMPOSITION_ROOT_ID, grp, 'inside');
+    expect(childrenOf(doc, grp)).toEqual([]);
+  });
+
+  it('guard: нельзя в себя', () => {
+    const doc = useDocument('creator');
+    doc.insertPreset(groupPreset());
+    const grp = childrenOf(doc, COMPOSITION_ROOT_ID)[0];
+    doc.moveNode(grp, grp, 'inside');
+    expect(childrenOf(doc, COMPOSITION_ROOT_ID)).toEqual([grp]);
+  });
+
+  it('guard: нельзя в собственное поддерево (цикл)', () => {
+    const doc = useDocument('creator');
+    doc.insertPreset(groupPreset());
+    doc.insertPreset(buttonPreset());
+    const [grp, btn] = childrenOf(doc, COMPOSITION_ROOT_ID);
+    doc.moveNode(btn, grp, 'inside'); // btn теперь внутри grp
+    doc.moveNode(grp, btn, 'inside'); // grp в свой потомок — no-op
+    expect(childrenOf(doc, grp)).toEqual([btn]);
+    expect(doc.schema().components.nodes[grp].parentId).toBe(COMPOSITION_ROOT_ID);
+  });
+
+  it('guard: inside в контейнер, НЕ принимающий тип — no-op', () => {
+    const doc = useDocument('creator');
+    const card = cardPreset();
+    if (!card) return;
+    doc.insertPreset(card); // composition, целиком
+    doc.insertPreset(buttonPreset());
+    const [cardNode, btn] = childrenOf(doc, COMPOSITION_ROOT_ID);
+    doc.moveNode(btn, cardNode, 'inside'); // Card принимает только свои parts
+    expect(childrenOf(doc, COMPOSITION_ROOT_ID)).toContain(btn);
+    expect(doc.schema().components.nodes[btn].parentId).toBe(COMPOSITION_ROOT_ID);
   });
 });
 

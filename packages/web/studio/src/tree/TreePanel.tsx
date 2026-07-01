@@ -14,7 +14,7 @@ import { useDocument } from '../document';
 import { Tree } from './Tree';
 
 export const TreePanel = () => {
-  const { schema, selectedNodeId, selectNode, insertPreset, isExpanded, setExpanded } =
+  const { schema, selectedNodeId, selectNode, insertPreset, isExpanded, setExpanded, moveNode } =
     useDocument('creator');
   return (
     <Tree
@@ -25,6 +25,7 @@ export const TreePanel = () => {
       onInsert={(preset, parentId) => insertPreset(preset, parentId)}
       isExpanded={isExpanded}
       onToggleExpand={setExpanded}
+      onMove={moveNode}
     />
   );
 };

@@ -1,5 +1,6 @@
 import type { IEditorNode } from '@capsuletech/web-renderer';
 import type { IPreset } from '@capsuletech/web-ui/manifest';
+import type { DropZone } from '../document';
 
 /**
  * Stateless-пропсы для `<Tree>` — резолвятся в `TreePanel` connected-обёртке из
@@ -21,6 +22,8 @@ export interface ITreeProps {
   isExpanded: (id: string) => boolean;
   /** Сменить open-состояние строки-контейнера. */
   onToggleExpand: (id: string, open: boolean) => void;
+  /** DnD: переместить `dragId` относительно `targetId` в зону (before/after/inside). */
+  onMove: (dragId: string, targetId: string, zone: DropZone) => void;
 }
 
 export interface ITreeRowProps extends ITreeProps {
