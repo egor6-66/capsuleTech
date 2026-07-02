@@ -2,9 +2,9 @@
  * StylesPanel — connected-модуль студии для переключения темы **канваса**
  * (remote `universal-canvas`) независимо от темы хрома самой студии.
  *
- * Структура (как `inspector/Inspector.tsx`): always-visible switcher-блок
- * (dark-режим виден всегда, не сворачивается) + `Accordion` со списком тем
- * (свой сворачиваемый item). Пишет в общий singleton `useCanvasTheme()` —
+ * Структура (как `inspector/Inspector.tsx`): один сворачиваемый `Accordion`-item
+ * «Тема канваса», **свёрнут по старту** (без `defaultValue` — решение USER); внутри
+ * dark-тоггл + reset + список тем. Пишет в общий singleton `useCanvasTheme()` —
  * `Canvas.tsx` форвардит override пропами `<Remote theme={…} dark={…} />`;
  * провод web-remote сам шлёт `__capsule_theme__` в iframe.
  *
@@ -42,9 +42,9 @@ export const StylesPanel = () => {
   const activeDark = () => ct.dark() ?? hostDark();
 
   return (
-    <Accordion multiple class="w-full">
+    <Accordion bordered multiple class="w-full">
       <Accordion.Item value="theme">
-        <Accordion.Trigger>Тема канваса</Accordion.Trigger>
+        <Accordion.Trigger data-testid="canvas-theme-trigger">Тема канваса</Accordion.Trigger>
         <Accordion.Content>
           <Flex direction="col" gap={2} class="px-1 pt-1">
             <Toggle

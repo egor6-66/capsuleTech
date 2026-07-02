@@ -21,18 +21,38 @@ describe('PropsPanel', () => {
     }
   });
 
-  it('рендерит поля Inspector для выбранного узла (Button-пресет загружен)', () => {
+  it('рендерит поля Inspector для выбранного узла (Button-пресет загружен)', async () => {
+    // host в document.body — Solid делегирует click на document (нужно для
+    // раскрытия свёрнутых по старту category-аккордеонов Inspector'а).
     const host = document.createElement('div');
+    document.body.appendChild(host);
     const { loadPreset } = useDocument();
     loadPreset(getPresets('ui.Button').find((p) => p.id === 'default')!);
     const dispose = render(() => <PropsPanel />, host);
     try {
-      const text = host.textContent ?? '';
-      const hasFields = host.querySelector('input, select, button[role="switch"]') !== null;
-      const hasFallback = text.includes('нет редактируемых пропсов');
-      expect(hasFields || hasFallback).toBe(true);
+      // Категории Inspector'а свёрнуты по старту → поля не смонтированы. Раскрыть
+      // все item'ы (клик по каждому свёрнутому триггеру), затем ждать поля.
+      const expandAll = () => {
+        for (const b of host.querySelectorAll<HTMLButtonElement>('button[aria-expanded="false"]')) {
+          b.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        }
+      };
+      expandAll();
+      await new Promise<void>((resolve, reject) => {
+        const start = Date.now();
+        const check = () => {
+          const text = host.textContent ?? '';
+          const hasFields = host.querySelector('input, select, button[role="switch"]') !== null;
+          const hasFallback = text.includes('нет редактируемых пропсов');
+          if (hasFields || hasFallback) return resolve();
+          if (Date.now() - start > 400) return reject(new Error('no fields mounted'));
+          setTimeout(check, 10);
+        };
+        check();
+      });
     } finally {
       dispose();
+      host.remove();
     }
   });
 
