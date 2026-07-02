@@ -13,6 +13,7 @@
  *   - Disabled item cannot be expanded.
  *   - Accordion.Item + Accordion.Trigger + Accordion.Content render without error.
  *   - defaultValue: item is expanded on mount.
+ *   - bordered: opt-in outer frame classes (off by default).
  */
 /* @vitest-environment jsdom */
 
@@ -228,6 +229,46 @@ describe('Accordion', () => {
       // Wait a tick for Solid reactivity to settle
       await new Promise((r) => setTimeout(r, 20));
       expect(container.querySelector('[data-expanded]')).not.toBeNull();
+    });
+  });
+
+  describe('bordered', () => {
+    it('no outer border token by default', () => {
+      cleanup = render(
+        () => (
+          <Accordion>
+            <Accordion.Item value="a">
+              <Accordion.Trigger>Section A</Accordion.Trigger>
+              <Accordion.Content>Content A</Accordion.Content>
+            </Accordion.Item>
+          </Accordion>
+        ),
+        container,
+      );
+
+      const root = container.firstElementChild!;
+      // `divide-border` is always present; the standalone `border` token is not.
+      expect(root.classList.contains('border')).toBe(false);
+      expect(root.classList.contains('rounded-md')).toBe(false);
+    });
+
+    it('bordered=true adds the outer frame classes', () => {
+      cleanup = render(
+        () => (
+          <Accordion bordered>
+            <Accordion.Item value="a">
+              <Accordion.Trigger>Section A</Accordion.Trigger>
+              <Accordion.Content>Content A</Accordion.Content>
+            </Accordion.Item>
+          </Accordion>
+        ),
+        container,
+      );
+
+      const root = container.firstElementChild!;
+      expect(root.classList.contains('border')).toBe(true);
+      expect(root.classList.contains('rounded-md')).toBe(true);
+      expect(root.classList.contains('overflow-hidden')).toBe(true);
     });
   });
 

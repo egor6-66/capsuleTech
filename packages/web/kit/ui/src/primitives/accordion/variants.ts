@@ -9,10 +9,24 @@ import { cva } from '@capsuletech/web-style';
  * For responsive multi-column layouts use the `fluid` prop on each Accordion
  * together with a parent `<Flex wrap='wrap'>` — same pattern as `Flex`'s own
  * `fluid` prop. When `fluid` is set, `w-full` is dropped automatically.
+ *
+ * `bordered` — opt-in outer frame (off by default). Wraps the whole accordion
+ * in a `border` + `rounded-md` (with `overflow-hidden` so item corners clip),
+ * so two accordions placed side by side / stacked stay visually distinct
+ * instead of merging into one flat surface.
  */
+export const accordionBorderClass = 'overflow-hidden rounded-md border border-border';
+
 export const accordionRootCva = cva('w-full divide-y divide-border', {
-  variants: {},
-  defaultVariants: {},
+  variants: {
+    bordered: {
+      true: accordionBorderClass,
+      false: '',
+    },
+  },
+  defaultVariants: {
+    bordered: false,
+  },
 });
 
 /**

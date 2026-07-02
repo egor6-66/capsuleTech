@@ -31,6 +31,12 @@ export interface IAccordionProps extends AccordionRootProps {
    * For typical (non-responsive) usage, omit — Accordion stays `w-full`.
    */
   fluid?: number;
+  /**
+   * Opt-in outer frame. When true, wraps the accordion in a border +
+   * rounded corners so adjacent accordions stay visually distinct instead of
+   * merging into one flat surface. Off by default.
+   */
+  bordered?: boolean;
 }
 
 /**

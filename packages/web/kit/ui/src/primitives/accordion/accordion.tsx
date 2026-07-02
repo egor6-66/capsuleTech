@@ -11,6 +11,7 @@ import type {
   IAccordionTriggerProps,
 } from './interfaces';
 import {
+  accordionBorderClass,
   accordionContentCva,
   accordionContentInnerClass,
   accordionItemCva,
@@ -46,13 +47,13 @@ import {
  */
 const AccordionImpl = (props: IAccordionProps) => {
   useTrace('web-ui.accordion'); // ADR 062
-  const [local, others] = splitProps(props, ['class', 'fluid']);
+  const [local, others] = splitProps(props, ['class', 'fluid', 'bordered']);
 
   const rootClass = () =>
     local.fluid !== undefined
       ? // Drop `w-full` when fluid is set — it conflicts with `flex: 1 1 Npx`.
-        cn('divide-y divide-border', local.class)
-      : cn(accordionRootCva(), local.class);
+        cn('divide-y divide-border', local.bordered && accordionBorderClass, local.class)
+      : cn(accordionRootCva({ bordered: local.bordered }), local.class);
 
   const rootStyle = (): string | undefined =>
     local.fluid !== undefined ? `flex: 1 1 ${local.fluid}px` : undefined;
