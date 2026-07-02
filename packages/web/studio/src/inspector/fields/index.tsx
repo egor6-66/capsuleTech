@@ -23,6 +23,7 @@ import type {
   ValuesMap,
 } from '../types';
 import { BooleanField } from './BooleanField';
+import { coerceTextValue } from './coerce';
 import { NumberField } from './NumberField';
 import { NumberUnitField } from './NumberUnitField';
 import { SelectField } from './SelectField';
@@ -49,8 +50,8 @@ export const FieldRenderer: Component<IFieldRendererProps> = (props) => {
       <Match when={props.field.type === 'text'}>
         <TextField
           field={props.field as ITextField}
-          value={value() as string | undefined}
-          onChange={emit}
+          value={value() as string | number | undefined}
+          onChange={(v) => emit(coerceTextValue(props.field as ITextField, v))}
           kit={kit()}
         />
       </Match>
