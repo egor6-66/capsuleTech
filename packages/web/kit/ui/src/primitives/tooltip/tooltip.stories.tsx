@@ -19,7 +19,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Default tooltip anchored to the cursor position. Hover to see it appear near the pointer. */
+/** Default tooltip anchored to — and following — the cursor. Hover and move to see it track the pointer. */
 export const Default: Story = {
   render: () => (
     <Tooltip>
@@ -47,9 +47,9 @@ export const LongText: Story = {
 };
 
 /**
- * Demonstrates cursor-anchored positioning on a tall element.
- * Hover the top, middle, or bottom of the box — the tooltip appears
- * near your cursor, not at the element's bottom edge.
+ * Demonstrates cursor-following positioning on a tall element.
+ * Move the pointer around inside the box — the tooltip tracks the cursor,
+ * and disappears the moment the pointer leaves the box.
  */
 export const LargeElement: Story = {
   render: () => (
@@ -58,9 +58,9 @@ export const LargeElement: Story = {
         as="div"
         class="flex h-64 w-80 cursor-default items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground text-sm select-none"
       >
-        Hover anywhere inside — tooltip follows your cursor
+        Move around inside — the tooltip tracks your cursor
       </Tooltip.Trigger>
-      <Tooltip.Content>Appears near your cursor, not at the element edge</Tooltip.Content>
+      <Tooltip.Content>Follows your cursor; closes when you leave the box</Tooltip.Content>
     </Tooltip>
   ),
 };

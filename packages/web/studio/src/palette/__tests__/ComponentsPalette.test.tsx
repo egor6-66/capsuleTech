@@ -2,13 +2,13 @@
 import { getAllManifests, getPresets, hasPresets } from '@capsuletech/web-ui/manifest';
 import { render } from 'solid-js/web';
 import { afterEach, describe, expect, it } from 'vitest';
-import { useSelectedPreset } from '../../selection';
+import { useDocument } from '../../document';
 import { ComponentsPalette } from '../ComponentsPalette';
 import { groupManifests } from '../groups';
 
-// Сбрасываем shared selection-singleton между тестами.
+// Сбрасываем shared document-singleton между тестами.
 afterEach(() => {
-  useSelectedPreset().setSelected(null);
+  useDocument().reset();
 });
 
 describe('ComponentsPalette — smoke', () => {
@@ -66,7 +66,7 @@ describe('Palette — presets registry', () => {
   });
 });
 
-describe('Preset click — emit + singleton write', () => {
+describe('Preset click — loadPreset в document + emit (store-mode)', () => {
   /** Fires pointer-down + pointer-up + click (Kobalte trigger needs the full sequence). */
   const press = (el: Element) => {
     el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
@@ -84,7 +84,7 @@ describe('Preset click — emit + singleton write', () => {
       check();
     });
 
-  it('клик пресета пишет singleton и НЕ бросает вне host-scope (useEmitOptional no-op)', async () => {
+  it('клик пресета грузит document + выбирает root и НЕ бросает вне host-scope', async () => {
     const host = document.createElement('div');
     document.body.appendChild(host);
     const dispose = render(() => <ComponentsPalette />, host);
@@ -101,10 +101,13 @@ describe('Preset click — emit + singleton write', () => {
       expect(btn).toBeTruthy();
 
       // Standalone (нет Controller/Feature выше) — emit('onPresetSelect') уходит
-      // в no-op, синглтон обновляется, ошибки нет.
+      // в no-op, document обновляется, ошибки нет.
       expect(() => press(btn!)).not.toThrow();
-      const expected = getPresets('ui.Button').find((p) => p.id === 'default');
-      expect(useSelectedPreset().selected()?.id).toBe(expected?.id);
+      const doc = useDocument();
+      expect(doc.loadedPresetId()).toBe('default');
+      // document загружен из пресета, выбран его root.
+      const def = getPresets('ui.Button').find((p) => p.id === 'default')!;
+      expect(doc.selectedNodeId()).toBe(def.schema.components.root);
     } finally {
       dispose();
       host.remove();
@@ -112,13 +115,13 @@ describe('Preset click — emit + singleton write', () => {
   });
 });
 
-describe('Selection singleton', () => {
-  it('useSelectedPreset работает без Provider (singleton сигнал)', () => {
-    const { selected, setSelected } = useSelectedPreset();
-    expect(selected()).toBeNull();
-    const p = getPresets('ui.Button').find((x) => x.id === 'default');
-    expect(p).toBeTruthy();
-    setSelected(p ?? null);
-    expect(selected()).toEqual(p);
+describe('Document singleton', () => {
+  it('useDocument работает без Provider (singleton сигнал)', () => {
+    const { loadedPresetId, loadPreset, selectedNode } = useDocument();
+    expect(loadedPresetId()).toBeNull();
+    const p = getPresets('ui.Button').find((x) => x.id === 'default')!;
+    loadPreset(p);
+    expect(loadedPresetId()).toBe(p.id);
+    expect(selectedNode()?.type).toBe('ui.Button');
   });
 });

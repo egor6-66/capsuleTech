@@ -31,6 +31,17 @@ export interface IAccordionProps extends AccordionRootProps {
    * For typical (non-responsive) usage, omit — Accordion stays `w-full`.
    */
   fluid?: number;
+  /**
+   * Opt-in outer stroke (`border`). Keeps adjacent accordions visually
+   * distinct instead of merging into one flat surface. Off by default.
+   * Independent of `rounded`.
+   */
+  bordered?: boolean;
+  /**
+   * Opt-in rounded corners (`rounded-md`, with `overflow-hidden` so item
+   * corners clip to the radius). Off by default. Independent of `bordered`.
+   */
+  rounded?: boolean;
 }
 
 /**

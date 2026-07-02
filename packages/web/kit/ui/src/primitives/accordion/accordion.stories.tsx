@@ -51,6 +51,35 @@ export const Multiple: Story = {
 };
 
 /**
+ * `bordered` (stroke) and `rounded` (radius) are independent opt-in flags,
+ * both off by default. Here: stroke-only, radius-only, and both combined.
+ */
+export const BorderedAndRounded: Story = {
+  render: () => (
+    <Flex direction="col" gap={4}>
+      <Accordion bordered collapsible>
+        <Accordion.Item value="a1">
+          <Accordion.Trigger>bordered — stroke only</Accordion.Trigger>
+          <Accordion.Content>Outer stroke, square corners.</Accordion.Content>
+        </Accordion.Item>
+      </Accordion>
+      <Accordion rounded collapsible>
+        <Accordion.Item value="b1">
+          <Accordion.Trigger>rounded — radius only</Accordion.Trigger>
+          <Accordion.Content>Rounded corners, no stroke.</Accordion.Content>
+        </Accordion.Item>
+      </Accordion>
+      <Accordion bordered rounded collapsible>
+        <Accordion.Item value="c1">
+          <Accordion.Trigger>bordered + rounded</Accordion.Trigger>
+          <Accordion.Content>A self-contained framed card.</Accordion.Content>
+        </Accordion.Item>
+      </Accordion>
+    </Flex>
+  ),
+};
+
+/**
  * Single-open with collapsible: only one item open at a time,
  * and clicking the active trigger collapses it.
  */

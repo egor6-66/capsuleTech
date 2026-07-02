@@ -1,4 +1,5 @@
 export { DnDProvider, useDnD } from './context';
+export { DropIndicator } from './DropIndicator';
 export { createDraggable } from './draggable';
 export { createDroppable } from './droppable';
 export type { IGridItem, IGridLayout } from './grid';
@@ -13,6 +14,8 @@ export {
   resizeItem,
 } from './grid';
 export { DragOverlay } from './overlay';
+export type { IReorderable, IReorderableOptions } from './reorderable';
+export { createReorderable } from './reorderable';
 export type { ISortableItem, ISortableOptions, ISortablePayload } from './sortable';
 export { createSortable, isFromSortable } from './sortable';
 export type {
@@ -43,3 +46,5 @@ export type {
   IDroppableOptions,
   IPoint,
 } from './types';
+export type { DropZone, IZoneThresholds } from './zone';
+export { zoneFromRatio } from './zone';

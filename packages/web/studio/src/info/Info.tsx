@@ -20,26 +20,8 @@ import type { IInfoProps } from './types';
 
 export const Info = (props: IInfoProps) => (
   <Flex wrap="wrap" w={'full'}>
-    <Accordion defaultValue={['contract']} fluid={300} multiple>
-      <Accordion.Item value="contract">
-        <Accordion.Trigger>Контракт</Accordion.Trigger>
-        <Accordion.Content>
-          <ContractBlock contract={props.contract} type={props.type} />
-        </Accordion.Content>
-      </Accordion.Item>
-    </Accordion>
-
-    <Accordion defaultValue={['manifest']} fluid={300} multiple>
-      <Accordion.Item value="manifest">
-        <Accordion.Trigger>Манифест</Accordion.Trigger>
-        <Accordion.Content>
-          <ManifestBlock manifest={props.manifest} preset={props.preset} type={props.type} />
-        </Accordion.Content>
-      </Accordion.Item>
-    </Accordion>
-
     <Show when={props.manifest?.docSlug}>
-      <Accordion defaultValue={[]} fluid={300} multiple>
+      <Accordion bordered fluid={300} multiple>
         <Accordion.Item value="readme">
           <Accordion.Trigger>Readme</Accordion.Trigger>
           <Accordion.Content>
@@ -48,5 +30,24 @@ export const Info = (props: IInfoProps) => (
         </Accordion.Item>
       </Accordion>
     </Show>
+
+    <Flex wrap="wrap" w={'full'} align={'start'}>
+      <Accordion bordered defaultValue={['contract']} fluid={300} multiple>
+        <Accordion.Item value="contract">
+          <Accordion.Trigger>Контракт</Accordion.Trigger>
+          <Accordion.Content>
+            <ContractBlock contract={props.contract} type={props.type} />
+          </Accordion.Content>
+        </Accordion.Item>
+      </Accordion>
+      <Accordion bordered defaultValue={['manifest']} fluid={300} multiple>
+        <Accordion.Item value="manifest">
+          <Accordion.Trigger>Манифест</Accordion.Trigger>
+          <Accordion.Content>
+            <ManifestBlock manifest={props.manifest} preset={props.preset} type={props.type} />
+          </Accordion.Content>
+        </Accordion.Item>
+      </Accordion>
+    </Flex>
   </Flex>
 );

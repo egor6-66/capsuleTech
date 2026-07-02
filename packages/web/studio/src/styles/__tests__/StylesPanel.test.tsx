@@ -20,28 +20,61 @@ import { StylesPanel } from '../StylesPanel';
 
 const CHECK = '✓';
 
+const click = (el: Element) =>
+  el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+const waitFor = (predicate: () => boolean, ms = 400): Promise<void> =>
+  new Promise<void>((resolve, reject) => {
+    const start = Date.now();
+    const check = () => {
+      if (predicate()) return resolve();
+      if (Date.now() - start > ms) return reject(new Error('waitFor timeout'));
+      setTimeout(check, 10);
+    };
+    check();
+  });
+
+/**
+ * StylesPanel — единственный `Accordion`-item «Тема канваса» свёрнут по старту
+ * (решение USER). Kobalte НЕ монтирует `Accordion.Content` пока item свёрнут,
+ * поэтому перед ассертами на inner-контент (тоггл/reset/темы) раскрываем item
+ * кликом по триггеру. host в document.body — Solid делегирует click на document.
+ */
+const mountExpanded = async () => {
+  const host = document.createElement('div');
+  document.body.appendChild(host);
+  const dispose = render(() => <StylesPanel />, host);
+  click(host.querySelector('[data-testid="canvas-theme-trigger"]')!);
+  await waitFor(() => host.querySelector('[data-testid="canvas-theme-ocean"]') !== null);
+  return {
+    host,
+    cleanup: () => {
+      dispose();
+      host.remove();
+    },
+  };
+};
+
 afterEach(() => {
   useCanvasTheme().reset();
 });
 
 describe('StylesPanel', () => {
-  it('рендерит строку-кнопку на каждую тему из DISCOVERED_THEMES', () => {
-    const host = document.createElement('div');
-    const dispose = render(() => <StylesPanel />, host);
+  it('рендерит строку-кнопку на каждую тему из DISCOVERED_THEMES', async () => {
+    const { host, cleanup } = await mountExpanded();
     try {
       for (const name of ['light', 'dark', 'ocean']) {
         expect(host.querySelector(`[data-testid="canvas-theme-${name}"]`)).toBeTruthy();
         expect(host.textContent).toContain(name);
       }
     } finally {
-      dispose();
+      cleanup();
     }
   });
 
-  it('без override отражает host-стейт (no-inversion): тоггл = host dark, чек = host тема', () => {
+  it('без override отражает host-стейт (no-inversion): тоггл = host dark, чек = host тема', async () => {
     // override пуст → activeTheme/activeDark должны равняться host (ocean / dark).
-    const host = document.createElement('div');
-    const dispose = render(() => <StylesPanel />, host);
+    const { host, cleanup } = await mountExpanded();
     try {
       // dark-тоггл в положении host (true), а не false — иначе была бы инверсия.
       const sw = host.querySelector('[role="switch"]');
@@ -52,74 +85,62 @@ describe('StylesPanel', () => {
       expect(ocean?.textContent).toContain(CHECK);
       expect(light?.textContent).not.toContain(CHECK);
     } finally {
-      dispose();
+      cleanup();
     }
   });
 
-  it('active-checkmark рисуется у темы === theme()', () => {
+  it('active-checkmark рисуется у темы === theme()', async () => {
     useCanvasTheme().setTheme('ocean');
-    const host = document.createElement('div');
-    const dispose = render(() => <StylesPanel />, host);
+    const { host, cleanup } = await mountExpanded();
     try {
       const active = host.querySelector('[data-testid="canvas-theme-ocean"]');
       const inactive = host.querySelector('[data-testid="canvas-theme-light"]');
       expect(active?.textContent).toContain(CHECK);
       expect(inactive?.textContent).not.toContain(CHECK);
     } finally {
-      dispose();
+      cleanup();
     }
   });
 
-  it('клик по теме → setTheme (override в singleton)', () => {
-    // Solid делегирует click на document → host должен быть в DOM, иначе
-    // событие не всплывёт до делегированного слушателя.
-    const host = document.createElement('div');
-    document.body.appendChild(host);
-    const dispose = render(() => <StylesPanel />, host);
+  it('клик по теме → setTheme (override в singleton)', async () => {
+    const { host, cleanup } = await mountExpanded();
     try {
       const btn = host.querySelector<HTMLButtonElement>('[data-testid="canvas-theme-ocean"]');
       expect(btn).toBeTruthy();
-      btn!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      click(btn!);
       expect(useCanvasTheme().theme()).toBe('ocean');
     } finally {
-      dispose();
-      host.remove();
+      cleanup();
     }
   });
 
-  it('toggle тёмного режима → setDark (флип от явного override)', () => {
+  it('toggle тёмного режима → setDark (флип от явного override)', async () => {
     // Явный override false → детерминированный старт (не зависит от host-режима).
     useCanvasTheme().setDark(false);
-    const host = document.createElement('div');
-    document.body.appendChild(host);
-    const dispose = render(() => <StylesPanel />, host);
+    const { host, cleanup } = await mountExpanded();
     try {
       const sw = host.querySelector<HTMLButtonElement>('[role="switch"]');
       expect(sw).toBeTruthy();
       expect(sw!.getAttribute('aria-checked')).toBe('false');
-      sw!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      click(sw!);
       expect(useCanvasTheme().dark()).toBe(true);
     } finally {
-      dispose();
-      host.remove();
+      cleanup();
     }
   });
 
-  it('reset-кнопка → оба override undefined', () => {
+  it('reset-кнопка → оба override undefined', async () => {
     useCanvasTheme().setTheme('ocean');
     useCanvasTheme().setDark(true);
-    const host = document.createElement('div');
-    document.body.appendChild(host);
-    const dispose = render(() => <StylesPanel />, host);
+    const { host, cleanup } = await mountExpanded();
     try {
       const reset = host.querySelector<HTMLButtonElement>('[data-testid="canvas-theme-reset"]');
       expect(reset).toBeTruthy();
-      reset!.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      click(reset!);
       expect(useCanvasTheme().theme()).toBeUndefined();
       expect(useCanvasTheme().dark()).toBeUndefined();
     } finally {
-      dispose();
-      host.remove();
+      cleanup();
     }
   });
 });

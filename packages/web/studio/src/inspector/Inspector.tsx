@@ -21,15 +21,13 @@ export const Inspector = (props: IInspectorProps) => {
   const kit = () => props.kit ?? DEFAULT_KIT;
 
   return (
-    <Accordion
-      multiple
-      defaultValue={props.categories.map((c) => c.id)}
-      class={`w-full ${props.class ?? ''}`}
-    >
+    <Accordion bordered multiple class={`w-full ${props.class ?? ''}`}>
       <For each={props.categories}>
         {(cat) => (
           <Accordion.Item value={cat.id}>
-            <Accordion.Trigger>{cat.label}</Accordion.Trigger>
+            <Accordion.Trigger data-testid={`inspector-cat-${cat.id}`}>
+              {cat.label}
+            </Accordion.Trigger>
             <Accordion.Content>
               <Flex orientation="vertical" gap={3} class="px-1 py-2">
                 <For each={cat.fields}>

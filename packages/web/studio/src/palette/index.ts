@@ -9,5 +9,6 @@
  * (`ui.Button` — обычная и иконочная).
  */
 
+export { ComponentSegments, type IComponentSegmentsProps } from './ComponentSegments';
 export { ComponentsPalette } from './ComponentsPalette';
 export { groupManifests, type IPaletteGroups } from './groups';

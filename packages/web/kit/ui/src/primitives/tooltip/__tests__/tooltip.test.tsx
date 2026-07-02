@@ -1,7 +1,7 @@
 /**
  * Tooltip primitive tests.
  *
- * Kobalte's Tooltip renders its content inside a Portal (teleported to
+ * The Tooltip renders its content inside a Portal (teleported to
  * document.body). This means the panel is NOT a descendant of the render
  * container — tests query document.body directly when the tooltip is open.
  *
@@ -12,10 +12,10 @@
  *   - Named re-exports exist: TooltipTrigger, TooltipContent, TooltipArrow.
  *   - Panel mounts into document.body (Portal), not the render container.
  *   - `cursorTracking` prop is accepted (no runtime error).
- *   - Cursor-position freeze: getAnchorRect is called during pointer tracking
- *     (structural/mock test — jsdom does not compute floating-ui pixel positions).
+ *   - Pointer-move tracking updates the cursor anchor without throwing
+ *     (jsdom does not compute pixel positions — structural check).
  *   - `disabled` prop prevents the panel from appearing on pointer events.
- *   - Default `gutter` is applied (8px — verified structurally via open state).
+ *   - `onOpenChange` fires on open.
  */
 /* @vitest-environment jsdom */
 import { render } from 'solid-js/web';

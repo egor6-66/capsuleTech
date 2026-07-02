@@ -12,14 +12,14 @@
  *   - `WebStudio.ComponentsPalette`  → палитра компонентов (click в store / drag в creator)
  *   - `WebStudio.Info`               → info-панель (контракт / манифест / readme)
  *   - `WebStudio.Navigation`         → навигация по разделам студии
- *   - `WebStudio.Props`              → редактор пропсов выбранного пресета
+ *   - `WebStudio.Props`              → редактор пропсов выбранного узла
  *   - `WebStudio.Provider`           → провайдер студии (DnD + Remote + связка палитра→канвас)
  *   - `WebStudio.Styles`             → canvas-local theme/dark override (панель, не дропдаун)
- *   - `WebStudio.Tree`               → иерархия композиции (creator-mode)
+ *   - `WebStudio.Tree`               → иерархия композиции + мини-палитра вставки (creator-mode)
  *   - `WebStudio.Welcome`            → welcome/index-fallback для /workspace/web-studio
  *
- * Selection — общий singleton в `@capsuletech/web-studio/selection`; все
- * модули читают/пишут без Provider'а.
+ * Document — единый singleton в `@capsuletech/web-studio` (`useDocument`); все
+ * модули читают/пишут без Provider'а (SSOT редактируемого дерева).
  */
 
 import { defineCapsuleModule } from '@capsuletech/web-core/module';
