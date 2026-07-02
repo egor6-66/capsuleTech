@@ -20,19 +20,14 @@ const Creator = Page((Ui) => (
         swapGroup: 'widgets',
       },
       rightBar: {
-        children: (
-          <Ui.Layout.Flex direction={'col'} h={'full'} w={'full'}>
-            <Widgets.Studio.Inspector />
-            <Widgets.Studio.Info />
-          </Ui.Layout.Flex>
-        ),
+        children: <Widgets.Studio.Inspector />,
         swapGroup: 'widgets',
-        initialSize: 0.28,
+        initialSize: 0.25,
       },
       footer: {
-        children: <Widgets.Studio.Monitoring />,
+        children: <Widgets.Studio.Info />,
         swapGroup: 'widgets',
-        initialSize: 0.22,
+        initialSize: 0.25,
       },
     }}
   />

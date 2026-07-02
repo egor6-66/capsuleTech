@@ -50,7 +50,7 @@ const ComponentsPaletteComponent = () => {
 
   return (
     <Flex wrap="wrap" w={'full'}>
-      <Accordion defaultValue={['primitives']} fluid={250} multiple>
+      <Accordion bordered defaultValue={['primitives']} fluid={250} multiple>
         <Accordion.Item value="primitives">
           <Accordion.Trigger>Примитивы</Accordion.Trigger>
           <Accordion.Content>
@@ -63,7 +63,7 @@ const ComponentsPaletteComponent = () => {
         </Accordion.Item>
       </Accordion>
 
-      <Accordion defaultValue={['compositions']} fluid={250} multiple>
+      <Accordion bordered defaultValue={['compositions']} fluid={250} multiple>
         <Accordion.Item value="compositions">
           <Accordion.Trigger>Композиции</Accordion.Trigger>
           <Accordion.Content>

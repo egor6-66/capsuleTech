@@ -76,9 +76,18 @@ export const TreeRow = (props: ITreeRowProps) => {
     </div>
   );
 
-  // Дети + мини-палитра — общий блок для accordion-контента и корневой строки.
+  // Мини-палитра + дети — общий блок для accordion-контента и корневой строки.
+  // «＋ добавить» ПЕРЕД детьми — закреплён вверху контейнера, не съезжает вниз
+  // по мере добавления компонентов (мандат USER).
   const childrenBlock = () => (
     <>
+      <Show when={isContainer()}>
+        <NodePalette
+          nodeType={node()!.type}
+          depth={props.depth}
+          onInsert={(preset) => props.onInsert(preset, props.nodeId)}
+        />
+      </Show>
       <For each={node()?.children ?? []}>
         {(childId) => (
           <TreeRow
@@ -95,13 +104,6 @@ export const TreeRow = (props: ITreeRowProps) => {
           />
         )}
       </For>
-      <Show when={isContainer()}>
-        <NodePalette
-          nodeType={node()!.type}
-          depth={props.depth}
-          onInsert={(preset) => props.onInsert(preset, props.nodeId)}
-        />
-      </Show>
     </>
   );
 
