@@ -32,11 +32,16 @@ export interface IAccordionProps extends AccordionRootProps {
    */
   fluid?: number;
   /**
-   * Opt-in outer frame. When true, wraps the accordion in a border +
-   * rounded corners so adjacent accordions stay visually distinct instead of
-   * merging into one flat surface. Off by default.
+   * Opt-in outer stroke (`border`). Keeps adjacent accordions visually
+   * distinct instead of merging into one flat surface. Off by default.
+   * Independent of `rounded`.
    */
   bordered?: boolean;
+  /**
+   * Opt-in rounded corners (`rounded-md`, with `overflow-hidden` so item
+   * corners clip to the radius). Off by default. Independent of `bordered`.
+   */
+  rounded?: boolean;
 }
 
 /**

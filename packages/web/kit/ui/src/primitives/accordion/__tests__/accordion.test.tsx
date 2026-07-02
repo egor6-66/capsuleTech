@@ -13,7 +13,7 @@
  *   - Disabled item cannot be expanded.
  *   - Accordion.Item + Accordion.Trigger + Accordion.Content render without error.
  *   - defaultValue: item is expanded on mount.
- *   - bordered: opt-in outer frame classes (off by default).
+ *   - bordered / rounded: independent opt-in stroke + radius (both off by default).
  */
 /* @vitest-environment jsdom */
 
@@ -232,8 +232,8 @@ describe('Accordion', () => {
     });
   });
 
-  describe('bordered', () => {
-    it('no outer border token by default', () => {
+  describe('bordered / rounded', () => {
+    it('neither stroke nor radius by default', () => {
       cleanup = render(
         () => (
           <Accordion>
@@ -252,7 +252,7 @@ describe('Accordion', () => {
       expect(root.classList.contains('rounded-md')).toBe(false);
     });
 
-    it('bordered=true adds the outer frame classes', () => {
+    it('bordered=true adds the stroke only (no radius)', () => {
       cleanup = render(
         () => (
           <Accordion bordered>
@@ -267,8 +267,45 @@ describe('Accordion', () => {
 
       const root = container.firstElementChild!;
       expect(root.classList.contains('border')).toBe(true);
+      expect(root.classList.contains('rounded-md')).toBe(false);
+      expect(root.classList.contains('overflow-hidden')).toBe(false);
+    });
+
+    it('rounded=true adds the radius only (no stroke)', () => {
+      cleanup = render(
+        () => (
+          <Accordion rounded>
+            <Accordion.Item value="a">
+              <Accordion.Trigger>Section A</Accordion.Trigger>
+              <Accordion.Content>Content A</Accordion.Content>
+            </Accordion.Item>
+          </Accordion>
+        ),
+        container,
+      );
+
+      const root = container.firstElementChild!;
       expect(root.classList.contains('rounded-md')).toBe(true);
       expect(root.classList.contains('overflow-hidden')).toBe(true);
+      expect(root.classList.contains('border')).toBe(false);
+    });
+
+    it('bordered + rounded compose', () => {
+      cleanup = render(
+        () => (
+          <Accordion bordered rounded>
+            <Accordion.Item value="a">
+              <Accordion.Trigger>Section A</Accordion.Trigger>
+              <Accordion.Content>Content A</Accordion.Content>
+            </Accordion.Item>
+          </Accordion>
+        ),
+        container,
+      );
+
+      const root = container.firstElementChild!;
+      expect(root.classList.contains('border')).toBe(true);
+      expect(root.classList.contains('rounded-md')).toBe(true);
     });
   });
 

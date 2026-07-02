@@ -51,23 +51,28 @@ export const Multiple: Story = {
 };
 
 /**
- * `bordered` — opt-in outer frame (off by default). Two accordions stacked
- * with a gap: without a border they read as one flat surface; with `bordered`
- * each is a self-contained framed card.
+ * `bordered` (stroke) and `rounded` (radius) are independent opt-in flags,
+ * both off by default. Here: stroke-only, radius-only, and both combined.
  */
-export const Bordered: Story = {
+export const BorderedAndRounded: Story = {
   render: () => (
     <Flex direction="col" gap={4}>
       <Accordion bordered collapsible>
         <Accordion.Item value="a1">
-          <Accordion.Trigger>First accordion</Accordion.Trigger>
-          <Accordion.Content>Framed — distinct from the one below.</Accordion.Content>
+          <Accordion.Trigger>bordered — stroke only</Accordion.Trigger>
+          <Accordion.Content>Outer stroke, square corners.</Accordion.Content>
         </Accordion.Item>
       </Accordion>
-      <Accordion bordered collapsible>
+      <Accordion rounded collapsible>
         <Accordion.Item value="b1">
-          <Accordion.Trigger>Second accordion</Accordion.Trigger>
-          <Accordion.Content>Its own frame — no merging.</Accordion.Content>
+          <Accordion.Trigger>rounded — radius only</Accordion.Trigger>
+          <Accordion.Content>Rounded corners, no stroke.</Accordion.Content>
+        </Accordion.Item>
+      </Accordion>
+      <Accordion bordered rounded collapsible>
+        <Accordion.Item value="c1">
+          <Accordion.Trigger>bordered + rounded</Accordion.Trigger>
+          <Accordion.Content>A self-contained framed card.</Accordion.Content>
         </Accordion.Item>
       </Accordion>
     </Flex>
