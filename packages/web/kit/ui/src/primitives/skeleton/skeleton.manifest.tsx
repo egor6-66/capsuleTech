@@ -17,6 +17,7 @@ export const SkeletonManifest: IPrimitiveManifestEntry = {
   description: 'Плейсхолдер контента — анимированный скелетон',
   isLeaf: true,
   contract: SkeletonContract,
+  docSlug: 'web-ui/primitives/skeleton',
   defaultProps: {
     variant: 'text',
     rows: 3,

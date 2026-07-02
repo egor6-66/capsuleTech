@@ -27,6 +27,7 @@ export const CardManifest: IPrimitiveManifestEntry = {
   description: 'Контейнер-карточка с шапкой/контентом/футером',
   accepts: (childType) => CARD_DIRECT_CHILDREN.has(childType),
   contract: CardContract,
+  docSlug: 'web-ui/primitives/card',
   defaultProps: {
     class: 'w-full max-w-sm',
   },

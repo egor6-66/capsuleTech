@@ -18,6 +18,7 @@ export const SeparatorManifest: IPrimitiveManifestEntry = {
   description: 'Визуальный разделитель — горизонтальный или вертикальный',
   isLeaf: true,
   contract: SeparatorContract,
+  docSlug: 'web-ui/primitives/separator',
   defaultProps: {
     variant: 'horizontal',
   },

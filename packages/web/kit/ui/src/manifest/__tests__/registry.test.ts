@@ -106,7 +106,7 @@ describe('getPresets — palette batch (label/separator/spinner/skeleton/group/g
     }
   });
 
-  it('returns 3 presets for ui.Layout.Grid (2-col/3-col/auto-fit) with 6 card tiles each', () => {
+  it('returns 3 presets for ui.Layout.Grid (2-col/3-col/auto-fit) with 6 neutral tiles each', () => {
     const presets = getPresets('ui.Layout.Grid');
     expect(presets.map((p) => p.id)).toEqual(['two-col', 'three-col', 'auto-fit']);
     for (const p of presets) {
@@ -116,7 +116,8 @@ describe('getPresets — palette batch (label/separator/spinner/skeleton/group/g
       // container preset: 6 tiles reflow when cols/gap change in the inspector
       expect(rootNode?.children.length).toBe(6);
       for (const childId of rootNode!.children) {
-        expect(p.schema.components.nodes[childId]?.type).toBe('ui.Card');
+        // neutral flat box, NOT ui.Card — Card chrome (shadow/border/padding) distorts tile size
+        expect(p.schema.components.nodes[childId]?.type).toBe('ui.Layout.Flex');
       }
     }
   });

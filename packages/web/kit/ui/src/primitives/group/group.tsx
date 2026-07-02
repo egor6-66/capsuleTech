@@ -4,8 +4,8 @@ import { Dynamic } from 'solid-js/web';
 
 import { useTrace } from '../../internal/useTrace';
 import { Flex } from '../layout/flex';
-import { Resizable } from '../layout/resizable';
 import type { FlexOrientation } from '../layout/flex/interfaces';
+import { Resizable } from '../layout/resizable';
 import type { IResizableItem } from '../layout/resizable/interfaces';
 import type { IGroupProps, IGroupSeparatorProps } from './interfaces';
 import { groupSeparatorVariants } from './variants';

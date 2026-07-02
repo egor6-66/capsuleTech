@@ -1,8 +1,7 @@
 import type { JSX } from 'solid-js';
 import { For, Match, Switch, splitProps, useContext } from 'solid-js';
-
-import { useTrace } from '../../internal/useTrace';
 import { resolveIcon } from '../../icons';
+import { useTrace } from '../../internal/useTrace';
 import { Dropdown } from '../../primitives/dropdown';
 import { Toggle } from '../../primitives/toggle';
 import { CompositeProxyContext } from '../compositeProxy';

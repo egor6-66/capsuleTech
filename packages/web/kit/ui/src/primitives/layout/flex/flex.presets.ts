@@ -11,9 +11,11 @@
  * настроек реально видно перестроение (gap-зазор, перенос при `wrap`, смена
  * оси при `direction`, расталкивание при `justify`).
  *
- * Плитки — `ui.Card` с фиксированным размером (`min-width` фиксирует ширину,
- * чтобы `wrap` срабатывал в узком контейнере). Сам контейнер несёт лёгкий
- * пунктирный бордер, чтобы границы Flex читались.
+ * Плитки — нейтральные боксы `ui.Layout.Flex` (пустые, без детей) с
+ * фиксированным размером (`min-width` фиксирует ширину, чтобы `wrap`
+ * срабатывал в узком контейнере). НЕ `ui.Card`: Card тащит свой хром
+ * (shadow / border / padding / max-w) и плитка рисуется крупнее задуманного.
+ * Сам контейнер несёт лёгкий пунктирный бордер, чтобы границы Flex читались.
  *
  * Стиль — инлайн через CSS-токены (НЕ Tailwind-классы): не требует
  * content-scan в приложении-консьюмере. Тот же приём, что в `flex.manifest`
@@ -25,7 +27,7 @@ import type { IPreset } from '../../../manifest/types';
 
 /**
  * Лёгкий каркас самого контейнера — пунктирный бордер + min-height + padding,
- * чтобы границы Flex читались. Без фона: плитки (`bg-card`) должны
+ * чтобы границы Flex читались. Без фона: плитки (`--color-muted`) должны
  * контрастировать. Все значения — themed CSS-токены (без Tailwind-скана).
  */
 const containerStyle: Record<string, string> = {
@@ -44,7 +46,7 @@ const TILE_IDS = ['tile-1', 'tile-2', 'tile-3'] as const;
  */
 const tileNode = (id: string): IEditorNode => ({
   id,
-  type: 'ui.Card',
+  type: 'ui.Layout.Flex',
   parentId: 'flex',
   children: [],
   props: {
@@ -53,6 +55,7 @@ const tileNode = (id: string): IEditorNode => ({
       'min-width': '96px',
       height: '56px',
       background: 'var(--color-muted)',
+      'border-radius': 'var(--radius-md)',
     } as Record<string, string>,
   },
 });

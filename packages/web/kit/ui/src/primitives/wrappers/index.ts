@@ -11,7 +11,7 @@ Wrapper.Status = Status;
 Wrapper.Resizable = ResizableImpl;
 
 export type {
-  ResizableOrientation,
   IResizableItem,
+  ResizableOrientation,
 } from '../layout/resizable/interfaces';
 export { ResizableImpl as Resizable, Status, Wrapper };

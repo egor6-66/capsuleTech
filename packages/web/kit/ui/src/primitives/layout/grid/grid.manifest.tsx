@@ -18,6 +18,7 @@ export const GridManifest: IPrimitiveManifestEntry = {
   description: 'CSS-grid контейнер: равномерные колонки, строки, gap',
   canBeRoot: true,
   contract: GridContract,
+  docSlug: 'web-ui/primitives/layout/grid',
   defaultProps: {
     cols: 2,
     // gap через семантический токен --space-component (density-aware).

@@ -6,8 +6,17 @@
  * Covers:
  *   - Renders with default horizontal orientation.
  *   - CVA variant class differs between horizontal/vertical.
+ *   - orientation flows to Kobalte SeparatorPrimitive (data-orientation /
+ *     aria-orientation) — pins the contract-inspector field
+ *     (`separator.contract.ts`) against silent breakage.
  *   - orientation/variant props update at runtime (reactivity contract).
  *   - class prop merges and updates reactively.
+ *
+ * NOT covered (known gap, surfaced 2026-07-02): `decorative` has no a11y
+ * effect — Kobalte 0.13.11 Separator has no such option, the prop leaks to
+ * the DOM as a raw `decorative` attribute. Element renders as `<hr>` (implicit
+ * role=separator) regardless of the flag. Fix pending architect decision —
+ * do not pin the broken behavior with a test.
  */
 
 import { createSignal } from 'solid-js';
@@ -45,6 +54,32 @@ describe('Separator — smoke', () => {
     cleanup = render(() => <Separator orientation="vertical" />, container);
     const el = container.firstElementChild as HTMLElement;
     expect(el?.className).toContain('w-px');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Kobalte pass-through contract (inspector fields from separator.contract.ts)
+// ---------------------------------------------------------------------------
+
+describe('Separator — orientation pass-through to Kobalte', () => {
+  it('default orientation=horizontal → data-orientation="horizontal", no aria-orientation', () => {
+    cleanup = render(() => <Separator />, container);
+    const el = container.firstElementChild as HTMLElement;
+    expect(el?.getAttribute('data-orientation')).toBe('horizontal');
+    // aria-orientation is only set for vertical (horizontal is the implicit default)
+    expect(el?.hasAttribute('aria-orientation')).toBe(false);
+  });
+
+  it('orientation="vertical" → data-orientation + aria-orientation="vertical"', () => {
+    cleanup = render(() => <Separator orientation="vertical" />, container);
+    const el = container.firstElementChild as HTMLElement;
+    expect(el?.getAttribute('data-orientation')).toBe('vertical');
+    expect(el?.getAttribute('aria-orientation')).toBe('vertical');
+  });
+
+  it('renders as <hr> (native separator semantics)', () => {
+    cleanup = render(() => <Separator />, container);
+    expect(container.firstElementChild?.tagName).toBe('HR');
   });
 });
 
