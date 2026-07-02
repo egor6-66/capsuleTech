@@ -19,6 +19,13 @@ export interface ITextField extends IBaseField {
   placeholder?: string;
   /** Моноширинный шрифт — для class, id, ARIA и подобного «технического». */
   mono?: boolean;
+  /**
+   * Числовая строка эмиттится как number (`'3'` → `3`), нечисловая — как есть.
+   * Для union-пропсов `number | string` (Grid `cols`/`gap`): компоненты трактуют
+   * number и string по-разному (`3` → `repeat(3, …)`, `'3'` — сырой CSS), поэтому
+   * тип должен восстанавливаться на выходе инспектора.
+   */
+  coerce?: 'number';
 }
 
 export interface ITextareaField extends IBaseField {

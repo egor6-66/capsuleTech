@@ -4,7 +4,8 @@ import { FieldShell } from './FieldShell';
 
 interface IProps {
   field: ITextField;
-  value: string | undefined;
+  /** number — union-пропсы (`cols: 2` из пресета) редактируются text-полем. */
+  value: string | number | undefined;
   onChange: (v: string) => void;
   kit: IInspectorKit;
 }
