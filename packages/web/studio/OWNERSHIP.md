@@ -5,7 +5,7 @@ group: web_base
 zone: studio
 status: alpha
 priority: P1
-last-updated: 2026-07-01
+last-updated: 2026-07-02
 ---
 
 # OWNERSHIP — @capsuletech/web-studio
@@ -227,6 +227,8 @@ Override **не персистится** (v1, in-memory как `selection`), **�
 | `tree/__tests__/dndHelpers.test.ts` | isSelfOrDescendant (self/потомок/не-потомок); zoneFromRatio ушёл в web-dnd |
 | `__tests__/document.test.ts` (moveNode) | reorder before/after, reparent inside, guard'ы: root/self/цикл/accept-reject |
 | `inspector/__tests__/PropsPanel.test.tsx` | fallback без selectedNode, поля по выбранному узлу, granular patchProps, no-op на несуществующем узле |
+| `inspector/__tests__/zod-to-categories.test.ts` | скаляры + unwrap (регресс), ZodUnion (string→text+coerce / number→number / literal-only→skip), record/array graceful-skip |
+| `inspector/__tests__/coerce.test.ts` | coerceTextValue: числовая строка→number, CSS/промежуточный ввод (`'1.'`)→строка, без флага — как есть |
 | `info/__tests__/InfoPanel.test.tsx` | EmptyState без узла, store-mode (реальный пресет), creator-mode (узел дерева) по selectedNode() |
 | `manifests/__tests__/rules.test.ts` | acceptsChildren (container/leaf/unknown), manifestsForNode (accept-фильтрация компонентов Flex vs Card) |
 | `palette/__tests__/ComponentSegments.test.tsx` | рендер manifests + onSelect(preset) по клику, подсветка selectedId, кастомный testIdPrefix |
