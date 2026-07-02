@@ -37,15 +37,13 @@ export const togglePresets: readonly IPreset[] = [
     id: 'small',
     label: 'Small',
     schema: singleToggle({ size: 'sm', label: 'Компакт' }),
-    description:
-      'Компактный размер — для плотных списков настроек, inline-флагов в таблицах.',
+    description: 'Компактный размер — для плотных списков настроек, inline-флагов в таблицах.',
   },
   {
     id: 'large',
     label: 'Large',
     schema: singleToggle({ size: 'lg', label: 'Крупный' }),
-    description:
-      'Крупный размер — для primary-настройки экрана, onboarding-флоу, touch-зоны.',
+    description: 'Крупный размер — для primary-настройки экрана, onboarding-флоу, touch-зоны.',
   },
   {
     id: 'disabled',

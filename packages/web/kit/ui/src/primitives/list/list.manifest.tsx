@@ -18,6 +18,7 @@ export const ListManifest: IPrimitiveManifestEntry = {
   description: 'Семантический список — принимает произвольные children',
   canBeRoot: true,
   contract: ListContract,
+  docSlug: 'web-ui/primitives/list',
   defaultProps: {
     orientation: 'vertical',
     variant: 'default',

@@ -26,6 +26,7 @@ export const FieldManifest: IPrimitiveManifestEntry = {
   description: 'Form-field: метка + ввод + описание/ошибка',
   accepts: (childType) => FIELD_DIRECT_CHILDREN.has(childType),
   contract: FieldContract,
+  docSlug: 'web-ui/primitives/field',
   defaultProps: {
     orientation: 'vertical',
   },

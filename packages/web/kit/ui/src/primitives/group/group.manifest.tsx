@@ -18,6 +18,7 @@ export const GroupManifest: IPrimitiveManifestEntry = {
   description: 'Flex-обёртка для группировки элементов (separate или attached)',
   canBeRoot: true,
   contract: GroupContract,
+  docSlug: 'web-ui/primitives/group',
   defaultProps: {
     orientation: 'horizontal',
     variant: 'separate',

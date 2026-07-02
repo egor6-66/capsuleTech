@@ -1,5 +1,5 @@
-import { children, createMemo, For, type JSX, Show } from 'solid-js';
 import { cn } from '@capsuletech/web-style';
+import { children, createMemo, For, type JSX, Show } from 'solid-js';
 import { useTrace } from '../../../internal/useTrace';
 import { ResizableHandle, ResizablePanel, ResizableRoot } from './_resize/primitives';
 import type { IResizableItem, IResizableProps, ResizableOrientation } from './interfaces';

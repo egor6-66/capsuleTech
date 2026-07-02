@@ -10,8 +10,8 @@
 /* @vitest-environment jsdom */
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { Resizable } from '../resizable';
 import type { IResizableItem } from '../interfaces';
+import { Resizable } from '../resizable';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -167,7 +167,10 @@ describe('ResizableHandle — withHandle toggle does not cause layout shift', ()
   ];
 
   it('handle element is present when withHandle=false (no grip in DOM)', () => {
-    cleanup = render(() => <Resizable orientation="horizontal" items={resizableItems} />, container);
+    cleanup = render(
+      () => <Resizable orientation="horizontal" items={resizableItems} />,
+      container,
+    );
 
     const handles = container.querySelectorAll('[data-corvu-resizable-handle]');
     expect(handles.length).toBeGreaterThanOrEqual(1);

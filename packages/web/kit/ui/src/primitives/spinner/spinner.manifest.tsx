@@ -17,6 +17,7 @@ export const SpinnerManifest: IPrimitiveManifestEntry = {
   description: 'Индикатор загрузки — анимированный спиннер',
   isLeaf: true,
   contract: SpinnerContract,
+  docSlug: 'web-ui/primitives/spinner',
   defaultProps: {
     size: 'md',
   },

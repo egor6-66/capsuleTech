@@ -18,6 +18,7 @@ export const LabelManifest: IPrimitiveManifestEntry = {
   description: 'HTML-лейбл для форм — ассоциируется с полем через for',
   isLeaf: true,
   contract: LabelContract,
+  docSlug: 'web-ui/primitives/label',
   defaultProps: {
     children: 'Label',
   },

@@ -9,10 +9,13 @@
  * наполнен ШЕСТЬЮ плитками: меняешь `cols` в инспекторе (2 → 3 → 4) — и плитки
  * реально перестраиваются (6 = 3×2 / 2×3 / wrap), `gap` раздвигает ячейки.
  *
- * Плитки — `ui.Card` шириной во всю ячейку (`width: 100%`): размер колонки
- * задаёт сам grid-трек, плитка его заполняет. Контейнер несёт лёгкий пунктирный
- * бордер, чтобы границы сетки читались. Стиль — инлайн через CSS-токены
- * (НЕ Tailwind-классы): не требует content-scan в приложении-консьюмере.
+ * Плитки — нейтральные боксы `ui.Layout.Flex` (пустые, без детей) шириной во
+ * всю ячейку (`width: 100%`): размер колонки задаёт сам grid-трек, плитка его
+ * заполняет. НЕ `ui.Card`: Card тащит свой хром (shadow / border / padding /
+ * max-w) и плитка рисуется крупнее задуманного. Контейнер несёт лёгкий
+ * пунктирный бордер, чтобы границы сетки читались. Стиль — инлайн через
+ * CSS-токены (НЕ Tailwind-классы): не требует content-scan в
+ * приложении-консьюмере.
  */
 
 import type { IEditorNode } from '@capsuletech/web-contract';
@@ -34,7 +37,7 @@ const TILE_IDS = ['tile-1', 'tile-2', 'tile-3', 'tile-4', 'tile-5', 'tile-6'] as
  */
 const tileNode = (id: string): IEditorNode => ({
   id,
-  type: 'ui.Card',
+  type: 'ui.Layout.Flex',
   parentId: 'grid',
   children: [],
   props: {
@@ -42,6 +45,7 @@ const tileNode = (id: string): IEditorNode => ({
       width: '100%',
       height: '56px',
       background: 'var(--color-muted)',
+      'border-radius': 'var(--radius-md)',
     } as Record<string, string>,
   },
 });

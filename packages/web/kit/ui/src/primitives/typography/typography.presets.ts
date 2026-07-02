@@ -32,27 +32,34 @@ export const typographyPresets: readonly IPreset[] = [
     id: 'h2',
     label: 'Heading 2',
     schema: singleText({ variant: 'h2', children: 'Heading 2' }),
-    description:
-      'Заголовок секции. Имеет нижний border-b для визуального разделения. Тег `<h2>`.',
+    description: 'Заголовок секции. Имеет нижний border-b для визуального разделения. Тег `<h2>`.',
   },
   {
     id: 'p',
     label: 'Paragraph',
-    schema: singleText({ variant: 'p', children: 'Обычный абзац с базовым размером и нормальным line-height.' }),
-    description:
-      'Базовый параграф. Дефолт для тела текста, описаний, инструкций. Тег `<p>`.',
+    schema: singleText({
+      variant: 'p',
+      children: 'Обычный абзац с базовым размером и нормальным line-height.',
+    }),
+    description: 'Базовый параграф. Дефолт для тела текста, описаний, инструкций. Тег `<p>`.',
   },
   {
     id: 'lead',
     label: 'Lead',
-    schema: singleText({ variant: 'lead', children: 'Лид-параграф — крупнее обычного, для вступления раздела.' }),
+    schema: singleText({
+      variant: 'lead',
+      children: 'Лид-параграф — крупнее обычного, для вступления раздела.',
+    }),
     description:
       'Вступительный абзац (intro) — крупнее `p`, цвет muted-foreground. Используй один раз в начале раздела/страницы.',
   },
   {
     id: 'muted',
     label: 'Muted',
-    schema: singleText({ variant: 'muted', children: 'Вторичный текст — подписи, метаданные, пояснения.' }),
+    schema: singleText({
+      variant: 'muted',
+      children: 'Вторичный текст — подписи, метаданные, пояснения.',
+    }),
     description:
       'Приглушённый текст для подписей под полями, метаданных, hint-текста. Меньше базы, цвет muted-foreground.',
   },
@@ -74,7 +81,6 @@ export const typographyPresets: readonly IPreset[] = [
     id: 'centered-heading',
     label: 'Centered heading',
     schema: singleText({ variant: 'h2', align: 'center', children: 'Centered Heading' }),
-    description:
-      'Heading 2 с центрированием — для hero-секций, modal-заголовков, лендинг-блоков.',
+    description: 'Heading 2 с центрированием — для hero-секций, modal-заголовков, лендинг-блоков.',
   },
 ];

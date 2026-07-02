@@ -1,10 +1,5 @@
 import { cn } from '@capsuletech/web-style';
-import {
-  children,
-  type JSX,
-  splitProps,
-  type ValidComponent,
-} from 'solid-js';
+import { children, type JSX, splitProps, type ValidComponent } from 'solid-js';
 import { useTrace } from '../../../internal/useTrace';
 import { Slot } from '../../slot';
 import { mergeStyle, toGap } from '../grid/utils';
