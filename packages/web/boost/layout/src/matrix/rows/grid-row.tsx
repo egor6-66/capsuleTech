@@ -40,6 +40,8 @@ export const renderGridRow = (
   isDragging: Accessor<boolean>,
   resizeEnabled: Accessor<boolean>,
   gridOpts: IGridOpts,
+  /** Single source of truth for the cell border — independent of resize/DnD. */
+  bordered: Accessor<boolean> = () => true,
 ): JSX.Element => {
   const cols = row.grid?.cols ?? GRID_DEFAULT_COLS;
   const rowHeight = row.grid?.rowHeight ?? GRID_DEFAULT_ROW_HEIGHT;
@@ -195,7 +197,8 @@ export const renderGridRow = (
             <div
               ref={zoneItem.ref}
               data-grid-cell={cell.id}
-              class="relative overflow-hidden rounded-sm border border-border"
+              class="relative overflow-hidden rounded-sm"
+              classList={{ 'border border-border/60': bordered() }}
               style={gridStyle()}
             >
               <div

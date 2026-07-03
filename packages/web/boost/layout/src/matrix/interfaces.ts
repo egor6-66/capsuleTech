@@ -330,6 +330,14 @@ export interface IMatrixCommonProps extends JSX.HTMLAttributes<HTMLDivElement> {
    * @default 'vertical'
    */
   direction?: 'vertical' | 'horizontal';
+  /**
+   * Single source of truth for the visual cell border (hairline divider between
+   * Matrix slots). Independent of `resize`/`dnd` — a resizable cell only gets the
+   * interactive handle (+ badge on draggable cells), never a border by itself.
+   *
+   * @default true
+   */
+  bordered?: boolean;
 }
 
 /**

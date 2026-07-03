@@ -70,6 +70,12 @@ export const renderCell = (
    * Instead it renders inline-relative so the parent grows to fit content.
    */
   rowIsAutoHeight: boolean,
+  /**
+   * Single source of truth for the cell divider. Independent of `resizable`/DnD —
+   * a resizable cell only gets an interactive handle (+ badge), never a border by
+   * itself. `bordered` alone toggles the `border-border/60` hairline on every cell.
+   */
+  bordered: Accessor<boolean>,
 ): JSX.Element => {
   const tag = cell.tag ?? 'div';
   const children = getSwappedChildren ? getSwappedChildren(cell.id) : cell.children;
@@ -110,7 +116,8 @@ export const renderCell = (
       <Dynamic
         component={tag}
         ref={cellRef}
-        class="h-full w-full relative rounded-sm border border-border"
+        class="h-full w-full relative rounded-sm"
+        classList={{ 'border border-border/60': bordered() }}
       >
         {/* Inner scroll wrapper; pointer-events-none during drag prevents hover leaking
             into cell content (table row hover, map hover, etc.).
@@ -151,7 +158,8 @@ export const renderCell = (
     <Dynamic
       component={tag}
       ref={cellRef}
-      class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative overflow-hidden rounded-sm border border-border`}
+      class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative overflow-hidden rounded-sm`}
+      classList={{ 'border border-border/60': bordered() }}
     >
       <div class="absolute inset-0 overflow-auto">
         <MatrixSlot slot={cell.id}>

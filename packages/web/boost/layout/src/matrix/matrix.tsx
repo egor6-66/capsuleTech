@@ -30,6 +30,7 @@ const MatrixImpl = (props: IMatrixProps) => {
     'mode',
     'onLayoutChange',
     'direction',
+    'bordered',
   ]);
 
   const { className, style } = createStyle(matrixCva, {
@@ -57,6 +58,10 @@ const MatrixImpl = (props: IMatrixProps) => {
     mode: () => local.mode,
   });
 
+  // Single flag for the cell border — deliberately NOT part of createMatrixModes:
+  // it has no relation to resize/dnd precedence, just a plain opt-out default.
+  const bordered = createMemo(() => local.bordered ?? true);
+
   return (
     <DnDProvider showDefaultOverlay overlayMode="thumbnail">
       <div ref={local.ref} class={`${className()} relative`} style={style()} {...(rest as object)}>
@@ -65,6 +70,7 @@ const MatrixImpl = (props: IMatrixProps) => {
           resizeEnabled={resizeEnabled}
           dndEnabled={dndEnabled}
           dndKind={dndKind}
+          bordered={bordered}
           onLayoutChange={local.onLayoutChange}
           direction={local.direction ?? 'vertical'}
           preset={local.preset as string | undefined}
@@ -114,5 +120,11 @@ const MatrixImpl = (props: IMatrixProps) => {
  * - Each draggable cell shows a DragBadge (grip icon) in its top-right corner when
  *   2+ draggable cells exist in the same swapGroup and DnD is enabled.
  * - `onLayoutChange` called with swap/insert/grid event after each successful layout change.
+ *
+ * **Border:**
+ * - `bordered?: boolean` (default `true`) — the ONLY switch for the cell hairline
+ *   border. Fully independent of `resize`/`dnd`: a resizable cell only gets the
+ *   interactive handle (and a draggable cell only gets the badge) — neither implies
+ *   a border on its own. Set `bordered={false}` to render edge-to-edge slots.
  */
 export const Matrix = MatrixImpl;
