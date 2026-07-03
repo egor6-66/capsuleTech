@@ -1,6 +1,6 @@
 ---
 title: Foundation 04 — backend/learn/ skeleton (BFF, plugin-modules, orchestrator)
-status: ready
+status: superseded # реализован иначе (learn iter 2, #438); композитор-роль → актуальный бриф backend-learn-compose.md (ADR 067)
 audience: general-purpose agent (commit-only, без push)
 last_updated: 2026-06-20
 depends_on: [foundation-00, foundation-01, foundation-02, foundation-03]

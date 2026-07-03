@@ -1,6 +1,6 @@
 ---
 title: Foundation 01 — packages/shared/data/ (core spec + Python adapter)
-status: ready
+status: superseded # ADR 067 — не реализован; learn/lang сделаны на собственном SQLAlchemy-стеке, shared-data не появился
 audience: owner-shared (commit-only, без push — push делает architect/user)
 last_updated: 2026-06-20
 depends_on: [foundation-00]
