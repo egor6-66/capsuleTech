@@ -136,4 +136,37 @@ describe('layer wrappers — mount/dispose trace (ADR 062)', () => {
     cleanup = undefined;
     expect(phasesFor('web-core.view')).toEqual(['mount', 'dispose']);
   });
+
+  // -------------------------------------------------------------------------
+  // brief core-shape-real-list-bridge-repro: постоянная trace-инструментация
+  // вызова Shape batch item.props-маппера — даёт факт «что реально вычислилось
+  // для этой строки» одним взглядом в консоль (`trace.enable('web-core.shape')`),
+  // без ручной бисекции reactivity в реальном браузере.
+  // -------------------------------------------------------------------------
+  it('Shape эмиттит web-core.shape item-props с row + вычисленным результатом на каждый вызов маппера', () => {
+    const ItemComp = (_props: any) => <li />;
+    const Template = (props: { item?: { use: unknown; props?: (it: unknown) => unknown } }) => (
+      <ul>{(props.item?.props as any)?.({ id: 1, label: 'A' })}</ul>
+    );
+
+    const Sh = Shape(
+      () => ({ schema: z.array(z.object({ id: z.number(), label: z.string() })), as: Template }),
+      () => ({
+        item: {
+          use: ItemComp,
+          props: (it: any) => ({ id: it.id, selected: it.id === 1 }),
+        },
+      }),
+    ) as any;
+
+    cleanup = render(
+      () => <ShapeUiContext.Provider value={{} as any}>{Sh({})}</ShapeUiContext.Provider>,
+      container,
+    );
+
+    expect(traceSpy).toHaveBeenCalledWith('web-core.shape', 'item-props', {
+      it: { id: 1, label: 'A' },
+      result: { id: 1, selected: true },
+    });
+  });
 });
