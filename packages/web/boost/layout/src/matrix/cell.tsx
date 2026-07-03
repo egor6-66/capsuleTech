@@ -107,7 +107,11 @@ export const renderCell = (
     // `scrollbar-hover` mirrors matrixSlots.resizeMain/Slot visual parity for
     // draggable cells (parity is otherwise carried by the non-DnD branch below).
     return (
-      <Dynamic component={tag} ref={cellRef} class="h-full w-full relative">
+      <Dynamic
+        component={tag}
+        ref={cellRef}
+        class="h-full w-full relative rounded-sm border border-border"
+      >
         {/* Inner scroll wrapper; pointer-events-none during drag prevents hover leaking
             into cell content (table row hover, map hover, etc.).
             DnD ref lives on the outer wrapper so elementFromPoint() always hits it. */}
@@ -147,7 +151,7 @@ export const renderCell = (
     <Dynamic
       component={tag}
       ref={cellRef}
-      class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative`}
+      class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative overflow-hidden rounded-sm border border-border`}
     >
       <div class="absolute inset-0 overflow-auto">
         <MatrixSlot slot={cell.id}>
