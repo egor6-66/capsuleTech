@@ -24,14 +24,19 @@ const WordInfo = View(({ Layout, Typography, Card, Button }, props: IWordInfoPro
     <Layout.Flex orientation="vertical" gapY={3} class="p-6">
       <Layout.Flex orientation="horizontal" gapX={2} align="center">
         <Typography variant="h2">{props.sense.text}</Typography>
-        <Button variant="ghost" meta={{ tags: ['speak'] }} payload={{ speak: props.sense.text }}>
+        <Button
+          variant="ghost"
+          meta={{ tags: ['speak'] }}
+          payload={{ audioUrl: props.sense.audio?.url ?? null }}
+        >
           🔊
         </Button>
       </Layout.Flex>
 
-      {/* Свитчер TTS-движка — A/B озвучки (применяется ко всем 🔊). */}
+      {/* Свитчер TTS-движка — A/B озвучки (применяется ко всем 🔊). Список движков
+          приходит в audio-блоке learn-композиции (ADR 067) — не хардкодим. */}
       <Layout.Flex orientation="horizontal" gapX={1}>
-        <For each={['kokoro', 'styletts2']}>
+        <For each={props.sense.audio?.engines ?? []}>
           {(e) => (
             <Button
               variant="ghost"

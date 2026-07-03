@@ -37,21 +37,22 @@ const Library = Feature(({ api }) => ({
   },
 
   // Клик: setEngine (свитчер движка) / speak (озвучка выбранным движком) / select (выбор).
-  // dedup bubbling разводит вложенные кнопки и тайл. Base — dev-хардкод (позже из конфига).
+  // dedup bubbling разводит вложенные кнопки и тайл.
   onClick: ({ target, store, context }) => {
     const p = target.payload as
-      | { id?: number; speak?: string; setEngine?: string }
+      | { id?: number; audioUrl?: string | null; setEngine?: string }
       | undefined;
     if (p?.setEngine) {
       store.update({ engine: p.setEngine });
       return;
     }
-    if (p?.speak) {
+    // Озвучка: payload несёт готовый audio.url из learn-композиции (ADR 067) —
+    // ссылка бьёт напрямую в voice-сервис. null = voice лежал при выдаче, молча скипаем.
+    if (p && 'audioUrl' in p) {
+      if (!p.audioUrl) return;
       const c = context as any;
       const engine = c?.data?.engine ?? c?.engine ?? 'kokoro';
-      void new Audio(
-        `http://127.0.0.1:8003/learn/voice/speak?text=${encodeURIComponent(p.speak)}&engine=${engine}`,
-      ).play();
+      void new Audio(`${p.audioUrl}&engine=${engine}`).play();
       return;
     }
     if (p?.id != null) store.update({ selectedId: p.id });

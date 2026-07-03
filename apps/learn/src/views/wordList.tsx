@@ -11,6 +11,7 @@ interface ITile {
   id: number;
   text: string;
   translation: string | null;
+  audioUrl: string | null;
 }
 
 interface IWordListProps {
@@ -45,7 +46,7 @@ const WordList = View(({ Layout, Card, Typography, Input, Button }, props: IWord
               <Button
                 variant="ghost"
                 meta={{ tags: ['speak'] }}
-                payload={{ speak: w.text }}
+                payload={{ audioUrl: w.audioUrl }}
                 class="h-5 px-1 text-xs"
               >
                 🔊
