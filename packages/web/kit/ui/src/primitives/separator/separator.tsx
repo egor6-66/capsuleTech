@@ -33,10 +33,15 @@ export const Separator = (props: ISeparatorProps) => {
     },
   });
 
+  // Kobalte 0.13.11 SeparatorPrimitive has no `decorative` option — the prop
+  // is intentionally NOT forwarded (would leak as a raw invalid DOM attribute).
+  // Radix/shadcn semantics implemented here: decorative=true (default) removes
+  // the element from the a11y tree via explicit role="none" (overrides the
+  // <hr>'s implicit separator role); decorative=false keeps implicit semantics.
   return (
     <SeparatorPrimitive
       orientation={(local.orientation as 'horizontal' | 'vertical') || 'horizontal'}
-      decorative={local.decorative}
+      role={local.decorative ? 'none' : undefined}
       class={className()}
       style={style()}
       {...others}

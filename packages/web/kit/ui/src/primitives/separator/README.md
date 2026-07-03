@@ -26,7 +26,7 @@ slug: web-ui/primitives/separator
 |---|---|---|---|
 | `orientation` | `'horizontal' \| 'vertical'` | `'horizontal'` | Ось: прокидывается в Kobalte (`data-orientation`, `aria-orientation` для vertical) |
 | `variant` | `'horizontal' \| 'vertical'` | = `orientation` | Визуальный CVA-вариант; задавать отдельно нужно редко |
-| `decorative` | `boolean` | `true` | Декоративный vs семантический разделитель. ⚠️ Известный gap: Kobalte 0.13 опцию не поддерживает — флаг сейчас не влияет на a11y-роль |
+| `decorative` | `boolean` | `true` | `true` — чисто визуальный: `role="none"` убирает элемент из a11y-дерева; `false` — смысловой separator (имплицитная роль `<hr>`) |
 | `class` / `style` | `string` / `JSX.CSSProperties` | — | Прокидываются на элемент |
 
 ```tsx
@@ -40,12 +40,12 @@ slug: web-ui/primitives/separator
 
 ## Доступность {#a11y}
 
-Рендерится `<hr>` — нативная имплицитная роль `separator`. `orientation="vertical"` добавляет `aria-orientation="vertical"`. Для вертикального варианта нужен родитель с высотой (линия — `h-full`).
+Рендерится `<hr>`. Канон Radix/shadcn: по умолчанию (`decorative`) разделитель чисто визуальный — явная `role="none"` убирает его из a11y-дерева; `decorative={false}` сохраняет имплицитную роль `separator`, для vertical добавляется `aria-orientation="vertical"`. Ставь `decorative={false}` только когда разделитель несёт смысл структуры (границы секций документа), не для косметики. Для вертикального варианта нужен родитель с высотой (линия — `h-full`).
 
 ## Контракт для studio {#contract}
 
 <!-- audience: agent -->
-`separator.contract.ts` — leaf; контракт-props: `variant` / `orientation` / `decorative`. Тесты контракта — `__tests__/separator.test.tsx` (orientation pass-through закреплён; `decorative` не закреплён — известный gap, см. заметку в тест-файле).
+`separator.contract.ts` — leaf; контракт-props: `variant` / `orientation` / `decorative`. Тесты контракта — `__tests__/separator.test.tsx` (orientation pass-through + decorative-семантика закреплены). `decorative` реализован в нашей обёртке (Kobalte 0.13 опции не имеет, в DOM проп не форвардится).
 <!-- /audience -->
 
 ## Связанное {#related}

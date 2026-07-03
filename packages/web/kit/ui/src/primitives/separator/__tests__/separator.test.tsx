@@ -9,14 +9,12 @@
  *   - orientation flows to Kobalte SeparatorPrimitive (data-orientation /
  *     aria-orientation) — pins the contract-inspector field
  *     (`separator.contract.ts`) against silent breakage.
+ *   - decorative semantics (Radix/shadcn canon, implemented in our wrapper —
+ *     Kobalte 0.13.11 has no such option): decorative=true (default) →
+ *     role="none" removes the <hr> from the a11y tree; decorative=false →
+ *     implicit separator semantics. The prop is NOT forwarded to the DOM.
  *   - orientation/variant props update at runtime (reactivity contract).
  *   - class prop merges and updates reactively.
- *
- * NOT covered (known gap, surfaced 2026-07-02): `decorative` has no a11y
- * effect — Kobalte 0.13.11 Separator has no such option, the prop leaks to
- * the DOM as a raw `decorative` attribute. Element renders as `<hr>` (implicit
- * role=separator) regardless of the flag. Fix pending architect decision —
- * do not pin the broken behavior with a test.
  */
 
 import { createSignal } from 'solid-js';
@@ -80,6 +78,44 @@ describe('Separator — orientation pass-through to Kobalte', () => {
   it('renders as <hr> (native separator semantics)', () => {
     cleanup = render(() => <Separator />, container);
     expect(container.firstElementChild?.tagName).toBe('HR');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Decorative semantics (Radix/shadcn canon, implemented in our wrapper)
+// ---------------------------------------------------------------------------
+
+describe('Separator — decorative semantics', () => {
+  it('default (decorative=true) → role="none", no raw `decorative` DOM attribute', () => {
+    cleanup = render(() => <Separator />, container);
+    const el = container.firstElementChild as HTMLElement;
+    expect(el?.getAttribute('role')).toBe('none');
+    expect(el?.hasAttribute('decorative')).toBe(false);
+  });
+
+  it('decorative=false → no role override, implicit <hr> separator semantics kept', () => {
+    cleanup = render(() => <Separator decorative={false} />, container);
+    const el = container.firstElementChild as HTMLElement;
+    expect(el?.tagName).toBe('HR');
+    expect(el?.hasAttribute('role')).toBe(false);
+    expect(el?.hasAttribute('decorative')).toBe(false);
+  });
+
+  it('decorative=false + orientation=vertical → aria-orientation preserved', () => {
+    cleanup = render(() => <Separator decorative={false} orientation="vertical" />, container);
+    const el = container.firstElementChild as HTMLElement;
+    expect(el?.hasAttribute('role')).toBe(false);
+    expect(el?.getAttribute('aria-orientation')).toBe('vertical');
+  });
+
+  it('updates role when decorative signal changes (reactivity contract)', () => {
+    const [decorative, setDecorative] = createSignal(true);
+    cleanup = render(() => <Separator decorative={decorative()} />, container);
+    const el = container.firstElementChild as HTMLElement;
+    expect(el?.getAttribute('role')).toBe('none');
+
+    setDecorative(false);
+    expect(el?.hasAttribute('role')).toBe(false);
   });
 });
 
