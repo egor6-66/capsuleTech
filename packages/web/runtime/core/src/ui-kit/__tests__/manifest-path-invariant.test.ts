@@ -36,17 +36,10 @@ const resolve = (registry: Record<string, unknown>, path: string): unknown => {
 
 /**
  * Намеренные исключения — manifest-типы, которые ОСОЗНАННО отсутствуют в
- * namespace `Ui`. Явный allowlist с обоснованием, НЕ молчаливый skip.
- *
- * - `ui.Animate` — wrapper-категория (анимационная обёртка), не render-leaf.
- *   `Animate` был удалён из ui-kit (`imports.tsx`) при переводе анимаций на
- *   нативный CSS (View Transitions + Kobalte data-attrs, см. OWNERSHIP
- *   changelog «Ui.Animate удалён»). Манифест остаётся для studio-метаданных,
- *   но render-узлом Animate не является и пресетов не имеет.
- *   owner-web-ui (Part B2 брифа) решает причинно — снять render-`type` с
- *   манифеста ИЛИ оставить здесь. До тех пор — явное исключение.
+ * namespace `Ui`. Явный allowlist с обоснованием (комментарий на каждую
+ * запись), НЕ молчаливый skip. Формат записи: `'ui.X'`.
  */
-const ALLOWLIST = new Set<string>(['ui.Animate']);
+const ALLOWLIST = new Set<string>([]);
 
 describe('manifest path-invariant: every web-ui manifest.type resolves in Ui namespace', () => {
   // Тот же registry, что апп/канвас передаёт рендереру.
@@ -65,5 +58,12 @@ describe('manifest path-invariant: every web-ui manifest.type resolves in Ui nam
     const stale = [...ALLOWLIST].filter((type) => resolve(registry, type) != null);
 
     expect(stale).toEqual([]);
+  });
+
+  it('allowlist entries reference existing manifests', () => {
+    const manifestTypes = new Set(getAllManifests().map((m) => m.type));
+    const orphaned = [...ALLOWLIST].filter((type) => !manifestTypes.has(type));
+
+    expect(orphaned).toEqual([]);
   });
 });

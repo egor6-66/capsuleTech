@@ -28,6 +28,7 @@
  */
 
 export { createCapsuleApp, type ICreateCapsuleAppOptions } from './createCapsuleApp';
+export { EmitContext, EmitProvider, type IEmitSink, useEmitSink } from './EmitProvider';
 export {
   createConfigStore,
   filterOverride,
@@ -43,7 +44,6 @@ export {
   readEmbedParams,
   startHandshake,
 } from './embedHandshake';
-export { EmitContext, EmitProvider, type IEmitSink, useEmitSink } from './EmitProvider';
 export {
   buildSolidImportMap,
   renderSolidImportMapTag,

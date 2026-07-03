@@ -1,8 +1,15 @@
 import type { JSX } from 'solid-js';
-import { createEffect, createUniqueId, mergeProps, onCleanup, splitProps, useContext } from 'solid-js';
+import {
+  createEffect,
+  createUniqueId,
+  mergeProps,
+  onCleanup,
+  splitProps,
+  useContext,
+} from 'solid-js';
 import { hasAccessResolver, resolveAccess } from './access-resolver';
-import { Context } from './ctx';
 import type { ICtx } from './ctx';
+import { Context } from './ctx';
 import {
   type AnyEvent,
   deriveInputType,
@@ -342,7 +349,12 @@ export const wrapComponent = (
     // Patch-источник передан **функцией** — Solid'овский mergeProps вызывает её
     // на КАЖДОМ чтении и пробрасывает реактивность от @xstate/solid (createStore)
     // в потребителя (`splitProps` / JSX-spread).
-    const finalProps = mergeProps(props, dynamicProps, () => liveCtx.store.props?.[id] ?? {}, local);
+    const finalProps = mergeProps(
+      props,
+      dynamicProps,
+      () => liveCtx.store.props?.[id] ?? {},
+      local,
+    );
     return <OriginalComponent {...finalProps} />;
   };
 

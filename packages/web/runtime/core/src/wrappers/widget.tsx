@@ -111,8 +111,8 @@ export const WidgetWrapper: IWidgetWrapper = ((
     // top-level children() call would eager-instantiate the content via its
     // memo and break that contract.
     const WidgetContent = () => {
-      const content = children(
-        () => (Component as IWidgetRenderer)(proxiedUi, store, wrapperProps),
+      const content = children(() =>
+        (Component as IWidgetRenderer)(proxiedUi, store, wrapperProps),
       );
       return (
         <Show when={showSettings()} fallback={content()}>

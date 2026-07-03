@@ -24,8 +24,8 @@ vi.mock('@capsuletech/web-router', () => ({
   useRouter: () => ({ goTo: () => {}, back: () => {}, current: () => '/', raw: {} }),
 }));
 
-import type { IServices } from '../../wrappers/interfaces';
 import { ControllerWrapper } from '../../wrappers/controller';
+import type { IServices } from '../../wrappers/interfaces';
 import { EmbedModeContext } from '../host-bridge';
 
 let container: HTMLDivElement;

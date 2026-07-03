@@ -24,7 +24,11 @@ describe('filterOverride', () => {
   });
 
   it('drops keys not in the schema', () => {
-    const out = filterOverride({ router: { transition: true }, serverUrl: 'https://x', theme: 'dark' });
+    const out = filterOverride({
+      router: { transition: true },
+      serverUrl: 'https://x',
+      theme: 'dark',
+    });
     expect(out).toEqual({ router: { transition: true } });
     expect(out).not.toHaveProperty('serverUrl');
     expect(out).not.toHaveProperty('theme');
