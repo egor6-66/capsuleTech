@@ -10,6 +10,7 @@ const Words = Widget(() => {
       id: s.id,
       text: s.text,
       translation: s.gloss,
+      audioUrl: s.audio?.url ?? null,
     }));
   const selectedId = () => ctx.store?.ctx?.data?.selectedId ?? null;
 

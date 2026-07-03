@@ -11,6 +11,9 @@
 export const senses = defineEndpoint(({ zod }) => {
   const tag = zod.object({ name: zod.string(), kind: zod.string() });
 
+  // Композиция ADR 067: готовая ссылка на voice-сервис (не байты). null = voice лежит.
+  const audio = zod.object({ url: zod.string(), engines: zod.array(zod.string()) }).nullable();
+
   const senseListItem = zod.object({
     id: zod.number(),
     text: zod.string(),
@@ -23,6 +26,7 @@ export const senses = defineEndpoint(({ zod }) => {
     connotation: zod.string().nullable(),
     synset: zod.string().nullable(),
     tags: zod.array(tag),
+    audio,
   });
 
   return {
@@ -80,6 +84,7 @@ export const sense = defineEndpoint(({ zod }) => {
         }),
       ),
       relations: zod.array(zod.object({ type: zod.string(), target: zod.string() })),
+      audio: zod.object({ url: zod.string(), engines: zod.array(zod.string()) }).nullable(),
     }),
   };
 });
