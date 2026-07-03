@@ -1,0 +1,20 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>capsule dev-gateway</title>
+<style>
+  body { font: 14px/1.6 ui-monospace, monospace; max-width: 640px; margin: 4rem auto; color: #ddd; background: #111; }
+  a { color: #7ab7ff; text-decoration: none; }
+  code { color: #999; }
+  h1 { font-size: 18px; }
+  td { padding: 2px 12px 2px 0; }
+</style>
+<h1>capsule dev-gateway <code>:8080</code> (ADR 068)</h1>
+<p>Один origin для всех аппов — кука и BroadcastChannel работают как в проде.<br />Апп не запущен → 502 на его пути. Запусти как обычно (<code>pnpm dev</code>) — появится.</p>
+<table>
+  <tr><td><a href="/learn/">/learn/</a></td><td><code>→ :3100</code></td></tr>
+  <tr><td>/studio/</td><td><code>→ :3050 (pending base-flip)</code></td></tr>
+  <tr><td>/api/auth/health</td><td><code>→ :8004</code></td></tr>
+  <tr><td><a href="/api/learn/lang/senses">/api/learn/lang/senses</a></td><td><code>→ :8003</code></td></tr>
+  <tr><td><a href="/api/lang/senses">/api/lang/senses</a></td><td><code>→ :8002</code></td></tr>
+  <tr><td><a href="/api/voice/engines">/api/voice/engines</a></td><td><code>→ :8001</code></td></tr>
+</table>
