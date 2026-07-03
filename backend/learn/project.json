@@ -12,27 +12,6 @@
         "command": "uv run uvicorn capsule_learn.main:app --port 8003 --reload"
       }
     },
-    "migrate": {
-      "executor": "nx:run-commands",
-      "options": {
-        "cwd": "backend/learn",
-        "command": "uv run alembic upgrade head"
-      }
-    },
-    "seed": {
-      "executor": "nx:run-commands",
-      "options": {
-        "cwd": "backend/learn",
-        "command": "uv run python -m capsule_learn.seed"
-      }
-    },
-    "import": {
-      "executor": "nx:run-commands",
-      "options": {
-        "cwd": "backend/learn",
-        "command": "uv run python -m capsule_learn.importer {args.file}"
-      }
-    },
     "test:py": {
       "executor": "nx:run-commands",
       "options": {

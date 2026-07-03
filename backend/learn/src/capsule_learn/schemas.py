@@ -1,99 +1,26 @@
-"""Pydantic models — ingestion canon (ADR 064-A A4) + response contract."""
+"""Learn's own response models — lang shapes + audio enrichment (ADR 067 D2).
+
+Deliberate copies of lang's response forms: the composer owns its front
+contract and never imports another service's models. Former enum facets are
+plain strings here — the lexical taxonomy lives in lang; learn passes values
+through without re-validating them.
+"""
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, field_validator
-
-from .enums import (
-    Connotation,
-    Frequency,
-    Level,
-    Pos,
-    Register,
-    RelationType,
-    Source,
-    TagKind,
-)
-
-# Long-form POS synonyms accepted from teacher YAML → canonical short form.
-POS_SYNONYMS: dict[str, str] = {
-    "adjective": "adj",
-    "adverb": "adv",
-    "noun": "noun",
-    "verb": "verb",
-    "pronoun": "pron",
-    "preposition": "prep",
-    "conjunction": "conj",
-    "determiner": "det",
-    "interjection": "interj",
-}
+from pydantic import BaseModel, Field
 
 
-# --- ingestion canon (ADR 064-A A4) -----------------------------------------
+class AudioBlock(BaseModel):
+    """Ready-to-play voice link + available engines — never audio bytes."""
 
-
-class ExampleIn(BaseModel):
-    text: str
-    pron_ru: str | None = None
-    ru: str | None = None
-    ipa: str | None = None
-
-
-class TagIn(BaseModel):
-    name: str
-    kind: TagKind  # field|domain|tier|phonetic|lexical
-
-
-class RelationIn(BaseModel):
-    type: RelationType  # antonym|hypernym|hyponym|part_of|member_of
-    target: str  # "word (gloss-disambiguator)" → resolved to a sense id
-
-
-class SenseIn(BaseModel):
-    word: str
-    lang: str = "en_US"
-    gloss: str | None = None
-    pos: Pos
-    level: Level | None = None
-    # `register_` avoids shadowing BaseModel; JSON key stays "register".
-    register_: Register | None = Field(default=None, alias="register")
-    frequency: Frequency | None = None
-    pron_ru: str | None = None
-    ipa: str | None = None
-    image: str | None = None
-    connotation: Connotation | None = None
-    intensity: int | None = None
-    synset: str | None = None
-    nuance: str | None = None
-    valency: str | None = None
-    forms: dict[str, str] = Field(default_factory=dict)
-    traits: list[str] = Field(default_factory=list)  # → lexical tags
-    tags: list[TagIn] = Field(default_factory=list)
-    relations: list[RelationIn] = Field(default_factory=list)
-    collocations: list[str] = Field(default_factory=list)
-    examples: list[ExampleIn] = Field(default_factory=list)
-
-    @field_validator("pos", mode="before")
-    @classmethod
-    def _normalize_pos(cls, v: object) -> object:
-        if isinstance(v, str):
-            return POS_SYNONYMS.get(v.strip().lower(), v.strip().lower())
-        return v
-
-    @field_validator("level", "register_", "frequency", "connotation", mode="before")
-    @classmethod
-    def _normalize_enum_case(cls, v: object) -> object:
-        # Teachers write CEFR (A1) and may capitalise enum values — accept any
-        # case; the canonical enum values are lowercase.
-        return v.strip().lower() if isinstance(v, str) else v
-
-
-# --- response contract ------------------------------------------------------
+    url: str
+    engines: list[str]
 
 
 class TagOut(BaseModel):
     name: str
-    kind: TagKind
+    kind: str
 
 
 class ExampleOut(BaseModel):
@@ -104,26 +31,8 @@ class ExampleOut(BaseModel):
 
 
 class RelationOut(BaseModel):
-    type: RelationType
+    type: str
     target: str  # "word" or "word (gloss)" of the resolved sense
-
-
-class SenseListItem(BaseModel):
-    id: int
-    text: str
-    gloss: str | None
-    pos: Pos
-    level: Level | None
-    register_: Register | None = Field(alias="register")
-    frequency: Frequency | None
-    pron_ru: str | None
-    connotation: Connotation | None
-    synset: str | None
-    tags: list[TagOut]
-
-
-class SensesResponse(BaseModel):
-    senses: list[SenseListItem]
 
 
 class WordOut(BaseModel):
@@ -131,19 +40,39 @@ class WordOut(BaseModel):
     lang: str
 
 
+class SenseListItem(BaseModel):
+    id: int
+    text: str
+    gloss: str | None
+    pos: str
+    level: str | None
+    # `register_` avoids shadowing BaseModel; JSON key stays "register".
+    register_: str | None = Field(alias="register")
+    frequency: str | None
+    pron_ru: str | None
+    connotation: str | None
+    synset: str | None
+    tags: list[TagOut]
+    audio: AudioBlock | None
+
+
+class SensesResponse(BaseModel):
+    senses: list[SenseListItem]
+
+
 class SenseDetail(BaseModel):
     id: int
     word: WordOut
     gloss: str | None
-    pos: Pos
-    level: Level | None
-    register_: Register | None = Field(alias="register")
-    frequency: Frequency | None
-    source: Source
+    pos: str
+    level: str | None
+    register_: str | None = Field(alias="register")
+    frequency: str | None
+    source: str
     pron_ru: str | None
     ipa: str | None
     image: str | None
-    connotation: Connotation | None
+    connotation: str | None
     intensity: int | None
     synset: str | None
     nuance: str | None
@@ -153,6 +82,7 @@ class SenseDetail(BaseModel):
     tags: list[TagOut]
     examples: list[ExampleOut]
     relations: list[RelationOut]
+    audio: AudioBlock | None
 
 
 class RelatedItem(BaseModel):
@@ -161,7 +91,7 @@ class RelatedItem(BaseModel):
     gloss: str | None
     sharedTags: int
     sameSynset: bool
-    connotation: Connotation | None
+    connotation: str | None
     intensity: int | None
     synset: str | None
     tags: list[TagOut]

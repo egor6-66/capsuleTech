@@ -1,61 +1,81 @@
-"""Test fixtures — in-memory SQLite, schema via create_all, seeded data."""
+"""Test fixtures — learn app with respx-mocked lang/voice upstreams."""
 
 from __future__ import annotations
 
 import pytest
+import respx
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import StaticPool
 
-from capsule_learn.db import Base, get_db
+from capsule_learn.config import settings
 from capsule_learn.main import app
-from capsule_learn.models import Base as ModelsBase  # noqa: F401  (ensure tables loaded)
-from capsule_learn.seed import seed
+
+SENSE_LIST_ITEM = {
+    "id": 1,
+    "text": "ice cream",
+    "gloss": "frozen dessert",
+    "pos": "noun",
+    "level": "a1",
+    "register": "neutral",
+    "frequency": "high",
+    "pron_ru": "айс крим",
+    "connotation": "positive",
+    "synset": "dessert",
+    "tags": [{"name": "food", "kind": "domain"}],
+}
+
+SENSE_DETAIL = {
+    "id": 1,
+    "word": {"text": "ice cream", "lang": "en_US"},
+    "gloss": "frozen dessert",
+    "pos": "noun",
+    "level": "a1",
+    "register": "neutral",
+    "frequency": "high",
+    "source": "curated",
+    "pron_ru": "айс крим",
+    "ipa": None,
+    "image": None,
+    "connotation": "positive",
+    "intensity": None,
+    "synset": "dessert",
+    "nuance": None,
+    "valency": None,
+    "forms": {},
+    "collocations": ["ice cream cone"],
+    "tags": [{"name": "food", "kind": "domain"}],
+    "examples": [{"text": "I love ice cream.", "pron_ru": None, "ru": None, "ipa": None}],
+    "relations": [{"type": "hypernym", "target": "dessert"}],
+}
+
+RELATED = {
+    "related": [
+        {
+            "id": 2,
+            "text": "sorbet",
+            "gloss": "frozen fruit dessert",
+            "sharedTags": 1,
+            "sameSynset": True,
+            "connotation": None,
+            "intensity": None,
+            "synset": "dessert",
+            "tags": [{"name": "food", "kind": "domain"}],
+        }
+    ]
+}
+
+ENGINES = {"engines": ["kokoro", "chatterbox"], "default": "kokoro"}
 
 
 @pytest.fixture()
-def session_factory():
-    engine = create_engine(
-        "sqlite://",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(engine)
-    factory = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
-    with factory() as db:
-        seed(db)
-    yield factory
-    Base.metadata.drop_all(engine)
+def upstream():
+    with respx.mock(assert_all_called=False) as router:
+        router.get(f"{settings.voice_url}/voice/engines").respond(json=ENGINES)
+        yield router
 
 
 @pytest.fixture()
-def db(session_factory) -> Session:
-    with session_factory() as s:
-        yield s
-
-
-@pytest.fixture()
-def blank_db() -> Session:
-    """Empty schema, no seed — for importer unit tests."""
-    engine = create_engine(
-        "sqlite://",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-    Base.metadata.create_all(engine)
-    factory = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
-    with factory() as s:
-        yield s
-    Base.metadata.drop_all(engine)
-
-
-@pytest.fixture()
-def client(session_factory) -> TestClient:
-    def _override():
-        with session_factory() as s:
-            yield s
-
-    app.dependency_overrides[get_db] = _override
-    yield TestClient(app)
-    app.dependency_overrides.clear()
+def client(upstream) -> TestClient:
+    # Context-managed so lifespan runs (creates fresh httpx clients per test —
+    # the voice engines cache never leaks between tests).
+    with TestClient(app) as c:
+        yield c

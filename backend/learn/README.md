@@ -1,70 +1,57 @@
 # backend/learn — `capsule-learn`
 
-First Python/FastAPI service in the monorepo. Sense-centric lexical library
-(`lang` module). Data model: **ADR 064**; service shape: **ADR 055**.
+Learn-service — **composer** (BFF, ADR 055 D2 / ADR 067): learning payloads
+are composed from the capability services — lexical data from
+`backend/lang` (:8002), audio links to `backend/voice` (:8001), «word +
+pronunciation side by side». Holds no lexical DB and no TTS engines;
+**stateless** until user-state (progress/SRS) arrives in a later wave.
 
-- **Stack:** Python 3.12, [uv](https://docs.astral.sh/uv/), FastAPI, SQLAlchemy 2.0, Alembic, SQLite-file.
+- **Stack:** Python 3.12+, [uv](https://docs.astral.sh/uv/), FastAPI, httpx.
 - **Port:** `8003` (voice 8001 / lang 8002 / learn 8003 — ADR 055).
-- **DB:** `DATABASE_URL` (default `sqlite:///./learn.db`) — drop-in Postgres later.
 
 ## Run
 
 ```bash
-uv sync                                                  # install deps
-uv run alembic upgrade head                              # create schema
-uv run python -m capsule_learn.importer content/lang/en_US/seed.yml   # ingest corpus
+uv sync --extra dev
 uv run uvicorn capsule_learn.main:app --port 8003 --reload
 ```
 
-`seed.py` is a thin wrapper around the importer on the bundled corpus; the
-canonical way to feed lexicon is **YAML via the importer** (`import_file` →
-`ImportReport`, ADR 064-A §A4) — `python -m capsule_learn.importer <file.yml>`.
+Upstreams are expected at their default ports; override via env (ADR 067 D4):
+
+| Env | Default | Purpose |
+|---|---|---|
+| `LANG_URL` | `http://localhost:8002` | lang capability service |
+| `VOICE_URL` | `http://localhost:8001` | voice capability service |
+| `VOICE_PUBLIC_URL` | = `VOICE_URL` | browser-facing base for `audio.url` (reverse-proxy deployments) |
+| `PORT` | `8003` | |
+| `DEFAULT_LANG` | `en_US` | |
 
 ```bash
-uv run pytest          # tests (in-memory SQLite)
+uv run pytest          # tests (respx-mocked upstreams — no live services needed)
 uv run ruff check .    # lint
 ```
 
-## Endpoints (Postman contract)
+## Endpoints
+
+Front contract is preserved from the pre-extraction service — same paths,
+same response forms, now composed:
 
 | Method | Path | Purpose |
 |---|---|---|
 | GET | `/health` | `{ "status": "ok" }` |
-| GET | `/learn/lang/senses` | facet + tag filter (`lang`,`pos`,`level`,`register`,`connotation`,`synset`,`domain`,`tier`,`tag`*,`q`) |
-| GET | `/learn/lang/sense/{id}` | rich sense detail + tags + examples + relations |
-| GET | `/learn/lang/senses/related?sense={id}` | synset-aware ranking (same synset first, then shared tags) |
-| GET | `/learn/voice/speak?text=&engine=&voice=&speed=` | TTS → `audio/wav` |
-| GET | `/learn/voice/engines` | `{ engines: [...], default }` for the engine switcher |
+| GET | `/learn/lang/senses` | lang passthrough (`lang`,`pos`,`level`,`register`,`connotation`,`synset`,`domain`,`tier`,`tag`*,`q`) + `audio` per item |
+| GET | `/learn/lang/sense/{id}` | rich sense detail + `audio` |
+| GET | `/learn/lang/senses/related?sense={id}` | lang passthrough (`context`, `limit`) |
 
-`tag` repeats → AND (sense must carry all). `related` accepts `context` (tag name
-weighted first) and `limit`.
+**Audio composition (ADR 067 D2):** `SenseListItem` / `SenseDetail` carry
 
-## Voice (TTS)
-
-Pluggable engine behind a `TTSEngine` Protocol + lazy registry
-(`modules/voice/engine.py`) — swap per request via `?engine=` or globally via
-`VOICE_ENGINE`. Engines install independently (opt-in extras, lazy-imported so
-the base service/CI stay light):
-
-```bash
-uv sync --extra voice              # Kokoro (torch)
-uv sync --extra voice-styletts2    # StyleTTS2  (also needs espeak-ng, see below)
-uv run uvicorn capsule_learn.main:app --port 8003
-curl "http://127.0.0.1:8003/learn/voice/speak?text=happy&engine=kokoro" -o k.wav
-curl "http://127.0.0.1:8003/learn/voice/speak?text=happy&engine=styletts2" -o s.wav
+```json
+"audio": { "url": "<VOICE_PUBLIC_URL>/voice/speak?text=ice+cream&lang=en_US", "engines": ["kokoro"] }
 ```
 
-Unknown `engine` → 400. Air-gapped: point `KOKORO_MODEL_PATH` at a local model
-snapshot. **StyleTTS2 requires the espeak-ng system binary** (phonemizer →
-espeak-ng); on Windows: `winget install eSpeak-NG.eSpeak-NG`. Without it,
-StyleTTS2 synthesis raises at inference time (Kokoro is unaffected).
+— a ready-to-play link (front hits voice directly via `<audio src>`), never
+audio bytes. `engines` comes from `GET /voice/engines`, cached in memory with
+a TTL. Voice down → `audio: null` + warning log (a word without audio beats
+a 502). Lang down → `502` with detail; lang 4xx (404/422) are mirrored as-is.
 
-## Model (ADR 064 + 064-A)
-
-Atomic unit is **Sense** (a meaning), not Word. Single-valued facets → columns
-(`pos/level/register/frequency` + rich: `pron_ru/ipa/image/connotation/intensity/
-synset/forms/collocations/nuance/valency`); multi-valued → tags. Tag taxonomy v2:
-`field/domain/tier/phonetic/lexical`. Tables: `words` · `senses` · `tags` ·
-`sense_tags` (M2M) · `sense_examples` (1:N, first-class) · `sense_relations`
-(defined, no endpoints yet). `source: auto|curated` — re-import never overwrites
-curated rows.
+The old `/learn/voice/*` endpoints are gone — talk to voice (:8001) directly.
