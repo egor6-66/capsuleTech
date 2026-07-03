@@ -1,6 +1,6 @@
 # @capsuletech/web-shell
 
-App-shell блоки capsule (chrome с логикой): Header, ModeToggle, ThemePicker, Layout — переиспользуются между capsule-аппами.  ·  zone: **domain**  ·  status: **alpha (0.1.0)**
+App-shell блоки capsule (chrome с логикой): Header, ModeToggle, Picker, ThemePicker, Layout — переиспользуются между capsule-аппами.  ·  zone: **domain**  ·  status: **alpha (0.1.0)**
 
 Tier-2 в двухъярусной модели — connected-контролы поверх stateless `@capsuletech/web-ui`. Параметризуется через subpath-блоки (`/ui`, `/controllers`, `/capsule`).
 
@@ -28,7 +28,7 @@ export default Widget((Ui) => (
 ## Subpath exports
 
 - `/chrome` — Header / Layout / Footer (chrome блоки).
-- `/ui` — UI-блоки (ModeToggle, ThemePicker, WidgetSettingsToggle).
+- `/ui` — UI-блоки (ModeToggle, Picker — generic каркас селекта, ThemePicker — тонкий wrapper над Picker, WidgetSettingsToggle).
 - `/controllers` — `Controllers.Shell.*` HCA-адаптер (useEmit, ADR 032).
 - `/capsule` — `defineCapsuleModule` manifest (ADR 033).
 - ~~`/matrix`~~, ~~`/layout`~~ — DEPRECATED, removed в Phase B2 (используй `@capsuletech/boost-matrix`).

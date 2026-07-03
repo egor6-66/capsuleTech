@@ -11,9 +11,17 @@
  */
 import { defineCapsuleModule } from '@capsuletech/web-core/module';
 
-import { Appearance, FinishSettings, Header, LocalePicker, ModeToggle, ThemePicker } from './ui';
+import {
+  Appearance,
+  FinishSettings,
+  Header,
+  LocalePicker,
+  ModeToggle,
+  Picker,
+  ThemePicker,
+} from './ui';
 
 export default defineCapsuleModule({
   name: 'Shell',
-  components: { Appearance, FinishSettings, Header, LocalePicker, ModeToggle, ThemePicker },
+  components: { Appearance, FinishSettings, Header, LocalePicker, ModeToggle, Picker, ThemePicker },
 });

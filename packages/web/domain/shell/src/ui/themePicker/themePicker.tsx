@@ -1,14 +1,17 @@
 import { DISCOVERED_THEMES, setTheme, useTheme } from '@capsuletech/web-style';
-import { Button } from '@capsuletech/web-ui/button';
-import { Dropdown } from '@capsuletech/web-ui/dropdown';
 import { Palette } from '@capsuletech/web-ui/icons';
-import { For, Show, splitProps } from 'solid-js';
+import { splitProps } from 'solid-js';
 
+import { Picker } from '../picker';
 import type { IThemePickerProps } from './interfaces';
 
 /**
- * Dropdown-based theme picker. A connected control — by default, theme state
- * lives in the `@capsuletech/web-style` module-level signal. Can be made fully
+ * Dropdown-based theme picker — тонкий wrapper над generic `Shell.Picker`:
+ * каркас селекта живёт в `../picker`, здесь только тематические дефолты
+ * (DISCOVERED_THEMES / useTheme / setTheme / Palette-иконка / label 'Тема').
+ *
+ * A connected control — by default, theme state lives in the
+ * `@capsuletech/web-style` module-level signal. Can be made fully
  * state-injectable via the `value` + `onSelect` props, which bypass the global
  * signal entirely (useful for canvas-local theme overrides in studio).
  *
@@ -43,64 +46,41 @@ export const ThemePicker = (props: IThemePickerProps) => {
   ]);
   const globalTheme = useTheme();
   const current = () => local.value?.() ?? globalTheme();
-  const themes = () => local.themes ?? DISCOVERED_THEMES;
   const mode = () => local.mode ?? 'standalone';
 
-  const renderItems = () => (
-    <For each={themes()}>
-      {(name) => (
-        <Dropdown.Item
-          onSelect={() => {
-            if (local.onSelect) {
-              local.onSelect(name);
-            } else {
-              setTheme(name, local.target);
-            }
-            local.onChange?.(name);
-          }}
-        >
-          <span class="inline-block w-4 text-primary">
-            <Show when={current() === name}>&#x2713;</Show>
-          </span>
-          <span>{name}</span>
-        </Dropdown.Item>
-      )}
-    </For>
-  );
+  const handleSelect = (name: string) => {
+    if (local.onSelect) {
+      local.onSelect(name);
+    } else {
+      setTheme(name, local.target);
+    }
+  };
 
-  if (mode() === 'standalone') {
-    return (
-      <Dropdown modal={false}>
-        <Dropdown.Trigger as={Button} variant="outline" size="sm" class={local.class}>
-          <Show
-            when={local.triggerLabel !== undefined}
-            fallback={
-              <>
-                <span class="text-muted-foreground">Theme:</span>
-                <span>{current()}</span>
-              </>
-            }
-          >
-            {local.triggerLabel}
-          </Show>
-          <span class="text-muted-foreground" aria-hidden="true">
-            &#9662;
-          </span>
-        </Dropdown.Trigger>
-        <Dropdown.Content>{renderItems()}</Dropdown.Content>
-      </Dropdown>
-    );
-  }
+  // Дефолтные лейблы триггера — 1:1 с historic-поведением ThemePicker:
+  // standalone → "Theme: <current>", sub → 'Тема'. Иконка Palette — только в
+  // sub (в standalone исторически иконки не было).
+  const triggerLabel = () =>
+    local.triggerLabel ??
+    (mode() === 'sub' ? (
+      'Тема'
+    ) : (
+      <>
+        <span class="text-muted-foreground">Theme:</span>
+        <span>{current()}</span>
+      </>
+    ));
 
   return (
-    <Dropdown.Sub>
-      <Dropdown.Row
-        variant="sub"
-        icon={Palette}
-        label={local.triggerLabel ?? 'Тема'}
-        class={local.class}
-      />
-      <Dropdown.SubContent>{renderItems()}</Dropdown.SubContent>
-    </Dropdown.Sub>
+    <Picker
+      name="theme"
+      options={local.themes ?? DISCOVERED_THEMES}
+      value={current}
+      onSelect={handleSelect}
+      onChange={local.onChange}
+      triggerLabel={triggerLabel()}
+      icon={mode() === 'sub' ? Palette : undefined}
+      class={local.class}
+      mode={local.mode}
+    />
   );
 };
