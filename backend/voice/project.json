@@ -3,5 +3,28 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "sourceRoot": "backend/voice/src",
-  "tags": ["backend", "python", "voice"]
+  "tags": ["backend", "python", "voice"],
+  "targets": {
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/voice",
+        "command": "uv run uvicorn capsule_voice.main:app --port 8001 --reload"
+      }
+    },
+    "test:py": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/voice",
+        "command": "uv run pytest"
+      }
+    },
+    "lint:py": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/voice",
+        "command": "uv run ruff check ."
+      }
+    }
+  }
 }

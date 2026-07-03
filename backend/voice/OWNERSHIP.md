@@ -1,0 +1,86 @@
+---
+name: backend-voice
+owner-agent: owner-backend-voice
+group: backend (not released to npm)
+zone: backend
+status: alpha
+priority: P1
+last-updated: 2026-07-03
+---
+
+# backend-voice
+
+Stateless TTS capability service (FastAPI, Python 3.11, port :8001) — pluggable engines (Kokoro, Chatterbox) behind a Protocol + lazy registry, per-request A/B via `?engine=`.
+
+## Состояние (читать ПЕРВЫМ)
+
+- **Zone:** backend (Python capability service, ADR 054/065/067).
+- **Status:** alpha — extracted from `backend/learn` (ADR 067 D1), contract fixed (D2), Chatterbox added.
+- **Priority:** P1 — first capability service of the ADR 067 decomposition.
+- **Maturity bar:** STT/scoring (ADR 065 phase 3), consumers switched off `learn`'s voice module, CI job wired by architect.
+- **Active blockers:** нет.
+- **Roadmap:** STT endpoint (next wave), audio cache (deferred), WebSocket streaming (deferred).
+- **Last activity:** 2026-07-03 — extraction + ChatterboxEngine.
+
+## Vendor stack
+
+- **FastAPI** (`fastapi` `>=0.115`) — HTTP layer. https://fastapi.tiangolo.com/
+- **pydantic-settings** (`>=2.3`) — env config. https://docs.pydantic.dev/latest/concepts/pydantic_settings/
+- **Kokoro** (`kokoro` `>=0.8`, extra `voice-kokoro`) — light TTS, CPU-friendly. https://github.com/hexgrad/kokoro
+- **Chatterbox** (`chatterbox-tts` `>=0.1`, extra `voice-chatterbox`) — Resemble AI TTS + voice cloning, MIT. https://github.com/resemble-ai/chatterbox
+- **uv** — toolchain (venv + lock). https://docs.astral.sh/uv/
+
+## Зона ответственности
+
+### Owns
+- `backend/voice/` полностью (src, tests, pyproject, uv.lock, project.json, docs).
+
+### Не трогает
+- `backend/learn/` (owner-learn — его voice-модуль чистится отдельным тактом).
+- `backend/scriber/`, `backend/fs/` (owner-scriber / shared).
+- `.github/` CI workflows (architect).
+- Front-end consumers (`apps/*`, `packages/*`).
+
+## Публичный API (контракт ADR 067 D2 — зафиксирован)
+
+HTTP, prefix `/voice`:
+- `GET /health` → `{"status":"ok"}`
+- `GET /voice/engines` → `{engines: string[], default: string}`
+- `GET /voice/speak?text=&engine=&lang=&voice=&speed=` → `audio/wav`; 400 на пустой text / неизвестный engine.
+
+Изменение контракта = breaking change → координировать с architect (ADR).
+
+## Quirks / gotchas
+
+- **Python строго 3.11** (`requires-python = ">=3.11,<3.12"`) — Chatterbox/XTTS не собираются под 3.13 (ADR 065 §3). Не поднимать версию без проверки всего engine-стека.
+- **Engines = lazy extras** — base `uv sync --extra dev` НЕ ставит torch; движки грузятся только по первому запросу (`engine.py` `_FACTORIES`). CI гоняет тесты без ML-стека.
+- **Chatterbox `speed` игнорируется** — у модели нет нативного speed-контроля; `voice` для него = путь к референс-клипу (cloning), не имя голоса.
+- **Первый Chatterbox-запрос** качает модель с HF (гигабайты) и грузит минуты на CPU — это норма, кэшируется in-process.
+- **StyleTTS2 выброшен** — pip-обёртка битая (ADR 065 §отклонено). Не возвращать.
+
+## План рефакторинга / оптимизаций
+
+- [ ] **STT/scoring** — ADR 065 фаза 3, следующая волна. (priority: high)
+- [ ] **Kokoro lang_code из `lang`** — сейчас захардкожен American English. (priority: low)
+- [x] **Вынос из learn + ChatterboxEngine + dep-долг kokoro→transformers в uv.lock** (2026-07-03).
+
+## Test coverage
+
+| Тип | Где | Что покрывает |
+|---|---|---|
+| Unit/contract | `tests/test_voice.py` | registry, /voice/engines, /voice/speak (fake engine), 400-ветки, /health |
+| Real synthesis | `tests/test_voice.py` (`*_real`) | opt-in через `VOICE_MODEL_AVAILABLE` / `VOICE_CHATTERBOX_AVAILABLE` |
+
+**Перед изменением:** `uv run pytest` green. **Lint:** `uv run ruff check .`.
+
+## Cross-package dependencies
+
+| Зона | Owner |
+|---|---|
+| `backend/learn` (бывший хозяин voice-модуля) | owner-learn |
+| `backend/scriber` | owner-scriber |
+| CI workflows | architect |
+
+## Release group
+
+Не публикуется в npm/PyPI — деплоится как сервис (Docker/deploy — зона architect, отложено).
