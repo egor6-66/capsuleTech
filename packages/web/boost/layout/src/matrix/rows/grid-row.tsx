@@ -198,7 +198,7 @@ export const renderGridRow = (
               ref={zoneItem.ref}
               data-grid-cell={cell.id}
               class="relative overflow-hidden rounded-sm"
-              classList={{ 'border border-border/60': bordered() }}
+              classList={{ 'border-[0.5px] border-border/70': bordered() }}
               style={gridStyle()}
             >
               <div

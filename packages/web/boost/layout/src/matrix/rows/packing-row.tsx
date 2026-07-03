@@ -244,7 +244,7 @@ export const renderPackingRow = (
                 component={tag}
                 ref={cellRef}
                 class={`${cell.id === 'main' ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative overflow-hidden rounded-sm`}
-                classList={{ 'border border-border/60': bordered() }}
+                classList={{ 'border-[0.5px] border-border/70': bordered() }}
                 style={cellStyle()}
               >
                 <div
