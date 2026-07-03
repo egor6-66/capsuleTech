@@ -12,10 +12,10 @@ const Library = Feature(({ api }) => ({
   initial: 'loading',
 
   // На уровне страницы — кормит и сетку слов (Words), и инфо-панель (WordInfo).
+  // Выбор TTS-движка — app-глобальный concern, живёт в Features.App (не тут).
   context: {
     senses: [] as unknown[],
     selectedId: null as number | null,
-    engine: 'kokoro' as string, // выбранный TTS-движок (свитчер)
   },
 
   states: {
@@ -36,25 +36,13 @@ const Library = Feature(({ api }) => ({
     store.update({ senses: res.senses });
   },
 
-  // Клик: setEngine (свитчер движка) / speak (озвучка выбранным движком) / select (выбор).
+  // Клик: speak (🔊 — баббл наверх) / select (выбор слова).
   // dedup bubbling разводит вложенные кнопки и тайл.
-  onClick: ({ target, store, context }) => {
-    const p = target.payload as
-      | { id?: number; audioUrl?: string | null; setEngine?: string }
-      | undefined;
-    if (p?.setEngine) {
-      store.update({ engine: p.setEngine });
-      return;
-    }
-    // Озвучка: payload несёт готовый audio.url из learn-композиции (ADR 067) —
-    // ссылка бьёт напрямую в voice-сервис. null = voice лежал при выдаче, молча скипаем.
-    if (p && 'audioUrl' in p) {
-      if (!p.audioUrl) return;
-      const c = context as any;
-      const engine = c?.data?.engine ?? c?.engine ?? 'kokoro';
-      void new Audio(`${p.audioUrl}&engine=${engine}`).play();
-      return;
-    }
+  onClick: ({ target, store, next }) => {
+    const p = target.payload as { id?: number; audioUrl?: string | null } | undefined;
+    // Озвучка — app-глобальный concern (движок + плеер в Features.App):
+    // пассивный баббл, payload (audio.url) доезжает нетронутым.
+    if (p && 'audioUrl' in p) return next();
     if (p?.id != null) store.update({ selectedId: p.id });
   },
 }));

@@ -9,7 +9,6 @@ import { For, Show } from 'solid-js';
 
 interface IWordInfoProps {
   sense: any | null;
-  engine: string;
 }
 
 const WordInfo = View(({ Layout, Typography, Card, Button }, props: IWordInfoProps) => (
@@ -31,24 +30,6 @@ const WordInfo = View(({ Layout, Typography, Card, Button }, props: IWordInfoPro
         >
           🔊
         </Button>
-      </Layout.Flex>
-
-      {/* Свитчер TTS-движка — A/B озвучки (применяется ко всем 🔊). Список движков
-          приходит в audio-блоке learn-композиции (ADR 067) — не хардкодим. */}
-      <Layout.Flex orientation="horizontal" gapX={1}>
-        <For each={props.sense.audio?.engines ?? []}>
-          {(e) => (
-            <Button
-              variant="ghost"
-              meta={{ tags: ['engine'] }}
-              payload={{ setEngine: e }}
-              aria-selected={props.engine === e}
-              class="px-2 text-xs aria-[selected=true]:bg-primary aria-[selected=true]:text-primary-foreground"
-            >
-              {e}
-            </Button>
-          )}
-        </For>
       </Layout.Flex>
 
       <Show when={props.sense.pron_ru}>
