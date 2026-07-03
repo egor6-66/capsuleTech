@@ -24,6 +24,12 @@ export const ListContract = defineContract({ name: 'List', kind: 'primitive' }, 
       // flex-wrap layout вместо grid (min) — тег/чип/тайл-сетки с разной
       // длиной текста. См. README §wrap.
       wrap: z.boolean().optional(),
+      // justify-content для wrap-режима (без эффекта в min/plain).
+      justify: z.enum(['start', 'center', 'end', 'between', 'around', 'evenly']).optional(),
+      // Padding контейнера — spacing-шкала, паритет с Flex.p/px/py.
+      p: z.number().optional(),
+      px: z.number().optional(),
+      py: z.number().optional(),
     }),
   ),
   rule.variants(['default', 'flush']),

@@ -3,7 +3,8 @@ import { createVirtualizer } from '@tanstack/solid-virtual';
 import type { JSX } from 'solid-js';
 import { For, splitProps } from 'solid-js';
 import { useTrace } from '../../internal/useTrace';
-import { toGap } from '../layout/grid/utils';
+import type { FlexJustify } from '../layout/flex/interfaces';
+import { mergeStyle, toGap } from '../layout/grid/utils';
 import type {
   IListBatchProps,
   IListProps,
@@ -11,6 +12,19 @@ import type {
   IVirtualListProps,
 } from './interfaces';
 import { listVariants } from './variants';
+
+// justify-content raw values — inline-style paths (grid/wrap) don't use
+// Tailwind classes, so this mirrors Flex's JUSTIFY table but with CSS values.
+const JUSTIFY_CONTENT: Record<FlexJustify, string> = {
+  start: 'flex-start',
+  center: 'center',
+  end: 'flex-end',
+  between: 'space-between',
+  around: 'space-around',
+  evenly: 'space-evenly',
+};
+
+const toSpacing = (n: number) => `calc(var(--spacing) * ${n})`;
 
 /** Type guard: batch mode — data + item.use present (ADR 036 §3). */
 function isBatchMode<T>(props: IListProps<T>): props is IListBatchProps<T> {
@@ -32,9 +46,19 @@ export function List<T = unknown>(props: IListProps<T>) {
   if (isBatchMode(props)) {
     const [local, variants, others] = splitProps(
       props,
-      ['class', 'style', 'data', 'item', 'min', 'gap', 'wrap'],
+      ['class', 'style', 'data', 'item', 'min', 'gap', 'wrap', 'justify', 'p', 'px', 'py'],
       ['variant', 'orientation'],
     );
+
+    // Container padding overlay — spacing-scale, parity with Flex.p/px/py.
+    // Applies on top of whichever layout path is active (grid/wrap/plain).
+    const paddingStyle = (): JSX.CSSProperties => {
+      const s: JSX.CSSProperties = {};
+      if (local.p !== undefined) s.padding = toSpacing(local.p);
+      if (local.px !== undefined) s['padding-inline'] = toSpacing(local.px);
+      if (local.py !== undefined) s['padding-block'] = toSpacing(local.py);
+      return s;
+    };
 
     const isGrid = () => !!local.min;
     const isCustomLayout = () => local.wrap || local.min;
@@ -65,6 +89,7 @@ export function List<T = unknown>(props: IListProps<T>) {
       gap: gapValue(),
       width: '100%',
       ...(typeof local.style === 'object' ? local.style : {}),
+      ...paddingStyle(),
     });
 
     // Content-width wrap: flex-wrap, no 1fr-stretch — items keep natural width
@@ -75,7 +100,9 @@ export function List<T = unknown>(props: IListProps<T>) {
       'flex-wrap': 'wrap',
       gap: gapValue(),
       width: '100%',
+      ...(local.justify ? { 'justify-content': JUSTIFY_CONTENT[local.justify] } : {}),
       ...(typeof local.style === 'object' ? local.style : {}),
+      ...paddingStyle(),
     });
 
     if (local.wrap) {
@@ -95,7 +122,7 @@ export function List<T = unknown>(props: IListProps<T>) {
     return (
       <ul
         class={isGrid() ? local.class : className()}
-        style={(isGrid() ? gridStyle() : style()) as JSX.CSSProperties}
+        style={(isGrid() ? gridStyle() : mergeStyle(paddingStyle(), style())) as JSX.CSSProperties}
         {...(others as object)}
       >
         <For each={local.data}>{(item) => <ItemTpl {...getItemProps(item)} />}</For>

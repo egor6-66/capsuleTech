@@ -233,6 +233,53 @@ describe('List — batch mode wrap prop (content-width, no 1fr-stretch)', () => 
     expect(ul.style.gap).toBe('0.5rem');
   });
 
+  it('justify centers the wrap row via justify-content', () => {
+    const data = [{ id: 1, label: 'A' }];
+    const ItemTpl = (p: { id: number; label: string }) => <span>{p.label}</span>;
+
+    cleanup = render(
+      () => <List data={data} item={{ use: ItemTpl }} wrap justify="center" />,
+      container,
+    );
+
+    const ul = container.querySelector('ul')!;
+    expect(ul.style.justifyContent).toBe('center');
+  });
+
+  it('p/px/py apply padding to the container in wrap mode', () => {
+    const data = [{ id: 1, label: 'A' }];
+    const ItemTpl = (p: { id: number; label: string }) => <span>{p.label}</span>;
+
+    cleanup = render(() => <List data={data} item={{ use: ItemTpl }} wrap p={4} />, container);
+
+    const ul = container.querySelector('ul')!;
+    expect(ul.style.padding).toBe('calc(var(--spacing) * 4)');
+  });
+
+  it('p/px/py apply padding to the container in grid (min) mode', () => {
+    const data = [{ id: 1, label: 'A' }];
+    const ItemTpl = (p: { id: number; label: string }) => <span>{p.label}</span>;
+
+    cleanup = render(
+      () => <List data={data} item={{ use: ItemTpl }} min="9rem" px={2} py={1} />,
+      container,
+    );
+
+    const ul = container.querySelector('ul')!;
+    expect(ul.style.getPropertyValue('padding-inline')).toBe('calc(var(--spacing) * 2)');
+    expect(ul.style.getPropertyValue('padding-block')).toBe('calc(var(--spacing) * 1)');
+  });
+
+  it('p applies padding to the container in plain (no min/wrap) batch mode', () => {
+    const data = [{ id: 1, label: 'A' }];
+    const ItemTpl = (p: { id: number; label: string }) => <span>{p.label}</span>;
+
+    cleanup = render(() => <List data={data} item={{ use: ItemTpl }} p={3} />, container);
+
+    const ul = container.querySelector('ul')!;
+    expect(ul.style.padding).toBe('calc(var(--spacing) * 3)');
+  });
+
   it('does not scramble content across items when data changes', () => {
     const data = [
       { id: 1, label: 'Short' },

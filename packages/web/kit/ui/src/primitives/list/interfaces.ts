@@ -1,5 +1,6 @@
 import type { VariantProps } from 'class-variance-authority';
 import type { Component, JSX } from 'solid-js';
+import type { FlexJustify } from '../layout/flex/interfaces';
 import type { listItemVariants, listVariants } from './variants';
 
 export interface IListItemProps extends Omit<JSX.HTMLAttributes<HTMLDivElement>, 'children'> {
@@ -69,6 +70,23 @@ export interface IListBatchProps<T> extends Omit<JSX.HTMLAttributes<HTMLDivEleme
    * Takes precedence over `min` when both are set.
    */
   wrap?: boolean;
+  /**
+   * `justify-content` for the `wrap` layout (row alignment — e.g. `'center'`
+   * to centre a wrapped chip grid). No effect in `min` (grid) or plain-flex
+   * mode. Same values as `Flex.justify`.
+   */
+  justify?: FlexJustify;
+  /**
+   * Container padding — spacing-scale, same convention as `Flex.p`/`px`/`py`
+   * (`p={4}` → `padding: calc(var(--spacing) * 4)`). Applies in every batch
+   * sub-mode (`min` grid / `wrap` flex / plain flex), layered on top of the
+   * `variant` (`default`/`flush`) padding class.
+   */
+  p?: number;
+  /** `padding-inline` (left+right) — spacing-scale. */
+  px?: number;
+  /** `padding-block` (top+bottom) — spacing-scale. */
+  py?: number;
   /** items/children must be absent in batch mode. */
   items?: never;
   children?: never;
