@@ -5,7 +5,7 @@ group: web_base
 zone: domain
 status: alpha
 priority: P0
-last-updated: 2026-06-11
+last-updated: 2026-07-03
 ---
 
 # @capsuletech/web-shell
@@ -15,7 +15,7 @@ tier-2 in the two-tier UI model.
 
 ## Состояние (читать ПЕРВЫМ)
 
-- **Zone:** `domain` — stateful feature-package, chrome для apps (Header / ModeToggle / ThemePicker / Appearance / FinishSettings / LocalePicker).
+- **Zone:** `domain` — stateful feature-package, chrome для apps (Header / ModeToggle / Picker / ThemePicker / Appearance / FinishSettings / LocalePicker).
 - **Status:** `alpha` (0.1.0) — chrome subpath работает; Matrix эвакуирована в `@capsuletech/boost-layout` (Phase B2 closed 2026-06-12 per ADR 046 D2 amend).
 - **Priority:** **P0** — каждый capsule-апп тянет shell для chrome.
 - **Maturity bar (до beta):**
@@ -27,7 +27,7 @@ tier-2 in the two-tier UI model.
   1. Header block (config-driven, через Shapes.Shell).
   2. `Controllers.Shell.*` finalize (ADR 032 useEmit).
   3. switcher-state coordination с owner-web-style (theme/layout-mode пересечения).
-- **Last activity:** 2026-06-12 (Phase B2 — Matrix moved out to boost-layout).
+- **Last activity:** 2026-07-03 (Shell.Picker — generic каркас селекта; ThemePicker → wrapper).
 
 ## Vendor stack (ADR 047 D3)
 
@@ -78,7 +78,7 @@ Per ADR 045 the package exposes two tiers as dedicated subpaths:
 
 | Subpath | Tier | What | Notes |
 |---|---|---|---|
-| `./chrome` | tier-2 connected | `Header`, `ModeToggle`, `Appearance`, `FinishSettings`, `ThemePicker`, `LocalePicker` | Wired to `@capsuletech/web-style` / `@capsuletech/web-auth` stores; `useEmit` |
+| `./chrome` | tier-2 connected | `Header`, `ModeToggle`, `Appearance`, `FinishSettings`, `Picker`, `ThemePicker`, `LocalePicker` | Wired to `@capsuletech/web-style` / `@capsuletech/web-auth` stores; `useEmit` |
 | `./ui` | (legacy) | Connected blocks only (no controllers) | Pre-ADR 045 subpath; still works, prefer `./chrome` for new consumers. |
 | `./controllers` | empty barrel | (placeholder for future Controllers.Shell.*) | Matrix Controller moved to `@capsuletech/boost-layout/controllers` per ADR 046 D2 (Phase B2). |
 | `.` | convenience barrel | Re-exports `./ui` | |
@@ -102,6 +102,19 @@ Per ADR 045 the package exposes two tiers as dedicated subpaths:
   Apps that previously wrapped `Ui.Outlet` in `<... class="vt-route-content">` manually
   should remove that wrapper — Matrix now provides the region automatically.
 
+- **`Picker` — generic каркас селекта** (`src/ui/picker/`, brief shell-generic-picker
+  2026-07-03). Канон: шелл раздаёт каркасы селектов, апп раздаёт данные (с бэка).
+  Доменные пикеры = `Picker` + данные аппа — VoicePicker/LocalePicker-подобные блоки
+  в шелле НЕ заводим. `ThemePicker` — тонкий wrapper над `Picker` (тематические
+  дефолты: DISCOVERED_THEMES / useTheme / setTheme / Palette / 'Тема'), его публичный
+  контракт `IThemePickerProps` не менялся. При выборе Picker эмитит named-event
+  `onPick { name, value }` через `useEmitOptional` (ADR 032; optional — контрол может
+  рендериться вне host-scope, прецедент ComponentsPalette); `onSelect`-prop — инжект-путь
+  (ADR 041: событие = роль, инжект = опция), порядок `onSelect → emit → onChange`.
+- **`/ui` web-core exception:** правило «`/ui` не импортит `@capsuletech/web-core`»
+  имеет одно каноничное исключение — `useEmitOptional` для named-events connected-блоков
+  (ADR 032, зафиксировано brief'ом shell-generic-picker). Остальной web-core
+  (wrappers, module, engine) в `/ui` по-прежнему запрещён.
 - **`ModeToggle` is config-driven** (`src/ui/modeToggle/`). One component for all
   boolean app-modes via `IModeDescriptor` — replaced the four near-identical
   `*ModeToggle` components deleted from `@capsuletech/web-ui/composites`. Built-in
@@ -120,8 +133,8 @@ Per ADR 045 the package exposes two tiers as dedicated subpaths:
 - [ ] **Header block** — navigation + menu currently duplicated in every app's
   `workspaceMenu`. Lands as `src/ui/header/` (presentation) + `Controllers.Shell`
   (active route / menu FSM via `useEmit`). (priority: high)
-- [ ] **Unit tests** — none yet. Add render tests for `ModeToggle` (descriptor
-  resolution, toggle wiring) + `ThemePicker` (standalone/sub). At the web-ui
+- [ ] **Unit tests** — `Header`, `Picker`, `ThemePicker` covered (2026-07-03).
+  Remaining: `ModeToggle` (descriptor resolution, toggle wiring). At the web-ui
   boundary, not lucide. (priority: medium)
 - [ ] **ADR 033 registration** — `./capsule` manifest is in place but the runtime
   is pending (phase 3). Apps import from `./ui` directly until then. (priority: low)
@@ -132,7 +145,7 @@ Per ADR 045 the package exposes two tiers as dedicated subpaths:
 
 | Тип | Где | Что покрывает |
 |---|---|---|
-| Unit | `src/**/__tests__/` | (none yet — see refactor plan) |
+| Unit | `src/**/__tests__/` | `Header` (compound, batch, capability filtering), `Picker` (options, checkmark, select flow, emit onPick, standalone/sub), `ThemePicker` (wrapper contract 1:1) |
 | E2E | `packages/cli/e2e/smoke.mjs` | косвенно через app scenarios |
 
 **Перед изменением:** `pnpm --filter @capsuletech/web-shell test` (green).

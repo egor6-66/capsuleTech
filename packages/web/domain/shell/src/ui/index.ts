@@ -10,4 +10,5 @@ export * from './finishSettings';
 export * from './header';
 export * from './localePicker';
 export * from './modeToggle';
+export * from './picker';
 export * from './themePicker';
