@@ -1,60 +1,53 @@
 ---
 name: "capsule-learn (backend/learn)"
-owner-agent: owner-backend-learn (future — пока зона без активного owner-агента)
+owner-agent: owner-backend-learn
 zone: backend-learn
-stack: python / fastapi / sqlalchemy / alembic
-status: building (iter library-2)
+stack: python / fastapi / httpx
+status: stable (composer, ADR 067 такт 2)
 priority: P1
-last-updated: 2026-06-28
-adr_refs: [055, 064, "064-A", 054]
+last-updated: 2026-07-03
+adr_refs: [055, 064, "064-A", 065, 067, 054]
 ---
 
 # OWNERSHIP — backend/learn (`capsule-learn`)
 
-**Зона:** `backend/learn/` — BFF learn-сервис (ADR 055 D1). Plugin-модули: `lang` (лексическая библиотека, ADR 064), `voice` (TTS, pluggable engine — seam под вынос в `backend/voice`).
+**Зона:** `backend/learn/` — **композитор** (BFF, ADR 055 D2 / ADR 067): учебные выдачи собирают данные capability-сервисов (`backend/lang` :8002, `backend/voice` :8001) в один payload — «слово + озвучка рядом». Лексической БД и TTS-движков **не держит**; stateless до появления user-состояния (прогресс/SRS — следующая волна, тогда своя БД заведётся заново).
 
 > [!note] Governance — scope `backend-learn`
-> `backend/**` **покрыт** scope-fence (`governance.mjs` расширен на backend; `scope-resolve.mjs` индексирует backend-проекты по `project.json#name`). Owner-сессия: **`.\claude-scope.ps1 -Scope backend-learn`** — заперта в `backend/learn` (правки в `packages/*` и чужие зоны режутся), git **commit-only** (нет main-маркера → git-gate активен). Перед первой правкой обязателен **Read этого OWNERSHIP** (ownership-gate хука). Рабочий контракт — бриф `docs/_meta/briefs/learn-iter2-backend-learn.md`.
+> Owner-сессия: **`.\claude-scope.ps1 -Scope backend-learn`** — заперта в `backend/learn`, git **commit-only** (нет main-маркера → git-gate активен). Перед первой правкой обязателен **Read этого OWNERSHIP** (ownership-gate хука).
 >
 > nx project name = `backend-learn` (= scope). Python dist/модуль — `capsule-learn` / `capsule_learn` (pyproject), это разные слои.
 
 ## Состояние (читать ПЕРВЫМ)
 
-- **Status:** `building` — iter library-2 (обогащённая lexical-запись + YAML-importer, ADR 064-A). library-1 (схема + filter-endpoints, #438) — merged.
-- **Stack:** Python 3.12, FastAPI, SQLAlchemy 2.0, Alembic, uv. SQLite-файл на старте (drop-in Postgres через `DATABASE_URL`, ADR 055 D3).
+- **Status:** `stable` — ADR 067 такт 2 выполнен: lexical-движок уехал в `backend/lang`, TTS — в `backend/voice`; learn = тонкий httpx-композитор.
+- **Stack:** Python 3.12+, FastAPI, httpx (async-клиенты), uv. БД **нет** — stateless.
 - **Port:** 8003 (voice 8001 / lang 8002 / learn 8003 — ADR 055).
-- **Первый Python-сервис в монорепо.** nx/Python-тулинг (namedInputs, CI Python-job) — заводит architect (foundation-00) на этапе интеграции; owner фокусируется на коде сервиса + локальном run (uv/uvicorn) для Postman.
+- **История:** до 067 learn держал sense-центричную lexical-БД (ADR 064/064-A, SQLAlchemy+Alembic) и pluggable-TTS (ADR 065) — оба домена перенесены 1:1 в capability-сервисы; их контракты см. ADR 067 D2.
 
 ## Зона ответственности
 
-- `backend/learn/**` — FastAPI-приложение, модели, миграции, endpoints, seed, тесты.
-- НЕ трогает: `backend/scriber/**` (owner-scriber), `backend/fs/**` (shared — эскалация architect), `packages/web/learn/**` (фронт, scope `learn`), root-config (nx.json/CI — architect).
+- `backend/learn/**` — FastAPI-приложение, httpx-клиенты, response-модели, тесты.
+- НЕ трогает: `backend/lang/**` (owner-backend-lang), `backend/voice/**` (owner-backend-voice), `backend/scriber/**` (owner-scriber), `backend/fs/**` (shared — эскалация architect), фронт `apps/learn` (architect), root-config/CI (architect).
 
-## Модель данных (ADR 064 + 064-A — sense-центричная, обогащённая)
+## Архитектура (ADR 067)
 
-Атомарная единица — **Sense (значение)**, не Word (строка). Теги/связи/фасеты на sense. Принцип фасетов: single-valued → колонка, multi-valued → тег. Провенанс `source: auto|curated` (re-import не трёт curated). Lang-scope на sense.
+- **`clients/lang.py`** — `LangClient`: async httpx к `LANG_URL`, таймаут 5s. Сетевые/5xx апстрима → `LangError(502, ...)`; 4xx (404 sense, 422 фильтр) зеркалятся as-is. Хэндлер `LangError` → JSON в `main.py`.
+- **`clients/voice.py`** — `VoiceClient`: engines-кэш в памяти (TTL 300s, отрицательный кэш 30s — чтобы лежащий voice не ел connect-timeout на каждый запрос) + `speak_url()` (готовая ссылка на `VOICE_PUBLIC_URL`, urlencode). Voice down → `engines() = None` + warning-лог.
+- **`api.py`** — фронт-контракт `/learn/lang/*` сохранён 1:1 (пути + формы): passthrough в lang + обогащение `audio: {url, engines} | null` в `SenseListItem`/`SenseDetail`. Аудио-байты через learn **не текут** — фронт дёргает `audio.url` напрямую.
+- **`schemas.py`** — **свои** pydantic-модели ответов (копия форм lang + `audio`), чужие модели не импортируются. Бывшие enum-фасеты — plain `str`: таксономией владеет lang, композитор не ревалидирует (иначе drift при добавлении значения в lang).
+- **config (D4):** `LANG_URL` / `VOICE_URL` / `VOICE_PUBLIC_URL` (= VOICE_URL если не задан; расходится за реверс-прокси) / `PORT` / `DEFAULT_LANG`.
 
-**064-A (library-2):** запись обогащена под каноны обучения — `pron_ru`(primary)/`ipa`/`image`/`connotation`/`intensity`/`synset`/`forms`(JSON)/`collocations`(JSON)/`nuance`/`valency`; `level`→CEFR, `frequency`→band-enum; новая таблица `sense_examples` (first-class, со своей фонетикой). Таксономия тегов v2 (ортогональная): `field`/`domain`/`tier`/`phonetic`/`lexical` (дроп `semantic`→колонка `synset`, `context`→`field`).
+## Публичный API
 
-Схема: `words` · `senses`(+rich facets) · `tags` · `sense_tags`(M2M) · `sense_examples`(1:N) · `sense_relations`(defined, endpoints позже). Детали — ADR 064 §start-schema + 064-A §A2.
+`GET /health` · `GET /learn/lang/senses` (фильтры lang + `audio` на item) · `GET /learn/lang/sense/{id}` (+`audio`) · `GET /learn/lang/senses/related?sense=` (чистый passthrough). `/learn/voice/*` **удалён** — потребители ходят в voice напрямую (фронт-миграция на `audio.url` — зона architect).
 
-## Ingestion (064-A §A4)
+## Тесты
 
-**Канонический способ кормёжки — YAML-importer.** `capsule_learn.importer.import_file(path) → ImportReport`: YAML-блок-на-значение → pydantic-канон `SenseIn` → two-pass идемпотентный upsert (pass-1 senses/tags/examples, pass-2 резолв relations в sense-id). Невалидные блоки → в отчёт, не падаем. `seed.py` = тонкая обёртка над importer на `content/lang/en_US/seed.yml`. CLI: `python -m capsule_learn.importer <file.yml>`; nx `import` target.
-
-## Публичный API (library-2)
-
-`GET /health` · `GET /learn/lang/senses` (фасетный фильтр: +`connotation`/`tier`/`synset`) · `GET /learn/lang/sense/{id}` (rich: +pron_ru/image/examples/relations/...) · `GET /learn/lang/senses/related?sense={id}` (synset-aware ранжирование). Контракты — бриф `learn-iter3-backend-importer.md`.
-
-**voice:** `GET /learn/voice/speak?text=&engine=&lang=&voice=&speed=` → `audio/wav` (TTS) · `GET /learn/voice/engines` → `{engines, default}`. Движок pluggable (`engine.py` Protocol + lazy registry); свап **per-request** (`?engine=`) или глобально (`VOICE_ENGINE`); unknown → 400. Impl: Kokoro + StyleTTS2. **Voice-deps — раздельные opt-in extras** (`--extra voice` / `--extra voice-styletts2`), ленивый импорт → базовый сервис/CI без torch. Air-gapped: `KOKORO_MODEL_PATH`. StyleTTS2 требует system-бинарь `espeak-ng`. Брифы `learn-voice-tts-kokoro.md`, `learn-voice-styletts2-switch.md`.
+`uv run pytest` — respx-моки апстримов, живые сервисы не нужны: passthrough форм, 404/502-маппинг, audio-блок (urlencode, engines-кэш = 1 probe), voice down → `audio: null` при 200. Живой smoke требует поднятых lang :8002 + voice :8001.
 
 ## Roadmap
 
-- [x] iter library-1: схема + filter-endpoints + seed + Postman (#438)
-- [x] iter library-2: обогащённая запись + YAML-importer (этот заход)
-- [ ] `sense_relations` endpoints (типизированный граф)
-- [ ] song/construction/exercise + backlinks (обратный поиск)
-- [ ] пер-юзер слой (bookmarks/mastery/lists)
-- [ ] NLP-обогащение (авто-POS/phonetics из lang-движка)
-- [ ] извлечение `packages/shared/data` при 2-м Python-сервисе
-- [ ] фронт `@capsuletech/web-learn/library` ← web-query
+- [ ] user-состояние (прогресс/SRS, bookmarks/mastery/lists) — своя БД, следующая волна
+- [ ] уроки/упражнения-endpoints (продуктовая волна learn)
+- [ ] фронт `apps/learn` мигрирует на `audio.url` (architect)

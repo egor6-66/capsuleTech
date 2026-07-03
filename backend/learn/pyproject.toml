@@ -1,7 +1,7 @@
 [project]
 name = "capsule-learn"
-version = "0.1.0"
-description = "Capsule learn-service — sense-centric lexical library (ADR 064)"
+version = "0.2.0"
+description = "Capsule learn-service — composer (BFF) over lang + voice capability services (ADR 067)"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -9,32 +9,15 @@ dependencies = [
     "uvicorn[standard]>=0.30",
     "pydantic>=2.7",
     "pydantic-settings>=2.3",
-    "sqlalchemy>=2.0",
-    "alembic>=1.13",
-    "pyyaml>=6.0",
+    "httpx>=0.27",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.2",
-    "pytest-asyncio>=0.23",
-    "httpx>=0.27",
+    "respx>=0.22",
     "ruff>=0.5",
     "mypy>=1.10",
-]
-# TTS engines — heavy (torch). Opt-in, separate per engine so they install
-# independently: `uv sync --extra voice` (Kokoro) / `--extra voice-styletts2`.
-# Engines are lazy-imported (see modules/voice), so the base service + CI stay
-# light. StyleTTS2 also needs the espeak-ng system binary (see README).
-voice = [
-    "kokoro>=0.8",
-    "soundfile>=0.12",
-    "numpy>=1.26",
-]
-voice-styletts2 = [
-    "styletts2>=0.1",
-    "soundfile>=0.12",
-    "numpy>=1.26",
 ]
 
 [build-system]
