@@ -177,6 +177,8 @@ jobs:
             python: '3.12'
           - service: voice
             python: '3.11'
+          - service: auth
+            python: '3.12'
     defaults:
       run:
         working-directory: backend/${{ matrix.service }}
