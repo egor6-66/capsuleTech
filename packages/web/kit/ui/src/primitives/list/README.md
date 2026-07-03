@@ -38,6 +38,8 @@ slug: web-ui/primitives/list
 | `data` + `item` | batch | `item.use` — компонент-шаблон, `item.props` — маппер данных → props (ADR 036 §3); `<For>` внутри, рендерит `<ul>` |
 | `min` / `gap` | batch | `min` включает responsive CSS Grid (`repeat(auto-fit, minmax(min, 1fr))`); `gap` — шаг сетки (default `0.5rem`) |
 | `wrap` / `gap` | batch | `wrap` включает content-width flex-wrap (`display: flex; flex-wrap: wrap`, каждый item в `shrink-0` `<li>`) — НЕ `1fr`-стретч, items сохраняют естественную ширину и переносятся по строкам; `gap` — тот же шаг (default `0.5rem`). Приоритет над `min`, если заданы оба |
+
+`gap` (в `min`/`wrap` режимах) следует spacing-шкале kit'а — паритету с `Flex`/`Grid` gap: `number` × 0.25rem (`gap={1}` → `0.25rem`) или сырая CSS-строка (`gap="8px"`). `gap={1}` — валидное значение, НЕ голое число без unit'а (частая ошибка).
 | `items` + `children`-функция | render-prop | Classic `(item, idx) => JSX`; рендерит `<div>` |
 
 ## Режимы {#modes}

@@ -210,6 +210,29 @@ describe('List — batch mode wrap prop (content-width, no 1fr-stretch)', () => 
     expect(ul.style.gridTemplateColumns).toBe('');
   });
 
+  it('accepts a numeric gap (spacing-scale, parity with Flex/Grid) — gap={1} -> 0.25rem', () => {
+    const data = [{ id: 1, label: 'A' }];
+    const ItemTpl = (p: { id: number; label: string }) => <span>{p.label}</span>;
+
+    cleanup = render(() => <List data={data} item={{ use: ItemTpl }} wrap gap={1} />, container);
+
+    const ul = container.querySelector('ul')!;
+    expect(ul.style.gap).toBe('0.25rem');
+  });
+
+  it('accepts a numeric gap in grid (min) mode too', () => {
+    const data = [{ id: 1, label: 'A' }];
+    const ItemTpl = (p: { id: number; label: string }) => <span>{p.label}</span>;
+
+    cleanup = render(
+      () => <List data={data} item={{ use: ItemTpl }} min="9rem" gap={2} />,
+      container,
+    );
+
+    const ul = container.querySelector('ul')!;
+    expect(ul.style.gap).toBe('0.5rem');
+  });
+
   it('does not scramble content across items when data changes', () => {
     const data = [
       { id: 1, label: 'Short' },

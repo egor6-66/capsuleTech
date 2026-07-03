@@ -3,6 +3,7 @@ import { createVirtualizer } from '@tanstack/solid-virtual';
 import type { JSX } from 'solid-js';
 import { For, splitProps } from 'solid-js';
 import { useTrace } from '../../internal/useTrace';
+import { toGap } from '../layout/grid/utils';
 import type {
   IListBatchProps,
   IListProps,
@@ -56,10 +57,12 @@ export function List<T = unknown>(props: IListProps<T>) {
     const getItemProps = local.item.props ?? ((item: T) => item as Record<string, unknown>);
     const ItemTpl = local.item.use;
 
+    const gapValue = () => (local.gap === undefined ? '0.5rem' : toGap(local.gap));
+
     const gridStyle = (): JSX.CSSProperties => ({
       display: 'grid',
       'grid-template-columns': `repeat(auto-fit, minmax(${local.min}, 1fr))`,
-      gap: local.gap ?? '0.5rem',
+      gap: gapValue(),
       width: '100%',
       ...(typeof local.style === 'object' ? local.style : {}),
     });
@@ -70,7 +73,7 @@ export function List<T = unknown>(props: IListProps<T>) {
     const wrapStyle = (): JSX.CSSProperties => ({
       display: 'flex',
       'flex-wrap': 'wrap',
-      gap: local.gap ?? '0.5rem',
+      gap: gapValue(),
       width: '100%',
       ...(typeof local.style === 'object' ? local.style : {}),
     });
