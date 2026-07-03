@@ -118,7 +118,7 @@ export const renderCell = (
         component={tag}
         ref={cellRef}
         class="h-full w-full relative rounded-sm"
-        classList={{ 'border-[0.5px] border-border/70': isBordered() }}
+        classList={{ 'border border-border/60': isBordered() }}
       >
         {/* Inner scroll wrapper; pointer-events-none during drag prevents hover leaking
             into cell content (table row hover, map hover, etc.).
@@ -160,7 +160,7 @@ export const renderCell = (
       component={tag}
       ref={cellRef}
       class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative overflow-hidden rounded-sm`}
-      classList={{ 'border-[0.5px] border-border/70': isBordered() }}
+      classList={{ 'border border-border/60': isBordered() }}
     >
       <div class="absolute inset-0 overflow-auto">
         <MatrixSlot slot={cell.id}>
