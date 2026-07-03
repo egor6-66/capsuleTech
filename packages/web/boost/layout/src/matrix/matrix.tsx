@@ -122,9 +122,13 @@ const MatrixImpl = (props: IMatrixProps) => {
  * - `onLayoutChange` called with swap/insert/grid event after each successful layout change.
  *
  * **Border:**
- * - `bordered?: boolean` (default `true`) — the ONLY switch for the cell hairline
- *   border. Fully independent of `resize`/`dnd`: a resizable cell only gets the
- *   interactive handle (and a draggable cell only gets the badge) — neither implies
- *   a border on its own. Set `bordered={false}` to render edge-to-edge slots.
+ * - `bordered?: boolean` (default `true`) — Matrix-level default for the cell
+ *   hairline border. Fully independent of `resize`/`dnd`: a resizable cell only
+ *   gets the interactive handle (and a draggable cell only gets the badge) —
+ *   neither implies a border on its own. Set `bordered={false}` to render
+ *   edge-to-edge slots.
+ * - Per-slot override: `slots.header.bordered` / `cell.bordered` (raw rows) wins
+ *   over the Matrix-level default when explicitly set, e.g.
+ *   `slots={{ header: { children, bordered: false }, main: {...} }}`.
  */
 export const Matrix = MatrixImpl;

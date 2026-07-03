@@ -71,15 +71,16 @@ export const renderCell = (
    */
   rowIsAutoHeight: boolean,
   /**
-   * Single source of truth for the cell divider. Independent of `resizable`/DnD —
-   * a resizable cell only gets an interactive handle (+ badge), never a border by
-   * itself. `bordered` alone toggles the `border-border/60` hairline on every cell.
+   * Matrix-level border default. Independent of `resizable`/DnD — a resizable
+   * cell only gets an interactive handle (+ badge), never a border by itself.
+   * Overridden per-cell by `cell.bordered` when explicitly set.
    */
   bordered: Accessor<boolean>,
 ): JSX.Element => {
   const tag = cell.tag ?? 'div';
   const children = getSwappedChildren ? getSwappedChildren(cell.id) : cell.children;
   const content = children;
+  const isBordered = (): boolean => cell.bordered ?? bordered();
   traceSlotRender(cell.id);
 
   // Cells with DnD need `position: relative` to host the absolute badge.
@@ -117,7 +118,7 @@ export const renderCell = (
         component={tag}
         ref={cellRef}
         class="h-full w-full relative rounded-sm"
-        classList={{ 'border-[0.5px] border-border/70': bordered() }}
+        classList={{ 'border-[0.5px] border-border/70': isBordered() }}
       >
         {/* Inner scroll wrapper; pointer-events-none during drag prevents hover leaking
             into cell content (table row hover, map hover, etc.).
@@ -159,7 +160,7 @@ export const renderCell = (
       component={tag}
       ref={cellRef}
       class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative overflow-hidden rounded-sm`}
-      classList={{ 'border-[0.5px] border-border/70': bordered() }}
+      classList={{ 'border-[0.5px] border-border/70': isBordered() }}
     >
       <div class="absolute inset-0 overflow-auto">
         <MatrixSlot slot={cell.id}>

@@ -45,6 +45,13 @@ export type SlotValue =
        */
       resizable?: boolean;
       /**
+       * Per-slot border override.
+       * Default: `undefined` — follows the Matrix-level `bordered` prop (which
+       * itself defaults to `true`). Set explicitly to `true`/`false` to force
+       * this one slot's border regardless of the Matrix-level flag.
+       */
+      bordered?: boolean;
+      /**
        * Fallback shown inside the per-cell `<Suspense>` boundary while the
        * slot's child (e.g. a lazy Widget chunk) is loading.
        *
@@ -150,6 +157,12 @@ export interface ICell {
    */
   draggable?: boolean;
   swapGroup?: string;
+  /**
+   * Per-cell border override.
+   * `undefined` (default) — follows the Matrix-level `bordered` prop.
+   * `true`/`false` — forces this cell's border regardless of the Matrix-level flag.
+   */
+  bordered?: boolean;
   /**
    * Fallback shown inside the per-cell `<Suspense>` boundary while the cell's
    * child is suspended (e.g. a lazy Widget chunk that hasn't resolved yet).
