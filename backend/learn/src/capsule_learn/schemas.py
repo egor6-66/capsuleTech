@@ -44,6 +44,7 @@ class SenseListItem(BaseModel):
     id: int
     text: str
     gloss: str | None
+    ru: str | None
     pos: str
     level: str | None
     # `register_` avoids shadowing BaseModel; JSON key stays "register".
@@ -64,6 +65,7 @@ class SenseDetail(BaseModel):
     id: int
     word: WordOut
     gloss: str | None
+    ru: str | None
     pos: str
     level: str | None
     register_: str | None = Field(alias="register")
