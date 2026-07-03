@@ -53,6 +53,7 @@ class SenseIn(BaseModel):
     word: str
     lang: str = "en_US"
     gloss: str | None = None
+    ru: str | None = None
     pos: Pos
     level: Level | None = None
     # `register_` avoids shadowing BaseModel; JSON key stays "register".
@@ -112,6 +113,7 @@ class SenseListItem(BaseModel):
     id: int
     text: str
     gloss: str | None
+    ru: str | None
     pos: Pos
     level: Level | None
     register_: Register | None = Field(alias="register")
@@ -135,6 +137,7 @@ class SenseDetail(BaseModel):
     id: int
     word: WordOut
     gloss: str | None
+    ru: str | None
     pos: Pos
     level: Level | None
     register_: Register | None = Field(alias="register")

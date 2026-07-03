@@ -4,6 +4,7 @@
 - word: bank
   lang: en_US
   gloss: land beside a river
+  ru: "берег"
   pos: noun
   level: b1
   register: neutral
@@ -18,6 +19,7 @@
 - word: bank
   lang: en_US
   gloss: financial institution
+  ru: "банк"
   pos: noun
   level: a2
   register: neutral
@@ -32,6 +34,7 @@
 - word: happy
   lang: en_US
   gloss: feeling or showing pleasure
+  ru: "счастливый"
   pos: adjective
   level: a1
   register: neutral
@@ -56,6 +59,7 @@
 - word: glad
   lang: en_US
   gloss: pleased about something
+  ru: "рад"
   pos: adjective
   level: a2
   register: neutral
@@ -71,6 +75,7 @@
 - word: joyful
   lang: en_US
   gloss: full of joy
+  ru: "радостный"
   pos: adjective
   level: b1
   register: neutral
@@ -85,6 +90,7 @@
 - word: sad
   lang: en_US
   gloss: not happy
+  ru: "грустный"
   pos: adjective
   level: a1
   register: neutral
@@ -95,3 +101,15 @@
   synset: sad
   tags:
     - {name: emotion, kind: field}
+
+- word: bad
+  lang: en_US
+  gloss: of poor quality or low standard
+  ru: "плохой"
+  pos: adjective
+  level: a1
+  register: neutral
+  frequency: high
+  pron_ru: "бэд"
+  connotation: negative
+  intensity: 2

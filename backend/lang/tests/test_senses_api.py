@@ -33,7 +33,7 @@ def test_senses_filter_pos_adj(client):
             "/lang/senses", params={"pos": "adj"}
         ).json()["senses"]
     )
-    assert texts == ["glad", "happy", "joyful", "sad"]
+    assert texts == ["bad", "glad", "happy", "joyful", "sad"]
 
 
 def test_senses_filter_tag(client):
@@ -84,19 +84,21 @@ def test_senses_q_matches_word_text_only(client):
     )
 
 
-def test_senses_q_cyrillic_searches_gloss(client, db, tmp_path):
-    # Teacher corpus keeps the ru translation in gloss (ADR 064-A) —
-    # Cyrillic q must search it instead of the (Latin) spelling.
+def test_senses_q_cyrillic_searches_ru_translation(client, db, tmp_path):
+    # `ru` is a dedicated translation column, separate from the (English)
+    # `gloss` — Cyrillic q must search it instead of the (Latin) spelling.
     p = tmp_path / "ru.yml"
     p.write_text(
         "\n".join(
             [
                 "- word: many",
                 "  pos: adverb",
-                '  gloss: "много"',
+                '  gloss: "a large number of"',
+                '  ru: "много"',
                 "- word: always",
                 "  pos: adverb",
-                '  gloss: "всегда"',
+                '  gloss: "at all times"',
+                '  ru: "всегда"',
             ]
         ),
         encoding="utf-8",
@@ -105,12 +107,25 @@ def test_senses_q_cyrillic_searches_gloss(client, db, tmp_path):
 
     hits = client.get("/lang/senses", params={"q": "мног"}).json()["senses"]
     assert {s["text"] for s in hits} == {"many"}
-    # capitalised Cyrillic query still matches the lowercase gloss (SQLite
+    # capitalised Cyrillic query still matches the lowercase ru (SQLite
     # lower() folds ASCII only → the pattern is pre-lowered in repo).
     hits = client.get("/lang/senses", params={"q": "Всегда"}).json()["senses"]
     assert {s["text"] for s in hits} == {"always"}
-    # Latin queries untouched: spelling-only, glosses are not searched.
+    # Latin queries untouched: spelling-only, ru/gloss are not searched.
     assert client.get("/lang/senses", params={"q": "ase"}).json()["senses"] == []
+
+
+def test_senses_q_cross_lingual_translation(client):
+    # The exact user-facing case: know the English spelling ("ba") OR know
+    # the Russian meaning ("плохо") — both must resolve to "bad".
+    by_spelling = client.get("/lang/senses", params={"q": "ba"}).json()["senses"]
+    assert {s["text"] for s in by_spelling} == {"bad", "bank"}
+
+    by_translation = client.get(
+        "/lang/senses", params={"q": "плохо"}
+    ).json()["senses"]
+    assert {s["text"] for s in by_translation} == {"bad"}
+    assert by_translation[0]["ru"] == "плохой"
 
 
 def test_sense_detail_rich(client):
@@ -136,6 +151,6 @@ def test_seed_idempotent(client, db):
     before = len(client.get("/lang/senses").json()["senses"])
     report = seed(db)  # re-run
     after = len(client.get("/lang/senses").json()["senses"])
-    assert before == after == 6
+    assert before == after == 7
     assert report.imported == 0  # all already present
-    assert report.updated == 6
+    assert report.updated == 7

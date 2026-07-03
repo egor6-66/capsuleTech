@@ -46,14 +46,16 @@ def filter_senses(
     if synset is not None:
         stmt = stmt.where(Sense.synset == synset)
     if q:
-        # Headword corpus is English (Latin), translations live in gloss
-        # (teacher corpus, ADR 064-A): Cyrillic input can never match
-        # word.text — route it to gloss. Latin input stays spelling-only
-        # (matching gloss surprises users, e.g. q=ase hitting "pleased").
-        # q is pre-lowered: SQLite's lower()/LIKE folds ASCII only, so the
-        # pattern side must arrive lowercase to match the lowercase corpus.
+        # Headword corpus is English (Latin); `ru` carries the Russian
+        # translation as its own column (distinct from `gloss`, an English
+        # definition/disambiguator — ADR 064-A). Cyrillic input can never
+        # match word.text, so it routes to `ru`. Latin input stays
+        # spelling-only (matching gloss surprises users, e.g. q=ase hitting
+        # "pleased"). q is pre-lowered: SQLite's lower()/LIKE folds ASCII
+        # only, so the pattern side must arrive lowercase to match the
+        # lowercase corpus.
         if _CYRILLIC_RE.search(q):
-            stmt = stmt.where(Sense.gloss.ilike(f"%{q.lower()}%"))
+            stmt = stmt.where(Sense.ru.ilike(f"%{q.lower()}%"))
         else:
             stmt = stmt.where(Word.text.ilike(f"%{q}%"))
 
