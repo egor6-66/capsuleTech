@@ -7,11 +7,15 @@ The tag axis (`sense_tags`) drives filtering and tag-overlap ranking; `synset`
 
 from __future__ import annotations
 
+import re
+
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from .enums import Connotation, Level, Pos, Register, RelationType, TagKind
 from .models import Sense, SenseRelation, SenseTag, Tag, Word
+
+_CYRILLIC_RE = re.compile(r"[а-яё]", re.IGNORECASE)
 
 
 def filter_senses(
@@ -42,9 +46,16 @@ def filter_senses(
     if synset is not None:
         stmt = stmt.where(Sense.synset == synset)
     if q:
-        # Search by spelling only (word.text). Matching gloss too surprises
-        # users (e.g. q=ase hitting "pleased"); gloss-search is a future opt-in.
-        stmt = stmt.where(Word.text.ilike(f"%{q}%"))
+        # Headword corpus is English (Latin), translations live in gloss
+        # (teacher corpus, ADR 064-A): Cyrillic input can never match
+        # word.text — route it to gloss. Latin input stays spelling-only
+        # (matching gloss surprises users, e.g. q=ase hitting "pleased").
+        # q is pre-lowered: SQLite's lower()/LIKE folds ASCII only, so the
+        # pattern side must arrive lowercase to match the lowercase corpus.
+        if _CYRILLIC_RE.search(q):
+            stmt = stmt.where(Sense.gloss.ilike(f"%{q.lower()}%"))
+        else:
+            stmt = stmt.where(Word.text.ilike(f"%{q}%"))
 
     # Each required tag must be present -> one EXISTS subquery per tag (AND).
     required: list[tuple[str, TagKind | None]] = []

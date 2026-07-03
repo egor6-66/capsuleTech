@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from capsule_lang.importer import import_file
 from capsule_lang.seed import seed
 
 
@@ -81,6 +82,35 @@ def test_senses_q_matches_word_text_only(client):
     assert (
         client.get("/lang/senses", params={"q": "ase"}).json()["senses"] == []
     )
+
+
+def test_senses_q_cyrillic_searches_gloss(client, db, tmp_path):
+    # Teacher corpus keeps the ru translation in gloss (ADR 064-A) —
+    # Cyrillic q must search it instead of the (Latin) spelling.
+    p = tmp_path / "ru.yml"
+    p.write_text(
+        "\n".join(
+            [
+                "- word: many",
+                "  pos: adverb",
+                '  gloss: "много"',
+                "- word: always",
+                "  pos: adverb",
+                '  gloss: "всегда"',
+            ]
+        ),
+        encoding="utf-8",
+    )
+    import_file(p, db=db)
+
+    hits = client.get("/lang/senses", params={"q": "мног"}).json()["senses"]
+    assert {s["text"] for s in hits} == {"many"}
+    # capitalised Cyrillic query still matches the lowercase gloss (SQLite
+    # lower() folds ASCII only → the pattern is pre-lowered in repo).
+    hits = client.get("/lang/senses", params={"q": "Всегда"}).json()["senses"]
+    assert {s["text"] for s in hits} == {"always"}
+    # Latin queries untouched: spelling-only, glosses are not searched.
+    assert client.get("/lang/senses", params={"q": "ase"}).json()["senses"] == []
 
 
 def test_sense_detail_rich(client):
