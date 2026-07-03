@@ -26,7 +26,7 @@ const WordTile = View(
       padding="sm"
     >
       <Layout.Flex orientation="vertical" gapY={0}>
-        <Layout.Flex orientation="horizontal" gapX={1} align="center" justify="center">
+        <Layout.Flex orientation="horizontal" gapX={1} align="center">
           <Typography align="center">{props.sense.text}</Typography>
           <Button
             variant="ghost"
