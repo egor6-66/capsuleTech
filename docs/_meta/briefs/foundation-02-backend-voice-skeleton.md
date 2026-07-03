@@ -1,6 +1,6 @@
 ---
 title: Foundation 02 — backend/voice/ skeleton (Python FastAPI, mock endpoints)
-status: ready
+status: superseded # ADR 067 → актуальный бриф backend-voice-extract.md (вынос реального TTS из learn, Python 3.11, без mock/capsule-data)
 audience: general-purpose agent (commit-only, без push)
 last_updated: 2026-06-20
 depends_on: [foundation-00, foundation-01]

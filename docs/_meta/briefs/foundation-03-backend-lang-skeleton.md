@@ -1,6 +1,6 @@
 ---
 title: Foundation 03 — backend/lang/ skeleton (Python FastAPI, plugin-pattern, en_US headliner)
-status: ready
+status: superseded # ADR 067 → актуальный бриф backend-lang-extract.md (вынос реального lexical-графа ADR 064 из learn, без mock/capsule-data)
 audience: general-purpose agent (commit-only, без push)
 last_updated: 2026-06-20
 depends_on: [foundation-00, foundation-01]
