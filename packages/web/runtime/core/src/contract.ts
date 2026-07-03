@@ -50,9 +50,7 @@ export interface IContract {
 export const defineContract = <C extends IContract>(build: (z: CapsuleZ) => C): C => build(Zod);
 
 /** Результат `validateEvent` — discriminated union по `ok`. */
-export type IValidateResult =
-  | { ok: true; value: unknown }
-  | { ok: false; error: string };
+export type IValidateResult = { ok: true; value: unknown } | { ok: false; error: string };
 
 /**
  * Валидирует payload события по контракту. Используется host-стороной (Phase 3):

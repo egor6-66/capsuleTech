@@ -14,7 +14,7 @@ import { Group as GroupBase, GroupSeparator } from '@capsuletech/web-ui/group';
 import { Icons } from '@capsuletech/web-ui/icons';
 import { Input } from '@capsuletech/web-ui/input';
 import { Label } from '@capsuletech/web-ui/label';
-import { Layout as KitLayout, type ILayoutNamespace } from '@capsuletech/web-ui/layout';
+import { type ILayoutNamespace, Layout as KitLayout } from '@capsuletech/web-ui/layout';
 import { List } from '@capsuletech/web-ui/list';
 import { Separator } from '@capsuletech/web-ui/separator';
 import { Skeleton } from '@capsuletech/web-ui/skeleton';
