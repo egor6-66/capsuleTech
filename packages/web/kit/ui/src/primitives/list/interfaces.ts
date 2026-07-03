@@ -54,10 +54,19 @@ export interface IListBatchProps<T> extends Omit<JSX.HTMLAttributes<HTMLDivEleme
    */
   min?: string;
   /**
-   * Grid gap when `min` is set. Accepts any valid CSS length (e.g. `'0.5rem'`, `'8px'`).
-   * Defaults to `'0.5rem'` when `min` is provided.
+   * Grid gap when `min` is set, or flex gap when `wrap` is set.
+   * Accepts any valid CSS length (e.g. `'0.5rem'`, `'8px'`). Defaults to `'0.5rem'`.
    */
   gap?: string;
+  /**
+   * Content-width wrap layout: `display: flex; flex-wrap: wrap` with each item
+   * wrapped in a `shrink-0` `<li>` (no `1fr`-stretch — items keep their natural
+   * width and wrap to new lines when the container narrows). For tag/chip/tile
+   * grids where items have varying text length (contrast with `min`, which is
+   * a CSS Grid that stretches every column to equal width).
+   * Takes precedence over `min` when both are set.
+   */
+  wrap?: boolean;
   /** items/children must be absent in batch mode. */
   items?: never;
   children?: never;

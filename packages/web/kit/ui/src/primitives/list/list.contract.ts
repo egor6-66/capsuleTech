@@ -20,6 +20,10 @@ export const ListContract = defineContract({ name: 'List', kind: 'primitive' }, 
       orientation: z.enum(['vertical', 'horizontal']).optional(),
       // default — с padding/gap; flush — edge-to-edge (p-0 gap-0) для вложения в Card/Panel.
       variant: z.enum(['default', 'flush']).optional(),
+      // Batch-only (runtime, не сериализуется в палитру): content-width
+      // flex-wrap layout вместо grid (min) — тег/чип/тайл-сетки с разной
+      // длиной текста. См. README §wrap.
+      wrap: z.boolean().optional(),
     }),
   ),
   rule.variants(['default', 'flush']),

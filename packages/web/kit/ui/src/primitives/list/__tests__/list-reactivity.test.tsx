@@ -155,3 +155,77 @@ describe('List — batch mode item.props reacts to external signal (no content s
     expect(get(3).textContent).toBe('C');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Batch mode — `wrap` content-width layout (brief: ui-list-group-wrap-gap).
+// Neither `min` (grid, 1fr-stretch) nor the plain flex path (no wrap class)
+// gave a content-width wrap layout for tag/chip/word grids. `wrap` fills
+// that gap: flex-wrap container, each item in a shrink-0 <li> — items keep
+// their own width instead of stretching to an equal column.
+// ---------------------------------------------------------------------------
+
+describe('List — batch mode wrap prop (content-width, no 1fr-stretch)', () => {
+  it('renders a flex-wrap container with each item in a shrink-0 <li>', () => {
+    const data = [
+      { id: 1, label: 'A' },
+      { id: 2, label: 'A much longer label' },
+    ];
+    const ItemTpl = (p: { id: number; label: string }) => (
+      <span data-testid={`item-${p.id}`}>{p.label}</span>
+    );
+
+    cleanup = render(
+      () => <List data={data} item={{ use: ItemTpl }} wrap gap="0.25rem" />,
+      container,
+    );
+
+    const ul = container.querySelector('ul')!;
+    expect(ul.style.display).toBe('flex');
+    expect(ul.style.flexWrap).toBe('wrap');
+    expect(ul.style.gap).toBe('0.25rem');
+    // NOT the grid (min) path — no 1fr-stretch.
+    expect(ul.style.display).not.toBe('grid');
+
+    const items = ul.querySelectorAll('li');
+    expect(items.length).toBe(2);
+    for (const li of items) {
+      expect(li.className).toContain('shrink-0');
+    }
+    expect(get(1)?.textContent).toBe('A');
+    expect(get(2)?.textContent).toBe('A much longer label');
+
+    function get(id: number) {
+      return container.querySelector(`[data-testid="item-${id}"]`);
+    }
+  });
+
+  it('takes precedence over min when both are set', () => {
+    const data = [{ id: 1, label: 'A' }];
+    const ItemTpl = (p: { id: number; label: string }) => <span>{p.label}</span>;
+
+    cleanup = render(() => <List data={data} item={{ use: ItemTpl }} wrap min="9rem" />, container);
+
+    const ul = container.querySelector('ul')!;
+    expect(ul.style.display).toBe('flex');
+    expect(ul.style.gridTemplateColumns).toBe('');
+  });
+
+  it('does not scramble content across items when data changes', () => {
+    const data = [
+      { id: 1, label: 'Short' },
+      { id: 2, label: 'A longer piece of text' },
+      { id: 3, label: 'Mid' },
+    ];
+    const ItemTpl = (p: { id: number; label: string }) => (
+      <span data-testid={`item-${p.id}`}>{p.label}</span>
+    );
+
+    cleanup = render(() => <List data={data} item={{ use: ItemTpl }} wrap />, container);
+
+    expect(container.querySelector('[data-testid="item-1"]')?.textContent).toBe('Short');
+    expect(container.querySelector('[data-testid="item-2"]')?.textContent).toBe(
+      'A longer piece of text',
+    );
+    expect(container.querySelector('[data-testid="item-3"]')?.textContent).toBe('Mid');
+  });
+});

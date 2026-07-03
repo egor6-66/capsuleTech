@@ -31,43 +31,68 @@ export function List<T = unknown>(props: IListProps<T>) {
   if (isBatchMode(props)) {
     const [local, variants, others] = splitProps(
       props,
-      ['class', 'style', 'data', 'item', 'min', 'gap'],
+      ['class', 'style', 'data', 'item', 'min', 'gap', 'wrap'],
       ['variant', 'orientation'],
     );
+
+    const isGrid = () => !!local.min;
+    const isCustomLayout = () => local.wrap || local.min;
 
     const { className, style } = createStyle(listVariants, {
       get variant() {
         return variants.variant;
       },
       get orientation() {
-        return local.min ? undefined : variants.orientation;
+        return isCustomLayout() ? undefined : variants.orientation;
       },
       get class() {
-        return local.min ? undefined : local.class;
+        return isCustomLayout() ? undefined : local.class;
       },
       get style() {
-        return local.min ? undefined : local.style;
+        return isCustomLayout() ? undefined : local.style;
       },
     });
 
     const getItemProps = local.item.props ?? ((item: T) => item as Record<string, unknown>);
     const ItemTpl = local.item.use;
 
-    const gridStyle = (): JSX.CSSProperties | undefined =>
-      local.min
-        ? {
-            display: 'grid',
-            'grid-template-columns': `repeat(auto-fit, minmax(${local.min}, 1fr))`,
-            gap: local.gap ?? '0.5rem',
-            width: '100%',
-            ...(typeof local.style === 'object' ? local.style : {}),
-          }
-        : undefined;
+    const gridStyle = (): JSX.CSSProperties => ({
+      display: 'grid',
+      'grid-template-columns': `repeat(auto-fit, minmax(${local.min}, 1fr))`,
+      gap: local.gap ?? '0.5rem',
+      width: '100%',
+      ...(typeof local.style === 'object' ? local.style : {}),
+    });
+
+    // Content-width wrap: flex-wrap, no 1fr-stretch — items keep natural width
+    // and wrap to new lines. Each item wrapped in a shrink-0 <li> so the
+    // layout is robust regardless of the item template's own CSS.
+    const wrapStyle = (): JSX.CSSProperties => ({
+      display: 'flex',
+      'flex-wrap': 'wrap',
+      gap: local.gap ?? '0.5rem',
+      width: '100%',
+      ...(typeof local.style === 'object' ? local.style : {}),
+    });
+
+    if (local.wrap) {
+      return (
+        <ul class={local.class} style={wrapStyle()} {...(others as object)}>
+          <For each={local.data}>
+            {(item) => (
+              <li class="shrink-0 list-none">
+                <ItemTpl {...getItemProps(item)} />
+              </li>
+            )}
+          </For>
+        </ul>
+      );
+    }
 
     return (
       <ul
-        class={local.min ? local.class : className()}
-        style={(local.min ? gridStyle() : style()) as JSX.CSSProperties}
+        class={isGrid() ? local.class : className()}
+        style={(isGrid() ? gridStyle() : style()) as JSX.CSSProperties}
         {...(others as object)}
       >
         <For each={local.data}>{(item) => <ItemTpl {...getItemProps(item)} />}</For>
