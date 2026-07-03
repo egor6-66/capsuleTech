@@ -162,20 +162,29 @@ jobs:
         run: pnpm docs:build
 
   python:
-    name: Python tests
+    name: Python tests (${{ matrix.service }})
     runs-on: ubuntu-latest
-    # Первый Python-сервис монорепо — backend/learn (ADR 055/064). Лёгкий джоб через
-    # uv напрямую (без node/pnpm/nx — для одного сервиса достаточно). Когда появятся
-    # backend/voice + backend/lang — перевести на `pnpm nx run-many -t test:py lint:py`
-    # (матрица по сервисам, foundation-00).
+    # Python-сервисы монорепо (ADR 054/055/067): learn (BFF-композитор), lang
+    # (lexical-граф), voice (TTS, 3.11 — стена SOTA-TTS экосистемы, ADR 065 §3).
+    # Лёгкий джоб через uv напрямую; ML-extras voice в CI не ставятся (lazy-import).
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: learn
+            python: '3.12'
+          - service: lang
+            python: '3.12'
+          - service: voice
+            python: '3.11'
     defaults:
       run:
-        working-directory: backend/learn
+        working-directory: backend/${{ matrix.service }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ matrix.python }}
       - name: Install uv
         run: pip install uv
       - name: Sync deps
