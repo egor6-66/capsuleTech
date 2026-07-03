@@ -96,3 +96,62 @@ describe('List — reactivity contract (render-prop mode)', () => {
     expect(el?.className).toContain('my-dynamic');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Batch mode — item.props reactivity to an external signal (brief:
+// ui-batch-reactivity-and-app-props-gaps, Part 1). `item.props` is a spread
+// (`{...getItemProps(item)}`) inside a `<For>` callback that runs once per
+// item — Solid's compiler wraps component spreads in a reactive mergeProps
+// getter, so each downstream prop-read re-invokes `getItemProps(item)`. This
+// test locks that contract: selection changes must reach the correct item
+// only, without scrambling sibling content.
+// ---------------------------------------------------------------------------
+
+describe('List — batch mode item.props reacts to external signal (no content scramble)', () => {
+  it('updates selected on the targeted item only; other items keep their own content', () => {
+    const [selectedId, setSelectedId] = createSignal<number | null>(null);
+    const data = [
+      { id: 1, label: 'A' },
+      { id: 2, label: 'B' },
+      { id: 3, label: 'C' },
+    ];
+    const ItemTpl = (p: { id: number; label: string; selected: boolean }) => (
+      <div data-testid={`item-${p.id}`} data-selected={String(p.selected)}>
+        {p.label}
+      </div>
+    );
+
+    cleanup = render(
+      () => (
+        <List
+          data={data}
+          item={{
+            use: ItemTpl,
+            props: (it) => ({ id: it.id, label: it.label, selected: selectedId() === it.id }),
+          }}
+        />
+      ),
+      container,
+    );
+
+    const get = (id: number) => container.querySelector(`[data-testid="item-${id}"]`)!;
+    expect(get(1).getAttribute('data-selected')).toBe('false');
+    expect(get(2).getAttribute('data-selected')).toBe('false');
+
+    setSelectedId(2);
+    expect(get(1).getAttribute('data-selected')).toBe('false');
+    expect(get(2).getAttribute('data-selected')).toBe('true');
+    expect(get(3).getAttribute('data-selected')).toBe('false');
+    expect(get(1).textContent).toBe('A');
+    expect(get(2).textContent).toBe('B');
+    expect(get(3).textContent).toBe('C');
+
+    setSelectedId(3);
+    expect(get(1).getAttribute('data-selected')).toBe('false');
+    expect(get(2).getAttribute('data-selected')).toBe('false');
+    expect(get(3).getAttribute('data-selected')).toBe('true');
+    expect(get(1).textContent).toBe('A');
+    expect(get(2).textContent).toBe('B');
+    expect(get(3).textContent).toBe('C');
+  });
+});
