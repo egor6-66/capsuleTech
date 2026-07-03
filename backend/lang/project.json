@@ -33,6 +33,13 @@
         "command": "uv run python -m capsule_lang.importer {args.file}"
       }
     },
+    "import-vocab": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/lang",
+        "command": "uv run python -m capsule_lang.vocab"
+      }
+    },
     "test:py": {
       "executor": "nx:run-commands",
       "options": {

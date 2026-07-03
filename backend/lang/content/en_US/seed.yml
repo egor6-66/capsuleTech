@@ -101,15 +101,3 @@
   synset: sad
   tags:
     - {name: emotion, kind: field}
-
-- word: bad
-  lang: en_US
-  gloss: of poor quality or low standard
-  ru: "плохой"
-  pos: adjective
-  level: a1
-  register: neutral
-  frequency: high
-  pron_ru: "бэд"
-  connotation: negative
-  intensity: 2

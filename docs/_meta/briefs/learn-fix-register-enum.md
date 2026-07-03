@@ -1,10 +1,15 @@
 ---
 title: backend/learn — расширить Register enum (vulgar/literary, +задел)
-status: ready
+status: done
 audience: owner-сессия backend-learn (scope `backend-learn`)
-last_updated: 2026-06-29
+last_updated: 2026-07-03
 adr_refs: ["064-A"]
 ---
+
+> **Done 2026-07-03** — реализовано в `backend/lang` (не `backend/learn`: пакет с тех пор
+> уехал туда, ADR 067 D1). `Register` enum расширен ровно рекомендованным списком
+> (`backend/lang/src/capsule_lang/enums.py`). Полный vocab-датасет (176 senses) импортится
+> 0 skipped. Консолидирован заодно: teacher-vocab переехал в `backend/lang/content/en_US/vocab/`.
 
 # Кто / запуск
 

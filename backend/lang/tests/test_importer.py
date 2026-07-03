@@ -15,7 +15,7 @@ def _count(db, model) -> int:
 
 def test_importer_idempotent(blank_db):
     r1 = import_file(SEED_FILE, db=blank_db)
-    assert r1.imported == 7
+    assert r1.imported == 6
     assert r1.updated == 0
     assert r1.skipped == 0
     counts = {
@@ -24,11 +24,11 @@ def test_importer_idempotent(blank_db):
         "tags": _count(blank_db, Tag),
         "examples": _count(blank_db, SenseExample),
     }
-    assert counts == {"words": 6, "senses": 7, "tags": 4, "examples": 3}
+    assert counts == {"words": 5, "senses": 6, "tags": 4, "examples": 3}
 
     r2 = import_file(SEED_FILE, db=blank_db)
     assert r2.imported == 0
-    assert r2.updated == 7
+    assert r2.updated == 6
     after = {
         "words": _count(blank_db, Word),
         "senses": _count(blank_db, Sense),

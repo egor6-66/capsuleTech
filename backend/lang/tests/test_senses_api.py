@@ -33,7 +33,7 @@ def test_senses_filter_pos_adj(client):
             "/lang/senses", params={"pos": "adj"}
         ).json()["senses"]
     )
-    assert texts == ["bad", "glad", "happy", "joyful", "sad"]
+    assert texts == ["glad", "happy", "joyful", "sad"]
 
 
 def test_senses_filter_tag(client):
@@ -116,16 +116,16 @@ def test_senses_q_cyrillic_searches_ru_translation(client, db, tmp_path):
 
 
 def test_senses_q_cross_lingual_translation(client):
-    # The exact user-facing case: know the English spelling ("ba") OR know
-    # the Russian meaning ("плохо") — both must resolve to "bad".
-    by_spelling = client.get("/lang/senses", params={"q": "ba"}).json()["senses"]
-    assert {s["text"] for s in by_spelling} == {"bad", "bank"}
+    # The exact user-facing case: know the English spelling ("hap") OR know
+    # the Russian meaning ("счастливый") — both must resolve to "happy".
+    by_spelling = client.get("/lang/senses", params={"q": "hap"}).json()["senses"]
+    assert {s["text"] for s in by_spelling} == {"happy"}
 
     by_translation = client.get(
-        "/lang/senses", params={"q": "плохо"}
+        "/lang/senses", params={"q": "счастливый"}
     ).json()["senses"]
-    assert {s["text"] for s in by_translation} == {"bad"}
-    assert by_translation[0]["ru"] == "плохой"
+    assert {s["text"] for s in by_translation} == {"happy"}
+    assert by_translation[0]["ru"] == "счастливый"
 
 
 def test_sense_detail_rich(client):
@@ -151,6 +151,6 @@ def test_seed_idempotent(client, db):
     before = len(client.get("/lang/senses").json()["senses"])
     report = seed(db)  # re-run
     after = len(client.get("/lang/senses").json()["senses"])
-    assert before == after == 7
+    assert before == after == 6
     assert report.imported == 0  # all already present
-    assert report.updated == 7
+    assert report.updated == 6
