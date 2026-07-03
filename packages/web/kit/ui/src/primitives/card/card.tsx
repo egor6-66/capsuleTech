@@ -23,7 +23,7 @@ const CardImpl = (props: ICardProps) => {
   const [local, variants, sizing, others] = splitProps(
     props,
     ['class', 'style'],
-    ['variant', 'size'],
+    ['variant', 'size', 'interactive', 'selected', 'padding'],
     ['elevation', 'w', 'minW', 'maxW'],
   );
 
@@ -61,7 +61,14 @@ const CardImpl = (props: ICardProps) => {
     ...finish.surfaceStyle(),
   }));
 
-  return <div class={className()} style={mergedStyle()} {...(others as object)} />;
+  return (
+    <div
+      class={className()}
+      style={mergedStyle()}
+      data-selected={variants.selected ? 'true' : undefined}
+      {...(others as object)}
+    />
+  );
 };
 
 export const Card = Object.assign(CardImpl, {

@@ -5,9 +5,11 @@ import { Slot } from '../../slot';
 import { mergeStyle, toGap } from '../grid/utils';
 import type {
   FlexAlign,
+  FlexBorder,
   FlexDirection,
   FlexJustify,
   FlexOrientation,
+  FlexOverflow,
   FlexWrap,
   IFlexProps,
 } from './interfaces';
@@ -41,6 +43,21 @@ const JUSTIFY: Record<FlexJustify, string> = {
   between: 'justify-between',
   around: 'justify-around',
   evenly: 'justify-evenly',
+};
+
+const OVERFLOW: Record<FlexOverflow, string> = {
+  auto: 'overflow-auto',
+  hidden: 'overflow-hidden',
+};
+
+const BORDER: Record<FlexBorder, string> = {
+  t: 'border-t border-border',
+  b: 'border-b border-border',
+  l: 'border-l border-border',
+  r: 'border-r border-border',
+  x: 'border-x border-border',
+  y: 'border-y border-border',
+  all: 'border border-border',
 };
 
 /** orientation → flex-direction class */
@@ -86,6 +103,11 @@ export const Flex = <T extends ValidComponent = 'div'>(props: IFlexProps<T>) => 
     'minW',
     'maxW',
     'fluid',
+    'p',
+    'px',
+    'py',
+    'overflow',
+    'border',
   ]);
   // `children` выделяем В `poly` (а не оставляем в `others`), иначе он
   // утечёт в `<Slot {...others}>` ВТОРЫМ потребителем ленивого getter'а —
@@ -117,6 +139,8 @@ export const Flex = <T extends ValidComponent = 'div'>(props: IFlexProps<T>) => 
       own.wrap && WRAP[own.wrap],
       own.align && ALIGN[own.align],
       own.justify && JUSTIFY[own.justify],
+      own.overflow && OVERFLOW[own.overflow],
+      own.border && BORDER[own.border],
       own.class,
     );
 
@@ -133,6 +157,9 @@ export const Flex = <T extends ValidComponent = 'div'>(props: IFlexProps<T>) => 
     if (own.maxH !== undefined) s['max-height'] = toSpacing(own.maxH);
     if (own.maxW !== undefined) s['max-width'] = toSpacing(own.maxW);
     if (own.minW !== undefined) s['min-width'] = toSpacing(own.minW);
+    if (own.p !== undefined) s.padding = toSpacing(own.p);
+    if (own.px !== undefined) s['padding-inline'] = toSpacing(own.px);
+    if (own.py !== undefined) s['padding-block'] = toSpacing(own.py);
     // minH: explicit prop wins over the auto empty-container fallback.
     if (own.fluid !== undefined) s.flex = `1 1 ${own.fluid}px`;
     if (own.minH !== undefined) {

@@ -24,7 +24,7 @@ last_updated: 2026-06-16
 | Prop | Type | Default | Назначение |
 |---|---|---|---|
 | `variant` | `'default' \| 'destructive' \| 'outline' \| 'secondary' \| 'ghost' \| 'link'` | `'default'` | Визуальный вариант (см. [[#variants]]) |
-| `size` | `'default' \| 'sm' \| 'lg' \| 'icon'` | `'default'` | Размер (`icon` = квадрат для одиночного svg) |
+| `size` | `'default' \| 'sm' \| 'lg' \| 'icon' \| 'xs'` | `'default'` | Размер (`icon` = квадрат для одиночного svg, `xs` = inline-иконка внутри текста/тайла, меньше `sm`) |
 | `disabled` | `boolean` | `false` | Стандартный disabled (native attr + CSS-targeting через `data-disabled`) |
 | `loading` | `boolean` | `false` | Заменяет children на `<Spinner/>` и блокирует кнопку (`aria-busy="true"` + `data-busy`) |
 | `fullWidth` | `boolean` | `false` | Растягивает на ширину контейнера (`w-full`) |
@@ -54,6 +54,7 @@ last_updated: 2026-06-16
 ## Размеры {#sizes}
 
 ```tsx
+<Button size="xs"><Volume2 /></Button>
 <Button size="sm">Small</Button>
 <Button>Default</Button>
 <Button size="lg">Large</Button>
@@ -61,6 +62,8 @@ last_updated: 2026-06-16
 ```
 
 `size="icon"` — квадратная кнопка под одиночный svg (используется в toolbars / меню). Spacing для svg внутри обычной кнопки регулируется автоматически через `has-[>svg]:px-*` — не нужно подкручивать padding руками.
+
+`size="xs"` (`h-5 px-1`) — меньше `sm`, для inline-иконки внутри строки текста/тайла (например, кнопка воспроизведения звука рядом с подписью слова). Не заводи под это отдельный примитив — это тот же `Button`, просто компактнее.
 
 ## Loading {#loading}
 

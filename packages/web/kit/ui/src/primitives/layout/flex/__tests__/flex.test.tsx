@@ -300,3 +300,146 @@ describe('Flex — sizing props apply as inline-style calc(var(--spacing) * N)',
     expect(root.style.height).toBe('calc(var(--spacing) * 20)');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Padding props (p/px/py), overflow, border
+// ---------------------------------------------------------------------------
+
+describe('Flex — padding props apply as inline-style calc(var(--spacing) * N)', () => {
+  it('p prop sets padding inline style', () => {
+    cleanup = render(
+      () => (
+        <Flex p={4}>
+          <span>content</span>
+        </Flex>
+      ),
+      container,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.style.padding).toBe('calc(var(--spacing) * 4)');
+  });
+
+  it('px prop sets padding-inline', () => {
+    cleanup = render(
+      () => (
+        <Flex px={4}>
+          <span>content</span>
+        </Flex>
+      ),
+      container,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.style.getPropertyValue('padding-inline')).toBe('calc(var(--spacing) * 4)');
+  });
+
+  it('py prop sets padding-block', () => {
+    cleanup = render(
+      () => (
+        <Flex py={2}>
+          <span>content</span>
+        </Flex>
+      ),
+      container,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.style.getPropertyValue('padding-block')).toBe('calc(var(--spacing) * 2)');
+  });
+
+  it('p, px, py can coexist independently', () => {
+    cleanup = render(
+      () => (
+        <Flex p={4} px={2} py={1}>
+          <span>content</span>
+        </Flex>
+      ),
+      container,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.style.padding).toBe('calc(var(--spacing) * 4)');
+    expect(root.style.getPropertyValue('padding-inline')).toBe('calc(var(--spacing) * 2)');
+    expect(root.style.getPropertyValue('padding-block')).toBe('calc(var(--spacing) * 1)');
+  });
+});
+
+describe('Flex — overflow prop', () => {
+  it('adds overflow-auto class', () => {
+    cleanup = render(
+      () => (
+        <Flex overflow="auto">
+          <span>content</span>
+        </Flex>
+      ),
+      container,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.className).toContain('overflow-auto');
+  });
+
+  it('adds overflow-hidden class', () => {
+    cleanup = render(
+      () => (
+        <Flex overflow="hidden">
+          <span>content</span>
+        </Flex>
+      ),
+      container,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.className).toContain('overflow-hidden');
+  });
+
+  it('does not add any overflow class by default', () => {
+    cleanup = render(
+      () => (
+        <Flex>
+          <span>content</span>
+        </Flex>
+      ),
+      container,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.className).not.toContain('overflow-');
+  });
+});
+
+describe('Flex — border prop (token border-border)', () => {
+  it('adds border-b border-border for border="b"', () => {
+    cleanup = render(
+      () => (
+        <Flex border="b">
+          <span>content</span>
+        </Flex>
+      ),
+      container,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.className).toContain('border-b');
+    expect(root.className).toContain('border-border');
+  });
+
+  it('adds border border-border for border="all"', () => {
+    cleanup = render(
+      () => (
+        <Flex border="all">
+          <span>content</span>
+        </Flex>
+      ),
+      container,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.className).toContain('border-border');
+  });
+
+  it('does not add border classes by default', () => {
+    cleanup = render(
+      () => (
+        <Flex>
+          <span>content</span>
+        </Flex>
+      ),
+      container,
+    );
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.className).not.toContain('border-border');
+  });
+});

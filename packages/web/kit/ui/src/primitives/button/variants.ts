@@ -15,6 +15,9 @@ export const variants = {
     sm: 'h-8 px-button-sm text-xs has-[>svg]:px-[calc(var(--spacing-button-sm)-0.125rem)]',
     lg: 'h-10 px-button-lg has-[>svg]:px-[calc(var(--spacing-button-lg)-0.5rem)]',
     icon: 'size-9 p-0',
+    // Inline icon-in-text buttons (e.g. a play/mute glyph inside a tile's label
+    // row) — smaller than `sm`, no dedicated spacing token at this scale.
+    xs: 'h-5 px-1 gap-1 text-xs has-[>svg]:px-0.5',
   },
 };
 

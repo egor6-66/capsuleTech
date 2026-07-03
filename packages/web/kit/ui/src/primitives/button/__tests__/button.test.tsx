@@ -27,6 +27,26 @@ afterEach(() => {
 });
 
 // ---------------------------------------------------------------------------
+// xs size — inline icon-in-text
+// ---------------------------------------------------------------------------
+
+describe('Button — size="xs"', () => {
+  it('adds h-5 px-1 for compact inline-icon usage', () => {
+    cleanup = render(
+      () => (
+        <Button size="xs" data-testid="btn">
+          X
+        </Button>
+      ),
+      container,
+    );
+    const el = container.querySelector<HTMLElement>('[data-testid="btn"]');
+    expect(el?.className).toContain('h-5');
+    expect(el?.className).toContain('px-1');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // fullWidth prop
 // ---------------------------------------------------------------------------
 

@@ -343,6 +343,120 @@ describe('Card.Content — default flex-col layout', () => {
 });
 
 // ---------------------------------------------------------------------------
+// interactive / selected / padding props
+// ---------------------------------------------------------------------------
+
+describe('Card — interactive prop', () => {
+  it('adds cursor-pointer + hover surface classes when interactive=true', () => {
+    cleanup = render(
+      () => (
+        <Card interactive data-testid="card">
+          content
+        </Card>
+      ),
+      container,
+    );
+    const el = container.querySelector<HTMLElement>('[data-testid="card"]');
+    expect(el?.className).toContain('cursor-pointer');
+    expect(el?.className).toContain('hover:bg-accent');
+  });
+
+  it('does NOT add cursor-pointer by default', () => {
+    cleanup = render(() => <Card data-testid="card">content</Card>, container);
+    const el = container.querySelector<HTMLElement>('[data-testid="card"]');
+    expect(el?.className).not.toContain('cursor-pointer');
+  });
+});
+
+describe('Card — selected prop', () => {
+  it('adds selected surface class + data-selected when selected=true', () => {
+    cleanup = render(
+      () => (
+        <Card selected data-testid="card">
+          content
+        </Card>
+      ),
+      container,
+    );
+    const el = container.querySelector<HTMLElement>('[data-testid="card"]');
+    expect(el?.className).toContain('bg-accent');
+    expect(el?.getAttribute('data-selected')).toBe('true');
+  });
+
+  it('does NOT set data-selected by default', () => {
+    cleanup = render(() => <Card data-testid="card">content</Card>, container);
+    const el = container.querySelector<HTMLElement>('[data-testid="card"]');
+    expect(el?.hasAttribute('data-selected')).toBe(false);
+  });
+
+  it('updates data-selected reactively when selected signal changes', () => {
+    const [selected, setSelected] = createSignal(false);
+    cleanup = render(
+      () => (
+        <Card selected={selected()} data-testid="card">
+          content
+        </Card>
+      ),
+      container,
+    );
+    const el = container.querySelector<HTMLElement>('[data-testid="card"]');
+    expect(el?.hasAttribute('data-selected')).toBe(false);
+
+    setSelected(true);
+    expect(el?.getAttribute('data-selected')).toBe('true');
+  });
+
+  it('consumer can still pass explicit aria-selected + role via passthrough', () => {
+    cleanup = render(
+      () => (
+        <Card selected role="option" aria-selected="true" data-testid="card">
+          content
+        </Card>
+      ),
+      container,
+    );
+    const el = container.querySelector<HTMLElement>('[data-testid="card"]');
+    expect(el?.getAttribute('role')).toBe('option');
+    expect(el?.getAttribute('aria-selected')).toBe('true');
+  });
+});
+
+describe('Card — padding prop', () => {
+  it('adds no padding class by default (chrome-only, backward compat)', () => {
+    cleanup = render(() => <Card data-testid="card">content</Card>, container);
+    const el = container.querySelector<HTMLElement>('[data-testid="card"]');
+    expect(el?.className).not.toContain('p-card');
+  });
+
+  it('adds p-card-tight for padding="sm"', () => {
+    cleanup = render(
+      () => (
+        <Card padding="sm" data-testid="card">
+          content
+        </Card>
+      ),
+      container,
+    );
+    const el = container.querySelector<HTMLElement>('[data-testid="card"]');
+    expect(el?.className).toContain('p-card-tight');
+  });
+
+  it('adds p-card for padding="md"', () => {
+    cleanup = render(
+      () => (
+        <Card padding="md" data-testid="card">
+          content
+        </Card>
+      ),
+      container,
+    );
+    const el = container.querySelector<HTMLElement>('[data-testid="card"]');
+    expect(el?.className).toContain('p-card');
+    expect(el?.className).not.toContain('p-card-tight');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Button fullWidth (smoke)
 // ---------------------------------------------------------------------------
 

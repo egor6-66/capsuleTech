@@ -8,7 +8,7 @@ export const ButtonContract = defineContract({ name: 'Button', kind: 'primitive'
       variant: z
         .enum(['default', 'destructive', 'outline', 'secondary', 'ghost', 'link'])
         .optional(),
-      size: z.enum(['default', 'sm', 'lg', 'icon']).optional(),
+      size: z.enum(['default', 'sm', 'lg', 'icon', 'xs']).optional(),
       disabled: z.boolean().optional(),
       loading: z.boolean().optional(),
       fullWidth: z.boolean().optional(),
