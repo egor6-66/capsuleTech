@@ -42,10 +42,38 @@ def _make_chatterbox() -> TTSEngine:
     return ChatterboxEngine()
 
 
+def _make_piper() -> TTSEngine:
+    from .engines.piper import PiperEngine
+
+    return PiperEngine()
+
+
+def _make_edge() -> TTSEngine:
+    from .engines.edge import EdgeEngine
+
+    return EdgeEngine()
+
+
+def _make_xtts() -> TTSEngine:
+    from .engines.xtts import XttsEngine
+
+    return XttsEngine()
+
+
+def _make_f5() -> TTSEngine:
+    from .engines.f5 import F5Engine
+
+    return F5Engine()
+
+
 # name -> lazy factory. Adding an engine = one entry + one file in engines/.
 _FACTORIES: dict[str, Callable[[], TTSEngine]] = {
     "kokoro": _make_kokoro,
     "chatterbox": _make_chatterbox,
+    "piper": _make_piper,
+    "edge": _make_edge,
+    "xtts": _make_xtts,
+    "f5": _make_f5,
 }
 _INSTANCES: dict[str, TTSEngine] = {}
 

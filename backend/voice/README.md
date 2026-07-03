@@ -1,18 +1,38 @@
 # capsule-voice
 
 Stateless TTS capability service (ADR 065/067). Extracted from `backend/learn`
-per ADR 067 D1 — one capability, no DB, port **:8001**.
+per ADR 067 D1 — one capability, no DB, port **:8001**. Dev runs on Windows,
+prod target is Docker/Linux — no platform-specific engines.
 
-Pluggable engines behind a `TTSEngine` Protocol + lazy registry: **Kokoro**
-(light, fast, CPU-friendly) and **Chatterbox** (Resemble AI, MIT — heavier,
-voice cloning). Per-request A/B via `?engine=`.
+Pluggable engines behind a `TTSEngine` Protocol + lazy registry, per-request
+A/B via `?engine=`. Six engines covering the latency↔quality spectrum:
+
+| Engine | Niche | Local | Cloning | Warm synth (CPU, short phrase) |
+|---|---|---|---|---|
+| `piper` | fastest start, small ONNX models, CPU realtime | ✅ | ❌ | **~0.1s** |
+| `kokoro` | fast + good quality, CPU-friendly | ✅ | ❌ | ~0.6s |
+| `edge` | near-instant, excellent voices — **network (Microsoft)** | ❌ | ❌ | ~1-3s (network) |
+| `xtts` | multilingual + cloning (Coqui XTTS-v2, **CPML non-commercial**) | ✅ | ✅ | ~2-17s |
+| `chatterbox` | high quality + voice cloning (Resemble AI, MIT) | ✅ | ✅ | ~8-24s |
+| `f5` | max pronunciation quality, slowest (F5-TTS) | ✅ | ✅ | ~34s |
+
+Timings measured 2026-07-03 on a dev CPU box; ranges = isolated vs all models
+loaded at once (RAM pressure). First request per engine additionally downloads
+its model from Hugging Face (piper ~60MB seconds; kokoro ~330MB;
+chatterbox/xtts/f5 — GBs, minutes) — cached afterwards.
+
+Evaluated and rejected: **StyleTTS2** (broken pip wrapper, ADR 065),
+**pyttsx3/SAPI** (OS-voice bindings, prod is Docker — needs espeak-ng there
+and piper beats it anyway), **Zonos / CSM / Orpheus** (CUDA/Linux-only
+setups), **MeloTTS** (git-only install + mecab system deps), **Bark** (slow,
+unstable output), **OpenVoice** (tone converter, not a TTS).
 
 ## Why Python 3.11
 
 The SOTA TTS ecosystem (Chatterbox, StyleTTS2, XTTS) ships wheels for
 3.10/3.11 only (ADR 065 §3). Kokoro is the exception. Pinning 3.11
 (`.python-version` + `requires-python = ">=3.11,<3.12"`) opens the whole
-stack and lets us A/B Kokoro ↔ Chatterbox in one venv.
+stack.
 
 ## Setup
 
@@ -27,45 +47,53 @@ uv run pytest                                # registry/contract tests, no model
 uv run ruff check .
 ```
 
-Engines are **opt-in extras** (heavy torch stack, lazy-imported — the base
-service and CI never load them):
+Engines are **opt-in extras** (heavy stacks, lazy-imported — the base service
+and CI never load them): `voice-piper`, `voice-kokoro`, `voice-edge`,
+`voice-xtts`, `voice-chatterbox`, `voice-f5`.
 
 ```bash
-uv sync --extra dev --extra voice-kokoro                          # Kokoro only
-uv sync --extra dev --extra voice-kokoro --extra voice-chatterbox # both (A/B)
+uv sync --extra dev --extra voice-kokoro --extra voice-piper --extra voice-edge `
+  --extra voice-xtts --extra voice-f5       # everything except chatterbox
 ```
+
+⚠️ **`voice-chatterbox` and `voice-xtts` cannot share a venv** — chatterbox
+pins `transformers` to an exact version, coqui-tts requires ranges that never
+include it. The extras are declared conflicting in `[tool.uv].conflicts`; the
+lock holds both worlds, install one **or** the other (`uv sync` errors if you
+ask for both). To A/B them: two syncs, or two service instances. In Docker
+each image picks its extras anyway.
 
 nx targets: `nx run backend-voice:serve|test:py|lint:py`.
 
 ## API (ADR 067 D2 — fixed contract)
 
 - `GET /health` → `{"status":"ok"}`
-- `GET /voice/engines` → `{"engines":["chatterbox","kokoro"],"default":"kokoro"}`
+- `GET /voice/engines` → `{"engines":[...],"default":"kokoro"}`
 - `GET /voice/speak?text=&engine=&lang=&voice=&speed=` → `audio/wav`
-  (400 on empty text / unknown engine)
+  (400 on empty text / unknown engine, 503 if the engine's extra is not
+  installed in this venv)
 
-A/B from the front-end: the existing engine switcher just sets `?engine=` —
-nothing else changes.
+A/B from the front-end: the existing engine switcher just sets `?engine=`.
+
+### Caching
+
+`/voice/speak` is deterministic, so it's cached on two tiers:
+- **HTTP**: `Cache-Control: public, max-age=86400` + `ETag` (sha256 of the
+  canonical params `engine|lang|voice|speed|text`, engine resolved after the
+  `VOICE_ENGINE` default). `If-None-Match` revalidates to `304` without
+  running synthesis.
+- **Server**: in-memory LRU (512 entries ≈ 30MB) keyed by the same hash — a
+  repeated phrase costs one synthesis per process lifetime, not one per
+  request (measured: chatterbox 24s → 1.4ms on repeat). Synthesis errors are
+  not cached. No disk cache — restart starts cold.
 
 ### Parameter semantics per engine
 
-| Param | Kokoro | Chatterbox |
-|---|---|---|
-| `voice` | voice name (`af_heart`, `am_adam`, `af_bella`) | **path to a reference audio clip** (voice cloning); omit for the built-in default voice |
-| `speed` | supported (0–4) | **ignored** — Chatterbox has no native speed control |
-| `lang` | accepted, currently American English pipeline | accepted, English model |
-
-## Engine notes (quality / speed)
-
-- **Kokoro** — small model, loads in seconds, near-realtime synthesis on CPU
-  (measured warm: **~0.5s** for a short phrase). Good default for interactive
-  use.
-- **Chatterbox** — full torch stack; **first request downloads the model from
-  Hugging Face (~GBs) and load takes minutes on CPU** — that's expected, the
-  model is then cached in-process. Warm synthesis on CPU: **~8s** for a short
-  phrase (measured); CUDA recommended (`CHATTERBOX_DEVICE=cuda`, auto-detected
-  when available). Quality: more natural prosody than Kokoro, plus voice
-  cloning from a short reference clip.
+| Param | piper | kokoro | edge | chatterbox | xtts | f5 |
+|---|---|---|---|---|---|---|
+| `voice` | voice id (`en_US-lessac-medium`) | voice name (`af_heart`, `am_adam`, `af_bella`) | Edge voice (`en-US-AriaNeural`) | **ref-clip path** (cloning) | **ref-clip path** (cloning) or omit → built-in speaker | **ref-clip path** (cloning; needs ffmpeg for auto-transcription) |
+| `speed` | ✅ (length_scale) | ✅ | ✅ (rate %) | ❌ ignored | ✅ | ✅ |
+| `lang` | via voice id | American English pipeline | via voice name | English model | `en_US` → `en`, multilingual | English model |
 
 ## Config (env / `.env`)
 
@@ -74,17 +102,20 @@ nothing else changes.
 | `PORT` | `8001` | service port |
 | `VOICE_ENGINE` | `kokoro` | default engine when `?engine=` is absent |
 | `DEFAULT_LANG` | `en_US` | default `lang` |
+| `TORCH_DEVICE` | auto | `cuda`/`cpu` for torch engines (chatterbox/xtts/f5) |
 | `KOKORO_MODEL_PATH` | — | local model snapshot (air-gapped) |
+| `PIPER_MODEL_PATH` | — | local `.onnx` voice, config `.onnx.json` next to it |
 | `CHATTERBOX_MODEL_PATH` | — | local checkpoint dir (air-gapped, `from_local`) |
-| `CHATTERBOX_DEVICE` | auto | `cuda`/`cpu`; default = cuda if available |
 
-**Air-gapped:** both engines download from Hugging Face by default. For
-offline/prod, snapshot the models and point `KOKORO_MODEL_PATH` /
-`CHATTERBOX_MODEL_PATH` at local copies.
+**Air-gapped:** local engines download from Hugging Face by default — snapshot
+the models and point the `*_MODEL_PATH` vars at local copies. `edge` is
+network-only and won't work air-gapped. `xtts` weights are CPML
+(non-commercial) — the first load auto-accepts the license
+(`COQUI_TOS_AGREED`), review before production use.
 
 ## Tests
 
 Model-free by design: registry + HTTP contract are covered without any ML
-stack (fake engine injected). Real-synthesis tests are opt-in via env flags
-(`VOICE_MODEL_AVAILABLE` for Kokoro, `VOICE_CHATTERBOX_AVAILABLE` for
-Chatterbox) — CI never installs the engine extras.
+stack (fake engine injected). Real-synthesis tests are opt-in:
+`VOICE_REAL_ENGINES="kokoro,piper"` (or `all`) — CI never sets it, engine
+extras are not installed there.

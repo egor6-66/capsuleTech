@@ -10,6 +10,7 @@ dependencies = [
     "uvicorn[standard]>=0.30",
     "pydantic>=2.7",
     "pydantic-settings>=2.3",
+    "cachetools>=5.3",
 ]
 
 [project.optional-dependencies]
@@ -28,13 +29,49 @@ voice-kokoro = [
     "numpy>=1.26",
 ]
 voice-chatterbox = [
-    "chatterbox-tts>=0.1",
+    # >=0.1.7: transformers-5 era; older releases pin numpy<1.26 (0.1.6) or
+    # pull the broken pkuseg build (<=0.1.5).
+    "chatterbox-tts>=0.1.7",
     "soundfile>=0.12",
     "numpy>=1.26",
     # resemble-perth (chatterbox dep) imports pkg_resources at runtime but does
     # not declare setuptools — without it the watermarker silently degrades to
     # None and synthesis crashes. <81: setuptools 81+ dropped pkg_resources.
     "setuptools>=70,<81",
+]
+voice-piper = [
+    "piper-tts>=1.3",
+    "huggingface-hub>=0.23",
+]
+voice-edge = [
+    "edge-tts>=6.1",
+    "soundfile>=0.12",
+    "numpy>=1.26",
+]
+voice-xtts = [
+    "coqui-tts>=0.25",
+    # coqui declares transformers>=4.57 but breaks on 5.x (isin_mps_friendly
+    # was removed from transformers.pytorch_utils) — cap it HERE, not globally:
+    # the chatterbox world needs transformers 5.x (chatterbox 0.1.7 pins ==5.2.0).
+    "transformers>=4.57,<5",
+    "soundfile>=0.12",
+    "numpy>=1.26",
+]
+voice-f5 = [
+    "f5-tts>=1.0",
+    "soundfile>=0.12",
+    "numpy>=1.26",
+]
+
+[tool.uv]
+# chatterbox-tts pins transformers EXACTLY (0.1.7 -> ==5.2.0), coqui-tts needs
+# <5 (see voice-xtts) -> the two engines cannot share a venv.
+# The lock keeps both worlds; install one OR the other (see README).
+conflicts = [
+    [
+        { extra = "voice-chatterbox" },
+        { extra = "voice-xtts" },
+    ],
 ]
 
 [build-system]
