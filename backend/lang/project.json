@@ -3,5 +3,49 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
   "sourceRoot": "backend/lang/src",
-  "tags": ["backend", "python", "lang"]
+  "tags": ["backend", "python", "lang"],
+  "targets": {
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/lang",
+        "command": "uv run uvicorn capsule_lang.main:app --port 8002 --reload"
+      }
+    },
+    "migrate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/lang",
+        "command": "uv run alembic upgrade head"
+      }
+    },
+    "seed": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/lang",
+        "command": "uv run python -m capsule_lang.seed"
+      }
+    },
+    "import": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/lang",
+        "command": "uv run python -m capsule_lang.importer {args.file}"
+      }
+    },
+    "test:py": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/lang",
+        "command": "uv run pytest"
+      }
+    },
+    "lint:py": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/lang",
+        "command": "uv run ruff check ."
+      }
+    }
+  }
 }
