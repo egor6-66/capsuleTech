@@ -4,7 +4,7 @@
  *   <Widgets.Navigation><Learn.LibraryNav /></Widgets.Navigation>
  */
 const Navigation = Widget((Ui, props: { children?: unknown }) => (
-  <Ui.Layout.Flex justify="center" align="center" h="full" class={'border-b'}>
+  <Ui.Layout.Flex justify="center" align="center" h="full" border="b">
     {props.children as never}
   </Ui.Layout.Flex>
 ));

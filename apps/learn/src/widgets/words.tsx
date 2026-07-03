@@ -1,20 +1,22 @@
 /**
- * Widgets.Library.Words — кормит сетку слов. Читает senses из Features.Library
- * (страничный Feature) через useCtx, маппит в { id, text, translation:gloss } и отдаёт
- * во Views.WordList. Выбор/поиск — на стороне Feature (тайлы несут meta+payload).
+ * Widgets.Library.Words — композиция библиотечной сетки (склейка ТОЛЬКО тут, канон):
+ * поиск-Input (meta 'search' → Features.Library.onInput) + `Shapes.WordTiles`
+ * (batch-shape тайлов; данные — senses из Features.Library через store-инжект).
+ *
+ * Ни одного import'а. store — 2-м аргументом виджета (канон), гард на undefined.
  */
-const Words = Widget(() => {
-  const ctx = useCtx() as any;
-  const words = () =>
-    ((ctx.store?.ctx?.data?.senses as any[]) ?? []).map((s) => ({
-      id: s.id,
-      text: s.text,
-      translation: s.gloss,
-      audioUrl: s.audio?.url ?? null,
-    }));
-  const selectedId = () => ctx.store?.ctx?.data?.selectedId ?? null;
+const Words = Widget((Ui, store) => {
+  const senses = () => ((store?.ctx as any)?.data?.senses as unknown[]) ?? [];
+  const selectedId = () => ((store?.ctx as any)?.data?.selectedId as number | null) ?? null;
 
-  return <Views.WordList words={words()} selectedId={selectedId()} />;
+  return (
+    <Ui.Layout.Flex orientation="vertical" gapY={2} h="full" p={4}>
+      <Ui.Input meta={{ tags: ['search'] }} placeholder="Поиск слова…" />
+      <Ui.Layout.Flex orientation="vertical" overflow="auto" fluid={200} minH={0}>
+        <Shapes.WordTiles data={senses()} selectedId={selectedId()} />
+      </Ui.Layout.Flex>
+    </Ui.Layout.Flex>
+  );
 });
 
 export default Words;
