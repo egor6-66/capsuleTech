@@ -5,27 +5,28 @@ per ADR 067 D1 — one capability, no DB, port **:8001**. Dev runs on Windows,
 prod target is Docker/Linux — no platform-specific engines.
 
 Pluggable engines behind a `TTSEngine` Protocol + lazy registry, per-request
-A/B via `?engine=`. Six engines covering the latency↔quality spectrum:
+A/B via `?engine=`. Five engines covering the latency↔quality spectrum:
 
 | Engine | Niche | Local | Cloning | Warm synth (CPU, short phrase) |
 |---|---|---|---|---|
 | `piper` | fastest start, small ONNX models, CPU realtime | ✅ | ❌ | **~0.1s** |
 | `kokoro` | fast + good quality, CPU-friendly | ✅ | ❌ | ~0.6s |
 | `edge` | near-instant, excellent voices — **network (Microsoft)** | ❌ | ❌ | ~1-3s (network) |
-| `xtts` | multilingual + cloning (Coqui XTTS-v2, **CPML non-commercial**) | ✅ | ✅ | ~2-17s |
 | `chatterbox` | high quality + voice cloning (Resemble AI, MIT) | ✅ | ✅ | ~8-24s |
 | `f5` | max pronunciation quality, slowest (F5-TTS) | ✅ | ✅ | ~34s |
 
 Timings measured 2026-07-03 on a dev CPU box; ranges = isolated vs all models
 loaded at once (RAM pressure). First request per engine additionally downloads
 its model from Hugging Face (piper ~60MB seconds; kokoro ~330MB;
-chatterbox/xtts/f5 — GBs, minutes) — cached afterwards.
+chatterbox/f5 — GBs, minutes) — cached afterwards.
 
 Evaluated and rejected: **StyleTTS2** (broken pip wrapper, ADR 065),
 **pyttsx3/SAPI** (OS-voice bindings, prod is Docker — needs espeak-ng there
 and piper beats it anyway), **Zonos / CSM / Orpheus** (CUDA/Linux-only
 setups), **MeloTTS** (git-only install + mecab system deps), **Bark** (slow,
-unstable output), **OpenVoice** (tone converter, not a TTS).
+unstable output), **OpenVoice** (tone converter, not a TTS), **Coqui XTTS-v2**
+(CPML non-commercial license + conflicts with chatterbox's `transformers`
+pin — dropped 2026-07-03 in favor of chatterbox, MIT + same cloning niche).
 
 ## Why Python 3.11
 
@@ -49,19 +50,12 @@ uv run ruff check .
 
 Engines are **opt-in extras** (heavy stacks, lazy-imported — the base service
 and CI never load them): `voice-piper`, `voice-kokoro`, `voice-edge`,
-`voice-xtts`, `voice-chatterbox`, `voice-f5`.
+`voice-chatterbox`, `voice-f5`.
 
 ```bash
 uv sync --extra dev --extra voice-kokoro --extra voice-piper --extra voice-edge `
-  --extra voice-xtts --extra voice-f5       # everything except chatterbox
+  --extra voice-chatterbox --extra voice-f5       # everything
 ```
-
-⚠️ **`voice-chatterbox` and `voice-xtts` cannot share a venv** — chatterbox
-pins `transformers` to an exact version, coqui-tts requires ranges that never
-include it. The extras are declared conflicting in `[tool.uv].conflicts`; the
-lock holds both worlds, install one **or** the other (`uv sync` errors if you
-ask for both). To A/B them: two syncs, or two service instances. In Docker
-each image picks its extras anyway.
 
 nx targets: `nx run backend-voice:serve|test:py|lint:py`.
 
@@ -89,11 +83,11 @@ A/B from the front-end: the existing engine switcher just sets `?engine=`.
 
 ### Parameter semantics per engine
 
-| Param | piper | kokoro | edge | chatterbox | xtts | f5 |
-|---|---|---|---|---|---|---|
-| `voice` | voice id (`en_US-lessac-medium`) | voice name (`af_heart`, `am_adam`, `af_bella`) | Edge voice (`en-US-AriaNeural`) | **ref-clip path** (cloning) | **ref-clip path** (cloning) or omit → built-in speaker | **ref-clip path** (cloning; needs ffmpeg for auto-transcription) |
-| `speed` | ✅ (length_scale) | ✅ | ✅ (rate %) | ❌ ignored | ✅ | ✅ |
-| `lang` | via voice id | American English pipeline | via voice name | English model | `en_US` → `en`, multilingual | English model |
+| Param | piper | kokoro | edge | chatterbox | f5 |
+|---|---|---|---|---|---|
+| `voice` | voice id (`en_US-lessac-medium`) | voice name (`af_heart`, `am_adam`, `af_bella`) | Edge voice (`en-US-AriaNeural`) | **ref-clip path** (cloning) | **ref-clip path** (cloning; needs ffmpeg for auto-transcription) |
+| `speed` | ✅ (length_scale) | ✅ | ✅ (rate %) | ❌ ignored | ✅ |
+| `lang` | via voice id | American English pipeline | via voice name | English model | English model |
 
 ## Config (env / `.env`)
 
@@ -102,16 +96,14 @@ A/B from the front-end: the existing engine switcher just sets `?engine=`.
 | `PORT` | `8001` | service port |
 | `VOICE_ENGINE` | `kokoro` | default engine when `?engine=` is absent |
 | `DEFAULT_LANG` | `en_US` | default `lang` |
-| `TORCH_DEVICE` | auto | `cuda`/`cpu` for torch engines (chatterbox/xtts/f5) |
+| `TORCH_DEVICE` | auto | `cuda`/`cpu` for torch engines (chatterbox/f5) |
 | `KOKORO_MODEL_PATH` | — | local model snapshot (air-gapped) |
 | `PIPER_MODEL_PATH` | — | local `.onnx` voice, config `.onnx.json` next to it |
 | `CHATTERBOX_MODEL_PATH` | — | local checkpoint dir (air-gapped, `from_local`) |
 
 **Air-gapped:** local engines download from Hugging Face by default — snapshot
 the models and point the `*_MODEL_PATH` vars at local copies. `edge` is
-network-only and won't work air-gapped. `xtts` weights are CPML
-(non-commercial) — the first load auto-accepts the license
-(`COQUI_TOS_AGREED`), review before production use.
+network-only and won't work air-gapped.
 
 ## Tests
 

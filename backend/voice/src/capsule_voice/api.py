@@ -75,7 +75,7 @@ def speak(
             audio = eng.synthesize(text, lang=lang, voice=voice, speed=speed)
         except ModuleNotFoundError as exc:
             # Engines are lazy opt-in extras — a registered engine may not be
-            # installed in this venv (e.g. chatterbox×xtts conflict, see README).
+            # installed in this venv yet (extra not synced).
             raise HTTPException(
                 status_code=503,
                 detail=(

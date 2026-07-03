@@ -48,30 +48,10 @@ voice-edge = [
     "soundfile>=0.12",
     "numpy>=1.26",
 ]
-voice-xtts = [
-    "coqui-tts>=0.25",
-    # coqui declares transformers>=4.57 but breaks on 5.x (isin_mps_friendly
-    # was removed from transformers.pytorch_utils) — cap it HERE, not globally:
-    # the chatterbox world needs transformers 5.x (chatterbox 0.1.7 pins ==5.2.0).
-    "transformers>=4.57,<5",
-    "soundfile>=0.12",
-    "numpy>=1.26",
-]
 voice-f5 = [
     "f5-tts>=1.0",
     "soundfile>=0.12",
     "numpy>=1.26",
-]
-
-[tool.uv]
-# chatterbox-tts pins transformers EXACTLY (0.1.7 -> ==5.2.0), coqui-tts needs
-# <5 (see voice-xtts) -> the two engines cannot share a venv.
-# The lock keeps both worlds; install one OR the other (see README).
-conflicts = [
-    [
-        { extra = "voice-chatterbox" },
-        { extra = "voice-xtts" },
-    ],
 ]
 
 [build-system]

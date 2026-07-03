@@ -54,12 +54,6 @@ def _make_edge() -> TTSEngine:
     return EdgeEngine()
 
 
-def _make_xtts() -> TTSEngine:
-    from .engines.xtts import XttsEngine
-
-    return XttsEngine()
-
-
 def _make_f5() -> TTSEngine:
     from .engines.f5 import F5Engine
 
@@ -72,7 +66,6 @@ _FACTORIES: dict[str, Callable[[], TTSEngine]] = {
     "chatterbox": _make_chatterbox,
     "piper": _make_piper,
     "edge": _make_edge,
-    "xtts": _make_xtts,
     "f5": _make_f5,
 }
 _INSTANCES: dict[str, TTSEngine] = {}
