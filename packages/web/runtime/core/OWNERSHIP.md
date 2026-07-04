@@ -5,7 +5,7 @@ group: web_base
 zone: runtime
 status: stable
 priority: P0
-last-updated: 2026-06-11
+last-updated: 2026-07-04
 ---
 
 # @capsuletech/web-core
@@ -205,6 +205,7 @@ Both points are no-ops when no resolver is registered (`hasAccessResolver()` fas
 
 ## План рефакторинга / оптимизаций
 
+- [x] **`Image` + `Avatar` добавлены в `Ui` namespace** — lazy imports из `@capsuletech/web-ui/image` и `@capsuletech/web-ui/avatar` (kit-коммит `20102e4b`, kobalte-backed, не critical-path → lazy как Textarea). Оба plain callables (isLeaf, без sub-components). `typeof Image`/`typeof Avatar` добавлены в `ViewUiRaw` и `WidgetUiRaw`. Закрывает красный guard `manifest-path-invariant` (`ui.Image`/`ui.Avatar` не резолвились). 8 новых характеризационных тестов в `ui-meta-props.test.tsx`. 559 тестов green (2026-07-04).
 - [x] **`useEmitOptional` — non-throwing вариант `useEmit`** — вне Controller/Feature-scope возвращает no-op (`() => undefined`), а не throw'ает (как `useEmit`). Внутри scope диспатчит идентично через `buildEmitFromCtx`. Для пакетных компонентов, рендерящихся в **опциональном** логик-контексте: кейс `@capsuletech/web-remote` `<Remote.View>` (ADR 060 D1 / remote→host auto-route B) — forwarded app→host событие роутится в ближайший оборачивающий host-Feature через `emit(name, { payload })`; без enclosing-логики (голая страница) emit просто дропается. `useEmit` НЕ тронут (app-код, где scope обязателен). Экспорт из `wrappers/index.ts` → main barrel. 2 новых теста в `engine/__tests__/use-emit.test.ts` (вне scope → no-op без throw; внутри scope → dispatch как useEmit). web-remote зависит от этого экспорта (Part 2 брифа, чужая зона) (2026-06-27).
 - [x] **`embedded` / `standalone` run-mode флаги в `services`** — `IServices` получил два статичных булевых поля: `embedded` (`true` если апп в хост-iframe) и `standalone` (`!embedded`). Источник правды — bootstrap iframe-check `isEmbedded()` (`window.parent !== window`), **НЕ** наличие host-bridge `contract` (апп может быть embedded и без контракта). Прокидывается через новый `EmbedModeContext` (`engine/host-bridge.ts`, дефолт `{ embedded: false }` = standalone) + хук `useEmbedMode`; `createCapsuleApp` оборачивает дерево `<EmbedModeContext.Provider value={{ embedded }}>` (всегда, не только при contract-мосте); `logic-wrapper` читает хук и кладёт оба поля в services (обе ветки — controller и feature). Поля **статичные** (режим фиксирован на сессию), не реактивные. Кейс: апп уступает хосту автономные триггеры — `Controller(({ standalone }) => ({ states: { idle: { onInit: ({ emit }) => { if (standalone) emit('addItems', { payload: localData }) } }}}))`. `contract.in`/`out` поведение НЕ менялось — это чисто экспозиция флага. 4 новых теста в `engine/__tests__/embed-mode.test.tsx` (services несёт оба флага; standalone-дефолт; provider embedded:true; mirror-инвариант). `services-capabilities.test.ts` моки дополнены полями (2026-06-27).
 - [x] **`Ui.Animate` удалён** — routing/popover-анимации переведены на нативный CSS (View Transitions + Kobalte data-attrs); `Animate` убран из `import type` в `interfaces.ts`, из `UniversalUiRaw`, из `page.tsx rawUi`, из `ui-kit/imports.tsx` (lazy export). `solid-motionone` удаляет owner-web-ui следующим шагом. 391 тест green (2026-06-08).

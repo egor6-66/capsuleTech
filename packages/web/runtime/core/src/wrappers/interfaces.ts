@@ -12,8 +12,10 @@ import type { Zod as ZodNamespace } from '@capsuletech/shared-zod';
 import type { ICapsuleRouter } from '@capsuletech/web-router';
 import type { IBaseStateSchema, IBridge, IMachineContext } from '@capsuletech/web-state';
 import type { Button, Card, Field, Group, Input, Layout, List } from '@capsuletech/web-ui';
+import type { Avatar } from '@capsuletech/web-ui/avatar';
 import type { Dropdown } from '@capsuletech/web-ui/dropdown';
 import type { DropdownMenu } from '@capsuletech/web-ui/dropdownMenu';
+import type { Image } from '@capsuletech/web-ui/image';
 import type { PreviewCard } from '@capsuletech/web-ui/previewCard';
 import type { Select } from '@capsuletech/web-ui/select';
 import type { Skeleton } from '@capsuletech/web-ui/skeleton';
@@ -196,6 +198,8 @@ type ViewUiRaw = UniversalUiRaw & {
   Group: typeof Group;
   Input: typeof Input;
   List: typeof List;
+  Image: typeof Image;
+  Avatar: typeof Avatar;
   PreviewCard: typeof PreviewCard;
   Skeleton: typeof Skeleton;
   Spinner: typeof Spinner;
@@ -234,6 +238,8 @@ type WidgetUiRaw = UniversalUiRaw & {
   Button: typeof Button;
   Card: typeof Card;
   Outlet: Outlet;
+  Image: typeof Image;
+  Avatar: typeof Avatar;
   PreviewCard: typeof PreviewCard;
   Skeleton: typeof Skeleton;
   Spinner: typeof Spinner;
