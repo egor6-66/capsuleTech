@@ -28,6 +28,7 @@ export default defineConfig({
           /@capsuletech\/web-ui/,
           /@capsuletech\/web-style/,
           /@capsuletech\/web-core/,
+          /@capsuletech\/web-docs/,
           /@capsuletech\/web-router/,
           /@tanstack\/solid-router/,
           /@solidjs\/meta/,
