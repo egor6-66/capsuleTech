@@ -8,23 +8,26 @@
  * разделами. `mode="view"` + `resizable:false` — shell не редактируется/не ресайзится.
  */
 const Workspace = Page((Ui) => (
-  <Learn.Provider>
+  <Learn.Provider apiBase="/api">
     <Layouts.Matrix
       mode="view"
       preset="app-shell"
+      bordered={false}
       slots={{
         header: {
           children: <Widgets.Header />,
           resizable: false,
           initialSize: 0.04,
+          bordered: false,
         },
         main: {
           children: (
-            <Ui.Layout.Flex h={'full'} class={'p-2'}>
+            <Ui.Layout.Flex h={'full'}>
               <Ui.Outlet />
             </Ui.Layout.Flex>
           ),
           resizable: false,
+          bordered: false,
         },
       }}
     />

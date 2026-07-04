@@ -1,6 +1,9 @@
 export default defineAppConfig({
+  // Словарь meta-тегов аппа (типизирует `meta.tags` в слоях):
+  // word/speak — тайл слова и его 🔊; search — поиск-input библиотеки;
+  // engine — свич TTS-движка (Shell.Picker).
   meta: {
-    tags: ['click'],
+    tags: ['click', 'word', 'speak', 'search', 'engine'],
   },
   aliases: {},
   // Learn-зона (ADR 055 D5) + app-shell как в playground (единый UI/UX-флоу
@@ -9,11 +12,12 @@ export default defineAppConfig({
   router: {
     transition: true,
   },
-  // API → backend/learn (ADR 055 D2). DEV: абсолютный localhost-base (бэк на :8003);
-  // браузер ходит cross-origin → бэку нужен CORS-middleware. PROD-base — конфигом позже.
-  // `voice` — прямой поход в capability-сервис (ADR 067: сервисы публичны; learn-BFF
-  // композитит выдачи, но статичные capability-вызовы вроде списка движков — напрямую).
+  // API → single-origin '/api' через gateway (ADR 068): dev = prod, same-origin,
+  // CORS не нужен. Маршрутизация (`/api/learn/*` → learn :8003, `/api/voice/*` →
+  // voice :8001) живёт только в nginx gateway (`docker/gateway/`), не в аппе.
+  // Ключ `voice` раздельный — семантический шов (ADR 067: capability-сервисы
+  // публичны; в prod базы могут разойтись).
   api: () => ({
-    bases: { default: 'http://127.0.0.1:8003', voice: 'http://127.0.0.1:8001' },
+    bases: { default: '/api', voice: '/api' },
   }),
 });
