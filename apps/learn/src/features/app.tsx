@@ -8,7 +8,8 @@
  *
  * Без авторизации (пока). Роутинг по событиям навигации (ADR 032):
  *   onNavigate (Learn.Welcome) — раздел `/<segment>`.
- *   onLibraryNavigate (Learn.LibraryNav) — под-раздел `/library/<segment>`.
+ *   Доменная под-навигация library — в `features/library.tsx` (канон app-фич:
+ *   root App = только глобальные концерны).
  *
  * Озвучка (ADR 067) — app-глобальный concern, живёт тут:
  *   context.engines — список TTS-движков с voice-сервиса (напрямую, capability публичен);
@@ -32,60 +33,55 @@ interface IOnSpeakEvent {
   onSpeak: { audioUrl: string | null };
 }
 
-const App = Feature<
-  Learn.Welcome.Events & Learn.LibraryNav.Events & Shell.Picker.Events & IOnSpeakEvent
->(({ router, api }) => ({
-  initial: 'idle',
+const App = Feature<Learn.Welcome.Events & Shell.Picker.Events & IOnSpeakEvent>(
+  ({ router, api }) => ({
+    initial: 'idle',
 
-  context: {
-    engines: [] as string[],
-    engine: localStorage.getItem(VOICE_ENGINE_KEY) ?? 'kokoro',
-  },
+    context: {
+      engines: [] as string[],
+      engine: localStorage.getItem(VOICE_ENGINE_KEY) ?? 'kokoro',
+    },
 
-  states: {
-    idle: {
-      onInit: async ({ store }) => {
-        if (!api) return;
-        const res = await api.voice.engines({});
-        store.update({ engines: res.engines });
-        // Персист мог указывать на движок, которого больше нет — откат на default.
-        // Свой стейт читаем через store (собственный Bridge), НЕ через `context`.
-        const current = (store.ctx as any)?.data?.engine as string | undefined;
-        if (current && !res.engines.includes(current)) {
-          store.update({ engine: res.default });
-          localStorage.setItem(VOICE_ENGINE_KEY, res.default);
-        }
+    states: {
+      idle: {
+        onInit: async ({ store }) => {
+          if (!api) return;
+          const res = await api.voice.engines({});
+          store.update({ engines: res.engines });
+          // Персист мог указывать на движок, которого больше нет — откат на default.
+          // Свой стейт читаем через store (собственный Bridge), НЕ через `context`.
+          const current = (store.ctx as any)?.data?.engine as string | undefined;
+          if (current && !res.engines.includes(current)) {
+            store.update({ engine: res.default });
+            localStorage.setItem(VOICE_ENGINE_KEY, res.default);
+          }
+        },
       },
     },
-  },
 
-  // Навигация из welcome-карточек: payload — id раздела (lessons/exercises/progress/library/guides).
-  onNavigate: ({ target }) => {
-    router.goTo(`/${target.payload}`);
-  },
+    // Навигация из welcome-карточек: payload — id раздела (lessons/exercises/progress/library/guides).
+    onNavigate: ({ target }) => {
+      router.goTo(`/${target.payload}`);
+    },
 
-  // Под-навигация library (Learn.LibraryNav, ADR 032): payload — explorer|collections.
-  onLibraryNavigate: ({ target }) => {
-    router.goTo(`/library/${target.payload}`);
-  },
+    // Shell.Picker (хедер): выбор TTS-движка.
+    onPick: ({ target, store }) => {
+      if (target.payload?.name !== 'engine') return;
+      const engine = target.payload.value;
+      store.update({ engine });
+      localStorage.setItem(VOICE_ENGINE_KEY, engine);
+    },
 
-  // Shell.Picker (хедер): выбор TTS-движка.
-  onPick: ({ target, store }) => {
-    if (target.payload?.name !== 'engine') return;
-    const engine = target.payload.value;
-    store.update({ engine });
-    localStorage.setItem(VOICE_ENGINE_KEY, engine);
-  },
-
-  // Озвучка: именованное событие из Learn.Library.Words/Info (payload несёт
-  // audio.url, null = voice лежал при выдаче — learn кэширует недоступность 30с;
-  // слово без озвучки — молча скипаем, ре-фетч слов самолечит).
-  onSpeak: ({ target, store }) => {
-    const audioUrl = target.payload?.audioUrl;
-    if (!audioUrl) return;
-    const engine = ((store.ctx as any)?.data?.engine as string | undefined) ?? 'kokoro';
-    void new Audio(`${audioUrl}&engine=${engine}`).play();
-  },
-}));
+    // Озвучка: именованное событие из Learn.Library.Words/Info (payload несёт
+    // audio.url, null = voice лежал при выдаче — learn кэширует недоступность 30с;
+    // слово без озвучки — молча скипаем, ре-фетч слов самолечит).
+    onSpeak: ({ target, store }) => {
+      const audioUrl = target.payload?.audioUrl;
+      if (!audioUrl) return;
+      const engine = ((store.ctx as any)?.data?.engine as string | undefined) ?? 'kokoro';
+      void new Audio(`${audioUrl}&engine=${engine}`).play();
+    },
+  }),
+);
 
 export default App;

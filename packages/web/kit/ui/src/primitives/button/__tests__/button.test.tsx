@@ -153,6 +153,63 @@ describe('Button — backward compatibility', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Active link — aria-current="page" accent lives in the base CVA
+// ---------------------------------------------------------------------------
+
+describe('Button — active link (aria-current="page")', () => {
+  it('base CVA carries the aria-[current=page] accent classes', () => {
+    cleanup = render(() => <Button data-testid="btn">Click</Button>, container);
+    const el = container.querySelector<HTMLElement>('[data-testid="btn"]');
+    expect(el?.className).toContain('aria-[current=page]:bg-primary');
+    expect(el?.className).toContain('aria-[current=page]:text-primary-foreground');
+    expect(el?.className).toContain('aria-[current=page]:font-semibold');
+    expect(el?.className).toContain('aria-[current=page]:pointer-events-none');
+  });
+
+  it('active link carries the gating attribute (accent applies)', () => {
+    cleanup = render(
+      () => (
+        <Button as="a" href="/current" aria-current="page" data-testid="btn">
+          Lessons
+        </Button>
+      ),
+      container,
+    );
+    const el = container.querySelector<HTMLElement>('[data-testid="btn"]');
+    expect(el?.getAttribute('aria-current')).toBe('page');
+    expect(el?.matches('[aria-current="page"]')).toBe(true);
+  });
+
+  it('inactive link has no gating attribute (accent does not apply)', () => {
+    cleanup = render(
+      () => (
+        <Button as="a" href="/other" data-testid="btn">
+          Exercises
+        </Button>
+      ),
+      container,
+    );
+    const el = container.querySelector<HTMLElement>('[data-testid="btn"]');
+    expect(el?.hasAttribute('aria-current')).toBe(false);
+    expect(el?.matches('[aria-current="page"]')).toBe(false);
+  });
+
+  it('accent classes coexist with every variant (ghost nav-canon)', () => {
+    cleanup = render(
+      () => (
+        <Button as="a" href="/current" aria-current="page" variant="ghost" data-testid="btn">
+          Lessons
+        </Button>
+      ),
+      container,
+    );
+    const el = container.querySelector<HTMLElement>('[data-testid="btn"]');
+    expect(el?.className).toContain('aria-[current=page]:bg-primary');
+    expect(el?.getAttribute('data-variant')).toBe('ghost');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Reactivity contract — variant/size/class/fullWidth must update at runtime
 // ---------------------------------------------------------------------------
 
@@ -168,13 +225,14 @@ describe('Button — reactivity contract', () => {
       container,
     );
     const el = container.querySelector<HTMLElement>('[data-testid="btn"]');
-    // default variant includes bg-primary
-    expect(el?.className).toContain('bg-primary');
+    // default variant includes bg-primary (exact token — base CVA also carries
+    // the aria-[current=page]:bg-primary substring)
+    expect(el?.className.split(' ')).toContain('bg-primary');
 
     // switch to outline — should gain 'border' and lose 'bg-primary'
     setVariant('outline');
     expect(el?.className).toContain('border');
-    expect(el?.className).not.toContain('bg-primary');
+    expect(el?.className.split(' ')).not.toContain('bg-primary');
   });
 
   it('updates CVA class when size signal changes', () => {

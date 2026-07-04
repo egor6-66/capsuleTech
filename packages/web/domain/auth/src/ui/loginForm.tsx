@@ -16,13 +16,13 @@
  */
 
 import { useCtx, View } from '@capsuletech/web-core';
-import type { IAuthFormField, IRoleStrategy } from '../role/index';
+import type { IAuthFormField } from '../types';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 export interface IAuthLoginFormProps {
-  /** Стратегия: задаёт поля формы. */
-  strategy: IRoleStrategy;
+  /** Стратегия (или любой fields-носитель): задаёт поля формы config-driven. */
+  strategy: { fields?: ReadonlyArray<IAuthFormField> };
   /** Заголовок формы. @default 'Вход' */
   title?: string;
   /** Подзаголовок формы (опционально). */
@@ -67,7 +67,7 @@ export const AuthLoginForm = View<IAuthLoginFormProps>((Ui, props) => {
       </Ui.Card.Header>
 
       <Ui.Card.Content>
-        <Ui.Flow.For each={props.strategy.fields as IAuthFormField[]}>
+        <Ui.Flow.For each={(props.strategy.fields ?? []) as IAuthFormField[]}>
           {(field: IAuthFormField) => (
             <Ui.Field>
               <Ui.Field.Label>{field.label}</Ui.Field.Label>

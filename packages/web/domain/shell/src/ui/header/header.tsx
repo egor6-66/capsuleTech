@@ -2,6 +2,7 @@ import { filterAllowed } from '@capsuletech/web-access';
 import { cn } from '@capsuletech/web-style';
 import { Button } from '@capsuletech/web-ui/button';
 import { Dropdown } from '@capsuletech/web-ui/dropdown';
+import { Flex } from '@capsuletech/web-ui/flex';
 import { Group } from '@capsuletech/web-ui/group';
 import { Menu } from '@capsuletech/web-ui/icons';
 import { createMemo } from 'solid-js';
@@ -21,15 +22,9 @@ import type {
 
 function HeaderRoot(props: IHeaderProps) {
   return (
-    <div
-      class={cn(
-        'flex h-full items-center justify-between',
-        'border-b bg-background px-cell',
-        props.class,
-      )}
-    >
+    <Flex p={1} w={'full'} justify={'between'} class={cn(props.class)}>
       {props.children}
-    </div>
+    </Flex>
   );
 }
 

@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
+﻿import { describe, expect, it } from 'vitest';
 import { appShellResolver } from '../presets';
 
-// Simple JSX-like values for testing — strings work as JSX.Element in Solid
+// Simple JSX-like values for testing вЂ” strings work as JSX.Element in Solid
 const H = 'Header';
 const S = 'Sidebar';
 const M = 'Main';
@@ -13,7 +13,7 @@ describe('appShellResolver', () => {
   // Auto-centroid
   // ---------------------------------------------------------------------------
 
-  it('only main → single centroid row, single cell', () => {
+  it('only main в†’ single centroid row, single cell', () => {
     const rows = appShellResolver({ main: M });
     expect(rows).toHaveLength(1);
     expect(rows[0].id).toBe('centroid-row');
@@ -23,7 +23,7 @@ describe('appShellResolver', () => {
     expect(rows[0].cells[0].children).toBe(M);
   });
 
-  it('only main (object-form) → centroid row', () => {
+  it('only main (object-form) в†’ centroid row', () => {
     const rows = appShellResolver({ main: { children: M, initialSize: 0.9 } });
     expect(rows).toHaveLength(1);
     expect(rows[0].cells[0].id).toBe('main');
@@ -35,7 +35,7 @@ describe('appShellResolver', () => {
   // header + main
   // ---------------------------------------------------------------------------
 
-  it('header + main → 2 rows: header-row + middle-row', () => {
+  it('header + main в†’ 2 rows: header-row + middle-row', () => {
     const rows = appShellResolver({ header: H, main: M });
     expect(rows).toHaveLength(2);
 
@@ -43,15 +43,17 @@ describe('appShellResolver', () => {
 
     expect(headerRow.id).toBe('header-row');
     expect(headerRow.height).toBe(0.1); // default initialSize
-    expect(headerRow.resizable).toBe(true); // default resizable
+    // tri-state pass-through: slot без явного флага → undefined
+    // (активность ручки следует matrix-резолюции mode/global)
+    expect(headerRow.resizable).toBeUndefined();
     expect(headerRow.cells).toHaveLength(1);
     expect(headerRow.cells[0].id).toBe('header');
     expect(headerRow.cells[0].tag).toBe('header');
-    expect(headerRow.cells[0].swapGroup).toBe('band');
+    expect(headerRow.cells[0].swapGroup).toBe('shell');
 
     expect(middleRow.id).toBe('middle-row');
     expect(middleRow.resizable).toBe(true);
-    // header=0.1, no footer → middle = 1 - 0.1 - 0 = 0.9
+    // header=0.1, no footer в†’ middle = 1 - 0.1 - 0 = 0.9
     expect(middleRow.height).toBe(0.9);
     expect(middleRow.cells).toHaveLength(1);
     expect(middleRow.cells[0].id).toBe('main');
@@ -61,7 +63,7 @@ describe('appShellResolver', () => {
   // header + main + footer
   // ---------------------------------------------------------------------------
 
-  it('header + main + footer → 3 rows', () => {
+  it('header + main + footer в†’ 3 rows', () => {
     const rows = appShellResolver({ header: H, main: M, footer: F });
     expect(rows).toHaveLength(3);
 
@@ -70,10 +72,10 @@ describe('appShellResolver', () => {
     expect(headerRow.id).toBe('header-row');
     expect(middleRow.id).toBe('middle-row');
     expect(footerRow.id).toBe('footer-row');
-    expect(footerRow.resizable).toBe(true);
+    expect(footerRow.resizable).toBeUndefined(); // tri-state pass-through
     expect(footerRow.cells[0].id).toBe('footer');
     expect(footerRow.cells[0].tag).toBe('footer');
-    expect(footerRow.cells[0].swapGroup).toBe('band');
+    expect(footerRow.cells[0].swapGroup).toBe('shell');
   });
 
   it('footer default height is 0.3', () => {
@@ -89,7 +91,7 @@ describe('appShellResolver', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // middle-row height — the fix for footer collapsing to 0px
+  // middle-row height вЂ” the fix for footer collapsing to 0px
   // ---------------------------------------------------------------------------
 
   it('middle-row gets height = 1 - footerInitialSize when footer present (default 0.3)', () => {
@@ -116,7 +118,7 @@ describe('appShellResolver', () => {
     expect(middleRow.height).toBe('fr');
   });
 
-  it('all 5 slots → middle-row height = 0.6 (header default 0.1 + footer default 0.3)', () => {
+  it('all 5 slots в†’ middle-row height = 0.6 (header default 0.1 + footer default 0.3)', () => {
     const rows = appShellResolver({ header: H, sidebar: S, main: M, rightBar: R, footer: F });
     const middleRow = rows.find((r) => r.id === 'middle-row')!;
     expect(middleRow.height).toBe(0.6);
@@ -126,7 +128,7 @@ describe('appShellResolver', () => {
   // All 5 slots
   // ---------------------------------------------------------------------------
 
-  it('all 5 slots → 3 rows: header / middle (sidebar+main+rightBar) / footer', () => {
+  it('all 5 slots в†’ 3 rows: header / middle (sidebar+main+rightBar) / footer', () => {
     const rows = appShellResolver({ header: H, sidebar: S, main: M, rightBar: R, footer: F });
     expect(rows).toHaveLength(3);
 
@@ -137,17 +139,18 @@ describe('appShellResolver', () => {
 
     expect(sidebarCell.id).toBe('sidebar');
     expect(sidebarCell.tag).toBe('aside');
-    expect(sidebarCell.resizable).toBe(true);
-    expect(sidebarCell.swapGroup).toBe('aside');
+    expect(sidebarCell.resizable).toBeUndefined(); // tri-state pass-through
+    expect(sidebarCell.swapGroup).toBe('shell');
 
     expect(mainCell.id).toBe('main');
     expect(mainCell.tag).toBe('main');
-    expect(mainCell.resizable).toBe(true);
+    expect(mainCell.resizable).toBe(true); // эластичный центр — всегда согласен
+    expect(mainCell.swapGroup).toBe('shell');
 
     expect(rightBarCell.id).toBe('rightBar');
     expect(rightBarCell.tag).toBe('aside');
-    expect(rightBarCell.resizable).toBe(true);
-    expect(rightBarCell.swapGroup).toBe('aside');
+    expect(rightBarCell.resizable).toBeUndefined(); // tri-state pass-through
+    expect(rightBarCell.swapGroup).toBe('shell');
   });
 
   it('sidebar default width is 0.2', () => {
@@ -188,7 +191,7 @@ describe('appShellResolver', () => {
   // sidebar only (no header/footer)
   // ---------------------------------------------------------------------------
 
-  it('sidebar + main → middle row only (no header/footer rows)', () => {
+  it('sidebar + main в†’ middle row only (no header/footer rows)', () => {
     const rows = appShellResolver({ sidebar: S, main: M });
     expect(rows).toHaveLength(1);
     expect(rows[0].id).toBe('middle-row');
@@ -199,7 +202,7 @@ describe('appShellResolver', () => {
   // rightBar only (no sidebar, no header/footer)
   // ---------------------------------------------------------------------------
 
-  it('main + rightBar → single middle row with 2 cells', () => {
+  it('main + rightBar в†’ single middle row with 2 cells', () => {
     const rows = appShellResolver({ main: M, rightBar: R });
     expect(rows).toHaveLength(1);
     const cells = rows[0].cells;

@@ -105,16 +105,16 @@ describe('loginResponseSchema (zod)', () => {
     expect(result.success).toBe(true);
   });
 
-  it('опциональный user-объект принимается', () => {
+  it('опциональный user-объект принимается (v2: id number + login)', () => {
     const result = loginResponseSchema.safeParse({
       token: 'jwt-abc',
       role: 'developer',
-      user: { id: '42', role: 'developer', name: 'Alice' },
+      user: { id: 42, login: 'alice', role: 'developer' },
     });
     expect(result.success).toBe(true);
   });
 
-  it('отсутствие token — ошибка', () => {
+  it('отсутствие token — ошибка (legacy mock-контракт, token обязателен в ответе мока)', () => {
     const result = loginResponseSchema.safeParse({ role: 'developer' });
     expect(result.success).toBe(false);
   });

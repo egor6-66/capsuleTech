@@ -1,13 +1,6 @@
 /**
- * /lessons — index fallback (welcome раздела).
- * Пока текущий контент; свапнём на `Learn.LessonsWelcome`, когда пакет добавит.
+ * /library — index fallback: сетка слов (live с backend/learn). rightBar (инфо) — в layout'е.
  */
-const LessonsHome = Page((Ui) => (
-  <Ui.Layout.Flex orientation="vertical" gapY={4} class="p-6">
-    <Ui.Typography variant="h1">Lessons</Ui.Typography>
-    <Learn.LessonView conceptId="lang.en_US.articles" />
-    <Learn.SentenceBuilder words={['I', 'saw', 'a', 'dog']} />
-  </Ui.Layout.Flex>
-));
+const LibraryHome = Page(() => <Learn.LibraryWelcome />);
 
-export default LessonsHome;
+export default LibraryHome;

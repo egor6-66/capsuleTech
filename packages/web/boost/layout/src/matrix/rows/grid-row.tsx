@@ -83,8 +83,10 @@ export const renderGridRow = (
 
           const zoneItem = zone.createItem(cell.id);
 
-          const children = getSwappedChildren ? getSwappedChildren(cell.id) : cell.children;
-          const content = children;
+          // Accessor, НЕ снапшот — childrenMap-сигнал swap-движка должен читаться
+          // в момент рендера (см. cell.tsx, drop-не-обновляет-DOM баг 2026-07-04).
+          const content = (): JSX.Element =>
+            getSwappedChildren ? getSwappedChildren(cell.id) : cell.children;
           traceSlotRender(cell.id);
 
           const gridCoords = (): { x: number; y: number; w: number; h: number } =>
@@ -100,7 +102,8 @@ export const renderGridRow = (
 
           // Grid resize handles — visible only when resizeEnabled AND cell opts in (default true).
           const gridResizeHandles = (): JSX.Element => {
-            const isCellResizable = resizeEnabled() && (cell.resizable ?? true);
+            // Tri-state: явный cell.resizable оверрайдит matrix-резолюцию.
+            const isCellResizable = cell.resizable ?? resizeEnabled();
             if (!isCellResizable) return null;
 
             const getContainerEl = (): HTMLElement | null =>
@@ -206,7 +209,9 @@ export const renderGridRow = (
                 classList={{ 'pointer-events-none': isDragging() }}
               >
                 <MatrixSlot slot={cell.id}>
-                  <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+                  <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>
+                    {content()}
+                  </Suspense>
                 </MatrixSlot>
               </div>
               {gridResizeHandles()}

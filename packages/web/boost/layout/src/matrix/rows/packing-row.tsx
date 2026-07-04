@@ -140,8 +140,10 @@ export const renderPackingRow = (
             }
             return NOOP_REF;
           })();
-          const children = getSwappedChildren ? getSwappedChildren(cell.id) : cell.children;
-          const content = children;
+          // Accessor, НЕ снапшот — childrenMap-сигнал swap-движка должен читаться
+          // в момент рендера (см. cell.tsx, drop-не-обновляет-DOM баг 2026-07-04).
+          const content = (): JSX.Element =>
+            getSwappedChildren ? getSwappedChildren(cell.id) : cell.children;
           traceSlotRender(cell.id);
 
           // Reactive cell style: explicit px size when set via handle,
@@ -178,7 +180,8 @@ export const renderPackingRow = (
           // Pointer-drag writes explicit px size into the CellSizeMap signal.
           // Floor = minW / minH so the cell cannot be dragged below minimum.
           const resizeHandle = (): JSX.Element => {
-            const isCellResizable = resizeEnabled() && (cell.resizable ?? true);
+            // Tri-state: явный cell.resizable оверрайдит matrix-резолюцию.
+            const isCellResizable = cell.resizable ?? resizeEnabled();
             if (!isCellResizable) return null;
 
             const onPointerDown = (e: PointerEvent): void => {
@@ -252,7 +255,9 @@ export const renderPackingRow = (
                   classList={{ 'pointer-events-none': isDragging() }}
                 >
                   <MatrixSlot slot={cell.id}>
-                    <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+                    <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>
+                      {content()}
+                    </Suspense>
                   </MatrixSlot>
                 </div>
                 {resizeHandle()}

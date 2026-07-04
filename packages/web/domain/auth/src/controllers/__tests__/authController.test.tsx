@@ -1,28 +1,30 @@
 /**
- * Auth.Login (AuthController) — тесты FSM-переходов + emit именованных событий.
+ * Auth.Login / Auth.Register — тесты FSM-переходов + emit именованных событий (v2).
  *
  * Контракт:
  *  1. Phantom __events присутствует как тип (undefined в runtime).
- *  2. onLogin emit вызывается при успешном api.auth.login (через emit из handler-API).
- *  3. onLoginError emit вызывается при ошибке api.auth.login.
- *  4. FSM начинается в состоянии 'idle'.
- *  5. idle.onClick(submit) → submitting; error.onClick(submit) → idle (retry).
- *  6. authed.onLogout → emit('onLogout') + сессия сброшена.
- *  7. Props: discriminated union type='role' + roles; стратегия строится внутри компонента.
+ *  2. onLogin emit несёт { user } — БЕЗ token (session v2 cookie-first).
+ *  3. onLoginError emit несёт rawMessage; форма получает дружелюбный текст.
+ *  4. FSM начинается в состоянии 'idle'; idle.onClick(submit) → submitting;
+ *     error.* → clear-on-interaction; authed.onLogout → сброс.
+ *  5. role-арм (legacy mock): IO через services.api.auth.login, token ответа
+ *     ИГНОРИРУЕТСЯ.
+ *  6. credentials-арм (cookie): IO через loginRequest HTTP-клиента пакета,
+ *     типизированный маппинг ошибок (401/сеть).
+ *  7. Auth.Register: confirm-валидация без сети, 409 → «Логин уже занят»,
+ *     успех → session.login(user) + emit onLogin.
  *
  * Стратегия мокирования:
- *  - Feature: захватываем schema для прямого вызова handlers в тестах.
- *    api (с auth.login) инжектируется в services фабрики Feature — именно так
- *    web-core передаёт api (Controller его НЕ получает — это by design).
- *    emit передаётся в каждый handler через handler-API (IHandlerApi.emit) —
- *    НЕ через useEmit/EmitProbe.
- *  - api: мокаем auth.login через vi.mock('@capsuletech/web-query').
+ *  - Feature (web-core): захватываем schema для прямого вызова handlers.
+ *  - role-IO: services.api.auth.login → vi.fn.
+ *  - credentials-IO: vi.mock('../../api/client') — loginRequest/registerRequest
+ *    мокаются, error-классы остаются реальными (typed mapping).
  */
 
 /* @vitest-environment jsdom */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// ─── Мок api клиента ──────────────────────────────────────────────────────────
+// ─── Мок api клиента (role-арм, app-endpoint) ────────────────────────────────
 
 const mockLogin = vi.fn();
 
@@ -33,6 +35,20 @@ vi.mock('@capsuletech/web-query', async (importOriginal) => {
     getApiClient: () => ({
       auth: { login: mockLogin },
     }),
+  };
+});
+
+// ─── Мок HTTP-клиента пакета (credentials-арм) ───────────────────────────────
+
+const mockLoginRequest = vi.fn();
+const mockRegisterRequest = vi.fn();
+
+vi.mock('../../api/client', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../api/client')>();
+  return {
+    ...actual,
+    loginRequest: (...args: unknown[]) => mockLoginRequest(...args),
+    registerRequest: (...args: unknown[]) => mockRegisterRequest(...args),
   };
 });
 
@@ -65,8 +81,9 @@ vi.mock('@capsuletech/web-core', async (importOriginal) => {
 // ─── Импорт после мока ────────────────────────────────────────────────────────
 
 import { render } from 'solid-js/web';
+import { InvalidCredentialsError, LoginTakenError } from '../../api/client';
 import { createAuthSession } from '../../session/index';
-import { AuthLogin } from '../index';
+import { AuthLogin, AuthRegister } from '../index';
 
 // ─── Фикстуры ─────────────────────────────────────────────────────────────────
 
@@ -75,6 +92,14 @@ const testRoles = [
   { value: 'developer', label: 'Developer' },
   { value: 'support', label: 'Support' },
 ];
+
+const USER = { id: 1, login: 'alice', role: 'user' };
+
+const makeStore = (values: Record<string, string> = {}) => ({
+  patch: vi.fn(),
+  update: vi.fn(),
+  values: vi.fn().mockReturnValue(values),
+});
 
 // ─── Setup/teardown ───────────────────────────────────────────────────────────
 
@@ -85,6 +110,8 @@ beforeEach(() => {
   container = document.createElement('div');
   document.body.appendChild(container);
   mockLogin.mockReset();
+  mockLoginRequest.mockReset();
+  mockRegisterRequest.mockReset();
   capturedSchema = null;
 });
 
@@ -110,6 +137,19 @@ describe('Auth.Login — структура', () => {
     }).not.toThrow();
   });
 
+  it('монтируется без ошибок (type=credentials)', () => {
+    expect(() => {
+      cleanup = render(
+        () => (
+          <AuthLogin type="credentials">
+            <div data-testid="child">form</div>
+          </AuthLogin>
+        ),
+        container,
+      );
+    }).not.toThrow();
+  });
+
   it('children рендерятся внутри Controller-scope', () => {
     cleanup = render(
       () => (
@@ -124,18 +164,13 @@ describe('Auth.Login — структура', () => {
 
   it('phantom __events = undefined (runtime)', () => {
     expect((AuthLogin as any).__events).toBeUndefined();
+    expect((AuthRegister as any).__events).toBeUndefined();
   });
 });
 
 // ─── Тесты — discriminated union type prop ─────────────────────────────────────
 
 describe('Auth.Login — discriminated union', () => {
-  it('type="credentials" бросает not-implemented (stub)', () => {
-    expect(() => {
-      render(() => <AuthLogin type="credentials" />, container);
-    }).toThrow('not implemented yet');
-  });
-
   it('type="oauth2" бросает not-implemented (stub)', () => {
     expect(() => {
       render(() => <AuthLogin type="oauth2" />, container);
@@ -149,40 +184,7 @@ describe('Auth.Login — discriminated union', () => {
   });
 });
 
-// ─── Тесты — defaultRole prop ──────────────────────────────────────────────────
-
-describe('Auth.Login — defaultRole', () => {
-  it('defaultRole задаёт первый элемент в стратегии (дефолтная роль)', () => {
-    cleanup = render(
-      () => (
-        <AuthLogin type="role" roles={testRoles} defaultRole="support">
-          <div />
-        </AuthLogin>
-      ),
-      container,
-    );
-
-    // Стратегия строится внутри: support идёт первым когда defaultRole='support'
-    // Проверяем через capturedSchema — strategy.defaults.role = 'support'
-    // (достигается тем что resolvedRoles[0].value = 'support')
-    expect(capturedSchema).not.toBeNull();
-  });
-
-  it('без defaultRole — дефолт первая роль из roles', () => {
-    cleanup = render(
-      () => (
-        <AuthLogin type="role" roles={testRoles}>
-          <div />
-        </AuthLogin>
-      ),
-      container,
-    );
-    // Стратегия строится внутри — первая роль = developer
-    expect(capturedSchema).not.toBeNull();
-  });
-});
-
-// ─── Тесты — FSM schema ───────────────────────────────────────────────────────
+// ─── Тесты — FSM schema (общая механика, role-арм) ────────────────────────────
 
 describe('Auth.Login — FSM schema', () => {
   it('initial state = "idle"', () => {
@@ -227,7 +229,7 @@ describe('Auth.Login — FSM schema', () => {
     capturedSchema.states.idle.onClick({
       target: { meta: { tags: ['submit'] } },
       state: mockState,
-      store: { patch: vi.fn(), values: vi.fn(() => ({})) },
+      store: makeStore(),
       emit: vi.fn(),
     });
 
@@ -248,14 +250,14 @@ describe('Auth.Login — FSM schema', () => {
     capturedSchema.states.idle.onClick({
       target: { meta: { tags: ['role'] } },
       state: mockState,
-      store: { patch: vi.fn(), values: vi.fn(() => ({})) },
+      store: makeStore(),
       emit: vi.fn(),
     });
 
     expect(mockState.set).not.toHaveBeenCalled();
   });
 
-  it('error.onClick с тегом "submit" → state.set("idle") + store.update errorMessage="" (retry)', () => {
+  it('error.onClick с тегом "submit" → state.set("idle") + errorMessage="" (retry)', () => {
     cleanup = render(
       () => (
         <AuthLogin type="role" roles={testRoles}>
@@ -266,7 +268,7 @@ describe('Auth.Login — FSM schema', () => {
     );
 
     const mockState = { set: vi.fn() };
-    const mockStore = { update: vi.fn(), patch: vi.fn(), values: vi.fn(() => ({})) };
+    const mockStore = makeStore();
     capturedSchema.states.error.onClick({
       target: { meta: { tags: ['submit'] } },
       state: mockState,
@@ -278,7 +280,7 @@ describe('Auth.Login — FSM schema', () => {
     expect(mockStore.update).toHaveBeenCalledWith({ errorMessage: '' });
   });
 
-  it('error.onInput → state.set("idle") + store.update errorMessage="" (clear-on-input)', () => {
+  it('error.onInput → state.set("idle") + errorMessage="" (clear-on-input)', () => {
     cleanup = render(
       () => (
         <AuthLogin type="role" roles={testRoles}>
@@ -289,7 +291,7 @@ describe('Auth.Login — FSM schema', () => {
     );
 
     const mockState = { set: vi.fn() };
-    const mockStore = { update: vi.fn(), patch: vi.fn(), values: vi.fn(() => ({})) };
+    const mockStore = makeStore();
     capturedSchema.states.error.onInput({
       target: {},
       state: mockState,
@@ -301,7 +303,7 @@ describe('Auth.Login — FSM schema', () => {
     expect(mockStore.update).toHaveBeenCalledWith({ errorMessage: '' });
   });
 
-  it('error.onChange → state.set("idle") + store.update errorMessage="" (clear-on-change для Select)', () => {
+  it('error.onChange → state.set("idle") + errorMessage="" (clear-on-change для Select)', () => {
     cleanup = render(
       () => (
         <AuthLogin type="role" roles={testRoles}>
@@ -312,7 +314,7 @@ describe('Auth.Login — FSM schema', () => {
     );
 
     const mockState = { set: vi.fn() };
-    const mockStore = { update: vi.fn(), patch: vi.fn(), values: vi.fn(() => ({})) };
+    const mockStore = makeStore();
     capturedSchema.states.error.onChange({
       target: {},
       state: mockState,
@@ -325,10 +327,10 @@ describe('Auth.Login — FSM schema', () => {
   });
 });
 
-// ─── Тесты — onLogin emit (через handler-API emit) ────────────────────────────
+// ─── Тесты — role-арм (legacy mock): onLogin без token ────────────────────────
 
-describe('Auth.Login — onLogin emit', () => {
-  it('успешный login → emit("onLogin") с token и user', async () => {
+describe('Auth.Login role — onLogin emit (v2)', () => {
+  it('успешный login → emit("onLogin") с { user }, БЕЗ token; token мока игнорируется', async () => {
     mockLogin.mockResolvedValue({ token: 'jwt-test', role: 'developer' });
 
     const sessionStore = createAuthSession();
@@ -343,16 +345,10 @@ describe('Auth.Login — onLogin emit', () => {
     );
 
     const mockEmit = vi.fn();
-    const mockStore = {
-      patch: vi.fn(),
-      update: vi.fn(),
-      values: vi.fn().mockReturnValue({ role: 'developer', password: '123' }),
-    };
     const mockState = { set: vi.fn() };
 
-    // emit передаётся через handler-API (IHandlerApi.emit) — не через useEmit-захват.
     await capturedSchema.states.submitting.onInit({
-      store: mockStore,
+      store: makeStore({ role: 'developer', password: '123' }),
       state: mockState,
       emit: mockEmit,
     });
@@ -360,16 +356,17 @@ describe('Auth.Login — onLogin emit', () => {
     expect(mockEmit).toHaveBeenCalledWith(
       'onLogin',
       expect.objectContaining({
-        payload: expect.objectContaining({
-          token: 'jwt-test',
-          user: expect.objectContaining({ role: 'developer' }),
-        }),
+        payload: { user: { role: 'developer' } },
       }),
     );
+    // token НЕ попадает ни в payload, ни в session (v2 cookie-first)
+    const payload = mockEmit.mock.calls.find((c) => c[0] === 'onLogin')?.[1]?.payload;
+    expect(payload).not.toHaveProperty('token');
 
     expect(mockState.set).toHaveBeenCalledWith('authed');
-    expect(sessionStore.session.token).toBe('jwt-test');
+    expect(sessionStore.session.user).toEqual({ role: 'developer' });
     expect(sessionStore.session.status).toBe('authed');
+    expect('token' in sessionStore.session).toBe(false);
   });
 
   it('api.auth.login получает роль и пароль из form-values', async () => {
@@ -385,14 +382,8 @@ describe('Auth.Login — onLogin emit', () => {
       container,
     );
 
-    const mockStore = {
-      patch: vi.fn(),
-      update: vi.fn(),
-      values: vi.fn().mockReturnValue({ role: 'support', password: 'secret' }),
-    };
-
     await capturedSchema.states.submitting.onInit({
-      store: mockStore,
+      store: makeStore({ role: 'support', password: 'secret' }),
       state: { set: vi.fn() },
       emit: vi.fn(),
     });
@@ -401,10 +392,8 @@ describe('Auth.Login — onLogin emit', () => {
   });
 });
 
-// ─── Тесты — onLoginError emit + error-state display ─────────────────────────
-
-describe('Auth.Login — onLoginError emit', () => {
-  it('ошибка login (role-стратегия) → emit("onLoginError") с rawMessage + store.update "Неверный пароль"', async () => {
+describe('Auth.Login role — onLoginError emit', () => {
+  it('ошибка login → emit rawMessage + форма «Неверный пароль» (role без поля логин)', async () => {
     mockLogin.mockRejectedValue(new Error('Invalid password'));
     const sessionStore = createAuthSession();
 
@@ -418,11 +407,7 @@ describe('Auth.Login — onLoginError emit', () => {
     );
 
     const mockEmit = vi.fn();
-    const mockStore = {
-      patch: vi.fn(),
-      update: vi.fn(),
-      values: vi.fn().mockReturnValue({ role: 'developer', password: 'wrong' }),
-    };
+    const mockStore = makeStore({ role: 'developer', password: 'wrong' });
     const mockState = { set: vi.fn() };
 
     await capturedSchema.states.submitting.onInit({
@@ -431,24 +416,20 @@ describe('Auth.Login — onLoginError emit', () => {
       emit: mockEmit,
     });
 
-    // emit несёт оригинальный rawMessage (для app-уровня)
     expect(mockEmit).toHaveBeenCalledWith(
       'onLoginError',
       expect.objectContaining({
         payload: expect.objectContaining({ message: 'Invalid password' }),
       }),
     );
-
-    // role-стратегия не имеет поля «логин» → сообщение «Неверный пароль», не «Неверный логин или пароль»
     expect(mockStore.update).toHaveBeenCalledWith(
       expect.objectContaining({ errorMessage: 'Неверный пароль' }),
     );
-
     expect(mockState.set).toHaveBeenCalledWith('error');
     expect(sessionStore.session.status).toBe('error');
   });
 
-  it('сетевая ошибка → дружелюбное "Не удалось подключиться к серверу"', async () => {
+  it('сетевая ошибка → «Не удалось подключиться к серверу»', async () => {
     mockLogin.mockRejectedValue(new Error('Network error'));
     const sessionStore = createAuthSession();
 
@@ -461,11 +442,7 @@ describe('Auth.Login — onLoginError emit', () => {
       container,
     );
 
-    const mockStore = {
-      patch: vi.fn(),
-      update: vi.fn(),
-      values: vi.fn().mockReturnValue({ role: 'developer', password: '' }),
-    };
+    const mockStore = makeStore({ role: 'developer', password: '' });
 
     await capturedSchema.states.submitting.onInit({
       store: mockStore,
@@ -478,8 +455,8 @@ describe('Auth.Login — onLoginError emit', () => {
     );
   });
 
-  it('неизвестная ошибка → дефолт "Не удалось войти. Попробуйте ещё раз."', async () => {
-    mockLogin.mockRejectedValue(new Error('Unexpected server error'));
+  it('неизвестная ошибка → дефолт «Не удалось войти. Попробуйте ещё раз.»', async () => {
+    mockLogin.mockRejectedValue(new Error('Unexpected server malfunction'));
     const sessionStore = createAuthSession();
 
     cleanup = render(
@@ -491,11 +468,7 @@ describe('Auth.Login — onLoginError emit', () => {
       container,
     );
 
-    const mockStore = {
-      patch: vi.fn(),
-      update: vi.fn(),
-      values: vi.fn().mockReturnValue({ role: 'developer', password: '' }),
-    };
+    const mockStore = makeStore({ role: 'developer', password: '' });
 
     await capturedSchema.states.submitting.onInit({
       store: mockStore,
@@ -509,28 +482,82 @@ describe('Auth.Login — onLoginError emit', () => {
   });
 });
 
-// ─── Тесты — per-strategy invalid-credentials copy ───────────────────────────
+// ─── Тесты — credentials-арм (cookie-флоу) ────────────────────────────────────
 
-describe('Auth.Login — per-strategy invalid-credentials copy', () => {
-  it('role-стратегия: invalid-creds → "Неверный пароль" (нет поля логин)', async () => {
-    // "wrong" → срабатывает invalid-creds ветка mapAuthError
-    mockLogin.mockRejectedValue(new Error('wrong password'));
-    const sessionStore = createAuthSession();
-
+describe('Auth.Login credentials — cookie-флоу', () => {
+  const renderCredentials = (
+    sessionStore: ReturnType<typeof createAuthSession>,
+    apiBase?: string,
+  ) => {
     cleanup = render(
       () => (
-        <AuthLogin type="role" roles={testRoles} sessionStore={sessionStore}>
+        <AuthLogin type="credentials" sessionStore={sessionStore} apiBase={apiBase}>
           <div />
         </AuthLogin>
       ),
       container,
     );
+  };
 
-    const mockStore = {
-      patch: vi.fn(),
-      update: vi.fn(),
-      values: vi.fn().mockReturnValue({ role: 'developer', password: 'wrong' }),
-    };
+  it('успешный login → loginRequest({login,password}, apiBase) + session.login(user) + emit onLogin', async () => {
+    mockLoginRequest.mockResolvedValue(USER);
+    const sessionStore = createAuthSession();
+    renderCredentials(sessionStore, '/gateway');
+
+    const mockEmit = vi.fn();
+    const mockState = { set: vi.fn() };
+
+    await capturedSchema.states.submitting.onInit({
+      store: makeStore({ login: 'alice', password: 'secret123' }),
+      state: mockState,
+      emit: mockEmit,
+    });
+
+    expect(mockLoginRequest).toHaveBeenCalledWith(
+      { login: 'alice', password: 'secret123' },
+      '/gateway',
+    );
+    expect(sessionStore.session.user).toEqual(USER);
+    expect(sessionStore.session.status).toBe('authed');
+    expect(mockState.set).toHaveBeenCalledWith('authed');
+    expect(mockEmit).toHaveBeenCalledWith(
+      'onLogin',
+      expect.objectContaining({ payload: { user: USER } }),
+    );
+  });
+
+  it('401 (InvalidCredentialsError) → «Неверный логин или пароль»', async () => {
+    mockLoginRequest.mockRejectedValue(new InvalidCredentialsError());
+    const sessionStore = createAuthSession();
+    renderCredentials(sessionStore);
+
+    const mockStore = makeStore({ login: 'alice', password: 'wrong' });
+    const mockEmit = vi.fn();
+
+    await capturedSchema.states.submitting.onInit({
+      store: mockStore,
+      state: { set: vi.fn() },
+      emit: mockEmit,
+    });
+
+    expect(mockStore.update).toHaveBeenCalledWith(
+      expect.objectContaining({ errorMessage: 'Неверный логин или пароль' }),
+    );
+    expect(mockEmit).toHaveBeenCalledWith(
+      'onLoginError',
+      expect.objectContaining({
+        payload: expect.objectContaining({ message: 'invalid credentials' }),
+      }),
+    );
+    expect(sessionStore.session.status).toBe('error');
+  });
+
+  it('network-failure (TypeError) → «Не удалось подключиться к серверу»', async () => {
+    mockLoginRequest.mockRejectedValue(new TypeError('Failed to fetch'));
+    const sessionStore = createAuthSession();
+    renderCredentials(sessionStore);
+
+    const mockStore = makeStore({ login: 'alice', password: 'x' });
 
     await capturedSchema.states.submitting.onInit({
       store: mockStore,
@@ -539,28 +566,103 @@ describe('Auth.Login — per-strategy invalid-credentials copy', () => {
     });
 
     expect(mockStore.update).toHaveBeenCalledWith(
-      expect.objectContaining({ errorMessage: 'Неверный пароль' }),
+      expect.objectContaining({ errorMessage: 'Не удалось подключиться к серверу' }),
     );
   });
 
-  it('role-стратегия: 401-ошибка → "Неверный пароль" (не "Неверный логин или пароль")', async () => {
-    mockLogin.mockRejectedValue(new Error('401 Unauthorized'));
+  it('loading-стейт: @submit loading + @input disabled на время запроса', async () => {
+    mockLoginRequest.mockResolvedValue(USER);
     const sessionStore = createAuthSession();
+    renderCredentials(sessionStore);
 
+    const mockStore = makeStore({ login: 'alice', password: 'secret123' });
+
+    await capturedSchema.states.submitting.onInit({
+      store: mockStore,
+      state: { set: vi.fn() },
+      emit: vi.fn(),
+    });
+
+    expect(mockStore.patch).toHaveBeenCalledWith(['@submit'], { loading: true });
+    expect(mockStore.patch).toHaveBeenCalledWith(['@input'], { disabled: true });
+    expect(mockStore.patch).toHaveBeenCalledWith(['@submit'], { loading: false });
+    expect(mockStore.patch).toHaveBeenCalledWith(['@input'], { disabled: false });
+  });
+});
+
+// ─── Тесты — Auth.Register ────────────────────────────────────────────────────
+
+describe('Auth.Register — cookie-флоу', () => {
+  const renderRegister = (sessionStore: ReturnType<typeof createAuthSession>, apiBase?: string) => {
     cleanup = render(
       () => (
-        <AuthLogin type="role" roles={testRoles} sessionStore={sessionStore}>
+        <AuthRegister sessionStore={sessionStore} apiBase={apiBase}>
           <div />
-        </AuthLogin>
+        </AuthRegister>
       ),
       container,
     );
+  };
 
-    const mockStore = {
-      patch: vi.fn(),
-      update: vi.fn(),
-      values: vi.fn().mockReturnValue({ role: 'developer', password: '' }),
-    };
+  it('пароли не совпадают → ошибка БЕЗ сетевого запроса', async () => {
+    const sessionStore = createAuthSession();
+    renderRegister(sessionStore);
+
+    const mockStore = makeStore({ login: 'alice', password: 'secret123', confirm: 'other' });
+    const mockState = { set: vi.fn() };
+    const mockEmit = vi.fn();
+
+    await capturedSchema.states.submitting.onInit({
+      store: mockStore,
+      state: mockState,
+      emit: mockEmit,
+    });
+
+    expect(mockRegisterRequest).not.toHaveBeenCalled();
+    expect(mockStore.update).toHaveBeenCalledWith(
+      expect.objectContaining({ errorMessage: 'Пароли не совпадают' }),
+    );
+    expect(mockState.set).toHaveBeenCalledWith('error');
+    expect(mockEmit).toHaveBeenCalledWith(
+      'onLoginError',
+      expect.objectContaining({
+        payload: expect.objectContaining({ message: 'passwords do not match' }),
+      }),
+    );
+  });
+
+  it('успешная регистрация → registerRequest + session.login(user) + emit onLogin', async () => {
+    mockRegisterRequest.mockResolvedValue(USER);
+    const sessionStore = createAuthSession();
+    renderRegister(sessionStore, '/api');
+
+    const mockEmit = vi.fn();
+    const mockState = { set: vi.fn() };
+
+    await capturedSchema.states.submitting.onInit({
+      store: makeStore({ login: 'alice', password: 'secret123', confirm: 'secret123' }),
+      state: mockState,
+      emit: mockEmit,
+    });
+
+    expect(mockRegisterRequest).toHaveBeenCalledWith(
+      { login: 'alice', password: 'secret123' },
+      '/api',
+    );
+    expect(sessionStore.session.user).toEqual(USER);
+    expect(sessionStore.session.status).toBe('authed');
+    expect(mockEmit).toHaveBeenCalledWith(
+      'onLogin',
+      expect.objectContaining({ payload: { user: USER } }),
+    );
+  });
+
+  it('409 (LoginTakenError) → «Логин уже занят»', async () => {
+    mockRegisterRequest.mockRejectedValue(new LoginTakenError());
+    const sessionStore = createAuthSession();
+    renderRegister(sessionStore);
+
+    const mockStore = makeStore({ login: 'taken', password: 'secret123', confirm: 'secret123' });
 
     await capturedSchema.states.submitting.onInit({
       store: mockStore,
@@ -569,25 +671,9 @@ describe('Auth.Login — per-strategy invalid-credentials copy', () => {
     });
 
     expect(mockStore.update).toHaveBeenCalledWith(
-      expect.objectContaining({ errorMessage: 'Неверный пароль' }),
+      expect.objectContaining({ errorMessage: 'Логин уже занят' }),
     );
-    // Явно проверяем что НЕ "Неверный логин или пароль"
-    const call = mockStore.update.mock.calls.find((c: any[]) => c[0]?.errorMessage);
-    expect(call?.[0]?.errorMessage).not.toBe('Неверный логин или пароль');
-  });
-
-  it('credentials-стратегия (будущее): дефолт "Неверный логин или пароль" при отсутствии invalidCredentialsMessage', async () => {
-    // Проверяем дефолтное поведение mapAuthError через role-стратегию без invalidCredentialsMessage.
-    // Имитируем стратегию без поля — напрямую через capturedSchema (захваченный Feature).
-    // Подход: рендерим role, но затем вручную тестируем что стратегия с id='credentials'
-    // и WITHOUT invalidCredentialsMessage вернёт дефолт. Это unit-уровень mapAuthError:
-    // при отсутствии поля — дефолт 'Неверный логин или пароль'.
-    //
-    // Полный тест будет добавлен при реализации credentials-стратегии.
-    // Здесь проверяем контракт roleStrategy.invalidCredentialsMessage напрямую.
-    const { roleStrategy } = await import('../../role/index');
-    const strategy = roleStrategy({ roles: testRoles });
-    expect(strategy.invalidCredentialsMessage).toBe('Неверный пароль');
+    expect(sessionStore.session.status).toBe('error');
   });
 });
 
@@ -596,7 +682,7 @@ describe('Auth.Login — per-strategy invalid-credentials copy', () => {
 describe('Auth.Login — onLogout', () => {
   it('authed.onLogout → emit("onLogout") + сессия сброшена + state=idle', () => {
     const sessionStore = createAuthSession();
-    sessionStore.login('jwt-xyz', { role: 'developer' });
+    sessionStore.login({ role: 'developer' });
 
     cleanup = render(
       () => (
@@ -610,7 +696,6 @@ describe('Auth.Login — onLogout', () => {
     const mockEmit = vi.fn();
     const mockState = { set: vi.fn() };
 
-    // emit передаётся через handler-API — не через useEmit.
     capturedSchema.states.authed.onLogout({
       target: {},
       state: mockState,
@@ -619,7 +704,7 @@ describe('Auth.Login — onLogout', () => {
 
     expect(mockEmit).toHaveBeenCalledWith('onLogout', {});
     expect(mockState.set).toHaveBeenCalledWith('idle');
-    expect(sessionStore.session.token).toBeNull();
+    expect(sessionStore.session.user).toBeNull();
     expect(sessionStore.session.status).toBe('idle');
   });
 });

@@ -2,7 +2,12 @@ import { cn } from '@capsuletech/web-style';
 import { children, createMemo, For, type JSX, Show } from 'solid-js';
 import { useTrace } from '../../../internal/useTrace';
 import { ResizableHandle, ResizablePanel, ResizableRoot } from './_resize/primitives';
-import type { IResizableItem, IResizableProps, ResizableOrientation } from './interfaces';
+import type {
+  IResizableItem,
+  IResizableProps,
+  ResizableHandleVariant,
+  ResizableOrientation,
+} from './interfaces';
 
 // fillInitialSizes — 1:1 из flex.tsx.
 const fillInitialSizes = (items: IResizableItem[]): number[] => {
@@ -13,6 +18,12 @@ const fillInitialSizes = (items: IResizableItem[]): number[] => {
   const auto = missing > 0 ? remainder / missing : 0;
   return declared.map((v) => v ?? auto);
 };
+
+// handleActive: boolean | Accessor<boolean>, default true.
+// Вызов accessor'а внутри реактивного скоупа (JSX-проп handle'а) — live-флип
+// меняет только классы/поведение handle, панели не пересоздаются.
+const resolveHandleActive = (v: IResizableItem['handleActive']): boolean =>
+  (typeof v === 'function' ? v() : v) !== false;
 
 // Children-mode helper: JSX children → IResizableItem[].
 // Каждый top-level child становится панелью с resizable=true (без initialSize → auto-distribute).
@@ -29,6 +40,7 @@ const ResizableInner = (props: {
   orientation: ResizableOrientation;
   withHandle?: boolean;
   handleDisabled?: boolean;
+  handleVariant?: ResizableHandleVariant;
   class?: string;
   onSizesChange?: (sizes: number[]) => void;
 }) => {
@@ -61,8 +73,12 @@ const ResizableInner = (props: {
             >
               <ResizableHandle
                 withHandle={props.withHandle}
-                disabled={props.handleDisabled}
-                classList={{ 'pointer-events-none': !!props.handleDisabled }}
+                variant={props.handleVariant}
+                active={
+                  !props.handleDisabled &&
+                  resolveHandleActive(item.handleActive) &&
+                  resolveHandleActive(items()[index() + 1]?.handleActive)
+                }
               />
             </Show>
           </>
@@ -146,6 +162,7 @@ export const Resizable = (props: IResizableProps) => {
         orientation={orientation()}
         withHandle={props.withHandle}
         handleDisabled={props.handleDisabled}
+        handleVariant={props.handleVariant}
         class={props.class}
         onSizesChange={props.onSizesChange}
       />

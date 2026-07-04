@@ -16,6 +16,7 @@ import type { ICell, IRow, LayoutChangeEvent, MatrixDndKind } from './interfaces
 import { renderRow } from './rows/flex-row';
 import type { IGridOpts } from './rows/grid-row';
 import { MatrixPresetContext, MatrixSlot, traceSlotRender } from './slot';
+import { dividerBetweenRows, rowResizeActive } from './utils';
 
 // ---------------------------------------------------------------------------
 // SizesMap — session-only persistence of user-resized panel sizes.
@@ -90,6 +91,12 @@ const rowsToVerticalItems = (
     const resolvedHeight =
       savedVerticalSizes?.[i] ?? (heightIsNumber ? (row.height as number) : undefined);
     const zone = getZone && row.id ? getZone(row.id) : undefined;
+    // Divider над row (i>0): пара bordered (either-rule). Resize на
+    // разделители не влияет — ручки ghost (без своей линии).
+    const prevRow = i > 0 ? rows[i - 1] : undefined;
+    const topDivider = prevRow
+      ? (): boolean => dividerBetweenRows(prevRow, row, bordered)
+      : undefined;
     return {
       children: renderRow(
         row,
@@ -106,8 +113,12 @@ const rowsToVerticalItems = (
         setCellSize,
         gridOpts,
         bordered,
+        topDivider,
       ),
+      // Структурный флаг (handle в DOM); АКТИВНОСТЬ — per-item handleActive,
+      // явный row.resizable оверрайдит mode/global (пер-слот контракт 2026-07-04).
       resizable: isResizable,
+      handleActive: (): boolean => rowResizeActive(row, resizeEnabled),
       initialSize: resolvedHeight,
       minSize: row.minHeight,
     };
@@ -126,8 +137,14 @@ export const MatrixContent = (props: IMatrixContentProps) => {
   const isDragging = createMemo(() => dnd.state.activeId() !== null);
 
   // DnD gating by both enabled flag and kind.
-  const swapEnabled = createMemo(() => props.dndEnabled() && props.dndKind() === 'swap');
   const insertEnabled = createMemo(() => props.dndEnabled() && props.dndKind() === 'insert');
+
+  // Per-cell swap-DnD resolution (precedence: cell.draggable > mode > global).
+  // `props.dndEnabled` already folds mode/global precedence (see mode.ts);
+  // an explicit `cell.draggable` overrides that resolved state for its cell.
+  // Reads signals at call time — passed into swap-engine memos, stays reactive.
+  const isCellSwapEnabled = (cell: ICell): boolean =>
+    (cell.draggable ?? props.dndEnabled()) && props.dndKind() === 'swap';
 
   const sizesSnapshot: SizesMap = {};
 
@@ -165,7 +182,7 @@ export const MatrixContent = (props: IMatrixContentProps) => {
 
   const swap = createSwapEngine({
     rows: props.rows,
-    enabled: swapEnabled,
+    isCellEnabled: isCellSwapEnabled,
     onLayoutChange: props.onLayoutChange,
   });
 
@@ -174,11 +191,6 @@ export const MatrixContent = (props: IMatrixContentProps) => {
     enabled: insertEnabled,
     onLayoutChange: props.onLayoutChange,
   });
-
-  // Badge shown only when DnD/swap is active and 2+ draggable cells exist.
-  const showBadges = createMemo(
-    () => props.dndEnabled() && swap.draggableCount >= 2 && props.dndKind() === 'swap',
-  );
 
   const effectiveRows = createMemo(() =>
     props.dndKind() === 'insert' ? insert.rows() : props.rows(),
@@ -197,17 +209,17 @@ export const MatrixContent = (props: IMatrixContentProps) => {
   // and lost inner state (e.g. accordion open-state). With a stable shape per
   // cell-identity, toggling DnD only flips overlay/badge visibility.
   const getCellDndState = (cell: ICell): ICellDndState | undefined => {
-    if (!(cell.draggable ?? true)) return undefined;
+    if (cell.draggable === false) return undefined;
     const { isOver, canDrop, canAccept } = swap.getCellDropState(cell.id);
     return {
       draggableId: swap.getDraggableId(cell.id),
       isOver,
       canDrop,
       canAccept,
-      // `showBadges` already encodes (dndEnabled && kind==='swap' && count>=2)
-      // reactively — pass the accessor through so badge mount/unmount is a
-      // local <Show> flip, not a cell re-render.
-      showBadge: showBadges,
+      // Per-cell + group-aware: cell enabled AND an enabled same-group partner
+      // exists. Reactive accessor — badge mount/unmount is a local <Show>
+      // flip, not a cell re-render.
+      showBadge: swap.getShowBadge(cell.id),
     };
   };
 
@@ -297,131 +309,77 @@ export const MatrixContent = (props: IMatrixContentProps) => {
       <Switch>
         <Match when={effectiveRows().length === 0}>{null}</Match>
 
-      {/* Branch 1: centroid shortcut (single non-resizable cell). */}
-      <Match when={isCentroid()}>
-        {(() => {
-          const rs = effectiveRows();
-          const row = rs[0];
-          const cell = row.cells[0];
-          const cellRef = cell.draggable !== false ? swapBind(cell, row.id) : NOOP_REF;
-          const dndState = cell.draggable !== false ? cellDndState(cell) : undefined;
-          const children = (): JSX.Element => {
-            traceSlotRender(cell.id);
-            const getSwapped = swapGetChildren();
-            return getSwapped ? getSwapped(cell.id) : cell.children;
-          };
-          return (
-            <div ref={cellRef} class="relative flex h-full w-full items-center justify-center">
-              <div
-                class="absolute inset-0 overflow-auto flex items-center justify-center"
-                classList={{ 'pointer-events-none': isDragging() }}
-              >
-                <MatrixSlot slot={cell.id}>
-                  <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>
-                    {children()}
-                  </Suspense>
-                </MatrixSlot>
-              </div>
-              <Show
-                when={dndState && (dndState.canAccept() || dndState.canDrop() || dndState.isOver())}
-              >
-                <div
-                  class="pointer-events-none absolute inset-0 z-30 transition-colors duration-150"
-                  classList={{
-                    'border-2 border-primary/30 bg-primary/5':
-                      (dndState?.canAccept() ?? false) && !(dndState?.canDrop() ?? false),
-                    'border-2 border-primary bg-primary/15': dndState?.canDrop() ?? false,
-                    'border-2 border-border':
-                      (dndState?.isOver() ?? false) &&
-                      !(dndState?.canDrop() ?? false) &&
-                      !(dndState?.canAccept() ?? false),
-                  }}
-                />
-              </Show>
-              <Show when={dndState?.showBadge() ?? false}>
-                <DragBadge draggableId={dndState!.draggableId} />
-              </Show>
-            </div>
-          );
-        })()}
-      </Match>
-
-      {/* Branch 2a: direction=horizontal + resizable zones (corvu Flex). */}
-      <Match when={isHorizontal() && hasHorizontalResizableZones()}>
-        {(() => {
-          const rs = effectiveRows();
-          const zoneItems = rs.map((row, i): IResizable.IResizableItem => {
-            const rowKey = row.id ?? `r${i}`;
-            const getZoneFn = insertGetZone();
-            const zone = getZoneFn && row.id ? getZoneFn(row.id) : undefined;
-            const widthFraction = typeof row.height === 'number' ? row.height : undefined;
-            return {
-              children: (
-                <div class="relative h-full min-w-0 flex-1 overflow-hidden">
-                  {renderRow(
-                    row,
-                    swapGetChildren(),
-                    swapBind,
-                    zone,
-                    cellDndState,
-                    getRowSavedSizes(rowKey),
-                    (sizes) => onRowSizesChange(rowKey, sizes),
-                    isDragging,
-                    props.resizeEnabled,
-                    props.dndEnabled,
-                    getCellSize,
-                    setCellSize,
-                    insertGridOpts(),
-                    props.bordered,
-                  )}
-                </div>
-              ),
-              resizable: row.resizable ?? false,
-              initialSize: getSavedSizes(`hz:${rowKey}`)?.[0] ?? widthFraction,
-              minSize: row.minHeight,
+        {/* Branch 1: centroid shortcut (single non-resizable cell). */}
+        <Match when={isCentroid()}>
+          {(() => {
+            const rs = effectiveRows();
+            const row = rs[0];
+            const cell = row.cells[0];
+            const cellRef = cell.draggable !== false ? swapBind(cell, row.id) : NOOP_REF;
+            const dndState = cell.draggable !== false ? cellDndState(cell) : undefined;
+            const children = (): JSX.Element => {
+              traceSlotRender(cell.id);
+              const getSwapped = swapGetChildren();
+              return getSwapped ? getSwapped(cell.id) : cell.children;
             };
-          });
-          return (
-            <div class="relative h-full w-full overflow-hidden">
-              <div class="absolute inset-0">
-                <Layout.Resizable
-                  orientation="horizontal"
-                  items={zoneItems}
-                  withHandle={props.resizeEnabled()}
-                  handleDisabled={!props.resizeEnabled()}
-                  onSizesChange={(sizes) => {
-                    for (let k = 0; k < rs.length; k++) {
-                      const rk = rs[k].id ?? `r${k}`;
-                      if (sizes[k] !== undefined) saveSizes(`hz:${rk}`, [sizes[k]]);
-                    }
-                  }}
-                />
+            return (
+              <div ref={cellRef} class="relative flex h-full w-full items-center justify-center">
+                <div
+                  class="absolute inset-0 overflow-auto flex items-center justify-center"
+                  classList={{ 'pointer-events-none': isDragging() }}
+                >
+                  <MatrixSlot slot={cell.id}>
+                    <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>
+                      {children()}
+                    </Suspense>
+                  </MatrixSlot>
+                </div>
+                <Show
+                  when={
+                    dndState && (dndState.canAccept() || dndState.canDrop() || dndState.isOver())
+                  }
+                >
+                  <div
+                    class="pointer-events-none absolute inset-0 z-30 transition-colors duration-150"
+                    classList={{
+                      'border-2 border-primary/30 bg-primary/5':
+                        (dndState?.canAccept() ?? false) && !(dndState?.canDrop() ?? false),
+                      'border-2 border-primary bg-primary/15': dndState?.canDrop() ?? false,
+                      'border-2 border-border':
+                        (dndState?.isOver() ?? false) &&
+                        !(dndState?.canDrop() ?? false) &&
+                        !(dndState?.canAccept() ?? false),
+                    }}
+                  />
+                </Show>
+                <Show when={dndState?.showBadge() ?? false}>
+                  <DragBadge draggableId={dndState!.draggableId} />
+                </Show>
               </div>
-            </div>
-          );
-        })()}
-      </Match>
+            );
+          })()}
+        </Match>
 
-      {/* Branch 2b: direction=horizontal + no resizable zones (plain flex-row). */}
-      <Match when={isHorizontal()}>
-        <div class="relative h-full w-full overflow-hidden">
-          <div class="absolute inset-0 flex flex-row overflow-hidden">
-            <For each={effectiveRows()}>
-              {(row, i) => {
-                const rowKey = row.id ?? `r${i()}`;
-                const getZoneFn = insertGetZone();
-                const zone = getZoneFn && row.id ? getZoneFn(row.id) : undefined;
-                const colStyle = (): JSX.CSSProperties => {
-                  if (row.height === 'auto') {
-                    return { flex: '0 0 auto', 'min-width': '0' };
-                  }
-                  if (typeof row.height === 'number') {
-                    return { flex: `0 0 ${row.height * 100}%`, 'min-width': '0' };
-                  }
-                  return { flex: '1', 'min-width': '0' };
-                };
-                return (
-                  <div class="relative h-full overflow-hidden" style={colStyle()}>
+        {/* Branch 2a: direction=horizontal + resizable zones (corvu Flex). */}
+        <Match when={isHorizontal() && hasHorizontalResizableZones()}>
+          {(() => {
+            const rs = effectiveRows();
+            const zoneItems = rs.map((row, i): IResizable.IResizableItem => {
+              const rowKey = row.id ?? `r${i}`;
+              const getZoneFn = insertGetZone();
+              const zone = getZoneFn && row.id ? getZoneFn(row.id) : undefined;
+              const widthFraction = typeof row.height === 'number' ? row.height : undefined;
+              // Divider слева от зоны (i>0): пара bordered (either-rule).
+              const prevZone = i > 0 ? rs[i - 1] : undefined;
+              const zoneDivider = prevZone
+                ? (): boolean => dividerBetweenRows(prevZone, row, props.bordered)
+                : undefined;
+              return {
+                children: (
+                  <div
+                    class="relative h-full min-w-0 flex-1 overflow-hidden"
+                    classList={{ 'border-l border-border/60': zoneDivider ? zoneDivider() : false }}
+                  >
                     {renderRow(
                       row,
                       swapGetChildren(),
@@ -439,129 +397,159 @@ export const MatrixContent = (props: IMatrixContentProps) => {
                       props.bordered,
                     )}
                   </div>
-                );
-              }}
-            </For>
-          </div>
-        </div>
-      </Match>
-
-      {/* Branch 3a: vertical resizable + no auto rows (single vertical Flex). */}
-      <Match when={useVertical() && !hasAutoRows()}>
-        {(() => {
-          const rs = effectiveRows();
-          const verticalItems = rowsToVerticalItems(
-            rs,
-            swapGetChildren(),
-            swapBind,
-            insertGetZone(),
-            cellDndState,
-            getSavedSizes('v'),
-            getRowSavedSizes,
-            onRowSizesChange,
-            isDragging,
-            props.resizeEnabled,
-            props.dndEnabled,
-            getCellSize,
-            setCellSize,
-            insertGridOpts(),
-            props.bordered,
-          );
-          return (
-            <div class="relative h-full w-full overflow-hidden">
-              <div class="absolute inset-0">
-                <Layout.Resizable
-                  orientation="vertical"
-                  items={verticalItems}
-                  withHandle={props.resizeEnabled()}
-                  handleDisabled={!props.resizeEnabled()}
-                  onSizesChange={onVerticalSizesChange}
-                />
-              </div>
-            </div>
-          );
-        })()}
-      </Match>
-
-      {/* Branch 3b: vertical resizable + mixed auto rows. */}
-      <Match when={useVertical() && hasAutoRows()}>
-        {(() => {
-          const rs = effectiveRows();
-          const resizableRows = rs.filter((r) => r.height !== 'auto');
-          const verticalItems = rowsToVerticalItems(
-            resizableRows,
-            swapGetChildren(),
-            swapBind,
-            insertGetZone(),
-            cellDndState,
-            getSavedSizes('v'),
-            getRowSavedSizes,
-            onRowSizesChange,
-            isDragging,
-            props.resizeEnabled,
-            props.dndEnabled,
-            getCellSize,
-            setCellSize,
-            insertGridOpts(),
-            props.bordered,
-          );
-          let resizableBlockEmitted = false;
-          const elements: JSX.Element[] = rs.map((row, _i) => {
-            if (row.height === 'auto') {
-              const rowKey = row.id ?? `r${_i}`;
-              const getZoneFn = insertGetZone();
-              const zone = getZoneFn && row.id ? getZoneFn(row.id) : undefined;
-              return (
-                <div class="w-full shrink-0">
-                  {renderRow(
-                    row,
-                    swapGetChildren(),
-                    swapBind,
-                    zone,
-                    cellDndState,
-                    getRowSavedSizes(rowKey),
-                    (sizes) => onRowSizesChange(rowKey, sizes),
-                    isDragging,
-                    props.resizeEnabled,
-                    props.dndEnabled,
-                    getCellSize,
-                    setCellSize,
-                    insertGridOpts(),
-                    props.bordered,
-                  )}
-                </div>
-              );
-            }
-            if (resizableBlockEmitted) return null;
-            resizableBlockEmitted = true;
+                ),
+                resizable: row.resizable ?? false,
+                handleActive: (): boolean => rowResizeActive(row, props.resizeEnabled),
+                initialSize: getSavedSizes(`hz:${rowKey}`)?.[0] ?? widthFraction,
+                minSize: row.minHeight,
+              };
+            });
             return (
-              <div class="relative min-h-0 flex-1 overflow-hidden">
+              <div class="relative h-full w-full overflow-hidden">
+                <div class="absolute inset-0">
+                  <Layout.Resizable
+                    orientation="horizontal"
+                    items={zoneItems}
+                    withHandle
+                    handleVariant="ghost"
+                    onSizesChange={(sizes) => {
+                      for (let k = 0; k < rs.length; k++) {
+                        const rk = rs[k].id ?? `r${k}`;
+                        if (sizes[k] !== undefined) saveSizes(`hz:${rk}`, [sizes[k]]);
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            );
+          })()}
+        </Match>
+
+        {/* Branch 2b: direction=horizontal + no resizable zones (plain flex-row). */}
+        <Match when={isHorizontal()}>
+          <div class="relative h-full w-full overflow-hidden">
+            <div class="absolute inset-0 flex flex-row overflow-hidden">
+              <For each={effectiveRows()}>
+                {(row, i) => {
+                  const rowKey = row.id ?? `r${i()}`;
+                  const getZoneFn = insertGetZone();
+                  const zone = getZoneFn && row.id ? getZoneFn(row.id) : undefined;
+                  const colStyle = (): JSX.CSSProperties => {
+                    if (row.height === 'auto') {
+                      return { flex: '0 0 auto', 'min-width': '0' };
+                    }
+                    if (typeof row.height === 'number') {
+                      return { flex: `0 0 ${row.height * 100}%`, 'min-width': '0' };
+                    }
+                    return { flex: '1', 'min-width': '0' };
+                  };
+                  const prevZone = i() > 0 ? effectiveRows()[i() - 1] : undefined;
+                  const zoneDivider = prevZone
+                    ? (): boolean => dividerBetweenRows(prevZone, row, props.bordered)
+                    : undefined;
+                  return (
+                    <div
+                      class="relative h-full overflow-hidden"
+                      style={colStyle()}
+                      classList={{
+                        'border-l border-border/60': zoneDivider ? zoneDivider() : false,
+                      }}
+                    >
+                      {renderRow(
+                        row,
+                        swapGetChildren(),
+                        swapBind,
+                        zone,
+                        cellDndState,
+                        getRowSavedSizes(rowKey),
+                        (sizes) => onRowSizesChange(rowKey, sizes),
+                        isDragging,
+                        props.resizeEnabled,
+                        props.dndEnabled,
+                        getCellSize,
+                        setCellSize,
+                        insertGridOpts(),
+                        props.bordered,
+                      )}
+                    </div>
+                  );
+                }}
+              </For>
+            </div>
+          </div>
+        </Match>
+
+        {/* Branch 3a: vertical resizable + no auto rows (single vertical Flex). */}
+        <Match when={useVertical() && !hasAutoRows()}>
+          {(() => {
+            const rs = effectiveRows();
+            const verticalItems = rowsToVerticalItems(
+              rs,
+              swapGetChildren(),
+              swapBind,
+              insertGetZone(),
+              cellDndState,
+              getSavedSizes('v'),
+              getRowSavedSizes,
+              onRowSizesChange,
+              isDragging,
+              props.resizeEnabled,
+              props.dndEnabled,
+              getCellSize,
+              setCellSize,
+              insertGridOpts(),
+              props.bordered,
+            );
+            return (
+              <div class="relative h-full w-full overflow-hidden">
                 <div class="absolute inset-0">
                   <Layout.Resizable
                     orientation="vertical"
                     items={verticalItems}
-                    withHandle={props.resizeEnabled()}
-                    handleDisabled={!props.resizeEnabled()}
+                    withHandle
+                    handleVariant="ghost"
                     onSizesChange={onVerticalSizesChange}
                   />
                 </div>
               </div>
             );
-          });
-          return <div class="flex h-full w-full flex-col overflow-hidden">{elements}</div>;
-        })()}
-      </Match>
+          })()}
+        </Match>
 
-      {/* Branch 4 (default): plain vertical flex-col (no vertical resize). */}
-      <Match when={true}>
-        <div class="flex h-full w-full flex-col overflow-hidden">
-          <For each={effectiveRows()}>
-            {(row, i) => {
-              const rowKey = row.id ?? `r${i()}`;
-              const getZoneFn = insertGetZone();
-              const zone = getZoneFn && row.id ? getZoneFn(row.id) : undefined;
-              const rowsSnap = effectiveRows();
-              if (row.height === 'auto' || (row.height === undefined && rowsSnap.length > 1)) {
+        {/* Branch 3b: vertical resizable + mixed auto rows. */}
+        <Match when={useVertical() && hasAutoRows()}>
+          {(() => {
+            const rs = effectiveRows();
+            const resizableRows = rs.filter((r) => r.height !== 'auto');
+            const verticalItems = rowsToVerticalItems(
+              resizableRows,
+              swapGetChildren(),
+              swapBind,
+              insertGetZone(),
+              cellDndState,
+              getSavedSizes('v'),
+              getRowSavedSizes,
+              onRowSizesChange,
+              isDragging,
+              props.resizeEnabled,
+              props.dndEnabled,
+              getCellSize,
+              setCellSize,
+              insertGridOpts(),
+              props.bordered,
+            );
+            let resizableBlockEmitted = false;
+            const elements: JSX.Element[] = rs.map((row, _i) => {
+              // Divider между соседними элементами вертикальной последовательности;
+              // внутри corvu-блока дивайдеры считает rowsToVerticalItems.
+              const prevRow = _i > 0 ? rs[_i - 1] : undefined;
+              const topDivider = prevRow
+                ? (): boolean => dividerBetweenRows(prevRow, row, props.bordered)
+                : undefined;
+              if (row.height === 'auto') {
+                const rowKey = row.id ?? `r${_i}`;
+                const getZoneFn = insertGetZone();
+                const zone = getZoneFn && row.id ? getZoneFn(row.id) : undefined;
                 return (
                   <div class="w-full shrink-0">
                     {renderRow(
@@ -579,30 +567,90 @@ export const MatrixContent = (props: IMatrixContentProps) => {
                       setCellSize,
                       insertGridOpts(),
                       props.bordered,
+                      topDivider,
                     )}
                   </div>
                 );
               }
-              return renderRow(
-                row,
-                swapGetChildren(),
-                swapBind,
-                zone,
-                cellDndState,
-                getRowSavedSizes(rowKey),
-                (sizes) => onRowSizesChange(rowKey, sizes),
-                isDragging,
-                props.resizeEnabled,
-                props.dndEnabled,
-                getCellSize,
-                setCellSize,
-                insertGridOpts(),
-                props.bordered,
+              if (resizableBlockEmitted) return null;
+              resizableBlockEmitted = true;
+              return (
+                <div
+                  class="relative min-h-0 flex-1 overflow-hidden"
+                  classList={{ 'border-t border-border/60': topDivider ? topDivider() : false }}
+                >
+                  <div class="absolute inset-0">
+                    <Layout.Resizable
+                      orientation="vertical"
+                      items={verticalItems}
+                      withHandle
+                      onSizesChange={onVerticalSizesChange}
+                    />
+                  </div>
+                </div>
               );
-            }}
-          </For>
-        </div>
-      </Match>
+            });
+            return <div class="flex h-full w-full flex-col overflow-hidden">{elements}</div>;
+          })()}
+        </Match>
+
+        {/* Branch 4 (default): plain vertical flex-col (no vertical resize). */}
+        <Match when={true}>
+          <div class="flex h-full w-full flex-col overflow-hidden">
+            <For each={effectiveRows()}>
+              {(row, i) => {
+                const rowKey = row.id ?? `r${i()}`;
+                const getZoneFn = insertGetZone();
+                const zone = getZoneFn && row.id ? getZoneFn(row.id) : undefined;
+                const rowsSnap = effectiveRows();
+                const prevRow = i() > 0 ? rowsSnap[i() - 1] : undefined;
+                const topDivider = prevRow
+                  ? (): boolean => dividerBetweenRows(prevRow, row, props.bordered)
+                  : undefined;
+                if (row.height === 'auto' || (row.height === undefined && rowsSnap.length > 1)) {
+                  return (
+                    <div class="w-full shrink-0">
+                      {renderRow(
+                        row,
+                        swapGetChildren(),
+                        swapBind,
+                        zone,
+                        cellDndState,
+                        getRowSavedSizes(rowKey),
+                        (sizes) => onRowSizesChange(rowKey, sizes),
+                        isDragging,
+                        props.resizeEnabled,
+                        props.dndEnabled,
+                        getCellSize,
+                        setCellSize,
+                        insertGridOpts(),
+                        props.bordered,
+                        topDivider,
+                      )}
+                    </div>
+                  );
+                }
+                return renderRow(
+                  row,
+                  swapGetChildren(),
+                  swapBind,
+                  zone,
+                  cellDndState,
+                  getRowSavedSizes(rowKey),
+                  (sizes) => onRowSizesChange(rowKey, sizes),
+                  isDragging,
+                  props.resizeEnabled,
+                  props.dndEnabled,
+                  getCellSize,
+                  setCellSize,
+                  insertGridOpts(),
+                  props.bordered,
+                  topDivider,
+                );
+              }}
+            </For>
+          </div>
+        </Match>
       </Switch>
     </MatrixPresetContext.Provider>
   );

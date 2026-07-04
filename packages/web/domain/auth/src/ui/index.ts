@@ -5,4 +5,5 @@
  * Headless-апп НЕ подключает этот subpath.
  */
 
+export { AuthGateSwitch } from './gateSwitch';
 export { AuthLoginForm } from './loginForm';

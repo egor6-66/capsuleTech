@@ -6,8 +6,10 @@
  * App подключает пакет в capsule.app.ts:
  *   packages: ['@capsuletech/web-auth']
  *
- * После регистрации доступен глобал:
- *   - `Auth.Login` → connected component: Controller-scope (auth-FSM) + форма.
+ * После регистрации доступны глобалы:
+ *   - `Auth.Login` → connected component: Controller-scope (auth-FSM) + форма входа.
+ *   - `Auth.Register` → connected component: регистрация (login+password+confirm).
+ *   - `Auth.Gate` → готовый guest-блок: Login ↔ Register + переключатель (mode внутри).
  *
  * Регистрация как component (НЕ controller) — по канону web-shell/MatrixController:
  * codegen строит namespace `Auth.Login.Events` из phantom `__events` в `components[X]`.
@@ -26,8 +28,9 @@
 
 import { registerPackageServices } from '@capsuletech/web-core';
 import { defineCapsuleModule } from '@capsuletech/web-core/module';
-import { AuthLogin } from './controllers/index';
-import { defaultAuthSession, useAuth } from './session/index';
+import { AuthGate, AuthLogin, AuthRegister } from './controllers/index';
+import { logoutCredentials } from './credentials/index';
+import { defaultAuthSession, initAuthSession, notifyAuthChanged, useAuth } from './session/index';
 import type { IAuthUser } from './types';
 
 // ─── Module augmentation: типизация services.authApi ─────────────────────────
@@ -41,8 +44,27 @@ declare module '@capsuletech/web-core' {
      * для аппов без web-auth.
      */
     authApi?: {
-      /** Очистить auth-сессию (defaultAuthSession). */
+      /**
+       * Bootstrap cookie-сессии (ADR 068 D3/D4): `GET /auth/me` → session-store
+       * (authed | guest) + подписка на BroadcastChannel-синк. Идемпотентен
+       * (повторный вызов переподписывает без дубля — контракт initAuthSession).
+       * Root-Feature аппа зовёт в onInit ДО чтения `isAuthed()`.
+       * @param apiBase префикс API, @default '/api'
+       * @returns юзер | null (guest / сеть недоступна)
+       */
+      init: (apiBase?: string) => Promise<IAuthUser | null>;
+      /**
+       * Локальный логаут: сброс defaultAuthSession + BroadcastChannel-синк.
+       * Серверную session-куку НЕ ревокирует — для cookie-флоу используй
+       * `logoutServer` (иначе перезагрузка вернёт сессию через `/me`).
+       */
       logout: () => void;
+      /**
+       * Полный логаут cookie-флоу: `POST /auth/logout` (ревокация куки) +
+       * сброс defaultAuthSession + BroadcastChannel-синк (ADR 068 D4).
+       * @param apiBase префикс API, @default '/api'
+       */
+      logoutServer: (apiBase?: string) => Promise<void>;
       /**
        * Реактивно читает: аутентифицирована ли текущая сессия.
        * Отражает восстановленную сессию после `configureAuthSession`.
@@ -61,7 +83,12 @@ declare module '@capsuletech/web-core' {
 // ─── Регистрация services.authApi (side-effect на module-load) ───────────────
 
 registerPackageServices('authApi', {
-  logout: () => defaultAuthSession.logout(),
+  init: (apiBase?: string) => initAuthSession(apiBase),
+  logout: () => {
+    defaultAuthSession.logout();
+    notifyAuthChanged();
+  },
+  logoutServer: (apiBase?: string) => logoutCredentials(apiBase),
   isAuthed: () => useAuth().isAuthed,
   user: () => useAuth().user,
 });
@@ -72,5 +99,7 @@ export default defineCapsuleModule({
   name: 'Auth',
   components: {
     Login: AuthLogin,
+    Register: AuthRegister,
+    Gate: AuthGate,
   },
 });

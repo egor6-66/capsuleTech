@@ -11,8 +11,17 @@
  *   surface itself does not start a drag.
  * - Drop targets show a ring highlight when a drag is active and the cell is a
  *   valid target (isOver + canDrop).
- * - `enabled` accessor is driven by `dnd='swap'` prop or global useDndMode();
- *   caller passes `() => true` when 2+ draggable cells exist.
+ *
+ * v3 per-cell enable resolution (2026-07-04):
+ * - The engine no longer takes a single matrix-wide `enabled` accessor. The
+ *   caller passes `isCellEnabled(cell)` — a reactive resolver encoding the
+ *   full precedence chain: explicit `cell.draggable` > `mode` prop > global
+ *   `useDndMode()` signal (+ kind === 'swap' gating).
+ * - Badge visibility is per-cell and group-aware (`getShowBadge`): a badge
+ *   shows only when the cell is enabled AND at least one other enabled cell
+ *   shares its swapGroup. Previously the 2+ threshold counted ALL draggable
+ *   cells across groups — a cell could start a drag that no target could
+ *   ever accept (drag-without-drop bug, learn app-shell pages 2026-07-04).
  */
 
 import type { IDraggable, IDroppable } from '@capsuletech/web-dnd';
@@ -27,11 +36,16 @@ import type { ICell, IRow, LayoutChangeEvent } from '../interfaces';
 interface ISwapEngineOptions {
   rows: Accessor<IRow[]>;
   /**
-   * When false, accepts() returns false (no drops allowed).
-   * In the badge-UX, caller passes `() => true` unconditionally — the badge
-   * is only shown when 2+ resizable cells exist, so swap is always valid.
+   * Reactive per-cell resolver: is swap-DnD active for this cell right now.
+   *
+   * Encodes the full precedence chain (highest → lowest):
+   *   1. explicit `cell.draggable` (true → always on, false → always off),
+   *   2. matrix `mode` prop ('view' → off, 'edit' → on),
+   *   3. global `useDndMode()` signal,
+   * plus the `dndKind() === 'swap'` gate. Must read signals at call time
+   * (called inside memos) — do not snapshot.
    */
-  enabled: Accessor<boolean>;
+  isCellEnabled: (cell: ICell) => boolean;
   onLayoutChange?: (e: LayoutChangeEvent) => void;
 }
 
@@ -59,7 +73,14 @@ export interface ISwapEngine {
   };
   /** Draggable id string for a given cellId — used by DragBadge. */
   getDraggableId: (cellId: string) => string;
-  /** Number of draggable cells registered (determines badge visibility). */
+  /**
+   * Reactive per-cell badge visibility: cell is enabled AND at least one other
+   * enabled cell shares its swapGroup (i.e. a valid drop target exists).
+   * MUST be an accessor — badge mount/unmount on toggle is a local <Show>
+   * flip inside renderCell, not a cell re-render (toggle-stability contract).
+   */
+  getShowBadge: (cellId: string) => Accessor<boolean>;
+  /** Number of structurally-draggable cells registered (diagnostics). */
   draggableCount: number;
 }
 
@@ -160,11 +181,15 @@ export const createSwapEngine = (opts: ISwapEngineOptions): ISwapEngine => {
   const bindingMap = new Map<string, ICellBinding>();
   /** Maps cellId → swapGroup string; used by getCellDropState.canAccept. */
   const _cellGroups = new Map<string, string>();
+  /** Maps cellId → cell entry; needed to resolve isCellEnabled per cell. */
+  const _cellEntries = new Map<string, ICellEntry>();
 
-  for (const { cell, rowId } of flatDraggableCells(opts.rows())) {
+  for (const entry of flatDraggableCells(opts.rows())) {
+    const { cell, rowId } = entry;
     const group = resolveGroup(cell, rowId);
     const cellId = cell.id;
     _cellGroups.set(cellId, group);
+    _cellEntries.set(cellId, entry);
 
     // disabled=true: badge calls dnd.startDrag directly; the cell element
     // is registered so the DnD context can track it, but pointerdown on the
@@ -180,7 +205,7 @@ export const createSwapEngine = (opts: ISwapEngineOptions): ISwapEngine => {
       accepts: (data) => {
         const d = data as { cellId?: string; swapGroup?: string };
         return (
-          opts.enabled() &&
+          opts.isCellEnabled(cell) &&
           typeof d.swapGroup === 'string' &&
           d.swapGroup === group &&
           d.cellId !== cellId
@@ -216,7 +241,10 @@ export const createSwapEngine = (opts: ISwapEngineOptions): ISwapEngine => {
     cellId: string,
   ): { isOver: Accessor<boolean>; canDrop: Accessor<boolean>; canAccept: Accessor<boolean> } => {
     const binding = bindingMap.get(cellId);
-    if (!binding) return { isOver: () => false, canDrop: () => false, canAccept: () => false };
+    const entry = _cellEntries.get(cellId);
+    if (!binding || !entry) {
+      return { isOver: () => false, canDrop: () => false, canAccept: () => false };
+    }
     // canAccept: a drag is active AND this cell would accept the active payload
     // (regardless of pointer position). Mirrors the accepts() logic registered
     // in createDroppable, derived from the same _cellGroups snapshot.
@@ -225,7 +253,7 @@ export const createSwapEngine = (opts: ISwapEngineOptions): ISwapEngine => {
       if (!data) return false;
       const d = data as { cellId?: string; swapGroup?: string };
       return (
-        opts.enabled() &&
+        opts.isCellEnabled(entry.cell) &&
         typeof d.swapGroup === 'string' &&
         d.cellId !== cellId &&
         d.swapGroup === _cellGroups.get(cellId)
@@ -236,11 +264,29 @@ export const createSwapEngine = (opts: ISwapEngineOptions): ISwapEngine => {
 
   const getDraggableId = (cellId: string): string => `cell:${cellId}`;
 
+  // Badge shows only when a drag started from this cell can actually land
+  // somewhere: the cell itself is enabled AND another enabled cell shares its
+  // swapGroup. Group-aware — a lone cell in its group never gets a badge.
+  const getShowBadge = (cellId: string): Accessor<boolean> => {
+    const entry = _cellEntries.get(cellId);
+    if (!entry) return () => false;
+    const group = _cellGroups.get(cellId);
+    return createMemo(() => {
+      if (!opts.isCellEnabled(entry.cell)) return false;
+      for (const [otherId, other] of _cellEntries) {
+        if (otherId === cellId) continue;
+        if (_cellGroups.get(otherId) === group && opts.isCellEnabled(other.cell)) return true;
+      }
+      return false;
+    });
+  };
+
   return {
     getCellChildren,
     bindCell,
     getCellDropState,
     getDraggableId,
+    getShowBadge,
     draggableCount: bindingMap.size,
   };
 };

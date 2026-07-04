@@ -319,6 +319,10 @@ describe('Matrix — inner-row handle reacts LIVE to resize toggle (bug 3)', () 
   it('T5: toggling resize flips GripIcon presence under inner-row handle', () => {
     const [resize, setResize] = createSignal<boolean>(true);
 
+    // Cells WITHOUT explicit `resizable` — активность ручки следует matrix
+    // `resize` prop. (Явный `resizable: true` — per-slot override, ручка
+    // была бы активна всегда и toggle бы её не гасил — см.
+    // divider-and-resize-override.test.tsx.)
     cleanup = render(
       () => (
         <Matrix
@@ -332,13 +336,11 @@ describe('Matrix — inner-row handle reacts LIVE to resize toggle (bug 3)', () 
                   id: 'a',
                   children: <div data-testid="t5-a">A</div>,
                   width: 0.5,
-                  resizable: true,
                 },
                 {
                   id: 'b',
                   children: <div data-testid="t5-b">B</div>,
                   width: 0.5,
-                  resizable: true,
                 },
               ],
             },

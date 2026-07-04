@@ -112,23 +112,26 @@ const MatrixImpl = (props: IMatrixProps) => {
  * - `dnd?: false | 'swap' | 'insert'` — `undefined` → follows `useDndMode()` from web-style (or `mode`);
  *   `false` → locked off; `'swap'`/`'insert'` → locked on with the specified kind.
  *
- * **Per-cell opt-out defaults:**
- * - `cell.draggable` defaults to `true` — set to `false` to lock a cell non-draggable.
- * - `cell.resizable` defaults to `true` — set to `false` to lock a cell non-resizable.
+ * **Per-cell overrides (tri-state):**
+ * - `cell.draggable`: `true` — DnD активен для cell всегда (оверрайдит `mode`/global);
+ *   `false` — никогда; `undefined` — следует matrix-резолюции (`dnd` > `mode` > global).
+ * - `cell.resizable`: та же tri-state семантика для resize-ручки (ручка между
+ *   соседями активна когда активны оба; «эластичный центр» пресета всегда согласен).
  *
  * **DnD / badge-UX:**
- * - Each draggable cell shows a DragBadge (grip icon) in its top-right corner when
- *   2+ draggable cells exist in the same swapGroup and DnD is enabled.
+ * - A cell shows a DragBadge (grip icon, top-right) only when DnD резолвится
+ *   активным для неё И существует другая активная cell в той же swapGroup
+ *   (т.е. drop-цель реально есть).
  * - `onLayoutChange` called with swap/insert/grid event after each successful layout change.
  *
- * **Border:**
- * - `bordered?: boolean` (default `true`) — Matrix-level default for the cell
- *   hairline border. Fully independent of `resize`/`dnd`: a resizable cell only
- *   gets the interactive handle (and a draggable cell only gets the badge) —
- *   neither implies a border on its own. Set `bordered={false}` to render
- *   edge-to-edge slots.
- * - Per-slot override: `slots.header.bordered` / `cell.bordered` (raw rows) wins
- *   over the Matrix-level default when explicitly set, e.g.
- *   `slots={{ header: { children, bordered: false }, main: {...} }}`.
+ * **Border (divider-модель, 2026-07-04):**
+ * - `bordered?: boolean` (default `true`) — рисует ВНУТРЕННИЕ hairline-разделители
+ *   между слотами. Слоты — общее пространство, разделённое линиями, не независимые
+ *   карточки (внешних бордеров и скруглений у ячеек нет).
+ * - Линии — исключительно функция `bordered`; resize на них не влияет: все
+ *   Resizable матрицы работают с `handleVariant="ghost"` (ручка = хит-зона +
+ *   grip-бэйдж, своей линии не рисует ни в каком состоянии).
+ * - Per-slot override: `slots.header.bordered` / `cell.bordered` (raw rows) —
+ *   divider виден, если хотя бы один из соседей резолвится в true.
  */
 export const Matrix = MatrixImpl;

@@ -8,6 +8,7 @@
  * The vitest config includes vite-plugin-solid, so .tsx tests with JSX are fully supported.
  */
 /* @vitest-environment jsdom */
+import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { IResizableItem } from '../interfaces';
@@ -300,5 +301,204 @@ describe('Resizable - children mode', () => {
     expect(() => {
       cleanup = render(() => <Resizable />, container);
     }).not.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// handleActive — per-item reactive handle enable (hairline + pointer + grip)
+// ---------------------------------------------------------------------------
+
+describe('Resizable — handleActive per-item contract', () => {
+  const getHandles = () =>
+    Array.from(container.querySelectorAll('[data-corvu-resizable-handle]')) as HTMLElement[];
+
+  it('default (no handleActive) — handle is active: bg-border present, no pointer-events-none', () => {
+    const items: IResizableItem[] = [
+      { children: <div>A</div>, resizable: true, initialSize: 0.5 },
+      { children: <div>B</div>, resizable: true, initialSize: 0.5 },
+    ];
+
+    cleanup = render(() => <Resizable items={items} withHandle />, container);
+
+    const handles = getHandles();
+    expect(handles.length).toBe(1);
+    expect(handles[0].classList.contains('bg-border')).toBe(true);
+    expect(handles[0].classList.contains('pointer-events-none')).toBe(false);
+    expect(handles[0].classList.contains('bg-transparent')).toBe(false);
+  });
+
+  it('handleActive:false on a neighbour — handle stays mounted but transparent, no grip', () => {
+    // 3 panels → 2 handles. C has handleActive:false → handle B-C inactive,
+    // handle A-B stays active.
+    const items: IResizableItem[] = [
+      { children: <div>A</div>, resizable: true, initialSize: 0.3 },
+      { children: <div>B</div>, resizable: true, initialSize: 0.3 },
+      { children: <div>C</div>, resizable: true, initialSize: 0.4, handleActive: false },
+    ];
+
+    cleanup = render(() => <Resizable items={items} withHandle />, container);
+
+    const handles = getHandles();
+    expect(handles.length).toBe(2);
+
+    const [activeHandle, inactiveHandle] = handles;
+    // Active handle: hairline + grip.
+    expect(activeHandle.classList.contains('bg-border')).toBe(true);
+    expect(activeHandle.querySelector('div')).not.toBeNull();
+    // Inactive handle: mounted, but transparent, pointer-locked, corvu-disabled, no grip.
+    expect(inactiveHandle.classList.contains('bg-border')).toBe(false);
+    expect(inactiveHandle.classList.contains('bg-transparent')).toBe(true);
+    expect(inactiveHandle.classList.contains('pointer-events-none')).toBe(true);
+    expect(inactiveHandle.querySelector('div')).toBeNull();
+  });
+
+  it('container handleDisabled — every handle inactive (no hairline anywhere)', () => {
+    const items: IResizableItem[] = [
+      { children: <div>A</div>, resizable: true, initialSize: 0.3 },
+      { children: <div>B</div>, resizable: true, initialSize: 0.3 },
+      { children: <div>C</div>, resizable: true, initialSize: 0.4 },
+    ];
+
+    cleanup = render(() => <Resizable items={items} withHandle handleDisabled />, container);
+
+    const handles = getHandles();
+    expect(handles.length).toBe(2);
+    for (const handle of handles) {
+      expect(handle.classList.contains('bg-border')).toBe(false);
+      expect(handle.classList.contains('pointer-events-none')).toBe(true);
+      expect(handle.querySelector('div')).toBeNull();
+    }
+  });
+
+  it('accessor live-flip toggles handle without remounting panels (DOM identity preserved)', () => {
+    const [active, setActive] = createSignal(true);
+    const items: IResizableItem[] = [
+      { children: <div data-testid="panel-a">A</div>, resizable: true, initialSize: 0.5 },
+      {
+        children: <div data-testid="panel-b">B</div>,
+        resizable: true,
+        initialSize: 0.5,
+        handleActive: active,
+      },
+    ];
+
+    cleanup = render(() => <Resizable items={items} withHandle />, container);
+
+    const handlesBefore = getHandles();
+    expect(handlesBefore.length).toBe(1);
+    const handle = handlesBefore[0];
+    expect(handle.classList.contains('bg-border')).toBe(true);
+    expect(handle.querySelector('div')).not.toBeNull();
+
+    const panelsBefore = Array.from(container.querySelectorAll('[data-corvu-resizable-panel]'));
+    const contentA = container.querySelector('[data-testid="panel-a"]');
+    const contentB = container.querySelector('[data-testid="panel-b"]');
+
+    setActive(false);
+
+    // Handle element itself is NOT remounted — same node, new classes.
+    const handlesAfter = getHandles();
+    expect(handlesAfter.length).toBe(1);
+    expect(handlesAfter[0]).toBe(handle);
+    expect(handle.classList.contains('bg-border')).toBe(false);
+    expect(handle.classList.contains('bg-transparent')).toBe(true);
+    expect(handle.classList.contains('pointer-events-none')).toBe(true);
+    expect(handle.querySelector('div')).toBeNull();
+
+    // Panels and their children keep DOM identity (no remount).
+    const panelsAfter = Array.from(container.querySelectorAll('[data-corvu-resizable-panel]'));
+    expect(panelsAfter.length).toBe(panelsBefore.length);
+    panelsAfter.forEach((panel, i) => {
+      expect(panel).toBe(panelsBefore[i]);
+    });
+    expect(container.querySelector('[data-testid="panel-a"]')).toBe(contentA);
+    expect(container.querySelector('[data-testid="panel-b"]')).toBe(contentB);
+
+    // Flip back — handle re-activates in place.
+    setActive(true);
+    expect(getHandles()[0]).toBe(handle);
+    expect(handle.classList.contains('bg-border')).toBe(true);
+    expect(handle.querySelector('div')).not.toBeNull();
+  });
+
+  it('grip is hidden on inactive handle even with container withHandle', () => {
+    const items: IResizableItem[] = [
+      { children: <div>A</div>, resizable: true, initialSize: 0.5, handleActive: false },
+      { children: <div>B</div>, resizable: true, initialSize: 0.5 },
+    ];
+
+    cleanup = render(() => <Resizable items={items} withHandle />, container);
+
+    const handles = getHandles();
+    expect(handles.length).toBe(1);
+    expect(handles[0].querySelector('div')).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// handleVariant — ghost handles (never draw their own hairline)
+// ---------------------------------------------------------------------------
+
+describe('Resizable — handleVariant ghost contract', () => {
+  const twoPanels: IResizableItem[] = [
+    { children: <div>A</div>, resizable: true, initialSize: 0.5 },
+    { children: <div>B</div>, resizable: true, initialSize: 0.5 },
+  ];
+  const getHandle = () => container.querySelector('[data-corvu-resizable-handle]') as HTMLElement;
+
+  it('ghost + active: no bg-border, drag enabled (no disabled attr), grip visible with withHandle', () => {
+    cleanup = render(
+      () => <Resizable items={twoPanels} withHandle handleVariant="ghost" />,
+      container,
+    );
+
+    const handle = getHandle();
+    expect(handle).not.toBeNull();
+    // Never draws its own line.
+    expect(handle.classList.contains('bg-border')).toBe(false);
+    expect(handle.classList.contains('bg-transparent')).toBe(true);
+    // Active behaviour untouched: pointer/drag enabled, grip + focus ring present.
+    expect(handle.classList.contains('pointer-events-none')).toBe(false);
+    expect(handle.hasAttribute('disabled')).toBe(false);
+    expect(handle.querySelector('div')).not.toBeNull();
+    expect(handle.className).toContain('focus-visible:ring-1');
+    // Hit-area preserved.
+    expect(handle.className).toContain('after:w-1');
+  });
+
+  it('ghost + inactive: same as inactive line — transparent, pointer-locked, no grip', () => {
+    const items: IResizableItem[] = [
+      { children: <div>A</div>, resizable: true, initialSize: 0.5 },
+      { children: <div>B</div>, resizable: true, initialSize: 0.5, handleActive: false },
+    ];
+
+    cleanup = render(() => <Resizable items={items} withHandle handleVariant="ghost" />, container);
+
+    const handle = getHandle();
+    expect(handle.classList.contains('bg-border')).toBe(false);
+    expect(handle.classList.contains('bg-transparent')).toBe(true);
+    expect(handle.classList.contains('pointer-events-none')).toBe(true);
+    expect(handle.hasAttribute('disabled')).toBe(true);
+    expect(handle.querySelector('div')).toBeNull();
+  });
+
+  it("default ('line' / prop absent): active handle keeps bg-border hairline (back-compat)", () => {
+    cleanup = render(() => <Resizable items={twoPanels} withHandle />, container);
+
+    const handle = getHandle();
+    expect(handle.classList.contains('bg-border')).toBe(true);
+    expect(handle.classList.contains('bg-transparent')).toBe(false);
+  });
+
+  it("explicit handleVariant='line' is identical to default", () => {
+    cleanup = render(
+      () => <Resizable items={twoPanels} withHandle handleVariant="line" />,
+      container,
+    );
+
+    const handle = getHandle();
+    expect(handle.classList.contains('bg-border')).toBe(true);
+    expect(handle.classList.contains('bg-transparent')).toBe(false);
+    expect(handle.hasAttribute('disabled')).toBe(false);
   });
 });

@@ -4,8 +4,9 @@
  * Per-slot runtime-trace boundary (ADR 062). Wraps each cell's content render
  * so the host can observe how many times a slot's content actually mounts.
  */
-import { type JSX, createContext, onCleanup, useContext } from 'solid-js';
+
 import { trace } from '@capsuletech/web-profiler/trace';
+import { createContext, type JSX, onCleanup, useContext } from 'solid-js';
 
 // ---------------------------------------------------------------------------
 // MatrixPresetContext — ambient preset-tag for slot traces.
