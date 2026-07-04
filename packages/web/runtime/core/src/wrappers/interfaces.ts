@@ -18,6 +18,7 @@ import type { DropdownMenu } from '@capsuletech/web-ui/dropdownMenu';
 import type { Image } from '@capsuletech/web-ui/image';
 import type { PreviewCard } from '@capsuletech/web-ui/previewCard';
 import type { Select } from '@capsuletech/web-ui/select';
+import type { Separator } from '@capsuletech/web-ui/separator';
 import type { Skeleton } from '@capsuletech/web-ui/skeleton';
 import type { Spinner } from '@capsuletech/web-ui/spinner';
 import type { Textarea } from '@capsuletech/web-ui/textarea';
@@ -190,6 +191,7 @@ type UniversalUiRaw = {
   /** Grid + Flex для internal layout. Matrix переехал в @capsuletech/web-shell. */
   Layout: ViewLayoutSubset;
   Typography: typeof Typography;
+  Separator: typeof Separator;
 };
 
 type ViewUiRaw = UniversalUiRaw & {
