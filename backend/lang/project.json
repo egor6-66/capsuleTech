@@ -19,25 +19,11 @@
         "command": "uv run alembic upgrade head"
       }
     },
-    "seed": {
-      "executor": "nx:run-commands",
-      "options": {
-        "cwd": "backend/lang",
-        "command": "uv run python -m capsule_lang.seed"
-      }
-    },
     "import": {
       "executor": "nx:run-commands",
       "options": {
         "cwd": "backend/lang",
         "command": "uv run python -m capsule_lang.importer {args.file}"
-      }
-    },
-    "import-vocab": {
-      "executor": "nx:run-commands",
-      "options": {
-        "cwd": "backend/lang",
-        "command": "uv run python -m capsule_lang.vocab"
       }
     },
     "import-lessons": {

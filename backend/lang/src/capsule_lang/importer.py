@@ -253,12 +253,10 @@ def import_file(path: str | Path, db: Session | None = None) -> ImportReport:
 def main(argv: list[str] | None = None) -> None:
     args = argv if argv is not None else sys.argv[1:]
     if not args:
-        # default to the bundled seed corpus
-        root = Path(__file__).resolve().parent.parent.parent
-        target = root / "content" / "en_US" / "seed.yml"
-    else:
-        target = Path(args[0])
-    print(import_file(target))
+        # Content lives in the vault now (ADR 070) — no bundled default corpus.
+        print("error: YAML path required — `import_file <file.yml>`", file=sys.stderr)
+        raise SystemExit(2)
+    print(import_file(Path(args[0])))
 
 
 if __name__ == "__main__":

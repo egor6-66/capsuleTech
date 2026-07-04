@@ -14,14 +14,15 @@ Sense-centric lexical graph as a standalone capability service (extracted from
 ```bash
 uv sync --extra dev                                      # install deps
 uv run alembic upgrade head                              # create schema (lang.db)
-uv run python -m capsule_lang.seed                       # seed bundled corpus (idempotent)
+uv run python -m capsule_lang.vault_import D:\learn\lang  # import content from the vault
 uv run uvicorn capsule_lang.main:app --port 8002 --reload
 ```
 
-`seed.py` is a thin wrapper around the importer on the bundled corpus
-(`content/en_US/seed.yml`); the canonical way to feed lexicon is **YAML via the
-importer** (`import_file` → `ImportReport`, ADR 064-A §A4) —
-`uv run python -m capsule_lang.importer <file.yml>`.
+`backend/lang` ships **only code** — all lexicon and lessons content lives in
+the teacher vault (ADR 070), fed in via the vault importer (see below). A single
+YAML pack can also be imported directly: `uv run python -m capsule_lang.importer
+<file.yml>` (`import_file` → `ImportReport`, ADR 064-A §A4). Tests carry their
+own tiny 6-sense corpus (`tests/fixtures/senses/seed.yml`).
 
 ```bash
 uv run pytest          # tests (in-memory SQLite)
