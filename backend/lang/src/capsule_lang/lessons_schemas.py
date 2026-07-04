@@ -164,6 +164,31 @@ class DrillOut(BaseModel):
     items: list[DrillItemOut]
 
 
+class ConceptListItem(BaseModel):
+    id: str
+    title: str
+    principle: str
+    tags: list[str]
+
+
+class ConceptsResponse(BaseModel):
+    concepts: list[ConceptListItem]
+
+
+class RuleListItem(BaseModel):
+    id: str
+    title: str
+    tags: list[str]
+
+
+class RulesResponse(BaseModel):
+    rules: list[RuleListItem]
+
+
+class DrillsResponse(BaseModel):
+    drills: list[DrillOut]
+
+
 class LessonListItem(BaseModel):
     id: str
     title: str

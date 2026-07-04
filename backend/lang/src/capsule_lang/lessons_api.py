@@ -8,20 +8,25 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from . import lessons_repo as repo
 from .db import get_db
 from .lessons_schemas import (
+    ConceptListItem,
     ConceptOut,
+    ConceptsResponse,
     DrillItemOut,
     DrillOut,
+    DrillsResponse,
     LessonDetail,
     LessonListItem,
     LessonsResponse,
     NearMissOut,
+    RuleListItem,
     RuleOut,
+    RulesResponse,
 )
 from .models import Concept, Drill, DrillItem, Lesson, Rule
 
@@ -100,12 +105,52 @@ def get_lesson(lesson_id: str, db: DbDep) -> LessonDetail:
     )
 
 
+@router.get("/rules", response_model=RulesResponse)
+def list_rules(db: DbDep) -> RulesResponse:
+    return RulesResponse(
+        rules=[
+            RuleListItem(id=r.id, title=r.title, tags=r.tags or [])
+            for r in repo.list_rules(db)
+        ]
+    )
+
+
+@router.get("/rules/{rule_id}", response_model=RuleOut)
+def get_rule(rule_id: str, db: DbDep) -> RuleOut:
+    r = repo.get_rule(db, rule_id)
+    if r is None:
+        raise HTTPException(status_code=404, detail="rule not found")
+    return _rule_out(r)
+
+
+@router.get("/drills", response_model=DrillsResponse)
+def list_drills(
+    db: DbDep,
+    rule: Annotated[str, Query(description="rule id — return that rule's drills")],
+) -> DrillsResponse:
+    return DrillsResponse(
+        drills=[_drill_out(d) for d in repo.list_drills_by_rule(db, rule)]
+    )
+
+
 @router.get("/drills/{drill_id}", response_model=DrillOut)
 def get_drill(drill_id: str, db: DbDep) -> DrillOut:
     d = repo.get_drill(db, drill_id)
     if d is None:
         raise HTTPException(status_code=404, detail="drill not found")
     return _drill_out(d)
+
+
+@router.get("/concepts", response_model=ConceptsResponse)
+def list_concepts(db: DbDep) -> ConceptsResponse:
+    return ConceptsResponse(
+        concepts=[
+            ConceptListItem(
+                id=c.id, title=c.title, principle=c.principle, tags=c.tags or []
+            )
+            for c in repo.list_concepts(db)
+        ]
+    )
 
 
 @router.get("/concepts/{concept_id}", response_model=ConceptOut)

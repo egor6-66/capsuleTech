@@ -93,3 +93,64 @@ def test_404s(lessons_client):
     assert lessons_client.get("/lang/lessons/nope").status_code == 404
     assert lessons_client.get("/lang/drills/nope").status_code == 404
     assert lessons_client.get("/lang/concepts/nope").status_code == 404
+
+
+def test_list_concepts(lessons_client):
+    r = lessons_client.get("/lang/concepts")
+    assert r.status_code == 200
+    assert r.json()["concepts"] == [
+        {
+            "id": "word-as-image",
+            "title": "Слово = образ, не перевод",
+            "principle": "Учи слово через образ (что оно делает в картинке), "
+            "не через русский ярлык.",
+            "tags": ["vocabulary", "method", "image"],
+        }
+    ]
+
+
+def test_list_rules(lessons_client):
+    r = lessons_client.get("/lang/rules")
+    assert r.status_code == 200
+    assert r.json()["rules"] == [
+        {
+            "id": "grammar-verbs-tenses",
+            "title": "5d. Глаголы и времена",
+            "tags": ["grammar", "verbs", "tenses"],
+        }
+    ]
+
+
+def test_rule_direct(lessons_client):
+    r = lessons_client.get("/lang/rules/grammar-verbs-tenses")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["id"] == "grammar-verbs-tenses"
+    assert body["title"] == "5d. Глаголы и времена"
+    assert "Правило тренируется дриллами." in body["body"]
+    assert lessons_client.get("/lang/rules/nope").status_code == 404
+
+
+def test_drills_by_rule(lessons_client):
+    r = lessons_client.get("/lang/drills", params={"rule": "grammar-verbs-tenses"})
+    assert r.status_code == 200
+    drills = r.json()["drills"]
+    assert [d["id"] for d in drills] == ["past-perfect-which-clause"]
+    # full body carried: items + nearMiss
+    drill = drills[0]
+    assert drill["rule"] == "grammar-verbs-tenses"
+    assert len(drill["items"]) == 2
+    modes = {nm["match"] for it in drill["items"] for nm in it["nearMiss"]}
+    assert modes == {"contains", "regex"}
+
+
+def test_drills_by_rule_empty(lessons_client):
+    # unknown / rule with no drills — empty list is a valid answer, not 404
+    r = lessons_client.get("/lang/drills", params={"rule": "no-such-rule"})
+    assert r.status_code == 200
+    assert r.json() == {"drills": []}
+
+
+def test_drills_requires_rule(lessons_client):
+    # `rule` is a required query param
+    assert lessons_client.get("/lang/drills").status_code == 422

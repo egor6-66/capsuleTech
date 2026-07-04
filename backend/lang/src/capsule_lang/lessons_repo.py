@@ -10,11 +10,34 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .models import Concept, Drill, Lesson
+from .models import Concept, Drill, Lesson, Rule
 
 
 def list_lessons(db: Session) -> list[Lesson]:
     stmt = select(Lesson).order_by(Lesson.level, Lesson.title)
+    return list(db.execute(stmt).scalars().all())
+
+
+def list_concepts(db: Session) -> list[Concept]:
+    stmt = select(Concept).order_by(Concept.title)
+    return list(db.execute(stmt).scalars().all())
+
+
+def list_rules(db: Session) -> list[Rule]:
+    stmt = select(Rule).order_by(Rule.title)
+    return list(db.execute(stmt).scalars().all())
+
+
+def get_rule(db: Session, rule_id: str) -> Rule | None:
+    return db.get(Rule, rule_id)
+
+
+def list_drills_by_rule(db: Session, rule_id: str) -> list[Drill]:
+    stmt = (
+        select(Drill)
+        .where(Drill.rule_id == rule_id)
+        .order_by(Drill.level, Drill.title)
+    )
     return list(db.execute(stmt).scalars().all())
 
 
