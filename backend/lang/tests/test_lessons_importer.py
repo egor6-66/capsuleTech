@@ -56,6 +56,12 @@ def test_import_reference_vault(blank_db):
     assert _count(blank_db, DrillItem) == 2
     assert _count(blank_db, DrillWord) == 5  # all 5 lemmas resolved
 
+    # rule id derived from filename + title from the body H1 (frontmatter has
+    # neither — matches real reference-rule files) — rule №0
+    rule = blank_db.get(Rule, "grammar-verbs-tenses")
+    assert rule is not None
+    assert rule.title == "5d. Глаголы и времена"
+
     drill = blank_db.get(Drill, "past-perfect-which-clause")
     assert [i.position for i in drill.items] == [0, 1]
     # near_miss survives as JSON with both match modes

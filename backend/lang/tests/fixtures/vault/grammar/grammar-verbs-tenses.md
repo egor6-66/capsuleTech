@@ -1,10 +1,10 @@
 ---
-id: grammar-verbs-tenses
 type: rule
-title: "Глаголы и времена"
+status: in-progress
+lessonTag: grammar-verbs-tenses
 tags: [grammar, verbs, tenses]
 ---
 
-# Глаголы и времена
+# 5d. Глаголы и времена
 
 Правило тренируется дриллами. Тело правила рендерит фронт как есть.

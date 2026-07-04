@@ -167,6 +167,17 @@ def _parse_file(path: Path, expected_type: str) -> ParsedEntity:
         raise ValueError(f"неизвестный type `{ftype}`")
 
     data = dict(front)
+    # Rule №0: имя файла = id. The id may be omitted from frontmatter (the
+    # finalочка tells teachers to add ONLY `type` to reference rules) — derive
+    # it from the filename. An explicit id, if present, must still match (the
+    # `_validate_intra` id==stem check catches rename/copy drift).
+    data.setdefault("id", path.stem)
+    # Title may live in the body's H1 rather than frontmatter — that's the case
+    # for reference rules («тело не трогаем, добавляем только type»). Frontmatter
+    # title, when present (drills/lessons/concepts), wins.
+    h1 = _first_h1(body)
+    if h1:
+        data.setdefault("title", h1)
     if ftype in ("concept", "rule"):
         data["body"] = body  # body = markdown content, not a frontmatter key
 
@@ -177,6 +188,18 @@ def _parse_file(path: Path, expected_type: str) -> ParsedEntity:
 
     _validate_intra(path, ftype, model)
     return ParsedEntity(kind=ftype, model=model, file=str(path))
+
+
+def _first_h1(body: str) -> str | None:
+    """Text of the first markdown H1 (`# ...`) in the body, verbatim, or None.
+
+    The section enumerator some rules carry (`# 5d. Глаголы …`) is kept as-is —
+    stripping it would be a content decision that belongs to the vault, not here.
+    """
+    for line in body.splitlines():
+        if line.startswith("# "):
+            return line[2:].strip()
+    return None
 
 
 def _first_error(e: ValidationError) -> str:

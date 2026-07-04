@@ -5,6 +5,8 @@
 
 - {word: against, lang: en_US, pos: preposition, ru: "против", pron_ru: "эге́нст", image: "упереться ладонями в стену", tags: [{name: everyday, kind: tier}]}
 - {word: alone, lang: en_US, pos: adjective, ru: "один, в одиночестве", pron_ru: "эло́ун", image: "один в пустой комнате", tags: [{name: everyday, kind: tier}]}
+# already — related yet/still отложены: обоих нет в корпусе (round-2, ADR 069)
+- {word: already, lang: en_US, pos: adverb, ru: "уже", pron_ru: "олрэ́ди", gloss: "before now, or before the expected/mentioned time", traits: [time], examples: [{text: "I've already eaten.", pron_ru: "айв олрэ́ди иитн", ru: "я уже поел"}], tags: [{name: everyday, kind: tier}]}
 - {word: alright, lang: en_US, pos: adverb, ru: "нормально, в порядке", pron_ru: "олра́йт", image: "жест «всё ок» большим пальцем", tags: [{name: everyday, kind: tier}]}
 - {word: arm, lang: en_US, pos: noun, ru: "рука (от плеча до кисти)", pron_ru: "аарм", image: "рука от плеча до кисти", tags: [{name: everyday, kind: tier}]}
 - {word: bad, lang: en_US, pos: adjective, ru: "плохой", pron_ru: "бэд", image: "палец вниз", tags: [{name: everyday, kind: tier}]}
