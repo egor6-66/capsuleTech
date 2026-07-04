@@ -104,6 +104,20 @@ export function resolveScope(scope, root = repoRoot()) {
   if (!scope) return null;
   if (scope === 'main') return { scope: 'main', kind: 'main' };
 
+  // Зона-scope `apps` (2026-07-03, канон user): ОДИН owner-apps на все apps/*
+  // (канон-хранитель app-слоёв, см. apps/OWNERSHIP.md). ПОЛНЫЙ фенс: apps
+  // правится ТОЛЬКО этим scope'ом (main — тоже deny, architect пишет брифы).
+  // kind='package' сохраняем ради совместимости потребителей (identity, governance).
+  if (scope === 'apps') {
+    return {
+      scope: 'apps',
+      kind: 'package',
+      packagePath: join(root, 'apps'),
+      packageName: 'apps/* (все аппы, зона owner-apps)',
+      relativePath: 'apps',
+    };
+  }
+
   const index = buildIndex(root);
   const match = index.get(scope);
   if (!match) return null;
@@ -120,7 +134,7 @@ export function resolveScope(scope, root = repoRoot()) {
 /** Список валидных scope-имён для help-сообщений. */
 export function listValidScopes(root = repoRoot()) {
   const index = buildIndex(root);
-  return ['main', ...[...index.keys()].sort()];
+  return ['main', 'apps', ...[...index.keys()].sort()];
 }
 
 // CLI mode
