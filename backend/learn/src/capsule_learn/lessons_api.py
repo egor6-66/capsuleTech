@@ -76,6 +76,25 @@ async def _resolve_word(
     return memo[word]
 
 
+async def _enrich_drill(
+    drill: dict[str, Any],
+    lang: LangClient,
+    voice: VoiceClient,
+    image: ImageClient,
+    memo: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    """Apply the lesson drill mechanics in place: sanitize items (strip the
+    answer key — point-surgical, the rest of the drill keeps passthrough
+    immunity) and attach `words_resolved`. Shared by the lesson and rule
+    composers so both stay identical (no copy of the enrichment).
+    """
+    drill["items"] = [_public_item(i, it) for i, it in enumerate(drill["items"])]
+    drill["words_resolved"] = [
+        await _resolve_word(w, lang, voice, image, memo) for w in drill["words"]
+    ]
+    return drill
+
+
 @router.get("/lessons")
 async def list_lessons(request: Request) -> Any:
     # Pure passthrough — lang owns the {id, title, level, tags} list shape.
@@ -91,13 +110,47 @@ async def get_lesson(lesson_id: str, request: Request) -> Any:
 
     memo: dict[str, dict[str, Any]] = {}
     for drill in lesson["drills"]:
-        # Point-surgical sanitization — the rest of the lesson keeps its
-        # passthrough immunity (no response_model), only items are scrubbed.
-        drill["items"] = [_public_item(i, it) for i, it in enumerate(drill["items"])]
-        drill["words_resolved"] = [
-            await _resolve_word(w, lang, voice, image, memo) for w in drill["words"]
-        ]
+        await _enrich_drill(drill, lang, voice, image, memo)
     return lesson
+
+
+@router.get("/concepts")
+async def list_concepts(request: Request) -> Any:
+    # Pure passthrough — lang owns the concept-library shape.
+    return await request.app.state.lang.concepts()
+
+
+@router.get("/concepts/{concept_id}")
+async def get_concept(concept_id: str, request: Request) -> Any:
+    # Passthrough of the full concept body (no response_model → immune to a
+    # new lang field silently dropping). 404 mirrored from lang.
+    return await request.app.state.lang.concept(concept_id)
+
+
+@router.get("/rules")
+async def list_rules(request: Request) -> Any:
+    # Pure passthrough — lang owns the {id, title, tags} rule-index shape.
+    return await request.app.state.lang.rules()
+
+
+@router.get("/rules/{rule_id}")
+async def get_rule(rule_id: str, request: Request) -> Any:
+    # Composition: the rule body verbatim + its drills, each run through the
+    # same lesson mechanics (items sanitized, words_resolved enriched). The rule
+    # 404 is mirrored from lang; an empty drill list is a valid answer.
+    lang: LangClient = request.app.state.lang
+    voice: VoiceClient = request.app.state.voice
+    image: ImageClient = request.app.state.image
+
+    rule = await lang.rule(rule_id)  # unknown rule_id → lang 404 mirrored
+    data = await lang.drills_by_rule(rule_id)
+
+    memo: dict[str, dict[str, Any]] = {}
+    drills = [
+        await _enrich_drill(drill, lang, voice, image, memo)
+        for drill in data["drills"]
+    ]
+    return {**rule, "drills": drills}
 
 
 @router.post("/drills/{drill_id}/check", response_model=DrillCheckResponse,

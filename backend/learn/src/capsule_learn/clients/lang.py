@@ -60,3 +60,20 @@ class LangClient:
         # The full drill incl. the answer key (answerEn/accept/nearMiss) — used
         # by the checker, never forwarded to the browser. 404 mirrored as-is.
         return await self._get(f"/lang/drills/{drill_id}")
+
+    async def drills_by_rule(self, rule_id: str) -> dict[str, Any]:
+        # Full drills (incl. the answer key) attached to a rule; the rule
+        # composer sanitizes items before forwarding. Empty list is valid.
+        return await self._get("/lang/drills", {"rule": rule_id})
+
+    async def concepts(self) -> dict[str, Any]:
+        return await self._get("/lang/concepts")
+
+    async def concept(self, concept_id: str) -> dict[str, Any]:
+        return await self._get(f"/lang/concepts/{concept_id}")
+
+    async def rules(self) -> dict[str, Any]:
+        return await self._get("/lang/rules")
+
+    async def rule(self, rule_id: str) -> dict[str, Any]:
+        return await self._get(f"/lang/rules/{rule_id}")
