@@ -15,6 +15,7 @@ export * from './label';
 export * from './layout';
 export * from './list';
 export * from './map';
+export * from './prose';
 export * from './separator';
 export * from './skeleton';
 export * from './slider';
