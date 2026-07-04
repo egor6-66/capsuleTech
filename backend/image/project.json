@@ -1,0 +1,30 @@
+{
+  "name": "backend-image",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "backend/image/src",
+  "tags": ["backend", "python", "image"],
+  "targets": {
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/image",
+        "command": "uv run uvicorn capsule_image.main:app --port 8005 --reload"
+      }
+    },
+    "test:py": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/image",
+        "command": "uv run pytest"
+      }
+    },
+    "lint:py": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/image",
+        "command": "uv run ruff check ."
+      }
+    }
+  }
+}
