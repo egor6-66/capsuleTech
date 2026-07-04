@@ -114,14 +114,20 @@ function scopeFromName(pkgName) {
  * Python/Rust в backend/ без package.json). Имя из package.json#name (приоритет),
  * иначе project.json#name.
  *
- * Зона apps/ (2026-07-03, канон user — ПОЛНЫЙ фенс): все apps/* = один scope
- * `apps` (owner-apps, канон apps/OWNERSHIP.md). main тоже deny — architect
- * пишет брифы, руками в apps не лезет. */
+ * Зона apps/ (канон user 2026-07-05 — owner PER APP, зеркало packages-модели;
+ * заменяет «один owner-apps» от 2026-07-03): apps/<name>/** = scope `apps-<name>`.
+ * Файлы прямо в apps/ (OWNERSHIP.md — общий канон app-слоёв) = scope `apps`
+ * (канон-хранитель). main по-прежнему deny везде в apps — architect пишет брифы. */
 function resolvePackage(targetPath) {
   const t = norm(targetPath);
   const appsIdx = t.indexOf('/apps/');
   if (appsIdx !== -1) {
-    return { root: t.slice(0, appsIdx + '/apps'.length), scope: 'apps' };
+    const zoneRoot = t.slice(0, appsIdx + '/apps'.length);
+    const rest = t.slice(appsIdx + '/apps/'.length);
+    // файл прямо в apps/ (без поддиректории) — общие канон-документы зоны
+    if (!rest.includes('/')) return { root: zoneRoot, scope: 'apps', zoneRoot };
+    const seg = rest.split('/')[0];
+    return { root: `${zoneRoot}/${seg}`, scope: `apps-${seg}`, zoneRoot };
   }
   let dir = dirname(targetPath);
   // не выходим выше сегмента packages/ или backend/
@@ -244,6 +250,19 @@ async function main() {
       `Scope-fence: этот инстанс работает в scope="${scope}", а правка идёт в пакет "${pkg.scope}" (${target}). ` +
         `Чужой пакет — зона его owner-агента. Запусти отдельный инстанс через claude-scope для "${pkg.scope}".`,
     );
+  }
+
+  // 2a) ownership-gate зоны apps: общий канон app-слоёв обязателен для ЛЮБОГО
+  // per-app owner'а (apps/OWNERSHIP.md), дополнительно к OWNERSHIP самого аппа.
+  if (pkg.zoneRoot && pkg.scope.startsWith('apps-')) {
+    const zoneCanon = join(pkg.zoneRoot, 'OWNERSHIP.md');
+    if (existsSync(zoneCanon) && !transcriptHasRead(input.transcript_path, zoneCanon)) {
+      await logDeviation('ownership-gate', scope, `edit ${pkg.scope} without reading apps/OWNERSHIP.md`);
+      deny(
+        `Ownership-gate: зона apps имеет общий канон app-слоёв — прочитай ${norm(zoneCanon)} ` +
+          `(Read), затем повтори правку.`,
+      );
+    }
   }
 
   // 2) ownership-gate
