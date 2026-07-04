@@ -1,8 +1,9 @@
 /**
  * Gate — единственный виджет auth-аппа: guest ↔ authed.
  *
- * guest  — `Auth.Login type="credentials"` / `Auth.Register` (переключение по
- *          store.mode) + Views.SwitchMode под формой.
+ * guest  — пакетный `Auth.Gate`: готовый guest-блок (Login ↔ Register +
+ *          ссылка-переключатель), mode-стейт живёт ВНУТРИ блока (Gate-FSM).
+ *          Переключение форм — забота пакета, не аппа.
  * authed — Views.AuthedPanel (login + continue/logout).
  *
  * Store — 2-й аргумент (контекст root `Features.App`), store опционален → гард.
@@ -12,7 +13,6 @@
 const Gate = Widget((Ui, store) => {
   const data = () => (store?.ctx as { data?: Record<string, unknown> } | undefined)?.data;
   const viewer = () => data()?.viewer as Entities.Viewer.Row | null | undefined;
-  const mode = () => (data()?.mode as 'login' | 'register' | undefined) ?? 'login';
   const hasNext = () => Boolean(data()?.next);
 
   return (
@@ -21,13 +21,7 @@ const Gate = Widget((Ui, store) => {
         when={!viewer()}
         fallback={<Views.AuthedPanel login={viewer()?.login} hasNext={hasNext()} />}
       >
-        <Ui.Flow.Show
-          when={mode() === 'register'}
-          fallback={<Auth.Login type="credentials" title="Вход" />}
-        >
-          <Auth.Register />
-        </Ui.Flow.Show>
-        <Views.SwitchMode mode={mode()} />
+        <Auth.Gate />
       </Ui.Flow.Show>
     </Ui.Layout.Flex>
   );

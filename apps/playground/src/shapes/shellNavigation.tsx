@@ -22,10 +22,6 @@ const ShellNavigation = Shape(
         as: ui.Link,
         to: it.to,
         variant: 'ghost',
-        // Активный link несёт aria-current='page' → подсветка аксентом,
-        // pointer-events-none блокирует повторный клик/hover-flicker.
-        class:
-          'aria-[current=page]:bg-primary aria-[current=page]:text-primary-foreground aria-[current=page]:font-semibold aria-[current=page]:pointer-events-none',
         children: it.label,
       }),
     },

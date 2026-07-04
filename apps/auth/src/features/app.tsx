@@ -5,8 +5,8 @@
  * (mount-once) → живёт один раз на всё приложение.
  *
  * Флоу:
- *   guest  — форма входа/регистрации (Widgets.Gate → Auth.Login / Auth.Register);
- *            переключение форм — теги to-register/to-login.
+ *   guest  — форма входа/регистрации (Widgets.Gate → пакетный `Auth.Gate`);
+ *            переключение форм — Gate-FSM пакета, апп его не касается.
  *   authed — панель «вы вошли как <login>» + logout + «продолжить» по next.
  *
  * Именованные события пакета web-auth (ADR 032, агрегат `Auth.Events`):
@@ -45,7 +45,6 @@ const App = Feature<Auth.Events>(({ utils, authApi }) => {
 
     context: {
       viewer: null as Entities.Viewer.Row | null,
-      mode: 'login' as 'login' | 'register',
       next: nextTarget,
     },
 
@@ -62,13 +61,6 @@ const App = Feature<Auth.Events>(({ utils, authApi }) => {
             state.set('authed');
           }
         },
-
-        // Переключение вход ↔ регистрация (теги на кнопках Views.SwitchMode).
-        onClick: ({ target, store }) => {
-          const tags = target.meta?.tags ?? [];
-          if (utils.includes(tags, 'to-register')) store.update({ mode: 'register' });
-          if (utils.includes(tags, 'to-login')) store.update({ mode: 'login' });
-        },
       },
 
       authed: {
@@ -76,7 +68,7 @@ const App = Feature<Auth.Events>(({ utils, authApi }) => {
           const tags = target.meta?.tags ?? [];
           if (utils.includes(tags, 'logout')) {
             await authApi?.logoutServer();
-            store.update({ viewer: null, mode: 'login' });
+            store.update({ viewer: null });
             state.set('guest');
             return;
           }

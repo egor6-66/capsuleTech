@@ -1,9 +1,9 @@
 export default defineAppConfig({
   // Словарь meta-тегов аппа (типизирует `meta.tags` в слоях):
-  // to-login/to-register — переключение форм вход/регистрация;
   // logout/continue — кнопки authed-панели (выход / переход по ?next=).
+  // Переключение форм (to-login/to-register) живёт внутри пакетного Auth.Gate.
   meta: {
-    tags: ['to-login', 'to-register', 'logout', 'continue'],
+    tags: ['logout', 'continue'],
   },
   // Query-side алиасы (ADR 005): FSM web-auth собирает значения формы через
   // `store.values(['@input'])` и вешает loading через `patch(['@submit'])` —
