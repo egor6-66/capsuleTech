@@ -34,17 +34,18 @@ adr_refs: [055, 064, "064-A", 065, 067, 054]
 
 - **`clients/lang.py`** — `LangClient`: async httpx к `LANG_URL`, таймаут 5s. Сетевые/5xx апстрима → `LangError(502, ...)`; 4xx (404 sense, 422 фильтр) зеркалятся as-is. Хэндлер `LangError` → JSON в `main.py`.
 - **`clients/voice.py`** — `VoiceClient`: engines-кэш в памяти (TTL 300s, отрицательный кэш 30s — чтобы лежащий voice не ел connect-timeout на каждый запрос) + `speak_url()` (готовая ссылка на `VOICE_PUBLIC_URL`, urlencode). Voice down → `engines() = None` + warning-лог.
-- **`api.py`** — фронт-контракт `/learn/lang/*` сохранён 1:1 (пути + формы): passthrough в lang + обогащение `audio: {url, engines} | null` в `SenseListItem`/`SenseDetail`. Аудио-байты через learn **не текут** — фронт дёргает `audio.url` напрямую.
-- **`schemas.py`** — **свои** pydantic-модели ответов (копия форм lang + `audio`), чужие модели не импортируются. Бывшие enum-фасеты — plain `str`: таксономией владеет lang, композитор не ревалидирует (иначе drift при добавлении значения в lang).
-- **config (D4):** `LANG_URL` / `VOICE_URL` / `VOICE_PUBLIC_URL` (= VOICE_URL если не задан; расходится за реверс-прокси) / `PORT` / `DEFAULT_LANG`.
+- **`clients/image.py`** — `ImageClient`: **зеркало `voice.py` 1-в-1** — engines-кэш (TTL 300s / failure 30s) + `render_url(prompt)` (ссылка на `IMAGE_PUBLIC_URL/image/render?prompt=…`, urlencode). Image down → `engines() = None` → `image: null`. Байты картинок через learn **не текут**.
+- **`api.py`** — фронт-контракт `/learn/lang/*` сохранён 1:1 (пути + формы): passthrough в lang + обогащение `audio: {url, engines} | null` **и** `image: {url} | null` в `SenseListItem`/`SenseDetail`. Медиа-байты через learn **не текут** — фронт дёргает `audio.url` / `image.url` напрямую. **Prompt-стратегия image v1 (ВРЕМЕННАЯ):** `f"{text} ({pos})"` — заглушка; переключится на teacher-curated поле «образ» когда оно доедет обогащённым в lang (lessons-волна).
+- **`schemas.py`** — **свои** pydantic-модели ответов (копия форм lang + `audio` + `image`), чужие модели не импортируются. Бывшие enum-фасеты — plain `str`: таксономией владеет lang, композитор не ревалидирует (иначе drift при добавлении значения в lang). Бывшее `image: str` (текст-«образ» из lang) **замещено** блоком `image: {url}` — образ был заглушкой до появления генерации картинок, теперь композитор кладёт готовую ссылку.
+- **config (D4):** `LANG_URL` / `VOICE_URL` / `VOICE_PUBLIC_URL` (= VOICE_URL если не задан; расходится за реверс-прокси) / `IMAGE_URL` / `IMAGE_PUBLIC_URL` (= IMAGE_URL если не задан; в dev через gateway = `/api`) / `PORT` / `DEFAULT_LANG`.
 
 ## Публичный API
 
-`GET /health` · `GET /learn/lang/senses` (фильтры lang + `audio` на item) · `GET /learn/lang/sense/{id}` (+`audio`) · `GET /learn/lang/senses/related?sense=` (чистый passthrough). `/learn/voice/*` **удалён** — потребители ходят в voice напрямую (фронт-миграция на `audio.url` — зона architect).
+`GET /health` · `GET /learn/lang/senses` (фильтры lang + `audio` + `image` на item) · `GET /learn/lang/sense/{id}` (+`audio` +`image`) · `GET /learn/lang/senses/related?sense=` (чистый passthrough). `/learn/voice/*` **удалён** — потребители ходят в voice напрямую (фронт-миграция на `audio.url` — зона architect).
 
 ## Тесты
 
-`uv run pytest` — respx-моки апстримов, живые сервисы не нужны: passthrough форм, 404/502-маппинг, audio-блок (urlencode, engines-кэш = 1 probe), voice down → `audio: null` при 200. Живой smoke требует поднятых lang :8002 + voice :8001.
+`uv run pytest` — respx-моки апстримов, живые сервисы не нужны: passthrough форм, 404/502-маппинг, audio-блок (urlencode, engines-кэш = 1 probe), voice down → `audio: null` при 200, image-блок (urlencode `{text} ({pos})`, engines-кэш = 1 probe, override текст-«образа» на detail), image down → `image: null` при 200. Живой smoke требует поднятых lang :8002 + voice :8001 + image :8005.
 
 ## Урок — контракт-каскад (2026-07-03)
 

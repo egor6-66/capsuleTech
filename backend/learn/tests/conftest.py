@@ -36,7 +36,6 @@ SENSE_DETAIL = {
     "source": "curated",
     "pron_ru": "айс крим",
     "ipa": None,
-    "image": None,
     "connotation": "positive",
     "intensity": None,
     "synset": "dessert",
@@ -66,12 +65,14 @@ RELATED = {
 }
 
 ENGINES = {"engines": ["kokoro", "chatterbox"], "default": "kokoro"}
+IMAGE_ENGINES = {"engines": ["sdxl-turbo", "fake"], "default": "sdxl-turbo"}
 
 
 @pytest.fixture()
 def upstream():
     with respx.mock(assert_all_called=False) as router:
         router.get(f"{settings.voice_url}/voice/engines").respond(json=ENGINES)
+        router.get(f"{settings.image_url}/image/engines").respond(json=IMAGE_ENGINES)
         yield router
 
 

@@ -18,6 +18,17 @@ class AudioBlock(BaseModel):
     engines: list[str]
 
 
+class ImageBlock(BaseModel):
+    """Ready-to-display image link — never image bytes.
+
+    Supersedes the former plain-text `image` ("образ") mnemonic on the sense:
+    lang carries a text stand-in until picture generation exists, at which
+    point the composer replaces it with this link.
+    """
+
+    url: str
+
+
 class TagOut(BaseModel):
     name: str
     kind: str
@@ -55,6 +66,7 @@ class SenseListItem(BaseModel):
     synset: str | None
     tags: list[TagOut]
     audio: AudioBlock | None
+    image: ImageBlock | None
 
 
 class SensesResponse(BaseModel):
@@ -73,7 +85,6 @@ class SenseDetail(BaseModel):
     source: str
     pron_ru: str | None
     ipa: str | None
-    image: str | None
     connotation: str | None
     intensity: int | None
     synset: str | None
@@ -85,6 +96,7 @@ class SenseDetail(BaseModel):
     examples: list[ExampleOut]
     relations: list[RelationOut]
     audio: AudioBlock | None
+    image: ImageBlock | None
 
 
 class RelatedItem(BaseModel):

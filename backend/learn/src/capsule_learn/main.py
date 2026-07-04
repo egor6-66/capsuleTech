@@ -7,6 +7,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from .api import router as lang_router
+from .clients.image import ImageClient
 from .clients.lang import LangClient, LangError
 from .clients.voice import VoiceClient
 from .config import settings
@@ -16,9 +17,11 @@ from .config import settings
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.lang = LangClient(settings.lang_url)
     app.state.voice = VoiceClient(settings.voice_url, settings.voice_public())
+    app.state.image = ImageClient(settings.image_url, settings.image_public())
     yield
     await app.state.lang.aclose()
     await app.state.voice.aclose()
+    await app.state.image.aclose()
 
 
 app = FastAPI(title="capsule-learn", version="0.2.0", lifespan=lifespan)

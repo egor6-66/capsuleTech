@@ -11,6 +11,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Query, Request
 
+from .clients.image import ImageClient
 from .clients.voice import VoiceClient
 from .config import settings
 from .schemas import RelatedResponse, SenseDetail, SensesResponse
@@ -23,6 +24,16 @@ async def _audio_block(voice: VoiceClient, text: str, lang: str) -> dict[str, An
     if engines is None:
         return None
     return {"url": voice.speak_url(text, lang), "engines": engines}
+
+
+async def _image_block(image: ImageClient, text: str, pos: str) -> dict[str, Any] | None:
+    # Prompt strategy v1 (TEMPORARY): a plain "{text} ({pos})" stub. The
+    # teacher-curated "образ" field is being refined in lang (lessons wave);
+    # once it lands enriched, switch the prompt to it. Do NOT invent prompt
+    # engineering here now. (brief backend-learn-image-compose, ADR 067)
+    if await image.engines() is None:
+        return None
+    return {"url": image.render_url(f"{text} ({pos})")}
 
 
 @router.get("/senses", response_model=SensesResponse)
@@ -54,8 +65,10 @@ async def list_senses(
     params.update({k: v for k, v in optional.items() if v is not None})
     data = await request.app.state.lang.senses(params)
     voice: VoiceClient = request.app.state.voice
+    image: ImageClient = request.app.state.image
     for item in data["senses"]:
         item["audio"] = await _audio_block(voice, item["text"], lang)
+        item["image"] = await _image_block(image, item["text"], item["pos"])
     return data
 
 
@@ -63,7 +76,10 @@ async def list_senses(
 async def get_sense(sense_id: int, request: Request) -> Any:
     data = await request.app.state.lang.sense(sense_id)
     voice: VoiceClient = request.app.state.voice
+    image: ImageClient = request.app.state.image
     data["audio"] = await _audio_block(voice, data["word"]["text"], data["word"]["lang"])
+    # Overrides lang's plain-text "образ" stub with the composed picture link.
+    data["image"] = await _image_block(image, data["word"]["text"], data["pos"])
     return data
 
 
