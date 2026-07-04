@@ -5,7 +5,13 @@ export default defineAppConfig({
   meta: {
     tags: ['to-login', 'to-register', 'logout', 'continue'],
   },
-  aliases: {},
+  // Query-side алиасы (ADR 005): FSM web-auth собирает значения формы через
+  // `store.values(['@input'])` и вешает loading через `patch(['@submit'])` —
+  // алиасы обязаны покрывать теги полей пакетных форм (login/password/confirm).
+  aliases: {
+    '@input': ['login', 'password', 'confirm'],
+    '@submit': ['submit'],
+  },
   // Auth-домен (ADR 068 D7): блоки Auth.Login/Auth.Register + services.authApi.
   // Без boost-layout/web-shell — минимализм: форма по центру, app-shell хром не нужен.
   packages: ['@capsuletech/web-auth'],

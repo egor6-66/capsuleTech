@@ -51,9 +51,12 @@ const App = Feature<Auth.Events>(({ utils, authApi }) => {
 
     states: {
       guest: {
-        // Restore: cookie-сессия уже поднята bootstrap'ом (`initAuthSession`,
-        // GET /auth/me) → входим в authed без формы. Гость — штатно, остаёмся.
-        onInit: ({ store, state }) => {
+        // Bootstrap cookie-сессии: `authApi.init()` = GET /auth/me → session-store
+        // + подписка на BroadcastChannel-синк (идемпотентен, повторный вход в
+        // guest после logout безопасен). Кука жива → authed-панель без формы;
+        // 401 — гость, штатно, остаёмся на форме.
+        onInit: async ({ store, state }) => {
+          await authApi?.init();
           if (authApi?.isAuthed()) {
             store.update({ viewer: authApi.user() });
             state.set('authed');
