@@ -91,6 +91,19 @@ def test_lesson_detail_passthrough_content(upstream, client):
     assert drill["words"] == ["eat", "come", "ghost"]  # raw list untouched
 
 
+def test_lesson_items_sanitized_no_answer_key(upstream, client):
+    # The answer key never reaches the browser: items are scrubbed down to
+    # {index, promptRu, context}. Grading happens via POST .../check.
+    _mock_lang_detail(upstream)
+    body = client.get("/learn/lessons/past-perfect").json()
+    item = body["drills"][0]["items"][0]
+    assert item == {"index": 0, "promptRu": "Я уже поел.", "context": None}
+    assert "answerEn" not in item
+    assert "accept" not in item
+    assert "nearMiss" not in item
+    assert "graboTag" not in item
+
+
 def test_words_resolved_enrichment(upstream, client):
     _mock_lang_detail(upstream)
     body = client.get("/learn/lessons/past-perfect").json()

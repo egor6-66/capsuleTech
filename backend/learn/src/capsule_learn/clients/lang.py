@@ -55,3 +55,8 @@ class LangClient:
 
     async def lesson(self, lesson_id: str) -> dict[str, Any]:
         return await self._get(f"/lang/lessons/{lesson_id}")
+
+    async def drill(self, drill_id: str) -> dict[str, Any]:
+        # The full drill incl. the answer key (answerEn/accept/nearMiss) — used
+        # by the checker, never forwarded to the browser. 404 mirrored as-is.
+        return await self._get(f"/lang/drills/{drill_id}")

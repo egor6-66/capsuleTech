@@ -19,16 +19,26 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 
+from .checker import check_item
 from .clients.image import ImageClient
 from .clients.lang import LangClient
 from .clients.voice import VoiceClient
 from .compose import audio_block, image_block
 from .config import settings
-from .schemas import ResolvedWord
+from .schemas import DrillCheckRequest, DrillCheckResponse, ResolvedWord
 
 router = APIRouter(prefix="/learn", tags=["lessons"])
+
+
+def _public_item(index: int, item: dict[str, Any]) -> dict[str, Any]:
+    """Front-facing drill item — the answer key (answerEn/accept/nearMiss/
+    graboTag) is stripped here so it never reaches the browser; grading happens
+    server-side via POST /learn/drills/{id}/check. `index` addresses the item
+    in that check call.
+    """
+    return {"index": index, "promptRu": item["promptRu"], "context": item.get("context")}
 
 
 async def _resolve_word(
@@ -81,7 +91,26 @@ async def get_lesson(lesson_id: str, request: Request) -> Any:
 
     memo: dict[str, dict[str, Any]] = {}
     for drill in lesson["drills"]:
+        # Point-surgical sanitization — the rest of the lesson keeps its
+        # passthrough immunity (no response_model), only items are scrubbed.
+        drill["items"] = [_public_item(i, it) for i, it in enumerate(drill["items"])]
         drill["words_resolved"] = [
             await _resolve_word(w, lang, voice, image, memo) for w in drill["words"]
         ]
     return lesson
+
+
+@router.post("/drills/{drill_id}/check", response_model=DrillCheckResponse,
+             response_model_exclude_none=True)
+async def check_drill(
+    drill_id: str, body: DrillCheckRequest, request: Request
+) -> DrillCheckResponse:
+    # Answer key stays server-side: the drill (with answerEn/accept/nearMiss)
+    # is fetched per-request from lang and graded here. No drill cache (early).
+    lang: LangClient = request.app.state.lang
+    drill = await lang.drill(drill_id)  # unknown drill_id → lang 404 mirrored
+    items = drill["items"]
+    if not 0 <= body.item_index < len(items):
+        raise HTTPException(status_code=404, detail="drill item not found")
+    result = check_item(items[body.item_index], body.answer, body.reveal)
+    return DrillCheckResponse(**result)

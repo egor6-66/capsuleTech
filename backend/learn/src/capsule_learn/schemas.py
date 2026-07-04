@@ -46,6 +46,22 @@ class ResolvedWord(BaseModel):
     image: ImageBlock | None
 
 
+class DrillCheckRequest(BaseModel):
+    """Learner submission for one drill item (ADR 069 phase 2)."""
+
+    item_index: int
+    answer: str
+    reveal: bool = False
+
+
+class DrillCheckResponse(BaseModel):
+    """Verdict for a drill submission — `hint` on near_miss, `answer` on reveal."""
+
+    verdict: str  # 'correct' | 'near_miss' | 'wrong'
+    hint: str | None = None
+    answer: str | None = None
+
+
 class TagOut(BaseModel):
     name: str
     kind: str
