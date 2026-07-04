@@ -107,3 +107,16 @@ class MatchMode(StrEnum):
 
     CONTAINS = "contains"
     REGEX = "regex"
+
+
+class DrillDimension(StrEnum):
+    """What a drill measures — the axis its prompts must be unambiguous on.
+
+    `tense` (default) keeps the strict time-marker check: a RU→EN tense drill is
+    worthless if the prompt doesn't pin the time. `other` (pronouns/articles/
+    copula/…) measures something else, so a time marker is not required — the
+    `context` becomes a recommendation, not a gate (ADR 069, round-3 decision).
+    """
+
+    TENSE = "tense"
+    OTHER = "other"

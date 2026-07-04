@@ -30,7 +30,7 @@ from sqlalchemy.orm import Session
 
 from .config import settings
 from .db import SessionLocal
-from .enums import MatchMode, Source
+from .enums import DrillDimension, MatchMode, Source
 from .lessons_schemas import ConceptIn, DrillIn, LessonIn, RuleIn
 from .models import (
     Concept,
@@ -222,17 +222,22 @@ def _validate_intra(path: Path, kind: str, model: BaseModel) -> None:
         raise ValueError(f"id `{ident}` содержит temp/wip/new/draft")
 
     if kind == "drill":
+        dimension = model.dimension  # type: ignore[attr-defined]
         for i, item in enumerate(model.items):  # type: ignore[attr-defined]
-            _validate_drill_item(i, item)
+            _validate_drill_item(i, item, dimension)
 
 
-def _validate_drill_item(index: int, item: object) -> None:
-    text = (item.prompt_ru or "") + "\n" + (item.context or "")  # type: ignore[attr-defined]
-    if not _MARKER_RE.search(text):
-        raise ValueError(
-            f"item[{index}]: промпт неоднозначен по времени — "
-            f"добавь маркер времени в promptRu или заполни context"
-        )
+def _validate_drill_item(index: int, item: object, dimension: DrillDimension) -> None:
+    # The time-marker check gates ONLY tense drills (round-3 decision, ADR 069):
+    # for other dimensions the prompt is disambiguated by its answer/nearMiss, not
+    # by a time word, so `context` is a recommendation rather than a requirement.
+    if dimension == DrillDimension.TENSE:
+        text = (item.prompt_ru or "") + "\n" + (item.context or "")  # type: ignore[attr-defined]
+        if not _MARKER_RE.search(text):
+            raise ValueError(
+                f"item[{index}]: промпт неоднозначен по времени — "
+                f"добавь маркер времени в promptRu или заполни context"
+            )
     for j, nm in enumerate(item.near_miss):  # type: ignore[attr-defined]
         if nm.match == MatchMode.REGEX:
             try:
@@ -362,6 +367,7 @@ def _upsert_scalar(db: Session, e: ParsedEntity, report: LessonsReport) -> None:
             row = Drill(id=m.id)  # type: ignore[attr-defined]
             db.add(row)
         row.title, row.level, row.tags = m.title, m.level, m.tags  # type: ignore[attr-defined]
+        row.dimension = m.dimension  # type: ignore[attr-defined]
         row.rule_id, row.grabo_tag, row.source = (
             m.rule, m.grabo_tag, Source.CURATED,  # type: ignore[attr-defined]
         )

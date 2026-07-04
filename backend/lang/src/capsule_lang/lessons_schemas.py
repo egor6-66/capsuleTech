@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from .enums import LessonLevel, MatchMode
+from .enums import DrillDimension, LessonLevel, MatchMode
 
 _camel = ConfigDict(populate_by_name=True)
 
@@ -77,6 +77,9 @@ class DrillIn(BaseModel):
     id: str
     title: str
     level: LessonLevel
+    # What the drill measures — gates the item time-marker check (round-3, ADR 069).
+    # Absent → `tense` (strict, protects the эталон drill without editing it).
+    dimension: DrillDimension = DrillDimension.TENSE
     tags: list[str] = Field(default_factory=list)
     rule: str
     concept: list[str] = Field(default_factory=list)
@@ -84,7 +87,7 @@ class DrillIn(BaseModel):
     words: list[str] = Field(default_factory=list)
     items: list[DrillItemIn]
 
-    @field_validator("level", mode="before")
+    @field_validator("level", "dimension", mode="before")
     @classmethod
     def _norm(cls, v: object) -> object:
         return _lower(v)
@@ -152,6 +155,7 @@ class DrillOut(BaseModel):
     id: str
     title: str
     level: LessonLevel
+    dimension: DrillDimension
     tags: list[str]
     rule: str
     graboTag: str

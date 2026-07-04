@@ -24,6 +24,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .db import Base
 from .enums import (
     Connotation,
+    DrillDimension,
     Frequency,
     LessonLevel,
     Level,
@@ -239,6 +240,13 @@ class Drill(Base):
         _enum(LessonLevel, "lesson_level"), nullable=False
     )
     tags: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    # The axis this drill measures (ADR 069, round-3): gates the prompt time-marker
+    # check in the importer. `tense` (default) = strict; `other` = marker optional.
+    dimension: Mapped[DrillDimension] = mapped_column(
+        _enum(DrillDimension, "drill_dimension"),
+        nullable=False,
+        default=DrillDimension.TENSE,
+    )
     rule_id: Mapped[str] = mapped_column(
         ForeignKey("rules.id", ondelete="RESTRICT"), nullable=False, index=True
     )

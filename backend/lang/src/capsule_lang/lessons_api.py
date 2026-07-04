@@ -63,6 +63,7 @@ def _drill_out(d: Drill) -> DrillOut:
         id=d.id,
         title=d.title,
         level=d.level,
+        dimension=d.dimension,
         tags=d.tags or [],
         rule=d.rule_id,
         graboTag=d.grabo_tag,

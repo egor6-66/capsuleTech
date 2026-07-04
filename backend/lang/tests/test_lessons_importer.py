@@ -63,6 +63,7 @@ def test_import_reference_vault(blank_db):
     assert rule.title == "5d. Глаголы и времена"
 
     drill = blank_db.get(Drill, "past-perfect-which-clause")
+    assert drill.dimension.value == "tense"  # эталон omits the field → default
     assert [i.position for i in drill.items] == [0, 1]
     # near_miss survives as JSON with both match modes
     modes = {nm["match"] for i in drill.items for nm in (i.near_miss or [])}
@@ -139,6 +140,40 @@ def test_reject_unresolved_reference(blank_db, tmp_path):
     )
     report = import_vault(tmp_path, blank_db)
     assert any("rule" in r.reason and "не найдено" in r.reason for r in report.rejected)
+    assert _count(blank_db, Drill) == 0
+
+
+# --- dimension gate (round-3, ADR 069) ---------------------------------------
+
+
+def test_other_dimension_skips_time_marker(blank_db, tmp_path):
+    # A non-tense drill: prompt carries NO time marker and NO context, yet it
+    # imports — the marker check is gated to `dimension: tense` only.
+    _write(tmp_path, "grammar/grammar-x.md", "---\nid: grammar-x\ntype: rule\ntitle: X\n---\nb")
+    _write(
+        tmp_path,
+        "drills/pron.md",
+        "---\nid: pron\ntype: drill\ntitle: P\nlevel: L1\ndimension: other\nrule: grammar-x\n"
+        "graboTag: g\nitems:\n"
+        '  - promptRu: "Дай им книгу."\n    answerEn: "Give them a book."\n---\nb',
+    )
+    report = import_vault(tmp_path, blank_db)
+    assert report.rejected == []
+    d = blank_db.get(Drill, "pron")
+    assert d is not None and d.dimension.value == "other"
+
+
+def test_unknown_dimension_rejected(blank_db, tmp_path):
+    _write(tmp_path, "grammar/grammar-x.md", "---\nid: grammar-x\ntype: rule\ntitle: X\n---\nb")
+    _write(
+        tmp_path,
+        "drills/bad.md",
+        "---\nid: bad\ntype: drill\ntitle: B\nlevel: L1\ndimension: bogus\nrule: grammar-x\n"
+        "graboTag: g\nitems:\n"
+        '  - promptRu: "Я уже поел."\n    answerEn: "I ate."\n---\nb',
+    )
+    report = import_vault(tmp_path, blank_db)
+    assert any("dimension" in r.reason for r in report.rejected)
     assert _count(blank_db, Drill) == 0
 
 
