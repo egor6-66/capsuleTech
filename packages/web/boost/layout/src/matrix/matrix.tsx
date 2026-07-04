@@ -115,7 +115,8 @@ const MatrixImpl = (props: IMatrixProps) => {
  * **Per-cell overrides (tri-state):**
  * - `cell.draggable`: `true` — DnD активен для cell всегда (оверрайдит `mode`/global);
  *   `false` — никогда; `undefined` — следует matrix-резолюции (`dnd` > `mode` > global).
- * - `cell.resizable` defaults to `true` — set to `false` to lock a cell non-resizable.
+ * - `cell.resizable`: та же tri-state семантика для resize-ручки (ручка между
+ *   соседями активна когда активны оба; «эластичный центр» пресета всегда согласен).
  *
  * **DnD / badge-UX:**
  * - A cell shows a DragBadge (grip icon, top-right) only when DnD резолвится
@@ -123,14 +124,13 @@ const MatrixImpl = (props: IMatrixProps) => {
  *   (т.е. drop-цель реально есть).
  * - `onLayoutChange` called with swap/insert/grid event after each successful layout change.
  *
- * **Border:**
- * - `bordered?: boolean` (default `true`) — Matrix-level default for the cell
- *   hairline border. Fully independent of `resize`/`dnd`: a resizable cell only
- *   gets the interactive handle (and a draggable cell only gets the badge) —
- *   neither implies a border on its own. Set `bordered={false}` to render
- *   edge-to-edge slots.
- * - Per-slot override: `slots.header.bordered` / `cell.bordered` (raw rows) wins
- *   over the Matrix-level default when explicitly set, e.g.
- *   `slots={{ header: { children, bordered: false }, main: {...} }}`.
+ * **Border (divider-модель, 2026-07-04):**
+ * - `bordered?: boolean` (default `true`) — рисует ВНУТРЕННИЕ hairline-разделители
+ *   между слотами. Слоты — общее пространство, разделённое линиями, не независимые
+ *   карточки (внешних бордеров и скруглений у ячеек нет). Divider между парой
+ *   соседей виден, когда пара bordered И между ними не рисуется активная
+ *   resize-ручка (её линия сама служит разделителем).
+ * - Per-slot override: `slots.header.bordered` / `cell.bordered` (raw rows) —
+ *   divider виден, если хотя бы один из соседей резолвится в true.
  */
 export const Matrix = MatrixImpl;

@@ -16,6 +16,7 @@ import type { ICell, IRow, LayoutChangeEvent, MatrixDndKind } from './interfaces
 import { renderRow } from './rows/flex-row';
 import type { IGridOpts } from './rows/grid-row';
 import { MatrixPresetContext, MatrixSlot, traceSlotRender } from './slot';
+import { dividerBetweenRows, rowResizeActive } from './utils';
 
 // ---------------------------------------------------------------------------
 // SizesMap — session-only persistence of user-resized panel sizes.
@@ -90,6 +91,14 @@ const rowsToVerticalItems = (
     const resolvedHeight =
       savedVerticalSizes?.[i] ?? (heightIsNumber ? (row.height as number) : undefined);
     const zone = getZone && row.id ? getZone(row.id) : undefined;
+    // Divider над row (i>0): пара bordered И вертикальная ручка между ними
+    // не активна (активная ручка сама рисует hairline).
+    const prevRow = i > 0 ? rows[i - 1] : undefined;
+    const handleBetween =
+      !!prevRow && (prevRow.resizable ?? true) !== false && (row.resizable ?? true) !== false;
+    const topDivider = prevRow
+      ? (): boolean => dividerBetweenRows(prevRow, row, bordered, resizeEnabled, handleBetween)
+      : undefined;
     return {
       children: renderRow(
         row,
@@ -106,8 +115,12 @@ const rowsToVerticalItems = (
         setCellSize,
         gridOpts,
         bordered,
+        topDivider,
       ),
+      // Структурный флаг (handle в DOM); АКТИВНОСТЬ — per-item handleActive,
+      // явный row.resizable оверрайдит mode/global (пер-слот контракт 2026-07-04).
       resizable: isResizable,
+      handleActive: (): boolean => rowResizeActive(row, resizeEnabled),
       initialSize: resolvedHeight,
       minSize: row.minHeight,
     };
@@ -358,9 +371,30 @@ export const MatrixContent = (props: IMatrixContentProps) => {
               const getZoneFn = insertGetZone();
               const zone = getZoneFn && row.id ? getZoneFn(row.id) : undefined;
               const widthFraction = typeof row.height === 'number' ? row.height : undefined;
+              // Divider слева от зоны (i>0). Структурный handle между зонами
+              // существует только когда ОБЕ зоны resizable !== false (structural
+              // default в horizontal-режиме — false).
+              const prevZone = i > 0 ? rs[i - 1] : undefined;
+              const zoneHandleBetween =
+                !!prevZone &&
+                (prevZone.resizable ?? false) !== false &&
+                (row.resizable ?? false) !== false;
+              const zoneDivider = prevZone
+                ? (): boolean =>
+                    dividerBetweenRows(
+                      prevZone,
+                      row,
+                      props.bordered,
+                      props.resizeEnabled,
+                      zoneHandleBetween,
+                    )
+                : undefined;
               return {
                 children: (
-                  <div class="relative h-full min-w-0 flex-1 overflow-hidden">
+                  <div
+                    class="relative h-full min-w-0 flex-1 overflow-hidden"
+                    classList={{ 'border-l border-border/60': zoneDivider ? zoneDivider() : false }}
+                  >
                     {renderRow(
                       row,
                       swapGetChildren(),
@@ -380,6 +414,7 @@ export const MatrixContent = (props: IMatrixContentProps) => {
                   </div>
                 ),
                 resizable: row.resizable ?? false,
+                handleActive: (): boolean => rowResizeActive(row, props.resizeEnabled),
                 initialSize: getSavedSizes(`hz:${rowKey}`)?.[0] ?? widthFraction,
                 minSize: row.minHeight,
               };
@@ -390,8 +425,7 @@ export const MatrixContent = (props: IMatrixContentProps) => {
                   <Layout.Resizable
                     orientation="horizontal"
                     items={zoneItems}
-                    withHandle={props.resizeEnabled()}
-                    handleDisabled={!props.resizeEnabled()}
+                    withHandle
                     onSizesChange={(sizes) => {
                       for (let k = 0; k < rs.length; k++) {
                         const rk = rs[k].id ?? `r${k}`;
@@ -423,8 +457,26 @@ export const MatrixContent = (props: IMatrixContentProps) => {
                     }
                     return { flex: '1', 'min-width': '0' };
                   };
+                  // Plain-режим — corvu-ручек между зонами нет (handleBetween=false).
+                  const prevZone = i() > 0 ? effectiveRows()[i() - 1] : undefined;
+                  const zoneDivider = prevZone
+                    ? (): boolean =>
+                        dividerBetweenRows(
+                          prevZone,
+                          row,
+                          props.bordered,
+                          props.resizeEnabled,
+                          false,
+                        )
+                    : undefined;
                   return (
-                    <div class="relative h-full overflow-hidden" style={colStyle()}>
+                    <div
+                      class="relative h-full overflow-hidden"
+                      style={colStyle()}
+                      classList={{
+                        'border-l border-border/60': zoneDivider ? zoneDivider() : false,
+                      }}
+                    >
                       {renderRow(
                         row,
                         swapGetChildren(),
@@ -476,8 +528,7 @@ export const MatrixContent = (props: IMatrixContentProps) => {
                   <Layout.Resizable
                     orientation="vertical"
                     items={verticalItems}
-                    withHandle={props.resizeEnabled()}
-                    handleDisabled={!props.resizeEnabled()}
+                    withHandle
                     onSizesChange={onVerticalSizesChange}
                   />
                 </div>
@@ -510,6 +561,14 @@ export const MatrixContent = (props: IMatrixContentProps) => {
             );
             let resizableBlockEmitted = false;
             const elements: JSX.Element[] = rs.map((row, _i) => {
+              // Divider между соседними элементами вертикальной последовательности.
+              // На стыке auto-row / corvu-блока ручек нет (handleBetween=false);
+              // внутри corvu-блока дивайдеры считает rowsToVerticalItems.
+              const prevRow = _i > 0 ? rs[_i - 1] : undefined;
+              const topDivider = prevRow
+                ? (): boolean =>
+                    dividerBetweenRows(prevRow, row, props.bordered, props.resizeEnabled, false)
+                : undefined;
               if (row.height === 'auto') {
                 const rowKey = row.id ?? `r${_i}`;
                 const getZoneFn = insertGetZone();
@@ -531,6 +590,7 @@ export const MatrixContent = (props: IMatrixContentProps) => {
                       setCellSize,
                       insertGridOpts(),
                       props.bordered,
+                      topDivider,
                     )}
                   </div>
                 );
@@ -538,13 +598,15 @@ export const MatrixContent = (props: IMatrixContentProps) => {
               if (resizableBlockEmitted) return null;
               resizableBlockEmitted = true;
               return (
-                <div class="relative min-h-0 flex-1 overflow-hidden">
+                <div
+                  class="relative min-h-0 flex-1 overflow-hidden"
+                  classList={{ 'border-t border-border/60': topDivider ? topDivider() : false }}
+                >
                   <div class="absolute inset-0">
                     <Layout.Resizable
                       orientation="vertical"
                       items={verticalItems}
-                      withHandle={props.resizeEnabled()}
-                      handleDisabled={!props.resizeEnabled()}
+                      withHandle
                       onSizesChange={onVerticalSizesChange}
                     />
                   </div>
@@ -564,6 +626,12 @@ export const MatrixContent = (props: IMatrixContentProps) => {
                 const getZoneFn = insertGetZone();
                 const zone = getZoneFn && row.id ? getZoneFn(row.id) : undefined;
                 const rowsSnap = effectiveRows();
+                // Plain-вертикаль — corvu-ручек между rows нет (handleBetween=false).
+                const prevRow = i() > 0 ? rowsSnap[i() - 1] : undefined;
+                const topDivider = prevRow
+                  ? (): boolean =>
+                      dividerBetweenRows(prevRow, row, props.bordered, props.resizeEnabled, false)
+                  : undefined;
                 if (row.height === 'auto' || (row.height === undefined && rowsSnap.length > 1)) {
                   return (
                     <div class="w-full shrink-0">
@@ -582,6 +650,7 @@ export const MatrixContent = (props: IMatrixContentProps) => {
                         setCellSize,
                         insertGridOpts(),
                         props.bordered,
+                        topDivider,
                       )}
                     </div>
                   );
@@ -601,6 +670,7 @@ export const MatrixContent = (props: IMatrixContentProps) => {
                   setCellSize,
                   insertGridOpts(),
                   props.bordered,
+                  topDivider,
                 );
               }}
             </For>

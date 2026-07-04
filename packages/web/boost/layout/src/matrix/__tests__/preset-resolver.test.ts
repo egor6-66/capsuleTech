@@ -43,7 +43,9 @@ describe('appShellResolver', () => {
 
     expect(headerRow.id).toBe('header-row');
     expect(headerRow.height).toBe(0.1); // default initialSize
-    expect(headerRow.resizable).toBe(true); // default resizable
+    // tri-state pass-through: slot без явного флага → undefined
+    // (активность ручки следует matrix-резолюции mode/global)
+    expect(headerRow.resizable).toBeUndefined();
     expect(headerRow.cells).toHaveLength(1);
     expect(headerRow.cells[0].id).toBe('header');
     expect(headerRow.cells[0].tag).toBe('header');
@@ -70,7 +72,7 @@ describe('appShellResolver', () => {
     expect(headerRow.id).toBe('header-row');
     expect(middleRow.id).toBe('middle-row');
     expect(footerRow.id).toBe('footer-row');
-    expect(footerRow.resizable).toBe(true);
+    expect(footerRow.resizable).toBeUndefined(); // tri-state pass-through
     expect(footerRow.cells[0].id).toBe('footer');
     expect(footerRow.cells[0].tag).toBe('footer');
     expect(footerRow.cells[0].swapGroup).toBe('shell');
@@ -137,17 +139,17 @@ describe('appShellResolver', () => {
 
     expect(sidebarCell.id).toBe('sidebar');
     expect(sidebarCell.tag).toBe('aside');
-    expect(sidebarCell.resizable).toBe(true);
+    expect(sidebarCell.resizable).toBeUndefined(); // tri-state pass-through
     expect(sidebarCell.swapGroup).toBe('shell');
 
     expect(mainCell.id).toBe('main');
     expect(mainCell.tag).toBe('main');
-    expect(mainCell.resizable).toBe(true);
+    expect(mainCell.resizable).toBe(true); // эластичный центр — всегда согласен
     expect(mainCell.swapGroup).toBe('shell');
 
     expect(rightBarCell.id).toBe('rightBar');
     expect(rightBarCell.tag).toBe('aside');
-    expect(rightBarCell.resizable).toBe(true);
+    expect(rightBarCell.resizable).toBeUndefined(); // tri-state pass-through
     expect(rightBarCell.swapGroup).toBe('shell');
   });
 

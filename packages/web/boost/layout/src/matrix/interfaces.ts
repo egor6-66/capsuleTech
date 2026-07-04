@@ -34,20 +34,26 @@ export type SlotValue =
        */
       swapGroup?: string;
       /**
-       * Per-slot resizable override.
-       * Default: `true` (opt-out model) — cell resize handle is active when resize is globally enabled.
-       * Set to `false` to lock this slot non-resizable regardless of global resize state.
+       * Per-slot resizable override. Tri-state precedence (highest → lowest):
+       * - `true`  — ручка слота активна ВСЕГДА (оверрайдит `mode` и глобальный
+       *             `useResizeMode()`);
+       * - `false` — ручка слота выключена всегда;
+       * - `undefined` (default) — активность следует matrix-резолюции
+       *   (`resize` prop > `mode` > глобальный сигнал).
        *
-       * - header: default = true (vertical resize). Size = initialSize ?? 0.1.
-       * - sidebar/main/rightBar: default = true (horizontal resize).
-       * - footer: default = true (vertical resize row).
+       * corvu-ручка живёт МЕЖДУ двумя панелями и активна когда активны оба
+       * соседа; «эластичный центр» пресета (middle-row / main) всегда согласен,
+       * поэтому активность определяет флаг периферийного слота.
+       * `initialSize` задаёт размер независимо от resizable.
        */
       resizable?: boolean;
       /**
-       * Per-slot border override.
-       * Default: `undefined` — follows the Matrix-level `bordered` prop (which
-       * itself defaults to `true`). Set explicitly to `true`/`false` to force
-       * this one slot's border regardless of the Matrix-level flag.
+       * Per-slot border override. `bordered` рисует ВНУТРЕННИЕ разделители
+       * (hairline между слотами) — слоты это общее пространство, разделённое
+       * линиями, не независимые карточки. Divider между двумя слотами виден,
+       * если ХОТЯ БЫ ОДИН из них резолвится в bordered и между ними не
+       * рисуется активная resize-ручка (её линия сама служит разделителем).
+       * `undefined` (default) — следует Matrix-level `bordered` prop.
        */
       bordered?: boolean;
       /**
@@ -70,6 +76,12 @@ export interface IRow {
    * - `'fr'` → flex-1 (grow)
    */
   height?: number | 'auto' | 'fr';
+  /**
+   * Tri-state (как ICell.resizable): `true` — вертикальная ручка row активна
+   * всегда; `false` — структурно отсутствует; `undefined` — активность следует
+   * matrix-резолюции. Структурный выбор ветки (corvu vs plain) — по
+   * `resizable === true || typeof height === 'number'`.
+   */
   resizable?: boolean;
   cells: ICell[];
   // -------------------------------------------------------------------------
@@ -144,9 +156,11 @@ export interface ICell {
    */
   width?: number | 'auto' | 'fr';
   /**
-   * Per-cell resizable flag.
-   * Default: `true` (opt-out model) — resize handle is active when resize is globally enabled.
-   * Set to `false` to lock this cell non-resizable.
+   * Per-cell resizable flag. Tri-state:
+   * - `true`  — ручка активна всегда (оверрайдит `mode`/global);
+   * - `false` — ручка структурно отсутствует (cell вне resize);
+   * - `undefined` (default) — активность следует matrix-резолюции.
+   * Ручка между соседями активна когда активны ОБА (corvu AND).
    */
   resizable?: boolean;
   /**
@@ -159,9 +173,10 @@ export interface ICell {
   draggable?: boolean;
   swapGroup?: string;
   /**
-   * Per-cell border override.
+   * Per-cell border override — участие cell в ВНУТРЕННИХ разделителях
+   * (divider виден между парой соседей, если хотя бы один резолвится true
+   * и между ними нет активной resize-ручки). Не карточный бордер.
    * `undefined` (default) — follows the Matrix-level `bordered` prop.
-   * `true`/`false` — forces this cell's border regardless of the Matrix-level flag.
    */
   bordered?: boolean;
   /**
@@ -314,7 +329,8 @@ export interface IMatrixCommonProps extends JSX.HTMLAttributes<HTMLDivElement> {
    * - `true` — resize permanently enabled on this Matrix, regardless of global signal.
    * - `false` — resize permanently disabled on this Matrix.
    *
-   * Per-cell: `cell.resizable ?? true` — opt-out default (resizable unless explicitly false).
+   * Per-cell/per-row: явный `resizable` на слоте оверрайдит эту резолюцию
+   * для своей ручки (tri-state, см. ICell.resizable).
    *
    * Resolved in mode.ts (createMatrixModes):
    *   resizeEnabled = resize ?? (mode !== undefined ? mode === 'edit' : globalResize())
@@ -345,9 +361,12 @@ export interface IMatrixCommonProps extends JSX.HTMLAttributes<HTMLDivElement> {
    */
   direction?: 'vertical' | 'horizontal';
   /**
-   * Single source of truth for the visual cell border (hairline divider between
-   * Matrix slots). Independent of `resize`/`dnd` — a resizable cell only gets the
-   * interactive handle (+ badge on draggable cells), never a border by itself.
+   * Single source of truth для ВНУТРЕННИХ разделителей Matrix (hairline между
+   * слотами). Слоты — общее пространство, разделённое линиями, не независимые
+   * карточки: внешнего бордера и скруглений у ячеек нет. Divider между парой
+   * соседей виден, когда пара резолвится bordered И между ними не рисуется
+   * активная resize-ручка (линия ручки сама служит разделителем — двойной
+   * линии не бывает). Per-slot override: `slots.X.bordered` / `cell.bordered`.
    *
    * @default true
    */

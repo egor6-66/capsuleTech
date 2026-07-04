@@ -180,7 +180,8 @@ export const renderPackingRow = (
           // Pointer-drag writes explicit px size into the CellSizeMap signal.
           // Floor = minW / minH so the cell cannot be dragged below minimum.
           const resizeHandle = (): JSX.Element => {
-            const isCellResizable = resizeEnabled() && (cell.resizable ?? true);
+            // Tri-state: явный cell.resizable оверрайдит matrix-резолюцию.
+            const isCellResizable = cell.resizable ?? resizeEnabled();
             if (!isCellResizable) return null;
 
             const onPointerDown = (e: PointerEvent): void => {

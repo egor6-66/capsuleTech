@@ -6,13 +6,20 @@ type AppShellSlots = LayoutPresets['app-shell'];
 /**
  * Built-in preset resolver для `'app-shell'`.
  *
- * All slots default to `resizable: true`; `initialSize` always sets the initial
- * row/cell size regardless of resizable flag. `resizable: false` disables only
- * the interactive resize handle — the size is still `initialSize`.
+ * `resizable` — tri-state pass-through (2026-07-04): явный `true` на слоте
+ * включает его ручку ВСЕГДА (оверрайдит `mode`/global), явный `false` —
+ * выключает всегда, `undefined` — активность следует matrix-резолюции
+ * (`resize` prop > `mode` > глобальный сигнал). `initialSize` задаёт размер
+ * независимо от resizable.
  *
- * - header (top, height = initialSize ?? 0.1, resizable = true by default)
- * - sidebar + main + rightBar (middle row, resizable)
- * - footer (bottom, resizable)
+ * «Эластичный центр» — middle-row (вертикально) и main (горизонтально) —
+ * дефолтно `resizable: true`: corvu-ручка активна когда АКТИВНЫ ОБА соседа,
+ * центр всегда «согласен», поэтому активность ручки определяет флаг
+ * периферийного слота (header/footer/sidebar/rightBar), как и ожидается.
+ *
+ * - header (top, height = initialSize ?? 0.1)
+ * - sidebar + main + rightBar (middle row)
+ * - footer (bottom)
  *
  * Auto-centroid: если передан только `main` — возвращает single-row single-cell.
  *
@@ -50,15 +57,13 @@ export const appShellResolver = (slots: AppShellSlots): IRow[] => {
 
   const rows: IRow[] = [];
 
-  // Header row —
-  //   default: height = initialSize ?? 0.1, resizable = true.
-  //   resizable: false disables the interactive handle but size is still initialSize.
+  // Header row — height = initialSize ?? 0.1; resizable — tri-state pass-through
+  // (undefined → активность ручки следует matrix-резолюции).
   if (header) {
-    const headerResizable = header.resizable ?? true;
     rows.push({
       id: 'header-row',
       height: header.initialSize ?? 0.1,
-      resizable: headerResizable,
+      resizable: header.resizable,
       cells: [
         {
           id: 'header',
@@ -66,7 +71,7 @@ export const appShellResolver = (slots: AppShellSlots): IRow[] => {
           children: header.children,
           draggable: header.draggable,
           swapGroup: header.swapGroup ?? 'shell',
-          resizable: headerResizable,
+          resizable: header.resizable,
           bordered: header.bordered,
           skeleton: header.skeleton,
         },
@@ -83,7 +88,7 @@ export const appShellResolver = (slots: AppShellSlots): IRow[] => {
       tag: 'aside',
       children: sidebar.children,
       width: sidebar.initialSize ?? 0.2,
-      resizable: sidebar.resizable ?? true,
+      resizable: sidebar.resizable,
       draggable: sidebar.draggable,
       swapGroup: sidebar.swapGroup ?? 'shell',
       bordered: sidebar.bordered,
@@ -103,6 +108,8 @@ export const appShellResolver = (slots: AppShellSlots): IRow[] => {
     tag: 'main',
     children: main.children,
     width: mainWidth,
+    // Эластичный центр: default true — активность горизонтальной ручки
+    // определяется флагом соседнего aside-слота (см. doc-блок выше).
     resizable: main.resizable ?? true,
     draggable: main.draggable,
     swapGroup: main.swapGroup ?? 'shell',
@@ -116,7 +123,7 @@ export const appShellResolver = (slots: AppShellSlots): IRow[] => {
       tag: 'aside',
       children: rightBar.children,
       width: rightBar.initialSize ?? 0.2,
-      resizable: rightBar.resizable ?? true,
+      resizable: rightBar.resizable,
       draggable: rightBar.draggable,
       swapGroup: rightBar.swapGroup ?? 'shell',
       bordered: rightBar.bordered,
@@ -134,16 +141,18 @@ export const appShellResolver = (slots: AppShellSlots): IRow[] => {
   rows.push({
     id: 'middle-row',
     height: middleHeight,
+    // Эластичный центр: всегда true — вертикальная ручка header/footer
+    // активируется флагом соответствующего band-слота (corvu ANDит соседей).
     resizable: true,
     cells: middleCells,
   });
 
-  // Footer row — resizable by default
+  // Footer row — resizable tri-state pass-through.
   if (footer) {
     rows.push({
       id: 'footer-row',
       height: footer.initialSize ?? 0.3,
-      resizable: footer.resizable ?? true,
+      resizable: footer.resizable,
       cells: [
         {
           id: 'footer',
@@ -151,7 +160,7 @@ export const appShellResolver = (slots: AppShellSlots): IRow[] => {
           children: footer.children,
           draggable: footer.draggable,
           swapGroup: footer.swapGroup ?? 'shell',
-          resizable: footer.resizable ?? true,
+          resizable: footer.resizable,
           bordered: footer.bordered,
           skeleton: footer.skeleton,
         },

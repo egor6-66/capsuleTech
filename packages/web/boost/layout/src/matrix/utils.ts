@@ -1,5 +1,60 @@
-import type { JSX } from 'solid-js';
-import type { SlotValue } from './interfaces';
+import type { Accessor, JSX } from 'solid-js';
+import type { ICell, IRow, SlotValue } from './interfaces';
+
+// ---------------------------------------------------------------------------
+// Effective-flag resolvers (2026-07-04).
+//
+// Precedence: явный per-slot флаг > matrix-резолюция (`resize`/`dnd` prop >
+// `mode` > глобальный сигнал). `resizeEnabled` — уже разрезолвленный
+// matrix-уровень (mode.ts). Читают сигналы в момент вызова — вызывать из
+// реактивного скоупа (classList / handleActive-акцессоры).
+// ---------------------------------------------------------------------------
+
+/** Активность resize для cell: `cell.resizable ?? resizeEnabled()`. */
+export const cellResizeActive = (cell: ICell, resizeEnabled: Accessor<boolean>): boolean =>
+  cell.resizable ?? resizeEnabled();
+
+/** Активность resize для row (вертикальная/зонная ручка). */
+export const rowResizeActive = (row: IRow, resizeEnabled: Accessor<boolean>): boolean =>
+  row.resizable ?? resizeEnabled();
+
+/** Row считается bordered, если хотя бы одна его cell резолвится в true. */
+export const rowBordered = (row: IRow, bordered: Accessor<boolean>): boolean =>
+  row.cells.some((c) => c.bordered ?? bordered());
+
+/**
+ * Divider между двумя соседними cells (внутренний разделитель общего
+ * пространства, НЕ карточный бордер). Виден когда:
+ *   - хотя бы один из соседей резолвится bordered, И
+ *   - между ними НЕ рисуется активная resize-ручка (её hairline сам служит
+ *     разделителем — иначе двойная линия).
+ * `handleBetween` — структурное наличие corvu-handle между парой
+ * (false в plain-flex путях, где ручек нет вовсе).
+ */
+export const dividerBetweenCells = (
+  prev: ICell,
+  cell: ICell,
+  bordered: Accessor<boolean>,
+  resizeEnabled: Accessor<boolean>,
+  handleBetween: boolean,
+): boolean =>
+  ((prev.bordered ?? bordered()) || (cell.bordered ?? bordered())) &&
+  !(
+    handleBetween &&
+    cellResizeActive(prev, resizeEnabled) &&
+    cellResizeActive(cell, resizeEnabled)
+  );
+
+/** То же для пары соседних rows (горизонтальный divider между зонами). */
+export const dividerBetweenRows = (
+  prev: IRow,
+  row: IRow,
+  bordered: Accessor<boolean>,
+  resizeEnabled: Accessor<boolean>,
+  handleBetween: boolean,
+): boolean =>
+  (rowBordered(prev, bordered) || rowBordered(row, bordered)) &&
+  !(handleBetween && rowResizeActive(prev, resizeEnabled) && rowResizeActive(row, resizeEnabled));
 
 /**
  * Нормализованный slot — всегда объект с `children` + размерами + `draggable`.

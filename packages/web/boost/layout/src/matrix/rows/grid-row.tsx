@@ -102,7 +102,8 @@ export const renderGridRow = (
 
           // Grid resize handles — visible only when resizeEnabled AND cell opts in (default true).
           const gridResizeHandles = (): JSX.Element => {
-            const isCellResizable = resizeEnabled() && (cell.resizable ?? true);
+            // Tri-state: явный cell.resizable оверрайдит matrix-резолюцию.
+            const isCellResizable = cell.resizable ?? resizeEnabled();
             if (!isCellResizable) return null;
 
             const getContainerEl = (): HTMLElement | null =>

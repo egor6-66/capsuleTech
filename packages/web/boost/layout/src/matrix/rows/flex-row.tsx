@@ -9,6 +9,7 @@ import type { Accessor, JSX } from 'solid-js';
 import { For } from 'solid-js';
 import { type ICellDndState, NOOP_REF, renderCell } from '../cell';
 import type { ICell, IRow } from '../interfaces';
+import { cellResizeActive, dividerBetweenCells } from '../utils';
 import type { IGridOpts } from './grid-row';
 import { renderGridRow } from './grid-row';
 import { isPackingZone, renderPackingRow } from './packing-row';
@@ -25,7 +26,7 @@ export const rowToFlexItems = (
   /** Saved sizes for this row's horizontal panels (index-aligned). */
   savedSizes: number[] | undefined,
   isDragging: Accessor<boolean>,
-  _resizeEnabled: Accessor<boolean>,
+  resizeEnabled: Accessor<boolean>,
   bordered: Accessor<boolean>,
 ): IResizable.IResizableItem[] => {
   const rowIsAutoHeight = row.height === 'auto';
@@ -35,6 +36,14 @@ export const rowToFlexItems = (
     const dndState = getCellDndState ? getCellDndState(cell) : undefined;
     // Prefer session-persisted size; fall back to declared cell.width.
     const resolvedSize = savedSizes?.[i] ?? (widthIsNumber ? (cell.width as number) : undefined);
+    // Divider слева от cell (i>0): пара bordered И ручка между ними не активна.
+    // handleBetween — структурное наличие corvu-handle (оба соседа resizable !== false).
+    const prev = i > 0 ? row.cells[i - 1] : undefined;
+    const handleBetween =
+      !!prev && (prev.resizable ?? true) !== false && (cell.resizable ?? true) !== false;
+    const leftDivider = prev
+      ? (): boolean => dividerBetweenCells(prev, cell, bordered, resizeEnabled, handleBetween)
+      : undefined;
     return {
       children: renderCell(
         cell,
@@ -43,12 +52,15 @@ export const rowToFlexItems = (
         dndState,
         isDragging,
         rowIsAutoHeight,
-        bordered,
+        leftDivider,
       ),
-      // resizable не gate'ится по resizeEnabled здесь: иначе все items станут resizable=false,
-      // Flex переключится в StaticItemsFlex (без corvu Panel) и cells схлопнутся в 0.
-      // Режим включён/выключен через `withHandle` + `handleDisabled` (см. вызовы Flex ниже).
+      // resizable — СТРУКТУРНЫЙ флаг: false убирает handle из DOM. Не gate'ится
+      // по resizeEnabled: иначе все items станут resizable=false, Resizable
+      // переключится в Static-путь и cells схлопнутся. АКТИВНОСТЬ ручки —
+      // реактивный per-item handleActive (web-ui ANDит соседей): явный
+      // cell.resizable оверрайдит mode/global (пер-слот контракт 2026-07-04).
       resizable: cell.resizable ?? true,
+      handleActive: (): boolean => cellResizeActive(cell, resizeEnabled),
       initialSize: resolvedSize,
       minSize: undefined,
       maxSize: undefined,
@@ -88,6 +100,12 @@ export const renderRow = (
    */
   gridOpts?: IGridOpts,
   bordered: Accessor<boolean> = () => true,
+  /**
+   * Видимость ВЕРХНЕГО divider'а этой row (hairline между ней и предыдущей).
+   * Вычисляется в content.tsx (нужен контекст соседней row). undefined —
+   * первая row / divider не нужен.
+   */
+  topDivider?: Accessor<boolean>,
 ): JSX.Element => {
   // ADR 026: Grid-canvas render-path.
   if (zone && row.grid && gridOpts && row.id) {
@@ -135,14 +153,16 @@ export const renderRow = (
       resizeEnabled,
       bordered,
     );
-    // NOTE: `resizeEnabled()` must be called INLINE in the JSX prop (not
-    // captured into a local const) so Solid compiler wraps it in a reactive
-    // getter — otherwise inner-row handles never re-render on live toggle.
+    // Активность ручек — per-item `handleActive` в items (web-ui ANDит соседей);
+    // контейнерный гейт `handleDisabled` больше не используется, иначе он бы
+    // глушил per-slot override (`resizable: true` при mode="view").
+    // `withHandle` — константа: grip рисуется только на АКТИВНОЙ ручке (web-ui).
     return (
       <div
         ref={rowContainerRef}
         class="relative h-full min-h-0 flex-1 overflow-hidden"
         classList={{
+          'border-t border-border/60': topDivider ? topDivider() : false,
           'ring-2 ring-inset ring-destructive/50': rowRejectsDrag(),
           'ring-2 ring-inset ring-primary/40 bg-primary/5':
             rowCanAccept() && !rowIsTarget() && !rowRejectsDrag(),
@@ -153,8 +173,7 @@ export const renderRow = (
           <Layout.Resizable
             orientation="horizontal"
             items={items}
-            withHandle={resizeEnabled()}
-            handleDisabled={!resizeEnabled()}
+            withHandle
             onSizesChange={onRowSizesChange}
           />
         </div>
@@ -168,6 +187,7 @@ export const renderRow = (
       ref={rowContainerRef}
       class="flex h-full min-h-0 w-full overflow-hidden"
       classList={{
+        'border-t border-border/60': topDivider ? topDivider() : false,
         'flex-1': row.height === 'fr' || row.height === undefined,
         'ring-2 ring-inset ring-destructive/50': rowRejectsDrag(),
         'ring-2 ring-inset ring-primary/40 bg-primary/5':
@@ -176,9 +196,15 @@ export const renderRow = (
       }}
     >
       <For each={row.cells}>
-        {(cell) => {
+        {(cell, i) => {
           const cellRef = cell.draggable !== false && bindCell ? bindCell(cell, row.id) : NOOP_REF;
           const dndState = getCellDndState ? getCellDndState(cell) : undefined;
+          // Plain-flex путь — corvu-ручек нет (handleBetween=false), divider
+          // определяется только парой bordered.
+          const prev = i() > 0 ? row.cells[i() - 1] : undefined;
+          const leftDivider = prev
+            ? (): boolean => dividerBetweenCells(prev, cell, bordered, resizeEnabled, false)
+            : undefined;
           return renderCell(
             cell,
             getSwappedChildren,
@@ -186,7 +212,7 @@ export const renderRow = (
             dndState,
             isDragging,
             rowIsAutoHeight,
-            bordered,
+            leftDivider,
           );
         }}
       </For>

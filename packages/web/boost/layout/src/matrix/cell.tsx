@@ -71,11 +71,14 @@ export const renderCell = (
    */
   rowIsAutoHeight: boolean,
   /**
-   * Matrix-level border default. Independent of `resizable`/DnD — a resizable
-   * cell only gets an interactive handle (+ badge), never a border by itself.
-   * Overridden per-cell by `cell.bordered` when explicitly set.
+   * Видимость ЛЕВОГО divider'а (hairline `border-l` между этой cell и её
+   * левым соседом). Слоты Matrix — общее пространство, разделённое линиями,
+   * а не независимые карточки: полный border + rounding убраны (2026-07-04).
+   * Вычисляется вызывающим (нужен контекст соседа): пара bordered И между
+   * ними не рисуется активная resize-ручка (её hairline — сам разделитель).
+   * `undefined` — первый в ряду / divider не нужен.
    */
-  bordered: Accessor<boolean>,
+  leftDivider?: Accessor<boolean>,
 ): JSX.Element => {
   const tag = cell.tag ?? 'div';
   // Accessor, НЕ снапшот: getSwappedChildren читает childrenMap-сигнал swap-движка
@@ -84,7 +87,7 @@ export const renderCell = (
   // (drop-не-работает баг, 2026-07-04).
   const content = (): JSX.Element =>
     getSwappedChildren ? getSwappedChildren(cell.id) : cell.children;
-  const isBordered = (): boolean => cell.bordered ?? bordered();
+  const showDivider = (): boolean => (leftDivider ? leftDivider() : false);
   traceSlotRender(cell.id);
 
   // Cells with DnD need `position: relative` to host the absolute badge.
@@ -121,8 +124,8 @@ export const renderCell = (
       <Dynamic
         component={tag}
         ref={cellRef}
-        class="h-full w-full relative rounded-sm"
-        classList={{ 'border border-border/60': isBordered() }}
+        class="h-full w-full relative"
+        classList={{ 'border-l border-border/60': showDivider() }}
       >
         {/* Inner scroll wrapper; pointer-events-none during drag prevents hover leaking
             into cell content (table row hover, map hover, etc.).
@@ -163,8 +166,8 @@ export const renderCell = (
     <Dynamic
       component={tag}
       ref={cellRef}
-      class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative overflow-hidden rounded-sm`}
-      classList={{ 'border border-border/60': isBordered() }}
+      class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative overflow-hidden`}
+      classList={{ 'border-l border-border/60': showDivider() }}
     >
       <div class="absolute inset-0 overflow-auto">
         <MatrixSlot slot={cell.id}>
