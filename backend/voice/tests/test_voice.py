@@ -36,7 +36,7 @@ def test_get_engine_unknown_raises():
         voice_engine.get_engine("does-not-exist")
 
 
-ALL_ENGINES = ["chatterbox", "edge", "f5", "kokoro", "piper"]
+ALL_ENGINES = ["chatterbox", "kokoro", "piper"]
 
 
 def test_list_engines_registry():

@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     kokoro_voices_path: str | None = None
     chatterbox_model_path: str | None = None  # local checkpoint dir (air-gapped)
     piper_model_path: str | None = None  # local .onnx voice (air-gapped)
-    torch_device: str | None = None  # cuda|cpu for torch engines (chatterbox/f5); default auto
+    torch_device: str | None = None  # cuda|cpu for torch engines (chatterbox); default auto
 
 
 settings = Settings()
