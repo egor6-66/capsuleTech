@@ -215,6 +215,71 @@ export type IAuthLoginProps =
       // TODO arms — polling interval, QR endpoint via props
     } & IAuthBranding);
 
+// ─── Публичный props-контракт Auth.Gate ──────────────────────────────────────
+
+/** Режим guest-блока `Auth.Gate`: какая форма показана. */
+export type AuthGateMode = 'login' | 'register';
+
+/**
+ * Точечный брендинг одной формы внутри `Auth.Gate` — перекрывает общие
+ * `title`/`subtitle`/`footerNote` Gate-пропсов для конкретной фазы.
+ */
+export interface IAuthGateFormBranding {
+  /** Заголовок формы. @default 'Вход' (login) / 'Регистрация' (register) */
+  title?: string;
+  /** Подзаголовок формы. */
+  subtitle?: string;
+  /** Текст кнопки submit. @default 'Войти' / 'Зарегистрироваться' */
+  submitLabel?: string;
+  /** Сноска внизу формы. */
+  footerNote?: string;
+  /** Метка поля логина. @default 'Логин' */
+  loginLabel?: string;
+  /** Метка поля пароля. @default 'Пароль' */
+  passwordLabel?: string;
+}
+
+/**
+ * Props `Auth.Gate` — готовый guest-блок целиком: Login-форма ↔ Register-форма
+ * + ссылка-переключатель («Нет аккаунта? …» / «Уже есть аккаунт? …»).
+ * Mode-стейт живёт ВНУТРИ блока (Gate-FSM) — апп монтирует один компонент
+ * и слушает те же события, что у форм: `onLogin`/`onLogout`/`onLoginError`
+ * баблятся сквозь Gate без изменений.
+ *
+ * Только credentials-флоу (cookie, backend/auth): register существует лишь
+ * у этой стратегии, поэтому оси `type` у Gate нет.
+ *
+ * Внешний layout/центрирование — ответственность страницы-консьюмера
+ * (как у `Auth.Login`): Gate возвращает карточку формы + ссылку.
+ */
+export interface IAuthGateProps {
+  /** Префикс API (single-origin канон). @default '/api' */
+  apiBase?: string;
+  /** Форма, показанная первой. @default 'login' */
+  initialMode?: AuthGateMode;
+  /** Общий заголовок ОБЕИХ форм. Без него у каждой формы свой дефолт. */
+  title?: string;
+  /** Общий подзаголовок обеих форм. */
+  subtitle?: string;
+  /** Общая сноска обеих форм (брендинг аппа). */
+  footerNote?: string;
+  /** Точечный брендинг login-формы (поверх общих title/subtitle/footerNote). */
+  login?: IAuthGateFormBranding;
+  /** Точечный брендинг register-формы (+ `confirmLabel`). */
+  register?: IAuthGateFormBranding & {
+    /** Метка поля подтверждения пароля. @default 'Повторите пароль' */
+    confirmLabel?: string;
+  };
+  /** Текст ссылки login→register. @default 'Нет аккаунта? Зарегистрироваться' */
+  toRegisterLabel?: string;
+  /** Текст ссылки register→login. @default 'Уже есть аккаунт? Войти' */
+  toLoginLabel?: string;
+  /** Session-store. Дефолт — `defaultAuthSession` (singleton). */
+  sessionStore?: IAuthSessionStore;
+  /** Overrides для ControllerProxy name-mapping (баблинг событий). */
+  overrides?: Record<string, string>;
+}
+
 // ─── Публичный props-контракт Auth.Register ──────────────────────────────────
 
 /**

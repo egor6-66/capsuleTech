@@ -1,11 +1,16 @@
 /**
- * @capsuletech/web-auth/controllers — connected-блоки Auth.Login / Auth.Register (ADR 032).
+ * @capsuletech/web-auth/controllers — connected-блоки Auth.Login / Auth.Register /
+ * Auth.Gate (ADR 032).
  *
  * Единственный subpath с зависимостью на `@capsuletech/web-core`.
  *
  * `AuthLogin` / `AuthRegister` — Tier 2 connected blocks: создают Controller-scope
  * (web-core Feature wrapper) с FSM `idle → submitting → authed/error` и рендерят
  * форму внутри своего scope.
+ *
+ * `AuthGate` — guest-блок целиком: Login ↔ Register + ссылка-переключатель;
+ * mode-стейт внутри (Gate-FSM), события вложенных форм баблятся сквозь него
+ * без изменений (auto-bubble — у Gate-схемы нет onLogin/onLoginError-хендлеров).
  *
  * Submit-канал: стандартный UiProxy meta-tags path:
  *   AuthLoginForm → <Button meta={{ tags: ['submit'] }}> → onClick → ControllerProxy dispatch.
@@ -33,8 +38,9 @@
  */
 
 import type { IHandlerApi } from '@capsuletech/web-core';
-import { Feature } from '@capsuletech/web-core';
+import { Feature, useCtx } from '@capsuletech/web-core';
 import type { JSX } from 'solid-js';
+import { Show } from 'solid-js';
 import {
   AuthApiError,
   InvalidCredentialsError,
@@ -46,7 +52,15 @@ import { credentialsStrategy, type ICredentialsStrategy } from '../credentials/i
 import type { IRoleStrategy } from '../role/index';
 import { roleStrategy } from '../role/index';
 import { defaultAuthSession, type IAuthSessionStore, notifyAuthChanged } from '../session/index';
-import type { IAuthEvents, IAuthLoginProps, IAuthRegisterProps, IAuthUser } from '../types';
+import type {
+  AuthGateMode,
+  IAuthEvents,
+  IAuthGateProps,
+  IAuthLoginProps,
+  IAuthRegisterProps,
+  IAuthUser,
+} from '../types';
+import { AuthGateSwitch } from '../ui/gateSwitch';
 import { AuthLoginForm } from '../ui/loginForm';
 
 // ─── Маппинг ошибок в дружелюбный текст формы ────────────────────────────────
@@ -489,6 +503,101 @@ const AuthRegisterComponent = (props: IAuthRegisterProps): JSX.Element => {
   );
 };
 
+// ─── buildGateFeature: mode-FSM guest-блока (вход ↔ регистрация) ─────────────
+//
+// Один state 'guest'; режим — в context.data.mode (store.update), не в FSM-стейтах:
+// пере-mount форм делает Show по реактивному mode, самим FSM-переходам тут нечего
+// моделировать. Клики переключателя приходят meta-тегами to-register/to-login
+// (AuthGateSwitch в Gate-scope); ВСЁ остальное прозрачно баблится наверх.
+
+const buildGateFeature = (initialMode: AuthGateMode) =>
+  Feature(() => ({
+    initial: 'guest' as const,
+
+    context: {
+      mode: initialMode,
+    },
+
+    states: {
+      guest: {
+        // Чужие клики (из authed-фазы вложенных FSM и т.п.) отдаём next() —
+        // Gate не должен глотать события между вложенными FSM и root-Feature аппа.
+        onClick: ({ target, store, next }: IHandlerApi) => {
+          const tags = (target.meta?.tags ?? []) as readonly string[];
+          if (tags.includes('to-register')) {
+            store.update({ mode: 'register' });
+            return;
+          }
+          if (tags.includes('to-login')) {
+            store.update({ mode: 'login' });
+            return;
+          }
+          return next();
+        },
+      },
+    },
+  }));
+
+// ─── AuthGateComponent ────────────────────────────────────────────────────────
+
+/**
+ * Тело Gate — отдельный компонент, потому что реактивный mode читается через
+ * `useCtx()` и требует рендера ВНУТРИ Gate-FSM scope (children `<GateFsm>`
+ * evaluate'ятся под Context.Provider — как AuthLoginForm внутри AuthFsm).
+ *
+ * Show пере-mount'ит форму при переключении: каждая фаза получает свежий
+ * FSM-instance (idle, без остаточной ошибки/loading) — это желаемое поведение.
+ */
+const AuthGateBody = (props: IAuthGateProps): JSX.Element => {
+  const ctx = useCtx();
+  const mode = () =>
+    (ctx?.store?.ctx?.data?.mode as AuthGateMode | undefined) ?? props.initialMode ?? 'login';
+
+  return (
+    <>
+      <Show
+        when={mode() === 'register'}
+        fallback={
+          <AuthLoginComponent
+            type="credentials"
+            apiBase={props.apiBase}
+            sessionStore={props.sessionStore}
+            title={props.login?.title ?? props.title}
+            subtitle={props.login?.subtitle ?? props.subtitle}
+            submitLabel={props.login?.submitLabel}
+            footerNote={props.login?.footerNote ?? props.footerNote}
+            loginLabel={props.login?.loginLabel}
+            passwordLabel={props.login?.passwordLabel}
+          />
+        }
+      >
+        <AuthRegisterComponent
+          apiBase={props.apiBase}
+          sessionStore={props.sessionStore}
+          title={props.register?.title ?? props.title}
+          subtitle={props.register?.subtitle ?? props.subtitle}
+          submitLabel={props.register?.submitLabel}
+          footerNote={props.register?.footerNote ?? props.footerNote}
+          loginLabel={props.register?.loginLabel}
+          passwordLabel={props.register?.passwordLabel}
+          confirmLabel={props.register?.confirmLabel}
+        />
+      </Show>
+      <AuthGateSwitch toRegisterLabel={props.toRegisterLabel} toLoginLabel={props.toLoginLabel} />
+    </>
+  );
+};
+
+const AuthGateComponent = (props: IAuthGateProps): JSX.Element => {
+  const GateFsm = buildGateFeature(props.initialMode ?? 'login');
+
+  return (
+    <GateFsm overrides={props.overrides}>
+      <AuthGateBody {...props} />
+    </GateFsm>
+  );
+};
+
 // ─── Публичные блоки с phantom __events ──────────────────────────────────────
 
 /**
@@ -523,7 +632,25 @@ export const AuthRegister: ((props: IAuthRegisterProps) => JSX.Element) & {
   readonly __events?: IAuthEvents;
 } = AuthRegisterComponent;
 
+/**
+ * Auth.Gate — готовый guest-блок: Login-форма ↔ Register-форма + переключатель.
+ *
+ * Mode-стейт ВНУТРИ блока (Gate-FSM context.data.mode) — апп монтирует один
+ * компонент вместо самодельного switch-mode. Только credentials-флоу (cookie).
+ *
+ * ```tsx
+ * <Auth.Gate title="Capsule ID" footerNote="© Capsule" />
+ * ```
+ *
+ * События вложенных форм (`onLogin`/`onLogout`/`onLoginError`) баблятся сквозь
+ * Gate БЕЗ изменений (auto-bubble ControllerProxy: у Gate-схемы нет их хендлеров),
+ * поэтому phantom `__events` тот же `IAuthEvents`.
+ */
+export const AuthGate: ((props: IAuthGateProps) => JSX.Element) & {
+  readonly __events?: IAuthEvents;
+} = AuthGateComponent;
+
 export default AuthLogin;
 
 // Re-export для удобства потребителей /controllers
-export type { IAuthEvents, IAuthLoginProps, IAuthRegisterProps } from '../types';
+export type { IAuthEvents, IAuthGateProps, IAuthLoginProps, IAuthRegisterProps } from '../types';

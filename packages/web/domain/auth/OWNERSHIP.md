@@ -33,7 +33,7 @@ last-updated: 2026-07-04
   2. Web-remote embed форм (шаг 2 волны auth-app, отдельный бриф).
   3. OAuth2 / QR стратегии.
   4. `IAuthCapability` контракт в `web-contract` (Phase D2).
-- **Last activity:** 2026-07-04 (session v2 cookie-first + credentials-стратегия + Auth.Register + BroadcastChannel-синк, ADR 068).
+- **Last activity:** 2026-07-04 (Auth.Gate — готовый guest-блок «формы + переключение вход↔регистрация», бриф auth-gate-block-switchmode; ранее в тот же день: session v2 cookie-first + credentials-стратегия + Auth.Register + BroadcastChannel-синк, ADR 068).
 
 ## 🔴 Session v2 — cookie-first (BREAKING, 2026-07-04, ADR 068 D3)
 
@@ -127,9 +127,9 @@ config-driven), session + `useAuth()`, Controllers + ИМЕНОВАННЫЕ со
 | `/oauth2` | stub | `IOAuth2Input`, `oauth2Strategy` (TODO) |
 | `/qr` | stub | `IQrInput`, `qrStrategy` (TODO) |
 | `/session` | **ready (v2)** | `createAuthSession`, `useAuth()` (без token), `initAuthSession(apiBase?, store?)` — me-bootstrap + broadcast-подписка, `defaultAuthSession`, `notifyAuthChanged`/`onAuthChanged`/`AUTH_CHANNEL_NAME`; `@deprecated` legacy: `configureAuthSession`, `ISessionStorage`, `IPersistedSession`, `localSessionStorage` |
-| `/controllers` | **ready** | `AuthLogin` (арм role + credentials), `AuthRegister` (login+password+confirm, client-side confirm-валидация), FSM idle→submitting→authed/error, phantom `__events` |
-| `/ui` | **ready** | `AuthLoginForm` — web-core `View<IAuthLoginFormProps>` (`strategy: { fields }` — любой fields-носитель; Ui от View-wrapper, не проп). Register переиспользует её же (config-driven поля) |
-| `/capsule` | **ready** | `defineCapsuleModule({ name:'Auth', components:{Login, Register} })` + `registerPackageServices('authApi', { init, logout, logoutServer, isAuthed, user })` — `init(apiBase?)` bootstrap cookie-сессии (initAuthSession: /me + broadcast-подписка; root-Feature аппа зовёт в onInit ДО чтения isAuthed), `logout` локальный (+broadcast), `logoutServer(apiBase?)` полный cookie-логаут |
+| `/controllers` | **ready** | `AuthLogin` (арм role + credentials), `AuthRegister` (login+password+confirm, client-side confirm-валидация), `AuthGate` (guest-блок целиком: Login ↔ Register + переключатель, mode-стейт внутри Gate-FSM `context.data.mode`; только credentials; события форм баблятся сквозь Gate без изменений — у Gate-схемы нет их хендлеров, чужие клики → `next()`), FSM idle→submitting→authed/error, phantom `__events` |
+| `/ui` | **ready** | `AuthLoginForm` — web-core `View<IAuthLoginFormProps>` (`strategy: { fields }` — любой fields-носитель; Ui от View-wrapper, не проп). Register переиспользует её же (config-driven поля). `AuthGateSwitch` — ссылка-переключатель (mode из ctx, клики meta-тегами `to-register`/`to-login` в Gate-FSM) |
+| `/capsule` | **ready** | `defineCapsuleModule({ name:'Auth', components:{Login, Register, Gate} })` + `registerPackageServices('authApi', { init, logout, logoutServer, isAuthed, user })` — `init(apiBase?)` bootstrap cookie-сессии (initAuthSession: /me + broadcast-подписка; root-Feature аппа зовёт в onInit ДО чтения isAuthed), `logout` локальный (+broadcast), `logoutServer(apiBase?)` полный cookie-логаут |
 
 ## Моки — `preRequest` + `gen` (НЕ MSW)
 
@@ -192,13 +192,14 @@ config-driven), session + `useAuth()`, Controllers + ИМЕНОВАННЫЕ со
 
 ## Тест-покрытие
 
-102 теста (vitest jsdom), все green:
-- `__tests__/capsule.test.ts` — wiring services.authApi.init: регистрация под namespace, 200 → authed(user)+return user, 401 → null/guest, прокидывание apiBase (перехват registerPackageServices через vi.hoisted — getPackageServices internal в web-core).
+118 тестов (vitest jsdom), все green:
+- `__tests__/capsule.test.ts` — манифест модуля (components: Login/Register/Gate); wiring services.authApi.init: регистрация под namespace, 200 → authed(user)+return user, 401 → null/guest, прокидывание apiBase (перехват registerPackageServices через vi.hoisted — getPackageServices internal в web-core).
 - `api/__tests__/client.test.ts` — HTTP-клиент (мок fetch): credentials same-origin на каждом запросе, zod-валидация UserOut, apiBase-подстановка; login 200/401(InvalidCredentialsError)/500; register 201/409(LoginTakenError)/422; me 200/401→null/500; logout 204/500; невалидный payload → AuthApiError.
 - `session/__tests__/session.test.ts` — session v2 (login(user)/logout/setStatus, БЕЗ token), useAuth v2, initAuthSession me-bootstrap (200 authed / 401 guest / 401 при authed → logout / network-fail → warn+null / кастомный apiBase); legacy localSessionStorage (`{user}` round-trip, v1-запись читается без token) + configureAuthSession.
 - `session/__tests__/broadcast.test.ts` — канал 'capsule-auth' (fake BroadcastChannel): доставка между «вкладками», без self-delivery, отписка; интеграция initAuthSession: login/logout в другой вкладке → ре-фетч /me → store обновлён; повторный init не дублирует подписку.
 - `credentials/__tests__/credentials.test.ts` — credentialsStrategy fields/defaults/labels; logoutCredentials (сервер ok / сервер down → локальный сброс всё равно).
 - `controllers/__tests__/authController.test.tsx` — FSM schema, общая механика (idle/error clear-on-interaction); role-арм: onLogin `{user}` БЕЗ token (token мока игнорируется), mapAuthError (401/network/default); credentials-арм: loginRequest(payload, apiBase), typed-маппинг (401/сеть), loading-стейт @submit/@input; Auth.Register: confirm-mismatch без сети, 409 → «Логин уже занят», успех → session+emit; onLogout.
+- `controllers/__tests__/gateController.test.tsx` — Auth.Gate: render обеих фаз (fields login,password ↔ +confirm) + переключатель под формой; реактивное переключение по context.data.mode; guest.onClick to-register/to-login → store.update({mode}); прозрачность (чужие клики → next(), у схемы нет onLogin/onLogout/onLoginError-хендлеров, вложенная FSM эмиттит onLogin как обычно, apiBase/sessionStore форвардятся); branding (общие title/subtitle/footerNote в обе формы, точечные login/register-секции перекрывают).
 - `role/__tests__/roleStrategy.test.ts` — roleStrategy fields/defaults, кастомные роли, zod-схемы.
 
 ## Roadmap
@@ -208,6 +209,7 @@ config-driven), session + `useAuth()`, Controllers + ИМЕНОВАННЫЕ со
 - [x] `/role` — `roleStrategy(config)` (legacy mock-опора playground)
 - [x] `/credentials` — стратегия + HTTP-клиент backend/auth + типизированные ошибки + `logoutCredentials`
 - [x] `/controllers` — `AuthLogin` (role+credentials армы) + `AuthRegister` + регистрация в capsule.ts
+- [x] `Auth.Gate` — готовый guest-блок (Login ↔ Register + переключатель, mode внутри; бриф auth-gate-block-switchmode)
 - [x] `/ui` — `AuthLoginForm` config-driven на web-ui (переиспользуется Register'ом)
 - [ ] добавить в `nx.json` web_base group (через главного, при releasable-контенте)
 - [ ] web-remote embed форм (шаг 2 волны auth-app, отдельный бриф)

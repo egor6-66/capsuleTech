@@ -9,6 +9,7 @@
  * После регистрации доступны глобалы:
  *   - `Auth.Login` → connected component: Controller-scope (auth-FSM) + форма входа.
  *   - `Auth.Register` → connected component: регистрация (login+password+confirm).
+ *   - `Auth.Gate` → готовый guest-блок: Login ↔ Register + переключатель (mode внутри).
  *
  * Регистрация как component (НЕ controller) — по канону web-shell/MatrixController:
  * codegen строит namespace `Auth.Login.Events` из phantom `__events` в `components[X]`.
@@ -27,7 +28,7 @@
 
 import { registerPackageServices } from '@capsuletech/web-core';
 import { defineCapsuleModule } from '@capsuletech/web-core/module';
-import { AuthLogin, AuthRegister } from './controllers/index';
+import { AuthGate, AuthLogin, AuthRegister } from './controllers/index';
 import { logoutCredentials } from './credentials/index';
 import { defaultAuthSession, initAuthSession, notifyAuthChanged, useAuth } from './session/index';
 import type { IAuthUser } from './types';
@@ -99,5 +100,6 @@ export default defineCapsuleModule({
   components: {
     Login: AuthLogin,
     Register: AuthRegister,
+    Gate: AuthGate,
   },
 });

@@ -31,9 +31,9 @@ vi.mock('@capsuletech/web-core', async (importOriginal) => {
 
 // ─── Импорт после мока (side-effect: registerPackageServices('authApi', …)) ──
 
+import authModule from '../capsule';
 import { defaultAuthSession } from '../session/index';
 import type { IAuthUser } from '../types';
-import '../capsule';
 
 type AuthApi = {
   init: (apiBase?: string) => Promise<IAuthUser | null>;
@@ -63,6 +63,20 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+});
+
+describe('манифест модуля (defineCapsuleModule)', () => {
+  it('components: Login, Register, Gate — все зарегистрированы', () => {
+    const { name, components } = authModule as unknown as {
+      name: string;
+      components: Record<string, unknown>;
+    };
+    expect(name).toBe('Auth');
+    expect(Object.keys(components).sort()).toEqual(['Gate', 'Login', 'Register']);
+    for (const component of Object.values(components)) {
+      expect(typeof component).toBe('function');
+    }
+  });
 });
 
 describe('services.authApi.init()', () => {
