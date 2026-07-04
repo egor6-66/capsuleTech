@@ -1,0 +1,7 @@
+{
+  "name": "@capsuletech/web-placeholders",
+  "version": "0.0.0",
+  "description": "Ходовые плейсхолдеры экосистемы (404 / error / access-denied / widget-unavailable) как ДАННЫЕ: схемы web-renderer + тонкая регистрация Placeholders.* (ADR 033). Bootstrap-манифест — заполняет owner (scope `placeholders`, бриф web-placeholders-package.md).",
+  "type": "module",
+  "private": true
+}
