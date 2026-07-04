@@ -31,27 +31,22 @@ const Header = Widget((Ui, store) => {
         </Shell.Header.Menu.Group>
         <Shell.Header.Menu.Separator />
         <Shell.Header.Menu.Group>
-          <Shell.Header.Menu.Label>Озвучка</Shell.Header.Menu.Label>
+          <Shell.Header.Menu.Label>Движки</Shell.Header.Menu.Label>
           <Shell.Picker
             mode="sub"
             name="engine"
             options={engines()}
             value={engine}
-            triggerLabel={`Движок: ${engine() ?? '—'}`}
+            triggerLabel={`озвучка: ${engine() ?? '—'}`}
           />
-        </Shell.Header.Menu.Group>
-        <Shell.Header.Menu.Separator />
-        <Shell.Header.Menu.Group>
-          <Shell.Header.Menu.Label>Картинки</Shell.Header.Menu.Label>
           <Shell.Picker
             mode="sub"
             name="image-engine"
             options={imageEngines()}
             value={imageEngine}
-            triggerLabel={`Движок: ${imageEngine() ?? '—'}`}
+            triggerLabel={`картинки: ${imageEngine() ?? '—'}`}
           />
         </Shell.Header.Menu.Group>
-        <Shell.Header.Menu.Separator />
       </Shell.Header.Menu>
     </Shell.Header>
   );
