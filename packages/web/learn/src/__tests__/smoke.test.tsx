@@ -11,7 +11,7 @@ import { describe, expect, test } from 'vitest';
 import { Exercise } from '../exercise';
 import { Tour } from '../guides';
 import { LessonView } from '../lesson';
-import { Collections, VocabList, WordExplorer } from '../library';
+import { Collections, VocabList } from '../library';
 import { Progress } from '../progress';
 import { SentenceBuilder } from '../sentence-builder';
 
@@ -72,16 +72,6 @@ describe('web-learn skeleton smoke', () => {
     const dispose = render(() => <SentenceBuilder />, host);
     try {
       expect(host.querySelector('[data-stub="Learn.SentenceBuilder"]')).toBeTruthy();
-    } finally {
-      dispose();
-    }
-  });
-
-  test('WordExplorer renders', () => {
-    const host = document.createElement('div');
-    const dispose = render(() => <WordExplorer />, host);
-    try {
-      expect(host.querySelector('[data-stub="Learn.WordExplorer"]')).toBeTruthy();
     } finally {
       dispose();
     }

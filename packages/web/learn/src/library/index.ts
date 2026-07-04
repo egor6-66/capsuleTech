@@ -1,5 +1,6 @@
 export { BookmarkButton, type IBookmarkButtonProps } from './BookmarkButton';
 export { Collections, type ICollectionsProps } from './Collections';
+export { type IInfoEvents, type IInfoProps, Info } from './Info';
 export {
   type ILibraryWelcomeEvents,
   type ILibraryWelcomeProps,
@@ -11,5 +12,8 @@ export {
   type LibrarySegmentId,
   Navigation,
 } from './Navigation';
+export { type ISearchProps, Search } from './Search';
+export { type ILibraryStore, libraryStore } from './store';
+export type { ISense, ISenseAudio, ISenseTag } from './types';
 export { type IVocabListProps, VocabList } from './VocabList';
-export { type IWordExplorerProps, WordExplorer } from './WordExplorer';
+export { type IWordsEvents, type IWordsProps, Words } from './Words';
