@@ -18,6 +18,13 @@
  *   onSpeak (Learn.Library.Words/Info, именованное событие пакета) — проигрывание,
  *   payload.audioUrl = готовая ссылка learn-композиции на voice (null — voice лежал).
  *
+ * Картинки слов (ADR 067/068) — тот же app-глобальный concern, зеркало озвучки:
+ *   context.imageEngines / context.imageEngine — список и выбор image-движка
+ *   (backend/image напрямую, capability публичен), персист в localStorage;
+ *   onPick (второй Shell.Picker в хедере, name='image-engine') — смена движка.
+ *   Прокидывание выбора в реальные запросы картинок — будущий шаг (когда
+ *   learn-выдача принесёт image.url, `&engine=` добавляется как в 🔊-onSpeak).
+ *
  * `Learn.Library.*` — вложенный namespace-блок, codegen per-component `.Events`
  * агрегат не видит вложенные ключи (nested-нюанс, см. `web-learn/src/capsule.ts`) —
  * `IOnSpeakEvent` ниже типизирует payload вручную (форма зеркалит `IWordsEvents`/
@@ -28,6 +35,7 @@
 // в services/Utils нет storage-хелпера (SSR/desktop-safe) — framework gap,
 // кандидат на mini-brief owner-shared. Заменить на Utils.storage когда появится.
 const VOICE_ENGINE_KEY = 'learn-voice-engine';
+const IMAGE_ENGINE_KEY = 'learn-image-engine';
 
 interface IOnSpeakEvent {
   onSpeak: { audioUrl: string | null };
@@ -40,6 +48,8 @@ const App = Feature<Learn.Welcome.Events & Shell.Picker.Events & IOnSpeakEvent>(
     context: {
       engines: [] as string[],
       engine: localStorage.getItem(VOICE_ENGINE_KEY) ?? 'kokoro',
+      imageEngines: [] as string[],
+      imageEngine: localStorage.getItem(IMAGE_ENGINE_KEY) ?? 'sdxl-turbo',
     },
 
     states: {
@@ -55,6 +65,15 @@ const App = Feature<Learn.Welcome.Events & Shell.Picker.Events & IOnSpeakEvent>(
             store.update({ engine: res.default });
             localStorage.setItem(VOICE_ENGINE_KEY, res.default);
           }
+
+          // Image-движки — тот же флоу, отдельный capability-сервис.
+          const img = await api.image.engines({});
+          store.update({ imageEngines: img.engines });
+          const currentImage = (store.ctx as any)?.data?.imageEngine as string | undefined;
+          if (currentImage && !img.engines.includes(currentImage)) {
+            store.update({ imageEngine: img.default });
+            localStorage.setItem(IMAGE_ENGINE_KEY, img.default);
+          }
         },
       },
     },
@@ -64,12 +83,20 @@ const App = Feature<Learn.Welcome.Events & Shell.Picker.Events & IOnSpeakEvent>(
       router.goTo(`/${target.payload}`);
     },
 
-    // Shell.Picker (хедер): выбор TTS-движка.
+    // Shell.Picker (хедер): выбор движка. Два пикера различаются по name.
     onPick: ({ target, store }) => {
-      if (target.payload?.name !== 'engine') return;
-      const engine = target.payload.value;
-      store.update({ engine });
-      localStorage.setItem(VOICE_ENGINE_KEY, engine);
+      const name = target.payload?.name;
+      if (name === 'engine') {
+        const engine = target.payload.value;
+        store.update({ engine });
+        localStorage.setItem(VOICE_ENGINE_KEY, engine);
+        return;
+      }
+      if (name === 'image-engine') {
+        const imageEngine = target.payload.value;
+        store.update({ imageEngine });
+        localStorage.setItem(IMAGE_ENGINE_KEY, imageEngine);
+      }
     },
 
     // Озвучка: именованное событие из Learn.Library.Words/Info (payload несёт

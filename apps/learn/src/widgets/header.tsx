@@ -15,6 +15,8 @@
 const Header = Widget((Ui, store) => {
   const engines = () => ((store?.ctx as any)?.data?.engines as string[]) ?? [];
   const engine = () => (store?.ctx as any)?.data?.engine as string | undefined;
+  const imageEngines = () => ((store?.ctx as any)?.data?.imageEngines as string[]) ?? [];
+  const imageEngine = () => (store?.ctx as any)?.data?.imageEngine as string | undefined;
 
   return (
     <Shell.Header>
@@ -36,6 +38,17 @@ const Header = Widget((Ui, store) => {
             options={engines()}
             value={engine}
             triggerLabel={`Движок: ${engine() ?? '—'}`}
+          />
+        </Shell.Header.Menu.Group>
+        <Shell.Header.Menu.Separator />
+        <Shell.Header.Menu.Group>
+          <Shell.Header.Menu.Label>Картинки</Shell.Header.Menu.Label>
+          <Shell.Picker
+            mode="sub"
+            name="image-engine"
+            options={imageEngines()}
+            value={imageEngine}
+            triggerLabel={`Движок: ${imageEngine() ?? '—'}`}
           />
         </Shell.Header.Menu.Group>
         <Shell.Header.Menu.Separator />

@@ -1,9 +1,9 @@
 export default defineAppConfig({
   // Словарь meta-тегов аппа (типизирует `meta.tags` в слоях):
   // word/speak — тайл слова и его 🔊; search — поиск-input библиотеки;
-  // engine — свич TTS-движка (Shell.Picker).
+  // engine — свич TTS-движка, image-engine — свич image-движка (Shell.Picker).
   meta: {
-    tags: ['click', 'word', 'speak', 'search', 'engine'],
+    tags: ['click', 'word', 'speak', 'search', 'engine', 'image-engine'],
   },
   aliases: {},
   // Learn-зона (ADR 055 D5) + app-shell как в playground (единый UI/UX-флоу
