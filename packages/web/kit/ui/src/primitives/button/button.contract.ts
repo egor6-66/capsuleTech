@@ -13,6 +13,9 @@ export const ButtonContract = defineContract({ name: 'Button', kind: 'primitive'
       loading: z.boolean().optional(),
       fullWidth: z.boolean().optional(),
       'aria-invalid': z.union([z.literal('true'), z.literal('false'), z.boolean()]).optional(),
+      // active-link состояние: router Link ставит aria-current="page" на активной
+      // ссылке, Button рисует primary-акцент из базового CVA (без пропсов у consumer'а)
+      'aria-current': z.literal('page').optional(),
     }),
   ),
   rule.variants(['default', 'destructive', 'outline', 'secondary', 'ghost', 'link']),
@@ -26,5 +29,9 @@ export const ButtonContract = defineContract({ name: 'Button', kind: 'primitive'
     { name: 'fullWidth', props: { variant: 'default', fullWidth: true } },
     { name: 'aria-invalid', props: { variant: 'default', 'aria-invalid': 'true' } },
     { name: 'as-link', props: { as: 'a', variant: 'outline', href: '/foo' } },
+    {
+      name: 'active-link',
+      props: { as: 'a', variant: 'ghost', href: '/current', 'aria-current': 'page' },
+    },
   ]),
 ]);

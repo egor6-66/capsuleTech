@@ -4,7 +4,7 @@ status: documented
 type: primitive
 audience: dev
 tags: [web-ui, primitive, button]
-last_updated: 2026-06-16
+last_updated: 2026-07-04
 ---
 
 # Button {#button}
@@ -83,12 +83,23 @@ last_updated: 2026-06-16
 
 `as` реализован через `<Slot>` (Kobalte). Stylings и `data-*` атрибуты переезжают на полученный элемент. Для `<button>` автоматически проставляется `type="button"` (защита от случайной submit-ы формы). Для прочих тегов `type` не ставится.
 
+## Активная ссылка (`aria-current="page"`) {#active-link}
+
+```tsx
+<Button as={Link} to="/lessons" variant="ghost">Lessons</Button>
+```
+
+Button-as-Link в навигации подсвечивается **автоматически**: router Link ставит `aria-current="page"` на активной ссылке, а Button из коробки рисует акцент — `bg-primary text-primary-foreground font-semibold` + `pointer-events-none` (клик по текущей странице гасится). Приложение не пишет ни классов, ни пропсов — состояние живёт в базовом CVA и срабатывает на любом варианте.
+
+Атрибут можно поставить и вручную (например, в studio-превью): `<Button as="a" aria-current="page">…</Button>`. Кнопки без атрибута не затрагиваются.
+
 ## Доступность {#a11y}
 
 - Активный focus-ring (`focus-visible:ring-ring/50`) — двухслойный, как в shadcn (`border` + `ring`).
 - `disabled` — native attr (не `aria-disabled`), плюс `data-disabled=""` для CSS.
 - `loading` — `aria-busy="true"`. Screen-reader не озвучивает «загрузка», но braking-state считывается.
 - `aria-invalid="true"` — кнопка получает destructive-ring (полезно в формах с server-side validation).
+- `aria-current="page"` — active-link акцент (см. [[#active-link]]); семантика «текущая страница» для скринридера идёт бесплатно от router Link.
 - Если содержимое кнопки — только иконка (`size="icon"`), всегда добавляй `aria-label`.
 
 ## Tokens / стили {#tokens}

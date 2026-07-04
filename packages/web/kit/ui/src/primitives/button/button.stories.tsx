@@ -98,6 +98,23 @@ export const IconOnlyGhost: Story = {
   args: { size: 'icon', variant: 'ghost', children: <Plus /> },
 };
 
+export const ActiveLink: Story = {
+  name: 'active link — aria-current="page" accent',
+  render: () => (
+    <nav style={{ display: 'flex', gap: '4px' }}>
+      <Button as="a" href="#" variant="ghost" aria-current="page">
+        Lessons
+      </Button>
+      <Button as="a" href="#" variant="ghost">
+        Exercises
+      </Button>
+      <Button as="a" href="#" variant="ghost">
+        Progress
+      </Button>
+    </nav>
+  ),
+};
+
 export const FullWidth: Story = {
   name: 'fullWidth — stretches to container',
   args: { fullWidth: true, children: 'Submit' },
