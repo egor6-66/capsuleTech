@@ -47,6 +47,13 @@
         "command": "uv run python -m capsule_lang.lessons_importer {args.vault}"
       }
     },
+    "import-vault": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/lang",
+        "command": "uv run python -m capsule_lang.vault_import {args.vault}"
+      }
+    },
     "test:py": {
       "executor": "nx:run-commands",
       "options": {

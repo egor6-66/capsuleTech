@@ -58,6 +58,21 @@ Folders scanned (finalочка mapping): `lessons/` (Lesson), `lessons/concepts/
 (Concept), `drills/` (Drill), `grammar|phonetics|speech/` (Rule).
 `methods/ briefs/ journal/` (and any unlisted folder) are ignored.
 
+### One-command round: words → lessons
+
+New dictionary words are authored in the vault too — `{vault}/words/*.yaml`, the
+same sense-YAML format as the lexical importer. A round is a single command:
+words first (drills resolve their `words[]` against the dictionary), then the
+lessons graph.
+
+```bash
+uv run python -m capsule_lang.vault_import D:\learn\lang   # or set LESSONS_VAULT
+```
+
+It prints a combined report — `words: imported/updated/skipped` then the
+`lessons:` line. The words pass reuses the lexical importer (`source: curated`),
+so re-running is idempotent and never overwrites curated rows.
+
 Validation is **reject-with-reason** (never a silent skip): id == filename +
 kebab (no `temp/wip/new`); every drill item must carry a time marker in
 `promptRu` or a `context`; `words[]` must already exist in the dictionary; all

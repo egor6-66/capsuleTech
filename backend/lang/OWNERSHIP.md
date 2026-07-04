@@ -78,6 +78,7 @@ Vault-importer (`lessons_importer.py`) — markdown+frontmatter → reject-with-
 - **Lessons-refs — жёсткий resolve, cascade-reject.** Дрилл ссылается на `rule`; если rule-файл rejected, дрилл тоже rejected (ref unresolved). Это by design (правило 4 финалочки) — importer чинит причину не молча.
 - **Rule-файлы: `id`/`title` — из имени файла + H1, не из frontmatter.** Реальные справочники (`grammar/phonetics/speech`) по финалочке получают ТОЛЬКО `type` во frontmatter (тело не трогаем). Поэтому importer: `id` дефолтит на имя файла (правило №0; явный id, если есть, обязан совпасть — ловит rename-drift); `title` дефолтит на первый H1 тела verbatim (секц-нумератор «5d.» НЕ срезаем — это контентное решение vault'а). Frontmatter-title (у дриллов/уроков/концептов) выигрывает. Это разрешает кажущийся конфликт финалочки «title required» vs «rules — только type»: title живёт в H1.
 - **Смена ключевого поля ломает natural key.** Если меняешь конвенцию поля, участвующего в natural key upsert'а (напр. `gloss`→`ru`, как 2026-07-03) — существующая БД получит ДУБЛИ при простом ре-импорте, не апдейт. Для локальной dev-БД: снести файл и пересобрать (`alembic upgrade head` + `seed` + `import-vocab`) начисто, не патчить поверх.
+- **Полный импорт vault — `vault_import.py` (words→lessons, ADR 069/070).** Оркестратор: сначала `{vault}/words/*.yaml` через lexical-importer (`import_file`, `source: curated`), потом lessons-граф через `import_vault`. Порядок жёсткий — дриллы резолвят `words[]` против словаря, поэтому слова обязаны существовать до lessons-прохода. `words/` **не** входит в `FOLDER_TYPES` lessons-importer'а (тот сканит только md-сущности) — это разные форматы (YAML sense-list vs markdown+frontmatter) и разные пайплайны. nx-таргет `import-vault`, CLI `python -m capsule_lang.vault_import {vault}`.
 
 ## План рефакторинга / оптимизаций
 
@@ -96,6 +97,7 @@ Vault-importer (`lessons_importer.py`) — markdown+frontmatter → reject-with-
 | Unit | `tests/test_lessons_schema.py` | lessons-таблицы регистрируются, drill/item/lesson roundtrip |
 | Unit | `tests/test_lessons_importer.py` | happy-path на эталонном дрилле (fixtures) + 5 reject-правил + идемпотентность |
 | API | `tests/test_lessons_api.py` | lesson-композиция сохраняет порядок, drill items, 404 |
+| Unit | `tests/test_vault_import.py` | full import words→lessons, drill words резолвятся без ручного seed, идемпотентность |
 
 **Перед изменением:** `uv run pytest` green. **Перед release:** contract D2 не ломать без ADR.
 
