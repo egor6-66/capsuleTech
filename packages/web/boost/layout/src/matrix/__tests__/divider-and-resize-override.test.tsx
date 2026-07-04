@@ -10,10 +10,14 @@
  *    (оверрайдит mode/global), false → никогда, undefined → следует
  *    matrix-резолюции. Активность ручки НЕ ремоунтит панели.
  *
+ * 4. Matrix использует `handleVariant="ghost"`: ручка НИКОГДА не рисует свою
+ *    линию (ни активная, ни выключенная) — линии в шве только от `bordered`.
+ *
  * DOM-маркеры:
  *  - divider: класс `border-l`/`border-t` + `border-border/60` на cell/row.
- *  - активная ручка web-ui: `[data-corvu-resizable-handle]` с классом
- *    `bg-border`; неактивная — `bg-transparent` + `pointer-events-none`.
+ *  - ручка: `[data-corvu-resizable-handle]`; активная — БЕЗ `pointer-events-none`
+ *    (drag работает), неактивная — с ним. `bg-border` не бывает ни у одной
+ *    (ghost). Grip svg — только на активной при withHandle.
  */
 /* @vitest-environment jsdom */
 import { createSignal } from 'solid-js';
@@ -40,13 +44,19 @@ afterEach(() => {
 const HANDLE_SEL = '[data-corvu-resizable-handle]';
 
 const activeHandles = (): Element[] =>
-  Array.from(container.querySelectorAll(HANDLE_SEL)).filter((h) =>
-    h.classList.contains('bg-border'),
+  Array.from(container.querySelectorAll(HANDLE_SEL)).filter(
+    (h) => !h.classList.contains('pointer-events-none'),
   );
 
 const inactiveHandles = (): Element[] =>
   Array.from(container.querySelectorAll(HANDLE_SEL)).filter((h) =>
-    h.classList.contains('bg-transparent'),
+    h.classList.contains('pointer-events-none'),
+  );
+
+/** Ghost-контракт: ни одна ручка Matrix не рисует свою линию. */
+const handlesWithLine = (): Element[] =>
+  Array.from(container.querySelectorAll(HANDLE_SEL)).filter((h) =>
+    h.classList.contains('bg-border'),
   );
 
 const dividers = (): Element[] =>
@@ -85,7 +95,7 @@ describe('Matrix — cells are a shared space, not cards', () => {
 });
 
 describe('Matrix — divider visibility (bordered pair, handle suppression)', () => {
-  it('bordered pair + INACTIVE handle (resize off) → divider on the right cell', () => {
+  it('bordered pair + resize OFF → divider on the right cell, handle inactive and lineless', () => {
     // NB: глобальный useResizeMode() дефолтится в true — гасим matrix-пропом.
     cleanup = render(
       () => (
@@ -107,16 +117,17 @@ describe('Matrix — divider visibility (bordered pair, handle suppression)', ()
       container,
     );
 
-    // Глобальный resize off → ручка между a|b неактивна → divider виден.
     const cellB = container.querySelector('main')!;
     expect(cellB.classList.contains('border-l')).toBe(true);
     expect(cellB.classList.contains('border-border/60')).toBe(true);
-    // Ручка при этом прозрачна (не даёт вторую линию).
     expect(activeHandles().length).toBe(0);
     expect(inactiveHandles().length).toBeGreaterThan(0);
+    expect(handlesWithLine().length).toBe(0);
   });
 
-  it('bordered pair + ACTIVE handle → divider suppressed (handle line is the separator)', () => {
+  it('bordered pair + resize ON → divider STAYS, handle is ghost (no second line)', () => {
+    // Разделители — функция ТОЛЬКО bordered; включение resize даёт drag+grip,
+    // но не меняет линии (handleVariant="ghost").
     cleanup = render(
       () => (
         <Matrix
@@ -138,8 +149,40 @@ describe('Matrix — divider visibility (bordered pair, handle suppression)', ()
     );
 
     const cellB = container.querySelector('main')!;
-    expect(cellB.classList.contains('border-l')).toBe(false);
+    expect(cellB.classList.contains('border-l')).toBe(true);
     expect(activeHandles().length).toBeGreaterThan(0);
+    // Активная ручка НЕ рисует свою линию — двойной линии не бывает.
+    expect(handlesWithLine().length).toBe(0);
+  });
+
+  it('bordered OFF + resize ON → no lines at all, only active ghost handle (grip)', () => {
+    cleanup = render(
+      () => (
+        <Matrix
+          bordered={false}
+          resize
+          rows={[
+            {
+              id: 'r',
+              resizable: true,
+              cells: [
+                { id: 'a', children: <div>A</div>, width: 0.5 },
+                { id: 'b', children: <div>B</div>, width: 0.5 },
+              ],
+            },
+          ]}
+        />
+      ),
+      container,
+    );
+
+    expect(dividers().length).toBe(0);
+    expect(handlesWithLine().length).toBe(0);
+    expect(activeHandles().length).toBeGreaterThan(0);
+    // Grip-бэйдж на активной ручке присутствует (единственный аффорданс).
+    expect(container.querySelectorAll(`${HANDLE_SEL} svg[role="presentation"]`).length).toBe(
+      activeHandles().length,
+    );
   });
 
   it('bordered={false} + no explicit slot bordered → no dividers at all', () => {

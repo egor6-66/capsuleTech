@@ -36,14 +36,10 @@ export const rowToFlexItems = (
     const dndState = getCellDndState ? getCellDndState(cell) : undefined;
     // Prefer session-persisted size; fall back to declared cell.width.
     const resolvedSize = savedSizes?.[i] ?? (widthIsNumber ? (cell.width as number) : undefined);
-    // Divider слева от cell (i>0): пара bordered И ручка между ними не активна.
-    // handleBetween — структурное наличие corvu-handle (оба соседа resizable !== false).
+    // Divider слева от cell (i>0): пара bordered (either-rule). Resize на
+    // разделители не влияет — ручки ghost (без своей линии).
     const prev = i > 0 ? row.cells[i - 1] : undefined;
-    const handleBetween =
-      !!prev && (prev.resizable ?? true) !== false && (cell.resizable ?? true) !== false;
-    const leftDivider = prev
-      ? (): boolean => dividerBetweenCells(prev, cell, bordered, resizeEnabled, handleBetween)
-      : undefined;
+    const leftDivider = prev ? (): boolean => dividerBetweenCells(prev, cell, bordered) : undefined;
     return {
       children: renderCell(
         cell,
@@ -174,6 +170,7 @@ export const renderRow = (
             orientation="horizontal"
             items={items}
             withHandle
+            handleVariant="ghost"
             onSizesChange={onRowSizesChange}
           />
         </div>
@@ -199,11 +196,9 @@ export const renderRow = (
         {(cell, i) => {
           const cellRef = cell.draggable !== false && bindCell ? bindCell(cell, row.id) : NOOP_REF;
           const dndState = getCellDndState ? getCellDndState(cell) : undefined;
-          // Plain-flex путь — corvu-ручек нет (handleBetween=false), divider
-          // определяется только парой bordered.
           const prev = i() > 0 ? row.cells[i() - 1] : undefined;
           const leftDivider = prev
-            ? (): boolean => dividerBetweenCells(prev, cell, bordered, resizeEnabled, false)
+            ? (): boolean => dividerBetweenCells(prev, cell, bordered)
             : undefined;
           return renderCell(
             cell,

@@ -24,37 +24,22 @@ export const rowBordered = (row: IRow, bordered: Accessor<boolean>): boolean =>
 
 /**
  * Divider между двумя соседними cells (внутренний разделитель общего
- * пространства, НЕ карточный бордер). Виден когда:
- *   - хотя бы один из соседей резолвится bordered, И
- *   - между ними НЕ рисуется активная resize-ручка (её hairline сам служит
- *     разделителем — иначе двойная линия).
- * `handleBetween` — структурное наличие corvu-handle между парой
- * (false в plain-flex путях, где ручек нет вовсе).
+ * пространства, НЕ карточный бордер). Виден когда хотя бы один из соседей
+ * резолвится bordered (either-rule).
+ *
+ * Разделители — ИСКЛЮЧИТЕЛЬНО функция `bordered`, resize на них не влияет:
+ * все Resizable матрицы работают с `handleVariant="ghost"` (ручка — хит-зона
+ * + grip-бэйдж, своей линии не рисует ни в каком состоянии).
  */
 export const dividerBetweenCells = (
   prev: ICell,
   cell: ICell,
   bordered: Accessor<boolean>,
-  resizeEnabled: Accessor<boolean>,
-  handleBetween: boolean,
-): boolean =>
-  ((prev.bordered ?? bordered()) || (cell.bordered ?? bordered())) &&
-  !(
-    handleBetween &&
-    cellResizeActive(prev, resizeEnabled) &&
-    cellResizeActive(cell, resizeEnabled)
-  );
+): boolean => (prev.bordered ?? bordered()) || (cell.bordered ?? bordered());
 
-/** То же для пары соседних rows (горизонтальный divider между зонами). */
-export const dividerBetweenRows = (
-  prev: IRow,
-  row: IRow,
-  bordered: Accessor<boolean>,
-  resizeEnabled: Accessor<boolean>,
-  handleBetween: boolean,
-): boolean =>
-  (rowBordered(prev, bordered) || rowBordered(row, bordered)) &&
-  !(handleBetween && rowResizeActive(prev, resizeEnabled) && rowResizeActive(row, resizeEnabled));
+/** То же для пары соседних rows (divider между зонами). */
+export const dividerBetweenRows = (prev: IRow, row: IRow, bordered: Accessor<boolean>): boolean =>
+  rowBordered(prev, bordered) || rowBordered(row, bordered);
 
 /**
  * Нормализованный slot — всегда объект с `children` + размерами + `draggable`.

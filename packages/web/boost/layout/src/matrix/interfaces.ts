@@ -51,8 +51,8 @@ export type SlotValue =
        * Per-slot border override. `bordered` рисует ВНУТРЕННИЕ разделители
        * (hairline между слотами) — слоты это общее пространство, разделённое
        * линиями, не независимые карточки. Divider между двумя слотами виден,
-       * если ХОТЯ БЫ ОДИН из них резолвится в bordered и между ними не
-       * рисуется активная resize-ручка (её линия сама служит разделителем).
+       * если ХОТЯ БЫ ОДИН из них резолвится в bordered (either-rule).
+       * Resize на линии не влияет: ручки ghost (только хит-зона + grip).
        * `undefined` (default) — следует Matrix-level `bordered` prop.
        */
       bordered?: boolean;
@@ -174,8 +174,8 @@ export interface ICell {
   swapGroup?: string;
   /**
    * Per-cell border override — участие cell в ВНУТРЕННИХ разделителях
-   * (divider виден между парой соседей, если хотя бы один резолвится true
-   * и между ними нет активной resize-ручки). Не карточный бордер.
+   * (divider виден между парой соседей, если хотя бы один резолвится true;
+   * resize на линии не влияет — ручки ghost). Не карточный бордер.
    * `undefined` (default) — follows the Matrix-level `bordered` prop.
    */
   bordered?: boolean;
@@ -364,9 +364,10 @@ export interface IMatrixCommonProps extends JSX.HTMLAttributes<HTMLDivElement> {
    * Single source of truth для ВНУТРЕННИХ разделителей Matrix (hairline между
    * слотами). Слоты — общее пространство, разделённое линиями, не независимые
    * карточки: внешнего бордера и скруглений у ячеек нет. Divider между парой
-   * соседей виден, когда пара резолвится bordered И между ними не рисуется
-   * активная resize-ручка (линия ручки сама служит разделителем — двойной
-   * линии не бывает). Per-slot override: `slots.X.bordered` / `cell.bordered`.
+   * соседей виден, когда хотя бы один резолвится bordered (either-rule).
+   * Линии — ИСКЛЮЧИТЕЛЬНО функция bordered: resize-ручки работают в
+   * ghost-варианте (хит-зона + grip-бэйдж, своей линии не рисуют никогда).
+   * Per-slot override: `slots.X.bordered` / `cell.bordered`.
    *
    * @default true
    */
