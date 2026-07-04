@@ -84,3 +84,26 @@ class Source(StrEnum):
 
     AUTO = "auto"
     CURATED = "curated"
+
+
+class LessonLevel(StrEnum):
+    """Pack-difficulty axis L0–L5 (ADR 069) — set by hand, distinct from the
+    CEFR `Level` facet of a sense. Drills/lessons carry this, not `a1..c2`."""
+
+    L0 = "l0"
+    L1 = "l1"
+    L2 = "l2"
+    L3 = "l3"
+    L4 = "l4"
+    L5 = "l5"
+
+
+class MatchMode(StrEnum):
+    """How a `nearMiss` pattern matches a learner answer (ADR 069 D2).
+
+    `contains` covers ~90% of typo-feedback; `regex` for the rare cases a plain
+    substring can't express. Default is `contains`.
+    """
+
+    CONTAINS = "contains"
+    REGEX = "regex"

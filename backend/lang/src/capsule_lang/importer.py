@@ -187,9 +187,12 @@ def _upsert_relation(db: Session, from_id: int, to_id: int, rel: RelationIn) -> 
                 from_sense_id=from_id,
                 to_sense_id=to_id,
                 type=rel.type,
+                bridge=rel.bridge,
                 source=Source.CURATED,
             )
         )
+    elif rel.bridge is not None:
+        exists.bridge = rel.bridge
 
 
 # --- orchestration ----------------------------------------------------------

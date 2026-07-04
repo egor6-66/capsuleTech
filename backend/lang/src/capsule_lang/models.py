@@ -25,6 +25,7 @@ from .db import Base
 from .enums import (
     Connotation,
     Frequency,
+    LessonLevel,
     Level,
     Pos,
     Register,
@@ -167,6 +168,241 @@ class SenseRelation(Base):
     type: Mapped[RelationType] = mapped_column(
         _enum(RelationType, "relation_type"), nullable=False
     )
+    # Образ-мост (ADR 069 D4) — image-metaphor bridging the two senses. No data
+    # yet; the column readies the conveyor (teacher writes → image renders).
+    bridge: Mapped[str | None] = mapped_column(String, nullable=True)
     source: Mapped[Source] = mapped_column(
         _enum(Source, "source"), nullable=False, default=Source.AUTO
     )
+
+
+# --- lessons content (ADR 069): concepts / rules / drills / lessons ----------
+#
+# A separate content domain living in the same DB as the lexical graph (ADR 069
+# D1): drills join the dictionary through `drill_words` (lemma → word). Ids are
+# kebab strings = the vault filename stem (rule №0: filename == id forever), so
+# cross-entity references are authored by that id and resolved at import time.
+# `tags` are a plain string[] facet (JSON) — not the sense `Tag` axis.
+
+
+class Concept(Base):
+    """Philosophy/mindset prose — `lessons/concepts/*.md` (ADR 069)."""
+
+    __tablename__ = "concepts"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    principle: Mapped[str] = mapped_column(String, nullable=False)
+    body: Mapped[str] = mapped_column(String, nullable=False)
+    tags: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    examples: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    source: Mapped[Source] = mapped_column(
+        _enum(Source, "source"), nullable=False, default=Source.CURATED
+    )
+
+    related_rules: Mapped[list[Rule]] = relationship(
+        secondary="concept_related_rules",
+        order_by="ConceptRelatedRule.position",
+        lazy="selectin",
+    )
+    related_concepts: Mapped[list[Concept]] = relationship(
+        secondary="concept_related_concepts",
+        primaryjoin="Concept.id == ConceptRelatedConcept.concept_id",
+        secondaryjoin="Concept.id == ConceptRelatedConcept.related_id",
+        order_by="ConceptRelatedConcept.position",
+        lazy="selectin",
+    )
+
+
+class Rule(Base):
+    """Reference rule (grammar/phonetics/speech) — body markdown as-is (ADR 069)."""
+
+    __tablename__ = "rules"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    body: Mapped[str] = mapped_column(String, nullable=False)
+    tags: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    source: Mapped[Source] = mapped_column(
+        _enum(Source, "source"), nullable=False, default=Source.CURATED
+    )
+
+
+class Drill(Base):
+    """A set of practice items for ONE mistake-class (`graboTag`) — `drills/*.md`."""
+
+    __tablename__ = "drills"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    level: Mapped[LessonLevel] = mapped_column(
+        _enum(LessonLevel, "lesson_level"), nullable=False
+    )
+    tags: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    rule_id: Mapped[str] = mapped_column(
+        ForeignKey("rules.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    grabo_tag: Mapped[str] = mapped_column(String, nullable=False)
+    source: Mapped[Source] = mapped_column(
+        _enum(Source, "source"), nullable=False, default=Source.CURATED
+    )
+
+    rule: Mapped[Rule] = relationship(lazy="selectin")
+    items: Mapped[list[DrillItem]] = relationship(
+        back_populates="drill",
+        cascade="all, delete-orphan",
+        order_by="DrillItem.position",
+        lazy="selectin",
+    )
+    concepts: Mapped[list[Concept]] = relationship(
+        secondary="drill_concepts",
+        order_by="DrillConcept.position",
+        lazy="selectin",
+    )
+    words: Mapped[list[Word]] = relationship(
+        secondary="drill_words",
+        order_by="DrillWord.position",
+        lazy="selectin",
+    )
+
+
+class DrillItem(Base):
+    """One RU→EN task inside a drill (ADR 069 D2). `accept`/`near_miss` are JSON."""
+
+    __tablename__ = "drill_items"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    drill_id: Mapped[str] = mapped_column(
+        ForeignKey("drills.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    prompt_ru: Mapped[str] = mapped_column(String, nullable=False)
+    context: Mapped[str | None] = mapped_column(String, nullable=True)
+    answer_en: Mapped[str] = mapped_column(String, nullable=False)
+    accept: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    near_miss: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    grabo_tag: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    drill: Mapped[Drill] = relationship(back_populates="items")
+
+
+class Lesson(Base):
+    """Ordered route stitching concepts → rules → drills by reference (ADR 069)."""
+
+    __tablename__ = "lessons"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    level: Mapped[LessonLevel] = mapped_column(
+        _enum(LessonLevel, "lesson_level"), nullable=False
+    )
+    tags: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    intro: Mapped[str | None] = mapped_column(String, nullable=True)
+    source: Mapped[Source] = mapped_column(
+        _enum(Source, "source"), nullable=False, default=Source.CURATED
+    )
+
+    concepts: Mapped[list[Concept]] = relationship(
+        secondary="lesson_concepts",
+        order_by="LessonConcept.position",
+        lazy="selectin",
+    )
+    rules: Mapped[list[Rule]] = relationship(
+        secondary="lesson_rules",
+        order_by="LessonRule.position",
+        lazy="selectin",
+    )
+    drills: Mapped[list[Drill]] = relationship(
+        secondary="lesson_drills",
+        order_by="LessonDrill.position",
+        lazy="selectin",
+    )
+
+
+# --- ordered link tables (position = author's route order) -------------------
+
+
+class LessonConcept(Base):
+    __tablename__ = "lesson_concepts"
+
+    lesson_id: Mapped[str] = mapped_column(
+        ForeignKey("lessons.id", ondelete="CASCADE"), primary_key=True
+    )
+    concept_id: Mapped[str] = mapped_column(
+        ForeignKey("concepts.id", ondelete="CASCADE"), primary_key=True
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class LessonRule(Base):
+    __tablename__ = "lesson_rules"
+
+    lesson_id: Mapped[str] = mapped_column(
+        ForeignKey("lessons.id", ondelete="CASCADE"), primary_key=True
+    )
+    rule_id: Mapped[str] = mapped_column(
+        ForeignKey("rules.id", ondelete="CASCADE"), primary_key=True
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class LessonDrill(Base):
+    __tablename__ = "lesson_drills"
+
+    lesson_id: Mapped[str] = mapped_column(
+        ForeignKey("lessons.id", ondelete="CASCADE"), primary_key=True
+    )
+    drill_id: Mapped[str] = mapped_column(
+        ForeignKey("drills.id", ondelete="CASCADE"), primary_key=True
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class DrillConcept(Base):
+    __tablename__ = "drill_concepts"
+
+    drill_id: Mapped[str] = mapped_column(
+        ForeignKey("drills.id", ondelete="CASCADE"), primary_key=True
+    )
+    concept_id: Mapped[str] = mapped_column(
+        ForeignKey("concepts.id", ondelete="CASCADE"), primary_key=True
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class DrillWord(Base):
+    """Drill → dictionary word (ADR 069 D1 join). Resolved lemma → word.id."""
+
+    __tablename__ = "drill_words"
+
+    drill_id: Mapped[str] = mapped_column(
+        ForeignKey("drills.id", ondelete="CASCADE"), primary_key=True
+    )
+    word_id: Mapped[int] = mapped_column(
+        ForeignKey("words.id", ondelete="CASCADE"), primary_key=True
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class ConceptRelatedRule(Base):
+    __tablename__ = "concept_related_rules"
+
+    concept_id: Mapped[str] = mapped_column(
+        ForeignKey("concepts.id", ondelete="CASCADE"), primary_key=True
+    )
+    rule_id: Mapped[str] = mapped_column(
+        ForeignKey("rules.id", ondelete="CASCADE"), primary_key=True
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class ConceptRelatedConcept(Base):
+    __tablename__ = "concept_related_concepts"
+
+    concept_id: Mapped[str] = mapped_column(
+        ForeignKey("concepts.id", ondelete="CASCADE"), primary_key=True
+    )
+    related_id: Mapped[str] = mapped_column(
+        ForeignKey("concepts.id", ondelete="CASCADE"), primary_key=True
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
