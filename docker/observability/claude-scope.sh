@@ -59,5 +59,19 @@ export OTEL_LOGS_EXPORT_INTERVAL=5000
 export OTEL_LOG_USER_PROMPTS=1
 export OTEL_LOG_TOOL_DETAILS=1
 
+# Модель (2026-07-04, решение user): owner-сессии — Opus; main (architect) —
+# модель не трогаем (Fable запинен в глобальном ~/.claude/settings.json).
+# Перебиваем глобальный пин дважды (флаг + env); явный --model в аргументах уважается.
+model_args=()
+if [ "$scope" != "main" ]; then
+  has_model=0
+  for a in "$@"; do [ "$a" = "--model" ] && has_model=1; done
+  if [ "$has_model" -eq 0 ]; then
+    export ANTHROPIC_MODEL=opus
+    model_args=(--model opus)
+    echo "[claude-scope] owner-model: opus (перебивает глобальный пин Fable; main остаётся на своей)"
+  fi
+fi
+
 echo "[observability] ${banner} -> otel-collector :4317"
-exec claude "$@"
+exec claude "${model_args[@]}" "$@"
