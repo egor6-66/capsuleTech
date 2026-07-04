@@ -9,28 +9,13 @@
  */
 const Workspace = Page((Ui) => (
   <Learn.Provider apiBase="/api">
-    <Layouts.Matrix
-      mode="view"
-      preset="app-shell"
-      bordered={false}
-      slots={{
-        header: {
-          children: <Widgets.Header />,
-          resizable: false,
-          initialSize: 0.04,
-          bordered: false,
-        },
-        main: {
-          children: (
-            <Ui.Layout.Flex h={'full'}>
-              <Ui.Outlet />
-            </Ui.Layout.Flex>
-          ),
-          resizable: false,
-          bordered: false,
-        },
-      }}
-    />
+    <Ui.Layout.Flex orientation={'vertical'} w={'full'} h={'full'}>
+      <Widgets.Header />
+      <Ui.Separator />
+      <Ui.Layout.Flex h={'full'} w={'full'}>
+        <Ui.Outlet />
+      </Ui.Layout.Flex>
+    </Ui.Layout.Flex>
   </Learn.Provider>
 ));
 
