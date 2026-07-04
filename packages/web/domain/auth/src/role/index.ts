@@ -1,21 +1,20 @@
 /**
- * @capsuletech/web-auth/role — СТРАТЕГИЯ: вход по роли.
+ * @capsuletech/web-auth/role — СТРАТЕГИЯ: вход по роли (LEGACY mock-опора).
  *
- * Стартовая стратегия (по playground-прототипу: developer/support, пароль).
- * Эталон для остальных стратегий-блоков.
+ * Стартовая стратегия playground-прототипа (developer/support, пароль) —
+ * работает через app-endpoint с preRequest-моком, БЕЗ бэка. Канонический
+ * продовый путь — `/credentials` (cookie-флоу, backend/auth, ADR 068);
+ * role остаётся опорой playground и demo-сценариев.
  *
- * Блок = zod-схемы контракта `/auth/login` + декларация полей формы.
+ * Session v2: токен из ответа мок-endpoint'а FSM ИГНОРИРУЕТ — сессия хранит
+ * только `{ user, status }` (см. `/session`).
+ *
+ * Блок = zod-схемы контракта `/auth/login` (мок-вариант) + декларация полей формы.
  * Роли — параметр конфига roleStrategy({ roles: [...] }), НЕ хардкод.
- *
- * Экспортирует:
- *  - `loginRequestSchema` / `loginResponseSchema` — zod-схемы для app defineEndpoint
- *  - `IRoleInput`, `IRoleLoginRequest`, `IRoleLoginResponse` — TS-типы
- *  - `roleStrategy(config)` — фабрика стратегии с config-driven полями
- *  - `RoleStrategy` — тип
  */
 
 import { z } from '@capsuletech/shared-zod';
-import type { IAuthStrategy } from '../types';
+import type { IAuthFormField, IAuthStrategy } from '../types';
 
 // ─── Zod-схемы контракта /auth/login (role-стратегия) ─────────────────────────
 
@@ -34,15 +33,20 @@ export const loginRequestSchema = z.object({
   password: z.string(),
 });
 
+/**
+ * Схема ответа мок-endpoint'а role-стратегии. `token` — артефакт legacy
+ * mock-контракта: FSM его игнорирует (session v2 cookie-first, токена в
+ * модели нет), но мок-endpoint playground его возвращает.
+ */
 export const loginResponseSchema = z.object({
   token: z.string(),
   role: z.string(),
   /** Опциональный user-объект. Если не вернул backend — собираем из role. */
   user: z
     .object({
-      id: z.string().optional(),
+      id: z.number().optional(),
+      login: z.string().optional(),
       role: z.string(),
-      name: z.string().optional(),
     })
     .optional(),
 });
@@ -63,20 +67,9 @@ export type IRoleLoginResponse = SchemaOutput<typeof loginResponseSchema>;
 
 // ─── Декларация полей формы ───────────────────────────────────────────────────
 
-/** Тип одного поля формы для config-driven рендера в LoginForm. */
-export type AuthFieldType = 'select' | 'password' | 'text';
-
-export interface IAuthFormField {
-  /** Уникальный тег поля — передаётся как `meta.tags: [tag]` в форму. */
-  tag: string;
-  type: AuthFieldType;
-  label: string;
-  placeholder?: string;
-  /** Опции для select-поля. */
-  options?: ReadonlyArray<{ value: string; label: string }>;
-  /** Значение по умолчанию. */
-  defaultValue?: string;
-}
+// Форм-поля общие для всех стратегий — живут в types.ts; re-export для
+// обратной совместимости импортов из /role.
+export type { AuthFieldType, IAuthFormField } from '../types';
 
 // ─── Конфигурация стратегии ───────────────────────────────────────────────────
 

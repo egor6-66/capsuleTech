@@ -1,12 +1,29 @@
 /**
- * @capsuletech/web-auth/session
+ * @capsuletech/web-auth/session — session v2, cookie-first (ADR 068 D3).
  *
  * Реактивный session-store (Solid createStore) + хук `useAuth()` для чтения
- * роли/статуса в любом слое аппа. Общий для всех стратегий.
+ * user/role/статуса в любом слое аппа. Общий для всех стратегий.
  *
- * Токен-хранилище — config-driven через `ITokenStorage` (дефолт: memory).
- * Персистентная сессия (token + user) — через `ISessionStorage`.
- * Air-gapped: никаких внешних URL, никакого хардкода localStorage-ключа.
+ * ## Модель v2
+ *
+ * Носитель сессии — httpOnly-кука `capsule_session`: фронт токен НЕ видит и
+ * НЕ возит (XSS-стойкость). Персистентность = сама кука + `GET /auth/me`:
+ * апп вызывает `initAuthSession()` один раз при загрузке — 200 → authed(user),
+ * 401 → guest (штатное состояние, не ошибка). Никакого localStorage для
+ * сессии — кука единственный носитель.
+ *
+ * `initAuthSession` также подписывает вкладку на BroadcastChannel-синк
+ * (`'capsule-auth'`, ADR 068 D4): login/logout в любой вкладке/аппе того же
+ * origin → ре-фетч `/me` → session-store обновлён.
+ *
+ * ## Legacy (role-mock, playground)
+ *
+ * `ISessionStorage`/`localSessionStorage`/`configureAuthSession` остаются
+ * ТОЛЬКО как опора legacy role-mock-стратегии (playground: мок-endpoint без
+ * бэка, персист user'а в localStorage через app-config-кодоген
+ * `auth.session: { storage: 'local', key }`). Для cookie-флоу НЕ использовать —
+ * помечены `@deprecated`. Персистируется только `{ user }` (токена в модели
+ * v2 нет).
  *
  * Создание session-store вне Controller-scope намеренно (Solid createStore
  * работает вне реактивного root'а — singleton на время жизни модуля).
@@ -14,52 +31,35 @@
  *
  * Интерфейс `IAuthSessionStore` объявлен в `types.ts` (избегаем циклических
  * импортов types ↔ session). Здесь — только реализация.
- *
- * ## Персистентность
- *
- * Чтобы пережить перезагрузку страницы, апп вызывает один раз при загрузке:
- *
- * ```ts
- * import { configureAuthSession } from '@capsuletech/web-auth/session';
- * configureAuthSession({ storage: 'local', key: 'my-app-auth' });
- * ```
- *
- * После этого `useAuth().isAuthed` и `useAuth().role` уже содержат
- * восстановленную сессию — синхронно, до первого рендера.
  */
 
 import { createStore } from 'solid-js/store';
+import { DEFAULT_API_BASE, meRequest } from '../api/client';
 import type { AuthStatus, IAuthSession, IAuthSessionStore, IAuthUser } from '../types';
+import { onAuthChanged } from './broadcast';
 
-// Re-export чтобы потребители /session могли импортировать тип из одного места.
+// Re-export чтобы потребители /session могли импортировать из одного места.
 export type { IAuthSessionStore } from '../types';
+export { AUTH_CHANNEL_NAME, notifyAuthChanged, onAuthChanged } from './broadcast';
 
-// ─── Token storage interface (config-driven, backward compat) ────────────────
+// ─── Legacy session storage (role-mock опора, @deprecated) ────────────────────
 
 /**
- * Config-driven токен-хранилище (только строка). Дефолт — memory.
- * Для хранения полной сессии используй `ISessionStorage`.
+ * Запись, которую `ISessionStorage` сериализует. v2: только `{ user }` —
+ * токена в модели нет (кука httpOnly).
+ *
+ * @deprecated Legacy-опора role-mock-стратегии (playground). Cookie-флоу
+ * персистентность не нужна — сессию хранит сама кука + `initAuthSession()`.
  */
-export interface ITokenStorage {
-  get(): string | null;
-  set(token: string): void;
-  clear(): void;
-}
-
-// ─── Session storage interface (persists token + user) ───────────────────────
-
-/** Запись, которую `ISessionStorage` сериализует. */
 export interface IPersistedSession {
-  token: string;
   user: IAuthUser;
 }
 
 /**
- * Расширенное хранилище: персистирует `{ token, user }` как единую запись.
- * Позволяет восстановить роль после перезагрузки страницы.
+ * Хранилище персиста сессии для role-mock-флоу (без бэка кука невозможна).
  *
- * `getSession()` возвращает `IPersistedSession | null` — null если хранилище
- * пусто или запись невалидна (JSON-ошибка, отсутствие обязательных полей).
+ * @deprecated Legacy-опора role-mock-стратегии. Для cookie-флоу используй
+ * `initAuthSession()` — кука единственный носитель.
  */
 export interface ISessionStorage {
   getSession(): IPersistedSession | null;
@@ -67,41 +67,11 @@ export interface ISessionStorage {
   clearSession(): void;
 }
 
-// ─── Storage implementations ──────────────────────────────────────────────────
-
-/** Дефолт: in-memory хранилище токена. Не переживает перезагрузку страницы. */
-export const memoryStorage = (): ITokenStorage => {
-  let _token: string | null = null;
-  return {
-    get: () => _token,
-    set: (t) => {
-      _token = t;
-    },
-    clear: () => {
-      _token = null;
-    },
-  };
-};
-
-/** localStorage-адаптер только для токена (backward compat). */
-export const localStorageStorage = (key: string): ITokenStorage => ({
-  get: () => (typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null),
-  set: (t) => {
-    if (typeof localStorage !== 'undefined') localStorage.setItem(key, t);
-  },
-  clear: () => {
-    if (typeof localStorage !== 'undefined') localStorage.removeItem(key);
-  },
-});
-
 /**
- * localStorage-адаптер полной сессии (token + user).
- * Апп передаёт в `createAuthSession` или использует через `configureAuthSession`.
+ * localStorage-адаптер персиста `{ user }`.
  *
- * @example
- * ```ts
- * const store = createAuthSession(localSessionStorage('my-app-auth'));
- * ```
+ * @deprecated Legacy-опора role-mock-стратегии (playground `auth.session`
+ * app-config). Для cookie-флоу НЕ использовать.
  */
 export const localSessionStorage = (key: string): ISessionStorage => ({
   getSession(): IPersistedSession | null {
@@ -113,12 +83,11 @@ export const localSessionStorage = (key: string): ISessionStorage => ({
       if (
         typeof parsed === 'object' &&
         parsed !== null &&
-        typeof (parsed as Record<string, unknown>).token === 'string' &&
         typeof (parsed as Record<string, unknown>).user === 'object' &&
         (parsed as Record<string, unknown>).user !== null &&
         typeof (parsed as Record<string, Record<string, unknown>>).user.role === 'string'
       ) {
-        return parsed as IPersistedSession;
+        return { user: (parsed as { user: IAuthUser }).user };
       }
       return null;
     } catch {
@@ -139,9 +108,8 @@ export const localSessionStorage = (key: string): ISessionStorage => ({
 
 // ─── Session store ────────────────────────────────────────────────────────────
 
-/** Начальная (неаутентифицированная) сессия. */
+/** Начальная (guest) сессия. */
 export const emptySession: IAuthSession = {
-  token: null,
   user: null,
   status: 'idle',
 };
@@ -149,23 +117,17 @@ export const emptySession: IAuthSession = {
 /**
  * Создаёт изолированный session-store.
  *
- * Принимает либо `ISessionStorage` (token + user, полная персистентность)
- * либо `ITokenStorage` (только токен, backward compat), либо ничего (memory).
- *
- * Если передан `ISessionStorage` и в нём есть валидная запись — store
- * инициализируется восстановленной сессией (status: 'authed').
+ * `storage` — ТОЛЬКО для legacy role-mock-флоу (`@deprecated`, персист
+ * `{ user }` в localStorage + синхронный rehydrate). Cookie-флоу вызывает
+ * без аргументов: персистентность обеспечивают кука + `initAuthSession()`.
  */
-export const createAuthSession = (storage?: ITokenStorage | ISessionStorage): IAuthSessionStore => {
-  // Определяем тип хранилища: ISessionStorage имеет метод `getSession`.
-  const isSessionStorage = (s: ITokenStorage | ISessionStorage): s is ISessionStorage =>
-    typeof (s as ISessionStorage).getSession === 'function';
-
-  // Начальное состояние: восстанавливаем из ISessionStorage если доступно.
+export const createAuthSession = (storage?: ISessionStorage): IAuthSessionStore => {
+  // Начальное состояние: восстанавливаем из legacy-storage если передан.
   let initial: IAuthSession = { ...emptySession };
-  if (storage && isSessionStorage(storage)) {
+  if (storage) {
     const persisted = storage.getSession();
     if (persisted) {
-      initial = { token: persisted.token, user: persisted.user, status: 'authed' };
+      initial = { user: persisted.user, status: 'authed' };
     }
   }
 
@@ -175,21 +137,12 @@ export const createAuthSession = (storage?: ITokenStorage | ISessionStorage): IA
     get session() {
       return session;
     },
-    login(token: string, user: IAuthUser) {
-      if (storage && isSessionStorage(storage)) {
-        storage.setSession({ token, user });
-      } else if (storage) {
-        // ITokenStorage backward compat — persist token only
-        storage.set(token);
-      }
-      setSession({ token, user, status: 'authed' });
+    login(user: IAuthUser) {
+      storage?.setSession({ user });
+      setSession({ user, status: 'authed' });
     },
     logout() {
-      if (storage && isSessionStorage(storage)) {
-        storage.clearSession();
-      } else if (storage) {
-        storage.clear();
-      }
+      storage?.clearSession();
       setSession({ ...emptySession });
     },
     setStatus(status: AuthStatus) {
@@ -206,19 +159,13 @@ export const createAuthSession = (storage?: ITokenStorage | ISessionStorage): IA
  * module-eval в Node/SSR-контексте (capsule-registry читает capsule.app.ts
  * через Node — простой импорт модуля не должен запускать client-only API).
  *
- * Первый реальный клиентский вызов (useAuth(), configureAuthSession(), login/
+ * Первый реальный клиентский вызов (useAuth(), initAuthSession(), login/
  * logout) создаёт store через `_getDefaultSession()` и запоминает результат.
  */
 const _sessionRef: { current: IAuthSessionStore | null } = {
   current: null,
 };
 
-/**
- * Возвращает (или создаёт при первом обращении) дефолтный session-store.
- * Единственная точка, где вызывается `createAuthSession()` для синглтона.
- * Клиентский код всегда попадает сюда через useAuth()/configureAuthSession() —
- * т.е. только на стороне браузера.
- */
 const _getDefaultSession = (): IAuthSessionStore => {
   if (_sessionRef.current === null) {
     _sessionRef.current = createAuthSession();
@@ -227,12 +174,10 @@ const _getDefaultSession = (): IAuthSessionStore => {
 };
 
 /**
- * Синглтон-сессия (memory-default). AuthController обновляет её при login/logout;
- * `useAuth()` читает из неё.
+ * Синглтон-сессия. Auth-FSM обновляет её при login/logout; `useAuth()` читает.
  *
- * Апп может изменить хранилище через `configureAuthSession` (один раз при
- * загрузке). Для нескольких независимых app-root'ов — используй
- * `createAuthSession(storage)` и пробрасывай явно.
+ * Для нескольких независимых app-root'ов — используй `createAuthSession()`
+ * и пробрасывай явно (`sessionStore` prop).
  *
  * Сам объект — ленивый прокси: Solid `createStore` НЕ вызывается при импорте
  * модуля; store создаётся при первом клиентском обращении к члену объекта.
@@ -241,8 +186,8 @@ export const defaultAuthSession: IAuthSessionStore = {
   get session() {
     return _getDefaultSession().session;
   },
-  login(token, user) {
-    _getDefaultSession().login(token, user);
+  login(user) {
+    _getDefaultSession().login(user);
   },
   logout() {
     _getDefaultSession().logout();
@@ -252,9 +197,69 @@ export const defaultAuthSession: IAuthSessionStore = {
   },
 };
 
-// ─── configureAuthSession ─────────────────────────────────────────────────────
+// ─── initAuthSession — bootstrap cookie-сессии (v2) ──────────────────────────
 
-/** Параметры одноразовой конфигурации дефолтной сессии. */
+let _syncUnsubscribe: (() => void) | null = null;
+
+/**
+ * Ре-фетч `GET /auth/me` → обновление session-store.
+ * 200 → authed(user); 401 → guest (logout). Network/5xx на фоне синка или
+ * bootstrap не роняет апп: warn + текущее состояние остаётся guest-safe.
+ */
+const refreshSessionFromServer = async (
+  apiBase: string,
+  store: IAuthSessionStore,
+): Promise<IAuthUser | null> => {
+  try {
+    const user = await meRequest(apiBase);
+    if (user) {
+      store.login(user);
+    } else {
+      store.logout();
+    }
+    return user;
+  } catch (err) {
+    console.warn('[web-auth] GET /auth/me failed — session state unchanged:', err);
+    return null;
+  }
+};
+
+/**
+ * Bootstrap cookie-сессии — ОДИН вызов при загрузке аппа:
+ *
+ * ```ts
+ * import { initAuthSession } from '@capsuletech/web-auth/session';
+ * await initAuthSession(); // '/api' по умолчанию (single-origin канон)
+ * ```
+ *
+ * - `GET /auth/me` (credentials: same-origin): 200 → authed(user),
+ *   401 → guest (`status: 'idle'`, `user: null`). Guest — штатное состояние.
+ * - Подписывает вкладку на BroadcastChannel-синк `'capsule-auth'` (ADR 068 D4):
+ *   login/register/logout в другой вкладке/аппе → авто ре-фетч `/me`.
+ *
+ * Повторный вызов переустанавливает подписку (не дублирует слушателей).
+ *
+ * @returns аутентифицированный user либо `null` (guest / сеть недоступна).
+ */
+export const initAuthSession = async (
+  apiBase: string = DEFAULT_API_BASE,
+  sessionStore: IAuthSessionStore = defaultAuthSession,
+): Promise<IAuthUser | null> => {
+  _syncUnsubscribe?.();
+  _syncUnsubscribe = onAuthChanged(() => {
+    void refreshSessionFromServer(apiBase, sessionStore);
+  });
+
+  return refreshSessionFromServer(apiBase, sessionStore);
+};
+
+// ─── configureAuthSession (legacy role-mock) ──────────────────────────────────
+
+/**
+ * Параметры одноразовой конфигурации дефолтной сессии.
+ *
+ * @deprecated Legacy-опора role-mock-стратегии — см. `configureAuthSession`.
+ */
 export interface IConfigureAuthSessionOptions {
   /**
    * Тип хранилища.
@@ -264,42 +269,29 @@ export interface IConfigureAuthSessionOptions {
   storage: 'memory' | 'local';
   /**
    * Ключ localStorage. Обязателен при `storage: 'local'`.
-   * Выбирай namespace, специфичный для приложения.
    * @example 'playground-auth'
    */
   key?: string;
 }
 
 /**
- * Конфигурирует `defaultAuthSession` (ту, что использует `useAuth()` и
- * `AuthController` по умолчанию) для персистентного хранения сессии.
+ * Конфигурирует `defaultAuthSession` для персиста `{ user }` в localStorage
+ * + синхронный rehydrate. Дёргается app-config-кодогеном
+ * (`auth.session: { storage: 'local', key }` в capsule.app.ts → app-config.gen).
  *
- * Вызови один раз при загрузке аппа (до монтирования root-компонента):
- *
- * ```ts
- * // apps/playground/src/main.tsx (или top-level side-effect)
- * import { configureAuthSession } from '@capsuletech/web-auth/session';
- * configureAuthSession({ storage: 'local', key: 'playground-auth' });
- * ```
- *
- * После вызова:
- * - `useAuth().isAuthed` немедленно `true` если в localStorage есть валидная сессия.
- * - `useAuth().role` возвращает сохранённую роль.
- * - Последующие `login()` / `logout()` пишут/очищают localStorage автоматически.
- *
- * Повторный вызов перезаписывает конфигурацию (не рекомендуется; для тестов — ок).
+ * @deprecated ТОЛЬКО для legacy role-mock-стратегии (playground: мок без
+ * бэка, куку поставить некому). Cookie-флоу (credentials, backend/auth)
+ * использует `initAuthSession()` — кука единственный носитель, localStorage
+ * запрещён (ADR 068 D3).
  */
 export const configureAuthSession = (options: IConfigureAuthSessionOptions): void => {
   if (options.storage === 'local') {
     if (!options.key) {
       throw new Error('[web-auth] configureAuthSession: "key" is required when storage is "local"');
     }
-    // Создаём новый store с localStorage-персистентностью и rehydrate синхронно.
     _sessionRef.current = createAuthSession(localSessionStorage(options.key));
   } else {
-    // 'memory' — сбрасываем к memory (полезно в тестах).
-    // Даже если лениво ещё не создан — выставляем явно (чтобы тесты, вызывающие
-    // configureAuthSession('memory') в beforeEach, получали чистый store).
+    // 'memory' — сбрасываем к чистому store (полезно в тестах).
     _sessionRef.current = createAuthSession();
   }
 };
@@ -307,8 +299,6 @@ export const configureAuthSession = (options: IConfigureAuthSessionOptions): voi
 // ─── useAuth() ────────────────────────────────────────────────────────────────
 
 export interface IUseAuthResult {
-  /** Реактивный токен. */
-  readonly token: string | null;
   /** Реактивный current-user. */
   readonly user: IAuthUser | null;
   /** Роль текущего пользователя (shorthand). */
@@ -321,6 +311,7 @@ export interface IUseAuthResult {
 
 /**
  * Читает текущую сессию реактивно. Используется в любом слое аппа.
+ * v2: токена в API нет — носитель сессии httpOnly-кука.
  *
  * ```ts
  * import { useAuth } from '@capsuletech/web-auth/session';
@@ -331,9 +322,6 @@ export interface IUseAuthResult {
 export const useAuth = (sessionStore?: IAuthSessionStore): IUseAuthResult => {
   const s = sessionStore ?? defaultAuthSession;
   return {
-    get token() {
-      return s.session.token;
-    },
     get user() {
       return s.session.user;
     },

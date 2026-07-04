@@ -1,67 +1,67 @@
 /**
- * @capsuletech/web-auth/controllers — Auth.Login connected component (ADR 032).
+ * @capsuletech/web-auth/controllers — connected-блоки Auth.Login / Auth.Register (ADR 032).
  *
  * Единственный subpath с зависимостью на `@capsuletech/web-core`.
  *
- * `AuthLogin` — Tier 2 connected block: создаёт Controller-scope (web-core Controller
- * wrapper) с FSM `idle → submitting → authed/error` и рендерит форму внутри своего scope.
+ * `AuthLogin` / `AuthRegister` — Tier 2 connected blocks: создают Controller-scope
+ * (web-core Feature wrapper) с FSM `idle → submitting → authed/error` и рендерят
+ * форму внутри своего scope.
  *
  * Submit-канал: стандартный UiProxy meta-tags path:
  *   AuthLoginForm → <Button meta={{ tags: ['submit'] }}> → onClick → ControllerProxy dispatch.
  *
  * Emit-канал: `emit` из handler-API (`IHandlerApi.emit`), доступен в каждом хендлере
- * включая async lifecycle (`onInit`). НЕ использует `useEmit`/EmitProbe — это старый паттерн.
+ * включая async lifecycle (`onInit`).
  *
- * Регистрируется в capsule.ts как `components: { Login: AuthLogin }`.
+ * ## Стратегии (v2, cookie-first)
+ *
+ * - `type="credentials"` — канонический cookie-флоу (ADR 068): собственный
+ *   HTTP-клиент пакета (`loginRequest`, credentials: 'same-origin'), httpOnly-кука,
+ *   session.login(user) + BroadcastChannel-синк. `apiBase` — prop (@default '/api').
+ * - `type="role"` — legacy mock-опора (playground): IO через app-endpoint
+ *   `services.api.auth.login` (preRequest-мок). Токен из ответа мока
+ *   ИГНОРИРУЕТСЯ — session v2 хранит только user.
  *
  * Phantom `__events?: IAuthEvents` → app-DX:
  *   Feature<EventsOf<typeof Auth.Login>>(({ router }) => ({
- *     onLogin: ({ target }) => { router.goTo('/'); },
+ *     onLogin: ({ target }) => { router.goTo('/'); },   // payload: { user } — БЕЗ token
  *     onLoginError: ({ target }) => { ... },
  *   }));
  *
  * Props-контракт: discriminated union по `type` (IAuthLoginProps из types.ts).
- * Апп передаёт только данные-пропсы — никаких импортов билдеров стратегий:
- *
- *   <Auth.Login
- *     type="role"
- *     roles={[{ value: 'developer', label: 'Developer' }]}
- *     title="Вход"
- *   />
- *
  * Стратегия строится ВНУТРИ компонента из пропов (инверсия зависимости).
- * `roleStrategy` — внутренняя деталь реализации (экспорт из /role остаётся
- * для advanced-кейсов, но Auth.Login его не требует).
  */
 
 import type { IHandlerApi } from '@capsuletech/web-core';
 import { Feature } from '@capsuletech/web-core';
 import type { JSX } from 'solid-js';
+import {
+  AuthApiError,
+  InvalidCredentialsError,
+  LoginTakenError,
+  loginRequest,
+  registerRequest,
+} from '../api/client';
+import { credentialsStrategy, type ICredentialsStrategy } from '../credentials/index';
 import type { IRoleStrategy } from '../role/index';
 import { roleStrategy } from '../role/index';
-import { defaultAuthSession, type IAuthSessionStore } from '../session/index';
-import type { IAuthEvents, IAuthLoginProps, IAuthUser } from '../types';
+import { defaultAuthSession, type IAuthSessionStore, notifyAuthChanged } from '../session/index';
+import type { IAuthEvents, IAuthLoginProps, IAuthRegisterProps, IAuthUser } from '../types';
 import { AuthLoginForm } from '../ui/loginForm';
 
-// ─── mapAuthError: маппинг HTTP/сетевых ошибок в дружелюбный текст ──────────
+// ─── Маппинг ошибок в дружелюбный текст формы ────────────────────────────────
 //
-// Правило: 401 / "invalid" / "wrong" / "incorrect" → «Неверный логин или пароль».
-// Сетевые ошибки (fetch/network) → «Не удалось подключиться к серверу».
-// Остальное → дефолт «Не удалось войти. Попробуйте ещё раз.»
 // Сообщение показывается В ФОРМЕ (package-level). emit('onLoginError') несёт
 // оригинальный rawMessage для app-уровня.
 
 const DEFAULT_INVALID_CREDENTIALS_MESSAGE = 'Неверный логин или пароль';
+const DEFAULT_ERROR_MESSAGE = 'Не удалось войти. Попробуйте ещё раз.';
+const NETWORK_ERROR_MESSAGE = 'Не удалось подключиться к серверу';
 
 /**
- * Маппинг HTTP/сетевых ошибок в дружелюбный текст.
- *
- * `invalidCredentialsMessage` — стратегия-специфичный текст для invalid-creds.
- * Например, /role не имеет поля «логин» → «Неверный пароль».
- * /credentials (логин+пароль) → дефолт «Неверный логин или пароль».
- *
- * Сетевые ошибки (fetch/network) → «Не удалось подключиться к серверу».
- * Остальное → «Не удалось войти. Попробуйте ещё раз.»
+ * Legacy string-sniffing маппинг для role-mock-стратегии (мок кидает plain
+ * Error с текстом). Credentials-флоу использует типизированный
+ * `mapCredentialsError` — точнее, без эвристик по подстрокам.
  */
 const mapAuthError = (
   rawMessage: string,
@@ -88,23 +88,104 @@ const mapAuthError = (
     msg.includes('timeout') ||
     msg.includes('econnrefused')
   ) {
-    return 'Не удалось подключиться к серверу';
+    return NETWORK_ERROR_MESSAGE;
   }
-  return 'Не удалось войти. Попробуйте ещё раз.';
+  return DEFAULT_ERROR_MESSAGE;
 };
 
-// ─── buildAuthFeature: строит Feature-компонент с auth-FSM ───────────────────
+/**
+ * Типизированный маппинг ошибок HTTP-клиента (credentials-флоу):
+ * 401 → invalid-creds текст стратегии, 409 → «Логин уже занят»,
+ * 422 (pydantic-валидация бэка) → требования к полям, сетевые
+ * (fetch TypeError) → «Не удалось подключиться…», прочее → дефолт.
+ */
+const mapCredentialsError = (
+  err: unknown,
+  invalidCredentialsMessage: string = DEFAULT_INVALID_CREDENTIALS_MESSAGE,
+): string => {
+  if (err instanceof InvalidCredentialsError) return invalidCredentialsMessage;
+  if (err instanceof LoginTakenError) return 'Логин уже занят';
+  if (err instanceof AuthApiError) {
+    if (err.status === 422) return 'Логин — от 3 символов, пароль — от 8 символов';
+    return DEFAULT_ERROR_MESSAGE;
+  }
+  // fetch кидает TypeError на network-failure (offline/ECONNREFUSED/CORS).
+  if (err instanceof TypeError) return NETWORK_ERROR_MESSAGE;
+  return DEFAULT_ERROR_MESSAGE;
+};
+
+const rawMessageOf = (err: unknown): string => (err instanceof Error ? err.message : '');
+
+// ─── Общие куски FSM (idle-переход + error-state clear) ──────────────────────
+
+const idleState = {
+  onClick: ({ target, state }: IHandlerApi) => {
+    const tags = (target.meta?.tags ?? []) as readonly string[];
+    if (tags.includes('submit')) state.set('submitting');
+  },
+};
+
+const errorState = {
+  /** Retry через submit — гасим ошибку и возвращаемся в idle. */
+  onClick: ({ target, store, state }: IHandlerApi) => {
+    const tags = (target.meta?.tags ?? []) as readonly string[];
+    if (tags.includes('submit')) {
+      store.update({ errorMessage: '' });
+      state.set('idle');
+    }
+  },
+  /** Любое взаимодействие с инпутом — сразу гасим ошибку + возврат в idle. */
+  onInput: ({ store, state }: IHandlerApi) => {
+    store.update({ errorMessage: '' });
+    state.set('idle');
+  },
+  /** onChange — для Select (изменение роли тоже гасит ошибку). */
+  onChange: ({ store, state }: IHandlerApi) => {
+    store.update({ errorMessage: '' });
+    state.set('idle');
+  },
+};
+
+const authedState = (sessionStore: IAuthSessionStore) => ({
+  onLogout: ({ state, emit }: IHandlerApi) => {
+    sessionStore.logout();
+    notifyAuthChanged();
+    state.set('idle');
+    emit('onLogout', {});
+  },
+});
+
+/** Общий фейл-путь submitting-хендлеров: session/FSM/форма/emit. */
+const failSubmit = (
+  { store, state, emit }: Pick<IHandlerApi, 'store' | 'state' | 'emit'>,
+  sessionStore: IAuthSessionStore,
+  errorMessage: string,
+  rawMessage: string,
+) => {
+  sessionStore.setStatus('error');
+  state.set('error');
+  store.update({ errorMessage });
+  emit('onLoginError', { payload: { message: rawMessage || errorMessage } });
+};
+
+/** Общий успех-путь: session + синк + FSM + emit (v2: payload БЕЗ token). */
+const succeedSubmit = (
+  { state, emit }: Pick<IHandlerApi, 'state' | 'emit'>,
+  sessionStore: IAuthSessionStore,
+  user: IAuthUser,
+) => {
+  sessionStore.login(user);
+  notifyAuthChanged();
+  state.set('authed');
+  emit('onLogin', { payload: { user } });
+};
+
+// ─── buildRoleFeature: legacy role-mock FSM (IO через app-endpoint) ──────────
 //
 // IO (api.auth.login) требует Feature, а не Controller — api инжектится
-// web-core'ом ТОЛЬКО в Feature (по контракту IServices; Controller получает
-// только router/store/state, но не api). Controller без api → undefined → ошибка.
+// web-core'ом ТОЛЬКО в Feature (по контракту IServices).
 
-/**
- * Строит Feature-компонент с auth-FSM.
- * Параметризован стратегией и session-store через замыкание.
- * Вызывается при рендере AuthLoginComponent — один раз на instance.
- */
-const buildAuthFeature = (
+const buildRoleFeature = (
   strategy: IRoleStrategy,
   sessionStore: IAuthSessionStore,
   roleTag: string,
@@ -114,21 +195,18 @@ const buildAuthFeature = (
     initial: 'idle' as const,
 
     states: {
-      idle: {
-        onClick: ({ target, state }: IHandlerApi) => {
-          const tags = (target.meta?.tags ?? []) as readonly string[];
-          if (tags.includes('submit')) state.set('submitting');
-        },
-      },
+      idle: idleState,
 
       submitting: {
         onInit: async ({ store, state, emit }: IHandlerApi) => {
           if (!api) {
             console.error('[Auth.Login] api client not initialized');
-            sessionStore.setStatus('error');
-            state.set('error');
-            store.update({ errorMessage: 'Не удалось войти. Попробуйте ещё раз.' });
-            emit('onLoginError', { payload: { message: 'API not initialized' } });
+            failSubmit(
+              { store, state, emit },
+              sessionStore,
+              DEFAULT_ERROR_MESSAGE,
+              'API not initialized',
+            );
             return;
           }
 
@@ -142,13 +220,15 @@ const buildAuthFeature = (
           sessionStore.setStatus('submitting');
 
           try {
+            // Мок-endpoint возвращает { token, role } — token в v2 ИГНОРИРУЕТСЯ
+            // (сессия cookie-first, токен фронту не нужен).
             const result = await (
               api as {
                 auth: {
                   login: (input: {
                     role: string;
                     password: string;
-                  }) => Promise<{ token: string; role: string; user?: IAuthUser }>;
+                  }) => Promise<{ role: string; user?: IAuthUser }>;
                 };
               }
             ).auth.login({
@@ -157,17 +237,11 @@ const buildAuthFeature = (
             });
 
             const user: IAuthUser = result.user ?? { role: result.role };
-            sessionStore.login(result.token, user);
-            state.set('authed');
-
-            emit('onLogin', { payload: { token: result.token, user } });
+            succeedSubmit({ state, emit }, sessionStore, user);
           } catch (err) {
-            const rawMessage = err instanceof Error ? err.message : '';
+            const rawMessage = rawMessageOf(err);
             const errorMessage = mapAuthError(rawMessage, strategy.invalidCredentialsMessage);
-            sessionStore.setStatus('error');
-            state.set('error');
-            store.update({ errorMessage });
-            emit('onLoginError', { payload: { message: rawMessage || errorMessage } });
+            failSubmit({ store, state, emit }, sessionStore, errorMessage, rawMessage);
           } finally {
             store.patch(['@submit'], { loading: false });
             store.patch(['@input'], { disabled: false });
@@ -175,34 +249,104 @@ const buildAuthFeature = (
         },
       },
 
-      authed: {
-        onLogout: ({ state, emit }: IHandlerApi) => {
-          sessionStore.logout();
-          state.set('idle');
-          emit('onLogout', {});
+      authed: authedState(sessionStore),
+
+      error: errorState,
+    },
+  }));
+
+// ─── buildCredentialsFeature: cookie-флоу login (собственный HTTP-клиент) ────
+
+const buildCredentialsFeature = (
+  strategy: ICredentialsStrategy,
+  sessionStore: IAuthSessionStore,
+  apiBase?: string,
+) =>
+  Feature(() => ({
+    initial: 'idle' as const,
+
+    states: {
+      idle: idleState,
+
+      submitting: {
+        onInit: async ({ store, state, emit }: IHandlerApi) => {
+          store.patch(['@submit'], { loading: true });
+          store.patch(['@input'], { disabled: true });
+
+          const values = store.values(['@input']) as Record<string, string>;
+          const login = values.login ?? '';
+          const password = values.password ?? '';
+
+          sessionStore.setStatus('submitting');
+
+          try {
+            const user = await loginRequest({ login, password }, apiBase);
+            succeedSubmit({ state, emit }, sessionStore, user);
+          } catch (err) {
+            const errorMessage = mapCredentialsError(err, strategy.invalidCredentialsMessage);
+            failSubmit({ store, state, emit }, sessionStore, errorMessage, rawMessageOf(err));
+          } finally {
+            store.patch(['@submit'], { loading: false });
+            store.patch(['@input'], { disabled: false });
+          }
         },
       },
 
-      error: {
-        /** Retry через submit — гасим ошибку и возвращаемся в idle. */
-        onClick: ({ target, store, state }: IHandlerApi) => {
-          const tags = (target.meta?.tags ?? []) as readonly string[];
-          if (tags.includes('submit')) {
-            store.update({ errorMessage: '' });
-            state.set('idle');
+      authed: authedState(sessionStore),
+
+      error: errorState,
+    },
+  }));
+
+// ─── buildRegisterFeature: cookie-флоу register (login+password+confirm) ─────
+
+const buildRegisterFeature = (sessionStore: IAuthSessionStore, apiBase?: string) =>
+  Feature(() => ({
+    initial: 'idle' as const,
+
+    states: {
+      idle: idleState,
+
+      submitting: {
+        onInit: async ({ store, state, emit }: IHandlerApi) => {
+          const values = store.values(['@input']) as Record<string, string>;
+          const login = values.login ?? '';
+          const password = values.password ?? '';
+          const confirm = values.confirm ?? '';
+
+          // Клиентская проверка совпадения паролей — без сетевого запроса.
+          if (password !== confirm) {
+            failSubmit(
+              { store, state, emit },
+              sessionStore,
+              'Пароли не совпадают',
+              'passwords do not match',
+            );
+            return;
+          }
+
+          store.patch(['@submit'], { loading: true });
+          store.patch(['@input'], { disabled: true });
+
+          sessionStore.setStatus('submitting');
+
+          try {
+            // 201 + Set-Cookie: бэк аутентифицирует сразу при регистрации.
+            const user = await registerRequest({ login, password }, apiBase);
+            succeedSubmit({ state, emit }, sessionStore, user);
+          } catch (err) {
+            const errorMessage = mapCredentialsError(err);
+            failSubmit({ store, state, emit }, sessionStore, errorMessage, rawMessageOf(err));
+          } finally {
+            store.patch(['@submit'], { loading: false });
+            store.patch(['@input'], { disabled: false });
           }
         },
-        /** Любое взаимодействие с инпутом — сразу гасим ошибку + возврат в idle. */
-        onInput: ({ store, state }: IHandlerApi) => {
-          store.update({ errorMessage: '' });
-          state.set('idle');
-        },
-        /** onChange — для Select (изменение роли тоже гасит ошибку). */
-        onChange: ({ store, state }: IHandlerApi) => {
-          store.update({ errorMessage: '' });
-          state.set('idle');
-        },
       },
+
+      authed: authedState(sessionStore),
+
+      error: errorState,
     },
   }));
 
@@ -238,13 +382,10 @@ const AuthLoginComponent = (props: IAuthLoginProps): JSX.Element => {
 
   if (props.type === 'role') {
     const strategy = buildRoleStrategyFromProps(props);
-    const roleTag = 'role';
-    const passwordTag = 'password';
 
     // Feature(factory) вызывается при рендере — каждый <Auth.Login> instance
-    // получает свой FSM-scope (своё замыкание buildAuthFeature).
-    // Feature используется потому что onInit вызывает api.auth.login (IO).
-    const AuthFsm = buildAuthFeature(strategy, sessionStore, roleTag, passwordTag);
+    // получает свой FSM-scope (своё замыкание buildRoleFeature).
+    const AuthFsm = buildRoleFeature(strategy, sessionStore, 'role', 'password');
 
     return (
       <AuthFsm overrides={props.overrides}>
@@ -266,8 +407,25 @@ const AuthLoginComponent = (props: IAuthLoginProps): JSX.Element => {
   }
 
   if (props.type === 'credentials') {
-    // TODO: реализовать в следующей итерации
-    throw new Error('[Auth.Login] strategy "credentials" not implemented yet');
+    const strategy = credentialsStrategy({
+      loginLabel: props.loginLabel,
+      passwordLabel: props.passwordLabel,
+    });
+    const AuthFsm = buildCredentialsFeature(strategy, sessionStore, props.apiBase);
+
+    return (
+      <AuthFsm overrides={props.overrides}>
+        {props.children ?? (
+          <AuthLoginForm
+            strategy={strategy}
+            title={props.title}
+            subtitle={props.subtitle}
+            submitLabel={props.submitLabel}
+            footerNote={props.footerNote}
+          />
+        )}
+      </AuthFsm>
+    );
   }
 
   if (props.type === 'oauth2') {
@@ -287,44 +445,85 @@ const AuthLoginComponent = (props: IAuthLoginProps): JSX.Element => {
   );
 };
 
-// ─── Публичный AuthLogin с phantom __events ────────────────────────────────────
+// ─── AuthRegisterComponent ────────────────────────────────────────────────────
+
+const AuthRegisterComponent = (props: IAuthRegisterProps): JSX.Element => {
+  const sessionStore = props.sessionStore ?? defaultAuthSession;
+  const RegisterFsm = buildRegisterFeature(sessionStore, props.apiBase);
+
+  // Форма регистрации — тот же config-driven AuthLoginForm: поля задаются
+  // декларацией, не отдельной разметкой (login + password + confirm).
+  const fields = [
+    {
+      tag: 'login',
+      type: 'text' as const,
+      label: props.loginLabel ?? 'Логин',
+      placeholder: 'login',
+    },
+    {
+      tag: 'password',
+      type: 'password' as const,
+      label: props.passwordLabel ?? 'Пароль',
+      placeholder: '•••••••••',
+    },
+    {
+      tag: 'confirm',
+      type: 'password' as const,
+      label: props.confirmLabel ?? 'Повторите пароль',
+      placeholder: '•••••••••',
+    },
+  ];
+
+  return (
+    <RegisterFsm overrides={props.overrides}>
+      {props.children ?? (
+        <AuthLoginForm
+          strategy={{ fields }}
+          title={props.title ?? 'Регистрация'}
+          subtitle={props.subtitle}
+          submitLabel={props.submitLabel ?? 'Зарегистрироваться'}
+          footerNote={props.footerNote}
+        />
+      )}
+    </RegisterFsm>
+  );
+};
+
+// ─── Публичные блоки с phantom __events ──────────────────────────────────────
 
 /**
  * Auth.Login — connected component: Controller-scope (auth-FSM) + форма.
  *
  * Props: discriminated union по `type` (`IAuthLoginProps`).
- * Апп передаёт только данные — никаких импортов билдеров стратегий:
  *
  * ```tsx
- * <Auth.Login
- *   type="role"
- *   roles={[{ value: 'developer', label: 'Developer' }, { value: 'support', label: 'Support' }]}
- *   title="Вход"
- * />
+ * <Auth.Login type="credentials" title="Вход" />
  * ```
  *
  * Несёт phantom `__events?: IAuthEvents` для типизации:
  *   `Feature<EventsOf<typeof Auth.Login>>` → `target.payload` типизирован.
  *
- * Пример app DX:
- * ```ts
- * // В app feature (ловит именованное событие):
- * const AuthFeature = Feature<EventsOf<typeof Auth.Login>>(({ router }) => ({
- *   onLogin: ({ target }) => {
- *     // target.payload: { token: string; user: IAuthUser }
- *     router.goTo('/dashboard');
- *   },
- *   onLoginError: ({ target }) => {
- *     // target.payload: { message: string }
- *   },
- * }));
- * ```
+ * v2: `onLogin.payload = { user }` — БЕЗ token (httpOnly-кука, ADR 068 D3).
  */
 export const AuthLogin: ((props: IAuthLoginProps) => JSX.Element) & {
   readonly __events?: IAuthEvents;
 } = AuthLoginComponent;
 
+/**
+ * Auth.Register — connected component: регистрация (login+password+confirm).
+ *
+ * `POST /auth/register` → 201 + Set-Cookie: пользователь аутентифицирован
+ * сразу, при успехе эмиттится `onLogin { user }`.
+ *
+ * ```tsx
+ * <Auth.Register title="Регистрация" />
+ * ```
+ */
+export const AuthRegister: ((props: IAuthRegisterProps) => JSX.Element) & {
+  readonly __events?: IAuthEvents;
+} = AuthRegisterComponent;
+
 export default AuthLogin;
 
 // Re-export для удобства потребителей /controllers
-export type { IAuthEvents, IAuthLoginProps } from '../types';
+export type { IAuthEvents, IAuthLoginProps, IAuthRegisterProps } from '../types';

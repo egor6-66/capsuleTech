@@ -3,9 +3,9 @@ name: "@capsuletech/web-auth"
 owner-agent: owner-web-auth
 group: web_base
 zone: domain
-status: scaffold
+status: in-progress
 priority: P1
-last-updated: 2026-06-11
+last-updated: 2026-07-04
 ---
 
 # OWNERSHIP — @capsuletech/web-auth
@@ -19,21 +19,53 @@ last-updated: 2026-06-11
 ## Состояние (читать ПЕРВЫМ)
 
 - **Zone:** `domain` — stateful feature-package, «мини-апп как пакет». Параметризуется ОСЬЮ СТРАТЕГИИ ВХОДА через subpath'ы (`/role`, `/credentials`, `/oauth2`, `/qr`).
-- **Status:** `scaffold` (0.0.0) — контракты + TODO; реализация стратегий в процессе.
+- **Status:** `in-progress` (0.0.0) — реализованы стратегии **role** (legacy mock) и **credentials** (cookie-флоу, backend/auth ADR 068); session **v2 cookie-first**; oauth2/qr — заглушки.
 - **Priority:** **P1** — критичный для любого capsule-аппа с auth.
 - **Maturity bar (до alpha):**
-  - Реализованы минимум стратегии: role + credentials.
-  - Generic auth FSM (idle → submitting → authed/error) на `createState`.
-  - useEmit named events (onLogin/onLogout/onError) per ADR 032.
-  - Capsule manifest (ADR 033) для capability injection.
+  - ✅ Реализованы минимум стратегии: role + credentials.
+  - ✅ Generic auth FSM (idle → submitting → authed/error).
+  - ✅ Named events (onLogin/onLogout/onLoginError) через handler-API `emit` (ADR 032).
+  - ✅ Capsule manifest (ADR 033) для capability injection.
   - Контракт `IAuthCapability` extracted в `web-contract` (ADR 047 D2).
 - **Active blockers:** ADR 047 D2 compliance не активирован, но canon зафиксирован [[web-zone-domain|domain zone canon]].
 - **Roadmap:**
-  1. Реализация role + credentials стратегий.
-  2. Migration playground-прототипа auth на web-auth.
+  1. ✅ Реализация role + credentials стратегий.
+  2. Web-remote embed форм (шаг 2 волны auth-app, отдельный бриф).
   3. OAuth2 / QR стратегии.
   4. `IAuthCapability` контракт в `web-contract` (Phase D2).
-- **Last activity:** 2026-06-11 (canon refresh).
+- **Last activity:** 2026-07-04 (session v2 cookie-first + credentials-стратегия + Auth.Register + BroadcastChannel-синк, ADR 068).
+
+## 🔴 Session v2 — cookie-first (BREAKING, 2026-07-04, ADR 068 D3)
+
+Token-центричная модель v1 (`IAuthSession.token`, `ITokenStorage`,
+`localStorageStorage`, `memoryStorage`, персист токена) — УДАЛЕНА. Носитель
+сессии — httpOnly-кука `capsule_session` (backend/auth): фронт токен НЕ видит
+и НЕ возит, все запросы `credentials: 'same-origin'`. Никакого localStorage
+для cookie-флоу.
+
+Breaking-изменения публичного API:
+- `IAuthSession` = `{ user: IAuthUser | null; status: AuthStatus }` — поле `token` удалено.
+- `IAuthSessionStore.login(user)` — сигнатура без token.
+- `useAuth()` — `token` удалён из результата (`user/role/status/isAuthed` остались).
+- `IAuthUser` = `{ id?: number; login?: string; role: string }` — выровнен на backend `UserOut`
+  (`id`/`login` опциональны ТОЛЬКО из-за legacy role-mock; credentials заполняет всё). `name` удалён.
+- `IAuthEvents.onLogin` = `{ user }` — БЕЗ token.
+- `ILoginRequest`/`ILoginResponse` из types.ts удалены (мёртвые скелет-типы; контракт бэка — `userOutSchema`).
+- Bootstrap: `initAuthSession(apiBase = '/api', store = defaultAuthSession)` — один вызов
+  при загрузке аппа: `GET /auth/me` → 200 = authed(user), 401 = guest (idle, штатно).
+  Также подписывает вкладку на BroadcastChannel-синк.
+
+**Legacy (role-mock, playground) — жив, но помечен `@deprecated`:**
+`ISessionStorage`/`IPersistedSession` (v2: персистится `{ user }`, без token)/
+`localSessionStorage`/`configureAuthSession`. Их дёргает app-config-кодоген
+(`auth.session: { storage: 'local', key }`) — сигнатуры сохранены. Для
+cookie-флоу НЕ использовать. v1-записи в localStorage (`{token,user}`)
+читаются: user извлекается, token отбрасывается.
+
+**BroadcastChannel-синк (ADR 068 D4):** канал `'capsule-auth'`. login/register/
+logout постят `{ type: 'auth-changed' }` → остальные вкладки/аппы origin
+ре-фетчат `/me` и обновляют store. Один shared-instance канала на модуль → без
+self-delivery. SSR/Node-safe guard.
 
 ## Vendor stack (ADR 047 D3)
 
@@ -90,14 +122,14 @@ config-driven), session + `useAuth()`, Controllers + ИМЕНОВАННЫЕ со
 | Subpath | Статус | Что |
 |---|---|---|
 | `.` | ready | barrel: types + session |
-| `/role` | **ready** | `IRoleInput`, `roleStrategy(config)`, `loginRequestSchema`/`loginResponseSchema` |
-| `/credentials` | stub | `ICredentialsInput`, `credentialsStrategy` (TODO) |
+| `/role` | **ready (legacy mock)** | `IRoleInput`, `roleStrategy(config)`, `loginRequestSchema`/`loginResponseSchema` (мок-контракт; token в ответе FSM игнорирует) |
+| `/credentials` | **ready** | `credentialsStrategy(config?)`, `ICredentialsInput`, HTTP-клиент (`loginRequest`/`registerRequest`/`logoutRequest`/`meRequest`, `userOutSchema`), ошибки (`AuthApiError`/`InvalidCredentialsError` 401/`LoginTakenError` 409), `logoutCredentials(apiBase?)` — полный логаут (сервер + store + broadcast) |
 | `/oauth2` | stub | `IOAuth2Input`, `oauth2Strategy` (TODO) |
 | `/qr` | stub | `IQrInput`, `qrStrategy` (TODO) |
-| `/session` | **ready** | `createAuthSession`, `useAuth()`, `configureAuthSession`, `ITokenStorage`, `ISessionStorage`, `IPersistedSession`, `memoryStorage`, `localStorageStorage`, `localSessionStorage`, `defaultAuthSession` |
-| `/controllers` | **ready** | `AuthController` FSM (idle→submitting→authed/error), phantom `__events`, EmitProbe pattern |
-| `/ui` | **ready** | `AuthLoginForm` — web-core `View<IAuthLoginFormProps>` (strategy.fields → Select/Input/Button; Ui от View-wrapper, не проп) |
-| `/capsule` | **ready** | `defineCapsuleModule({ name:'Auth', components:{LoginForm}, controllers:{Auth} })` + `registerPackageServices('authApi', { logout, isAuthed, user })` |
+| `/session` | **ready (v2)** | `createAuthSession`, `useAuth()` (без token), `initAuthSession(apiBase?, store?)` — me-bootstrap + broadcast-подписка, `defaultAuthSession`, `notifyAuthChanged`/`onAuthChanged`/`AUTH_CHANNEL_NAME`; `@deprecated` legacy: `configureAuthSession`, `ISessionStorage`, `IPersistedSession`, `localSessionStorage` |
+| `/controllers` | **ready** | `AuthLogin` (арм role + credentials), `AuthRegister` (login+password+confirm, client-side confirm-валидация), FSM idle→submitting→authed/error, phantom `__events` |
+| `/ui` | **ready** | `AuthLoginForm` — web-core `View<IAuthLoginFormProps>` (`strategy: { fields }` — любой fields-носитель; Ui от View-wrapper, не проп). Register переиспользует её же (config-driven поля) |
+| `/capsule` | **ready** | `defineCapsuleModule({ name:'Auth', components:{Login, Register} })` + `registerPackageServices('authApi', { logout, logoutServer, isAuthed, user })` — `logout` локальный (+broadcast), `logoutServer(apiBase?)` полный cookie-логаут |
 
 ## Моки — `preRequest` + `gen` (НЕ MSW)
 
@@ -160,18 +192,23 @@ config-driven), session + `useAuth()`, Controllers + ИМЕНОВАННЫЕ со
 
 ## Тест-покрытие
 
-70 тестов (vitest jsdom), все green:
-- `controllers/__tests__/authController.test.tsx` — FSM schema (idle/submitting/authed/error), emit onLogin/onLoginError/onLogout, phantom __events, render/children; error-state: store.update(errorMessage), clear-on-input/onChange, mapAuthError маппинг (401/network/default).
-- `session/__tests__/session.test.ts` — createAuthSession, login/logout/setStatus, useAuth reads, ITokenStorage impls (memory/localStorage); ISessionStorage (localSessionStorage): persist round-trip, rehydrate-on-init, logout clears; configureAuthSession: storage:'local' rehydrate, login/logout через defaultAuthSession пишут/очищают localStorage, storage:'memory' сброс, ошибка без key.
-- `role/__tests__/roleStrategy.test.ts` — roleStrategy fields/defaults, кастомные роли, zod-схемы (loginRequestSchema/loginResponseSchema).
+98 тестов (vitest jsdom), все green:
+- `api/__tests__/client.test.ts` — HTTP-клиент (мок fetch): credentials same-origin на каждом запросе, zod-валидация UserOut, apiBase-подстановка; login 200/401(InvalidCredentialsError)/500; register 201/409(LoginTakenError)/422; me 200/401→null/500; logout 204/500; невалидный payload → AuthApiError.
+- `session/__tests__/session.test.ts` — session v2 (login(user)/logout/setStatus, БЕЗ token), useAuth v2, initAuthSession me-bootstrap (200 authed / 401 guest / 401 при authed → logout / network-fail → warn+null / кастомный apiBase); legacy localSessionStorage (`{user}` round-trip, v1-запись читается без token) + configureAuthSession.
+- `session/__tests__/broadcast.test.ts` — канал 'capsule-auth' (fake BroadcastChannel): доставка между «вкладками», без self-delivery, отписка; интеграция initAuthSession: login/logout в другой вкладке → ре-фетч /me → store обновлён; повторный init не дублирует подписку.
+- `credentials/__tests__/credentials.test.ts` — credentialsStrategy fields/defaults/labels; logoutCredentials (сервер ok / сервер down → локальный сброс всё равно).
+- `controllers/__tests__/authController.test.tsx` — FSM schema, общая механика (idle/error clear-on-interaction); role-арм: onLogin `{user}` БЕЗ token (token мока игнорируется), mapAuthError (401/network/default); credentials-арм: loginRequest(payload, apiBase), typed-маппинг (401/сеть), loading-стейт @submit/@input; Auth.Register: confirm-mismatch без сети, 409 → «Логин уже занят», успех → session+emit; onLogout.
+- `role/__tests__/roleStrategy.test.ts` — roleStrategy fields/defaults, кастомные роли, zod-схемы.
 
 ## Roadmap
 
 - [x] Skeleton: configs + subpath-блоки + регистрация путей/exclude (главный, bootstrap)
-- [x] `/session` — `createAuthSession`, `useAuth()`, `ITokenStorage` (memory/localStorage), `defaultAuthSession`
-- [x] `/role` — `roleStrategy(config)`, `loginRequestSchema`/`loginResponseSchema`, `IAuthFormField`
-- [x] `/controllers` — `AuthController` (generic FSM, EmitProbe + useEmit) + регистрация в capsule.ts
-- [x] `/ui` — `AuthLoginForm` config-driven на web-ui
+- [x] `/session` v2 — cookie-first: `initAuthSession` (me-bootstrap), BroadcastChannel-синк (ADR 068 D3/D4)
+- [x] `/role` — `roleStrategy(config)` (legacy mock-опора playground)
+- [x] `/credentials` — стратегия + HTTP-клиент backend/auth + типизированные ошибки + `logoutCredentials`
+- [x] `/controllers` — `AuthLogin` (role+credentials армы) + `AuthRegister` + регистрация в capsule.ts
+- [x] `/ui` — `AuthLoginForm` config-driven на web-ui (переиспользуется Register'ом)
 - [ ] добавить в `nx.json` web_base group (через главного, при releasable-контенте)
-- [ ] `/credentials`, `/oauth2`, `/qr` — итерациями
+- [ ] web-remote embed форм (шаг 2 волны auth-app, отдельный бриф)
+- [ ] `/oauth2`, `/qr` — итерациями
 - [ ] `docs/_meta/web-auth.md` AI-anchor + user-guide
