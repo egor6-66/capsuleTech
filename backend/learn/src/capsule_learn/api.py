@@ -13,27 +13,12 @@ from fastapi import APIRouter, Query, Request
 
 from .clients.image import ImageClient
 from .clients.voice import VoiceClient
+from .compose import audio_block as _audio_block
+from .compose import image_block as _image_block
 from .config import settings
 from .schemas import RelatedResponse, SenseDetail, SensesResponse
 
 router = APIRouter(prefix="/learn/lang", tags=["lang"])
-
-
-async def _audio_block(voice: VoiceClient, text: str, lang: str) -> dict[str, Any] | None:
-    engines = await voice.engines()
-    if engines is None:
-        return None
-    return {"url": voice.speak_url(text, lang), "engines": engines}
-
-
-async def _image_block(image: ImageClient, text: str, pos: str) -> dict[str, Any] | None:
-    # Prompt strategy v1 (TEMPORARY): a plain "{text} ({pos})" stub. The
-    # teacher-curated "образ" field is being refined in lang (lessons wave);
-    # once it lands enriched, switch the prompt to it. Do NOT invent prompt
-    # engineering here now. (brief backend-learn-image-compose, ADR 067)
-    if await image.engines() is None:
-        return None
-    return {"url": image.render_url(f"{text} ({pos})")}
 
 
 @router.get("/senses", response_model=SensesResponse)

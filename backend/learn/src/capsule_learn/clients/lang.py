@@ -49,3 +49,9 @@ class LangClient:
 
     async def related(self, params: dict[str, Any]) -> dict[str, Any]:
         return await self._get("/lang/senses/related", params)
+
+    async def lessons(self) -> dict[str, Any]:
+        return await self._get("/lang/lessons")
+
+    async def lesson(self, lesson_id: str) -> dict[str, Any]:
+        return await self._get(f"/lang/lessons/{lesson_id}")

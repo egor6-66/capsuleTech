@@ -11,6 +11,7 @@ from .clients.image import ImageClient
 from .clients.lang import LangClient, LangError
 from .clients.voice import VoiceClient
 from .config import settings
+from .lessons_api import router as lessons_router
 
 
 @asynccontextmanager
@@ -38,3 +39,4 @@ def health() -> dict[str, str]:
 
 
 app.include_router(lang_router)
+app.include_router(lessons_router)

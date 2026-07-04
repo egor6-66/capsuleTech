@@ -29,6 +29,23 @@ class ImageBlock(BaseModel):
     url: str
 
 
+class ResolvedWord(BaseModel):
+    """A drill word resolved to its lang sense + media (library-style enrichment).
+
+    Injected as `words_resolved[]` on each lesson drill (ADR 069 ф.1). When the
+    word isn't in lang yet, `senseId`/`ru`/`pron_ru`/`pos` stay `None`; `audio`
+    rides on the text alone (voice up), `image` needs the resolved `pos`.
+    """
+
+    text: str
+    senseId: int | None
+    ru: str | None
+    pron_ru: str | None
+    pos: str | None
+    audio: AudioBlock | None
+    image: ImageBlock | None
+
+
 class TagOut(BaseModel):
     name: str
     kind: str
