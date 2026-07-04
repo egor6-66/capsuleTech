@@ -14,6 +14,12 @@ const fillInitialSizes = (items: IResizableItem[]): number[] => {
   return declared.map((v) => v ?? auto);
 };
 
+// handleActive: boolean | Accessor<boolean>, default true.
+// Вызов accessor'а внутри реактивного скоупа (JSX-проп handle'а) — live-флип
+// меняет только классы/поведение handle, панели не пересоздаются.
+const resolveHandleActive = (v: IResizableItem['handleActive']): boolean =>
+  (typeof v === 'function' ? v() : v) !== false;
+
 // Children-mode helper: JSX children → IResizableItem[].
 // Каждый top-level child становится панелью с resizable=true (без initialSize → auto-distribute).
 const childrenToItems = (resolved: unknown): IResizableItem[] => {
@@ -61,8 +67,11 @@ const ResizableInner = (props: {
             >
               <ResizableHandle
                 withHandle={props.withHandle}
-                disabled={props.handleDisabled}
-                classList={{ 'pointer-events-none': !!props.handleDisabled }}
+                active={
+                  !props.handleDisabled &&
+                  resolveHandleActive(item.handleActive) &&
+                  resolveHandleActive(items()[index() + 1]?.handleActive)
+                }
               />
             </Show>
           </>

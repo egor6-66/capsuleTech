@@ -1,4 +1,4 @@
-import type { JSX } from 'solid-js';
+import type { Accessor, JSX } from 'solid-js';
 
 export type ResizableOrientation = 'horizontal' | 'vertical';
 
@@ -11,10 +11,20 @@ export interface IResizableItem {
   maxSize?: number;
   collapsible?: boolean;
   /**
-   * false → панель не участвует в resize (нет handle перед/после).
+   * Структурный флаг: false → панель не участвует в resize (нет handle перед/после).
    * true (default) → handle инжектируется между resizable-соседями.
+   * Live-флип пересоздаёт дерево панелей — для реактивного вкл/выкл ручки
+   * без ремоунта используй `handleActive`.
    */
   resizable?: boolean;
+  /**
+   * Реактивная активность ручки. Default: true.
+   * Handle между i и i+1 активен ⇔ active(i) && active(i+1) && !handleDisabled (контейнерный).
+   * false → handle остаётся смонтирован (панели не ремоунтятся), но прозрачен
+   * (без bg-border), pointer-events-none, без grip, corvu drag отключён.
+   * Accessor-форма — для live-флипа без пересоздания items-массива.
+   */
+  handleActive?: boolean | Accessor<boolean>;
 }
 
 export interface IResizableProps {
@@ -26,7 +36,11 @@ export interface IResizableProps {
   orientation?: ResizableOrientation;
   /** Показать grip-индикатор на handle'е. */
   withHandle?: boolean;
-  /** Заблокировать pointer на handle'ах (раскладка применяется, drag нет). */
+  /**
+   * Глобальный гейт активности всех handle'ов (AND с per-item `handleActive`).
+   * true → каждая ручка неактивна: прозрачна (без линии), pointer-events-none,
+   * без grip. Раскладка панелей при этом сохраняется.
+   */
   handleDisabled?: boolean;
   /** Callback с новыми размерами при ресайзе (forwarded в corvu). */
   onSizesChange?: (sizes: number[]) => void;

@@ -5,7 +5,7 @@ group: web_base
 zone: kit
 status: stable
 priority: P0
-last-updated: 2026-06-11
+last-updated: 2026-07-04
 ---
 
 # @capsuletech/web-ui
@@ -28,7 +28,7 @@ Stateless UI-kit для capsule: 16 primitives (Button, Input, Card, Field, Togg
   2. Ui.Map/Flow/Chart placeholder'ы (после W6 boost-renames).
   3. Vitest Solid transform → разблокировать DOM-render unit-coverage.
   4. Visual regression CI.
-- **Last activity:** 2026-07-03 (Image + Avatar primitives added).
+- **Last activity:** 2026-07-04 (Resizable per-handle `handleActive` contract, brief web-ui-resizable-handle-contract).
 
 ## Vendor stack (ADR 047 D3)
 
@@ -142,6 +142,15 @@ import { Grid } from '@capsuletech/web-ui/grid';
 Migration from v0.3.0: `slots={{ header, main, rightBar, footer }}` → `preset="app-shell" slots={{ header, main, rightBar, footer }}`
 
 **Это контракт.** Изменение API Matrix — breaking change для всех consumer'ов (currently только sandbox).
+
+### Resizable — per-handle реактивный enable `handleActive` (2026-07-04)
+
+По брифу `docs/_meta/briefs/web-ui-resizable-handle-contract.md` (owner-boost-layout, приоритеты resize в Matrix):
+
+- **`IResizableItem.handleActive?: boolean | Accessor<boolean>`** (default `true`) — реактивная активность ручки. Handle между i и i+1 активен ⇔ `active(i) && active(i+1) && !handleDisabled`. `resizable` остаётся **структурным** (панель в corvu, handle в DOM); `handleActive` — **реактивным**: флип Accessor'а меняет только классы/поведение handle-элемента, панели и их children НЕ ремоунтятся (DOM-идентичность проверена unit-тестом).
+- **Неактивная ручка не рисует hairline** — `bg-transparent` вместо `bg-border`, `pointer-events-none`, corvu `disabled`, grip скрыт. Разделитель-«бордер» ячеек — забота консьюмера (в Matrix — проп `bordered`), не handle'а. Это **намеренное visual-изменение** для `handleDisabled` (раньше линия оставалась): бордер ≠ resize-аффорданс.
+- `withHandle` / `handleDisabled` — глобальные гейты (AND с per-item), grip показывается только на активной ручке.
+- Механика: cva-вариант `active` в `resizableHandleCva` (`_resize/variants.ts`), проп `active` на internal `ResizableHandle` (getter-пропсы в `createStyle` для реактивности), резолв per-pair в `resizable.tsx`. Тесты: `resizable/__tests__/resizable.test.tsx` («handleActive per-item contract», 5 тестов). Stories: `resizable.stories.tsx` (Basic / MixedHandles / LiveToggle / AllDisabled).
 
 ### Dropdown — HTML-passthrough для data-* / title / style (2026-06-03)
 

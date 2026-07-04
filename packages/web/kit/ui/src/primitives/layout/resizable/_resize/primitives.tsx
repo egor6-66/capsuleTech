@@ -29,19 +29,40 @@ type ResizableHandleProps<T extends ValidComponent = 'button'> = HandleProps<T> 
   class?: string;
   style?: string | Record<string, string | number>;
   withHandle?: boolean;
+  /**
+   * Реактивная активность ручки. Default: true.
+   * false → без hairline (bg-transparent), pointer-events-none, corvu drag
+   * отключён, grip скрыт. Handle остаётся смонтирован — флип не ремоунтит панели.
+   */
+  active?: boolean;
 };
 
 export const ResizableHandle = <T extends ValidComponent = 'button'>(
   props: DynamicProps<T, ResizableHandleProps<T>>,
 ) => {
-  const [local, rest] = splitProps(props as ResizableHandleProps, ['class', 'style', 'withHandle']);
+  const [local, rest] = splitProps(props as ResizableHandleProps, [
+    'class',
+    'style',
+    'withHandle',
+    'active',
+  ]);
+  const isActive = () => local.active !== false;
+  // Getters — createStyle мемоизирует cvaFn(props); без них флип `active`
+  // не пересчитал бы класс (props оценились бы один раз при создании объекта).
   const { className, style } = createStyle(resizableHandleCva, {
-    class: local.class,
-    style: local.style,
+    get active() {
+      return isActive();
+    },
+    get class() {
+      return local.class;
+    },
+    get style() {
+      return local.style;
+    },
   });
   return (
-    <ResizablePrimitive.Handle class={className()} style={style()} {...rest}>
-      <Show when={local.withHandle}>
+    <ResizablePrimitive.Handle disabled={!isActive()} class={className()} style={style()} {...rest}>
+      <Show when={local.withHandle && isActive()}>
         <GripIcon />
       </Show>
     </ResizablePrimitive.Handle>
