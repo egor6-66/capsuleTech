@@ -29,7 +29,7 @@ import { registerPackageServices } from '@capsuletech/web-core';
 import { defineCapsuleModule } from '@capsuletech/web-core/module';
 import { AuthLogin, AuthRegister } from './controllers/index';
 import { logoutCredentials } from './credentials/index';
-import { defaultAuthSession, notifyAuthChanged, useAuth } from './session/index';
+import { defaultAuthSession, initAuthSession, notifyAuthChanged, useAuth } from './session/index';
 import type { IAuthUser } from './types';
 
 // ─── Module augmentation: типизация services.authApi ─────────────────────────
@@ -43,6 +43,15 @@ declare module '@capsuletech/web-core' {
      * для аппов без web-auth.
      */
     authApi?: {
+      /**
+       * Bootstrap cookie-сессии (ADR 068 D3/D4): `GET /auth/me` → session-store
+       * (authed | guest) + подписка на BroadcastChannel-синк. Идемпотентен
+       * (повторный вызов переподписывает без дубля — контракт initAuthSession).
+       * Root-Feature аппа зовёт в onInit ДО чтения `isAuthed()`.
+       * @param apiBase префикс API, @default '/api'
+       * @returns юзер | null (guest / сеть недоступна)
+       */
+      init: (apiBase?: string) => Promise<IAuthUser | null>;
       /**
        * Локальный логаут: сброс defaultAuthSession + BroadcastChannel-синк.
        * Серверную session-куку НЕ ревокирует — для cookie-флоу используй
@@ -73,6 +82,7 @@ declare module '@capsuletech/web-core' {
 // ─── Регистрация services.authApi (side-effect на module-load) ───────────────
 
 registerPackageServices('authApi', {
+  init: (apiBase?: string) => initAuthSession(apiBase),
   logout: () => {
     defaultAuthSession.logout();
     notifyAuthChanged();

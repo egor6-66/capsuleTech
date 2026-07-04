@@ -129,7 +129,7 @@ config-driven), session + `useAuth()`, Controllers + ИМЕНОВАННЫЕ со
 | `/session` | **ready (v2)** | `createAuthSession`, `useAuth()` (без token), `initAuthSession(apiBase?, store?)` — me-bootstrap + broadcast-подписка, `defaultAuthSession`, `notifyAuthChanged`/`onAuthChanged`/`AUTH_CHANNEL_NAME`; `@deprecated` legacy: `configureAuthSession`, `ISessionStorage`, `IPersistedSession`, `localSessionStorage` |
 | `/controllers` | **ready** | `AuthLogin` (арм role + credentials), `AuthRegister` (login+password+confirm, client-side confirm-валидация), FSM idle→submitting→authed/error, phantom `__events` |
 | `/ui` | **ready** | `AuthLoginForm` — web-core `View<IAuthLoginFormProps>` (`strategy: { fields }` — любой fields-носитель; Ui от View-wrapper, не проп). Register переиспользует её же (config-driven поля) |
-| `/capsule` | **ready** | `defineCapsuleModule({ name:'Auth', components:{Login, Register} })` + `registerPackageServices('authApi', { logout, logoutServer, isAuthed, user })` — `logout` локальный (+broadcast), `logoutServer(apiBase?)` полный cookie-логаут |
+| `/capsule` | **ready** | `defineCapsuleModule({ name:'Auth', components:{Login, Register} })` + `registerPackageServices('authApi', { init, logout, logoutServer, isAuthed, user })` — `init(apiBase?)` bootstrap cookie-сессии (initAuthSession: /me + broadcast-подписка; root-Feature аппа зовёт в onInit ДО чтения isAuthed), `logout` локальный (+broadcast), `logoutServer(apiBase?)` полный cookie-логаут |
 
 ## Моки — `preRequest` + `gen` (НЕ MSW)
 
@@ -192,7 +192,8 @@ config-driven), session + `useAuth()`, Controllers + ИМЕНОВАННЫЕ со
 
 ## Тест-покрытие
 
-98 тестов (vitest jsdom), все green:
+102 теста (vitest jsdom), все green:
+- `__tests__/capsule.test.ts` — wiring services.authApi.init: регистрация под namespace, 200 → authed(user)+return user, 401 → null/guest, прокидывание apiBase (перехват registerPackageServices через vi.hoisted — getPackageServices internal в web-core).
 - `api/__tests__/client.test.ts` — HTTP-клиент (мок fetch): credentials same-origin на каждом запросе, zod-валидация UserOut, apiBase-подстановка; login 200/401(InvalidCredentialsError)/500; register 201/409(LoginTakenError)/422; me 200/401→null/500; logout 204/500; невалидный payload → AuthApiError.
 - `session/__tests__/session.test.ts` — session v2 (login(user)/logout/setStatus, БЕЗ token), useAuth v2, initAuthSession me-bootstrap (200 authed / 401 guest / 401 при authed → logout / network-fail → warn+null / кастомный apiBase); legacy localSessionStorage (`{user}` round-trip, v1-запись читается без token) + configureAuthSession.
 - `session/__tests__/broadcast.test.ts` — канал 'capsule-auth' (fake BroadcastChannel): доставка между «вкладками», без self-delivery, отписка; интеграция initAuthSession: login/logout в другой вкладке → ре-фетч /me → store обновлён; повторный init не дублирует подписку.
