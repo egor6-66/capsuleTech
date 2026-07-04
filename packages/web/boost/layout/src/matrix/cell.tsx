@@ -78,8 +78,12 @@ export const renderCell = (
   bordered: Accessor<boolean>,
 ): JSX.Element => {
   const tag = cell.tag ?? 'div';
-  const children = getSwappedChildren ? getSwappedChildren(cell.id) : cell.children;
-  const content = children;
+  // Accessor, НЕ снапшот: getSwappedChildren читает childrenMap-сигнал swap-движка
+  // в момент вызова. Снимок в const давал нереактивный контент — после drop'а
+  // childrenMap свапался, onLayoutChange стрелял, а DOM не менялся
+  // (drop-не-работает баг, 2026-07-04).
+  const content = (): JSX.Element =>
+    getSwappedChildren ? getSwappedChildren(cell.id) : cell.children;
   const isBordered = (): boolean => cell.bordered ?? bordered();
   traceSlotRender(cell.id);
 
@@ -128,7 +132,7 @@ export const renderCell = (
           classList={{ 'pointer-events-none': isDragging() }}
         >
           <MatrixSlot slot={cell.id}>
-            <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+            <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content()}</Suspense>
           </MatrixSlot>
         </div>
         {/* Absolute overlay renders above canvas / GPU layers — ring/box-shadow do not. */}
@@ -164,7 +168,7 @@ export const renderCell = (
     >
       <div class="absolute inset-0 overflow-auto">
         <MatrixSlot slot={cell.id}>
-          <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content}</Suspense>
+          <Suspense fallback={cell.skeleton ?? <MatrixCellFallback />}>{content()}</Suspense>
         </MatrixSlot>
       </div>
     </Dynamic>

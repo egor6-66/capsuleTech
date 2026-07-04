@@ -112,13 +112,15 @@ const MatrixImpl = (props: IMatrixProps) => {
  * - `dnd?: false | 'swap' | 'insert'` — `undefined` → follows `useDndMode()` from web-style (or `mode`);
  *   `false` → locked off; `'swap'`/`'insert'` → locked on with the specified kind.
  *
- * **Per-cell opt-out defaults:**
- * - `cell.draggable` defaults to `true` — set to `false` to lock a cell non-draggable.
+ * **Per-cell overrides (tri-state):**
+ * - `cell.draggable`: `true` — DnD активен для cell всегда (оверрайдит `mode`/global);
+ *   `false` — никогда; `undefined` — следует matrix-резолюции (`dnd` > `mode` > global).
  * - `cell.resizable` defaults to `true` — set to `false` to lock a cell non-resizable.
  *
  * **DnD / badge-UX:**
- * - Each draggable cell shows a DragBadge (grip icon) in its top-right corner when
- *   2+ draggable cells exist in the same swapGroup and DnD is enabled.
+ * - A cell shows a DragBadge (grip icon, top-right) only when DnD резолвится
+ *   активным для неё И существует другая активная cell в той же swapGroup
+ *   (т.е. drop-цель реально есть).
  * - `onLayoutChange` called with swap/insert/grid event after each successful layout change.
  *
  * **Border:**

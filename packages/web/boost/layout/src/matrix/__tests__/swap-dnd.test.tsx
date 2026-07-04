@@ -10,13 +10,18 @@
  * - Drop → onLayoutChange fires with { kind: 'swap', a, b }.
  * - swapGroup constraint enforced (badge still shown but drop rejected).
  *
- * Full pointer-event DnD is an e2e / Storybook concern. Unit tests cover:
- *   1. Badge renders when 2+ draggable cells.
- *   2. Badge NOT rendered when < 2 draggable cells.
- *   3. Badge count matches draggable cell count.
+ * Unit tests cover:
+ *   1. Badge renders when 2+ ENABLED cells share a swapGroup (group-aware).
+ *   2. Badge NOT rendered when a cell has no enabled same-group partner.
+ *   3. Badge count matches enabled-partner cells.
  *   4. onLayoutChange handler wires without errors.
  *   5. Non-draggable cells render without badge.
  *   6. No crash on preset with only main slot (no draggable cells).
+ *   7. Per-slot draggable override precedence (slot > mode/dnd prop > global).
+ *   8. FULL drop flow (pointerdown → move → up) — web-dnd не использует
+ *      pointer capture, цикл выполним в jsdom; хит-тест мокается через
+ *      document.elementFromPoint (jsdom без layout'а). Браузерная геометрия
+ *      остаётся e2e/Storybook concern'ом.
  */
 /* @vitest-environment jsdom */
 import { render } from 'solid-js/web';
@@ -308,6 +313,70 @@ describe('Matrix — badge-UX swap DnD', () => {
     expect(onLayoutChange).not.toHaveBeenCalled();
   });
 
+  it('cells in DIFFERENT swapGroups (no partner) → NO badges even with DnD on', () => {
+    // Root of the drag-without-drop bug (learn app-shell pages, 2026-07-04):
+    // the old 2+ threshold counted ALL draggable cells regardless of group, so
+    // a drag could start with no cell able to accept it. Badge is now
+    // group-aware — a lone cell in its group gets no badge.
+    cleanup = render(
+      () => (
+        <Matrix
+          dnd="swap"
+          rows={[
+            {
+              id: 'r',
+              resizable: true,
+              cells: [
+                {
+                  id: 'a',
+                  children: <div>A</div>,
+                  draggable: true,
+                  swapGroup: 'g1',
+                  width: 0.5,
+                  resizable: true,
+                },
+                {
+                  id: 'b',
+                  children: <div>B</div>,
+                  draggable: true,
+                  swapGroup: 'g2',
+                  width: 0.5,
+                  resizable: true,
+                },
+              ],
+            },
+          ]}
+        />
+      ),
+      container,
+    );
+
+    const badges = container.querySelectorAll('[aria-label="Drag to swap cell"]');
+    expect(badges.length).toBe(0);
+  });
+
+  it('preset app-shell default: header + main share the "shell" group → 2 badges', () => {
+    // Preset slots now default to one shared swapGroup 'shell' — any slot can
+    // swap with any other when DnD is on. Previously header='band' vs
+    // main='middle-row' partitioned every learn page into partner-less groups.
+    cleanup = render(
+      () => (
+        <Matrix
+          preset="app-shell"
+          dnd="swap"
+          slots={{
+            header: { children: <div data-testid="hdr">H</div> },
+            main: { children: <div data-testid="mn">M</div> },
+          }}
+        />
+      ),
+      container,
+    );
+
+    const badges = container.querySelectorAll('[aria-label="Drag to swap cell"]');
+    expect(badges.length).toBe(2);
+  });
+
   it('preset app-shell with draggable sidebar + rightBar, locked main → 2 badges', () => {
     // Opt-out model: main must be explicitly locked with draggable: false to prevent
     // it from entering the swap engine. sidebar + rightBar are explicitly draggable: true.
@@ -341,5 +410,251 @@ describe('Matrix — badge-UX swap DnD', () => {
     expect(badges.length).toBe(2);
     expect(container.querySelector('[data-testid="main"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="sidebar"]')).not.toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Per-slot draggable override — precedence: cell.draggable > mode/dnd > global
+// ---------------------------------------------------------------------------
+
+describe('Matrix — per-slot draggable override', () => {
+  const twoCells = (draggable: boolean | undefined) => [
+    {
+      id: 'r',
+      resizable: true,
+      cells: [
+        {
+          id: 'a',
+          children: <div data-testid="ov-a">A</div>,
+          draggable,
+          swapGroup: 'g',
+          width: 0.5,
+          resizable: true,
+        },
+        {
+          id: 'b',
+          children: <div data-testid="ov-b">B</div>,
+          draggable,
+          swapGroup: 'g',
+          width: 0.5,
+          resizable: true,
+        },
+      ],
+    },
+  ];
+
+  it('mode="view" + no explicit flags → NO badges (mode disables DnD)', () => {
+    cleanup = render(() => <Matrix mode="view" rows={twoCells(undefined)} />, container);
+    expect(container.querySelectorAll('[aria-label="Drag to swap cell"]').length).toBe(0);
+  });
+
+  it('mode="view" + slot draggable:true on both → badges show (slot overrides mode)', () => {
+    cleanup = render(() => <Matrix mode="view" rows={twoCells(true)} />, container);
+    expect(container.querySelectorAll('[aria-label="Drag to swap cell"]').length).toBe(2);
+  });
+
+  it('dnd={false} + slot draggable:true → badges show (slot is most specific)', () => {
+    cleanup = render(() => <Matrix dnd={false} rows={twoCells(true)} />, container);
+    expect(container.querySelectorAll('[aria-label="Drag to swap cell"]').length).toBe(2);
+  });
+
+  it('mode="edit" + slot draggable:false → NO badges (slot lock wins over mode)', () => {
+    cleanup = render(() => <Matrix mode="edit" rows={twoCells(false)} />, container);
+    expect(container.querySelectorAll('[aria-label="Drag to swap cell"]').length).toBe(0);
+  });
+
+  it('mode="view" + only ONE slot draggable:true → NO badges (no enabled partner)', () => {
+    cleanup = render(
+      () => (
+        <Matrix
+          mode="view"
+          rows={[
+            {
+              id: 'r',
+              resizable: true,
+              cells: [
+                {
+                  id: 'a',
+                  children: <div>A</div>,
+                  draggable: true,
+                  swapGroup: 'g',
+                  width: 0.5,
+                  resizable: true,
+                },
+                {
+                  id: 'b',
+                  children: <div>B</div>,
+                  swapGroup: 'g',
+                  width: 0.5,
+                  resizable: true,
+                },
+              ],
+            },
+          ]}
+        />
+      ),
+      container,
+    );
+    expect(container.querySelectorAll('[aria-label="Drag to swap cell"]').length).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Full swap drop flow — pointer simulation (A7/A8 from the characterization
+// suite). web-dnd uses window-level listeners without setPointerCapture, so
+// the full cycle runs in jsdom; only hit-testing (document.elementFromPoint)
+// needs a mock because jsdom has no layout.
+// ---------------------------------------------------------------------------
+
+describe('Matrix — full swap drop flow', () => {
+  const origElementFromPoint = document.elementFromPoint;
+
+  afterEach(() => {
+    document.elementFromPoint = origElementFromPoint;
+  });
+
+  const pointer = (type: string, target: EventTarget, x: number, y: number) => {
+    target.dispatchEvent(
+      new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, clientX: x, clientY: y }),
+    );
+  };
+
+  const dragAtoB = (): { cellA: HTMLElement; cellB: HTMLElement } => {
+    const droppables = container.querySelectorAll<HTMLElement>('[data-dnd-droppable]');
+    expect(droppables.length).toBe(2);
+    const cellA = droppables[0];
+    const cellB = droppables[1];
+    const badgeA = cellA.querySelector<HTMLElement>('[aria-label="Drag to swap cell"]');
+    expect(badgeA).not.toBeNull();
+
+    // jsdom has no layout — hit-test always "lands" on cell B.
+    document.elementFromPoint = () => cellB;
+
+    pointer('pointerdown', badgeA!, 10, 10);
+    pointer('pointermove', window, 300, 10);
+    pointer('pointerup', window, 300, 10);
+    return { cellA, cellB };
+  };
+
+  it('drop on same-group partner → onLayoutChange({kind:swap}) + children swapped (A7+A8)', () => {
+    const onLayoutChange = vi.fn();
+    cleanup = render(
+      () => (
+        <Matrix
+          dnd="swap"
+          onLayoutChange={onLayoutChange}
+          rows={[
+            {
+              id: 'r',
+              resizable: true,
+              cells: [
+                {
+                  id: 'a',
+                  children: <div data-testid="content-a">A</div>,
+                  draggable: true,
+                  swapGroup: 'g',
+                  width: 0.5,
+                  resizable: true,
+                },
+                {
+                  id: 'b',
+                  children: <div data-testid="content-b">B</div>,
+                  draggable: true,
+                  swapGroup: 'g',
+                  width: 0.5,
+                  resizable: true,
+                },
+              ],
+            },
+          ]}
+        />
+      ),
+      container,
+    );
+
+    const { cellA, cellB } = dragAtoB();
+
+    expect(onLayoutChange).toHaveBeenCalledTimes(1);
+    expect(onLayoutChange).toHaveBeenCalledWith({ kind: 'swap', a: 'a', b: 'b' });
+    // A8: children visually swapped between the two cells
+    expect(cellA.querySelector('[data-testid="content-b"]')).not.toBeNull();
+    expect(cellB.querySelector('[data-testid="content-a"]')).not.toBeNull();
+  });
+
+  it('mode="view" + both slots draggable:true → drop still works (override end-to-end)', () => {
+    const onLayoutChange = vi.fn();
+    cleanup = render(
+      () => (
+        <Matrix
+          mode="view"
+          onLayoutChange={onLayoutChange}
+          rows={[
+            {
+              id: 'r',
+              resizable: true,
+              cells: [
+                {
+                  id: 'a',
+                  children: <div data-testid="content-a">A</div>,
+                  draggable: true,
+                  swapGroup: 'g',
+                  width: 0.5,
+                  resizable: true,
+                },
+                {
+                  id: 'b',
+                  children: <div data-testid="content-b">B</div>,
+                  draggable: true,
+                  swapGroup: 'g',
+                  width: 0.5,
+                  resizable: true,
+                },
+              ],
+            },
+          ]}
+        />
+      ),
+      container,
+    );
+
+    const { cellA, cellB } = dragAtoB();
+
+    expect(onLayoutChange).toHaveBeenCalledWith({ kind: 'swap', a: 'a', b: 'b' });
+    expect(cellA.querySelector('[data-testid="content-b"]')).not.toBeNull();
+    expect(cellB.querySelector('[data-testid="content-a"]')).not.toBeNull();
+  });
+
+  it('preset app-shell (header + main, default groups) → header↔main drop works', () => {
+    const onLayoutChange = vi.fn();
+    cleanup = render(
+      () => (
+        <Matrix
+          preset="app-shell"
+          dnd="swap"
+          onLayoutChange={onLayoutChange}
+          slots={{
+            header: { children: <div data-testid="content-h">H</div> },
+            main: { children: <div data-testid="content-m">M</div> },
+          }}
+        />
+      ),
+      container,
+    );
+
+    const droppables = container.querySelectorAll<HTMLElement>('[data-dnd-droppable]');
+    expect(droppables.length).toBe(2);
+    const headerCell = droppables[0];
+    const mainCell = droppables[1];
+    const headerBadge = headerCell.querySelector<HTMLElement>('[aria-label="Drag to swap cell"]');
+    expect(headerBadge).not.toBeNull();
+
+    document.elementFromPoint = () => mainCell;
+    pointer('pointerdown', headerBadge!, 10, 10);
+    pointer('pointermove', window, 300, 300);
+    pointer('pointerup', window, 300, 300);
+
+    expect(onLayoutChange).toHaveBeenCalledWith({ kind: 'swap', a: 'header', b: 'main' });
+    expect(headerCell.querySelector('[data-testid="content-m"]')).not.toBeNull();
+    expect(mainCell.querySelector('[data-testid="content-h"]')).not.toBeNull();
   });
 });

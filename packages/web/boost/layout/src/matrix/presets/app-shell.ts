@@ -16,9 +16,12 @@ type AppShellSlots = LayoutPresets['app-shell'];
  *
  * Auto-centroid: если передан только `main` — возвращает single-row single-cell.
  *
- * swapGroup convention (Phase 1.2):
- * - header/footer → 'band'
- * - sidebar/rightBar → 'aside'
+ * swapGroup convention (2026-07-04):
+ * - Все слоты по умолчанию в ОБЩЕЙ группе `'shell'` — при включённом DnD любой
+ *   слот свапается с любым. Прежние партиции ('band' для header/footer, 'aside'
+ *   для sidebar/rightBar, main без группы) давали drag-без-drop: бэйдж
+ *   показывался, а валидной цели не существовало.
+ * - Ограничить свап можно явным `swapGroup` на слотах или `draggable: false`.
  */
 export const appShellResolver = (slots: AppShellSlots): IRow[] => {
   const header = normalizeSlotValue(slots.header);
@@ -62,7 +65,7 @@ export const appShellResolver = (slots: AppShellSlots): IRow[] => {
           tag: 'header',
           children: header.children,
           draggable: header.draggable,
-          swapGroup: header.swapGroup ?? 'band',
+          swapGroup: header.swapGroup ?? 'shell',
           resizable: headerResizable,
           bordered: header.bordered,
           skeleton: header.skeleton,
@@ -82,7 +85,7 @@ export const appShellResolver = (slots: AppShellSlots): IRow[] => {
       width: sidebar.initialSize ?? 0.2,
       resizable: sidebar.resizable ?? true,
       draggable: sidebar.draggable,
-      swapGroup: sidebar.swapGroup ?? 'aside',
+      swapGroup: sidebar.swapGroup ?? 'shell',
       bordered: sidebar.bordered,
       skeleton: sidebar.skeleton,
     });
@@ -102,7 +105,7 @@ export const appShellResolver = (slots: AppShellSlots): IRow[] => {
     width: mainWidth,
     resizable: main.resizable ?? true,
     draggable: main.draggable,
-    swapGroup: main.swapGroup,
+    swapGroup: main.swapGroup ?? 'shell',
     bordered: main.bordered,
     skeleton: main.skeleton,
   });
@@ -115,7 +118,7 @@ export const appShellResolver = (slots: AppShellSlots): IRow[] => {
       width: rightBar.initialSize ?? 0.2,
       resizable: rightBar.resizable ?? true,
       draggable: rightBar.draggable,
-      swapGroup: rightBar.swapGroup ?? 'aside',
+      swapGroup: rightBar.swapGroup ?? 'shell',
       bordered: rightBar.bordered,
       skeleton: rightBar.skeleton,
     });
@@ -147,7 +150,7 @@ export const appShellResolver = (slots: AppShellSlots): IRow[] => {
           tag: 'footer',
           children: footer.children,
           draggable: footer.draggable,
-          swapGroup: footer.swapGroup ?? 'band',
+          swapGroup: footer.swapGroup ?? 'shell',
           resizable: footer.resizable ?? true,
           bordered: footer.bordered,
           skeleton: footer.skeleton,

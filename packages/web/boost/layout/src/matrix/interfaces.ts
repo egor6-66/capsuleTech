@@ -16,22 +16,21 @@ export type SlotValue =
       minSize?: number;
       maxSize?: number;
       /**
-       * Per-slot draggable override.
-       * Default: `true` (opt-out model) — cell is draggable when DnD is globally enabled.
-       * Set to `false` to lock this slot non-draggable regardless of global DnD state.
+       * Per-slot draggable override. Tri-state precedence (highest → lowest):
+       * - `true`  — DnD активен для этого слота ВСЕГДА (оверрайдит `mode` и
+       *             глобальный `useDndMode()`);
+       * - `false` — DnD для слота выключен всегда;
+       * - `undefined` (default) — следует matrix-резолюции (`dnd` prop >
+       *   `mode` > глобальный сигнал).
        */
       draggable?: boolean;
       /**
        * Группа, внутри которой возможен swap/insert через DnD.
        * Cells с одинаковой `swapGroup` могут меняться местами.
        *
-       * Если не задан в slot — preset присваивает дефолт по позиции:
-       *   - `'band'` для header/footer,
-       *   - `'aside'` для sidebar/rightBar,
-       *   - `undefined` для main (нельзя свапить).
-       *
-       * Чтобы свапать main вместе с aside / band — задай явный
-       * общий `swapGroup` на нужных слотах.
+       * Если не задан в slot — preset кладёт все слоты в общую группу
+       * `'shell'` (любой слот свапается с любым при включённом DnD).
+       * Ограничить свап — явный `swapGroup` или `draggable: false`.
        */
       swapGroup?: string;
       /**
@@ -151,9 +150,11 @@ export interface ICell {
    */
   resizable?: boolean;
   /**
-   * Per-cell draggable flag.
-   * Default: `true` (opt-out model) — cell is draggable when DnD is globally enabled.
-   * Set to `false` to lock this cell non-draggable.
+   * Per-cell draggable flag. Tri-state precedence (highest → lowest):
+   * - `true`  — DnD активен для этой cell всегда (оверрайдит `mode`/global);
+   * - `false` — cell никогда не участвует в DnD;
+   * - `undefined` (default) — следует matrix-резолюции (`dnd` prop > `mode` >
+   *   глобальный `useDndMode()`).
    */
   draggable?: boolean;
   swapGroup?: string;

@@ -7,9 +7,9 @@
  *
  * Coverage (what a render-branch refactor could plausibly break):
  *
- *   A1. showBadges condition: dnd=swap + ≥2 draggable cells
- *       → badges ABSENT in view mode (even with 2+ draggable)
- *       → badges ABSENT in insert mode (even in edit with 2+ draggable)
+ *   A1. badge condition: dnd=swap + per-cell enabled + same-group enabled partner
+ *       → badges ABSENT when matrix-resolved DnD off and no explicit cell flag
+ *       → badges ABSENT in insert mode (kind gate)
  *       → badges ABSENT when exactly 1 draggable (already in swap-dnd.test.tsx)
  *   A2. DragBadge aria-label / draggableId format: badge renders with
  *       aria-label="Drag to swap cell" and title="Drag to swap".
@@ -23,17 +23,11 @@
  *   A6. swapGroup isolation: cells in different swapGroups each get badges
  *       (counted per group; groups do NOT share the 2+ threshold between them).
  *   A7. onLayoutChange callback fires exactly once per swap commit with
- *       {kind:'swap', a, b} — CANNOT be tested in jsdom without real pointer
- *       events. Flagged as Phase 3 risk (see note below).
- *   A8. getCellChildren swap mapping after doSwap — CANNOT be triggered in
- *       jsdom. Flagged as Phase 3 risk.
- *
- * NOTE on jsdom limits for the swap engine:
- *   `doSwap` is called from inside createDroppable.onDrop which is invoked by
- *   the web-dnd DnD context on a real pointer-up event. jsdom does not support
- *   setPointerCapture, and the DnD context's internal state machine requires
- *   a full pointerdown → pointermove → pointerup sequence to trigger onDrop.
- *   Tests A7 and A8 require Storybook / Playwright (Phase 3 manual pass).
+ *       {kind:'swap', a, b} — NOW COVERED by the drop-flow suite in
+ *       swap-dnd.test.tsx (web-dnd no longer uses setPointerCapture; the full
+ *       pointerdown → pointermove → pointerup cycle runs in jsdom with a
+ *       mocked document.elementFromPoint).
+ *   A8. getCellChildren swap mapping after doSwap — NOW COVERED, same suite.
  *
  * NOTE on pixel-level resize geometry:
  *   jsdom does not measure layout (offsetWidth/offsetHeight always 0). Pixel
@@ -66,9 +60,11 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('createSwapEngine — showBadges triple condition', () => {
-  it('A1a: badges ABSENT when dnd=false even with 2+ draggable cells', () => {
-    // showBadges requires dndEnabled=true && dndKind==='swap' && draggableCount>=2.
-    // When dnd={false}, DnD is permanently disabled → no badges.
+  it('A1a: badges ABSENT when dnd=false and cells have no explicit draggable flag', () => {
+    // Per-cell resolution: cell.draggable (explicit) > matrix dnd/mode > global.
+    // Cells WITHOUT an explicit flag follow the matrix resolution; dnd={false}
+    // → disabled → no badges. (Explicit draggable:true would override — see
+    // the per-slot override suite in swap-dnd.test.tsx.)
     cleanup = render(
       () => (
         <Matrix
@@ -81,7 +77,6 @@ describe('createSwapEngine — showBadges triple condition', () => {
                 {
                   id: 'a',
                   children: <div data-testid="cell-a">A</div>,
-                  draggable: true,
                   swapGroup: 'g',
                   width: 0.5,
                   resizable: true,
@@ -89,7 +84,6 @@ describe('createSwapEngine — showBadges triple condition', () => {
                 {
                   id: 'b',
                   children: <div data-testid="cell-b">B</div>,
-                  draggable: true,
                   swapGroup: 'g',
                   width: 0.5,
                   resizable: true,
@@ -590,9 +584,9 @@ describe('createSwapEngine — draggable:false cells excluded from engine', () =
 
 describe('createSwapEngine — swapGroup isolation', () => {
   it('A6a: cells in different swapGroups each get badges if group has ≥2 members', () => {
-    // draggableCount = total draggable cells (not per-group).
-    // But the 2+ threshold for showBadges is total, not per-group.
-    // Here: 4 cells total across 2 groups → draggableCount=4 → showBadges=true → 4 badges.
+    // Badge visibility is per-group: a cell gets a badge only when another
+    // ENABLED cell shares its swapGroup. Here both groups have 2 members →
+    // every cell has a valid partner → 4 badges.
     cleanup = render(
       () => (
         <Matrix
@@ -747,31 +741,16 @@ describe('createSwapEngine — swapGroup isolation', () => {
 // (not implemented: requires real pointer events / Storybook)
 // ---------------------------------------------------------------------------
 
-describe('createSwapEngine — Phase 3 risks (not testable in jsdom)', () => {
-  it('A7: onLayoutChange({kind:swap,a,b}) firing — documented as Phase 3 manual pass', () => {
-    // CANNOT test: onDrop is triggered by the DnD context's internal state machine
-    // via pointerdown → pointermove → pointerup sequence. jsdom does not implement
-    // setPointerCapture (called in DnD context) so the full DnD cycle cannot run.
-    //
-    // Phase 3 manual check:
-    //   1. Open Matrix story with swap mode in Storybook.
-    //   2. Click badge → drag to another cell → release.
-    //   3. Verify onLayoutChange spy logs {kind:'swap', a:'cellA', b:'cellB'}.
-    //   4. Verify cell contents are visually swapped.
-    //
-    // This test exists ONLY to document the risk and make Phase 3 checklist visible.
-    expect(true).toBe(true);
-  });
-
-  it('A8: getCellChildren swap mapping after doSwap — documented as Phase 3 manual pass', () => {
-    // CANNOT test: doSwap runs inside droppable.onDrop which requires full DnD lifecycle.
-    // After a successful drop: childrenMap is updated via setChildrenMap() so
-    // getCellChildren('a') returns cell-b's children and vice-versa.
-    //
-    // Phase 3 manual check:
-    //   1. Drag badge from cell A and drop onto cell B.
-    //   2. Verify content of A and B is visually swapped in the DOM.
-    //   3. Drag back — verify second swap restores original positions.
+describe('createSwapEngine — A7/A8 moved to swap-dnd.test.tsx drop-flow suite', () => {
+  it('A7/A8: full drop cycle is unit-tested in swap-dnd.test.tsx', () => {
+    // web-dnd removed setPointerCapture, so the full pointerdown → pointermove →
+    // pointerup cycle runs in jsdom. Hit-testing needs only a mocked
+    // document.elementFromPoint (jsdom has no layout). See
+    // "Matrix — full swap drop flow" in swap-dnd.test.tsx:
+    //   - onLayoutChange fires once with {kind:'swap', a, b} (A7)
+    //   - children are visually swapped between cells after drop (A8)
+    // Browser-level verification (real pointer geometry) remains a Storybook /
+    // e2e concern.
     expect(true).toBe(true);
   });
 });
