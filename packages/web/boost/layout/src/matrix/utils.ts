@@ -21,6 +21,11 @@ export interface INormalizedSlot {
   /** Explicit resizable override — undefined = preset применяет свой default. */
   resizable?: boolean;
   /**
+   * Per-slot border override — undefined = follows the Matrix-level `bordered` prop.
+   * `true`/`false` forces this slot's border regardless of the Matrix-level flag.
+   */
+  bordered?: boolean;
+  /**
    * Per-slot Suspense fallback — forwarded to ICell.skeleton.
    * Shown while the slot's child is suspended (lazy chunk loading).
    */
@@ -54,6 +59,7 @@ export const normalizeSlotValue = (slot: SlotValue | undefined): INormalizedSlot
       draggable?: boolean;
       swapGroup?: string;
       resizable?: boolean;
+      bordered?: boolean;
       skeleton?: JSX.Element;
     };
     return {
@@ -64,6 +70,7 @@ export const normalizeSlotValue = (slot: SlotValue | undefined): INormalizedSlot
       draggable: config.draggable,
       swapGroup: config.swapGroup,
       resizable: config.resizable,
+      bordered: config.bordered,
       skeleton: config.skeleton,
     };
   }

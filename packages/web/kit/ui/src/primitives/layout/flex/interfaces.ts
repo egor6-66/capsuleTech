@@ -6,6 +6,8 @@ export type FlexWrap = 'wrap' | 'nowrap' | 'wrap-reverse';
 export type FlexAlign = 'start' | 'center' | 'end' | 'stretch' | 'baseline';
 export type FlexJustify = 'start' | 'center' | 'end' | 'between' | 'around' | 'evenly';
 export type FlexGap = number | string;
+export type FlexOverflow = 'auto' | 'hidden';
+export type FlexBorder = 't' | 'b' | 'l' | 'r' | 'x' | 'y' | 'all';
 
 /**
  * Ориентация Flex-группы. `'horizontal'` = row direction.
@@ -76,6 +78,25 @@ export interface IFlexOwnProps {
   minW?: number;
   /** `max-width`. `maxW={80}` → `max-width: calc(var(--spacing) * 80)`. */
   maxW?: number;
+
+  /** `padding` (all sides). `p={4}` → `padding: calc(var(--spacing) * 4)`. */
+  p?: number;
+  /** `padding-inline` (left+right). `px={4}` → `padding-inline: calc(var(--spacing) * 4)`. */
+  px?: number;
+  /** `padding-block` (top+bottom). `py={4}` → `padding-block: calc(var(--spacing) * 4)`. */
+  py?: number;
+
+  /**
+   * `overflow` для скролл-контейнеров. `'auto'` — скролл при переполнении,
+   * `'hidden'` — обрезка без скролла.
+   */
+  overflow?: FlexOverflow;
+
+  /**
+   * Chrome-разделитель по токену `border-border`. `'x'`/`'y'` — обе стороны
+   * оси, `'all'` — со всех сторон.
+   */
+  border?: FlexBorder;
 
   /**
    * Canonical responsive-flex pattern. Applies `flex: 1 1 Npx` inline:

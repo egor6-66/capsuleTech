@@ -292,6 +292,26 @@
       "import": "./dist/components/skeleton/*.mjs",
       "default": "./dist/components/skeleton/*.mjs"
     },
+    "./image": {
+      "types": "./dist/components/image/index.d.ts",
+      "import": "./dist/components/image/index.mjs",
+      "default": "./dist/components/image/index.mjs"
+    },
+    "./image/*": {
+      "types": "./dist/components/image/*.d.ts",
+      "import": "./dist/components/image/*.mjs",
+      "default": "./dist/components/image/*.mjs"
+    },
+    "./avatar": {
+      "types": "./dist/components/avatar/index.d.ts",
+      "import": "./dist/components/avatar/index.mjs",
+      "default": "./dist/components/avatar/index.mjs"
+    },
+    "./avatar/*": {
+      "types": "./dist/components/avatar/*.d.ts",
+      "import": "./dist/components/avatar/*.mjs",
+      "default": "./dist/components/avatar/*.mjs"
+    },
     "./spinner": {
       "types": "./dist/components/spinner/index.d.ts",
       "import": "./dist/components/spinner/index.mjs",

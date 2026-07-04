@@ -320,6 +320,54 @@ describe('WidgetUi — Tooltip compound: root and sub-components preserved with 
 });
 
 // ---------------------------------------------------------------------------
+// Compile-time: Image + Avatar — plain callables (isLeaf, no sub-components).
+// Both lazy (kobalte-backed). Guards: callable + IUiMetaProps + original props
+// preserved in both ViewUi and WidgetUi.
+// ---------------------------------------------------------------------------
+
+describe('ViewUi — Image and Avatar: plain callables with meta', () => {
+  it('Ui.Image is a function', () => {
+    expectTypeOf<ViewUi['Image']>().toBeFunction();
+  });
+
+  it('Ui.Image accepts IUiMetaProps (meta prop)', () => {
+    type Props = Parameters<ViewUi['Image']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
+  });
+
+  it('Ui.Image still accepts its original props (src)', () => {
+    type Props = Parameters<ViewUi['Image']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<{ src?: string }>();
+  });
+
+  it('Ui.Avatar is a function', () => {
+    expectTypeOf<ViewUi['Avatar']>().toBeFunction();
+  });
+
+  it('Ui.Avatar accepts IUiMetaProps (meta prop)', () => {
+    type Props = Parameters<ViewUi['Avatar']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
+  });
+
+  it('Ui.Avatar still accepts its original props (src)', () => {
+    type Props = Parameters<ViewUi['Avatar']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<{ src?: string }>();
+  });
+});
+
+describe('WidgetUi — Image and Avatar: plain callables with meta', () => {
+  it('Ui.Image accepts IUiMetaProps (meta prop)', () => {
+    type Props = Parameters<WidgetUi['Image']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
+  });
+
+  it('Ui.Avatar accepts IUiMetaProps (meta prop)', () => {
+    type Props = Parameters<WidgetUi['Avatar']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Runtime: ViewWrapper + UiProxy does not crash when meta is passed
 // (the actual prop stripping is in UiProxy; here we verify no runtime error)
 // ---------------------------------------------------------------------------

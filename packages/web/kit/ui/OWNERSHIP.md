@@ -28,7 +28,7 @@ Stateless UI-kit для capsule: 16 primitives (Button, Input, Card, Field, Togg
   2. Ui.Map/Flow/Chart placeholder'ы (после W6 boost-renames).
   3. Vitest Solid transform → разблокировать DOM-render unit-coverage.
   4. Visual regression CI.
-- **Last activity:** 2026-06-11 (canon refresh).
+- **Last activity:** 2026-07-03 (Image + Avatar primitives added).
 
 ## Vendor stack (ADR 047 D3)
 
@@ -53,7 +53,7 @@ Stateless UI-kit для capsule: 16 primitives (Button, Input, Card, Field, Togg
 
 ### Owns
 
-- `packages/web/ui/src/primitives/` — все primitives: button, input, label, card, field, flex, grid, list, separator, slot, table, toggle, typography, matrix, wrappers/* (animate, resizable как internal `flex/_resize/`).
+- `packages/web/ui/src/primitives/` — все primitives: button, input, label, card, field, flex, grid, list, separator, slot, table, toggle, typography, matrix, image, avatar, wrappers/* (animate, resizable как internal `flex/_resize/`).
 - `packages/web/ui/src/composites/` — assembled higher-level components: DataTable (инкапсулирует `@tanstack/solid-table`).
 - `packages/web/ui/.storybook/` — Storybook config (`main.ts`, `vite.config.ts`, `preview.ts`).
 - `packages/web/ui/.babelrc` — Babel config для CVA.
@@ -85,7 +85,7 @@ import { Grid } from '@capsuletech/web-ui/grid';
 
 ### Subpath exports (через `package.json.exports`)
 
-`./button`, `./card`, `./field`, `./flex`, `./grid`, `./input`, `./label`, `./layout` (deprecated alias на matrix), `./list`, `./matrix`, `./select`, `./separator`, `./slot`, `./table`, `./textarea`, `./toggle`, `./tooltip`, `./typography`, `./wrappers`, `./dataTable`, `./previewCard`.
+`./button`, `./card`, `./field`, `./flex`, `./grid`, `./input`, `./label`, `./layout` (deprecated alias на matrix), `./list`, `./matrix`, `./select`, `./separator`, `./slot`, `./table`, `./textarea`, `./toggle`, `./tooltip`, `./typography`, `./wrappers`, `./dataTable`, `./previewCard`, `./image`, `./avatar`.
 
 ### Layout namespace
 
@@ -302,6 +302,7 @@ Vitest version lock: `@vitest/browser@4.1.6` + `@vitest/browser-playwright@4.1.6
 - [x] **Table scroll context removed (BREAKING v0.5.0, 2026-05-22)** — `overflow-auto scrollbar-hover` убраны из wrapper'а `Table` primitive. Scroll context теперь ответственность parent'а. Standalone `<Table>` без outer scroll container — оберни в `<div class="overflow-auto">`. `DataTable` infinite mode (`InfiniteTable`) имеет собственный `overflow-auto` для виртуализации — не затронут.
 - [x] **Navigation primitive removed (BREAKING v0.6.0, 2026-05-22)** — `Ui.Navigation`, `Ui.NavigationList`, `Ui.NavigationItem` удалены. Используй `Ui.List` batch mode (`data + as + itemProps`) с `as: Ui.Button` для навигационных flows. Subpath `./navigation` удалён из `package.json`. Parallel: owner-web-core unregister'ит `Ui.Navigation` из imports.tsx.
 - [x] **Skeleton rewrite: kobalte-backed (2026-06-01)** — каждый шард теперь `Root` из `@kobalte/core/skeleton`. Публичный API (`ISkeletonProps`) не изменился. Пресеты text/table/list/card/map сохранены. TS clean, 281 tests green.
+- [x] **Image + Avatar primitives (2026-07-03)** — Image = generic stateless picture primitive backed by @kobalte/core/image, circle/square shape, size tokens; Avatar = thin composed sub-component over Image, circle-shape forced, string-fallback convenience (initials wrapped in Typography), not a duplicate implementation.
 - [x] **Design tokens migration (Phase 2)** — все primitives + composites переведены на design-system tokens (2026-05-22).
   - Button: `px-button py-1.5` (sm: `px-button-sm py-cell-tight`, lg: `px-button-lg py-button`) — default vertical padding tightened from `py-button-sm` (8px) to `py-1.5` (6px) for more compact UI rhythm. 2026-05-28.
   - Input: `px-input py-input` — density-aware, убрано `h-9` fixed height.

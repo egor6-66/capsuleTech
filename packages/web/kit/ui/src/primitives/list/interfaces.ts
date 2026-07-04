@@ -1,5 +1,6 @@
 import type { VariantProps } from 'class-variance-authority';
 import type { Component, JSX } from 'solid-js';
+import type { FlexJustify } from '../layout/flex/interfaces';
 import type { listItemVariants, listVariants } from './variants';
 
 export interface IListItemProps extends Omit<JSX.HTMLAttributes<HTMLDivElement>, 'children'> {
@@ -54,10 +55,38 @@ export interface IListBatchProps<T> extends Omit<JSX.HTMLAttributes<HTMLDivEleme
    */
   min?: string;
   /**
-   * Grid gap when `min` is set. Accepts any valid CSS length (e.g. `'0.5rem'`, `'8px'`).
-   * Defaults to `'0.5rem'` when `min` is provided.
+   * Grid gap when `min` is set, or flex gap when `wrap` is set. Same
+   * spacing-scale convention as `Flex`/`Grid` gap: `number` × 0.25rem
+   * (`gap={1}` → `0.25rem`), or a raw CSS-length string (`'8px'`).
+   * Defaults to `'0.5rem'`.
    */
-  gap?: string;
+  gap?: number | string;
+  /**
+   * Content-width wrap layout: `display: flex; flex-wrap: wrap` with each item
+   * wrapped in a `shrink-0` `<li>` (no `1fr`-stretch — items keep their natural
+   * width and wrap to new lines when the container narrows). For tag/chip/tile
+   * grids where items have varying text length (contrast with `min`, which is
+   * a CSS Grid that stretches every column to equal width).
+   * Takes precedence over `min` when both are set.
+   */
+  wrap?: boolean;
+  /**
+   * `justify-content` for the `wrap` layout (row alignment — e.g. `'center'`
+   * to centre a wrapped chip grid). No effect in `min` (grid) or plain-flex
+   * mode. Same values as `Flex.justify`.
+   */
+  justify?: FlexJustify;
+  /**
+   * Container padding — spacing-scale, same convention as `Flex.p`/`px`/`py`
+   * (`p={4}` → `padding: calc(var(--spacing) * 4)`). Applies in every batch
+   * sub-mode (`min` grid / `wrap` flex / plain flex), layered on top of the
+   * `variant` (`default`/`flush`) padding class.
+   */
+  p?: number;
+  /** `padding-inline` (left+right) — spacing-scale. */
+  px?: number;
+  /** `padding-block` (top+bottom) — spacing-scale. */
+  py?: number;
   /** items/children must be absent in batch mode. */
   items?: never;
   children?: never;

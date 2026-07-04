@@ -4,6 +4,7 @@ initialises on first synthesize and is then reused.
 
 Install with the optional extra: `uv sync --extra voice-chatterbox`.
 Air-gapped/prod: point `CHATTERBOX_MODEL_PATH` at a local checkpoint dir.
+Device: `TORCH_DEVICE` (default: cuda if available, else cpu).
 
 `voice` = path to a reference audio clip (voice cloning); omit for the
 built-in default voice. `speed` is not natively supported by Chatterbox and
@@ -28,7 +29,7 @@ class ChatterboxEngine:
             import torch
             from chatterbox.tts import ChatterboxTTS
 
-            device = settings.chatterbox_device or (
+            device = settings.torch_device or (
                 "cuda" if torch.cuda.is_available() else "cpu"
             )
             if settings.chatterbox_model_path:

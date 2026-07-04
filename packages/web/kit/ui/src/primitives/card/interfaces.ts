@@ -23,6 +23,26 @@ export interface ICardProps extends JSX.HTMLAttributes<HTMLDivElement>, CardVari
    * Max-width. Spacing-scale number.
    */
   maxW?: number;
+  /**
+   * Visual affordance for clickable cards — `cursor-pointer` + hover surface
+   * (`hover:bg-accent hover:text-accent-foreground`). Purely presentational;
+   * click handling stays the consumer's responsibility (meta/onClick).
+   */
+  interactive?: boolean;
+  /**
+   * Persistent "selected" surface (`bg-accent text-accent-foreground`) +
+   * `data-selected` reflection. Card is a bare `<div>` with no ARIA role, so
+   * `aria-selected` would be invalid without one (a11y lint) — pass your own
+   * `role`/`aria-selected` explicitly when this Card acts as a listbox option
+   * or tab (the passthrough spread still applies it).
+   */
+  selected?: boolean;
+  /**
+   * Root padding token. `'none'` (default, current behaviour — chrome only,
+   * no padding) / `'sm'` (`p-card-tight`, compact — tiles/chips) / `'md'`
+   * (`p-card`, matches `Card.Content` default).
+   */
+  padding?: 'none' | 'sm' | 'md';
 }
 
 // ---- Card.Header props ----

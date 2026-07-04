@@ -70,10 +70,17 @@ export const renderCell = (
    * Instead it renders inline-relative so the parent grows to fit content.
    */
   rowIsAutoHeight: boolean,
+  /**
+   * Matrix-level border default. Independent of `resizable`/DnD — a resizable
+   * cell only gets an interactive handle (+ badge), never a border by itself.
+   * Overridden per-cell by `cell.bordered` when explicitly set.
+   */
+  bordered: Accessor<boolean>,
 ): JSX.Element => {
   const tag = cell.tag ?? 'div';
   const children = getSwappedChildren ? getSwappedChildren(cell.id) : cell.children;
   const content = children;
+  const isBordered = (): boolean => cell.bordered ?? bordered();
   traceSlotRender(cell.id);
 
   // Cells with DnD need `position: relative` to host the absolute badge.
@@ -107,7 +114,12 @@ export const renderCell = (
     // `scrollbar-hover` mirrors matrixSlots.resizeMain/Slot visual parity for
     // draggable cells (parity is otherwise carried by the non-DnD branch below).
     return (
-      <Dynamic component={tag} ref={cellRef} class="h-full w-full relative">
+      <Dynamic
+        component={tag}
+        ref={cellRef}
+        class="h-full w-full relative rounded-sm"
+        classList={{ 'border border-border/60': isBordered() }}
+      >
         {/* Inner scroll wrapper; pointer-events-none during drag prevents hover leaking
             into cell content (table row hover, map hover, etc.).
             DnD ref lives on the outer wrapper so elementFromPoint() always hits it. */}
@@ -147,7 +159,8 @@ export const renderCell = (
     <Dynamic
       component={tag}
       ref={cellRef}
-      class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative`}
+      class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative overflow-hidden rounded-sm`}
+      classList={{ 'border border-border/60': isBordered() }}
     >
       <div class="absolute inset-0 overflow-auto">
         <MatrixSlot slot={cell.id}>

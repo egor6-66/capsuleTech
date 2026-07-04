@@ -41,6 +41,14 @@ export const FlexContract = defineContract({ name: 'Flex', kind: 'primitive' }, 
       maxW: z.number().optional(),
       // Responsive basis: flex: 1 1 Npx.
       fluid: z.number().optional(),
+      // Padding — spacing-шкала (паритет с h/w).
+      p: z.number().optional(),
+      px: z.number().optional(),
+      py: z.number().optional(),
+      // Скролл-контейнеры.
+      overflow: z.enum(['auto', 'hidden']).optional(),
+      // Chrome-разделитель по токену border-border.
+      border: z.enum(['t', 'b', 'l', 'r', 'x', 'y', 'all']).optional(),
     }),
   ),
   rule.styleSlots(['root']),

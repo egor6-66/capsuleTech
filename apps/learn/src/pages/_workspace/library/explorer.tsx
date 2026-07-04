@@ -1,17 +1,26 @@
 /**
- * /library/explorer — сетка слов (поиск + плитка). Инфо выбранного — в rightBar (layout).
+ * /library/explorer — сетка слов (поиск + плитка) из пакетных блоков
+ * `Learn.Library.*` (стор внутри пакета, брифы learn-library-block-migration.md /
+ * apps-learn-mount-library-blocks.md). Инфо выбранного — в rightBar.
  */
-const Explorer = Page(() => (
+const Explorer = Page((Ui) => (
   <Layouts.Matrix
     preset="app-shell"
     slots={{
       main: {
-        children: <Widgets.Words />,
+        children: (
+          <Ui.Layout.Flex orientation="vertical" h="full">
+            <Learn.Library.Search />
+            <Learn.Library.Words />
+          </Ui.Layout.Flex>
+        ),
         resizable: true,
+        bordered: false,
       },
       rightBar: {
-        children: <Widgets.WordInfo />,
+        children: <Learn.Library.Info />,
         resizable: true,
+        bordered: false,
       },
     }}
   />

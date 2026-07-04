@@ -1,10 +1,14 @@
 ---
 title: backend/learn importer — нормализовать level (CEFR заглавными → enum)
-status: ready
+status: done
 audience: owner-сессия backend-learn (scope `backend-learn`)
-last_updated: 2026-06-28
+last_updated: 2026-07-03
 adr_refs: ["064-A"]
 ---
+
+> **Done** (found already implemented 2026-07-03) — `_normalize_enum_case` в
+> `backend/lang/src/capsule_lang/schemas.py` (пакет с тех пор уехал из `backend/learn`,
+> ADR 067 D1) уже нормализует `level`/`register_`/`frequency`/`connotation` lowercase-before.
 
 # Кто / запуск
 

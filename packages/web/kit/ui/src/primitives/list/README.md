@@ -37,7 +37,12 @@ slug: web-ui/primitives/list
 | `children` (JSX) | semantic | Plain children, без итерации; рендерит `<ul>` |
 | `data` + `item` | batch | `item.use` — компонент-шаблон, `item.props` — маппер данных → props (ADR 036 §3); `<For>` внутри, рендерит `<ul>` |
 | `min` / `gap` | batch | `min` включает responsive CSS Grid (`repeat(auto-fit, minmax(min, 1fr))`); `gap` — шаг сетки (default `0.5rem`) |
+| `wrap` / `gap` | batch | `wrap` включает content-width flex-wrap (`display: flex; flex-wrap: wrap`, каждый item в `shrink-0` `<li>`) — НЕ `1fr`-стретч, items сохраняют естественную ширину и переносятся по строкам; `gap` — тот же шаг (default `0.5rem`). Приоритет над `min`, если заданы оба |
+| `justify` | batch (`wrap` only) | `justify-content` строки: `'start'\|'center'\|'end'\|'between'\|'around'\|'evenly'` (те же значения, что `Flex.justify`). Без эффекта в `min`/plain-режимах |
+| `p` / `px` / `py` | batch (все под-режимы) | Padding контейнера — spacing-шкала (паритет с `Flex.p`/`px`/`py`): `p={4}` → `padding: calc(var(--spacing) * 4)`. Накладывается поверх padding'а от `variant` |
 | `items` + `children`-функция | render-prop | Classic `(item, idx) => JSX`; рендерит `<div>` |
+
+`gap` (в `min`/`wrap` режимах) следует той же spacing-шкале kit'а — паритету с `Flex`/`Grid` gap: `number` × 0.25rem (`gap={1}` → `0.25rem`) или сырая CSS-строка (`gap="8px"`). `gap={1}` — валидное значение, НЕ голое число без unit'а (частая ошибка).
 
 ## Режимы {#modes}
 
@@ -54,8 +59,11 @@ slug: web-ui/primitives/list
 
 ```tsx
 <List data={rows} item={{ use: NavItem, props: (it) => ({ label: it.label }) }} />
-<List data={cards} item={{ use: Card }} min="116px" gap="0.5rem" />  {/* responsive grid */}
+<List data={cards} item={{ use: Card }} min="116px" gap="0.5rem" />  {/* responsive grid, equal-width columns */}
+<List data={tags} item={{ use: Card }} wrap gap={2} justify="center" p={4} />  {/* content-width, centered, padded */}
 ```
+
+`min` (grid) stretches every item to fill its column (`1fr`) — use it for uniform-size tiles/cards. `wrap` (flex) keeps each item at its natural content width and wraps when the row is full — use it for tag/chip/word grids where items have varying text length (mixing them was the root cause of a reported "tiles drifted to equal width" regression in `apps/learn`). `justify` only affects `wrap` (row alignment); `p`/`px`/`py` apply to every batch sub-mode.
 
 ### Render-prop (classic) {#render-prop}
 
@@ -92,7 +100,7 @@ Semantic и batch режимы рендерят `<ul>` — нативная сп
 ## Контракт для studio {#contract}
 
 <!-- audience: agent -->
-`list.contract.ts` описывает `orientation` / `variant` в zod-схеме для studio inspector. Палитра использует СЕМАНТИЧЕСКИЙ режим (plain children-ноды); batch и render-prop — runtime-режимы, в сериализуемый контракт не входят. `class` — inspector-only, расширяется в `propsSchema` манифеста.
+`list.contract.ts` описывает `orientation` / `variant` / `wrap` / `justify` / `p` / `px` / `py` в zod-схеме для studio inspector. Палитра использует СЕМАНТИЧЕСКИЙ режим (plain children-ноды); batch (включая `min`/`wrap`) и render-prop — runtime-режимы, в сериализуемый контракт не входят полностью (за исключением перечисленных полей, добавленных заранее для будущей batch-палитры). `class` — inspector-only, расширяется в `propsSchema` манифеста.
 <!-- /audience -->
 
 ## Связанное {#related}

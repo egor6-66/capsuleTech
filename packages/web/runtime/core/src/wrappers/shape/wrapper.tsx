@@ -134,10 +134,17 @@ const shape = (bind: (...args: unknown[]) => unknown, config?: unknown) => {
               const fn = configItem.props;
               return (it: unknown) => {
                 const result = fn(it);
-                if (result !== null && typeof result === 'object' && !Array.isArray(result)) {
-                  return resolveValuesInObject(result as Record<string, unknown>, realUi);
-                }
-                return result;
+                const resolved =
+                  result !== null && typeof result === 'object' && !Array.isArray(result)
+                    ? resolveValuesInObject(result as Record<string, unknown>, realUi)
+                    : result;
+                // ADR 062 — постоянная trace-инструментация вызова item.props-маппера
+                // (per-row, per-invocation; no-op когда канал off). Даёт факт «что
+                // реально вычислилось для этой строки» одним взглядом в консоль
+                // (`trace.enable('web-core.shape')`), без ручной бисекции reactivity
+                // brief core-shape-real-list-bridge-repro).
+                trace('web-core.shape', 'item-props', { it, result: resolved });
+                return resolved;
               };
             })()
           : undefined;

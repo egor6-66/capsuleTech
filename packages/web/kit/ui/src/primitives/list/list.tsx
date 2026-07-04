@@ -3,6 +3,8 @@ import { createVirtualizer } from '@tanstack/solid-virtual';
 import type { JSX } from 'solid-js';
 import { For, splitProps } from 'solid-js';
 import { useTrace } from '../../internal/useTrace';
+import type { FlexJustify } from '../layout/flex/interfaces';
+import { mergeStyle, toGap } from '../layout/grid/utils';
 import type {
   IListBatchProps,
   IListProps,
@@ -10,6 +12,19 @@ import type {
   IVirtualListProps,
 } from './interfaces';
 import { listVariants } from './variants';
+
+// justify-content raw values — inline-style paths (grid/wrap) don't use
+// Tailwind classes, so this mirrors Flex's JUSTIFY table but with CSS values.
+const JUSTIFY_CONTENT: Record<FlexJustify, string> = {
+  start: 'flex-start',
+  center: 'center',
+  end: 'flex-end',
+  between: 'space-between',
+  around: 'space-around',
+  evenly: 'space-evenly',
+};
+
+const toSpacing = (n: number) => `calc(var(--spacing) * ${n})`;
 
 /** Type guard: batch mode — data + item.use present (ADR 036 §3). */
 function isBatchMode<T>(props: IListProps<T>): props is IListBatchProps<T> {
@@ -31,43 +46,83 @@ export function List<T = unknown>(props: IListProps<T>) {
   if (isBatchMode(props)) {
     const [local, variants, others] = splitProps(
       props,
-      ['class', 'style', 'data', 'item', 'min', 'gap'],
+      ['class', 'style', 'data', 'item', 'min', 'gap', 'wrap', 'justify', 'p', 'px', 'py'],
       ['variant', 'orientation'],
     );
+
+    // Container padding overlay — spacing-scale, parity with Flex.p/px/py.
+    // Applies on top of whichever layout path is active (grid/wrap/plain).
+    const paddingStyle = (): JSX.CSSProperties => {
+      const s: JSX.CSSProperties = {};
+      if (local.p !== undefined) s.padding = toSpacing(local.p);
+      if (local.px !== undefined) s['padding-inline'] = toSpacing(local.px);
+      if (local.py !== undefined) s['padding-block'] = toSpacing(local.py);
+      return s;
+    };
+
+    const isGrid = () => !!local.min;
+    const isCustomLayout = () => local.wrap || local.min;
 
     const { className, style } = createStyle(listVariants, {
       get variant() {
         return variants.variant;
       },
       get orientation() {
-        return local.min ? undefined : variants.orientation;
+        return isCustomLayout() ? undefined : variants.orientation;
       },
       get class() {
-        return local.min ? undefined : local.class;
+        return isCustomLayout() ? undefined : local.class;
       },
       get style() {
-        return local.min ? undefined : local.style;
+        return isCustomLayout() ? undefined : local.style;
       },
     });
 
     const getItemProps = local.item.props ?? ((item: T) => item as Record<string, unknown>);
     const ItemTpl = local.item.use;
 
-    const gridStyle = (): JSX.CSSProperties | undefined =>
-      local.min
-        ? {
-            display: 'grid',
-            'grid-template-columns': `repeat(auto-fit, minmax(${local.min}, 1fr))`,
-            gap: local.gap ?? '0.5rem',
-            width: '100%',
-            ...(typeof local.style === 'object' ? local.style : {}),
-          }
-        : undefined;
+    const gapValue = () => (local.gap === undefined ? '0.5rem' : toGap(local.gap));
+
+    const gridStyle = (): JSX.CSSProperties => ({
+      display: 'grid',
+      'grid-template-columns': `repeat(auto-fit, minmax(${local.min}, 1fr))`,
+      gap: gapValue(),
+      width: '100%',
+      ...(typeof local.style === 'object' ? local.style : {}),
+      ...paddingStyle(),
+    });
+
+    // Content-width wrap: flex-wrap, no 1fr-stretch — items keep natural width
+    // and wrap to new lines. Each item wrapped in a shrink-0 <li> so the
+    // layout is robust regardless of the item template's own CSS.
+    const wrapStyle = (): JSX.CSSProperties => ({
+      display: 'flex',
+      'flex-wrap': 'wrap',
+      gap: gapValue(),
+      width: '100%',
+      ...(local.justify ? { 'justify-content': JUSTIFY_CONTENT[local.justify] } : {}),
+      ...(typeof local.style === 'object' ? local.style : {}),
+      ...paddingStyle(),
+    });
+
+    if (local.wrap) {
+      return (
+        <ul class={local.class} style={wrapStyle()} {...(others as object)}>
+          <For each={local.data}>
+            {(item) => (
+              <li class="shrink-0 list-none">
+                <ItemTpl {...getItemProps(item)} />
+              </li>
+            )}
+          </For>
+        </ul>
+      );
+    }
 
     return (
       <ul
-        class={local.min ? local.class : className()}
-        style={(local.min ? gridStyle() : style()) as JSX.CSSProperties}
+        class={isGrid() ? local.class : className()}
+        style={(isGrid() ? gridStyle() : mergeStyle(paddingStyle(), style())) as JSX.CSSProperties}
         {...(others as object)}
       >
         <For each={local.data}>{(item) => <ItemTpl {...getItemProps(item)} />}</For>

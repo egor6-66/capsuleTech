@@ -1,0 +1,34 @@
+# Лексика из волта — пак L0 «Ядро / функциональные». Верный перенос «как есть».
+# Перенесено: pos, ru(перевод), pron_ru(кириллица+ударение), image, forms(где были), tags(tier).
+# НЕ заполнено (авто-филл/обогащение позже): gloss(англ. определение), ipa, frequency,
+#   level(CEFR), synset, connotation, intensity, relations, collocations, examples.
+
+- {word: "a lot", lang: en_US, pos: adverb, ru: "много", pron_ru: "э ло́т", image: "большая куча", tags: [{name: core, kind: tier}]}
+- {word: also, lang: en_US, pos: adverb, ru: "тоже, также", pron_ru: "о́лсоу", image: "плюсик «ещё»", tags: [{name: core, kind: tier}]}
+- {word: always, lang: en_US, pos: adverb, ru: "всегда", pron_ru: "о́луэйз", image: "круг без конца", tags: [{name: core, kind: tier}]}
+- {word: and, lang: en_US, pos: conjunction, ru: "и", pron_ru: "энд", image: "цепочка-плюс", tags: [{name: core, kind: tier}]}
+- {word: because, lang: en_US, pos: conjunction, ru: "потому что", pron_ru: "бико́з", image: "стрелка-причина", tags: [{name: core, kind: tier}]}
+- {word: but, lang: en_US, pos: conjunction, ru: "но", pron_ru: "бат", image: "стоп-разворот", tags: [{name: core, kind: tier}]}
+- {word: can, lang: en_US, pos: verb, ru: "мочь, уметь", pron_ru: "кэн", image: "согнутая в мышце рука", traits: [modal], tags: [{name: core, kind: tier}]}
+- {word: have, lang: en_US, pos: verb, ru: "иметь; помощник Perfect", pron_ru: "хэв", image: "руки держат", forms: {past: had, participle: had}, traits: [irregular], tags: [{name: core, kind: tier}]}
+- {word: here, lang: en_US, pos: adverb, ru: "здесь", pron_ru: "хиэ", image: "точка под ногами", tags: [{name: core, kind: tier}]}
+- {word: how, lang: en_US, pos: adverb, ru: "как", pron_ru: "хау", image: "шестерёнки «как?»", tags: [{name: core, kind: tier}]}
+- {word: if, lang: en_US, pos: conjunction, ru: "если", pron_ru: "иф", image: "развилка-условие", tags: [{name: core, kind: tier}]}
+- {word: never, lang: en_US, pos: adverb, ru: "никогда", pron_ru: "нэ́вэр", image: "перечёркнутый круг", tags: [{name: core, kind: tier}]}
+- {word: not, lang: en_US, pos: adverb, ru: "не (отрицание)", pron_ru: "нот", image: "перечёркнуто", tags: [{name: core, kind: tier}]}
+- {word: now, lang: en_US, pos: adverb, ru: "сейчас", pron_ru: "нау", image: "«вот сейчас»", tags: [{name: core, kind: tier}]}
+- {word: or, lang: en_US, pos: conjunction, ru: "или", pron_ru: "ор", image: "развилка", tags: [{name: core, kind: tier}]}
+- {word: so, lang: en_US, pos: conjunction, ru: "так что, поэтому", pron_ru: "соу", image: "стрелка-вывод", tags: [{name: core, kind: tier}]}
+- {word: some, lang: en_US, pos: determiner, ru: "немного; какие-то", pron_ru: "сам", image: "горсть", tags: [{name: core, kind: tier}]}
+- {word: sometimes, lang: en_US, pos: adverb, ru: "иногда", pron_ru: "са́мтаймз", image: "галочки тут и там", tags: [{name: core, kind: tier}]}
+- {word: that, lang: en_US, pos: conjunction, ru: "что (связка)", pron_ru: "зэт", image: "указка / связка", tags: [{name: core, kind: tier}]}
+- {word: there, lang: en_US, pos: adverb, ru: "там", pron_ru: "зэр", image: "палец вдаль", tags: [{name: core, kind: tier}]}
+- {word: too, lang: en_US, pos: adverb, ru: "тоже; слишком", pron_ru: "туу", image: "через край", tags: [{name: core, kind: tier}]}
+- {word: very, lang: en_US, pos: adverb, ru: "очень", pron_ru: "вэ́ри", image: "усилитель громкости", tags: [{name: core, kind: tier}]}
+- {word: what, lang: en_US, pos: pronoun, ru: "что", pron_ru: "уот", image: "знак «?»", tags: [{name: core, kind: tier}]}
+- {word: when, lang: en_US, pos: adverb, ru: "когда", pron_ru: "уэн", image: "часы-вопрос", tags: [{name: core, kind: tier}]}
+- {word: where, lang: en_US, pos: adverb, ru: "где, куда", pron_ru: "уэр", image: "карта-пин", tags: [{name: core, kind: tier}]}
+- {word: which, lang: en_US, pos: determiner, ru: "который", pron_ru: "уич", image: "палец между двух", tags: [{name: core, kind: tier}]}
+- {word: who, lang: en_US, pos: pronoun, ru: "кто", pron_ru: "ху", image: "силуэт «кто?»", tags: [{name: core, kind: tier}]}
+- {word: why, lang: en_US, pos: adverb, ru: "почему", pron_ru: "уай", image: "«почему?»", tags: [{name: core, kind: tier}]}
+- {word: will, lang: en_US, pos: verb, ru: "помощник будущего", pron_ru: "уил", image: "стрелка в будущее", traits: [modal], tags: [{name: core, kind: tier}]}

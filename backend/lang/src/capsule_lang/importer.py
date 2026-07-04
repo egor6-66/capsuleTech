@@ -107,6 +107,7 @@ def _upsert_sense(db: Session, s: SenseIn) -> tuple[Sense, bool]:
         db.add(sense)
 
     # Scalars + JSON (all set before flush; pos is NOT NULL).
+    sense.ru = s.ru
     sense.pos = s.pos
     sense.level = s.level
     sense.register = s.register_

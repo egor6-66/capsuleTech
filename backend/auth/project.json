@@ -1,0 +1,37 @@
+{
+  "name": "backend-auth",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "backend/auth/src",
+  "tags": ["backend", "python", "auth"],
+  "targets": {
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/auth",
+        "command": "uv run uvicorn capsule_auth.main:app --port 8004 --reload"
+      }
+    },
+    "migrate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/auth",
+        "command": "uv run alembic upgrade head"
+      }
+    },
+    "test:py": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/auth",
+        "command": "uv run pytest"
+      }
+    },
+    "lint:py": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/auth",
+        "command": "uv run ruff check ."
+      }
+    }
+  }
+}

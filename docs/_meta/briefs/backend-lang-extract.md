@@ -45,7 +45,7 @@ Prefix роутера **`/lang`** (не `/learn/lang`):
 - **pyproject:** `name = "capsule-lang"`, description про lexical-graph (ADR 064/067), deps как у learn МИНУС voice-extras (fastapi, uvicorn, pydantic, pydantic-settings, sqlalchemy, alembic, pyyaml; dev: pytest, pytest-asyncio, httpx, ruff, mypy). Свой `uv.lock` (`uv sync --extra dev`).
 - **config.py:** `database_url = "sqlite:///./lang.db"`, `port = 8002`, `default_lang = "en_US"`. Без voice-полей. Комментарий drop-in Postgres сохранить.
 - **main.py:** `FastAPI(title="capsule-lang")` + `/health` + include lang-роутера.
-- **seed/importer:** пути к `content/` поправить под новую структуру; сид остаётся идемпотентным. Teacher-vocab `docs/_meta/briefs/learn-vocab/` — проверить, что importer-формат не задет переносом (сами yml-файлы не трогать).
+- **seed/importer:** пути к `content/` поправить под новую структуру; сид остаётся идемпотентным. Teacher-vocab `docs/_meta/briefs/learn-vocab/` — проверить, что importer-формат не задет переносом (сами yml-файлы не трогать). **[2026-07-03: с тех пор переехали — см. ниже.]**
 - **project.json:** добавить targets `serve` (`uv run uvicorn capsule_lang.main:app --port 8002 --reload`), `migrate`, `seed`, `import`, `test:py`, `lint:py` — зеркало backend-learn (cwd `backend/lang`).
 - **alembic:** цепочка миграций переезжает как есть (история валидна для новой БД); `alembic.ini`/`env.py` — пути и импорты на `capsule_lang`.
 - **OWNERSHIP.md** — создать (шаблон `docs/_meta/OWNERSHIP-template.md`): зона, публичный контракт D2, quirks (native_enum=False, drop-in Postgres), coverage.
@@ -71,3 +71,12 @@ Prefix роутера **`/lang`** (не `/learn/lang`):
 - НЕ NLP-enrichment (wn/wordfreq/embeddings — ADR 064 §enrichment, отдельная волна).
 - НЕ Postgres, не Docker, не auth.
 - CI-workflow (`.github/`) — зона architect, не трогать.
+
+# Addendum — 2026-07-03
+
+Teacher-vocab (`docs/_meta/briefs/learn-vocab/*.yaml`, ~170 senses, гитигнорился нигде не
+трекнутый как контент) консолидирован в `backend/lang/content/en_US/vocab/` — единое место
+для всех YAML-источников пакета (рядом с `seed.yml`). Заодно: `gloss` в этих файлах менял
+семантику — держал русский перевод; переименован в `ru` (новая колонка `Sense.ru`, миграция
+0003) так как `gloss` в каноне пакета = английское определение/дизамбигуатор. `Register` enum
+расширен под реальный датасет (`vulgar`/`literary`/+задел). `lang.db` пересобрана с нуля.

@@ -64,6 +64,7 @@ export const appShellResolver = (slots: AppShellSlots): IRow[] => {
           draggable: header.draggable,
           swapGroup: header.swapGroup ?? 'band',
           resizable: headerResizable,
+          bordered: header.bordered,
           skeleton: header.skeleton,
         },
       ],
@@ -82,6 +83,7 @@ export const appShellResolver = (slots: AppShellSlots): IRow[] => {
       resizable: sidebar.resizable ?? true,
       draggable: sidebar.draggable,
       swapGroup: sidebar.swapGroup ?? 'aside',
+      bordered: sidebar.bordered,
       skeleton: sidebar.skeleton,
     });
   }
@@ -101,6 +103,7 @@ export const appShellResolver = (slots: AppShellSlots): IRow[] => {
     resizable: main.resizable ?? true,
     draggable: main.draggable,
     swapGroup: main.swapGroup,
+    bordered: main.bordered,
     skeleton: main.skeleton,
   });
 
@@ -113,6 +116,7 @@ export const appShellResolver = (slots: AppShellSlots): IRow[] => {
       resizable: rightBar.resizable ?? true,
       draggable: rightBar.draggable,
       swapGroup: rightBar.swapGroup ?? 'aside',
+      bordered: rightBar.bordered,
       skeleton: rightBar.skeleton,
     });
   }
@@ -145,6 +149,7 @@ export const appShellResolver = (slots: AppShellSlots): IRow[] => {
           draggable: footer.draggable,
           swapGroup: footer.swapGroup ?? 'band',
           resizable: footer.resizable ?? true,
+          bordered: footer.bordered,
           skeleton: footer.skeleton,
         },
       ],

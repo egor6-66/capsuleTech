@@ -12,6 +12,7 @@
  */
 
 import type { Contract } from '@capsuletech/web-contract';
+import { AvatarManifest } from '../primitives/avatar/avatar.manifest';
 import { ButtonManifest } from '../primitives/button/button.manifest';
 import {
   CardContentManifest,
@@ -29,6 +30,7 @@ import {
   FieldManifest,
 } from '../primitives/field/field.manifest';
 import { GroupManifest } from '../primitives/group/group.manifest';
+import { ImageManifest } from '../primitives/image/image.manifest';
 import { InputManifest } from '../primitives/input/input.manifest';
 import { LabelManifest } from '../primitives/label/label.manifest';
 import { FlexManifest } from '../primitives/layout/flex/flex.manifest';
@@ -79,6 +81,9 @@ const ALL: IPrimitiveManifestEntry[] = [
   SeparatorManifest,
   SpinnerManifest,
   SkeletonManifest,
+  // media
+  ImageManifest,
+  AvatarManifest,
 ];
 
 const BY_TYPE = new Map<string, IPrimitiveManifestEntry>(ALL.map((m) => [m.type, m]));

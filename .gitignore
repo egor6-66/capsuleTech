@@ -76,3 +76,5 @@ secrets*.json
 # VPN / tunnel configs (WireGuard/OpenVPN — contain private keys)
 *.conf
 *.ovpn
+# ...но nginx-конфиг dev-gateway (ADR 068 D6) — код, не секрет
+!docker/gateway/nginx.conf

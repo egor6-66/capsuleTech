@@ -86,6 +86,8 @@ export const renderPackingRow = (
   getCellSize: (cellId: string) => number | undefined,
   /** Setter called by the resize handle to persist a new explicit px size. */
   setCellSize: (cellId: string, px: number) => void,
+  /** Single source of truth for the cell border — independent of resize/DnD. */
+  bordered: Accessor<boolean> = () => true,
 ): JSX.Element => {
   const isVertical = row.orientation === 'vertical';
   const hasWrap = row.wrap === true;
@@ -241,7 +243,8 @@ export const renderPackingRow = (
               <Dynamic
                 component={tag}
                 ref={cellRef}
-                class={`${cell.id === 'main' ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative overflow-hidden rounded-sm border border-border`}
+                class={`${cell.id === 'main' ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative overflow-hidden rounded-sm`}
+                classList={{ 'border border-border/60': cell.bordered ?? bordered() }}
                 style={cellStyle()}
               >
                 <div

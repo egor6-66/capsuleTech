@@ -1,6 +1,14 @@
-import { resolve } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname, join, resolve } from 'node:path';
 import solid from 'vite-plugin-solid';
 import { defineConfig } from 'vitest/config';
+
+const require = createRequire(import.meta.url);
+// require.resolve('@xstate/solid') follows package.json#exports → the CJS
+// entry (main). Its real ESM build sits next to it on disk as
+// xstate-solid.esm.js — reachable by filesystem path even though the
+// package's exports map doesn't expose that subpath directly.
+const xstateSolidEsm = join(dirname(require.resolve('@xstate/solid')), 'xstate-solid.esm.js');
 
 export default defineConfig({
   // hot:false — отключаем solid-refresh для тестов (иначе jsdom получает
@@ -12,7 +20,26 @@ export default defineConfig({
       // (pnpm install не запускался после добавления dep). Алиасы указывают
       // прямо на src — Vite трансформирует их как обычные модули.
       '@capsuletech/shared-utils': resolve(__dirname, '../../../shared/utils/src/index.ts'),
+      // @xstate/solid's package.json "import" condition points at a CJS-wrapped
+      // .mjs (`export {...} from './xstate-solid.cjs.js'`), NOT its real ESM
+      // build (`dist/xstate-solid.esm.js`). That CJS require()'s solid-js
+      // through Node's native module system, bypassing Vite's ESM module
+      // graph entirely — a SEPARATE solid-js instantiation from the one used
+      // by JSX/render() elsewhere in the test. Result: useMachine()'s signals
+      // never notify computations tracked under the other instance — silent
+      // dead reactivity, no thrown error, only the "multiple instances of
+      // Solid" console warning as a clue. Force-resolve straight to the real
+      // ESM build so it shares module identity with everything else.
+      '@xstate/solid': xstateSolidEsm,
     },
+    // Зеркалит dedupe из vite-builder/capsuleConfig.ts (production apps). Без
+    // этого vitest резолвит solid-js ОТДЕЛЬНО для web-core и для transitively
+    // импортируемого @capsuletech/web-ui → "multiple instances of Solid" →
+    // signals/stores из web-ui-side инстанса не трекаются computations'ами
+    // web-core-side инстанса (owner/tracking — module-level singleton внутри
+    // каждого экземпляра solid-js). Тест-only артефакт, не воспроизводится в
+    // реальном app-build (vite-builder уже дедупит).
+    dedupe: ['solid-js', 'solid-js/web', 'solid-js/store'],
   },
   test: {
     include: ['src/**/__tests__/**/*.test.ts', 'src/**/__tests__/**/*.test.tsx'],
@@ -48,6 +75,19 @@ export default defineConfig({
           /solid-motionone/,
           /solid-map-gl/,
           /@capsuletech\/shared-utils/,
+          // @xstate/solid's "import" condition resolves to a CJS-wrapped .mjs
+          // (see its package.json — module vs import point at different
+          // builds); left external, Vite/vitest resolves solid-js SEPARATELY
+          // for that CJS require() vs the ESM import graph everywhere else →
+          // "multiple instances of Solid" → useMachine()'s signals never
+          // notify computations from the other instance (silent dead
+          // reactivity, no error). Production apps dodge this because
+          // vite-builder's optimizeDeps.include pre-bundles solid-js +
+          // xstate + @xstate/solid together (capsuleConfig.ts comment: "xstate
+          // отдаёт CJS-сборку"). Mirror that here via inline so both resolve
+          // to the same solid-js instance in tests too.
+          /@xstate\/solid/,
+          /^xstate$/,
         ],
       },
     },

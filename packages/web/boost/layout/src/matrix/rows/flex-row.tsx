@@ -26,6 +26,7 @@ export const rowToFlexItems = (
   savedSizes: number[] | undefined,
   isDragging: Accessor<boolean>,
   _resizeEnabled: Accessor<boolean>,
+  bordered: Accessor<boolean>,
 ): IResizable.IResizableItem[] => {
   const rowIsAutoHeight = row.height === 'auto';
   return row.cells.map((cell, i) => {
@@ -42,6 +43,7 @@ export const rowToFlexItems = (
         dndState,
         isDragging,
         rowIsAutoHeight,
+        bordered,
       ),
       // resizable не gate'ится по resizeEnabled здесь: иначе все items станут resizable=false,
       // Flex переключится в StaticItemsFlex (без corvu Panel) и cells схлопнутся в 0.
@@ -85,10 +87,19 @@ export const renderRow = (
    * ADR 026: Grid-zone bindings. Only passed in insert mode when row.grid is set.
    */
   gridOpts?: IGridOpts,
+  bordered: Accessor<boolean> = () => true,
 ): JSX.Element => {
   // ADR 026: Grid-canvas render-path.
   if (zone && row.grid && gridOpts && row.id) {
-    return renderGridRow(row, getSwappedChildren, zone, isDragging, resizeEnabled, gridOpts);
+    return renderGridRow(
+      row,
+      getSwappedChildren,
+      zone,
+      isDragging,
+      resizeEnabled,
+      gridOpts,
+      bordered,
+    );
   }
 
   // ADR 022: Packing zones use a separate render-path.
@@ -103,6 +114,7 @@ export const renderRow = (
       dndEnabled,
       getCellSize,
       setCellSize,
+      bordered,
     );
   }
 
@@ -121,6 +133,7 @@ export const renderRow = (
       savedSizes,
       isDragging,
       resizeEnabled,
+      bordered,
     );
     // NOTE: `resizeEnabled()` must be called INLINE in the JSX prop (not
     // captured into a local const) so Solid compiler wraps it in a reactive
@@ -173,6 +186,7 @@ export const renderRow = (
             dndState,
             isDragging,
             rowIsAutoHeight,
+            bordered,
           );
         }}
       </For>

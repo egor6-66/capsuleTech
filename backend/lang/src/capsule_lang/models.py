@@ -89,6 +89,11 @@ class Sense(Base):
         ForeignKey("words.id", ondelete="CASCADE"), nullable=False, index=True
     )
     gloss: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Russian headword translation (e.g. "плохой" for "bad") — distinct from
+    # `gloss`, which is an English definition/disambiguator. Cross-lingual `q`
+    # search matches this column, not gloss (ADR 064-A corpus keeps gloss
+    # English; conflating the two left Cyrillic search with nothing to hit).
+    ru: Mapped[str | None] = mapped_column(String, nullable=True)
     pos: Mapped[Pos] = mapped_column(_enum(Pos, "pos"), nullable=False)
     level: Mapped[Level | None] = mapped_column(_enum(Level, "level"), nullable=True)
     register: Mapped[Register | None] = mapped_column(

@@ -31,9 +31,18 @@ class Level(StrEnum):
 
 
 class Register(StrEnum):
+    """Register axis — teacher corpus uses more than the original 3 (2026-06-29)."""
+
     FORMAL = "formal"
     INFORMAL = "informal"
     NEUTRAL = "neutral"
+    COLLOQUIAL = "colloquial"
+    SLANG = "slang"
+    VULGAR = "vulgar"
+    LITERARY = "literary"
+    ARCHAIC = "archaic"
+    DATED = "dated"
+    TECHNICAL = "technical"
 
 
 class Frequency(StrEnum):

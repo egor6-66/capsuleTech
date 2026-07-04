@@ -32,6 +32,12 @@ export interface IMatrixContentProps {
   resizeEnabled: Accessor<boolean>;
   dndEnabled: Accessor<boolean>;
   dndKind: Accessor<MatrixDndKind>;
+  /**
+   * Single source of truth for the Matrix cell border. Independent of `resizeEnabled`/
+   * `dndEnabled` — resize only activates the interactive handle (+ badge), it never
+   * implies a border by itself.
+   */
+  bordered: Accessor<boolean>;
   onLayoutChange: ((e: LayoutChangeEvent) => void) | undefined;
   /**
    * Matrix-level outer axis (ADR 022).
@@ -69,7 +75,9 @@ const rowsToVerticalItems = (
   /** ADR 022: Setter for per-cell explicit px sizes (packing resize handle). */
   setCellSize: (cellId: string, px: number) => void,
   /** ADR 026: Grid-zone bindings (insert mode only). */
-  gridOpts?: IGridOpts,
+  gridOpts: IGridOpts | undefined,
+  /** Single source of truth for the cell border — independent of resize/DnD. */
+  bordered: Accessor<boolean>,
 ): IResizable.IResizableItem[] => {
   return rows.map((row, i) => {
     const heightIsNumber = typeof row.height === 'number';
@@ -97,6 +105,7 @@ const rowsToVerticalItems = (
         getCellSize,
         setCellSize,
         gridOpts,
+        bordered,
       ),
       resizable: isResizable,
       initialSize: resolvedHeight,
@@ -363,6 +372,7 @@ export const MatrixContent = (props: IMatrixContentProps) => {
                     getCellSize,
                     setCellSize,
                     insertGridOpts(),
+                    props.bordered,
                   )}
                 </div>
               ),
@@ -426,6 +436,7 @@ export const MatrixContent = (props: IMatrixContentProps) => {
                       getCellSize,
                       setCellSize,
                       insertGridOpts(),
+                      props.bordered,
                     )}
                   </div>
                 );
@@ -454,6 +465,7 @@ export const MatrixContent = (props: IMatrixContentProps) => {
             getCellSize,
             setCellSize,
             insertGridOpts(),
+            props.bordered,
           );
           return (
             <div class="relative h-full w-full overflow-hidden">
@@ -491,6 +503,7 @@ export const MatrixContent = (props: IMatrixContentProps) => {
             getCellSize,
             setCellSize,
             insertGridOpts(),
+            props.bordered,
           );
           let resizableBlockEmitted = false;
           const elements: JSX.Element[] = rs.map((row, _i) => {
@@ -514,6 +527,7 @@ export const MatrixContent = (props: IMatrixContentProps) => {
                     getCellSize,
                     setCellSize,
                     insertGridOpts(),
+                    props.bordered,
                   )}
                 </div>
               );
@@ -564,6 +578,7 @@ export const MatrixContent = (props: IMatrixContentProps) => {
                       getCellSize,
                       setCellSize,
                       insertGridOpts(),
+                      props.bordered,
                     )}
                   </div>
                 );
@@ -582,6 +597,7 @@ export const MatrixContent = (props: IMatrixContentProps) => {
                 getCellSize,
                 setCellSize,
                 insertGridOpts(),
+                props.bordered,
               );
             }}
           </For>

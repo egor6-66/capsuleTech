@@ -7,6 +7,7 @@
  * to batch-mode (data + itemAs), since batch-mode is not an "empty container".
  */
 /* @vitest-environment jsdom */
+import { createSignal } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Group } from '../group';
@@ -143,5 +144,78 @@ describe('Group — batch mode does NOT get empty-state min-height', () => {
     for (const el of allEls) {
       expect((el as HTMLElement).style.minHeight).not.toBe('var(--size-slot)');
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 4. Batch mode — item.props reactivity to an external signal (brief:
+// ui-batch-reactivity-and-app-props-gaps, Part 1). Covers both batch render
+// paths: spaced (StaticInner via Resizable) and resizable=true (corvu
+// ResizableInner). Locks the contract: selection changes reach only the
+// targeted item, siblings keep their own content.
+// ---------------------------------------------------------------------------
+
+describe('Group — batch mode item.props reacts to external signal (no content scramble)', () => {
+  const data = [
+    { id: 1, label: 'A' },
+    { id: 2, label: 'B' },
+    { id: 3, label: 'C' },
+  ];
+  const ItemTpl = (p: { id: number; label: string; selected: boolean }) => (
+    <div data-testid={`item-${p.id}`} data-selected={String(p.selected)}>
+      {p.label}
+    </div>
+  );
+
+  it('spaced batch (StaticInner) — updates selected on the targeted item only', () => {
+    const [selectedId, setSelectedId] = createSignal<number | null>(null);
+
+    cleanup = render(
+      () => (
+        <Group
+          data={data}
+          item={{
+            use: ItemTpl,
+            props: (it) => ({ id: it.id, label: it.label, selected: selectedId() === it.id }),
+          }}
+        />
+      ),
+      container,
+    );
+
+    const get = (id: number) => container.querySelector(`[data-testid="item-${id}"]`)!;
+    setSelectedId(2);
+
+    expect(get(1).getAttribute('data-selected')).toBe('false');
+    expect(get(2).getAttribute('data-selected')).toBe('true');
+    expect(get(3).getAttribute('data-selected')).toBe('false');
+    expect(get(1).textContent).toBe('A');
+    expect(get(2).textContent).toBe('B');
+    expect(get(3).textContent).toBe('C');
+  });
+
+  it('resizable batch (corvu ResizableInner) — updates selected on the targeted item only', () => {
+    const [selectedId, setSelectedId] = createSignal<number | null>(null);
+
+    cleanup = render(
+      () => (
+        <Group
+          resizable
+          data={data}
+          item={{
+            use: ItemTpl,
+            props: (it) => ({ id: it.id, label: it.label, selected: selectedId() === it.id }),
+          }}
+        />
+      ),
+      container,
+    );
+
+    const get = (id: number) => container.querySelector(`[data-testid="item-${id}"]`)!;
+    setSelectedId(2);
+
+    expect(get(1).getAttribute('data-selected')).toBe('false');
+    expect(get(2).getAttribute('data-selected')).toBe('true');
+    expect(get(3).getAttribute('data-selected')).toBe('false');
   });
 });

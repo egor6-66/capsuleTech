@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from capsule_lang.importer import import_file
 from capsule_lang.seed import seed
 
 
@@ -81,6 +82,50 @@ def test_senses_q_matches_word_text_only(client):
     assert (
         client.get("/lang/senses", params={"q": "ase"}).json()["senses"] == []
     )
+
+
+def test_senses_q_cyrillic_searches_ru_translation(client, db, tmp_path):
+    # `ru` is a dedicated translation column, separate from the (English)
+    # `gloss` — Cyrillic q must search it instead of the (Latin) spelling.
+    p = tmp_path / "ru.yml"
+    p.write_text(
+        "\n".join(
+            [
+                "- word: many",
+                "  pos: adverb",
+                '  gloss: "a large number of"',
+                '  ru: "много"',
+                "- word: always",
+                "  pos: adverb",
+                '  gloss: "at all times"',
+                '  ru: "всегда"',
+            ]
+        ),
+        encoding="utf-8",
+    )
+    import_file(p, db=db)
+
+    hits = client.get("/lang/senses", params={"q": "мног"}).json()["senses"]
+    assert {s["text"] for s in hits} == {"many"}
+    # capitalised Cyrillic query still matches the lowercase ru (SQLite
+    # lower() folds ASCII only → the pattern is pre-lowered in repo).
+    hits = client.get("/lang/senses", params={"q": "Всегда"}).json()["senses"]
+    assert {s["text"] for s in hits} == {"always"}
+    # Latin queries untouched: spelling-only, ru/gloss are not searched.
+    assert client.get("/lang/senses", params={"q": "ase"}).json()["senses"] == []
+
+
+def test_senses_q_cross_lingual_translation(client):
+    # The exact user-facing case: know the English spelling ("hap") OR know
+    # the Russian meaning ("счастливый") — both must resolve to "happy".
+    by_spelling = client.get("/lang/senses", params={"q": "hap"}).json()["senses"]
+    assert {s["text"] for s in by_spelling} == {"happy"}
+
+    by_translation = client.get(
+        "/lang/senses", params={"q": "счастливый"}
+    ).json()["senses"]
+    assert {s["text"] for s in by_translation} == {"happy"}
+    assert by_translation[0]["ru"] == "счастливый"
 
 
 def test_sense_detail_rich(client):

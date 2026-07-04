@@ -48,6 +48,11 @@ uv run ruff check .    # lint
 `tag` repeats → AND (sense must carry all). `related` accepts `context` (tag name
 weighted first) and `limit`.
 
+`q` is script-aware: Latin input searches the spelling (`word.text`); Cyrillic
+input searches `gloss` — the teacher corpus keeps the ru translation there
+(ADR 064-A), so typing «много» finds *a lot / many*. English-headword corpus
+is the current scope; other headword scripts would need a revisit.
+
 ## Model (ADR 064 + 064-A)
 
 Atomic unit is **Sense** (a meaning), not Word. Single-valued facets → columns

@@ -26,6 +26,9 @@ slug: web-ui/primitives/card
 |---|---|---|---|
 | `elevation` | `'none' \| 'sm' \| 'md' \| 'lg' \| 'xl'` | `'sm'` | Тень (`shadow-{level}`); twMerge корректно перекрывает базовую |
 | `w` / `minW` / `maxW` | `number` | — | Ширина по spacing-шкале: `w={24}` → `calc(var(--spacing) * 24)` (паритет с Flex sizing) |
+| `interactive` | `boolean` | `false` | Визуальный аффорданс кликабельности: `cursor-pointer` + `hover:bg-accent hover:text-accent-foreground`. Не биндит onClick — это по-прежнему ответственность consumer'а (meta) |
+| `selected` | `boolean` | `false` | Персистентная "выбранная" поверхность (`bg-accent text-accent-foreground`) + `data-selected` на корне. Для тайл/чип-сеток с единственным выбранным элементом |
+| `padding` | `'none' \| 'sm' \| 'md'` | `'none'` | Padding корня: `none` — как раньше (хром без отступов), `sm` — `p-card-tight` (компактные тайлы/чипы), `md` — `p-card` (как у `Card.Content`) |
 | `class` / `style` | `string` / `JSX.CSSProperties` | — | Прокидываются на корневой `<div>` |
 
 Дефолт из манифеста: `class="w-full max-w-sm"`.
@@ -57,9 +60,23 @@ slug: web-ui/primitives/card
 
 Все части опциональны и комбинируются свободно; Content-only карточка валидна.
 
+### Tile / chip pattern (без частей) {#tile}
+
+Для компактных selectable-тайлов (грид слов, тег-чипы) `Card` используется напрямую —
+без `Card.Header`/`Card.Content` — с `padding='sm'` + `interactive` + `selected`:
+
+```tsx
+<Card padding="sm" interactive selected={isSelected}>
+  {label}
+</Card>
+```
+
+Не заводи отдельный Badge/Chip-примитив под этот случай — `Card` уже несёт нужный
+хром (border/radius/поверхность); чип — просто Card с компактным padding.
+
 ## Доступность {#a11y}
 
-Card — `<div>` без собственной роли. Для самостоятельных смысловых блоков используй `aria-labelledby` на связке Card ↔ Card.Title, интерактивные карточки — через вложенный `<a>`/`<button>` на всю область, не onClick на корне.
+Card — `<div>` без собственной роли. Для самостоятельных смысловых блоков используй `aria-labelledby` на связке Card ↔ Card.Title, интерактивные карточки — через вложенный `<a>`/`<button>` на всю область, не onClick на корне. `selected` даёт `data-selected` (не `aria-selected` — на bare `<div>` без role это невалидный ARIA, лints it); если Card используется как listbox-option/tab, добавь `role` + `aria-selected` сам через passthrough-пропсы.
 
 ## Tokens / стили {#tokens}
 

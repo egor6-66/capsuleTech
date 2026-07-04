@@ -1,0 +1,10 @@
+# Лексика из волта — пак L4 «Литературные / образные» (поэтика, метафоры, колорит).
+# Верный перенос «как есть» (gloss(рус) → ru). Не заполнено: gloss(англ. определение),
+#   ipa, frequency, level(CEFR), synset, connotation, intensity, relations, collocations, examples.
+
+- {word: charade, lang: en_US, pos: noun, ru: "фарс, притворство", pron_ru: "шэрэйд", image: "картонные улыбки, фарс", register: literary, tags: [{name: literary, kind: tier}]}
+- {word: sucker, lang: en_US, pos: noun, ru: "простак, лох (sucker love = глупая, наивная любовь)", pron_ru: "сакэр", image: "доверчивый простак с открытым ртом", register: informal, tags: [{name: literary, kind: tier}]}
+- {word: tart, lang: en_US, pos: noun, ru: "груб. «шлюха»; ещё = пирожок-тарт (игра слов)", pron_ru: "таарт", image: "⚠ разг.", register: vulgar, tags: [{name: literary, kind: tier}]}
+- {word: heaven-sent, lang: en_US, pos: adjective, ru: "ниспосланный небом; идеальный", pron_ru: "хэвн-сент", image: "дар в луче с небес", register: literary, tags: [{name: literary, kind: tier}]}
+- {word: naked, lang: en_US, pos: adjective, ru: "голый, обнажённый", pron_ru: "нэйкид", image: "голый силуэт", tags: [{name: literary, kind: tier}]}
+- {word: rent, lang: en_US, pos: adjective, ru: "сданный в аренду / истерзанный (игра слов)", pron_ru: "рент", image: "одновременно «арендованный» и «разорванный»", register: literary, tags: [{name: literary, kind: tier}]}

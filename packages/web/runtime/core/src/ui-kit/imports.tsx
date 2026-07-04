@@ -122,6 +122,12 @@ export const Select = Object.assign(SelectBase, {
 // Textarea — multiline text input, mirrors Input in styling conventions
 export const Textarea = createLazy(() => import('@capsuletech/web-ui/textarea'), 'Textarea');
 
+// Image — kobalte-backed responsive image with fallback; not on the critical shell path
+export const Image = createLazy(() => import('@capsuletech/web-ui/image'), 'Image');
+
+// Avatar — thin composition over Image (circular, string-fallback convenience)
+export const Avatar = createLazy(() => import('@capsuletech/web-ui/avatar'), 'Avatar');
+
 // ---------------------------------------------------------------------------
 // Augmentation-ready namespaces for boost-* extensions (per ADR 046 D5).
 // Kit ships a basic member in each namespace as a light placeholder; boost-*

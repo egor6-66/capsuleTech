@@ -32,6 +32,13 @@ const COLLECTOR_LOGS = 'http://localhost:4318/v1/logs';
 
 const norm = (p) => (p ?? '').replace(/\\/g, '/');
 
+/** Debug-лог в stderr (stdout занят hook-протоколом). Включается GOVERNANCE_DEBUG=1.
+ * NB: раньше `dbg` не была определена → ReferenceError в main() → fail-open →
+ * ownership-gate молча не работал (найдено 2026-07-03 при подводке зоны apps). */
+const dbg = (msg) => {
+  if (process.env.GOVERNANCE_DEBUG) process.stderr.write(`[governance] ${msg}\n`);
+};
+
 /** Пропустить правку (с опц. причиной для логов). */
 function allow() {
   process.stdout.write(
@@ -105,8 +112,17 @@ function scopeFromName(pkgName) {
 /** Найти корень проекта (ближайший манифест вверх) + его scope-имя.
  * Манифест: package.json (TS-пакеты в packages/) или project.json (backend-проекты
  * Python/Rust в backend/ без package.json). Имя из package.json#name (приоритет),
- * иначе project.json#name. */
+ * иначе project.json#name.
+ *
+ * Зона apps/ (2026-07-03, канон user — ПОЛНЫЙ фенс): все apps/* = один scope
+ * `apps` (owner-apps, канон apps/OWNERSHIP.md). main тоже deny — architect
+ * пишет брифы, руками в apps не лезет. */
 function resolvePackage(targetPath) {
+  const t = norm(targetPath);
+  const appsIdx = t.indexOf('/apps/');
+  if (appsIdx !== -1) {
+    return { root: t.slice(0, appsIdx + '/apps'.length), scope: 'apps' };
+  }
   let dir = dirname(targetPath);
   // не выходим выше сегмента packages/ или backend/
   while (norm(dir).includes('/packages/') || norm(dir).includes('/backend/')) {
@@ -197,16 +213,24 @@ function transcriptHasRead(transcriptPath, wantedFile) {
 }
 
 async function main() {
-  const input = JSON.parse(readFileSync(0, 'utf8'));
+  // BOM-strip: PS-пайп в ручных тестах добавляет U+FEFF; Claude Code шлёт чистый JSON.
+  const input = JSON.parse(readFileSync(0, 'utf8').replace(/^﻿/, ''));
   const tool = input.tool_name;
+  dbg(`enter tool=${tool} scope=${process.env.CAPSULE_SCOPE ?? ''}`);
   if (!EDIT_TOOLS.has(tool)) allow();
 
   const targetRaw = input.tool_input?.file_path ?? input.tool_input?.notebook_path;
   if (!targetRaw) allow();
   const target = norm(targetRaw);
+  dbg(`target=${target}`);
 
-  // Гейтим правки в packages/** и backend/** — apps/docs/прочее свободно.
-  if (!target.includes('/packages/') && !target.includes('/backend/')) allow();
+  // Гейтим правки в packages/**, backend/** и apps/** — docs/infra/прочее свободно.
+  if (
+    !target.includes('/packages/') &&
+    !target.includes('/backend/') &&
+    !target.includes('/apps/')
+  )
+    allow();
 
   const pkg = resolvePackage(target);
   if (!pkg) allow(); // не нашли package.json — не наш кейс
