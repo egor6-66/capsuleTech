@@ -2,6 +2,17 @@ import type { Accessor, JSX } from 'solid-js';
 
 export type ResizableOrientation = 'horizontal' | 'vertical';
 
+/**
+ * Визуальный вариант ручек.
+ * - 'line' (default) — активная ручка рисует bg-border hairline (shadcn-конвенция).
+ * - 'ghost' — ручка НИКОГДА не рисует линию (bg-transparent в любом состоянии).
+ *   Остаются: хит-зона (after:w-1), pointer/drag при active, grip при
+ *   `withHandle && active`, focus-visible ring. Для консьюмеров с собственной
+ *   системой разделителей (Matrix `bordered`): линия — от бордер-системы,
+ *   ручка — только хит-зона + grip.
+ */
+export type ResizableHandleVariant = 'line' | 'ghost';
+
 /** Описание одной панели в Resizable. */
 export interface IResizableItem {
   children: JSX.Element;
@@ -36,6 +47,8 @@ export interface IResizableProps {
   orientation?: ResizableOrientation;
   /** Показать grip-индикатор на handle'е. */
   withHandle?: boolean;
+  /** Визуальный вариант ручек. Default: 'line'. См. {@link ResizableHandleVariant}. */
+  handleVariant?: ResizableHandleVariant;
   /**
    * Глобальный гейт активности всех handle'ов (AND с per-item `handleActive`).
    * true → каждая ручка неактивна: прозрачна (без линии), pointer-events-none,

@@ -28,7 +28,7 @@ Stateless UI-kit для capsule: 16 primitives (Button, Input, Card, Field, Togg
   2. Ui.Map/Flow/Chart placeholder'ы (после W6 boost-renames).
   3. Vitest Solid transform → разблокировать DOM-render unit-coverage.
   4. Visual regression CI.
-- **Last activity:** 2026-07-04 (Resizable per-handle `handleActive` contract, brief web-ui-resizable-handle-contract).
+- **Last activity:** 2026-07-04 (Resizable `handleActive` + `handleVariant='ghost'`, briefs web-ui-resizable-handle-contract / web-ui-resizable-ghost-handle).
 
 ## Vendor stack (ADR 047 D3)
 
@@ -151,6 +151,7 @@ Migration from v0.3.0: `slots={{ header, main, rightBar, footer }}` → `preset=
 - **Неактивная ручка не рисует hairline** — `bg-transparent` вместо `bg-border`, `pointer-events-none`, corvu `disabled`, grip скрыт. Разделитель-«бордер» ячеек — забота консьюмера (в Matrix — проп `bordered`), не handle'а. Это **намеренное visual-изменение** для `handleDisabled` (раньше линия оставалась): бордер ≠ resize-аффорданс.
 - `withHandle` / `handleDisabled` — глобальные гейты (AND с per-item), grip показывается только на активной ручке.
 - Механика: cva-вариант `active` в `resizableHandleCva` (`_resize/variants.ts`), проп `active` на internal `ResizableHandle` (getter-пропсы в `createStyle` для реактивности), резолв per-pair в `resizable.tsx`. Тесты: `resizable/__tests__/resizable.test.tsx` («handleActive per-item contract», 5 тестов). Stories: `resizable.stories.tsx` (Basic / MixedHandles / LiveToggle / AllDisabled).
+- **`IResizableProps.handleVariant?: 'line' | 'ghost'`** (default `'line'`, follow-up бриф `web-ui-resizable-ghost-handle.md`) — визуал ручек контейнер-левел. `'line'` — активная ручка рисует `bg-border` hairline (shadcn-конвенция, бит-в-бит back-compat). `'ghost'` — ручка НИКОГДА не рисует свою линию (для консьюмеров с собственной бордер-системой: Matrix `bordered`); остаются хит-зона (`after:w-1`), pointer/drag при active, grip при `withHandle && active`, focus-ring. Ось `variant` в `resizableHandleCva` композитится с `active` через compoundVariant (`active:true + variant:'line'` → `bg-border`), поведение active не трогает. Тесты: «handleVariant ghost contract» (4). Story: LineVsGhost.
 
 ### Dropdown — HTML-passthrough для data-* / title / style (2026-06-03)
 

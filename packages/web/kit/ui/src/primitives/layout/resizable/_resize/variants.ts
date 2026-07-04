@@ -20,6 +20,11 @@ export const resizableRootCva = cva(
  * (панели не ремоунтятся), но не рисует hairline (`bg-transparent`) и не
  * принимает pointer — видимый разделитель ячеек это забота консьюмера
  * (бордер ≠ resize-аффорданс).
+ *
+ * Вариант `variant` — визуал ручки: `line` (default) рисует bg-border hairline
+ * на активной ручке (compound с `active:true`); `ghost` глушит ТОЛЬКО фон
+ * (линии нет ни в каком состоянии) — поведение active (pointer/drag/grip/ring)
+ * не трогает.
  */
 export const resizableHandleCva = cva(
   // `relative` is load-bearing: GripIcon uses `absolute` positioning relative to
@@ -31,10 +36,15 @@ export const resizableHandleCva = cva(
   {
     variants: {
       active: {
-        true: 'bg-border focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1',
+        true: 'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1',
         false: 'bg-transparent pointer-events-none',
       },
+      variant: {
+        line: '',
+        ghost: 'bg-transparent',
+      },
     },
-    defaultVariants: { active: true },
+    compoundVariants: [{ active: true, variant: 'line', class: 'bg-border' }],
+    defaultVariants: { active: true, variant: 'line' },
   },
 );
