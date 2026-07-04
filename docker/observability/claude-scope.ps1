@@ -64,12 +64,14 @@ $env:OTEL_LOG_USER_PROMPTS        = "1"
 $env:OTEL_LOG_TOOL_DETAILS        = "1"
 
 # Модель (2026-07-04, решение user): owner-сессии — Opus; main (architect) —
-# модель сессии не трогаем (Fable выбирается в самом Claude Code). Явный
-# --model в аргументах запуска уважается и НЕ перекрывается.
+# модель сессии не трогаем (Fable запинен в глобальном ~/.claude/settings.json).
+# Перебиваем глобальный пин ДВАЖДЫ (флаг + env) — alias 'opus' = актуальный Opus.
+# Явный --model в аргументах запуска уважается и НЕ перекрывается.
 if (-not $ClaudeArgs) { $ClaudeArgs = @() }
-if ($Scope -ne 'main' -and -not (@($ClaudeArgs) -match '^--model$')) {
-  $ClaudeArgs = @('--model', 'claude-opus-4-8') + @($ClaudeArgs)
-  Write-Host "[claude-scope] owner-model: claude-opus-4-8 (main остаётся на своей)" -ForegroundColor DarkCyan
+if ($Scope -ne 'main' -and -not (@($ClaudeArgs) -match '^--model')) {
+  $env:ANTHROPIC_MODEL = 'opus'
+  $ClaudeArgs = @('--model', 'opus') + @($ClaudeArgs)
+  Write-Host "[claude-scope] owner-model: opus (перебивает глобальный пин Fable; main остаётся на своей)" -ForegroundColor DarkCyan
 }
 
 Write-Host "[observability] $banner -> otel-collector :4317" -ForegroundColor Cyan
