@@ -927,6 +927,9 @@ importers:
       '@capsuletech/web-intl':
         specifier: workspace:*
         version: link:../../runtime/intl
+      '@capsuletech/web-router':
+        specifier: workspace:*
+        version: link:../../runtime/router
       '@capsuletech/web-style':
         specifier: workspace:*
         version: link:../../runtime/style
@@ -1429,9 +1432,9 @@ importers:
       '@capsuletech/web-docs':
         specifier: workspace:*
         version: link:../../docs
-      '@capsuletech/web-router':
+      '@capsuletech/web-shell':
         specifier: workspace:*
-        version: link:../../runtime/router
+        version: link:../../domain/shell
       '@capsuletech/web-ui':
         specifier: workspace:*
         version: link:../../kit/ui

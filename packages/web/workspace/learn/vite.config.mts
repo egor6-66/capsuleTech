@@ -12,7 +12,7 @@ export default libConfig({
     'sentence-builder': 'src/sentence-builder/index.ts',
     welcome: 'src/welcome/index.ts',
     controllers: 'src/controllers/index.ts',
-    capsule: 'src/capsule.ts',
+    capsule: 'src/capsule.tsx',
   },
   name: 'CapsuleWebLearn',
 });

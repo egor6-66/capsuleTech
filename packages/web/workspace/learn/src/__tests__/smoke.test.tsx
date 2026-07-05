@@ -3,8 +3,9 @@
  * (зеркало studio-паттерна: manual host + dispose, без @solidjs/testing-library —
  * её в репо нет, эталон тестирует так же).
  *
- * Welcome НЕ тестим bare: его `useEmit` требует Controller-контекст (как и
- * studio Welcome — он тоже не покрыт unit-тестом).
+ * Nav/Welcome здесь не покрываются: после дедупа (brief `pilot-segment-nav-4-learn`)
+ * это композиция `Shell.SegmentNav`/`Shell.Launcher` в `capsule.tsx` — тестируются
+ * сами shell-блоки в web-shell, не тонкий data-биндинг зоны.
  */
 import { render } from 'solid-js/web';
 import { describe, expect, test } from 'vitest';

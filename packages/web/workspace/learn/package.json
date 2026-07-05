@@ -73,7 +73,7 @@
   "dependencies": {
     "@capsuletech/web-core": "workspace:*",
     "@capsuletech/web-docs": "workspace:*",
-    "@capsuletech/web-router": "workspace:*",
+    "@capsuletech/web-shell": "workspace:*",
     "@capsuletech/web-ui": "workspace:*"
   },
   "peerDependencies": {
