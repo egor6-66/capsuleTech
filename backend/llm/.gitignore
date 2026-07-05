@@ -1,0 +1,14 @@
+# Python / uv
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# env
+.env
+
+# local GGUF weights (user-supplied, never committed)
+*.gguf
+models/
