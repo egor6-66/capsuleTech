@@ -109,7 +109,13 @@ def get_lesson(lesson_id: str, db: DbDep) -> LessonDetail:
 def list_rules(db: DbDep) -> RulesResponse:
     return RulesResponse(
         rules=[
-            RuleListItem(id=r.id, title=r.title, tags=r.tags or [])
+            RuleListItem(
+                id=r.id,
+                title=r.title,
+                tags=r.tags or [],
+                category=r.category,
+                sortOrder=r.sort_order,
+            )
             for r in repo.list_rules(db)
         ]
     )
@@ -146,7 +152,12 @@ def list_concepts(db: DbDep) -> ConceptsResponse:
     return ConceptsResponse(
         concepts=[
             ConceptListItem(
-                id=c.id, title=c.title, principle=c.principle, tags=c.tags or []
+                id=c.id,
+                title=c.title,
+                principle=c.principle,
+                tags=c.tags or [],
+                kind=c.kind,
+                sortOrder=c.sort_order,
             )
             for c in repo.list_concepts(db)
         ]

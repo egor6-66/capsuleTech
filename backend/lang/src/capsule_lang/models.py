@@ -23,6 +23,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
 from .enums import (
+    ConceptKind,
     Connotation,
     DrillDimension,
     Frequency,
@@ -31,6 +32,7 @@ from .enums import (
     Pos,
     Register,
     RelationType,
+    RuleCategory,
     Source,
     TagKind,
 )
@@ -197,6 +199,14 @@ class Concept(Base):
     body: Mapped[str] = mapped_column(String, nullable=False)
     tags: Mapped[list | None] = mapped_column(JSON, nullable=True)
     examples: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    # Accordion-IA grouping facet (ADR 069). `kind` = which group; `sort_order`
+    # = position within it. Ru labels / group order are a front concern.
+    kind: Mapped[ConceptKind] = mapped_column(
+        _enum(ConceptKind, "concept_kind"),
+        nullable=False,
+        default=ConceptKind.APPROACH,
+    )
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=100)
     source: Mapped[Source] = mapped_column(
         _enum(Source, "source"), nullable=False, default=Source.CURATED
     )
@@ -224,6 +234,14 @@ class Rule(Base):
     title: Mapped[str] = mapped_column(String, nullable=False)
     body: Mapped[str] = mapped_column(String, nullable=False)
     tags: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    # Accordion-IA grouping facet (ADR 069). `category` = which group (defaults
+    # from the vault folder); `sort_order` = position within it.
+    category: Mapped[RuleCategory] = mapped_column(
+        _enum(RuleCategory, "rule_category"),
+        nullable=False,
+        default=RuleCategory.GRAMMAR,
+    )
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=100)
     source: Mapped[Source] = mapped_column(
         _enum(Source, "source"), nullable=False, default=Source.CURATED
     )

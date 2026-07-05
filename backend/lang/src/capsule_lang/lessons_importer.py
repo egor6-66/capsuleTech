@@ -156,8 +156,14 @@ _MODELS: dict[str, type[BaseModel]] = {
 }
 
 
-def _parse_file(path: Path, expected_type: str) -> ParsedEntity:
-    """Parse one vault file into its typed model. Raises ValueError with reason."""
+def _parse_file(
+    path: Path, expected_type: str, default_category: str | None = None
+) -> ParsedEntity:
+    """Parse one vault file into its typed model. Raises ValueError with reason.
+
+    `default_category` — folder-derived rule category (grammar/phonetics/speech),
+    applied only when the rule's frontmatter omits `category` (ADR 069).
+    """
     front, body = _split_frontmatter(path.read_text(encoding="utf-8"))
 
     ftype = front.get("type")
@@ -167,6 +173,11 @@ def _parse_file(path: Path, expected_type: str) -> ParsedEntity:
         raise ValueError(f"неизвестный type `{ftype}`")
 
     data = dict(front)
+    # Rule category defaults from the vault folder it lives in — real reference
+    # rules carry only `type`, not `category` (finalочка). An explicit category,
+    # if present, wins (and pydantic rejects an unknown value).
+    if ftype == "rule" and default_category is not None:
+        data.setdefault("category", default_category)
     # Rule №0: имя файла = id. The id may be omitted from frontmatter (the
     # finalочка tells teachers to add ONLY `type` to reference rules) — derive
     # it from the filename. An explicit id, if present, must still match (the
@@ -251,15 +262,21 @@ def _validate_drill_item(index: int, item: object, dimension: DrillDimension) ->
 # --- discovery ---------------------------------------------------------------
 
 
-def _discover(vault: Path) -> list[tuple[Path, str]]:
-    """(file, expected_type) for every scannable file, longest-prefix folder wins."""
-    found: list[tuple[Path, str]] = []
+def _discover(vault: Path) -> list[tuple[Path, str, str | None]]:
+    """(file, expected_type, default_category) per scannable file.
+
+    `default_category` is the top folder name for rule folders (== a
+    `RuleCategory` value), else None — it seeds a rule's category when the
+    frontmatter omits it (ADR 069). Longest-prefix folder wins.
+    """
+    found: list[tuple[Path, str, str | None]] = []
     for rel, etype in FOLDER_TYPES:
         base = vault / rel
         if not base.is_dir():
             continue
+        default_category = rel if etype == "rule" else None
         for p in sorted(base.glob("*.md")):
-            found.append((p, etype))
+            found.append((p, etype, default_category))
     return found
 
 
@@ -348,6 +365,7 @@ def _upsert_scalar(db: Session, e: ParsedEntity, report: LessonsReport) -> None:
         row.title, row.body, row.tags, row.source = (
             m.title, m.body, m.tags, Source.CURATED,  # type: ignore[attr-defined]
         )
+        row.category, row.sort_order = m.category, m.sort_order  # type: ignore[attr-defined]
     elif e.kind == "concept":
         row = db.get(Concept, m.id)  # type: ignore[attr-defined]
         report.imported += row is None
@@ -357,6 +375,7 @@ def _upsert_scalar(db: Session, e: ParsedEntity, report: LessonsReport) -> None:
             db.add(row)
         row.title, row.principle, row.body = m.title, m.principle, m.body  # type: ignore[attr-defined]
         row.tags = m.tags  # type: ignore[attr-defined]
+        row.kind, row.sort_order = m.kind, m.sort_order  # type: ignore[attr-defined]
         row.examples = [ex.model_dump() for ex in m.examples]  # type: ignore[attr-defined]
         row.source = Source.CURATED
     elif e.kind == "drill":
@@ -441,9 +460,9 @@ def import_vault(vault: str | Path, db: Session, lang: str | None = None) -> Les
     parsed: list[ParsedEntity] = []
 
     # 1-3. discover + parse + intra-validate
-    for path, etype in _discover(vault):
+    for path, etype, default_category in _discover(vault):
         try:
-            parsed.append(_parse_file(path, etype))
+            parsed.append(_parse_file(path, etype, default_category))
         except ValueError as exc:
             report.rejected.append(Reject(file=str(path), reason=str(exc)))
 

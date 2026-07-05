@@ -6,6 +6,7 @@ from pathlib import Path
 
 from sqlalchemy import func, select
 
+from capsule_lang import lessons_repo as repo
 from capsule_lang.lessons_importer import import_vault
 from capsule_lang.models import (
     Concept,
@@ -175,6 +176,80 @@ def test_unknown_dimension_rejected(blank_db, tmp_path):
     report = import_vault(tmp_path, blank_db)
     assert any("dimension" in r.reason for r in report.rejected)
     assert _count(blank_db, Drill) == 0
+
+
+# --- accordion-IA grouping: rule.category / concept.kind (ADR 069) -----------
+
+
+def test_rule_category_defaults_from_folder(blank_db, tmp_path):
+    # No `category` in frontmatter → derived from the folder the rule lives in.
+    _write(tmp_path, "grammar/g.md", "---\ntype: rule\n---\n# G\nb")
+    _write(tmp_path, "phonetics/p.md", "---\ntype: rule\n---\n# P\nb")
+    _write(tmp_path, "speech/s.md", "---\ntype: rule\n---\n# S\nb")
+    report = import_vault(tmp_path, blank_db)
+    assert report.rejected == []
+    assert blank_db.get(Rule, "g").category.value == "grammar"
+    assert blank_db.get(Rule, "p").category.value == "phonetics"
+    assert blank_db.get(Rule, "s").category.value == "speech"
+    # sort_order defaults to 100 when `order` is omitted
+    assert blank_db.get(Rule, "g").sort_order == 100
+
+
+def test_rule_explicit_category_and_order_win(blank_db, tmp_path):
+    # An explicit category overrides the folder default; `order` maps to sort_order.
+    _write(
+        tmp_path,
+        "grammar/x.md",
+        "---\ntype: rule\ncategory: speech\norder: 7\n---\n# X\nb",
+    )
+    report = import_vault(tmp_path, blank_db)
+    assert report.rejected == []
+    row = blank_db.get(Rule, "x")
+    assert row.category.value == "speech"
+    assert row.sort_order == 7
+
+
+def test_reject_unknown_rule_category(blank_db, tmp_path):
+    _write(tmp_path, "grammar/bad.md", "---\ntype: rule\ncategory: bogus\n---\n# B\nb")
+    report = import_vault(tmp_path, blank_db)
+    assert report.imported == 0
+    assert any("category" in r.reason for r in report.rejected)
+    assert _count(blank_db, Rule) == 0
+
+
+def test_concept_kind_defaults_approach(blank_db, tmp_path):
+    _write(
+        tmp_path,
+        "lessons/concepts/c.md",
+        "---\ntype: concept\ntitle: C\nprinciple: p\n---\n# C\nbody",
+    )
+    report = import_vault(tmp_path, blank_db)
+    assert report.rejected == []
+    row = blank_db.get(Concept, "c")
+    assert row.kind.value == "approach"
+    assert row.sort_order == 100
+
+
+def test_reject_unknown_concept_kind(blank_db, tmp_path):
+    _write(
+        tmp_path,
+        "lessons/concepts/c.md",
+        "---\ntype: concept\ntitle: C\nprinciple: p\nkind: bogus\n---\n# C\nbody",
+    )
+    report = import_vault(tmp_path, blank_db)
+    assert report.imported == 0
+    assert any("kind" in r.reason for r in report.rejected)
+    assert _count(blank_db, Concept) == 0
+
+
+def test_rules_sorted_by_category_then_order_then_title(blank_db, tmp_path):
+    # category (grammar<phonetics<speech) → sort_order → title.
+    _write(tmp_path, "phonetics/p1.md", "---\ntype: rule\norder: 100\n---\n# Zeta\nb")
+    _write(tmp_path, "grammar/g1.md", "---\ntype: rule\norder: 5\n---\n# Beta\nb")
+    _write(tmp_path, "grammar/g2.md", "---\ntype: rule\norder: 5\n---\n# Alpha\nb")
+    _write(tmp_path, "speech/s1.md", "---\ntype: rule\norder: 1\n---\n# Mid\nb")
+    import_vault(tmp_path, blank_db)
+    assert [r.id for r in repo.list_rules(blank_db)] == ["g2", "g1", "p1", "s1"]
 
 
 def test_reject_invalid_regex_near_miss(blank_db, tmp_path):

@@ -98,6 +98,30 @@ class LessonLevel(StrEnum):
     L5 = "l5"
 
 
+class RuleCategory(StrEnum):
+    """Grouping facet for reference rules (accordion IA, ADR 069).
+
+    Default is derived from the vault folder a rule lives in (`grammar/` →
+    grammar, `phonetics/` → phonetics, `speech/` → speech), so real reference
+    files need no extra frontmatter. Ru group labels + group order live on the
+    front, not here (only the field is our concern)."""
+
+    PHONETICS = "phonetics"
+    GRAMMAR = "grammar"
+    SPEECH = "speech"
+
+
+class ConceptKind(StrEnum):
+    """Grouping facet for concepts (accordion IA, ADR 069). Default `approach`.
+
+    A `trap`-kind is intentionally NOT added yet — it lands additively with its
+    first content."""
+
+    APPROACH = "approach"
+    PATTERN = "pattern"
+    RECOMMENDATION = "recommendation"
+
+
 class MatchMode(StrEnum):
     """How a `nearMiss` pattern matches a learner answer (ADR 069 D2).
 

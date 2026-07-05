@@ -105,6 +105,8 @@ def test_list_concepts(lessons_client):
             "principle": "Учи слово через образ (что оно делает в картинке), "
             "не через русский ярлык.",
             "tags": ["vocabulary", "method", "image"],
+            "kind": "approach",  # frontmatter omits kind → default
+            "sortOrder": 100,  # omits order → default
         }
     ]
 
@@ -117,6 +119,8 @@ def test_list_rules(lessons_client):
             "id": "grammar-verbs-tenses",
             "title": "5d. Глаголы и времена",
             "tags": ["grammar", "verbs", "tenses"],
+            "category": "grammar",  # derived from the grammar/ folder
+            "sortOrder": 100,  # frontmatter omits order → default
         }
     ]
 

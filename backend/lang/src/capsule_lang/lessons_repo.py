@@ -19,12 +19,14 @@ def list_lessons(db: Session) -> list[Lesson]:
 
 
 def list_concepts(db: Session) -> list[Concept]:
-    stmt = select(Concept).order_by(Concept.title)
+    # Accordion-IA order: group (kind) → within-group position → title (ADR 069).
+    stmt = select(Concept).order_by(Concept.kind, Concept.sort_order, Concept.title)
     return list(db.execute(stmt).scalars().all())
 
 
 def list_rules(db: Session) -> list[Rule]:
-    stmt = select(Rule).order_by(Rule.title)
+    # Accordion-IA order: group (category) → within-group position → title.
+    stmt = select(Rule).order_by(Rule.category, Rule.sort_order, Rule.title)
     return list(db.execute(stmt).scalars().all())
 
 

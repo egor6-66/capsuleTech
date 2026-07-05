@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from .enums import DrillDimension, LessonLevel, MatchMode
+from .enums import ConceptKind, DrillDimension, LessonLevel, MatchMode, RuleCategory
 
 _camel = ConfigDict(populate_by_name=True)
 
@@ -59,16 +59,35 @@ class ConceptIn(BaseModel):
     principle: str
     body: str  # markdown content (injected by importer, not frontmatter)
     tags: list[str] = Field(default_factory=list)
+    # Accordion-IA grouping (ADR 069). Absent kind → `approach`; `order` → 100.
+    kind: ConceptKind = ConceptKind.APPROACH
+    sort_order: int = Field(default=100, alias="order")
     examples: list[ExampleIn] = Field(default_factory=list)
     related_rules: list[str] = Field(default_factory=list, alias="relatedRules")
     related_concepts: list[str] = Field(default_factory=list, alias="relatedConcepts")
 
+    @field_validator("kind", mode="before")
+    @classmethod
+    def _norm(cls, v: object) -> object:
+        return _lower(v)
+
 
 class RuleIn(BaseModel):
+    model_config = _camel
+
     id: str
     title: str
     body: str  # markdown content (injected by importer)
     tags: list[str] = Field(default_factory=list)
+    # Accordion-IA grouping (ADR 069). `category` defaults from the vault folder
+    # (filled by the importer when absent); `order` → 100.
+    category: RuleCategory = RuleCategory.GRAMMAR
+    sort_order: int = Field(default=100, alias="order")
+
+    @field_validator("category", mode="before")
+    @classmethod
+    def _norm(cls, v: object) -> object:
+        return _lower(v)
 
 
 class DrillIn(BaseModel):
@@ -169,6 +188,8 @@ class ConceptListItem(BaseModel):
     title: str
     principle: str
     tags: list[str]
+    kind: ConceptKind
+    sortOrder: int
 
 
 class ConceptsResponse(BaseModel):
@@ -179,6 +200,8 @@ class RuleListItem(BaseModel):
     id: str
     title: str
     tags: list[str]
+    category: RuleCategory
+    sortOrder: int
 
 
 class RulesResponse(BaseModel):
