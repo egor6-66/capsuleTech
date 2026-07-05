@@ -45,15 +45,19 @@
       "@capsuletech/web-placeholders/capsule": ["packages/web/domain/placeholders/src/capsule.ts"],
       "@capsuletech/web-learn": ["packages/web/workspace/learn/src/index.ts"],
       "@capsuletech/web-learn/core": ["packages/web/workspace/learn/src/core/index.ts"],
-      "@capsuletech/web-learn/lesson": ["packages/web/workspace/learn/src/lesson/index.ts"],
-      "@capsuletech/web-learn/exercise": ["packages/web/workspace/learn/src/exercise/index.ts"],
-      "@capsuletech/web-learn/progress": ["packages/web/workspace/learn/src/progress/index.ts"],
-      "@capsuletech/web-learn/library": ["packages/web/workspace/learn/src/library/index.ts"],
-      "@capsuletech/web-learn/guides": ["packages/web/workspace/learn/src/guides/index.ts"],
-      "@capsuletech/web-learn/sentence-builder": ["packages/web/workspace/learn/src/sentence-builder/index.ts"],
-      "@capsuletech/web-learn/welcome": ["packages/web/workspace/learn/src/welcome/index.ts"],
-      "@capsuletech/web-learn/controllers": ["packages/web/workspace/learn/src/controllers/index.ts"],
-      "@capsuletech/web-learn/capsule": ["packages/web/workspace/learn/src/capsule.ts"],
+      "@capsuletech/web-learn/lesson": ["packages/web/workspace/learn/src/modules/lessons/index.ts"],
+      "@capsuletech/web-learn/exercise": ["packages/web/workspace/learn/src/modules/exercise/index.ts"],
+      "@capsuletech/web-learn/progress": ["packages/web/workspace/learn/src/modules/progress/index.ts"],
+      "@capsuletech/web-learn/library": ["packages/web/workspace/learn/src/modules/library/index.ts"],
+      "@capsuletech/web-learn/guides": ["packages/web/workspace/learn/src/modules/guides/index.ts"],
+      "@capsuletech/web-learn/sentence-builder": [
+        "packages/web/workspace/learn/src/modules/sentence-builder/index.ts"
+      ],
+      "@capsuletech/web-learn/welcome": ["packages/web/workspace/learn/src/modules/welcome/index.ts"],
+      "@capsuletech/web-learn/controllers": [
+        "packages/web/workspace/learn/src/core/controllers/index.ts"
+      ],
+      "@capsuletech/web-learn/capsule": ["packages/web/workspace/learn/src/capsule.tsx"],
       "@capsule/docs-registry": ["docs/.generated/registry.ts"],
       "@capsuletech/web-access": ["packages/web/runtime/access/src/index.ts"],
       "@capsuletech/web-dnd": ["packages/web/runtime/dnd/src/index.ts"],
