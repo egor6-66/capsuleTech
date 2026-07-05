@@ -154,7 +154,7 @@ def test_rule_drill_words_resolved_enrichment(upstream, client):
     assert eat["ru"] == "есть"
     assert eat["pron_ru"] == "ит"
     assert eat["pos"] == "verb"
-    assert eat["audio"]["url"].endswith("/voice/speak?text=eat&lang=en_US")
+    assert eat["audio"]["url"].endswith("?engine=kokoro&kind=words&text=eat&lang=en_US")
     assert eat["audio"]["engines"] == ENGINES["engines"]
     assert "image/render?prompt=eat+%28verb%29" in eat["image"]["url"]
 
@@ -167,7 +167,7 @@ def test_rule_drill_words_resolved_enrichment(upstream, client):
     ghost = resolved[2]
     assert ghost["senseId"] is None
     assert ghost["image"] is None
-    assert ghost["audio"]["url"].endswith("/voice/speak?text=ghost&lang=en_US")
+    assert ghost["audio"]["url"].endswith("?engine=kokoro&kind=words&text=ghost&lang=en_US")
 
 
 def test_rule_without_drills_empty_list(upstream, client):

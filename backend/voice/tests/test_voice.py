@@ -13,6 +13,8 @@ import pytest
 
 from capsule_voice import api as voice_api
 from capsule_voice import engine as voice_engine
+from capsule_voice import storage as voice_storage
+from capsule_voice.config import settings
 
 
 @pytest.fixture(autouse=True)
@@ -138,6 +140,136 @@ def test_speak_returns_wav(client, monkeypatch):
     assert r.status_code == 200
     assert r.headers["content-type"] == "audio/wav"
     assert r.content.startswith(b"RIFF")
+
+
+# --- Persistent tier (ADR 076) — mocked storage, fake counting engine --------
+
+
+def test_speak_minio_hit_skips_synthesis(client, monkeypatch):
+    # kind=words + object present -> served from MinIO, engine never runs.
+    eng = _CountingEngine("kokoro")
+    monkeypatch.setattr(voice_engine, "get_engine", lambda name=None: eng)
+    monkeypatch.setattr(voice_storage, "get", lambda key: b"RIFF-from-minio")
+    r = client.get("/voice/speak", params={"text": "cat", "kind": "words"})
+    assert r.status_code == 200
+    assert r.content == b"RIFF-from-minio"
+    assert r.headers["content-type"] == "audio/wav"
+    assert eng.calls == 0
+
+
+def test_speak_dynamic_does_not_persist(client, monkeypatch):
+    # Default kind=dynamic -> LRU only, MinIO put must not be called.
+    eng = _CountingEngine("kokoro")
+    monkeypatch.setattr(voice_engine, "get_engine", lambda name=None: eng)
+    puts: list[str] = []
+    monkeypatch.setattr(voice_storage, "get", lambda key: None)
+    monkeypatch.setattr(voice_storage, "put", lambda key, data: puts.append(key))
+    r = client.get("/voice/speak", params={"text": "cat"})
+    assert r.status_code == 200
+    assert eng.calls == 1
+    assert puts == []
+
+
+def test_speak_words_persists_after_synthesis(client, monkeypatch):
+    # kind=words miss -> synthesize + put under the versioned key.
+    eng = _CountingEngine("kokoro")
+    monkeypatch.setattr(voice_engine, "get_engine", lambda name=None: eng)
+    puts: dict[str, bytes] = {}
+    monkeypatch.setattr(voice_storage, "get", lambda key: None)
+    monkeypatch.setattr(voice_storage, "put", lambda key, data: puts.__setitem__(key, data))
+    r = client.get("/voice/speak", params={"text": "cat", "kind": "words"})
+    assert r.status_code == 200
+    assert eng.calls == 1
+    assert len(puts) == 1
+    (obj_key,) = puts
+    assert obj_key.startswith("voice/words/kokoro/")
+    assert obj_key.endswith(".wav")
+
+
+def test_speak_version_bump_changes_key(client, monkeypatch):
+    # Bumping VOICE_MODEL_VERSION changes ETag + storage key -> resynthesize.
+    eng = _CountingEngine("kokoro")
+    monkeypatch.setattr(voice_engine, "get_engine", lambda name=None: eng)
+    puts: list[str] = []
+    monkeypatch.setattr(voice_storage, "get", lambda key: None)
+    monkeypatch.setattr(voice_storage, "put", lambda key, data: puts.append(key))
+
+    monkeypatch.setattr(settings, "voice_model_version", "v1")
+    e1 = client.get("/voice/speak", params={"text": "cat", "kind": "words"}).headers["etag"]
+    voice_api._cache.clear()
+    monkeypatch.setattr(settings, "voice_model_version", "v2")
+    e2 = client.get("/voice/speak", params={"text": "cat", "kind": "words"}).headers["etag"]
+
+    assert e1 != e2
+    assert eng.calls == 2
+    assert len(set(puts)) == 2  # two distinct keys
+
+
+def test_speak_storage_get_error_is_graceful(client, monkeypatch):
+    # MinIO get raising must not 5xx — fall through to synthesis, 200.
+    eng = _CountingEngine("kokoro")
+    monkeypatch.setattr(voice_engine, "get_engine", lambda name=None: eng)
+
+    def _boom(key):
+        raise RuntimeError("minio unreachable")
+
+    monkeypatch.setattr(voice_storage, "get", _boom)
+    monkeypatch.setattr(voice_storage, "put", lambda key, data: None)
+    r = client.get("/voice/speak", params={"text": "cat", "kind": "words"})
+    assert r.status_code == 200
+    assert r.content.startswith(b"RIFF")
+    assert eng.calls == 1
+
+
+def test_warm_idempotent(client, monkeypatch):
+    # First run synthesizes+stores; second run skips everything (keys exist).
+    eng = _CountingEngine("kokoro")
+    monkeypatch.setattr(voice_engine, "get_engine", lambda name=None: eng)
+    stored: set[str] = set()
+    monkeypatch.setattr(voice_storage, "exists", lambda key: key in stored)
+    monkeypatch.setattr(voice_storage, "put", lambda key, data: stored.add(key))
+
+    body = {
+        "texts": [{"text": "cat"}, {"text": "dog"}],
+        "engines": ["kokoro"],
+        "kind": "words",
+    }
+    r1 = client.post("/voice/warm", json=body).json()
+    assert r1 == {"generated": 2, "skipped": 0}
+    assert eng.calls == 2
+    assert len(stored) == 2
+
+    r2 = client.post("/voice/warm", json=body).json()
+    assert r2 == {"generated": 0, "skipped": 2}
+    assert eng.calls == 2  # nothing re-synthesized
+
+
+def test_warm_one_pair_failure_does_not_break_batch(client, monkeypatch):
+    # A synthesis error on one text must not abort the rest of the batch.
+    class _FlakyEngine:
+        name = "kokoro"
+
+        def __init__(self):
+            self.calls = 0
+
+        def synthesize(self, text, *, lang="en_US", voice=None, speed=1.0) -> bytes:
+            self.calls += 1
+            if text == "boom":
+                raise RuntimeError("synth exploded")
+            return b"RIFF" + text.encode("utf-8")
+
+    eng = _FlakyEngine()
+    monkeypatch.setattr(voice_engine, "get_engine", lambda name=None: eng)
+    monkeypatch.setattr(voice_storage, "exists", lambda key: False)
+    monkeypatch.setattr(voice_storage, "put", lambda key, data: None)
+
+    body = {
+        "texts": [{"text": "ok"}, {"text": "boom"}, {"text": "fine"}],
+        "engines": ["kokoro"],
+        "kind": "phrases",
+    }
+    r = client.post("/voice/warm", json=body).json()
+    assert r == {"generated": 2, "skipped": 0}
 
 
 # Real synthesis, opt-in per engine: VOICE_REAL_ENGINES="kokoro,piper" (or "all").

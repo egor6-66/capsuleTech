@@ -19,8 +19,8 @@ Stateless TTS capability service (FastAPI, Python 3.11, port :8001) — three pl
 - **Priority:** P1 — first capability service of the ADR 067 decomposition.
 - **Maturity bar:** STT/scoring (ADR 065 phase 3), consumers switched off `learn`'s voice module, CI job wired by architect.
 - **Active blockers:** нет.
-- **Roadmap:** STT endpoint (next wave), audio cache (deferred), WebSocket streaming (deferred).
-- **Last activity:** 2026-07-03 — extraction + ChatterboxEngine.
+- **Roadmap:** STT endpoint (next wave), WebSocket streaming (deferred).
+- **Last activity:** 2026-07-05 — persistent MinIO tier + `/voice/warm` (ADR 076, brief voice-persist-1).
 
 ## Vendor stack
 
@@ -29,6 +29,7 @@ Stateless TTS capability service (FastAPI, Python 3.11, port :8001) — three pl
 - **Piper** (`piper-tts` `>=1.3`, extra `voice-piper`) — fastest, small ONNX voices, CPU realtime. https://github.com/OHF-Voice/piper1-gpl
 - **Kokoro** (`kokoro` `>=0.8`, extra `voice-kokoro`) — light TTS, CPU-friendly. https://github.com/hexgrad/kokoro
 - **Chatterbox** (`chatterbox-tts` `>=0.1`, extra `voice-chatterbox`) — Resemble AI TTS + voice cloning, MIT. https://github.com/resemble-ai/chatterbox
+- **MinIO** (`minio` `>=7.2`, base dep) — S3-compatible object store client for the persistent voice tier (ADR 076). Pure-Python, light; the tier is off until `MINIO_ENDPOINT` is set. https://min.io/docs/minio/linux/developers/python/API.html
 - **uv** — toolchain (venv + lock). https://docs.astral.sh/uv/
 
 ## Лицензии движков (канон ростера)
@@ -60,8 +61,10 @@ Stateless TTS capability service (FastAPI, Python 3.11, port :8001) — three pl
 HTTP, prefix `/voice`:
 - `GET /health` → `{"status":"ok"}`
 - `GET /voice/engines` → `{engines: string[], default: string}`
-- `GET /voice/speak?text=&engine=&lang=&voice=&speed=` → `audio/wav`; 400 на пустой text / неизвестный engine; 503 если extra движка не установлен в текущем venv.
-- `/voice/speak` кэшируется: `Cache-Control: public, max-age=86400` + `ETag` (sha256 канонических параметров, engine — resolved) + `304` на `If-None-Match`; серверный in-memory LRU 512 записей (~30MB). Ошибки не кэшируются, диск-кэша нет.
+- `GET /voice/speak?text=&engine=&lang=&voice=&speed=&kind=` → `audio/wav`; 400 на пустой text / неизвестный engine; 503 если extra движка не установлен в текущем venv.
+- `/voice/speak` кэшируется тремя ярусами: `Cache-Control: public, max-age=86400` + `ETag` (sha256 канонических параметров `engine|lang|voice|speed|text|VOICE_MODEL_VERSION`, engine — resolved) + `304` на `If-None-Match`; **persist-ярус (ADR 076)** — MinIO для `kind` ∈ `words`|`phrases` (ключ `voice/<kind>/<engine>/<sha>.wav`); серверный in-memory LRU 512 записей (~30MB, держит и `dynamic`). Ошибки не кэшируются.
+- `kind` (query, дефолт `dynamic`) = политика хранения, **не** входит в ETag. `dynamic` → только LRU; `words`/`phrases` → persist. **Graceful:** любая ошибка MinIO → warning + проваливание в LRU+синтез, никогда 5xx на speak.
+- `POST /voice/warm` — body `{texts: [{text, lang?, voice?, speed?}], engines: [str], kind: words|phrases}`. Идемпотентно pre-синтезирует curated-клипы в persist-ярус (существующий ключ → skip). Возвращает `{generated, skipped}`; ошибка одной пары не валит батч. Для warm-at-ingest (learn ingest → brief 2).
 
 Изменение контракта = breaking change → координировать с architect (ADR).
 
@@ -72,6 +75,7 @@ HTTP, prefix `/voice`:
 - **chatterbox-tts строго `>=0.1.7`** — 0.1.6 пинит numpy<1.26 (конфликт с остальными), ≤0.1.5 тянет битый build pkuseg.
 - **Chatterbox `speed` игнорируется** — у модели нет нативного speed-контроля; `voice` для chatterbox = путь к референс-клипу (cloning), не имя голоса.
 - **Первый запрос тяжёлых движков** качает модель с HF (гигабайты) и грузит минуты на CPU — норма, кэшируется in-process.
+- **Persist-ярус best-effort** — `storage.py` НИКОГДА не бросает наверх: init/get/put/exists ловят всё → warning + `None`/`False`. MinIO-клиент строится лениво один раз; отсутствие `MINIO_ENDPOINT` = ярус выключен навсегда (не ретраит), transient-сбой init = `None` без latching (ретрай следующим запросом). `speak` дополнительно гардит `storage.get/put` (defence-in-depth: контракт «storage не даёт 5xx на speak»). Тесты мокают `storage.get/put/exists` — реальный `minio` в CI не импортируется (ленивый импорт внутри функций).
 - **Windows dev: не `uv sync` под запущенным сервером** — uvicorn держит .pyd/DLL, sync падает или оставляет битый пакет (прецедент: полуустановленный transformers → `cannot import name 'pipeline'`). Сначала стоп сервера. И TaskStop у фонового `uv run uvicorn` убивает shell, но НЕ python-потомка — добивать процесс на :8001 руками.
 - **StyleTTS2 выброшен** — pip-обёртка битая (ADR 065 §отклонено). pyttsx3/SAPI отклонён (OS-биндинги, prod=Docker). Не возвращать.
 - **XTTS выброшен (2026-07-03)** — конфликтовал с chatterbox по venv (`transformers` pin) + CPML non-commercial лицензия; ниша (cloning + мультиязычность) перекрывалась chatterbox (MIT). Не возвращать без нового обоснования.
@@ -82,6 +86,7 @@ HTTP, prefix `/voice`:
 
 - [ ] **STT/scoring** — ADR 065 фаза 3, следующая волна. (priority: high)
 - [ ] **Kokoro lang_code из `lang`** — сейчас захардкожен American English. (priority: low)
+- [x] **Персистентный MinIO-ярус + `/voice/warm`** — ADR 076 / brief voice-persist-1. Curated (`words`/`phrases`) кладётся в MinIO раз, `dynamic` только LRU. `VOICE_MODEL_VERSION` в hash-ключе; graceful degrade при недоступном MinIO (2026-07-05).
 - [x] **Чистка ростера по канону лицензий/library-not-service** — f5 (CC-BY-NC) и edge (облачный сервис MS) выпилены; ростер = kokoro/chatterbox/piper; license-таблица зафиксирована (2026-07-04).
 - [x] **Отсев движков по итогам ушного A/B** — xtts убран (venv-конфликт с chatterbox + лицензия), chatterbox остался единственным cloning-движком с torch-конфликтом (2026-07-03).
 - [x] **Вынос из learn + ChatterboxEngine + dep-долг kokoro→transformers в uv.lock** (2026-07-03).
@@ -93,7 +98,8 @@ HTTP, prefix `/voice`:
 | Тип | Где | Что покрывает |
 |---|---|---|
 | Unit/contract | `tests/test_voice.py` | registry, /voice/engines, /voice/speak (fake engine), 400-ветки, /health |
-| Real synthesis | `tests/test_voice.py` (`*_real`) | opt-in через `VOICE_MODEL_AVAILABLE` / `VOICE_CHATTERBOX_AVAILABLE` |
+| Persist tier | `tests/test_voice.py` (mock storage + counting engine) | MinIO-hit skips synth, `dynamic` no-put, `words` put-after-synth, version-bump → new key, get-error graceful 200, `/voice/warm` идемпотентность + per-pair failure isolation |
+| Real synthesis | `tests/test_voice.py` (`*_real`) | opt-in через `VOICE_REAL_ENGINES` |
 
 **Перед изменением:** `uv run pytest` green. **Lint:** `uv run ruff check .`.
 

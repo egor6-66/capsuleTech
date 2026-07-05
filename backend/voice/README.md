@@ -64,23 +64,37 @@ nx targets: `nx run backend-voice:serve|test:py|lint:py`.
 
 - `GET /health` → `{"status":"ok"}`
 - `GET /voice/engines` → `{"engines":[...],"default":"kokoro"}`
-- `GET /voice/speak?text=&engine=&lang=&voice=&speed=` → `audio/wav`
+- `GET /voice/speak?text=&engine=&lang=&voice=&speed=&kind=` → `audio/wav`
   (400 on empty text / unknown engine, 503 if the engine's extra is not
   installed in this venv)
+- `POST /voice/warm` → `{"generated":n,"skipped":m}` — pre-synthesize curated
+  clips into the persistent tier (warm-at-ingest). Body:
+  `{"texts":[{"text","lang?","voice?","speed?"}],"engines":[str],"kind":"words"|"phrases"}`.
+  Idempotent (existing key → skip); one pair's failure never aborts the batch.
 
 A/B from the front-end: the existing engine switcher just sets `?engine=`.
 
-### Caching
+### Caching (three tiers)
 
-`/voice/speak` is deterministic, so it's cached on two tiers:
+`/voice/speak` is deterministic, so it's cached on three tiers:
 - **HTTP**: `Cache-Control: public, max-age=86400` + `ETag` (sha256 of the
-  canonical params `engine|lang|voice|speed|text`, engine resolved after the
-  `VOICE_ENGINE` default). `If-None-Match` revalidates to `304` without
-  running synthesis.
+  canonical params `engine|lang|voice|speed|text|VOICE_MODEL_VERSION`, engine
+  resolved after the `VOICE_ENGINE` default). `If-None-Match` revalidates to
+  `304` without running synthesis.
+- **Persistent (ADR 076)**: MinIO/S3 object store for **curated** synthesis —
+  `?kind=words` / `?kind=phrases` are stored once (`voice/<kind>/<engine>/<sha>.wav`)
+  and served forever. Best-effort: any storage error (MinIO down/timeout) logs
+  a warning and falls through to LRU + synthesis — storage never 5xx's speak.
+  The tier is **off** until `MINIO_ENDPOINT` is set.
 - **Server**: in-memory LRU (512 entries ≈ 30MB) keyed by the same hash — a
   repeated phrase costs one synthesis per process lifetime, not one per
-  request (measured: chatterbox 24s → 1.4ms on repeat). Synthesis errors are
-  not cached. No disk cache — restart starts cold.
+  request (measured: chatterbox 24s → 1.4ms on repeat). Holds `dynamic` (the
+  default kind, never persisted). Synthesis errors are not cached.
+
+`kind` is a **storage policy** (which tier persists), not part of the ETag —
+the ETag is pure synthesis determinism. `dynamic` (default) → LRU only;
+`words`/`phrases` → persist. Bumping `VOICE_MODEL_VERSION` invalidates both the
+ETag and every storage key (a model/voice upgrade forces regeneration).
 
 ### Parameter semantics per engine
 
@@ -101,6 +115,12 @@ A/B from the front-end: the existing engine switcher just sets `?engine=`.
 | `KOKORO_MODEL_PATH` | — | local model snapshot (air-gapped) |
 | `PIPER_MODEL_PATH` | — | local `.onnx` voice, config `.onnx.json` next to it |
 | `CHATTERBOX_MODEL_PATH` | — | local checkpoint dir (air-gapped, `from_local`) |
+| `MINIO_ENDPOINT` | — | object store `host:port`; **unset → persist tier off** |
+| `MINIO_BUCKET` | `voice` | bucket for stored clips (auto-created) |
+| `MINIO_ACCESS_KEY` | — | object store access key |
+| `MINIO_SECRET_KEY` | — | object store secret key |
+| `MINIO_SECURE` | `false` | TLS to the object store |
+| `VOICE_MODEL_VERSION` | `v1` | part of the synthesis hash — bump to invalidate all cached/stored audio |
 
 **Air-gapped:** local engines download from Hugging Face by default — snapshot
 the models and point the `*_MODEL_PATH` vars at local copies. All three engines

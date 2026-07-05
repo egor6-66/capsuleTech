@@ -68,7 +68,7 @@ async def _resolve_word(
         ru=sense["ru"] if sense else None,
         pron_ru=sense["pron_ru"] if sense else None,
         pos=pos,
-        audio=await audio_block(voice, text, settings.default_lang),
+        audio=await audio_block(voice, text, settings.default_lang, "words"),
         # image needs a resolved pos for the prompt; unresolved word → no image.
         image=await image_block(image, text, pos) if pos is not None else None,
     )

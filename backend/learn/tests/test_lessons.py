@@ -116,7 +116,7 @@ def test_words_resolved_enrichment(upstream, client):
     assert eat["ru"] == "есть"
     assert eat["pron_ru"] == "ит"
     assert eat["pos"] == "verb"
-    assert eat["audio"]["url"].endswith("/voice/speak?text=eat&lang=en_US")
+    assert eat["audio"]["url"].endswith("?engine=kokoro&kind=words&text=eat&lang=en_US")
     assert eat["audio"]["engines"] == ENGINES["engines"]
     assert "image/render?prompt=eat+%28verb%29" in eat["image"]["url"]
 
@@ -135,7 +135,7 @@ def test_unresolved_word_rides_with_audio_only(upstream, client):
     assert ghost["ru"] is None
     assert ghost["pos"] is None
     # audio rides on the text alone (voice up); image needs a resolved pos.
-    assert ghost["audio"]["url"].endswith("/voice/speak?text=ghost&lang=en_US")
+    assert ghost["audio"]["url"].endswith("?engine=kokoro&kind=words&text=ghost&lang=en_US")
     assert ghost["image"] is None
 
 
