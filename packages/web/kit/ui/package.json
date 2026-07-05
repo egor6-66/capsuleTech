@@ -342,6 +342,16 @@
       "import": "./dist/components/avatar/*.mjs",
       "default": "./dist/components/avatar/*.mjs"
     },
+    "./badge": {
+      "types": "./dist/components/badge/index.d.ts",
+      "import": "./dist/components/badge/index.mjs",
+      "default": "./dist/components/badge/index.mjs"
+    },
+    "./badge/*": {
+      "types": "./dist/components/badge/*.d.ts",
+      "import": "./dist/components/badge/*.mjs",
+      "default": "./dist/components/badge/*.mjs"
+    },
     "./spinner": {
       "types": "./dist/components/spinner/index.d.ts",
       "import": "./dist/components/spinner/index.mjs",
