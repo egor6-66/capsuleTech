@@ -142,6 +142,7 @@
       ],
       "@capsuletech/web-ui/chart": ["packages/web/kit/ui/src/primitives/chart/index.ts"],
       "@capsuletech/web-ui/list": ["packages/web/kit/ui/src/primitives/list/index.ts"],
+      "@capsuletech/web-ui/prose": ["packages/web/kit/ui/src/primitives/prose/index.ts"],
       "@capsuletech/web-ui/select": ["packages/web/kit/ui/src/primitives/select/index.ts"],
       "@capsuletech/web-ui/separator": ["packages/web/kit/ui/src/primitives/separator/index.ts"],
       "@capsuletech/web-ui/skeleton": ["packages/web/kit/ui/src/primitives/skeleton/index.ts"],
