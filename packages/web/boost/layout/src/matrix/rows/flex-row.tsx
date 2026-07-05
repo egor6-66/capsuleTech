@@ -8,8 +8,8 @@ import { type IResizable, Layout } from '@capsuletech/web-ui';
 import type { Accessor, JSX } from 'solid-js';
 import { For } from 'solid-js';
 import { type ICellDndState, NOOP_REF, renderCell } from '../cell';
-import type { ICell, IRow } from '../interfaces';
-import { cellResizeActive, dividerBetweenCells } from '../utils';
+import type { BorderValue, ICell, IRow } from '../interfaces';
+import { cellHandleActive, cellResizeActive, dividerBetweenCells } from '../utils';
 import type { IGridOpts } from './grid-row';
 import { renderGridRow } from './grid-row';
 import { isPackingZone, renderPackingRow } from './packing-row';
@@ -27,7 +27,7 @@ export const rowToFlexItems = (
   savedSizes: number[] | undefined,
   isDragging: Accessor<boolean>,
   resizeEnabled: Accessor<boolean>,
-  bordered: Accessor<boolean>,
+  bordered: Accessor<BorderValue>,
 ): IResizable.IResizableItem[] => {
   const rowIsAutoHeight = row.height === 'auto';
   return row.cells.map((cell, i) => {
@@ -36,10 +36,17 @@ export const rowToFlexItems = (
     const dndState = getCellDndState ? getCellDndState(cell) : undefined;
     // Prefer session-persisted size; fall back to declared cell.width.
     const resolvedSize = savedSizes?.[i] ?? (widthIsNumber ? (cell.width as number) : undefined);
-    // Divider слева от cell (i>0): пара bordered (either-rule). Resize на
-    // разделители не влияет — ручки ghost (без своей линии).
+    // Divider слева от cell (i>0): пара bordered (either-rule со сторонами).
+    // Resize-стык: когда ручка между prev и cell АКТИВНА, её линия (bg-border)
+    // и есть divider — Matrix гасит свой бордер на этой стороне (иначе двойная
+    // линия, см. img_9/img_10).
     const prev = i > 0 ? row.cells[i - 1] : undefined;
-    const leftDivider = prev ? (): boolean => dividerBetweenCells(prev, cell, bordered) : undefined;
+    const leftDivider = prev
+      ? (): boolean =>
+          dividerBetweenCells(prev, cell, bordered, () =>
+            cellHandleActive(prev, cell, resizeEnabled),
+          )
+      : undefined;
     return {
       children: renderCell(
         cell,
@@ -95,7 +102,7 @@ export const renderRow = (
    * ADR 026: Grid-zone bindings. Only passed in insert mode when row.grid is set.
    */
   gridOpts?: IGridOpts,
-  bordered: Accessor<boolean> = () => true,
+  bordered: Accessor<BorderValue> = () => true,
   /**
    * Видимость ВЕРХНЕГО divider'а этой row (hairline между ней и предыдущей).
    * Вычисляется в content.tsx (нужен контекст соседней row). undefined —
@@ -158,7 +165,7 @@ export const renderRow = (
         ref={rowContainerRef}
         class="relative h-full min-h-0 flex-1 overflow-hidden"
         classList={{
-          'border-t border-border/60': topDivider ? topDivider() : false,
+          'border-t border-border': topDivider ? topDivider() : false,
           'ring-2 ring-inset ring-destructive/50': rowRejectsDrag(),
           'ring-2 ring-inset ring-primary/40 bg-primary/5':
             rowCanAccept() && !rowIsTarget() && !rowRejectsDrag(),
@@ -170,7 +177,6 @@ export const renderRow = (
             orientation="horizontal"
             items={items}
             withHandle
-            handleVariant="ghost"
             onSizesChange={onRowSizesChange}
           />
         </div>
@@ -184,7 +190,7 @@ export const renderRow = (
       ref={rowContainerRef}
       class="flex h-full min-h-0 w-full overflow-hidden"
       classList={{
-        'border-t border-border/60': topDivider ? topDivider() : false,
+        'border-t border-border': topDivider ? topDivider() : false,
         'flex-1': row.height === 'fr' || row.height === undefined,
         'ring-2 ring-inset ring-destructive/50': rowRejectsDrag(),
         'ring-2 ring-inset ring-primary/40 bg-primary/5':
@@ -196,6 +202,8 @@ export const renderRow = (
         {(cell, i) => {
           const cellRef = cell.draggable !== false && bindCell ? bindCell(cell, row.id) : NOOP_REF;
           const dndState = getCellDndState ? getCellDndState(cell) : undefined;
+          // Plain-путь (row без resizable) — ручек нет, resizeActive не нужен:
+          // divider всегда по bordered.
           const prev = i() > 0 ? row.cells[i() - 1] : undefined;
           const leftDivider = prev
             ? (): boolean => dividerBetweenCells(prev, cell, bordered)

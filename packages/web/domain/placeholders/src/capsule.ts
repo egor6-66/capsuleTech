@@ -4,7 +4,7 @@
  * App подключает: `packages: ['@capsuletech/web-placeholders']` в capsule.app.ts →
  * CapsuleRegistryPlugin генерит глобалы Placeholders.*:
  *   Placeholders.NotFound | Placeholders.Error | Placeholders.AccessDenied |
- *   Placeholders.Community | Placeholders.WidgetUnavailable
+ *   Placeholders.Community | Placeholders.WidgetUnavailable | Placeholders.Empty
  *
  * Имя 'Placeholders' — не JS-builtin (нет конфликта TS2451).
  *
@@ -17,7 +17,7 @@
  */
 
 import { defineCapsuleModule } from '@capsuletech/web-core/module';
-import { AccessDenied, Community, ErrorState, NotFound, WidgetUnavailable } from './blocks';
+import { AccessDenied, Community, Empty, ErrorState, NotFound, WidgetUnavailable } from './blocks';
 
 export default defineCapsuleModule({
   name: 'Placeholders',
@@ -27,5 +27,6 @@ export default defineCapsuleModule({
     AccessDenied,
     Community,
     WidgetUnavailable,
+    Empty,
   },
 });

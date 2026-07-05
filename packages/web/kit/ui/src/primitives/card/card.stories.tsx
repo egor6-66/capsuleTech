@@ -199,3 +199,75 @@ export const LoginFormCard: Story = {
     </Card>
   ),
 };
+
+// ─── Entity mode (data-driven) ───────────────────────────────────────────────
+// The consumer feeds data only — no Flex/Typography/Badge composed by hand.
+
+export const EntityWordCompact: Story = {
+  name: 'entity — word tile (compact, center, selectable)',
+  render: () => (
+    <Card
+      w={40}
+      interactive
+      title="cat"
+      titleAction={
+        <Button variant="ghost" size="icon" aria-label="Произнести">
+          🔊
+        </Button>
+      }
+      subtitle="/kæt/"
+      translation="кошка"
+      align="center"
+      onClick={() => {}}
+    />
+  ),
+};
+
+export const EntityWordFull: Story = {
+  name: 'entity — word info (full, start) — same preset, more slots',
+  render: () => (
+    <Card
+      w={80}
+      title="cat"
+      titleAction={
+        <Button variant="ghost" size="icon" aria-label="Произнести">
+          🔊
+        </Button>
+      }
+      subtitle="/kæt/"
+      translation="кошка"
+      definition="a small domesticated carnivorous mammal"
+      tags={['noun', 'A1', 'animals']}
+      meta={[
+        { key: 'часть речи', value: 'существительное' },
+        { key: 'частота', value: 'высокая' },
+      ]}
+    />
+  ),
+};
+
+export const EntityLessonCard: Story = {
+  name: 'entity — lesson card (title + badge + tags, selectable)',
+  render: () => (
+    <Card
+      w={64}
+      interactive
+      selected
+      title="Present Simple"
+      badge="A2"
+      tags={['grammar', 'tense']}
+      onClick={() => {}}
+    />
+  ),
+};
+
+export const EntitySlotsToggle: Story = {
+  name: 'entity — slot completeness (absent slot = gone, not empty)',
+  render: () => (
+    <div class="flex flex-col gap-3">
+      <Card w={64} title="Только заголовок" />
+      <Card w={64} title="+ подзаголовок" subtitle="muted caption" />
+      <Card w={64} title="+ теги" subtitle="muted caption" tags={['a', 'b']} />
+    </div>
+  ),
+};

@@ -1,7 +1,7 @@
 import { cn } from '@capsuletech/web-style';
 import { Accordion as KobalteAccordion } from '@kobalte/core/accordion';
 import { ChevronDown } from 'lucide-solid';
-import { type Accessor, createContext, splitProps, useContext } from 'solid-js';
+import { type Accessor, createContext, Show, splitProps, useContext } from 'solid-js';
 
 import { useTrace } from '../../internal/useTrace';
 import type {
@@ -21,6 +21,8 @@ import {
   accordionRootCva,
   accordionRoundedClass,
   accordionTriggerCva,
+  accordionTriggerLabelStackClass,
+  accordionTriggerSubtitleClass,
 } from './variants';
 
 /**
@@ -133,14 +135,19 @@ const Item = (props: IAccordionItemProps) => {
  */
 const Trigger = (props: IAccordionTriggerProps) => {
   const density = useContext(AccordionDensityContext);
-  const [local, others] = splitProps(props, ['class', 'children']);
+  const [local, others] = splitProps(props, ['class', 'children', 'subtitle']);
   return (
     <KobalteAccordion.Header>
       <KobalteAccordion.Trigger
         class={cn(accordionTriggerCva({ density: density() }), local.class)}
         {...(others as any)}
       >
-        <span>{local.children}</span>
+        <Show when={local.subtitle} fallback={<span>{local.children}</span>}>
+          <span class={accordionTriggerLabelStackClass}>
+            <span>{local.children}</span>
+            <span class={accordionTriggerSubtitleClass}>{local.subtitle}</span>
+          </span>
+        </Show>
         <ChevronDown
           size={16}
           aria-hidden="true"

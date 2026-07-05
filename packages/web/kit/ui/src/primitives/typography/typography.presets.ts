@@ -35,6 +35,12 @@ export const typographyPresets: readonly IPreset[] = [
     description: 'Заголовок секции. Имеет нижний border-b для визуального разделения. Тег `<h2>`.',
   },
   {
+    id: 'h3',
+    label: 'Heading 3',
+    schema: singleText({ variant: 'h3', children: 'Heading 3' }),
+    description: 'Подзаголовок внутри секции. Меньше `h2`, без border-b. Тег `<h3>`.',
+  },
+  {
     id: 'p',
     label: 'Paragraph',
     schema: singleText({

@@ -104,6 +104,13 @@ export interface IAccordionTriggerProps extends AccordionTriggerProps {
   class?: string;
   /** Trigger label. */
   children?: JSX.Element;
+  /**
+   * Optional muted caption under the label. When set, the label is drawn as a
+   * column stack (title on top, muted subtitle below); otherwise — a single
+   * line. Replaces the raw `flex-col` + `tone="muted"` composite a consumer
+   * would otherwise hand-roll around the trigger's children.
+   */
+  subtitle?: JSX.Element;
 }
 
 /**

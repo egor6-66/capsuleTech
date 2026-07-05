@@ -2,12 +2,7 @@ import { cn } from '@capsuletech/web-style';
 import { children, createMemo, For, type JSX, Show } from 'solid-js';
 import { useTrace } from '../../../internal/useTrace';
 import { ResizableHandle, ResizablePanel, ResizableRoot } from './_resize/primitives';
-import type {
-  IResizableItem,
-  IResizableProps,
-  ResizableHandleVariant,
-  ResizableOrientation,
-} from './interfaces';
+import type { IResizableItem, IResizableProps, ResizableOrientation } from './interfaces';
 
 // fillInitialSizes — 1:1 из flex.tsx.
 const fillInitialSizes = (items: IResizableItem[]): number[] => {
@@ -40,7 +35,6 @@ const ResizableInner = (props: {
   orientation: ResizableOrientation;
   withHandle?: boolean;
   handleDisabled?: boolean;
-  handleVariant?: ResizableHandleVariant;
   class?: string;
   onSizesChange?: (sizes: number[]) => void;
 }) => {
@@ -73,7 +67,6 @@ const ResizableInner = (props: {
             >
               <ResizableHandle
                 withHandle={props.withHandle}
-                variant={props.handleVariant}
                 active={
                   !props.handleDisabled &&
                   resolveHandleActive(item.handleActive) &&
@@ -162,7 +155,6 @@ export const Resizable = (props: IResizableProps) => {
         orientation={orientation()}
         withHandle={props.withHandle}
         handleDisabled={props.handleDisabled}
-        handleVariant={props.handleVariant}
         class={props.class}
         onSizesChange={props.onSizesChange}
       />

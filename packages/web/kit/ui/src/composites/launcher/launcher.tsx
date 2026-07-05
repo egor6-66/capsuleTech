@@ -11,10 +11,11 @@ import { resolveLauncherPreset } from './launcher.presets';
  * Launcher — stateless hero + грид кликабельных карточек-разделов.
  *
  * Визуал вынесен из learn-копии `welcome/Welcome.tsx`: центрированный `Flex`
- * (hero: Typography h1 + muted) + ряд кликабельных `Card` (role=button, tabIndex,
- * onClick/onKeyDown Enter/Space → `onSelect`) + hint. Клик-хендлинг клавиатуры —
- * внутри компонента. Кликабельная поверхность карточки берётся из канон-пропа
- * `Card interactive` (cursor + hover-surface) — ноль сырых hover-классов наружу.
+ * (hero: Typography h1 + muted) + ряд кликабельных `Card interactive` + hint.
+ * A11y карточки-кнопки (role=button, tabIndex, Enter/Space → onClick) вшита в
+ * сам `Card` (entity-card бриф) — Launcher только даёт `interactive` + `onClick`,
+ * руками a11y не пишет. Кликабельная поверхность (cursor + hover) — из `Card
+ * interactive`; ноль сырых hover-классов наружу.
  *
  * Ничего не знает про роутер/emit: `onSelect(id)` уходит наружу, connected-обвязку
  * держит shell-слой (`@capsuletech/web-shell`).
@@ -70,17 +71,10 @@ export function Launcher(props: ILauncherProps) {
           {(item) => (
             <Card
               interactive
-              role="button"
-              tabIndex={0}
               // focus-ring для клавиатурной навигации — внутренний класс (легитимен в kit'е).
+              // role/tabIndex/Enter-Space даёт сам Card (interactive + onClick).
               class="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               onClick={() => select(item.id)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  select(item.id);
-                }
-              }}
             >
               <Card.Header>
                 <Card.Title>{item.label}</Card.Title>

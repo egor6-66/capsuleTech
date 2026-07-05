@@ -128,3 +128,15 @@ export const accordionContentCva = cva('accordion-animate', {
  * Inner content wrapper ensures `min-height: 0` so the grid can collapse.
  */
 export const accordionContentInnerClass = 'min-h-0 text-sm text-muted-foreground';
+
+/**
+ * Trigger label as a column stack (title + muted caption). Applied only when
+ * the `subtitle` prop is set — the "title over caption" group header is a
+ * repeating pattern across reference accordions (Concepts / Rules), so its
+ * layout lives inside the primitive instead of being copy-pasted by every
+ * consumer. `min-w-0` keeps the stack shrinkable next to the chevron;
+ * `text-left` overrides any inherited centring.
+ */
+export const accordionTriggerLabelStackClass = 'flex min-w-0 flex-col gap-0.5 text-left';
+/** Muted caption row under the label in the stacked-trigger layout. */
+export const accordionTriggerSubtitleClass = 'text-xs font-normal text-muted-foreground';

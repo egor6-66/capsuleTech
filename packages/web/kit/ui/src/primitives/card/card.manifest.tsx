@@ -34,6 +34,18 @@ export const CardManifest: IPrimitiveManifestEntry = {
   styleSlots: ['root'],
   propsSchema: cardBaseProps.extend({
     class: z.string().optional(),
+    // Entity-mode slots (data-driven Card). Text slots as strings for the
+    // inspector; runtime also accepts JSX. Setting any slot switches Card to
+    // the entity layout (see ICardEntityProps).
+    title: z.string().optional(),
+    titleAction: z.string().optional(),
+    subtitle: z.string().optional(),
+    translation: z.string().optional(),
+    definition: z.string().optional(),
+    badge: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+    meta: z.array(z.object({ key: z.string(), value: z.string() })).optional(),
+    align: z.enum(['start', 'center']).optional(),
   }),
   presets: cardPresets,
 };

@@ -11,14 +11,14 @@ slug: web-ui/primitives/typography
 # Typography {#typography}
 
 Текстовый примитив @capsuletech/web-ui. Полиморфный — тег выбирается автоматически из variant
-(h1/h2/p/blockquote/code; lead и muted рендерятся как <p>). Поддерживает цветовой override через
+(h1/h2/h3/p/blockquote/code; lead и muted рендерятся как <p>). Поддерживает цветовой override через
 tone, выравнивание (align), размер поверх варианта (size) и opacity-скрытие без layout shift (dim).
 
 Импорт: import { Typography } from '@capsuletech/web-ui/typography';
 
 ## Когда использовать {#usage}
 
-- Семантические заголовки h1/h2 — иерархия страниц и секций.
+- Семантические заголовки h1/h2/h3 — иерархия страниц и секций.
 - Параграфы — тело текста, описания, инструкции.
 - Lead — вступительный абзац раздела (один в начале).
 - Muted — подписи под полями, метаданные, hint-текст.
@@ -29,7 +29,7 @@ tone, выравнивание (align), размер поверх вариант
 
 | Prop | Type | Default | Назначение |
 |---|---|---|---|
-| variant | enum h1/h2/p/blockquote/code/lead/muted | p | Семантический вариант. Определяет HTML-тег и стиль. |
+| variant | enum h1/h2/h3/p/blockquote/code/lead/muted | p | Семантический вариант. Определяет HTML-тег и стиль. |
 | color | enum default/muted/primary/destructive | default | Color через CVA (старый канал). |
 | tone | enum default/muted/destructive/primary | — | Color override (новый канал). Приоритетнее color. |
 | align | enum start/center/end | — | Выравнивание текста. |
@@ -43,6 +43,7 @@ tone, выравнивание (align), размер поверх вариант
 
 - h1 — один на маршрут (SEO + a11y outline). Font extrabold + tight tracking.
 - h2 — заголовок секции. Нижний border-b для визуального разделения.
+- h3 — подзаголовок внутри секции. Меньше h2 (text-2xl), без border-b.
 - p — дефолт для тела текста. leading-7 для читаемости.
 - lead — крупный вступительный абзац. text-xl + text-muted-foreground.
 - muted — приглушённый текст. text-sm + text-muted-foreground.
@@ -92,8 +93,8 @@ as overrides тег, вычисленный из variant. Polymorphism runtime-o
 
 ## Tokens / стили {#tokens}
 
-Шрифты: text-4xl (h1) / text-3xl (h2) / text-base (p) / text-xl (lead) / text-sm (muted).
-Tracking: tracking-tight (h1/h2). Line-height: leading-7 (p).
+Шрифты: text-4xl (h1) / text-3xl (h2) / text-2xl (h3) / text-base (p) / text-xl (lead) / text-sm (muted).
+Tracking: tracking-tight (h1/h2/h3). Line-height: leading-7 (p).
 Цвета через design-system tokens: text-foreground, text-muted-foreground, text-primary, text-destructive.
 Border: border-b pb-2 (h2), border-l-2 pl-6 (blockquote).
 Переход: transition-opacity duration-200 (всегда — для dim).

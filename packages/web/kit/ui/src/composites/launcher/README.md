@@ -35,8 +35,9 @@ import { Launcher } from '@capsuletech/web-ui/launcher';
 
 - **Stateless, props-only.** Роутер/emit не известны — клик уходит через
   `onSelect`. Connected-обвязку держит `@capsuletech/web-shell`.
-- **Кликабельная карточка** = канон-проп `Card interactive` (cursor + hover-surface)
-  + `role="button"` + `tabIndex={0}` + клавиатура (Enter/Space) внутри компонента.
+- **Кликабельная карточка** = канон-проп `Card interactive` (cursor + hover-surface).
+  A11y кнопки (`role="button"` + `tabIndex={0}` + Enter/Space → `onClick`) вшита в
+  сам `Card` — Launcher даёт только `interactive` + `onClick`, руками a11y не пишет.
   Ноль сырых hover-классов в публичном API; focus-ring — внутренний класс kit'а.
 
 ## Пресеты {#presets}

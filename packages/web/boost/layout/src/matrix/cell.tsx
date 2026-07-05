@@ -74,8 +74,9 @@ export const renderCell = (
    * Видимость ЛЕВОГО divider'а (hairline `border-l` между этой cell и её
    * левым соседом). Слоты Matrix — общее пространство, разделённое линиями,
    * а не независимые карточки: полный border + rounding убраны (2026-07-04).
-   * Вычисляется вызывающим (нужен контекст соседа): пара bordered И между
-   * ними не рисуется активная resize-ручка (её hairline — сам разделитель).
+   * Вычисляется вызывающим (нужен контекст соседа): пара bordered (either-rule
+   * со сторонами) И на шве нет активной resize-ручки — если ручка активна, её
+   * hairline (`bg-border`) сам служит разделителем (resize-стык = один элемент).
    * `undefined` — первый в ряду / divider не нужен.
    */
   leftDivider?: Accessor<boolean>,
@@ -125,7 +126,7 @@ export const renderCell = (
         component={tag}
         ref={cellRef}
         class="h-full w-full relative"
-        classList={{ 'border-l border-border/60': showDivider() }}
+        classList={{ 'border-l border-border': showDivider() }}
       >
         {/* Inner scroll wrapper; pointer-events-none during drag prevents hover leaking
             into cell content (table row hover, map hover, etc.).
@@ -167,7 +168,7 @@ export const renderCell = (
       component={tag}
       ref={cellRef}
       class={`${isMain ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative overflow-hidden`}
-      classList={{ 'border-l border-border/60': showDivider() }}
+      classList={{ 'border-l border-border': showDivider() }}
     >
       <div class="absolute inset-0 overflow-auto">
         <MatrixSlot slot={cell.id}>

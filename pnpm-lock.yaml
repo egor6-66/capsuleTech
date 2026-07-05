@@ -1432,6 +1432,9 @@ importers:
       '@capsuletech/web-docs':
         specifier: workspace:*
         version: link:../../docs
+      '@capsuletech/web-placeholders':
+        specifier: workspace:*
+        version: link:../../domain/placeholders
       '@capsuletech/web-shell':
         specifier: workspace:*
         version: link:../../domain/shell

@@ -7,6 +7,7 @@ import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccessDenied } from '../accessDenied';
 import { Community } from '../community';
+import { Empty } from '../empty';
 import { ErrorState } from '../error';
 import { NotFound } from '../notFound';
 import { WidgetUnavailable } from '../widgetUnavailable';
@@ -92,5 +93,33 @@ describe('Placeholders.WidgetUnavailable', () => {
     expect(emitSpy).toHaveBeenCalledWith('onRetry', {
       source: 'Placeholders.WidgetUnavailable',
     });
+  });
+});
+
+describe('Placeholders.Empty', () => {
+  it('рендерит title/description и дефолтный заголовок', () => {
+    cleanup = render(() => <Empty />, container);
+    expect(container.textContent).toContain('Пусто');
+  });
+
+  it('уважает текстовые оверрайды title/description', () => {
+    cleanup = render(() => <Empty title="Выберите урок" description="Список слева" />, container);
+    expect(container.textContent).toContain('Выберите урок');
+    expect(container.textContent).toContain('Список слева');
+  });
+
+  it('actionLabel задан → кнопка + эмит onAction по клику', () => {
+    cleanup = render(() => <Empty actionLabel="Создать" />, container);
+    const button = container.querySelector('button');
+    expect(button).not.toBeNull();
+    expect(container.textContent).toContain('Создать');
+    clickAction();
+    expect(emitSpy).toHaveBeenCalledWith('onAction', { source: 'Placeholders.Empty' });
+  });
+
+  it('actionLabel не задан → нет кнопки и события', () => {
+    cleanup = render(() => <Empty title="Практик нет" />, container);
+    expect(container.querySelector('button')).toBeNull();
+    expect(emitSpy).not.toHaveBeenCalled();
   });
 });

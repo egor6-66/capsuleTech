@@ -32,6 +32,16 @@
       "import": "./dist/components/accordion/*.mjs",
       "default": "./dist/components/accordion/*.mjs"
     },
+    "./article": {
+      "types": "./dist/components/article/index.d.ts",
+      "import": "./dist/components/article/index.mjs",
+      "default": "./dist/components/article/index.mjs"
+    },
+    "./article/*": {
+      "types": "./dist/components/article/*.d.ts",
+      "import": "./dist/components/article/*.mjs",
+      "default": "./dist/components/article/*.mjs"
+    },
     "./button": {
       "types": "./dist/components/button/index.d.ts",
       "import": "./dist/components/button/index.mjs",
@@ -271,6 +281,16 @@
       "types": "./dist/components/segmentedBar/*.d.ts",
       "import": "./dist/components/segmentedBar/*.mjs",
       "default": "./dist/components/segmentedBar/*.mjs"
+    },
+    "./sectionedList": {
+      "types": "./dist/components/sectionedList/index.d.ts",
+      "import": "./dist/components/sectionedList/index.mjs",
+      "default": "./dist/components/sectionedList/index.mjs"
+    },
+    "./sectionedList/*": {
+      "types": "./dist/components/sectionedList/*.d.ts",
+      "import": "./dist/components/sectionedList/*.mjs",
+      "default": "./dist/components/sectionedList/*.mjs"
     },
     "./launcher": {
       "types": "./dist/components/launcher/index.d.ts",

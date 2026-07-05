@@ -397,6 +397,118 @@ describe('WidgetUi — Prose: plain callable with meta', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Compile-time: Accordion compound — root + Item/Trigger/Content sub-components.
+// Accordion is lazy (kobalte-heavy). Mirrors Dropdown/Tooltip pattern.
+// Guards: root + 3 sub-components accept IUiMetaProps in both ViewUi and WidgetUi.
+// ---------------------------------------------------------------------------
+
+describe('ViewUi — Accordion compound: root and sub-components preserved with meta', () => {
+  it('Ui.Accordion is a function', () => {
+    expectTypeOf<ViewUi['Accordion']>().toBeFunction();
+  });
+
+  it('Ui.Accordion accepts IUiMetaProps (meta prop)', () => {
+    type Props = Parameters<ViewUi['Accordion']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
+  });
+
+  it('Ui.Accordion.Item is a function (not lost after WithMetaProps)', () => {
+    expectTypeOf<ViewUi['Accordion']['Item']>().toBeFunction();
+  });
+
+  it('Ui.Accordion.Item accepts meta prop', () => {
+    type Props = Parameters<ViewUi['Accordion']['Item']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<{ meta?: ITagMeta }>();
+  });
+
+  it('Ui.Accordion.Trigger is a function', () => {
+    expectTypeOf<ViewUi['Accordion']['Trigger']>().toBeFunction();
+  });
+
+  it('Ui.Accordion.Trigger accepts meta prop', () => {
+    type Props = Parameters<ViewUi['Accordion']['Trigger']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<{ meta?: ITagMeta }>();
+  });
+
+  it('Ui.Accordion.Content is a function', () => {
+    expectTypeOf<ViewUi['Accordion']['Content']>().toBeFunction();
+  });
+
+  it('Ui.Accordion.Content accepts meta prop', () => {
+    type Props = Parameters<ViewUi['Accordion']['Content']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<{ meta?: ITagMeta }>();
+  });
+});
+
+describe('WidgetUi — Accordion compound: root and sub-components preserved with meta', () => {
+  it('Ui.Accordion is a function', () => {
+    expectTypeOf<WidgetUi['Accordion']>().toBeFunction();
+  });
+
+  it('Ui.Accordion.Item is a function (not lost after WithMetaProps)', () => {
+    expectTypeOf<WidgetUi['Accordion']['Item']>().toBeFunction();
+  });
+
+  it('Ui.Accordion.Trigger accepts meta prop', () => {
+    type Props = Parameters<WidgetUi['Accordion']['Trigger']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<{ meta?: ITagMeta }>();
+  });
+
+  it('Ui.Accordion.Content accepts meta prop', () => {
+    type Props = Parameters<WidgetUi['Accordion']['Content']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<{ meta?: ITagMeta }>();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Compile-time: SectionedList — plain callable (isLeaf, no sub-components).
+// Lazy (composite over Accordion + List + Tooltip). Guards: callable +
+// IUiMetaProps in both ViewUi and WidgetUi.
+// ---------------------------------------------------------------------------
+
+describe('ViewUi — SectionedList: plain callable with meta', () => {
+  it('Ui.SectionedList is a function', () => {
+    expectTypeOf<ViewUi['SectionedList']>().toBeFunction();
+  });
+
+  it('Ui.SectionedList accepts IUiMetaProps (meta prop)', () => {
+    type Props = Parameters<ViewUi['SectionedList']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
+  });
+});
+
+describe('WidgetUi — SectionedList: plain callable with meta', () => {
+  it('Ui.SectionedList accepts IUiMetaProps (meta prop)', () => {
+    type Props = Parameters<WidgetUi['SectionedList']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Compile-time: Article — plain callable (isLeaf, no sub-components).
+// Lazy (composite over Card + Prose + Badge). Guards: callable +
+// IUiMetaProps in both ViewUi and WidgetUi.
+// ---------------------------------------------------------------------------
+
+describe('ViewUi — Article: plain callable with meta', () => {
+  it('Ui.Article is a function', () => {
+    expectTypeOf<ViewUi['Article']>().toBeFunction();
+  });
+
+  it('Ui.Article accepts IUiMetaProps (meta prop)', () => {
+    type Props = Parameters<ViewUi['Article']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
+  });
+});
+
+describe('WidgetUi — Article: plain callable with meta', () => {
+  it('Ui.Article accepts IUiMetaProps (meta prop)', () => {
+    type Props = Parameters<WidgetUi['Article']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Runtime: ViewWrapper + UiProxy does not crash when meta is passed
 // (the actual prop stripping is in UiProxy; here we verify no runtime error)
 // ---------------------------------------------------------------------------

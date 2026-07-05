@@ -124,14 +124,16 @@ const MatrixImpl = (props: IMatrixProps) => {
  *   (т.е. drop-цель реально есть).
  * - `onLayoutChange` called with swap/insert/grid event after each successful layout change.
  *
- * **Border (divider-модель, 2026-07-04):**
- * - `bordered?: boolean` (default `true`) — рисует ВНУТРЕННИЕ hairline-разделители
- *   между слотами. Слоты — общее пространство, разделённое линиями, не независимые
- *   карточки (внешних бордеров и скруглений у ячеек нет).
- * - Линии — исключительно функция `bordered`; resize на них не влияет: все
- *   Resizable матрицы работают с `handleVariant="ghost"` (ручка = хит-зона +
- *   grip-бэйдж, своей линии не рисует ни в каком состоянии).
- * - Per-slot override: `slots.header.bordered` / `cell.bordered` (raw rows) —
- *   divider виден, если хотя бы один из соседей резолвится в true.
+ * **Border (divider-модель, 2026-07-05):**
+ * - `bordered?: boolean | BorderSides` (opt-out, default `true`) — рисует
+ *   ВНУТРЕННИЕ hairline-разделители между слотами. Слоты — общее пространство,
+ *   разделённое линиями, не независимые карточки (внешних бордеров и скруглений
+ *   у ячеек нет). Divider виден по either-rule со сторонами (kill-wins).
+ * - **Resize-стык = один элемент:** на АКТИВНОЙ resize-ручке линию рисует сама
+ *   ручка (`bg-border`, web-ui после снятия ghost) — Matrix гасит СВОЙ divider на
+ *   этой стороне. На стыке одна линия, не две (см. img_9/img_10). Единый токен.
+ * - Per-slot / per-side override: `slots.header.bordered` / `cell.bordered` —
+ *   `boolean` (весь слот) либо `BorderSides` (точечно T/R/B/L, кейс: погасить
+ *   ОДНУ сторону двойного шва у вложенного фрейма).
  */
 export const Matrix = MatrixImpl;
