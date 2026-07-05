@@ -52,7 +52,7 @@ async def list_senses(
     voice: VoiceClient = request.app.state.voice
     image: ImageClient = request.app.state.image
     for item in data["senses"]:
-        item["audio"] = await _audio_block(voice, item["text"], lang)
+        item["audio"] = await _audio_block(voice, item["text"], lang, "words")
         item["image"] = await _image_block(image, item["text"], item["pos"])
     return data
 
@@ -62,7 +62,9 @@ async def get_sense(sense_id: int, request: Request) -> Any:
     data = await request.app.state.lang.sense(sense_id)
     voice: VoiceClient = request.app.state.voice
     image: ImageClient = request.app.state.image
-    data["audio"] = await _audio_block(voice, data["word"]["text"], data["word"]["lang"])
+    data["audio"] = await _audio_block(
+        voice, data["word"]["text"], data["word"]["lang"], "words"
+    )
     # Overrides lang's plain-text "образ" stub with the composed picture link.
     data["image"] = await _image_block(image, data["word"]["text"], data["pos"])
     return data

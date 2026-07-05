@@ -11,6 +11,9 @@ dependencies = [
     "pydantic>=2.7",
     "pydantic-settings>=2.3",
     "cachetools>=5.3",
+    # Persistent voice tier (ADR 076) — MinIO/S3 client. Pure-Python, light;
+    # the tier is off until MINIO_ENDPOINT is set (client built lazily).
+    "minio>=7.2",
 ]
 
 [project.optional-dependencies]
