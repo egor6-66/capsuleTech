@@ -122,6 +122,7 @@
       "@capsuletech/web-ui/manifest": ["packages/web/kit/ui/src/manifest/index.ts"],
       "@capsuletech/web-ui/accordion": ["packages/web/kit/ui/src/primitives/accordion/index.ts"],
       "@capsuletech/web-ui/avatar": ["packages/web/kit/ui/src/primitives/avatar/index.ts"],
+      "@capsuletech/web-ui/badge": ["packages/web/kit/ui/src/primitives/badge/index.ts"],
       "@capsuletech/web-ui/button": ["packages/web/kit/ui/src/primitives/button/index.ts"],
       "@capsuletech/web-ui/card": ["packages/web/kit/ui/src/primitives/card/index.ts"],
       "@capsuletech/web-ui/dropdown": ["packages/web/kit/ui/src/primitives/dropdown/index.ts"],
