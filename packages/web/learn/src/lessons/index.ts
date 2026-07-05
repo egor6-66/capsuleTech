@@ -1,5 +1,10 @@
 export { Concept, type IConceptProps } from './Concept';
 export { Concepts, type IConceptsEvents, type IConceptsProps } from './Concepts';
+export {
+  type ILessonsWelcomeEvents,
+  type ILessonsWelcomeProps,
+  LessonsWelcome,
+} from './LessonsWelcome';
 export { type ILessonsListEvents, type IListProps, List } from './List';
 export { type ILessonsNavEvents, type INavProps, Nav } from './Nav';
 export { type IRuleEvents, type IRuleProps, Rule } from './Rule';

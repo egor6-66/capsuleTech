@@ -5,7 +5,7 @@
  * CapsuleRegistryPlugin генерит глобалы Learn.*:
  *   Learn.Provider | Learn.Welcome | Learn.Exercise | Learn.Progress |
  *   Learn.VocabList | Learn.Tour | Learn.SentenceBuilder | Learn.LibraryNav |
- *   Learn.LessonsNav | Learn.LibraryWelcome | Learn.Collections |
+ *   Learn.LessonsNav | Learn.LessonsWelcome | Learn.LibraryWelcome | Learn.Collections |
  *   Learn.Library.{Search,Words,Info} |
  *   Learn.Lessons.{List,View,Concepts,Concept,Rules,Rule}
  *
@@ -23,7 +23,16 @@ import { defineCapsuleModule } from '@capsuletech/web-core/module';
 import { LearnProvider } from './core';
 import { Exercise } from './exercise';
 import { Tour } from './guides';
-import { Concept, Concepts, Nav as LessonsNav, List, Rule, Rules, View } from './lessons';
+import {
+  Concept,
+  Concepts,
+  Nav as LessonsNav,
+  LessonsWelcome,
+  List,
+  Rule,
+  Rules,
+  View,
+} from './lessons';
 import {
   Collections,
   Info,
@@ -49,6 +58,7 @@ export default defineCapsuleModule({
     SentenceBuilder,
     LibraryNav,
     LessonsNav,
+    LessonsWelcome,
     LibraryWelcome,
     Collections,
     Library: { Search, Words, Info },
