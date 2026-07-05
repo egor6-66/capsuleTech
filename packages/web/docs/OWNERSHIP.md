@@ -19,14 +19,14 @@ Solid runtime для docs-as-data registry — `<DocsProvider>` / `<DocSection>`
 - **Priority:** `P2` — runtime готов, но пока без live-consumer'ов (studio/ReadmeBlock — placeholder; ждём wiring).
 - **Maturity bar (alpha → beta):**
   - Live consumer в apps/playground или studio info-panel.
-  - Wikilink rewrite в `render-markdown` (сейчас raw `[[name]]`).
   - Syntax highlighting (marked-extension).
 - **Active blockers:** нет.
 - **Roadmap:**
-  - `[ ]` Wikilink → `<a href="#slug">` rewrite (post-launch task).
+  - `[x]` Wikilink → `<a class="wikilink" data-ref="id">` rewrite (2026-07-05).
+  - `[x]` Obsidian-callouts → `<div class="callout callout-<type>">` (2026-07-05).
   - `[ ]` Syntax-highlighting через marked-extension.
   - `[ ]` Variant: `<DocSection>` без `DocsProvider` (inline registry prop).
-- **Last activity:** 2026-06-16 — package created from studio/src/docs/ extract.
+- **Last activity:** 2026-07-05 — callouts + wikilink semantic rewrite в `render-markdown`.
 
 ## Vendor stack (ADR 047 D3)
 
@@ -61,11 +61,12 @@ Solid runtime для docs-as-data registry — `<DocsProvider>` / `<DocSection>`
 - **`marked` синхронный.** `renderMarkdown` кастит `parse(md) as string` — это корректно при синхронной конфигурации (`gfm: true, breaks: false`). Async-extensions сломают каст. См. `src/render-markdown.ts`.
 - **Markdown source — controlled.** `<DocSection>` / `<DocPage>` рендерят результат через `innerHTML` без санитизации. XSS не вектор: `docs/**/*.md` живёт в монорепе под git-review. **НЕ подключать user-supplied markdown в registry без санитизации.**
 - **DocsProvider — required.** `useDoc()` / `<DocSection>` / `<DocPage>` бросают исключение вне `<DocsProvider>`. Это намеренно — typed registry это контракт, не optional.
-- **Wikilinks raw.** На MVP `[[slug]]` рендерится как-есть в выходном HTML (post-launch — rewrite в `<a href>`).
+- **Semantic-only rewrite.** `renderMarkdown` выдаёт СЕМАНТИКУ, не презентацию/поведение (канон разделения): wikilink `[[id]]`/`[[id|label]]` → `<a class="wikilink" data-ref="id">…</a>` **без href** (резолв пути и клик — зона потребителя, web-learn/studio Info); callout `> [!type] Title` → `<div class="callout callout-<type>"><p class="callout-title">…</p>…</div>` (`type ∈ info|tip|warning|note`, unknown → `note`). Стили — Prose (web-ui). `[[…]]` внутри code-блоков не трогается (inline-extension не заходит в codespan/fenced).
 
 ## План рефакторинга / оптимизаций
 
-- [ ] **Wikilink rewrite** — `[[slug]]` → `<a href="#slug">` через marked-extension. (priority: medium)
+- [x] **Wikilink rewrite** — `[[id]]`/`[[id|label]]` → `<a class="wikilink" data-ref="id">` (semantic-only, no href) через marked-extension (2026-07-05).
+- [x] **Obsidian callouts** — `> [!type] Title` → `<div class="callout callout-<type>">` через block-level marked-extension (2026-07-05).
 - [ ] **Syntax highlighting** — code-blocks через `prismjs` или встроенный marked-highlight. (priority: low)
 - [ ] **Standalone variant** — `<DocSection registry={...}>` без provider'а для one-shot use cases. (priority: low)
 - [x] **Phase 3.6 extract** — вынесли из `@capsuletech/web-studio/docs` в свой пакет (2026-06-16).
@@ -74,6 +75,7 @@ Solid runtime для docs-as-data registry — `<DocsProvider>` / `<DocSection>`
 
 | Тип | Где | Что покрывает |
 |---|---|---|
+| Unit | `src/__tests__/render-markdown.test.ts` | Wikilinks (semantic anchor, alias, escape, code-block untouched) + callouts (types, empty title, fallback, nested md, escape) + no-regression (tables/lists/mix). |
 | Unit | `src/__tests__/audience-filter.test.ts` | Audience-block parser: matching, multi-line, multi-block, comma-lists. |
 | Unit | `src/__tests__/DocSection.test.tsx` | Render section by slug, missing fallback, audience filter, custom fallback. |
 | Unit | `src/__tests__/DocPage.test.tsx` | Render title + section order, missing slug fallback. |
