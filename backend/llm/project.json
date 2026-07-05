@@ -1,0 +1,30 @@
+{
+  "name": "backend-llm",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "backend/llm/src",
+  "tags": ["backend", "python", "llm"],
+  "targets": {
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/llm",
+        "command": "uv run uvicorn capsule_llm.main:app --port 8007 --reload"
+      }
+    },
+    "test:py": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/llm",
+        "command": "uv run pytest"
+      }
+    },
+    "lint:py": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/llm",
+        "command": "uv run ruff check ."
+      }
+    }
+  }
+}
