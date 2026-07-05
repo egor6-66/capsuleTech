@@ -1,0 +1,37 @@
+{
+  "name": "backend-community",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "backend/community/src",
+  "tags": ["backend", "python", "community"],
+  "targets": {
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/community",
+        "command": "uv run uvicorn capsule_community.main:app --port 8006 --reload"
+      }
+    },
+    "migrate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/community",
+        "command": "uv run alembic upgrade head"
+      }
+    },
+    "test:py": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/community",
+        "command": "uv run pytest"
+      }
+    },
+    "lint:py": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/community",
+        "command": "uv run ruff check ."
+      }
+    }
+  }
+}
