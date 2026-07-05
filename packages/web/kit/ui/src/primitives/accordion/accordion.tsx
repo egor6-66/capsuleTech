@@ -29,7 +29,9 @@ import {
  * Default accessor returns `'default'` — a standalone `Accordion.Trigger`
  * (outside a Root) still renders with roomy padding, never crashes.
  */
-const AccordionDensityContext = createContext<Accessor<AccordionDensity>>(() => 'default');
+const AccordionDensityContext = createContext<Accessor<AccordionDensity>>(
+  (): AccordionDensity => 'default',
+);
 
 /**
  * Root accordion container.

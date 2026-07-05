@@ -1,5 +1,5 @@
 import type { VariantProps } from 'class-variance-authority';
-import type { Component, JSX } from 'solid-js';
+import type { Component, ComponentProps, JSX } from 'solid-js';
 import type { FlexJustify } from '../layout/flex/interfaces';
 import type { listItemVariants, listVariants } from './variants';
 
@@ -28,8 +28,11 @@ export interface ISelectableItemProps
   extends Omit<JSX.ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'onSelect' | 'class'> {
   /** Row label. */
   children: JSX.Element;
-  /** Optional leading icon component (e.g. a lucide icon). */
-  icon?: Component;
+  /**
+   * Optional leading icon component (e.g. a lucide icon). Typed to accept SVG
+   * props so the primitive can pass `class` / `aria-hidden` through to it.
+   */
+  icon?: Component<ComponentProps<'svg'>>;
   /** Highlighted (selected) state — `bg-accent`. */
   selected?: boolean;
   /** Fired on click / Enter / Space. */
