@@ -11,6 +11,35 @@ export interface IListItemProps extends Omit<JSX.HTMLAttributes<HTMLDivElement>,
   style?: JSX.CSSProperties | string;
 }
 
+/**
+ * Selectable list leaf (`Ui.List.Item`). A stateless, keyboard-accessible
+ * "selectable row": the visual + a11y contract of a picker option, with the
+ * highlight styling baked in (no raw hover/selected classes leak to the
+ * consumer). The single leaf primitive behind list- and accordion-based
+ * pickers (e.g. the studio component palette).
+ *
+ * `onSelect` fires on click, Enter, or Space. Tooltip / preview chrome is NOT
+ * part of this primitive — wrap it (`<Tooltip><SelectableItem/></Tooltip>`).
+ *
+ * Extends button HTML attrs (minus the redefined `children`/`onSelect`/`class`)
+ * so `data-*` markers, `title`, `aria-*` etc. pass straight through.
+ */
+export interface ISelectableItemProps
+  extends Omit<JSX.ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'onSelect' | 'class'> {
+  /** Row label. */
+  children: JSX.Element;
+  /** Optional leading icon component (e.g. a lucide icon). */
+  icon?: Component;
+  /** Highlighted (selected) state — `bg-accent`. */
+  selected?: boolean;
+  /** Fired on click / Enter / Space. */
+  onSelect: () => void;
+  /** Optional trailing slot (right-aligned — badge, count, chevron…). */
+  trailing?: JSX.Element;
+  /** Extra CSS classes on the button. */
+  class?: string;
+}
+
 /** Render-prop (classic) mode: items + children as render function. */
 export interface IListRenderProps<T> extends Omit<JSX.HTMLAttributes<HTMLDivElement>, 'children'> {
   items: T[];

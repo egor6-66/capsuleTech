@@ -28,7 +28,7 @@ Stateless UI-kit для capsule: 16 primitives (Button, Input, Card, Field, Togg
   2. Ui.Map/Flow/Chart placeholder'ы (после W6 boost-renames).
   3. Vitest Solid transform → разблокировать DOM-render unit-coverage.
   4. Visual regression CI.
-- **Last activity:** 2026-07-04 (Button active-link `aria-current="page"` accent в базовом CVA, brief ui-button-active-link-state; ранее в тот же день — Resizable `handleActive` + `handleVariant='ghost'`).
+- **Last activity:** 2026-07-05 (Accordion `segmented` пресет + `density` + `nested`; `List.Item` selectable leaf — brief accordion-selectable-1-ui; ранее в тот же день — SegmentedBar + Launcher).
 
 ## Vendor stack (ADR 047 D3)
 
@@ -170,6 +170,24 @@ Migration from v0.3.0: `slots={{ header, main, rightBar, footer }}` → `preset=
 - **`Launcher`** (`composites/launcher/`, subpath `@capsuletech/web-ui/launcher`) — hero + грид карточек из learn `welcome/Welcome.tsx`. Центрированный `Flex` (Typography h1 + muted) + ряд кликабельных `Card` (`interactive` проп даёт cursor+hover-surface — ноль сырых hover-классов; `role=button`, `tabIndex=0`, Enter/Space внутри) + hint. Props: `items`, `onSelect`, `title?`/`description?`/`hint?`, `preset?`, `class?`/`style?`. Hero скрыт когда нет title/description.
 - **Пресеты (рычаг №1 канона)** — `preset?` резолвится в config-объект (`segmentedBar.presets.ts` / `launcher.presets.ts`) через `resolve*Preset` (неизвестное имя → дефолт). Пресет = композиция замороженных токенов/вариантов (ADR 042), НЕ новые классы. Для пилота — один `default`-пресет + точка расширения. Manifest/contract (studio-палитра) НЕ заводились — вне scope пилота.
 - Тесты: `__tests__/segmentedBar.test.tsx` (рендер items / onSelect по клику / aria-current / variant+pointer-events, 4) + `__tests__/launcher.test.tsx` (рендер карточек / onSelect клик / Enter+Space / hero present / hero omit, 5). Stories: SegmentedBar (Default/NoActive/Centered), Launcher (Default/NoHero). README + subpath exports (`./segmentedBar`, `./launcher` + `/*`).
+
+### Accordion — `segmented` пресет + `density` + `nested` (2026-07-05)
+
+По брифу `docs/_meta/briefs/accordion-selectable-1-ui.md` (часть A, канон [[feedback_product_wide_kit_layering]]) — studio-look аккордеона (палитра компонентов) вынесен в кит пресетом, сырые классы (`pl-3`, ручной `py-2`) убраны. Публичный API не сломан — только добавления.
+
+- **`preset?: 'segmented'`** (`accordion/presets.ts`, `resolveAccordionPreset`) — именованный бандл root-пропов: `{ bordered: true, multiple: true, density: 'compact' }`. Явный проп ВСЕГДА выигрывает у пресета (`local.x ?? preset().x`), так `<Accordion preset="segmented" density="default">` держит stroke+multiple, но возвращает roomy-триггер. Пресет = композиция замороженных токенов (ADR 042), НЕ новые классы. Точка расширения — добавить ключ в `ACCORDION_PRESETS`.
+- **`density?: 'default' | 'compact'`** — плотность триггер-рядов. Течёт Root → Trigger через `AccordionDensityContext` (у Kobalte нет слота), дефолт-accessor `() => 'default'`. CVA-ось `density` в `accordionTriggerCva`: `default` → `px-4 py-3`, `compact` → `px-4 py-2` (горизонталь стабильна, тянется только вертикаль — 1:1 бывший ручной `py-2` в studio-палитре).
+- **`nested?: boolean`** — индент вложенного уровня (`pl-3`, `accordionNestedClass`). Заменяет сырой `class="pl-3"` на суб-аккордеоне; композится и с fluid-веткой, и с CVA-веткой root-класса. После — в палитре ноль `pl-3`.
+- Тесты: `__tests__/accordion.test.tsx` (density default/compact, nested default/on/fluid-compose, segmented preset bordered+compact / multiple-mode / explicit-override, 8 новых). Story: `Segmented` (полная палитра-композиция на kit-примитивах — preset+nested+`List.Item`, ноль сырых классов). Контекст `AccordionDensityContext` — module-local, не экспортится.
+
+### List.Item — selectable leaf (2026-07-05)
+
+По брифу `accordion-selectable-1-ui.md` (часть B) — leaf палитры (`<button>` с сырыми классами + tooltip) заменён kit-примитивом `Ui.List.Item` (`ISelectableItemProps`). Дом — вариант `List.Item` (leaf живёт в списке/аккордеоне); **новый субпат НЕ нужен** — статик-проп на `List`-объекте (`list/index.ts`, `Object.assign`), сюрфейсится как `Ui.List.Item` через существующий `@capsuletech/web-ui/list` без правок web-core (аналогично `List.Virtual`).
+
+- **`SelectableItem`** (`list/selectableItem.tsx`) — stateless picker-строка: `<button role="option" aria-selected data-selected>`. `onSelect` на click / Enter / Space (`preventDefault` на пробеле). `selectableItemCva` (`list/variants.ts`) — миграция сырых leaf-классов ВНУТРЬ кита (там легитимны): база `flex w-full ... px-2 py-1.5 text-xs text-muted-foreground hover:bg-accent`, ось `selected` → `bg-accent text-accent-foreground`.
+- **Слоты:** `icon?: Component` (лидирующая, `size-4 shrink-0` через `<Dynamic>`), `trailing?: JSX.Element` (правый), `children` (лейбл, `flex-1 truncate`). Прочие button-атрибуты (`data-*`/`title`/`aria-*`) насквозь. Тултип-превью — композиция потребителя (`<Tooltip><List.Item/></Tooltip>`), НЕ часть примитива (по брифу).
+- Тесты: `__tests__/selectableItem.test.tsx` (List.Item===SelectableItem, render option-button, click→onSelect, Enter+Space→onSelect, selected→aria/highlight/data-selected, not-selected, icon+trailing, 7). Stories: `SelectableItem` (InList / SelectedState / WithIcon / WithTrailing). README: секция `List.Item — selectable leaf`.
+- **Реальная сборка палитры** на этих примитивах (снять сырые классы из `web-studio` ComponentSegments/ComponentsPalette) — в studio-волне (не в этом брифе).
 
 ### Dropdown — HTML-passthrough для data-* / title / style (2026-06-03)
 

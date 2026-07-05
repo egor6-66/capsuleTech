@@ -1,6 +1,9 @@
+import { LayoutGrid, Square, Type } from 'lucide-solid';
+import { createSignal, For } from 'solid-js';
 import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Flex } from '../layout/flex/flex';
+import { List } from '../list';
 import { Accordion } from '.';
 
 const meta = {
@@ -180,6 +183,78 @@ export const ResponsiveWithFlex: Story = {
       </Accordion>
     </Flex>
   ),
+};
+
+/**
+ * `preset="segmented"` — the studio component-palette look in one word:
+ * `bordered` stroke + `multiple`-open + `compact` (py-2) triggers. The nested
+ * per-component level uses `nested` for its indent (no raw `pl-3`), and the
+ * leaf rows are `List.Item` selectables (no raw `<button>` classes). This is
+ * the exact composition the studio palette will collapse onto.
+ */
+export const Segmented: Story = {
+  render: () => {
+    const [selected, setSelected] = createSignal('button-primary');
+    const groups = [
+      {
+        type: 'button',
+        label: 'Button',
+        icon: Square,
+        presets: [
+          { id: 'button-primary', label: 'primary' },
+          { id: 'button-ghost', label: 'ghost' },
+        ],
+      },
+      {
+        type: 'layout',
+        label: 'Layout',
+        icon: LayoutGrid,
+        presets: [
+          { id: 'layout-grid', label: 'grid' },
+          { id: 'layout-flex', label: 'flex' },
+        ],
+      },
+      {
+        type: 'typography',
+        label: 'Typography',
+        icon: Type,
+        presets: [{ id: 'typo-h1', label: 'heading' }],
+      },
+    ];
+    return (
+      <Accordion preset="segmented" fluid={250} defaultValue={['primitives']}>
+        <Accordion.Item value="primitives">
+          <Accordion.Trigger>Примитивы</Accordion.Trigger>
+          <Accordion.Content>
+            <Accordion preset="segmented" nested defaultValue={['button']}>
+              <For each={groups}>
+                {(g) => (
+                  <Accordion.Item value={g.type}>
+                    <Accordion.Trigger>{g.label}</Accordion.Trigger>
+                    <Accordion.Content>
+                      <List>
+                        <For each={g.presets}>
+                          {(p) => (
+                            <List.Item
+                              icon={g.icon}
+                              selected={selected() === p.id}
+                              onSelect={() => setSelected(p.id)}
+                            >
+                              {p.label}
+                            </List.Item>
+                          )}
+                        </For>
+                      </List>
+                    </Accordion.Content>
+                  </Accordion.Item>
+                )}
+              </For>
+            </Accordion>
+          </Accordion.Content>
+        </Accordion.Item>
+      </Accordion>
+    );
+  },
 };
 
 /**

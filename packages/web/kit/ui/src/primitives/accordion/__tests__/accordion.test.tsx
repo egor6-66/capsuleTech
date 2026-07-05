@@ -309,6 +309,154 @@ describe('Accordion', () => {
     });
   });
 
+  describe('density', () => {
+    it('default density → trigger has py-3', () => {
+      cleanup = render(
+        () => (
+          <Accordion>
+            <Accordion.Item value="a">
+              <Accordion.Trigger data-testid="trigger-a">Section A</Accordion.Trigger>
+              <Accordion.Content>Content A</Accordion.Content>
+            </Accordion.Item>
+          </Accordion>
+        ),
+        container,
+      );
+      const trigger = container.querySelector('[data-testid="trigger-a"]')!;
+      expect(trigger.classList.contains('py-3')).toBe(true);
+      expect(trigger.classList.contains('py-2')).toBe(false);
+    });
+
+    it('density="compact" → trigger tightens to py-2 (px stays px-4)', () => {
+      cleanup = render(
+        () => (
+          <Accordion density="compact">
+            <Accordion.Item value="a">
+              <Accordion.Trigger data-testid="trigger-a">Section A</Accordion.Trigger>
+              <Accordion.Content>Content A</Accordion.Content>
+            </Accordion.Item>
+          </Accordion>
+        ),
+        container,
+      );
+      const trigger = container.querySelector('[data-testid="trigger-a"]')!;
+      expect(trigger.classList.contains('py-2')).toBe(true);
+      expect(trigger.classList.contains('py-3')).toBe(false);
+      expect(trigger.classList.contains('px-4')).toBe(true);
+    });
+  });
+
+  describe('nested indent', () => {
+    it('no indent by default', () => {
+      cleanup = render(
+        () => (
+          <Accordion>
+            <Accordion.Item value="a">
+              <Accordion.Trigger>Section A</Accordion.Trigger>
+              <Accordion.Content>Content A</Accordion.Content>
+            </Accordion.Item>
+          </Accordion>
+        ),
+        container,
+      );
+      expect(container.firstElementChild!.classList.contains('pl-3')).toBe(false);
+    });
+
+    it('nested=true adds pl-3 on the root', () => {
+      cleanup = render(
+        () => (
+          <Accordion nested>
+            <Accordion.Item value="a">
+              <Accordion.Trigger>Section A</Accordion.Trigger>
+              <Accordion.Content>Content A</Accordion.Content>
+            </Accordion.Item>
+          </Accordion>
+        ),
+        container,
+      );
+      expect(container.firstElementChild!.classList.contains('pl-3')).toBe(true);
+    });
+
+    it('nested composes with the fluid layout branch', () => {
+      cleanup = render(
+        () => (
+          <Accordion nested fluid={250}>
+            <Accordion.Item value="a">
+              <Accordion.Trigger>Section A</Accordion.Trigger>
+              <Accordion.Content>Content A</Accordion.Content>
+            </Accordion.Item>
+          </Accordion>
+        ),
+        container,
+      );
+      const root = container.firstElementChild! as HTMLElement;
+      expect(root.classList.contains('pl-3')).toBe(true);
+      expect(root.getAttribute('style')).toContain('1 1 250px');
+    });
+  });
+
+  describe('segmented preset', () => {
+    it('applies bordered + compact triggers in one word', () => {
+      cleanup = render(
+        () => (
+          <Accordion preset="segmented">
+            <Accordion.Item value="a">
+              <Accordion.Trigger data-testid="trigger-a">Section A</Accordion.Trigger>
+              <Accordion.Content>Content A</Accordion.Content>
+            </Accordion.Item>
+          </Accordion>
+        ),
+        container,
+      );
+      const root = container.firstElementChild!;
+      const trigger = container.querySelector('[data-testid="trigger-a"]')!;
+      expect(root.classList.contains('border')).toBe(true);
+      expect(trigger.classList.contains('py-2')).toBe(true);
+    });
+
+    it('segmented enables multiple-open mode', async () => {
+      cleanup = render(
+        () => (
+          <Accordion preset="segmented">
+            <Accordion.Item value="a">
+              <Accordion.Trigger data-testid="trigger-a">Section A</Accordion.Trigger>
+              <Accordion.Content>Content A</Accordion.Content>
+            </Accordion.Item>
+            <Accordion.Item value="b">
+              <Accordion.Trigger data-testid="trigger-b">Section B</Accordion.Trigger>
+              <Accordion.Content>Content B</Accordion.Content>
+            </Accordion.Item>
+          </Accordion>
+        ),
+        container,
+      );
+      click(container.querySelector('[data-testid="trigger-a"]')!);
+      await waitFor(() => container.querySelectorAll('[data-expanded]').length >= 1);
+      click(container.querySelector('[data-testid="trigger-b"]')!);
+      await waitFor(() => container.querySelectorAll('[data-expanded]').length >= 2);
+      expect(container.querySelectorAll('[data-expanded]').length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('explicit prop overrides the preset (density="default" restores py-3)', () => {
+      cleanup = render(
+        () => (
+          <Accordion preset="segmented" density="default">
+            <Accordion.Item value="a">
+              <Accordion.Trigger data-testid="trigger-a">Section A</Accordion.Trigger>
+              <Accordion.Content>Content A</Accordion.Content>
+            </Accordion.Item>
+          </Accordion>
+        ),
+        container,
+      );
+      const trigger = container.querySelector('[data-testid="trigger-a"]')!;
+      expect(trigger.classList.contains('py-3')).toBe(true);
+      expect(trigger.classList.contains('py-2')).toBe(false);
+      // stroke still comes from the preset.
+      expect(container.firstElementChild!.classList.contains('border')).toBe(true);
+    });
+  });
+
   describe('compound structure', () => {
     it('Accordion.Item + Trigger + Content render without error', () => {
       expect(() => {

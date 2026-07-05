@@ -21,6 +21,12 @@ import { cva } from '@capsuletech/web-style';
  */
 export const accordionBorderClass = 'border border-border';
 export const accordionRoundedClass = 'overflow-hidden rounded-md';
+/**
+ * Nested-level indent (`nested` prop). Replaces the raw `class="pl-3"` a
+ * consumer would add to a sub-accordion — indenting a nested level is the
+ * component's job, not the caller's.
+ */
+export const accordionNestedClass = 'pl-3';
 
 export const accordionRootCva = cva('w-full divide-y divide-border', {
   variants: {
@@ -67,7 +73,6 @@ export const accordionTriggerCva = cva(
     // `aria-expanded` via `group-aria-expanded:*` Tailwind variant.
     // Kobalte sets `aria-expanded` directly on the Trigger button.
     'group flex w-full items-center justify-between cursor-pointer',
-    'px-4 py-3',
 
     'text-sm font-medium text-foreground',
     // Default: transparent background (no fill).
@@ -83,8 +88,18 @@ export const accordionTriggerCva = cva(
     'data-[disabled]:cursor-not-allowed data-[disabled]:opacity-50',
   ].join(' '),
   {
-    variants: {},
-    defaultVariants: {},
+    variants: {
+      // Density controls vertical rhythm only (horizontal padding stays `px-4`
+      // so labels line up across densities). `compact` mirrors the studio
+      // palette's hand-tightened `py-2` trigger — now a first-class prop.
+      density: {
+        default: 'px-4 py-3',
+        compact: 'px-4 py-2',
+      },
+    },
+    defaultVariants: {
+      density: 'default',
+    },
   },
 );
 
