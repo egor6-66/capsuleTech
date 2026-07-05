@@ -5,23 +5,25 @@
  * CapsuleRegistryPlugin генерит глобалы Learn.*:
  *   Learn.Provider | Learn.Welcome | Learn.Exercise | Learn.Progress |
  *   Learn.VocabList | Learn.Tour | Learn.SentenceBuilder | Learn.LibraryNav |
- *   Learn.LibraryWelcome | Learn.Collections |
- *   Learn.Library.{Search,Words,Info} | Learn.Lessons.{List,View}
+ *   Learn.LessonsNav | Learn.LibraryWelcome | Learn.Collections |
+ *   Learn.Library.{Search,Words,Info} |
+ *   Learn.Lessons.{List,View,Concepts,Concept,Rules,Rule}
  *
  * `Library` / `Lessons` — вложенные namespace-блоки (как `WebStudio.*` на
  * верхнем уровне, но на уровень глубже): `Learn.Library.Search` /
  * `Learn.Lessons.List` и т.д. Блоки раздельные намеренно (апп раскладывает по
- * слотам Matrix сам: List слева, View справа). codegen per-component `.Events`
+ * слотам Matrix сам: список слева, деталь справа). `LessonsNav` — ПЛОСКИЙ ключ
+ * (как `LibraryNav`) — под-навигация раздела. codegen per-component `.Events`
  * aggregate (`packagesTypesOut`, `componentEntries` в CapsuleRegistryPlugin)
  * читает только ПЛОСКИЕ ключи `components` — вложенные `Library.*`/`Lessons.*`
- * в агрегат не попадают; `IWordsEvents`/`ILessonsListEvents` типизируются
- * вручную через прямой импорт из `./library` / `./lessons`.
+ * в агрегат не попадают; `IWordsEvents`/`ILessonsListEvents`/`IConceptsEvents`
+ * и т.д. типизируются вручную через прямой импорт из `./library` / `./lessons`.
  */
 import { defineCapsuleModule } from '@capsuletech/web-core/module';
 import { LearnProvider } from './core';
 import { Exercise } from './exercise';
 import { Tour } from './guides';
-import { List, View } from './lessons';
+import { Concept, Concepts, Nav as LessonsNav, List, Rule, Rules, View } from './lessons';
 import {
   Collections,
   Info,
@@ -46,9 +48,10 @@ export default defineCapsuleModule({
     Tour,
     SentenceBuilder,
     LibraryNav,
+    LessonsNav,
     LibraryWelcome,
     Collections,
     Library: { Search, Words, Info },
-    Lessons: { List, View },
+    Lessons: { List, View, Concepts, Concept, Rules, Rule },
   },
 });

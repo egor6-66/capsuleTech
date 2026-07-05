@@ -5,7 +5,7 @@ group: web_base
 zone: learn
 status: skeleton
 priority: P2
-last-updated: 2026-07-04
+last-updated: 2026-07-05
 ---
 
 # @capsuletech/web-learn
@@ -23,14 +23,14 @@ last-updated: 2026-07-04
   - Backend-интеграция остальных модулей: `web-query` endpoints к `/learn/*` (ADR 055 D2) — `library` уже ходит на backend напрямую через `fetch` (см. Quirks).
   - app `apps/learn/` связан с пакетом, верификация в браузере (library-блоки — коллапс страницы на блоки, отдельный бриф owner-apps).
 - **Active blockers:** owner-agent `owner-web-learn` ещё не создан (появится отдельным PR). Пока зона ведётся через scoped `learn`-сессию.
-- **Last activity:** 2026-07-04 (library-блок migration: store/api/Search/Words/Info из apps/learn, brief `learn-library-block-migration.md`).
+- **Last activity:** 2026-07-05 (Lessons ИА iter 1: вкладки Концепты/Правила + правило-с-дриллами + Markdown→Prose, brief `learn-lessons-ia-blocks.md`).
 
 ## Vendor stack (ADR 047 D3)
 
 - **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
 - **`@capsuletech/web-core`** (workspace, dep) — HCA: `useEmit`/`useEmitOptional` (Welcome → `onNavigate`, LibraryNav → `onLibraryNavigate`, library `Words`/`Info` → `onWordSelect`/`onSpeak`), `defineCapsuleModule` (регистрация).
 - **`@capsuletech/web-router`** (workspace, dep) — `useRouter().current()` для derived-active в `LibraryNav` (URL = single source of truth, как studio Navigation).
-- **`@capsuletech/web-ui`** (workspace, dep) — chrome модулей (Typography / Card / Layout / Button / Group / Input / Toggle).
+- **`@capsuletech/web-ui`** (workspace, dep) — chrome модулей (Typography / Card / Layout / Button / Group / Input / Toggle) + **`Prose`** (типографика rendered-markdown на design-tokens — обёртка тел концептов/правил в `lessons/Markdown.tsx`).
 - **`@capsuletech/web-docs`** (workspace, dep) — `renderMarkdown` для тел концептов/правил урока (там таблицы!). Переиспользуем экспортированную top-level функцию (та же механика, что `DocSection` инжектит README в studio Info) — НЕ тянем новый markdown-dep. См. `lessons/Markdown.tsx`.
 
 > `@capsuletech/web-query` добавится при backend-интеграции остальных модулей — сейчас НЕ зависимость. `library/api.ts` и `lessons/api.ts` ходят на backend напрямую нативным `fetch` (не через web-query) — см. Quirks.
@@ -54,7 +54,7 @@ last-updated: 2026-07-04
 |---|---|
 | `.` | barrel: framework-agnostic core (контракты + типы) |
 | `./core` | доменные контракты (`IConcept`/`IExercise`/`IProgressEntry`/`ISkillNode`, `ExerciseType`) + `LearnProvider` |
-| `./lessons` | **Реальный** уроки-браузер: `List` / `View` (регистрируются вложенно `Learn.Lessons.List`/`.View`) + `lessonsStore` singleton (`loadList`/`open`/`close` + эфемерный интерактив дрилла `setAnswer`/`check`/`answer`/`verdict`) + `fetchLessons`/`fetchLesson`/`checkDrill` (`api.ts`) + типы (`ILessonSummary`/`ILessonDetail`/`IConcept`/`IRule`/`IDrill`/`IResolvedWord`/…). Internal (не регистрируются): `Drill` (интерактив), `Markdown` (renderMarkdown-обёртка), `WordChip` |
+| `./lessons` | **Реальный** раздел Lessons (ИА: вкладки Концепты/Правила + уроки-маршруты). Блоки: `List` / `View` (уроки), `Concepts` / `Concept` (библиотека прозы), `Rules` / `Rule` (справочник; у правила — секция «Практика» с его дриллами), `Nav` (под-навигация `concepts\|rules`). Регистрация: вложенно `Learn.Lessons.{List,View,Concepts,Concept,Rules,Rule}` + плоский `Learn.LessonsNav` (как `LibraryNav`). `lessonsStore` singleton — три пласта навигации (уроки `loadList`/`open`, концепты `loadConcepts`/`openConcept`, правила `loadRules`/`openRule`) + общий `close` + эфемерный интерактив дрилла (`setAnswer`/`check`/`answer`/`verdict`, глобальный чекер — общий для дриллов урока и правила). API (`api.ts`): `fetchLessons`/`fetchLesson`/`fetchConcepts`/`fetchConcept`/`fetchRules`/`fetchRule`/`checkDrill`. Типы: `ILessonSummary`/`ILessonDetail`/`IConceptSummary`/`IConcept`/`IRuleSummary`/`IRule`/`IRuleDetail`/`IDrill`/`IResolvedWord`/… + `LessonsSegmentId`/`LESSONS_SEGMENTS`. Internal (не регистрируются): `Drill` (интерактив), `Markdown` (renderMarkdown → `Prose`-обёртка), `WordChip` |
 | `./exercise` | `Exercise` (dispatch по type) + `FillBlank`/`BuildClause`/`FixTypeError`/`Translate` |
 | `./progress` | `Progress` / `SkillTree` |
 | `./library` | **Реальный** library-браузер (перенесён из `apps/learn`, канон «пакет владеет стором» — см. Quirks): `Search` / `Words` / `Info` (регистрируются вложенно `Learn.Library.Search`/`.Words`/`.Info`) + `libraryStore` singleton (`load`/`select`/`selected`) + `fetchSenses` (`api.ts`) + `ISense` тип. Плюс прежние плейсхолдеры: `LibraryWelcome` (landing раздела, useEmit `onLibraryNavigate`) / `Navigation` (под-навигация, тот же `onLibraryNavigate`) / `Collections` / `VocabList` / `BookmarkButton`. Internal `LIBRARY_SEGMENTS` (не реэкспортится) |
@@ -62,13 +62,15 @@ last-updated: 2026-07-04
 | `./sentence-builder` | `SentenceBuilder` |
 | `./welcome` | `Welcome` (tier-2 connected, useEmit `onNavigate`) + `LEARN_SEGMENTS` |
 | `./controllers` | гнездо `Controllers.Learn` (ADR 032) — пока пусто (`export {}`) |
-| `./capsule` | `defineCapsuleModule({ name: 'Learn', components })` (ADR 033) — включая вложенные `Library.{Search,Words,Info}` и `Lessons.{List,View}` |
+| `./capsule` | `defineCapsuleModule({ name: 'Learn', components })` (ADR 033) — включая плоский `LessonsNav` + вложенные `Library.{Search,Words,Info}` и `Lessons.{List,View,Concepts,Concept,Rules,Rule}` |
 
 Это **контракт**. Изменение публичного API = breaking change → coordinate с architect.
 
 ## Quirks / gotchas
 
-- **`lessons` — тот же канон, что `library`:** singleton `lessonsStore` (Solid `createStore`, НЕ XState), `api.ts` с явным `apiBase`, `useApiBase()` в блоках, `useEmitOptional`, phantom `__events`, вложенная регистрация `Learn.Lessons.{List,View}` (codegen-quirk аналогичен `Library.*` — `ILessonsListEvents`/`ILessonsViewEvents` типизируются вручную прямым импортом из `@capsuletech/web-learn/lessons`).
+- **`lessons` — тот же канон, что `library`:** singleton `lessonsStore` (Solid `createStore`, НЕ XState), `api.ts` с явным `apiBase`, `useApiBase()` в блоках, `useEmitOptional`, phantom `__events`, вложенная регистрация `Learn.Lessons.{List,View,Concepts,Concept,Rules,Rule}` (codegen-quirk аналогичен `Library.*` — `ILessonsListEvents`/`ILessonsViewEvents`/`IConceptsEvents`/`IRulesEvents`/`IRuleEvents` типизируются вручную прямым импортом из `@capsuletech/web-learn/lessons`). `LessonsNav` (под-навигация `concepts\|rules`) — ПЛОСКИЙ ключ `Learn.LessonsNav` (как `LibraryNav`), `useEmit` (не optional) + derived-active из роутера; `ILessonsNavEvents.onLessonsNavigate` payload = segment-id (зеркало `onLibraryNavigate`).
+- **Markdown-тела концептов/правил обёрнуты в `Prose`** (`@capsuletech/web-ui/prose`), НЕ голый `<div innerHTML>`. `Prose` даёт типографику rendered-markdown (заголовки/списки/таблицы/код) на design-tokens — без неё Tailwind preflight сбрасывает браузерные стили и грамматические таблицы выглядят кашей. Собственных стилей `Markdown` не добавляет (канон «примитивы props-only»).
+- **Дриллы правила = дриллы урока (общий чекер).** `Learn.Lessons.Rule` переиспользует internal `Drill` как есть; `openRule` (как `open` урока) сбрасывает эфемерный интерактив (`resetDrills`) — переход на другое правило/урок начинает практику с чистого листа. Списки концептов/правил (как `lessons`-список) `close` НЕ чистит — только выбор/деталь.
 - **`lessonsStore.resetDrills` чистит map'ы через `reconcile({})`, НЕ `setState('answers', {})`.** Solid `createStore` при передаче объекта на ключ-путь **мёржит** его (пустой объект ничего не чистит → старые ответы залипают между уроками). `reconcile({})` реально заменяет. Грабля закрыта тестом `open resets ephemeral drill state`.
 - **Дрилл-интерактив: ключ ответа НЕ на фронте.** Item'ы урока санитизированы бэком (`{index,promptRu,context}`) — проверка только через `POST /learn/drills/{id}/check` (канон user «фронт = интерфейс»). `answers`/`verdicts` — эфемерны (не персистим; прогресс = фаза 3).
 - **Markdown тел концептов/правил — через `@capsuletech/web-docs` `renderMarkdown`** (`lessons/Markdown.tsx`), `innerHTML` курируемого lang-vault контента. НЕ добавляли markdown-dep. Solid `innerHTML`-проп biome НЕ флагует (в отличие от React `dangerouslySetInnerHTML`) — suppression не нужен.
@@ -88,6 +90,7 @@ last-updated: 2026-07-04
 - [x] Skeleton scaffold (структура + регистрация + smoke) — 2026-06-28.
 - [x] `library` — реальный UI + store + backend-fetch (Search/Words/Info, перенос из `apps/learn`) — 2026-07-04.
 - [x] `lessons` — реальный UI + store + backend-fetch (List/View + дрилл-интерактив/чекер), снос старых `lesson/*`-скелетов (brief `learn-lessons-blocks.md`) — 2026-07-04.
+- [x] `lessons` ИА iter 1 — вкладки Концепты/Правила (`Concepts`/`Concept`/`Rules`/`Rule` + `Nav`/`LessonsNav`), правило-с-дриллами («Практика»), Markdown→`Prose` (brief `learn-lessons-ia-blocks.md`) — 2026-07-05.
 - [ ] Наполнить остальные модули реальным UI (exercise/progress/guides/sentence-builder).
 - [ ] Реализовать `Controllers.Learn` (useEmit-эмиссия доменных событий обучения).
 - [ ] Backend-интеграция остальных модулей: `web-query` endpoints к `/learn/*` (ADR 055 D2).
@@ -102,6 +105,11 @@ last-updated: 2026-07-04
 | Unit | `lessons/__tests__/store.test.ts` | `loadList`/`open`/`close`, `setAnswer`/`check` (POST item_index+answer), сброс дрилла на `open` (regression `reconcile`) |
 | Unit | `lessons/__tests__/List.test.tsx` | lazy-load на mount, клик → `open` (fetch урока) + emit `onLessonSelect` |
 | Unit | `lessons/__tests__/View.test.tsx` | маршрут concepts→rules→drills (порядок), markdown-тела, дрилл-флоу correct/near_miss(хинт)/wrong/reveal, emit `onSpeak` |
+| Unit | `lessons/__tests__/store.concepts-rules.test.ts` | `loadConcepts`/`openConcept`, `loadRules`/`openRule` (правило-с-дриллами), `close` чистит выбор, `openRule` сбрасывает эфемерный дрилл-интерактив |
+| Unit | `lessons/__tests__/Concepts.test.tsx` | lazy-load списка на mount, principle в карточке, клик → `openConcept` + emit `onConceptSelect` |
+| Unit | `lessons/__tests__/Concept.test.tsx` | title/principle/markdown-тело/примеры, обёртка `Prose` (tokenized), fallback без выбора |
+| Unit | `lessons/__tests__/Rules.test.tsx` | lazy-load списка на mount, tags в карточке, клик → `openRule` + emit `onRuleSelect` |
+| Unit | `lessons/__tests__/Rule.test.tsx` | тело в `Prose` + секция «Практика» с дриллами, дрилл-флоу correct (общий чекер), emit `onSpeak`, fallback |
 | Unit | `library/__tests__/store.test.ts` | `load`/`select`/`selected`, select-миграция между id (регрессия к app-слой багу) |
 | Unit | `library/__tests__/Search.test.tsx` | keystroke → `load(apiBase, q)`, `apiBase` из `Learn.Provider` / дефолт |
 | Unit | `library/__tests__/Words.test.tsx` | lazy-load on mount, `data-selected` миграция по тайлам (регрессия), emit `onWordSelect`/`onSpeak` |
