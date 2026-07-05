@@ -1,26 +1,18 @@
 /**
- * /lessons — index: дефолт раздела = вкладка «Концепты» (зеркало `concepts.tsx`).
+ * /lessons — index: редирект на вкладку «Концепты» (дефолт раздела).
  *
- * На голом `/lessons` показываем библиотеку прозы master-detail из пакетных
- * блоков `Learn.Lessons.*` — тот же контент, что `/lessons/concepts` (концепты =
- * дефолтная вкладка). Сегментные роуты `concepts.tsx` / `rules.tsx` рендерят под
- * своим URL, чтобы под-нав `Learn.LessonsNav` подсвечивал активную вкладку.
+ * Сегментные роуты (`concepts/`, `rules/`) рендерят под своим URL, чтобы под-нав
+ * `Learn.LessonsNav` подсвечивал активную вкладку (active derive'ится из сегмента).
+ * Голый `/lessons` собственного контента не имеет — уводим на `/lessons/concepts`
+ * (replace: без записи в history, back не застревает на редиректе).
  *
- * Уроки-маршруты (`Learn.Lessons.List/View`) отсюда сняты до накопления контента —
- * блоки в пакете живут, вернём вкладкой позже.
+ * `queueMicrotask` — навигация ПОСЛЕ фазы рендера (не мутируем router в render);
+ * `useRouter` — auto-import глобал. Импортов в файле нет (канон app-слоёв).
  */
-const LessonsHome = Page(() => (
-  <Layouts.Matrix
-    preset="app-shell"
-    slots={{
-      sidebar: {
-        children: <Learn.Lessons.Concepts />,
-      },
-      main: {
-        children: <Learn.Lessons.Concept />,
-      },
-    }}
-  />
-));
+const LessonsHome = Page(() => {
+  const router = useRouter();
+  queueMicrotask(() => router.goTo('/lessons/concepts', { replace: true }));
+  return null;
+});
 
 export default LessonsHome;
