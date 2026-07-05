@@ -183,6 +183,8 @@ jobs:
             python: '3.12'
           - service: community
             python: '3.12'
+          - service: llm
+            python: '3.12'
     defaults:
       run:
         working-directory: backend/${{ matrix.service }}
