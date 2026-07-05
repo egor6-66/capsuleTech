@@ -13,7 +13,7 @@ last_updated: 2026-06-14
 
 ## TL;DR {#tldr}
 
-Context-based (ADR 003) обёртка над `@tanstack/solid-router`. Factory `createRouter({ routeTree, context? })` возвращает `{ raw, capsuleRouter }`. Hook `useRouter()` достаёт `ICapsuleRouter` из Context. Реактивное API: `goTo(path, opts?) / back() / current()`, где `opts = { params, search, hash, replace }` — прямой проброс в `raw.navigate`. Инжектится в Feature/Controller через `services.router`. `ICapsuleRouterContext<TUser>` — generic, app расширяет под свой shape (ADR 014).
+Context-based (ADR 003) обёртка над `@tanstack/solid-router`. Factory `createRouter({ routeTree, context? })` возвращает `{ raw, capsuleRouter }`. Hook `useRouter()` достаёт `ICapsuleRouter` из Context. Реактивное API: `goTo(path, opts?) / back() / current() / params() / param(name)`, где `opts = { params, search, hash, replace }` — прямой проброс в `raw.navigate`. `params()` — реактивное **чтение** path-параметров leaf-матча (симметрия к `IGoToOpts.params` на запись); `param(name)` — сахар на один ключ. Инжектится в Feature/Controller через `services.router`. `ICapsuleRouterContext<TUser>` — generic, app расширяет под свой shape (ADR 014).
 
 **Routing-animation (ADR 046 Decision 4):** `CapsuleOutlet` — capsule-обёртка над TanStack `<Outlet/>` — владеет двумя view-transition-проперти:
 
@@ -54,7 +54,7 @@ createRouter<TRouteTree>({ routeTree, context?, basepath?, notFoundRedirect?, be
 useRouter(): ICapsuleRouter   // generic TRouteTree теряется (см. гочи)
 
 // Types
-ICapsuleRouter<TRouteTree>             // { goTo, back, current, raw }
+ICapsuleRouter<TRouteTree>             // { goTo, back, current, params, param, raw }
 ICapsuleRouterContext<TUser = {}>      // TUser & { [k: string]: unknown }
 IGoToOpts                              // { params?, search?, hash?, replace? }
 IBeforeLoadContext                     // { location, cause, params, search, context, preload, abortController }
@@ -73,6 +73,8 @@ normalizeBase                          // pure helper: нормализует ba
 | `goTo` | `(path: string, opts?: IGoToOpts) => void` | `raw.navigate({ to: path, ...opts })`. `opts = { params, search, hash, replace }` (ADR 014) |
 | `back` | `() => void` | `raw.history.back()` — через TanStack, не `window.history` |
 | `current` | `() => string` | `raw.state.location.pathname` — реактивно через Solid-store TanStack |
+| `params` | `() => Record<string, string>` | `raw.state.matches[last].params` — path-параметры leaf-матча (TanStack мёржит предков), реактивно тем же Solid-memo что `current()`; нет матча → `{}` |
+| `param` | `(name) => string \| undefined` | сахар: `params()[name]` |
 | `raw` | property | Escape hatch; типизирован если `BaseProviders` параметризован `routeTree` |
 
 ## Lifecycle flow {#lifecycle}
@@ -121,6 +123,8 @@ apps/<app>/bootstrap.tsx
 14. **`beforeLoad` применяется через `routeTree.options.beforeLoad`**, не через `.update()** — метод `.update()` принимает `UpdatableRouteOptions`, который не содержит `beforeLoad`. Прямая запись в `.options` корректна рантаймово и типово (`RouteOptions` включает `beforeLoad`). Cast `as any` на присвоении — обход несовместимости generic-параметра `TBeforeLoadFn` из `AnyRoute` с конкретным `IBeforeLoadContext`-колбэком.
 
 15. **`redirect` и `notFound` — из `@capsuletech/web-router`**, не из `@tanstack/solid-router` напрямую. Ре-экспортируем, чтобы apps не пробивали абстракцию движка.
+
+16. **`params()` читает leaf-матч, реактивен как `current()`** — источник `raw.state.matches[last].params` (тот же Solid-memo `raw.state`, что у `current()`). Deep-link Page читает `router.params().ruleId` прямо в JSX-пропе / `createMemo` — при навигации `/rules/a → /rules/b` значение обновляется БЕЗ ремаунта. НЕ кэшируй в `const` вне реактивного scope (stale). Причина, почему это в контракте, а НЕ прямой `useParams()` из TanStack в аппе: `useParams` = raw-import движка в слое (ломает канон «в аппе только глобалы `@capsuletech/*`»); парсить `current()` по сегментам — костыль. Верифицировано real-router тестом `params.reactive.test.tsx` (эффект перезапускается на навигацию).
 
 ## Pattern: derived signals from location
 

@@ -24,13 +24,61 @@ const mkRaw = (overrides: Partial<any> = {}) => {
 };
 
 describe('wrap — shape', () => {
-  it('returns ICapsuleRouter with goTo/back/current/raw', () => {
+  it('returns ICapsuleRouter with goTo/back/current/params/param/raw', () => {
     const { raw } = mkRaw();
     const w = wrap(raw);
     expect(typeof w.goTo).toBe('function');
     expect(typeof w.back).toBe('function');
     expect(typeof w.current).toBe('function');
+    expect(typeof w.params).toBe('function');
+    expect(typeof w.param).toBe('function');
     expect(w.raw).toBe(raw);
+  });
+});
+
+describe('wrap — params / param', () => {
+  // TanStack мёржит параметры предков в leaf-матч → читаем последний match.
+  // Реактивность (raw.state — Solid-memo) покрыта отдельным real-router тестом
+  // params.reactive.test.tsx; тут — чистое чтение leaf-shape'а через мок.
+  const withMatches = (matches: Array<{ params?: Record<string, string> }>) =>
+    mkRaw({ state: { location: { pathname: '/cur' }, matches } }).raw;
+
+  it('returns params of the leaf match', () => {
+    const raw = withMatches([{ params: {} }, { params: { ruleId: 'a' } }]);
+    expect(wrap(raw).params()).toEqual({ ruleId: 'a' });
+  });
+
+  it('leaf carries merged ancestor params (TanStack merge)', () => {
+    const raw = withMatches([{ params: { lang: 'en' } }, { params: { lang: 'en', ruleId: 'a' } }]);
+    expect(wrap(raw).params()).toEqual({ lang: 'en', ruleId: 'a' });
+  });
+
+  it('returns {} when no route matched (empty matches)', () => {
+    const raw = withMatches([]);
+    expect(wrap(raw).params()).toEqual({});
+  });
+
+  it('param(name) — sugar for a single key', () => {
+    const raw = withMatches([{ params: { ruleId: 'a' } }]);
+    expect(wrap(raw).param('ruleId')).toBe('a');
+  });
+
+  it('param(name) → undefined for a missing key', () => {
+    const raw = withMatches([{ params: { ruleId: 'a' } }]);
+    expect(wrap(raw).param('nope')).toBeUndefined();
+  });
+
+  it('param(name) → undefined when no route matched', () => {
+    const raw = withMatches([]);
+    expect(wrap(raw).param('ruleId')).toBeUndefined();
+  });
+
+  it('reads params dynamically (не закешировано)', () => {
+    const raw = withMatches([{ params: { ruleId: 'a' } }]);
+    const w = wrap(raw);
+    expect(w.param('ruleId')).toBe('a');
+    (raw.state.matches as Array<{ params: Record<string, string> }>)[0].params = { ruleId: 'b' };
+    expect(w.param('ruleId')).toBe('b');
   });
 });
 
