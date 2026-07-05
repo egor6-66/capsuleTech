@@ -1,16 +1,19 @@
 /**
- * Learn.Lessons.Rule tests — тело правила в `Prose` + секция «Практика» с ЕГО
- * дриллами (переиспользуют существующий `Drill`: чекер глобален). Дрилл-флоу
- * (correct) и emit `onSpeak` — тот же контракт, что `View`. Fallback до выбора.
+ * Learn.Lessons.Rule tests (iter 2) — URL-driven по `id`-пропу: title (свой) +
+ * тело в `Prose` со СРЕЗАННЫМ ведущим H1; БЕЗ дриллов (уехали в `RuleDrills`);
+ * wikilink в теле → emit `onRuleSelect`/`onConceptSelect` (по загруженным
+ * спискам), неизвестный ref → `console.warn` + no-op. Fallback до выбора.
  *
- * `useEmitOptional` + `renderMarkdown` мокнуты (прецедент `View`).
+ * `renderMarkdown` мокнут ИДЕНТИЧНО (echo) — тело = сырой HTML, чтобы положить в
+ * него настоящий `<a class="wikilink" data-ref>` и кликнуть. `useEmitOptional`
+ * мокнут (прецедент `View`).
  */
 /* @vitest-environment jsdom */
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Rule } from '../Rule';
 import { lessonsStore } from '../store';
-import type { ICheckResult, IRuleDetail } from '../types';
+import type { IRuleDetail } from '../types';
 
 const { emitSpy } = vi.hoisted(() => ({ emitSpy: vi.fn() }));
 
@@ -19,66 +22,61 @@ vi.mock('@capsuletech/web-core', () => ({
 }));
 
 vi.mock('@capsuletech/web-docs', () => ({
-  renderMarkdown: (md: string) => `<p data-md>${md}</p>`,
+  renderMarkdown: (md: string) => md, // echo — тело кладём как готовый HTML
 }));
 
-const RULE: IRuleDetail = {
-  id: 'grammar-pronouns',
+const ruleWith = (id: string, body: string): IRuleDetail => ({
+  id,
   title: 'RULE-TITLE',
-  body: 'RULE-BODY',
+  body,
   tags: ['grammar'],
-  drills: [
-    {
-      id: 'd1',
-      title: 'DRILL-A',
-      level: 'l2',
-      tags: [],
-      rule: 'grammar-pronouns',
-      graboTag: 'd1',
-      words: ['see'],
-      concepts: [],
-      items: [{ index: 0, promptRu: 'Я вижу его.', context: null }],
-      words_resolved: [
-        {
-          text: 'see',
-          senseId: 1,
-          ru: 'видеть',
-          pron_ru: 'си',
-          pos: 'verb',
-          audio: { url: 'https://a/see.mp3', engines: ['gtts'] },
-          image: null,
-        },
-      ],
-    },
-  ],
-};
+  drills: [],
+});
 
-let checkResponse: ICheckResult = { verdict: 'wrong' };
-let lastPostBody: unknown;
+let ruleBody = 'RULE-BODY';
+let rulesList: string[] = [];
+let conceptsList: string[] = [];
+
+const catOf = (id: string) => ({
+  id,
+  title: id,
+  tags: [],
+  category: 'grammar' as const,
+  sortOrder: 100,
+});
+const kindOf = (id: string) => ({
+  id,
+  title: id,
+  principle: '',
+  tags: [],
+  kind: 'approach' as const,
+  sortOrder: 100,
+});
 
 const mockFetch = () =>
   vi.stubGlobal(
     'fetch',
-    vi.fn(async (_url: string, init?: { method?: string; body?: string }) => {
-      if (init?.method === 'POST') {
-        lastPostBody = JSON.parse(init.body ?? '{}');
-        return { ok: true, json: async () => checkResponse };
-      }
-      return { ok: true, json: async () => RULE };
+    vi.fn(async (url: string) => {
+      if (url.includes('/learn/rules/'))
+        return { ok: true, json: async () => ruleWith('r1', ruleBody) };
+      if (url.includes('/learn/rules'))
+        return { ok: true, json: async () => ({ rules: rulesList.map(catOf) }) };
+      return { ok: true, json: async () => ({ concepts: conceptsList.map(kindOf) }) };
     }),
   );
 
 let container: HTMLDivElement;
 let cleanup: (() => void) | undefined;
 
-beforeEach(async () => {
+beforeEach(() => {
   container = document.createElement('div');
   document.body.appendChild(container);
   emitSpy.mockClear();
-  checkResponse = { verdict: 'wrong' };
-  lastPostBody = undefined;
+  ruleBody = 'RULE-BODY';
+  rulesList = [];
+  conceptsList = [];
+  lessonsStore.close();
   mockFetch();
-  await lessonsStore.openRule('', 'grammar-pronouns');
 });
 
 afterEach(() => {
@@ -90,58 +88,72 @@ afterEach(() => {
 });
 
 const flush = () => new Promise((r) => setTimeout(r, 0));
-const button = (label: string) =>
-  [...container.querySelectorAll('button')].find((b) => b.textContent?.trim() === label);
-const submit = async (label: string) => {
-  (button(label) as HTMLElement).click();
-  await flush();
-};
-const typeAnswer = (value: string) => {
-  const input = container.querySelector('input') as HTMLInputElement;
-  input.value = value;
-  input.dispatchEvent(new Event('input', { bubbles: true }));
-};
 
 describe('Learn.Lessons.Rule', () => {
-  it('renders the rule body (in Prose) and a «Практика» section with its drills', () => {
-    cleanup = render(() => <Rule />, container);
+  it('renders title + body in Prose, strips the leading H1, no drills', async () => {
+    ruleBody = '# DUP-HEADING\nRULE-BODY-PROSE';
+    await lessonsStore.openRule('', 'r1');
+    cleanup = render(() => <Rule id="r1" />, container);
+    await flush();
+
     const text = container.textContent ?? '';
+    expect(text).toContain('RULE-TITLE'); // block-rendered title
+    expect(text).toContain('RULE-BODY-PROSE'); // body
+    expect(text).not.toContain('DUP-HEADING'); // leading H1 stripped
+    expect(text).not.toContain('Практика'); // drills live in RuleDrills now
 
-    expect(text).toContain('RULE-TITLE');
-    expect(text).toContain('RULE-BODY');
-    expect(text).toContain('Практика');
-    expect(text).toContain('DRILL-A'); // drill grafted on
-
-    // body rendered inside a Prose container (tokenized typography), not a raw div.
-    const proseRoot = container.querySelector('[data-md]')?.parentElement;
-    expect(proseRoot?.className).toContain('text-foreground');
+    // body wrapped in Prose (tokenized foreground), not a raw div
+    expect(container.querySelector('[class*="text-foreground"]')).toBeTruthy();
   });
 
-  it('fallback when no rule is open', () => {
-    lessonsStore.close();
+  it('fallback when no rule id is set', async () => {
     cleanup = render(() => <Rule />, container);
     expect(container.textContent).toContain('Выберите правило');
   });
 
-  it('drill correct → POSTs the answer and shows ✅ (global checker reused)', async () => {
-    checkResponse = { verdict: 'correct' };
-    cleanup = render(() => <Rule />, container);
+  it('wikilink → onRuleSelect when ref is a loaded rule', async () => {
+    ruleBody = '<a class="wikilink" data-ref="ref-rule">go</a>';
+    rulesList = ['ref-rule'];
+    await lessonsStore.loadRules('');
+    await lessonsStore.openRule('', 'r1');
+    cleanup = render(() => <Rule id="r1" />, container);
+    await flush();
 
-    typeAnswer('I see him');
-    await submit('Проверить');
+    (container.querySelector('a.wikilink') as HTMLElement).click();
 
-    expect(lastPostBody).toEqual({ item_index: 0, answer: 'I see him', reveal: false });
-    expect(container.textContent).toContain('✅ Верно');
+    expect(emitSpy).toHaveBeenCalledWith('onRuleSelect', {
+      source: 'Learn.Lessons.Rule',
+      payload: { id: 'ref-rule' },
+    });
   });
 
-  it('speaker on a drill word emits onSpeak with the audio url', async () => {
-    cleanup = render(() => <Rule />, container);
+  it('wikilink → onConceptSelect when ref is a loaded concept', async () => {
+    ruleBody = '<a class="wikilink" data-ref="ref-concept">go</a>';
+    conceptsList = ['ref-concept'];
+    await lessonsStore.loadConcepts('');
+    await lessonsStore.openRule('', 'r1');
+    cleanup = render(() => <Rule id="r1" />, container);
+    await flush();
 
-    await submit('🔊');
+    (container.querySelector('a.wikilink') as HTMLElement).click();
 
-    expect(emitSpy).toHaveBeenCalledWith('onSpeak', {
+    expect(emitSpy).toHaveBeenCalledWith('onConceptSelect', {
       source: 'Learn.Lessons.Rule',
-      payload: { audioUrl: 'https://a/see.mp3' },
+      payload: { id: 'ref-concept' },
     });
+  });
+
+  it('unknown wikilink ref → console.warn, no emit', async () => {
+    ruleBody = '<a class="wikilink" data-ref="nope">go</a>';
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await lessonsStore.openRule('', 'r1');
+    cleanup = render(() => <Rule id="r1" />, container);
+    await flush();
+
+    (container.querySelector('a.wikilink') as HTMLElement).click();
+
+    expect(warn).toHaveBeenCalled();
+    expect(emitSpy).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 });

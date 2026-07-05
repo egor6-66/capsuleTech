@@ -1,4 +1,4 @@
-export { Concept, type IConceptProps } from './Concept';
+export { Concept, type IConceptEvents, type IConceptProps } from './Concept';
 export { Concepts, type IConceptsEvents, type IConceptsProps } from './Concepts';
 export {
   type ILessonsWelcomeEvents,
@@ -8,10 +8,12 @@ export {
 export { type ILessonsListEvents, type IListProps, List } from './List';
 export { type ILessonsNavEvents, type INavProps, Nav } from './Nav';
 export { type IRuleEvents, type IRuleProps, Rule } from './Rule';
+export { type IRuleDrillsEvents, type IRuleDrillsProps, RuleDrills } from './RuleDrills';
 export { type IRulesEvents, type IRulesProps, Rules } from './Rules';
 export { type ILessonsSegment, LESSONS_SEGMENTS, type LessonsSegmentId } from './segments';
 export { type ILessonsStore, lessonsStore } from './store';
 export type {
+  ConceptKind,
   ICheckRequest,
   ICheckResult,
   IConcept,
@@ -27,6 +29,7 @@ export type {
   IRule,
   IRuleDetail,
   IRuleSummary,
+  RuleCategory,
   Verdict,
 } from './types';
 export { type ILessonsViewEvents, type IViewProps, View } from './View';

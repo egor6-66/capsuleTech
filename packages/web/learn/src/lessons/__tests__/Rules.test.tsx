@@ -1,14 +1,16 @@
 /**
- * Learn.Lessons.Rules tests — lazy-load списка на mount, карточка на правило
- * (title + tags), клик → `lessonsStore.openRule` (fetch правила + дриллов) +
- * emit `onRuleSelect { id }`. `useEmitOptional` мокнут (прецедент `List`).
+ * Learn.Lessons.Rules tests (iter 2) — аккордеон по `category`: порядок групп +
+ * ru-подписи + подзаголовки; СВЁРНУТ по умолчанию, кроме группы активного `id`
+ * (проверяем через `aria-expanded` триггеров — стабильный сигнал Kobalte);
+ * внутри — по `sortOrder`; клик по карточке → emit `onRuleSelect { id }`.
+ * `useEmitOptional` мокнут (прецедент `List`).
  */
 /* @vitest-environment jsdom */
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Rules } from '../Rules';
 import { lessonsStore } from '../store';
-import type { IRuleSummary } from '../types';
+import type { IRuleSummary, RuleCategory } from '../types';
 
 const { emitSpy } = vi.hoisted(() => ({ emitSpy: vi.fn() }));
 
@@ -16,27 +18,26 @@ vi.mock('@capsuletech/web-core', () => ({
   useEmitOptional: () => emitSpy,
 }));
 
-const summary = (id: string): IRuleSummary => ({ id, title: id, tags: ['grammar'] });
-
-const RULES = [summary('grammar-pronouns'), summary('articles')];
-
-const ruleDetail = (id: string) => ({
+const summary = (id: string, category: RuleCategory, sortOrder: number): IRuleSummary => ({
   id,
   title: id,
-  body: `# ${id}`,
   tags: ['grammar'],
-  drills: [],
+  category,
+  sortOrder,
 });
+
+// grammar group out of order (b before a) to prove within-group sort by sortOrder.
+const RULES = [
+  summary('phon-x', 'phonetics', 10),
+  summary('gram-b', 'grammar', 20),
+  summary('gram-a', 'grammar', 10),
+  summary('speech-x', 'speech', 10),
+];
 
 const mockFetch = () =>
   vi.stubGlobal(
     'fetch',
-    vi.fn(async (url: string) => {
-      if (url.includes('/learn/rules/')) {
-        return { ok: true, json: async () => ruleDetail('grammar-pronouns') };
-      }
-      return { ok: true, json: async () => ({ rules: RULES }) };
-    }),
+    vi.fn(async () => ({ ok: true, json: async () => ({ rules: RULES }) })),
   );
 
 let container: HTMLDivElement;
@@ -59,30 +60,57 @@ afterEach(() => {
 
 const flush = () => new Promise((r) => setTimeout(r, 0));
 const cards = () => [...container.querySelectorAll('[role="button"]')];
+const triggers = () => [...container.querySelectorAll('[aria-expanded]')];
+const triggerFor = (label: string) => triggers().find((t) => t.textContent?.includes(label));
+const orderOf = (...needles: string[]) =>
+  needles.map((n) => (container.textContent ?? '').indexOf(n));
 
 describe('Learn.Lessons.Rules', () => {
-  it('lazy-loads on mount, one card per rule with its tags', async () => {
+  it('lazy-loads on mount', async () => {
     cleanup = render(() => <Rules />, container);
     await flush();
-
     expect(fetch).toHaveBeenCalledWith('/learn/rules');
-    expect(cards()).toHaveLength(2);
-    expect(container.textContent).toContain('#grammar');
   });
 
-  it('click → opens the rule (fetch) and emits onRuleSelect', async () => {
+  it('renders groups in canonical order with ru labels + subtitles', async () => {
     await lessonsStore.loadRules('');
     cleanup = render(() => <Rules />, container);
     await flush();
 
-    (cards()[0] as HTMLElement).click();
+    const [phon, gram, speech] = orderOf('Фонетика', 'Грамматика', 'Речь');
+    expect(phon).toBeGreaterThanOrEqual(0);
+    expect(phon).toBeLessThan(gram);
+    expect(gram).toBeLessThan(speech);
+    expect(container.textContent).toContain('Строй фразы: времена, порядок, связки.');
+  });
+
+  it('collapsed by default except the active id group', async () => {
+    await lessonsStore.loadRules('');
+    cleanup = render(() => <Rules id="gram-a" />, container);
     await flush();
+
+    // active rule's group (grammar) is expanded; the others stay collapsed
+    expect(triggerFor('Грамматика')?.getAttribute('aria-expanded')).toBe('true');
+    expect(triggerFor('Фонетика')?.getAttribute('aria-expanded')).toBe('false');
+    expect(triggerFor('Речь')?.getAttribute('aria-expanded')).toBe('false');
+
+    // expanded group's items sorted by sortOrder: gram-a (10) before gram-b (20)
+    const [a, b] = orderOf('gram-a', 'gram-b');
+    expect(a).toBeGreaterThanOrEqual(0);
+    expect(a).toBeLessThan(b);
+  });
+
+  it('click on a rule card emits onRuleSelect', async () => {
+    await lessonsStore.loadRules('');
+    cleanup = render(() => <Rules id="gram-a" />, container);
+    await flush();
+
+    const card = cards().find((c) => c.textContent?.trim() === 'gram-a');
+    (card as HTMLElement).click();
 
     expect(emitSpy).toHaveBeenCalledWith('onRuleSelect', {
       source: 'Learn.Lessons.Rules',
-      payload: { id: 'grammar-pronouns' },
+      payload: { id: 'gram-a' },
     });
-    expect(fetch).toHaveBeenCalledWith('/learn/rules/grammar-pronouns');
-    expect(lessonsStore.selectedRuleId()).toBe('grammar-pronouns');
   });
 });

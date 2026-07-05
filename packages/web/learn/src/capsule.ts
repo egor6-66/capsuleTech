@@ -7,7 +7,7 @@
  *   Learn.VocabList | Learn.Tour | Learn.SentenceBuilder | Learn.LibraryNav |
  *   Learn.LessonsNav | Learn.LessonsWelcome | Learn.LibraryWelcome | Learn.Collections |
  *   Learn.Library.{Search,Words,Info} |
- *   Learn.Lessons.{List,View,Concepts,Concept,Rules,Rule}
+ *   Learn.Lessons.{List,View,Concepts,Concept,Rules,Rule,RuleDrills}
  *
  * `Library` / `Lessons` — вложенные namespace-блоки (как `WebStudio.*` на
  * верхнем уровне, но на уровень глубже): `Learn.Library.Search` /
@@ -30,6 +30,7 @@ import {
   LessonsWelcome,
   List,
   Rule,
+  RuleDrills,
   Rules,
   View,
 } from './lessons';
@@ -62,6 +63,6 @@ export default defineCapsuleModule({
     LibraryWelcome,
     Collections,
     Library: { Search, Words, Info },
-    Lessons: { List, View, Concepts, Concept, Rules, Rule },
+    Lessons: { List, View, Concepts, Concept, Rules, Rule, RuleDrills },
   },
 });

@@ -37,6 +37,18 @@ export interface ILessonExample {
   image?: string | null;
 }
 
+/**
+ * Фасет группировки концепта в аккордеон-IA (ADR 069). `approach` — дефолт при
+ * отсутствии `kind` во frontmatter. Ru-подписи/порядок групп — в блоке `Concepts`.
+ */
+export type ConceptKind = 'approach' | 'pattern' | 'recommendation';
+
+/**
+ * Категория правила = раздел справочника (ADR 069). Дефолт выводится из папки
+ * vault'а (`grammar/`→grammar и т.д.). Ru-подписи/порядок групп — в блоке `Rules`.
+ */
+export type RuleCategory = 'phonetics' | 'grammar' | 'speech';
+
 /** Концепт урока — проза (принцип + markdown-тело). */
 export interface IConcept {
   id: string;
@@ -49,12 +61,17 @@ export interface IConcept {
   relatedConcepts: string[];
 }
 
-/** Элемент списка `/learn/concepts` — карточка библиотеки прозы (без тела). */
+/**
+ * Элемент списка `/learn/concepts` — карточка библиотеки прозы (без тела).
+ * `kind`/`sortOrder` — группировка/порядок для аккордеона (ADR 069).
+ */
 export interface IConceptSummary {
   id: string;
   title: string;
   principle: string;
   tags: string[];
+  kind: ConceptKind;
+  sortOrder: number;
 }
 
 /** Правило урока — справочник (markdown-тело). */
@@ -65,11 +82,16 @@ export interface IRule {
   tags: string[];
 }
 
-/** Элемент списка `/learn/rules` — карточка справочника (без тела). */
+/**
+ * Элемент списка `/learn/rules` — карточка справочника (без тела).
+ * `category`/`sortOrder` — группировка/порядок для аккордеона (ADR 069).
+ */
 export interface IRuleSummary {
   id: string;
   title: string;
   tags: string[];
+  category: RuleCategory;
+  sortOrder: number;
 }
 
 /**

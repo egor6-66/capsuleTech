@@ -1,8 +1,11 @@
 /**
- * lessonsStore — concepts/rules навигация (Lessons ИА iter 1). Списки + деталь
- * обеих вкладок; правило несёт СВОИ дриллы, и `openRule` сбрасывает эфемерный
- * интерактив дрилла (тот же чекер, что урок). Плейн `createStore` — тот же
- * канон, что уроки/library (не зависит от `@xstate/solid`).
+ * lessonsStore — concepts/rules навигация (Lessons ИА iter 2, URL-driven).
+ * Списки + **кэш деталей по id** (стор больше не держит «selected»-стейт). Ключ
+ * iter-2: `open{Concept,Rule}` ДЕДУПЛИЦИРОВАНЫ — повторный вызов на
+ * закэшированный/загружающийся id даёт 0 новых fetch (так `Rule` и `RuleDrills`
+ * на один id = один fetch правила). cache-miss `openRule` сбрасывает эфемерный
+ * интерактив дрилла, cache-hit — НЕТ. Плейн `createStore` — тот же канон, что
+ * уроки/library (не зависит от `@xstate/solid`).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { lessonsStore } from '../store';
@@ -13,6 +16,8 @@ const conceptSummary = (id: string): IConceptSummary => ({
   title: id,
   principle: `${id}-principle`,
   tags: ['philosophy'],
+  kind: 'approach',
+  sortOrder: 100,
 });
 
 const conceptDetail = (id: string): IConcept => ({
@@ -26,7 +31,13 @@ const conceptDetail = (id: string): IConcept => ({
   relatedConcepts: [],
 });
 
-const ruleSummary = (id: string): IRuleSummary => ({ id, title: id, tags: ['grammar'] });
+const ruleSummary = (id: string): IRuleSummary => ({
+  id,
+  title: id,
+  tags: ['grammar'],
+  category: 'grammar',
+  sortOrder: 100,
+});
 
 const ruleDetail = (id: string): IRuleDetail => ({
   id,
@@ -97,22 +108,29 @@ describe('web-learn lessons store — concepts', () => {
     expect(lessonsStore.conceptsLoading()).toBe(false);
   });
 
-  it('openConcept GETs the concept, sets selectedConceptId + currentConcept', async () => {
+  it('openConcept caches the concept by id (concept(id) getter)', async () => {
     mockFetch({ concept: conceptDetail('word-as-image') });
+    expect(lessonsStore.concept('word-as-image')).toBeNull();
     await lessonsStore.openConcept('http://api', 'word-as-image');
 
     expect(fetch).toHaveBeenCalledWith('http://api/learn/concepts/word-as-image');
-    expect(lessonsStore.selectedConceptId()).toBe('word-as-image');
-    expect(lessonsStore.currentConcept()?.body).toBe('# word-as-image body');
+    expect(lessonsStore.concept('word-as-image')?.body).toBe('# word-as-image body');
   });
 
-  it('close clears concept selection', async () => {
+  it('openConcept dedupes — second call on a cached id does not refetch', async () => {
+    const spy = mockFetch({ concept: conceptDetail('word-as-image') });
+    await lessonsStore.openConcept('http://api', 'word-as-image');
+    await lessonsStore.openConcept('http://api', 'word-as-image');
+
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('close clears the concept cache', async () => {
     mockFetch({ concept: conceptDetail('x') });
     await lessonsStore.openConcept('http://api', 'x');
     lessonsStore.close();
 
-    expect(lessonsStore.selectedConceptId()).toBeNull();
-    expect(lessonsStore.currentConcept()).toBeNull();
+    expect(lessonsStore.concept('x')).toBeNull();
   });
 });
 
@@ -135,23 +153,42 @@ describe('web-learn lessons store — rules', () => {
     expect(lessonsStore.rulesLoading()).toBe(false);
   });
 
-  it('openRule GETs the rule with its drills', async () => {
+  it('openRule caches the rule with its drills by id', async () => {
     mockFetch({ rule: ruleDetail('grammar-pronouns') });
     await lessonsStore.openRule('http://api', 'grammar-pronouns');
 
     expect(fetch).toHaveBeenCalledWith('http://api/learn/rules/grammar-pronouns');
-    expect(lessonsStore.selectedRuleId()).toBe('grammar-pronouns');
-    expect(lessonsStore.currentRule()?.drills.map((d) => d.id)).toEqual(['grammar-pronouns-drill']);
+    expect(lessonsStore.rule('grammar-pronouns')?.drills.map((d) => d.id)).toEqual([
+      'grammar-pronouns-drill',
+    ]);
   });
 
-  it('openRule resets ephemeral drill state (rule drills share the global checker)', async () => {
+  it('openRule dedupes — Rule + RuleDrills on one id → one fetch', async () => {
+    const spy = mockFetch({ rule: ruleDetail('grammar-pronouns') });
+    // simulate both blocks opening the same rule concurrently
+    await Promise.all([
+      lessonsStore.openRule('http://api', 'grammar-pronouns'),
+      lessonsStore.openRule('http://api', 'grammar-pronouns'),
+    ]);
+
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('cache-miss openRule resets ephemeral drill state; cache-hit does not', async () => {
     mockFetch({ rule: ruleDetail('grammar-pronouns'), check: { verdict: 'correct' } });
+
+    // first (cache-miss) load resets any stale interaction
     lessonsStore.setAnswer('d1', 0, 'stale');
     await lessonsStore.check('http://api', 'd1', 0);
     expect(lessonsStore.verdict('d1', 0)).not.toBeNull();
-
     await lessonsStore.openRule('http://api', 'grammar-pronouns');
     expect(lessonsStore.answer('d1', 0)).toBe('');
     expect(lessonsStore.verdict('d1', 0)).toBeNull();
+
+    // now type into a rule drill, then a cache-HIT openRule must NOT wipe it
+    // (else the second block would clobber the first block's input)
+    lessonsStore.setAnswer('grammar-pronouns-drill', 0, 'keep me');
+    await lessonsStore.openRule('http://api', 'grammar-pronouns');
+    expect(lessonsStore.answer('grammar-pronouns-drill', 0)).toBe('keep me');
   });
 });

@@ -4,12 +4,18 @@
  * Solid `createStore`, НЕ XState/Feature (см. `library/store.ts` — избегаем
  * `@xstate/solid` reconcile-баг).
  *
- * Два пласта состояния:
- *   - навигация: `lessons` (список) / `selectedId` / `current` (полный урок);
+ * Три пласта состояния:
+ *   - уроки: `lessons` (список) / `selectedId` / `current` (полный урок);
+ *   - концепты/правила (iter 2, URL-driven): списки + **кэш деталей по id**.
+ *     Выбор темы живёт в URL (id приходит блокам ПРОПОМ) — стор больше НЕ
+ *     держит «selected»-стейт, только данные/кэш. `open{Concept,Rule}(id)`
+ *     дедуплицируются: повторный вызов на закэшированный/загружающийся id —
+ *     no-op, поэтому `Rule` и `RuleDrills`, читающие одно правило, дают ОДИН
+ *     fetch;
  *   - интерактив дрилла (ЭФЕМЕРНО, не персистим — прогресс = фаза 3):
  *     `answers` / `verdicts` / `checking`, keyed `${drillId}#${itemIndex}`.
- *     `open()`/`close()` сбрасывают этот пласт — переход на другой урок
- *     начинает дрилл с чистого листа.
+ *     `open()` (урок) и cache-miss `openRule()` сбрасывают этот пласт — переход
+ *     на другую тему начинает дрилл с чистого листа.
  */
 import { createStore, reconcile } from 'solid-js/store';
 import {
@@ -39,18 +45,16 @@ interface ILessonsState {
   current: ILessonDetail | null;
   loading: boolean;
   opening: boolean;
-  // Концепты (библиотека прозы) — список + текущая статья.
+  // Концепты (библиотека прозы) — список + кэш деталей по id.
   concepts: IConceptSummary[];
-  selectedConceptId: string | null;
-  currentConcept: IConcept | null;
   conceptsLoading: boolean;
-  conceptOpening: boolean;
-  // Правила (справочник) — список + текущее правило (тело + его дриллы).
+  conceptCache: Record<string, IConcept>;
+  conceptInflight: Record<string, boolean>;
+  // Правила (справочник) — список + кэш деталей (тело + дриллы) по id.
   rules: IRuleSummary[];
-  selectedRuleId: string | null;
-  currentRule: IRuleDetail | null;
   rulesLoading: boolean;
-  ruleOpening: boolean;
+  ruleCache: Record<string, IRuleDetail>;
+  ruleInflight: Record<string, boolean>;
   answers: Record<string, string>;
   verdicts: Record<string, ICheckResult>;
   checking: Record<string, boolean>;
@@ -63,15 +67,13 @@ const [state, setState] = createStore<ILessonsState>({
   loading: false,
   opening: false,
   concepts: [],
-  selectedConceptId: null,
-  currentConcept: null,
   conceptsLoading: false,
-  conceptOpening: false,
+  conceptCache: {},
+  conceptInflight: {},
   rules: [],
-  selectedRuleId: null,
-  currentRule: null,
   rulesLoading: false,
-  ruleOpening: false,
+  ruleCache: {},
+  ruleInflight: {},
   answers: {},
   verdicts: {},
   checking: {},
@@ -108,11 +110,11 @@ const open = async (apiBase: string, id: string): Promise<void> => {
 const close = (): void => {
   setState('selectedId', null);
   setState('current', null);
-  // Сброс выбора концепта/правила (списки сохраняются — как lessons-список).
-  setState('selectedConceptId', null);
-  setState('currentConcept', null);
-  setState('selectedRuleId', null);
-  setState('currentRule', null);
+  // Кэши концептов/правил чистим (списки сохраняются — как lessons-список).
+  setState('conceptCache', reconcile({}));
+  setState('conceptInflight', reconcile({}));
+  setState('ruleCache', reconcile({}));
+  setState('ruleInflight', reconcile({}));
   resetDrills();
 };
 
@@ -127,13 +129,14 @@ const loadConcepts = async (apiBase: string): Promise<void> => {
   }
 };
 
+/** Загрузить концепт по id в кэш. Дедуп: закэшированный/загружающийся id — no-op. */
 const openConcept = async (apiBase: string, id: string): Promise<void> => {
-  setState('selectedConceptId', id);
-  setState('conceptOpening', true);
+  if (state.conceptCache[id] || state.conceptInflight[id]) return;
+  setState('conceptInflight', id, true);
   try {
-    setState('currentConcept', await fetchConcept(apiBase, id));
+    setState('conceptCache', id, await fetchConcept(apiBase, id));
   } finally {
-    setState('conceptOpening', false);
+    setState('conceptInflight', id, false);
   }
 };
 
@@ -148,16 +151,21 @@ const loadRules = async (apiBase: string): Promise<void> => {
   }
 };
 
+/**
+ * Загрузить правило (+ его дриллы) по id в кэш. Дедуп по кэшу/inflight — ОДИН
+ * fetch, даже если `Rule` и `RuleDrills` дёрнут одновременно. На реальной
+ * загрузке (cache-miss) сбрасываем эфемерный интерактив дрилла — переход на
+ * другое правило начинает практику с чистого листа; на cache-hit НЕ трогаем,
+ * иначе второй блок затёр бы ответы, введённые в первом.
+ */
 const openRule = async (apiBase: string, id: string): Promise<void> => {
-  setState('selectedRuleId', id);
-  setState('ruleOpening', true);
-  // Правило несёт свои дриллы («Практика») — тот же чекер, что урок; переход
-  // на другое правило начинает интерактив с чистого листа.
+  if (state.ruleCache[id] || state.ruleInflight[id]) return;
+  setState('ruleInflight', id, true);
   resetDrills();
   try {
-    setState('currentRule', await fetchRule(apiBase, id));
+    setState('ruleCache', id, await fetchRule(apiBase, id));
   } finally {
-    setState('ruleOpening', false);
+    setState('ruleInflight', id, false);
   }
 };
 
@@ -192,15 +200,17 @@ export interface ILessonsStore {
   loading: () => boolean;
   opening: () => boolean;
   concepts: () => IConceptSummary[];
-  selectedConceptId: () => string | null;
-  currentConcept: () => IConcept | null;
   conceptsLoading: () => boolean;
-  conceptOpening: () => boolean;
+  /** Закэшированный концепт по id (null, если ещё не загружен). */
+  concept: (id: string) => IConcept | null;
+  /** Идёт ли сейчас загрузка концепта с этим id. */
+  conceptOpening: (id: string) => boolean;
   rules: () => IRuleSummary[];
-  selectedRuleId: () => string | null;
-  currentRule: () => IRuleDetail | null;
   rulesLoading: () => boolean;
-  ruleOpening: () => boolean;
+  /** Закэшированное правило (+ дриллы) по id (null, если ещё не загружено). */
+  rule: (id: string) => IRuleDetail | null;
+  /** Идёт ли сейчас загрузка правила с этим id. */
+  ruleOpening: (id: string) => boolean;
   /** Текущий ответ на item дрилла ('' если не введён). */
   answer: (drillId: string, itemIndex: number) => string;
   /** Вердикт по item'у дрилла (null если ещё не проверяли). */
@@ -211,15 +221,15 @@ export interface ILessonsStore {
   loadList: (apiBase: string) => Promise<void>;
   /** GET полного урока + сброс интерактива дрилла. */
   open: (apiBase: string, id: string) => Promise<void>;
-  /** Сброс выбора + интерактива. */
+  /** Сброс кэшей деталей + интерактива (списки остаются). */
   close: () => void;
   /** GET списка концептов (библиотека прозы). */
   loadConcepts: (apiBase: string) => Promise<void>;
-  /** GET полного концепта (статья). */
+  /** GET концепта в кэш по id (дедуп). */
   openConcept: (apiBase: string, id: string) => Promise<void>;
   /** GET списка правил (справочник). */
   loadRules: (apiBase: string) => Promise<void>;
-  /** GET правила + его дриллов + сброс интерактива дрилла. */
+  /** GET правила (+ дриллов) в кэш по id (дедуп); cache-miss сбрасывает дрилл. */
   openRule: (apiBase: string, id: string) => Promise<void>;
   /** Записать ответ на item дрилла (эфемерно). */
   setAnswer: (drillId: string, itemIndex: number, value: string) => void;
@@ -234,15 +244,13 @@ export const lessonsStore: ILessonsStore = {
   loading: () => state.loading,
   opening: () => state.opening,
   concepts: () => state.concepts,
-  selectedConceptId: () => state.selectedConceptId,
-  currentConcept: () => state.currentConcept,
   conceptsLoading: () => state.conceptsLoading,
-  conceptOpening: () => state.conceptOpening,
+  concept: (id) => state.conceptCache[id] ?? null,
+  conceptOpening: (id) => state.conceptInflight[id] ?? false,
   rules: () => state.rules,
-  selectedRuleId: () => state.selectedRuleId,
-  currentRule: () => state.currentRule,
   rulesLoading: () => state.rulesLoading,
-  ruleOpening: () => state.ruleOpening,
+  rule: (id) => state.ruleCache[id] ?? null,
+  ruleOpening: (id) => state.ruleInflight[id] ?? false,
   answer: (drillId, itemIndex) => state.answers[itemKey(drillId, itemIndex)] ?? '',
   verdict: (drillId, itemIndex) => state.verdicts[itemKey(drillId, itemIndex)] ?? null,
   checking: (drillId, itemIndex) => state.checking[itemKey(drillId, itemIndex)] ?? false,

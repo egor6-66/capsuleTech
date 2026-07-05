@@ -22,6 +22,6 @@ export interface ILessonsSegment {
 }
 
 export const LESSONS_SEGMENTS: readonly ILessonsSegment[] = [
-  { id: 'concepts', label: 'Концепты', description: 'Библиотека прозы: принципы и объяснения.' },
-  { id: 'rules', label: 'Правила', description: 'Справочник грамматики; у правила — его дриллы.' },
+  { id: 'concepts', label: 'Concepts', description: 'Библиотека прозы: принципы и объяснения.' },
+  { id: 'rules', label: 'Rules', description: 'Справочник грамматики; у правила — его дриллы.' },
 ] as const;
