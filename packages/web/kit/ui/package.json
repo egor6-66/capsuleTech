@@ -262,6 +262,26 @@
       "import": "./dist/components/previewCard/*.mjs",
       "default": "./dist/components/previewCard/*.mjs"
     },
+    "./segmentedBar": {
+      "types": "./dist/components/segmentedBar/index.d.ts",
+      "import": "./dist/components/segmentedBar/index.mjs",
+      "default": "./dist/components/segmentedBar/index.mjs"
+    },
+    "./segmentedBar/*": {
+      "types": "./dist/components/segmentedBar/*.d.ts",
+      "import": "./dist/components/segmentedBar/*.mjs",
+      "default": "./dist/components/segmentedBar/*.mjs"
+    },
+    "./launcher": {
+      "types": "./dist/components/launcher/index.d.ts",
+      "import": "./dist/components/launcher/index.mjs",
+      "default": "./dist/components/launcher/index.mjs"
+    },
+    "./launcher/*": {
+      "types": "./dist/components/launcher/*.d.ts",
+      "import": "./dist/components/launcher/*.mjs",
+      "default": "./dist/components/launcher/*.mjs"
+    },
     "./dropdownMenu": {
       "types": "./dist/components/dropdownMenu/index.d.ts",
       "import": "./dist/components/dropdownMenu/index.mjs",
