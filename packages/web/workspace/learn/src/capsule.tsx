@@ -4,7 +4,7 @@
  * App подключает: `packages: ['@capsuletech/web-learn']` в capsule.app.ts →
  * CapsuleRegistryPlugin генерит глобалы Learn.*:
  *   Learn.Provider | Learn.Welcome | Learn.Exercise | Learn.Progress |
- *   Learn.VocabList | Learn.Tour | Learn.SentenceBuilder | Learn.LibraryNav |
+ *   Learn.Tour | Learn.SentenceBuilder | Learn.LibraryNav |
  *   Learn.LessonsNav | Learn.LessonsWelcome | Learn.LibraryWelcome | Learn.Collections |
  *   Learn.Library.{Search,Words,Info} |
  *   Learn.Lessons.{List,View,Concepts,Concept,Rules,Rule,RuleDrills}
@@ -35,7 +35,7 @@ import { Exercise } from './exercise';
 import { Tour } from './guides';
 import { Concept, Concepts, List, Rule, RuleDrills, Rules, View } from './lessons';
 import { LESSONS_SEGMENTS } from './lessons/segments';
-import { Collections, Info, Search, VocabList, Words } from './library';
+import { Collections, Info, Search, Words } from './library';
 import { LIBRARY_SEGMENTS } from './library/segments';
 import { Progress } from './progress';
 import { SentenceBuilder } from './sentence-builder';
@@ -81,7 +81,6 @@ export default defineCapsuleModule({
     Welcome,
     Exercise,
     Progress,
-    VocabList,
     Tour,
     SentenceBuilder,
     LibraryNav,

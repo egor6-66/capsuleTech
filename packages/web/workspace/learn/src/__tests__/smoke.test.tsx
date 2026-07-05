@@ -11,7 +11,7 @@ import { render } from 'solid-js/web';
 import { describe, expect, test } from 'vitest';
 import { Exercise } from '../exercise';
 import { Tour } from '../guides';
-import { Collections, VocabList } from '../library';
+import { Collections } from '../library';
 import { Progress } from '../progress';
 import { SentenceBuilder } from '../sentence-builder';
 
@@ -32,16 +32,6 @@ describe('web-learn skeleton smoke', () => {
     const dispose = render(() => <Progress />, host);
     try {
       expect(host.querySelector('[data-stub="Learn.Progress"]')).toBeTruthy();
-    } finally {
-      dispose();
-    }
-  });
-
-  test('VocabList renders', () => {
-    const host = document.createElement('div');
-    const dispose = render(() => <VocabList />, host);
-    try {
-      expect(host.querySelector('[data-stub="Learn.VocabList"]')).toBeTruthy();
     } finally {
       dispose();
     }

@@ -9,8 +9,8 @@
  * Регистрируется как `Learn.Library.Info` через `../capsule` (ADR 033).
  */
 import { useEmitOptional } from '@capsuletech/web-core';
+import { Badge } from '@capsuletech/web-ui/badge';
 import { Button } from '@capsuletech/web-ui/button';
-import { Card } from '@capsuletech/web-ui/card';
 import { Layout } from '@capsuletech/web-ui/layout';
 import { Typography } from '@capsuletech/web-ui/typography';
 import { For, Show } from 'solid-js';
@@ -70,11 +70,9 @@ const InfoComponent = (props: IInfoProps) => {
           <Layout.Flex orientation="horizontal" gapX={2} gapY={2} wrap="wrap">
             <For each={s().tags ?? []}>
               {(t) => (
-                <Card padding="sm">
-                  <Typography size="sm" tone="muted">
-                    {t.name} · {t.kind}
-                  </Typography>
-                </Card>
+                <Badge tone="muted">
+                  {t.name} · {t.kind}
+                </Badge>
               )}
             </For>
           </Layout.Flex>

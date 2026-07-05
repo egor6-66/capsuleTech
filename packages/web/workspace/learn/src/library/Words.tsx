@@ -1,9 +1,9 @@
 /**
- * Learn.Library.Words — сетка тайлов словаря. Читает `libraryStore.senses()`;
- * lazy-load при первом монтировании (пустой стор — зеркало исходного
- * `Features.Library.onInit`). Клик тайла → `libraryStore.select(id)` +
- * emit `onWordSelect`; клик 🔊 → emit `onSpeak` (плеер/движок — app-concern,
- * пакет звук НЕ играет).
+ * Learn.Library.Words — сетка тайлов словаря на `Ui.List` (batch `wrap`-грид,
+ * ADR 036): `data` = стор sense'ов, `item.use` = `WordTile`. Lazy-load при
+ * первом монтировании (пустой стор — зеркало исходного `Features.Library.onInit`).
+ * Клик тайла → `libraryStore.select(id)` + emit `onWordSelect`; клик 🔊 → emit
+ * `onSpeak` (плеер/движок — app-concern, пакет звук НЕ играет).
  *
  * `useEmitOptional` (не `useEmit`) — блок может рендериться вне
  * Controller/Feature-scope (unit-тесты, будущие standalone-превью); emit
@@ -13,8 +13,8 @@
  * Регистрируется как `Learn.Library.Words` через `../capsule` (ADR 033).
  */
 import { useEmitOptional } from '@capsuletech/web-core';
-import { Layout } from '@capsuletech/web-ui/layout';
-import { For, onMount } from 'solid-js';
+import { List as UiList } from '@capsuletech/web-ui/list';
+import { onMount } from 'solid-js';
 import { useApiBase } from '../core/apiContext';
 import { libraryStore } from './store';
 import type { ISense } from './types';
@@ -48,26 +48,21 @@ const WordsComponent = (props: IWordsProps) => {
   };
 
   return (
-    <Layout.Flex
-      orientation="horizontal"
-      gapX={1}
-      gapY={1}
-      wrap="wrap"
+    <UiList
+      wrap
       justify="center"
-      p={1}
       class={props.class}
-    >
-      <For each={libraryStore.senses()}>
-        {(sense) => (
-          <WordTile
-            sense={sense}
-            selected={libraryStore.selectedId() === sense.id}
-            onSelect={handleSelect}
-            onSpeak={handleSpeak}
-          />
-        )}
-      </For>
-    </Layout.Flex>
+      data={libraryStore.senses()}
+      item={{
+        use: WordTile,
+        props: (sense: ISense) => ({
+          sense,
+          selected: libraryStore.selectedId() === sense.id,
+          onSelect: handleSelect,
+          onSpeak: handleSpeak,
+        }),
+      }}
+    />
   );
 };
 

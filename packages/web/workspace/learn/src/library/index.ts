@@ -5,5 +5,4 @@ export { type ISearchProps, Search } from './Search';
 export { type ILibrarySegment, type LibrarySegmentId } from './segments';
 export { type ILibraryStore, libraryStore } from './store';
 export type { ISense, ISenseAudio, ISenseTag } from './types';
-export { type IVocabListProps, VocabList } from './VocabList';
 export { type IWordsEvents, type IWordsProps, Words } from './Words';

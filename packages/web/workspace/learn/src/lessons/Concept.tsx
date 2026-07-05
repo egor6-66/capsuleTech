@@ -12,6 +12,7 @@
  * Регистрируется как `Learn.Lessons.Concept` через `../capsule` (ADR 033).
  */
 import { useEmitOptional } from '@capsuletech/web-core';
+import { Badge } from '@capsuletech/web-ui/badge';
 import { Card } from '@capsuletech/web-ui/card';
 import { Layout } from '@capsuletech/web-ui/layout';
 import { Typography } from '@capsuletech/web-ui/typography';
@@ -92,15 +93,9 @@ const ConceptComponent = (props: IConceptProps) => {
               <Layout.Flex orientation="horizontal" gapX={1} gapY={1} wrap="wrap">
                 <For each={c().relatedRules}>
                   {(ruleId) => (
-                    <Card
-                      role="button"
-                      tabIndex={0}
-                      interactive
-                      padding="sm"
-                      onClick={() => selectRule(ruleId)}
-                    >
-                      <Typography size="sm">{ruleLabel(ruleId)}</Typography>
-                    </Card>
+                    <Badge interactive onClick={() => selectRule(ruleId)}>
+                      {ruleLabel(ruleId)}
+                    </Badge>
                   )}
                 </For>
               </Layout.Flex>

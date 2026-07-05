@@ -9,8 +9,8 @@
  *
  * Состояние ответов/вердиктов — в `lessonsStore` (эфемерно, per item).
  */
+import { Badge } from '@capsuletech/web-ui/badge';
 import { Button } from '@capsuletech/web-ui/button';
-import { Card } from '@capsuletech/web-ui/card';
 import { Input } from '@capsuletech/web-ui/input';
 import { Layout } from '@capsuletech/web-ui/layout';
 import { Typography } from '@capsuletech/web-ui/typography';
@@ -29,24 +29,18 @@ const VERDICT_LABEL: Record<string, string> = {
   wrong: 'Мимо',
 };
 
+// Слово-чип = статический `Ui.Badge` (текст + перевод); 🔊 — ОТДЕЛЬНАЯ speak-кнопка
+// рядом, не сливаем в чип (чип не кликабелен — единственное действие = проговорить).
 const WordChip = (props: { word: IResolvedWord; onSpeak: (audioUrl: string | null) => void }) => (
-  <Card padding="sm">
-    <Layout.Flex orientation="horizontal" gapX={1} align="center">
-      <Typography size="sm">{props.word.text}</Typography>
-      <Show when={props.word.ru}>
-        <Typography size="sm" tone="muted">
-          {props.word.ru}
-        </Typography>
-      </Show>
-      <Button
-        variant="ghost"
-        size="xs"
-        onClick={() => props.onSpeak(props.word.audio?.url ?? null)}
-      >
-        🔊
-      </Button>
-    </Layout.Flex>
-  </Card>
+  <Layout.Flex orientation="horizontal" gapX={1} align="center">
+    <Badge tone="muted">
+      {props.word.text}
+      <Show when={props.word.ru}> · {props.word.ru}</Show>
+    </Badge>
+    <Button variant="ghost" size="xs" onClick={() => props.onSpeak(props.word.audio?.url ?? null)}>
+      🔊
+    </Button>
+  </Layout.Flex>
 );
 
 export const Drill = (props: IDrillProps) => (

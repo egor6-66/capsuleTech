@@ -1,7 +1,8 @@
 /**
- * Learn.Lessons.List — список уроков (title, level-бейдж, tags). Lazy-load при
- * первом монтировании (пустой стор — зеркало `Learn.Library.Words`). Клик по
- * уроку → `lessonsStore.open` (fetch урока) + emit `onLessonSelect { id }`.
+ * Learn.Lessons.List — список уроков на `Ui.List` (batch-режим, ADR 036):
+ * `data` = стор уроков, `item.use` = `LessonCard` (title + level/tags-бейджи).
+ * Lazy-load при первом монтировании (пустой стор — зеркало `Learn.Library.Words`).
+ * Клик по уроку → `lessonsStore.open` (fetch урока) + emit `onLessonSelect { id }`.
  *
  * `useEmitOptional` (не `useEmit`) — блок может рендериться вне Controller/
  * Feature-scope (unit-тесты); emit тихо no-op'ится вне scope.
@@ -10,12 +11,12 @@
  * Регистрируется как `Learn.Lessons.List` через `../capsule` (ADR 033).
  */
 import { useEmitOptional } from '@capsuletech/web-core';
-import { Card } from '@capsuletech/web-ui/card';
-import { Layout } from '@capsuletech/web-ui/layout';
-import { Typography } from '@capsuletech/web-ui/typography';
-import { For, onMount, Show } from 'solid-js';
+import { List as UiList } from '@capsuletech/web-ui/list';
+import { onMount } from 'solid-js';
 import { useApiBase } from '../core/apiContext';
+import { LessonCard } from './LessonCard';
 import { lessonsStore } from './store';
+import type { ILessonSummary } from './types';
 
 export interface IListProps {
   class?: string;
@@ -39,45 +40,18 @@ const ListComponent = (props: IListProps) => {
   };
 
   return (
-    <Layout.Flex orientation="vertical" gapY={1} p={1} class={props.class}>
-      <For each={lessonsStore.lessons()}>
-        {(lesson) => (
-          <Card
-            role="button"
-            tabIndex={0}
-            interactive
-            selected={lessonsStore.selectedId() === lesson.id}
-            padding="sm"
-            onClick={() => handleSelect(lesson.id)}
-          >
-            <Layout.Flex orientation="vertical" gapY={1}>
-              <Layout.Flex orientation="horizontal" gapX={2} align="center">
-                <Typography>{lesson.title}</Typography>
-                <Show when={lesson.level}>
-                  <Card padding="sm">
-                    <Typography size="sm" tone="muted">
-                      {lesson.level}
-                    </Typography>
-                  </Card>
-                </Show>
-              </Layout.Flex>
-
-              <Show when={lesson.tags.length > 0}>
-                <Layout.Flex orientation="horizontal" gapX={1} gapY={1} wrap="wrap">
-                  <For each={lesson.tags}>
-                    {(tag) => (
-                      <Typography size="sm" tone="muted">
-                        #{tag}
-                      </Typography>
-                    )}
-                  </For>
-                </Layout.Flex>
-              </Show>
-            </Layout.Flex>
-          </Card>
-        )}
-      </For>
-    </Layout.Flex>
+    <UiList
+      class={props.class}
+      data={lessonsStore.lessons()}
+      item={{
+        use: LessonCard,
+        props: (lesson: ILessonSummary) => ({
+          lesson,
+          selected: lessonsStore.selectedId() === lesson.id,
+          onSelect: handleSelect,
+        }),
+      }}
+    />
   );
 };
 
