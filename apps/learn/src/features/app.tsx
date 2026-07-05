@@ -6,10 +6,14 @@
  * (layout оборачивает все секции, URL'ы плоские: `/`, `/lessons`, `/library/explorer`).
  * `_public/` — для auth-роутов (login и т.п.), заведём с авторизацией.
  *
- * Без авторизации (пока). Роутинг по событиям навигации (ADR 032):
- *   onNavigate (Learn.Welcome) — раздел `/<segment>`.
- *   Доменная под-навигация library — в `features/library.tsx` (канон app-фич:
- *   root App = только глобальные концерны).
+ * Без авторизации (пока). Роутинг по единому событию навигации (ADR 032):
+ *   onSegmentNavigate (Shell.SegmentNav/Launcher) — все nav-источники эмитят
+ *   ОДНО generic-событие `{ nav, segment }`. Маппинг app-wide (домен-специфики
+ *   в формуле нет), поэтому живёт тут, в root App (канон app-фич):
+ *     nav='root' (welcome-лаунчер)  → `/<segment>`
+ *     nav='library'|'lessons' (…)   → `/<nav>/<segment>`
+ *   Под-навигация разделов не ловится доменными фичами (library/lessons) —
+ *   автобабблится (HCA `next()`) до App и роутится единой формулой.
  *
  * Озвучка (ADR 067) — app-глобальный concern, живёт тут:
  *   context.engines — список TTS-движков с voice-сервиса (напрямую, capability публичен);
@@ -41,7 +45,7 @@ interface IOnSpeakEvent {
   onSpeak: { audioUrl: string | null };
 }
 
-const App = Feature<Learn.Welcome.Events & Shell.Picker.Events & IOnSpeakEvent>(
+const App = Feature<Shell.SegmentNav.Events & Shell.Picker.Events & IOnSpeakEvent>(
   ({ router, api }) => ({
     initial: 'idle',
 
@@ -78,9 +82,11 @@ const App = Feature<Learn.Welcome.Events & Shell.Picker.Events & IOnSpeakEvent>(
       },
     },
 
-    // Навигация из welcome-карточек: payload — id раздела (lessons/exercises/progress/library/guides).
-    onNavigate: ({ target }) => {
-      router.goTo(`/${target.payload}`);
+    // Навигация из любого SegmentNav/Launcher (welcome + под-навигации разделов).
+    // Событие app-wide: маппинг nav+segment → путь одинаков для всех источников.
+    onSegmentNavigate: ({ target }) => {
+      const { nav, segment } = target.payload;
+      router.goTo(nav === 'root' ? `/${segment}` : `/${nav}/${segment}`);
     },
 
     // Shell.Picker (хедер): выбор движка. Два пикера различаются по name.

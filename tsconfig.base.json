@@ -33,27 +33,31 @@
       "@capsuletech/web-contract/capabilities": [
         "packages/web/runtime/contract/src/capabilities/index.ts"
       ],
-      "@capsuletech/web-studio": ["packages/web/studio/src/index.ts"],
-      "@capsuletech/web-studio/manifests": ["packages/web/studio/src/manifests/index.ts"],
-      "@capsuletech/web-studio/state": ["packages/web/studio/src/state/index.ts"],
-      "@capsuletech/web-studio/inspector": ["packages/web/studio/src/inspector/index.ts"],
-      "@capsuletech/web-studio/generators": ["packages/web/studio/src/generators/index.ts"],
-      "@capsuletech/web-studio/controllers": ["packages/web/studio/src/controllers/index.ts"],
-      "@capsuletech/web-studio/capsule": ["packages/web/studio/src/capsule.ts"],
-      "@capsuletech/web-studio/docs": ["packages/web/studio/src/docs/index.ts"],
+      "@capsuletech/web-studio": ["packages/web/workspace/studio/src/index.ts"],
+      "@capsuletech/web-studio/manifests": ["packages/web/workspace/studio/src/manifests/index.ts"],
+      "@capsuletech/web-studio/state": ["packages/web/workspace/studio/src/state/index.ts"],
+      "@capsuletech/web-studio/inspector": ["packages/web/workspace/studio/src/inspector/index.ts"],
+      "@capsuletech/web-studio/generators": ["packages/web/workspace/studio/src/generators/index.ts"],
+      "@capsuletech/web-studio/controllers": ["packages/web/workspace/studio/src/controllers/index.ts"],
+      "@capsuletech/web-studio/capsule": ["packages/web/workspace/studio/src/capsule.ts"],
+      "@capsuletech/web-studio/docs": ["packages/web/workspace/studio/src/docs/index.ts"],
       "@capsuletech/web-placeholders": ["packages/web/domain/placeholders/src/index.ts"],
       "@capsuletech/web-placeholders/capsule": ["packages/web/domain/placeholders/src/capsule.ts"],
-      "@capsuletech/web-learn": ["packages/web/learn/src/index.ts"],
-      "@capsuletech/web-learn/core": ["packages/web/learn/src/core/index.ts"],
-      "@capsuletech/web-learn/lesson": ["packages/web/learn/src/lesson/index.ts"],
-      "@capsuletech/web-learn/exercise": ["packages/web/learn/src/exercise/index.ts"],
-      "@capsuletech/web-learn/progress": ["packages/web/learn/src/progress/index.ts"],
-      "@capsuletech/web-learn/library": ["packages/web/learn/src/library/index.ts"],
-      "@capsuletech/web-learn/guides": ["packages/web/learn/src/guides/index.ts"],
-      "@capsuletech/web-learn/sentence-builder": ["packages/web/learn/src/sentence-builder/index.ts"],
-      "@capsuletech/web-learn/welcome": ["packages/web/learn/src/welcome/index.ts"],
-      "@capsuletech/web-learn/controllers": ["packages/web/learn/src/controllers/index.ts"],
-      "@capsuletech/web-learn/capsule": ["packages/web/learn/src/capsule.ts"],
+      "@capsuletech/web-learn": ["packages/web/workspace/learn/src/index.ts"],
+      "@capsuletech/web-learn/core": ["packages/web/workspace/learn/src/core/index.ts"],
+      "@capsuletech/web-learn/lesson": ["packages/web/workspace/learn/src/modules/lessons/index.ts"],
+      "@capsuletech/web-learn/exercise": ["packages/web/workspace/learn/src/modules/exercise/index.ts"],
+      "@capsuletech/web-learn/progress": ["packages/web/workspace/learn/src/modules/progress/index.ts"],
+      "@capsuletech/web-learn/library": ["packages/web/workspace/learn/src/modules/library/index.ts"],
+      "@capsuletech/web-learn/guides": ["packages/web/workspace/learn/src/modules/guides/index.ts"],
+      "@capsuletech/web-learn/sentence-builder": [
+        "packages/web/workspace/learn/src/modules/sentence-builder/index.ts"
+      ],
+      "@capsuletech/web-learn/welcome": ["packages/web/workspace/learn/src/modules/welcome/index.ts"],
+      "@capsuletech/web-learn/controllers": [
+        "packages/web/workspace/learn/src/core/controllers/index.ts"
+      ],
+      "@capsuletech/web-learn/capsule": ["packages/web/workspace/learn/src/capsule.tsx"],
       "@capsule/docs-registry": ["docs/.generated/registry.ts"],
       "@capsuletech/web-access": ["packages/web/runtime/access/src/index.ts"],
       "@capsuletech/web-dnd": ["packages/web/runtime/dnd/src/index.ts"],
@@ -122,6 +126,7 @@
       "@capsuletech/web-ui/manifest": ["packages/web/kit/ui/src/manifest/index.ts"],
       "@capsuletech/web-ui/accordion": ["packages/web/kit/ui/src/primitives/accordion/index.ts"],
       "@capsuletech/web-ui/avatar": ["packages/web/kit/ui/src/primitives/avatar/index.ts"],
+      "@capsuletech/web-ui/badge": ["packages/web/kit/ui/src/primitives/badge/index.ts"],
       "@capsuletech/web-ui/button": ["packages/web/kit/ui/src/primitives/button/index.ts"],
       "@capsuletech/web-ui/card": ["packages/web/kit/ui/src/primitives/card/index.ts"],
       "@capsuletech/web-ui/dropdown": ["packages/web/kit/ui/src/primitives/dropdown/index.ts"],
@@ -165,6 +170,10 @@
         "packages/web/kit/ui/src/composites/compositeProxy/index.ts"
       ],
       "@capsuletech/web-ui/dataTable": ["packages/web/kit/ui/src/composites/dataTable/index.ts"],
+      "@capsuletech/web-ui/segmentedBar": [
+        "packages/web/kit/ui/src/composites/segmentedBar/index.ts"
+      ],
+      "@capsuletech/web-ui/launcher": ["packages/web/kit/ui/src/composites/launcher/index.ts"],
       "@capsuletech/web-ui/dropdownMenu": [
         "packages/web/kit/ui/src/composites/dropdownMenu/index.ts"
       ],

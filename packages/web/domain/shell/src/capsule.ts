@@ -15,13 +15,25 @@ import {
   Appearance,
   FinishSettings,
   Header,
+  Launcher,
   LocalePicker,
   ModeToggle,
   Picker,
+  SegmentNav,
   ThemePicker,
 } from './ui';
 
 export default defineCapsuleModule({
   name: 'Shell',
-  components: { Appearance, FinishSettings, Header, LocalePicker, ModeToggle, Picker, ThemePicker },
+  components: {
+    Appearance,
+    FinishSettings,
+    Header,
+    Launcher,
+    LocalePicker,
+    ModeToggle,
+    Picker,
+    SegmentNav,
+    ThemePicker,
+  },
 });

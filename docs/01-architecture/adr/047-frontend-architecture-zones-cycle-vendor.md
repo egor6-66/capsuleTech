@@ -331,6 +331,86 @@ packages/web/
 
 Studio exports **product-blocks** (`logic-editor`, `component-builder`, `inspector-panel`, …), НЕ raw functionality. Universal engines (generators, manifest registry, JSON-tree ops) при необходимости живут в своих пакетах и юзаются и в studio, и в apps. Текущий internal layout studio (manifests/state/inspector/generators/controllers/capsule) — quick-and-dirty placement для test-запусков; будет audit-PR с extract'ом raw-блоков в свои пакеты. См. memory `feedback_studio_composition_rule` (canon-источник для owner-studio).
 
+## Amendment D7 (2026-07-05) — `workspace` catalog zone (studio + learn + shared `web-workspace`)
+
+> [!info] Amendment
+> Sole-inhabitant `studio` зона + незарегистрированный `learn` → общая зона-каталог `workspace`. Layout + новый shared-пакет; npm-имена studio/learn не меняются.
+
+### Контекст
+
+Две болячки скопились:
+
+1. **`studio` — sole-inhabitant зона** (D6): parent-папка = один пакет. То же паттерн-повторение, что D6 сворачивал у `design-time`.
+2. **`learn` (`@capsuletech/web-learn`, добавлен ADR 055/067) НИКОГДА не был в каноне зон.** `classifyZone('packages/web/learn/…')` → `null`; `@capsuletech/web-learn` как цель импорта трактуется «shared infra, можно откуда угодно». Слепое пятно линтера — cross-zone импорты learn не проверяются.
+
+И studio, и learn — **полноценные «апп-как-пакет» хосты** с широким UX (studio = design-time конструктор, learn = обучающий апп). Мандат user (2026-07-05): **их интерфейс и механики должны быть максимально одинаковы** — юзер, привыкший к одному, работает в другом привычным способом; меняется только смысл/контент, «мехи те же». Значит общие механики (палитра первой, дальше панели/навигация/шелл) живут в **общем пакете**, который оба потребляют.
+
+### Что меняется
+
+Вводится зона-каталог `workspace` — группа апп-хостов + их общий kit:
+
+**Было:**
+```
+packages/web/
+├── kit/  runtime/  domain/  boost/
+├── studio/          ← sole-inhabitant зона (D6)
+└── learn/           ← flat, НЕ в каноне зон (слепое пятно)
+```
+
+**Стало:**
+```
+packages/web/
+├── kit/  runtime/  domain/  boost/
+└── workspace/                      ← 6-я zone, каталог апп-хостов
+    ├── studio/   @capsuletech/web-studio     (move, имя не меняется)
+    ├── learn/    @capsuletech/web-learn      (move, впервые в каноне)
+    └── kit/      @capsuletech/web-workspace  (НОВЫЙ — общий шелл механик)
+```
+
+### Intra-zone канон (жёсткое правило, v1, не конвенция)
+
+Внутри `workspace` есть два яруса: **shared** (`web-workspace` — kit каталога) и **app-члены** (`web-studio`, `web-learn`).
+
+- **app ⊥ app** — `web-studio` и `web-learn` **НЕ импортят друг друга** (линтер режет, как cross-domain D2). Причина = канон §0: модуль не пускает корни в соседа. Именно поэтому модули студии живут в **пакете**, а не в аппе: их можно комбинировать между аппами, но сами апп-пакеты остаются развязаны (мандат user).
+- **app → shared: разрешено** — оба зависят **только** от `web-workspace`.
+- **shared ↛ app** — `web-workspace` тонкий, потребителей не знает (kit не знает консюмеров).
+
+Это правило «designated shared package» — строже, чем loose same-zone у `boost` (там cross-package «architecturally suspect, но allowed»). В `workspace` cross-package разрешён **исключительно** если цель = `@capsuletech/web-workspace`.
+
+### Zone deps
+
+`workspace` потребляет всё нижнее (kit / runtime / boost / domain) — наследует host-привилегии студии (D6 `studio` → «всё кроме apps»). Никакая другая зона **не** импортит `workspace` (apps подключают через регистрацию ADR 033, не прямым импортом в prod-слоях).
+
+### Compliance (owner-builders)
+
+- `Zone` type: добавить `'workspace'` (зон становится 6). `'studio'` как отдельная зона **уходит** — становится пакетом внутри `workspace`.
+- `ZONE_RX`: `['workspace', /packages[\/]web[\/]workspace[\/]/]`; правило `studio` снять.
+- `extractZonePackage`: sole-inhabitant спец-кейс `studio` **удалить** — `workspace` использует обычную `<zone>/<pkg>` экстракцию (теперь studio/learn/kit — реальные субдиры).
+- `PACKAGE_TO_ZONE`: `@capsuletech/web-studio` → `workspace`, `@capsuletech/web-learn` → `workspace`, `@capsuletech/web-workspace` → `workspace`.
+- `ZONE_ALLOWED_DEPS.workspace` = `{workspace, kit, runtime, boost, domain}`.
+- `isZoneImportAllowed` — спец-кейс: `if (fromZone === 'workspace' && targetZone === 'workspace' && fromPkg !== targetPkg) return targetPkg === '@capsuletech/web-workspace';` (app↔app forbidden; всё что угодно → shared kit allowed; shared kit → app forbidden покрывается той же строкой).
+- `zones.test.ts` — переписать studio-кейсы на workspace + добавить app⊥app и app→shared кейсы.
+
+### Cost (coordinator-PR главного)
+
+- `git mv packages/web/{studio,learn}` → `packages/web/workspace/{studio,learn}`.
+- `tsconfig.base.json` — 8 studio + 10 learn путей под `workspace/…`.
+- 2× `project.json` — `sourceRoot` + `$schema` depth (стало на уровень глубже).
+- `pnpm install` — релинк workspace-симлинков.
+- compliance zones (бриф owner-builders, ↑).
+- OWNERSHIP.md `zone:` → `workspace` (studio + learn).
+- `docs/_meta/web-zones/` — зон-док `workspace`.
+
+### Что НЕ меняется
+
+- npm-имена `@capsuletech/web-studio`, `@capsuletech/web-learn` — без изменений.
+- Все subpath-экспорты (`/manifests`, `/library`, …) — без изменений.
+- Import-пути консюмеров (apps) — без изменений (меняются только `tsconfig.base.json` paths под капотом).
+
+### Sequencing
+
+Move-first (этот амендмент) — потом отдельным шагом скаффолд `@capsuletech/web-workspace` + вынос generic-палитры (`ComponentSegments` обобщается от прибитого к `IPrimitiveManifestEntry`/`IPreset` к абстрактному контракту `группа → элемент → запись`) → studio перевешивается на общий примитив без смены поведения → learn строит свой каталог на том же примитиве.
+
 ## Open questions {#open-questions}
 
 - Как именно дефинируем «3-й вызов» в colocation-правиле (D5)? Heuristic, не строго. Owner-агенты используют здравый смысл; ревью catches premature abstraction.

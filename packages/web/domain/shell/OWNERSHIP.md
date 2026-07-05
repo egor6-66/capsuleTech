@@ -27,7 +27,8 @@ tier-2 in the two-tier UI model.
   1. Header block (config-driven, через Shapes.Shell).
   2. `Controllers.Shell.*` finalize (ADR 032 useEmit).
   3. switcher-state coordination с owner-web-style (theme/layout-mode пересечения).
-- **Last activity:** 2026-07-03 (Shell.Picker — generic каркас селекта; ThemePicker → wrapper).
+- **Last activity:** 2026-07-05 (Shell.SegmentNav + Shell.Launcher — nav connected-блоки,
+  единое generic-событие `onSegmentNavigate`; brief pilot-segment-nav-3).
 
 ## Vendor stack (ADR 047 D3)
 
@@ -79,7 +80,7 @@ Per ADR 045 the package exposes two tiers as dedicated subpaths:
 | Subpath | Tier | What | Notes |
 |---|---|---|---|
 | `./chrome` | tier-2 connected | `Header`, `ModeToggle`, `Appearance`, `FinishSettings`, `Picker`, `ThemePicker`, `LocalePicker` | Wired to `@capsuletech/web-style` / `@capsuletech/web-auth` stores; `useEmit` |
-| `./ui` | (legacy) | Connected blocks only (no controllers) | Pre-ADR 045 subpath; still works, prefer `./chrome` for new consumers. |
+| `./ui` | tier-2 connected | Connected blocks: chrome (see `./chrome`) + nav blocks `SegmentNav`, `Launcher` | Pre-ADR 045 subpath; still the home of nav connected-блоков (brief pilot-segment-nav-3). learn импортит `SegmentNav`/`Launcher` напрямую из `/ui`. |
 | `./controllers` | empty barrel | (placeholder for future Controllers.Shell.*) | Matrix Controller moved to `@capsuletech/boost-layout/controllers` per ADR 046 D2 (Phase B2). |
 | `.` | convenience barrel | Re-exports `./ui` | |
 | `./capsule` | pkg manifest | `defineCapsuleModule` (ADR 033) — `Shell` namespace (chrome only) | Depends on `@capsuletech/web-core`; runtime pending (phase 3). |
@@ -102,6 +103,18 @@ Per ADR 045 the package exposes two tiers as dedicated subpaths:
   Apps that previously wrapped `Ui.Outlet` in `<... class="vt-route-content">` manually
   should remove that wrapper — Matrix now provides the region automatically.
 
+- **`SegmentNav` + `Launcher` — nav connected-блоки** (`src/ui/segmentNav/`,
+  `src/ui/launcher/`, brief pilot-segment-nav-3). Пилот дедупа Nav/Welcome (канон
+  product-wide kit layering): shell собирает connected app-блок из stateless-визуала
+  (web-ui `SegmentedBar` / `Launcher`) + path-хелпера (web-router `useActiveSegment`) +
+  emit. `SegmentNav` подсвечивает активный сегмент производной от URL
+  (route-prefix-агностично); `Launcher` — hero + грид разделов, роутер ему не нужен.
+  **Единое generic-событие** (решение user): оба блока эмитят ОДНО
+  `onSegmentNavigate { nav, segment }` (`ISegmentNavEvents`, живёт в `segmentNav/`);
+  app-Feature различает источник по `nav`-дискриминатору, а не по имени события.
+  Emit через `useEmitOptional` (могут рендериться вне host-scope, прецедент Picker).
+  **Ноль сырых классов** — весь визуал в web-ui; shell только `class`-passthrough.
+  web-router добавлен в `dependencies` (runtime-зона, ADR 047 D2 allowed).
 - **`Picker` — generic каркас селекта** (`src/ui/picker/`, brief shell-generic-picker
   2026-07-03). Канон: шелл раздаёт каркасы селектов, апп раздаёт данные (с бэка).
   Доменные пикеры = `Picker` + данные аппа — VoicePicker/LocalePicker-подобные блоки
@@ -145,7 +158,7 @@ Per ADR 045 the package exposes two tiers as dedicated subpaths:
 
 | Тип | Где | Что покрывает |
 |---|---|---|
-| Unit | `src/**/__tests__/` | `Header` (compound, batch, capability filtering), `Picker` (options, checkmark, select flow, emit onPick, standalone/sub), `ThemePicker` (wrapper contract 1:1) |
+| Unit | `src/**/__tests__/` | `Header` (compound, batch, capability filtering), `Picker` (options, checkmark, select flow, emit onPick, standalone/sub), `ThemePicker` (wrapper contract 1:1), `SegmentNav` (items/class passthrough, activeId из useActiveSegment, emit onSegmentNavigate), `Launcher` (items/hero passthrough, emit onSegmentNavigate) |
 | E2E | `packages/cli/e2e/smoke.mjs` | косвенно через app scenarios |
 
 **Перед изменением:** `pnpm --filter @capsuletech/web-shell test` (green).

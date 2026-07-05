@@ -7,6 +7,24 @@ import type {
 import type { JSX } from 'solid-js';
 
 /**
+ * Density of the trigger rows. `compact` tightens vertical padding for
+ * dense list-like usage (e.g. a component palette); `default` keeps the
+ * comfortable `px-4 py-3`.
+ */
+export type AccordionDensity = 'default' | 'compact';
+
+/**
+ * Named look-preset. A preset is a frozen bundle of root props (bordered /
+ * multiple / density) that reproduces a canonical appearance in one word.
+ * Explicit props always win over the preset's values.
+ *
+ * - `segmented` — the studio component-palette look: `bordered` outer stroke,
+ *   `multiple`-open behaviour, `compact` density. Nesting indent is opt-in via
+ *   the separate `nested` prop.
+ */
+export type AccordionPreset = 'segmented';
+
+/**
  * Root accordion container.
  *
  * Kobalte Accordion supports both single and multiple-open modes:
@@ -42,6 +60,25 @@ export interface IAccordionProps extends AccordionRootProps {
    * corners clip to the radius). Off by default. Independent of `bordered`.
    */
   rounded?: boolean;
+  /**
+   * Named look-preset (see {@link AccordionPreset}). Applies a frozen bundle
+   * of root props in one word. Explicit props override the preset's values,
+   * so `<Accordion preset="segmented" density="default">` keeps the segmented
+   * stroke + multiple-mode but restores the roomy trigger padding.
+   */
+  preset?: AccordionPreset;
+  /**
+   * Trigger row density. Flows to every `Accordion.Trigger` via context, so
+   * the consumer never hand-tightens padding with a raw class. Default
+   * `'default'` (`px-4 py-3`); `'compact'` → `px-4 py-2`.
+   */
+  density?: AccordionDensity;
+  /**
+   * Indent this accordion as a nested level (`pl-3`). Replaces the raw
+   * `class="pl-3"` a consumer would otherwise add to a sub-accordion — the
+   * indent of a nested level is the component's concern, not the caller's.
+   */
+  nested?: boolean;
 }
 
 /**

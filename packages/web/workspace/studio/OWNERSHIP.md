@@ -1,0 +1,247 @@
+---
+name: "@capsuletech/web-studio"
+owner-agent: owner-studio
+group: web_base
+zone: workspace
+status: alpha
+priority: P1
+last-updated: 2026-07-05
+---
+
+# OWNERSHIP — @capsuletech/web-studio
+
+**Owner agent:** `owner-studio`
+**Package path:** `packages/web/workspace/studio/`
+**Release group:** `web_base` (tag `web@{version}`)
+
+## Состояние (читать ПЕРВЫМ)
+
+- **Zone:** `workspace` (каталог апп-хостов, ADR 047 **D7**, 2026-07-05). Studio — app-хост-ярус зоны рядом с `learn`; общий шелл механик уедет в designated-shared `@capsuletech/web-workspace` (kit). Studio ⊥ learn (app не пускает корни в соседа) — enforced в `compliance/zones.ts`. Ранее (D6) studio была плоской sole-inhabitant зоной `studio`. См. [[web-zone-workspace]].
+- **Status:** `alpha` (0.1.1) — manifests/state/inspector/generators работают; controllers subpath добавлен.
+- **Priority:** **P1** — единственный design-time host; активная разработка ожидается на следующих этапах.
+- **Composition rule (canon):** Studio exports **product-blocks** (`logic-editor`, `component-builder`, `inspector-panel`, …), НЕ raw functionality. Raw engines (universal generators, manifest registry, JSON-tree ops) при необходимости extract'ятся в свои пакеты и юзаются и в studio, и в apps. См. [[studio-composition-rule]].
+- **Audit-backlog (текущий внутренний layout — quick-and-dirty, ожидает rework):**
+  - `/generators` — universal data-gen engine, должен быть extract'нут в свой пакет (нужен также apps и test-стендам).
+  - `/manifests` — дублирует manifests в `@capsuletech/web-ui` (kit). Consolidate в kit как single source.
+  - `/state`, `/inspector` — TBD при аудите (product-block vs raw extract).
+- **Last activity:** 2026-06-12 (zone-flatten + canon refresh).
+
+## Vendor stack (ADR 047 D3)
+
+- **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
+- **`@capsuletech/web-core`** (workspace, dep) — HCA wrappers; `/controllers` subpath единственный с этой зависимостью (WebStudioController).
+- **`@capsuletech/web-ui`** (workspace, dep) — chrome редактора.
+- **`@capsuletech/web-dnd`** (workspace, dep) — pointer DnD для палитры/tree.
+- **`@capsuletech/web-renderer`** (workspace, peerDep) — preview JSON-схемы.
+- **`@capsuletech/shared-zod`** (workspace, dep) — schema-validation для manifest'ов.
+
+## Зона ответственности
+
+Studio = host/composer (5-я zone). Текущий внутренний toolkit для построения JSON-деревьев UI:
+- **Манифесты** компонентов (спецификации, DnD-правила);
+- **State-операции** над editing tree (pure functions, immutable);
+- **DnD resolver'ы** (drag-spec, intent, applyDrop — framework-agnostic);
+- **Inspector** — generic UI-form по manifest (design-time only);
+- **Generators** — procedural/seeded генераторы UI-деревьев.
+
+**ADR 032 фаза 5 (часть 2):** `/controllers` + `/capsule` добавлены. `/controllers` единственный subpath с `web-core`-зависимостью (WebStudioController + WebStudioOverlay). Остальное — framework-agnostic.
+
+**Document-store (`src/document.ts`, `useDocument`) — SSOT редактируемого дерева, РАЗДЕЛЁННЫЙ по режимам (iter1 + правки).** Слил раздельные `selection.ts` (preview пресета) + `composition.ts` (ручная сборка) в ОДИН стор с общим API и моделью ноды, но держит **два независимых слайса** — `store` (активный пресет) и `creator` (композиция). Слайсы не мешают: переход store↔creator НЕ обнуляет дерево creator'а и НЕ сбрасывает активный компонент store'а (мандат USER).
+- Слайс: `{ schema, selectedNodeId, loadedPresetId, expandedIds }`. Ops: `loadPreset` (store-replace + provenance, дети сохранены), `insertPreset(preset, parentId?)` (creator, append + remap-id, unguarded — accept-гейт в UI), `selectNode`, `patchProps`/`patchNodeType` (granular), `removeNode` (subtree, root-guard, чистит expand), `setExpanded`, `reset`. Selectors: `schema`/`selectedNodeId`/`selectedNode`/`loadedPresetId`/`isExpanded`.
+- **Layout-контейнер вставляется пустым в creator**: `insertPreset` для пресета с root `category === 'container'` (Flex/Grid/Group/List — `isLayoutContainer` в `manifests/rules.ts`) вставляет только root, БЕЗ детей-плейсхолдеров (они для store-превью; в creator наполняет юзер узловой мини-палитрой). `composition` (Card/Field) + leaf вставляются целиком (Card без частей бессмыслен, part-пресетов нет). `loadPreset` (store) всегда с детьми.
+- **`useDocument(mode)`** — `mode` строка (`'store'`/`'creator'`) для фикс-режимных потребителей (палитра=`store`, дерево=`creator`) ИЛИ accessor `() => DocMode` для потребителей активного режима (rightbar/канвас через `useStudioMode()` — держит селекторы реактивными к URL). Дефолт `'store'`.
+- **`expandedIds`** — persist open-состояния строк дерева (creator): по дефолту закрыто, состояние живёт ВНЕ Kobalte (его `Accordion.Content` анмаунтит контент при сворачивании), поэтому `TreeRow` (не-корень) — **controlled** Accordion (`value`/`onChange` → `isExpanded`/`setExpanded`): свернул родителя → ребёнок сохранил открыт/закрыт (восстанавливается при ремаунте из стора).
+- **Корень (`nodeId === rootId`) — всегда открыт, БЕЗ сворачивания** (мандат USER): рендерится статической строкой (без Accordion/chevron) + дети + мини-палитра всегда видны.
+- **DnD в дереве (reorder + reparent, creator)** — generic-механика вынесена в `@capsuletech/web-dnd` (`createReorderable` + `<DropIndicator>` + `zoneFromRatio`/`DropZone`); студия — тонкий консюмер. `tree/useRowDnd.ts` = доменный адаптер: даёт `createReorderable` предикаты `accepts` (не в себя/потомка — `isSelfOrDescendant` в `dndHelpers.ts`) + `canInside` (`acceptsChildren` && `canAcceptChild` по манифесту) + `data` (nodeId/nodeType). Зона/связка draggable+droppable/no-op-вне-провайдера — внутри web-dnd. `TreeRow` рисует `<DropIndicator zone={dnd.zone()}>` (визуал сепаратора владеет web-dnd, инлайн-стили — видим без Tailwind-скана пакета; это фикс «сепаратора не было»: классы из пакета не сканились консюмером). Корень не draggable (но droppable). Store-оп `moveNode(dragId, targetId, zone)` (creator-слайс): guard'ы — корень неподвижен, не в себя, не в собственное поддерево (цикл), `canAcceptChild` для родителя назначения. DnD → `moveNode` → document → канвас. **Overlay:** кастомный `providers/DragChip.tsx` (иконка + название узла из манифеста, контент домена) через `<DragOverlay>`; дефолтный ghost выключен (`overlayMode="none"`).
+- Экспортится из корневого barrel (`useDocument`, `IWebStudioDocument`, `COMPOSITION_ROOT_ID`; `DocMode` тип).
+
+- Корневой пустой `document` = `ui.Layout.Flex` (канонический dot-path манифеста/пресетов; legacy `ui.Flex` не имел манифеста → container-gate его не видел).
+- **Палитра и узловая мини-палитра — ОДИН сегментированный блок** (`palette/ComponentSegments.tsx`, бриф `studio-palette-unify-segmented`): `Accordion` (компонент → его пресеты), различаются только **источником** (`manifests`), **действием** (`onSelect`) и стилями. Нет дрейфа: добавили компонент/пресет в палитру → он сам появляется в узле (где принят). Действие развязано от URL-режима — `useStudioMode`-ветвление и `DraggablePresetItem` удалены (вставка = клик).
+  - **Ховер-превью пресета** (`palette/PresetPreview.tsx` + `previewRegistry.ts`): `PresetItem` обёрнут в web-ui `Tooltip`, в контенте — `<Renderer schema={preset.schema} registry={PREVIEW_REGISTRY} mode="static">`. Живая картинка «что это за компонент» без перехода в store / вставки. `PREVIEW_REGISTRY` — локально собранный `{ ui: {...} }` из web-ui subpath-экспортов (в хосте нет инъектированного kit'а; канвас в remote-iframe). ⚠️ Fidelity ≠ канвасу (host-тема), и **дрейф**: новый примитив web-ui не появится в превью, пока не добавлен в `previewRegistry.ts` — осознанный локальный компромисс, будущее = агрегат-namespace в web-ui.
+  - **store-палитра** (`ComponentsPalette`): L1 группы (`groupManifests`) → `ComponentSegments` с `onSelect = loadPreset + emit`, `selectedId = loadedPresetId()`.
+  - **Узловая мини-палитра** (`tree/NodePalette.tsx`, creator-mode): kit `Accordion` «＋ добавить компонент» (плавный вылет) → `ComponentSegments` с `onSelect = insertPreset(preset, nodeId)`, `testIdPrefix="node-preset"`. `TreeRow` рендерит узел контейнером по `acceptsChildren(type)` (принимает по манифесту), а не по «уже есть дети» — иначе пустой контейнер не получил бы первую вставку.
+- **Accept-гейт — реальный сигнал манифеста, не хардкод** (`manifests/rules.ts`): `acceptsChildren(type)` = `!manifest.isLeaf` (container-gate в `TreeRow`); `manifestsForNode(nodeType)` = `getAllManifests().filter(hasPresets && canAcceptChild(nodeType, m.type))` (accept на уровне КОМПОНЕНТА — принят компонент → его пресеты валидны). Accept-policy, которую брифы считали «отсутствующей», уже есть в kit-манифестах (`isLeaf`/`accepts`) — временный хардкод-предикат не понадобился (флаг architect'у).
+
+## Два кита редактора (архитектурное правило)
+
+Редактор работает с двумя независимыми наборами UI-компонентов:
+
+### КОНТЕНТ-кит (`kit` prop → `useWebStudioKit()`)
+Передаётся пропом в `<WebStudio.Provider kit={...}>`. Это компоненты, ИЗ которых пользователь строит свой UI. Используется:
+- `WebStudioCanvas` — registry для `<Renderer>` (рендер Canvas-контента)
+- `WebStudioPalette` — только для `<TemplateCard>` preview через `<Renderer>` (превью шаблонов)
+
+Доступен через `useWebStudioKit()`. НЕ используется для chrome-элементов самого редактора.
+
+### Chrome-кит (`@capsuletech/web-ui`, прямая зависимость пакета)
+Фиксированный набор компонентов, КОТОРЫМИ нарисован сам редактор. Импортируются напрямую:
+- `WebStudioTree` → `import { Dropdown } from '@capsuletech/web-ui/dropdown'` (метки узлов)
+- `WebStudioPalette` → `import { Dropdown } from '@capsuletech/web-ui/dropdown'` (Dropdown шаблонов)
+- `inspector/` → `import { Input } from '@capsuletech/web-ui/input'`, `Toggle` (поля формы)
+
+**Правило для owner-agent:** chrome → `@capsuletech/web-ui` напрямую. `useWebStudioKit()` — только контент (Canvas render, Palette preview).
+
+**GAP:** Inspector Select/Textarea — нативный fallback. Свапнуть на `web-ui` Select/Textarea отдельной задачей когда owner-web-ui добавит их.
+
+## Публичный API (subpaths)
+
+### `@capsuletech/web-studio/manifests`
+
+| Экспорт | Описание |
+|---|---|
+| `getManifest(type)` | Резолв манифеста по dot-path типу |
+| `getAllManifests()` | Все зарегистрированные манифесты |
+| `listByCategory(cat)` | Манифесты конкретной категории |
+| `canAcceptChild(parentType, childType)` | Базовая DnD-валидация через манифест |
+| `summarize(m)` | Лёгкая сводка для палитры |
+| `getCategories()` | Уникальные категории |
+| `acceptsChildren(node)` | Может ли нода держать детей (не leaf, не string-children) |
+| `canDropInto(parentType, childType)` | Drop-валидация с composite-строгостью |
+| `isInside(tree, ancestorId, nodeId)` | Лежит ли nodeId внутри поддерева ancestorId |
+| `canMoveInto(tree, dragId, targetId)` | Полная валидация move (не root, не в себя, не в потомков) |
+| `type ComponentCategory` | Допустимые категории компонентов |
+| `type IPrimitiveManifestEntry` | Спецификация компонента |
+| `type IManifestSummary` | Лёгкая сводка |
+
+### `@capsuletech/web-studio/state`
+
+| Экспорт | Описание |
+|---|---|
+| `addNode(tree, payload)` | Добавить ноду |
+| `moveNode(tree, payload)` | Переместить ноду |
+| `removeNode(tree, payload)` | Удалить ноду и subtree |
+| `updateNode(tree, payload)` | Patch props/meta/styles |
+| `reorderChildren(tree, payload)` | Переупорядочить детей |
+| `insertSubtree(tree, fragment, payload)` | Вставить фрагмент с ремапом id |
+| `createEmptyTree(rootType?)` | Пустое дерево |
+| `createWebStudioSchema(options?)` | XState-совместимая схема |
+| `generateId()` | Уникальный NodeId |
+| `ROOT_ID` | Константа id корня |
+| `WebStudioOpError` | Ошибка операции |
+| **DnD resolver'ы (ADR 032, фаза 5):** | |
+| `dragSpec(data)` | Распознать DragSpec из raw payload web-dnd |
+| `canInto(tree, spec, parentId)` | Можно ли вставить spec в parentId |
+| `canBeside(tree, spec, siblingId)` | Можно ли вставить spec соседом siblingId |
+| `applyDrop(tree, spec, intent)` | Применить drop (add/addTree/move) |
+| `canvasIntent(tree, spec, x, y)` | Геометрический резолвер канваса (DOM) |
+| `treeIntent(tree, spec, targetId, zone)` | Резолвер дерева по zone строки |
+| `type DragSpec` | Что тащим: add / addTree / move |
+| `type DropIntent` | Куда вставить: parentId + beforeId |
+| `type TreeZone` | Зона строки дерева: before / after / inside |
+| (+ все payload-типы) | IAddNodePayload, IMoveNodePayload, … |
+
+### `@capsuletech/web-studio/inspector`
+
+`Inspector`, `type InspectorProps` — studio-only UI-form (тулинг авторства). Тянет web-style/web-ui; НЕ для prod-bundles.
+
+### `@capsuletech/web-studio/generators`
+
+`generate`, `FORM_PRESET`, `CARD_PRODUCT_PRESET`, `LAYOUT_2COL_PRESET`, `BUTTON_PRIMARY_PRESET`, `TYPOGRAPHY_PRESET`, `createRng`, `buildTemplate`, `type IPreset`, `type IGeneratorOptions`.
+
+### `@capsuletech/web-studio/controllers` (ADR 032, фаза 5)
+
+HCA-integration subpath. Зависит на `@capsuletech/web-core`.
+
+| Экспорт | Описание |
+|---|---|
+| `WebStudioController` | Package-shipped HCA-Controller: tree/selection/drag/marks state + handlers |
+| `WebStudioOverlay` | Edit-decoration компонент для `<Renderer editOverlay={...} />` |
+| `type IWebStudioCtx` | Shape store.ctx: tree, selectedId, dragSpec, dropTargetId, intent, marks |
+| `type IOnDragOverCanvasPayload` | Payload для `onCanvasDragOver` |
+| `type IOnDragOverTreePayload` | Payload для `onTreeDragOver` |
+| `type IOnDropPayload` | Payload для `onDrop` |
+| `type IOnMarkPayload` | Payload для `onMark` |
+
+**Handlers WebStudioController:**
+
+| Handler | Payload | Описание |
+|---|---|---|
+| `onSelect` | `NodeId \| null` | Toggle selectedId (повторный клик → deselect) |
+| `onCanvasDragOver` | `{ spec, pointer: {x,y} }` | canvasIntent → dragSpec/dropTargetId/intent |
+| `onTreeDragOver` | `{ spec, targetId, zone }` | treeIntent → dragSpec/dropTargetId/intent |
+| `onDrop` | `{ spec, intent }` | applyDrop → tree; clear drag |
+| `onDragEnd` | — | clear dragSpec/dropTargetId/intent |
+| `onMark` | `{ nodeId, color\|null }` | set/unset цветную метку |
+| `onSetTree` | `IWebStudioTree` | принудительная замена всего дерева |
+| `canInto` | `{ spec, parentId }` | pure-read: возвращает boolean, не мутирует |
+
+**Различение canvas vs tree surface:** разные handler-имена (`onCanvasDragOver` / `onTreeDragOver`). App-виджеты — тонкие (только emit с payload), resolver-логика в Controller.
+
+### `@capsuletech/web-studio/capsule` (ADR 033)
+
+`defineCapsuleModule({ name: 'WebStudio', components: { Overlay: WebStudioOverlay }, controllers: { Editor: WebStudioController } })`
+
+Регистрация в app: `packages: ['@capsuletech/web-studio']` в `capsule.app.ts`.
+После регистрации доступны: `WebStudio.Overlay` (компонент), `Controllers.WebStudio` (HCA-Controller).
+
+Connected-панели регистрируются как `WebStudio.*` глобалы через `src/capsule.ts`
+(не subpath): `Canvas`, `ComponentsPalette`, `Info`, `Navigation`, `Props`,
+`Provider`, `Styles`, `Tree`, `Welcome`.
+
+### `src/styles/` — canvas-local theme override (модуль `WebStudio.Styles`)
+
+Панель переключения темы **канваса** (remote `universal-canvas`) независимо от
+темы хрома самой студии. Не subpath — connected-модуль через `capsule.ts`.
+
+| Экспорт (`src/styles/index.ts`) | Описание |
+|---|---|
+| `useCanvasTheme()` | Shared singleton (паттерн `selection.ts`): `theme()` / `dark()` / `setTheme(name\|undefined)` / `setDark(v\|undefined)` / `reset()`. `undefined` = наследовать host. |
+| `StylesPanel` | Connected-панель (структура как `inspector/Inspector.tsx`): always-visible switcher (dark-toggle + reset, не сворачивается) + `Accordion` со списком тем (свой item, чек-маркер на активной). Зарегистрирована как `WebStudio.Styles`. |
+| `type ICanvasThemeState` / `IWebStudioCanvasTheme` | Типы override-state и hook'а. |
+
+**Отражение host-стейта (no-inversion):** активная тема / режим панели считаются
+как `override ?? host` (`useTheme()` / `useDarkMode()` из web-style). Иначе при
+пустом override (наследуем host) тоггл показывал бы `false`, хотя канвас на
+тёмном host'е — визуальная инверсия (баг-репорт 2026-06-30). Чек-маркер тоже на
+реально активной (host) теме, когда override не задан.
+
+**Провод:** `Canvas.tsx` рендерит `<Remote theme={ct.theme()} dark={ct.dark()} />`.
+`undefined`-проп → `RemoteComponent` делает `?? hostTheme()` (наследует host).
+Override **не персистится** (v1, in-memory как `selection`), **не трогает**
+`capsule-theme` localStorage и **не зовёт** `web-style.setTheme` (иначе
+перекрасился бы хром студии). web-remote трогать не нужно — провод готов (#453).
+
+## Известные ограничения / quirks
+
+1. **Multi-entry vite build** — все subpaths обязаны присутствовать в dist.
+2. **`/inspector` тянет UI-зависимости** — не импортировать в prod-app.
+3. **`/generators` — детерминизм через seed** — mulberry32 RNG, никакого `Math.random`.
+4. **`canvasIntent`/`treeIntent` используют DOM** — framework-agnostic (DOM, не web-core). Тесты через jsdom с моком `elementFromPoint`.
+5. **`rules.ts` — composite-строгость**: composite-части (Card.Header и т.п.) принимаются только контейнером с явным `accepts` — иначе могут потеряться в чужом дереве.
+6. **`styles/` — `DISCOVERED_THEMES` = темы host-бандла** (`@capsuletech/web-style`). Если canvas-app бандлит другой набор тем, список панели может разойтись с реально доступными в канвасе. В v1 принимаем (оба используют один web-style glob). Future: тянуть доступные темы из манифеста canvas-remote.
+
+## Тест-покрытие
+
+| Файл | Что покрыто |
+|---|---|
+| `state/__tests__/insert-subtree.test.ts` | insertSubtree: вставка, ремап id, orphan-check, ошибки |
+| `state/__tests__/dnd.test.ts` | dragSpec, canInto, canBeside, applyDrop (all 3 kinds), treeIntent, canvasIntent |
+| `manifests/__tests__/rules.test.ts` | acceptsChildren, canDropInto, isInside, canMoveInto |
+| `generators/__tests__/` | engine, form, fuzzer, rng, templates |
+| `controllers/__tests__/WebStudioController.test.ts` | onSelect toggle, onDrop mutates tree, onMark set/unset, onDragEnd clear, drag-cycle |
+| `controllers/__tests__/WebStudioOverlay.test.tsx` | chrome по ctx, emit onSelect на клик, pointer-events drag, линия вставки, цветная метка |
+| `styles/__tests__/canvas-theme.test.ts` | singleton: set/reset/undefined-fallback семантика, общий стейт |
+| `styles/__tests__/StylesPanel.test.tsx` | рендер списка из мок-DISCOVERED_THEMES, no-inversion (override пуст → отражает host), active-checkmark, клик→setTheme, toggle→setDark, reset→undefined (jsdom) |
+| `__tests__/document.test.ts` | стор: loadPreset (replace + provenance + immutable clone), insertPreset (parentId/дефолт/remap-id/no-op + layout-контейнер пустой vs composition целиком), selectNode/patchNodeType, removeNode (subtree + selection-reset + root-guard + expand-cleanup), expand-state (default-closed/persist/per-mode), режимы независимы (store↔creator) |
+| `tree/__tests__/Tree.test.tsx` | корень всегда открыт: дети + мини-палитра видны без раскрытия (isExpanded→false) |
+| `tree/__tests__/dndHelpers.test.ts` | isSelfOrDescendant (self/потомок/не-потомок); zoneFromRatio ушёл в web-dnd |
+| `__tests__/document.test.ts` (moveNode) | reorder before/after, reparent inside, guard'ы: root/self/цикл/accept-reject |
+| `inspector/__tests__/PropsPanel.test.tsx` | fallback без selectedNode, поля по выбранному узлу, granular patchProps, no-op на несуществующем узле |
+| `inspector/__tests__/zod-to-categories.test.ts` | скаляры + unwrap (регресс), ZodUnion (string→text+coerce / number→number / literal-only→skip), record/array graceful-skip |
+| `inspector/__tests__/coerce.test.ts` | coerceTextValue: числовая строка→number, CSS/промежуточный ввод (`'1.'`)→строка, без флага — как есть |
+| `info/__tests__/InfoPanel.test.tsx` | EmptyState без узла, store-mode (реальный пресет), creator-mode (узел дерева) по selectedNode() |
+| `manifests/__tests__/rules.test.ts` | acceptsChildren (container/leaf/unknown), manifestsForNode (accept-фильтрация компонентов Flex vs Card) |
+| `palette/__tests__/ComponentSegments.test.tsx` | рендер manifests + onSelect(preset) по клику, подсветка selectedId, кастомный testIdPrefix |
+| `palette/__tests__/PresetPreview.test.tsx` | живой рендер пресета через локальный registry (Button → real button, Flex-контейнер без падения) |
+| `tree/__tests__/NodePalette.test.tsx` | Accordion-вылет → сегменты компонентов → клик пресета → onInsert; fallback без подходящих компонентов |
+
+## Roadmap
+
+- [x] `docs/_meta/studio.md` AI-anchor
+- [x] `/controllers` subpath → `WebStudioController` (ADR 032 фаза 5, часть 2)
+- [x] `/capsule` манифест (ADR 033)
+- [ ] App-миграция: удалить `apps/ui-creator/src/editor/`, переписать виджеты на `Controllers.WebStudio` + `useCtx` (ADR 032 фаза 6)
+- [ ] Undo/redo для state (command pattern)
+- [ ] Manifest field-types: color, file, date
+- [ ] Schema validation для tree через manifests
+- [ ] Generator presets: navigation

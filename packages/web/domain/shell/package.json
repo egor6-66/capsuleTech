@@ -43,6 +43,7 @@
   "dependencies": {
     "@capsuletech/web-core": "workspace:*",
     "@capsuletech/web-intl": "workspace:*",
+    "@capsuletech/web-router": "workspace:*",
     "@capsuletech/web-style": "workspace:*",
     "@capsuletech/web-ui": "workspace:*"
   },

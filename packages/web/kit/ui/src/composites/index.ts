@@ -7,5 +7,7 @@
 export * from './compositeProxy';
 export * from './dataTable';
 export * from './dropdownMenu';
+export * from './launcher';
 export * from './menu';
 export * from './previewCard';
+export * from './segmentedBar';

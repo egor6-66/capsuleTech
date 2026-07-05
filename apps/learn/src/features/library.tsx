@@ -3,20 +3,18 @@
  * глобальные концерны, доменные события пакета ловит доменная фича аппа).
  *
  * Монтируется обёрткой в layout-странице `pages/_workspace/library/index.tsx` —
- * сток баблинга для `Learn.LibraryNav` и будущих library-событий.
+ * сток баблинга для будущих library-событий.
  *
- * Под-навигация library (ADR 032): `Learn.LibraryNav` эмитит `onLibraryNavigate`
- * с payload = id под-раздела (`explorer` | `collections`) → роутим в `/library/<segment>`.
+ * Под-навигация library теперь эмитит единый generic `onSegmentNavigate`
+ * (`Shell.SegmentNav`, brief pilot-segment-nav-5) — оно app-wide, ловится
+ * в root `Features.App`, сюда не приходит (автобабблится выше). Фича оставлена
+ * стоком под будущие доменные события раздела.
  */
-const Library = Feature<Learn.LibraryNav.Events>(({ router }) => ({
+const Library = Feature(() => ({
   initial: 'idle',
 
   states: {
     idle: {},
-  },
-
-  onLibraryNavigate: ({ target }) => {
-    router.goTo(`/library/${target.payload}`);
   },
 }));
 

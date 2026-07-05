@@ -9,7 +9,7 @@ import {
 } from '../zones';
 
 /**
- * Phase D3 — zone-canon compliance per ADR 047 D1/D2 + D6 (studio zone, 2026-06-12).
+ * Phase D3 — zone-canon compliance per ADR 047 D1/D2 + D6 + D7 (workspace zone, 2026-07-05).
  *
  * Tests group around:
  *   1. classifyZone — path → Zone.
@@ -39,8 +39,10 @@ describe('classifyZone — basic path classification', () => {
     expect(classifyZone('/repo/packages/web/boost/layout/src/matrix/matrix.tsx')).toBe('boost');
   });
 
-  it('classifies studio zone', () => {
-    expect(classifyZone('/repo/packages/web/studio/src/index.ts')).toBe('studio');
+  it('classifies workspace zone', () => {
+    expect(classifyZone('/repo/packages/web/workspace/studio/src/index.ts')).toBe('workspace');
+    expect(classifyZone('/repo/packages/web/workspace/learn/src/index.ts')).toBe('workspace');
+    expect(classifyZone('/repo/packages/web/workspace/kit/src/index.ts')).toBe('workspace');
   });
 
   it('returns null for paths outside packages/web/', () => {
@@ -64,7 +66,15 @@ describe('extractZonePackage — package directory extraction', () => {
     expect(extractZonePackage('/repo/packages/web/runtime/core/src/x.ts', 'runtime')).toBe('core');
     expect(extractZonePackage('/repo/packages/web/boost/layout/src/x.ts', 'boost')).toBe('layout');
     expect(extractZonePackage('/repo/packages/web/domain/auth/src/x.ts', 'domain')).toBe('auth');
-    expect(extractZonePackage('/repo/packages/web/studio/src/x.ts', 'studio')).toBe('studio');
+    expect(extractZonePackage('/repo/packages/web/workspace/studio/src/x.ts', 'workspace')).toBe(
+      'studio',
+    );
+    expect(extractZonePackage('/repo/packages/web/workspace/learn/src/x.ts', 'workspace')).toBe(
+      'learn',
+    );
+    expect(extractZonePackage('/repo/packages/web/workspace/kit/src/x.ts', 'workspace')).toBe(
+      'kit',
+    );
   });
 
   it('returns null when zone is null', () => {
@@ -93,8 +103,10 @@ describe('PACKAGE_TO_ZONE — canon coverage', () => {
     expect(PACKAGE_TO_ZONE['@capsuletech/boost-layout']).toBe('boost');
   });
 
-  it('lists studio in studio zone', () => {
-    expect(PACKAGE_TO_ZONE['@capsuletech/web-studio']).toBe('studio');
+  it('lists workspace app-hosts + shared kit in workspace zone', () => {
+    expect(PACKAGE_TO_ZONE['@capsuletech/web-studio']).toBe('workspace');
+    expect(PACKAGE_TO_ZONE['@capsuletech/web-learn']).toBe('workspace');
+    expect(PACKAGE_TO_ZONE['@capsuletech/web-workspace']).toBe('workspace');
   });
 
   it('omits shared-infra packages (allowed everywhere)', () => {
@@ -163,13 +175,75 @@ describe('isZoneImportAllowed — canon rules', () => {
     ).toBe(false);
   });
 
-  it('allows studio → anything', () => {
+  it('allows workspace → anything below (host role)', () => {
     expect(
-      isZoneImportAllowed('studio', '@capsuletech/web-studio', 'kit', '@capsuletech/web-ui'),
+      isZoneImportAllowed('workspace', '@capsuletech/web-studio', 'kit', '@capsuletech/web-ui'),
     ).toBe(true);
     expect(
-      isZoneImportAllowed('studio', '@capsuletech/web-studio', 'domain', '@capsuletech/web-auth'),
+      isZoneImportAllowed(
+        'workspace',
+        '@capsuletech/web-studio',
+        'domain',
+        '@capsuletech/web-auth',
+      ),
     ).toBe(true);
+    expect(
+      isZoneImportAllowed(
+        'workspace',
+        '@capsuletech/web-learn',
+        'boost',
+        '@capsuletech/boost-layout',
+      ),
+    ).toBe(true);
+  });
+
+  it('allows workspace app → shared web-workspace', () => {
+    expect(
+      isZoneImportAllowed(
+        'workspace',
+        '@capsuletech/web-studio',
+        'workspace',
+        '@capsuletech/web-workspace',
+      ),
+    ).toBe(true);
+    expect(
+      isZoneImportAllowed(
+        'workspace',
+        '@capsuletech/web-learn',
+        'workspace',
+        '@capsuletech/web-workspace',
+      ),
+    ).toBe(true);
+  });
+
+  it('forbids workspace app ↔ app (web-studio ⊥ web-learn)', () => {
+    expect(
+      isZoneImportAllowed(
+        'workspace',
+        '@capsuletech/web-studio',
+        'workspace',
+        '@capsuletech/web-learn',
+      ),
+    ).toBe(false);
+    expect(
+      isZoneImportAllowed(
+        'workspace',
+        '@capsuletech/web-learn',
+        'workspace',
+        '@capsuletech/web-studio',
+      ),
+    ).toBe(false);
+  });
+
+  it('forbids shared web-workspace → app (shared ↛ app)', () => {
+    expect(
+      isZoneImportAllowed(
+        'workspace',
+        '@capsuletech/web-workspace',
+        'workspace',
+        '@capsuletech/web-studio',
+      ),
+    ).toBe(false);
   });
 });
 
@@ -179,30 +253,30 @@ describe('isZoneImportAllowed — canon rules', () => {
 
 describe('ZONE_ALLOWED_DEPS — table shape', () => {
   it('each zone allows itself', () => {
-    for (const zone of ['kit', 'runtime', 'boost', 'domain', 'studio'] as const) {
+    for (const zone of ['kit', 'runtime', 'boost', 'domain', 'workspace'] as const) {
       expect(ZONE_ALLOWED_DEPS[zone].has(zone)).toBe(true);
     }
   });
 
-  it('kit forbids boost / domain / studio', () => {
+  it('kit forbids boost / domain / workspace', () => {
     expect(ZONE_ALLOWED_DEPS.kit.has('boost')).toBe(false);
     expect(ZONE_ALLOWED_DEPS.kit.has('domain')).toBe(false);
-    expect(ZONE_ALLOWED_DEPS.kit.has('studio')).toBe(false);
+    expect(ZONE_ALLOWED_DEPS.kit.has('workspace')).toBe(false);
   });
 
-  it('runtime forbids boost / domain / studio', () => {
+  it('runtime forbids boost / domain / workspace', () => {
     expect(ZONE_ALLOWED_DEPS.runtime.has('boost')).toBe(false);
     expect(ZONE_ALLOWED_DEPS.runtime.has('domain')).toBe(false);
-    expect(ZONE_ALLOWED_DEPS.runtime.has('studio')).toBe(false);
+    expect(ZONE_ALLOWED_DEPS.runtime.has('workspace')).toBe(false);
   });
 
-  it('boost forbids domain and studio', () => {
+  it('boost forbids domain and workspace', () => {
     expect(ZONE_ALLOWED_DEPS.boost.has('domain')).toBe(false);
-    expect(ZONE_ALLOWED_DEPS.boost.has('studio')).toBe(false);
+    expect(ZONE_ALLOWED_DEPS.boost.has('workspace')).toBe(false);
   });
 
-  it('domain forbids studio', () => {
-    expect(ZONE_ALLOWED_DEPS.domain.has('studio')).toBe(false);
+  it('domain forbids workspace', () => {
+    expect(ZONE_ALLOWED_DEPS.domain.has('workspace')).toBe(false);
   });
 });
 
@@ -215,7 +289,9 @@ const RUNTIME_PATH = '/repo/packages/web/runtime/core/src/wrappers/widget.tsx';
 const BOOST_PATH = '/repo/packages/web/boost/layout/src/matrix/matrix.tsx';
 const DOMAIN_AUTH_PATH = '/repo/packages/web/domain/auth/src/role/index.ts';
 const DOMAIN_SHELL_PATH = '/repo/packages/web/domain/shell/src/ui/header/header.tsx';
-const STUDIO_PATH = '/repo/packages/web/studio/src/index.ts';
+const WS_STUDIO_PATH = '/repo/packages/web/workspace/studio/src/index.ts';
+const WS_LEARN_PATH = '/repo/packages/web/workspace/learn/src/index.ts';
+const WS_KIT_PATH = '/repo/packages/web/workspace/kit/src/index.ts';
 
 describe('check — zone canon enforcement', () => {
   it('kit importing kit subpath → allowed', () => {
@@ -291,14 +367,52 @@ import { Matrix } from '@capsuletech/boost-layout';
     ).toEqual([]);
   });
 
-  it('studio importing anything → allowed', () => {
+  it('workspace app-host importing anything below → allowed', () => {
     expect(
       check(
-        STUDIO_PATH,
+        WS_STUDIO_PATH,
         `
 import { Button } from '@capsuletech/web-ui';
 import { useAuth } from '@capsuletech/web-auth';
 import { Matrix } from '@capsuletech/boost-layout';
+`,
+      ),
+    ).toEqual([]);
+  });
+
+  it('workspace app → shared web-workspace → allowed', () => {
+    expect(
+      check(WS_STUDIO_PATH, "import { shared } from '@capsuletech/web-workspace';"),
+    ).toEqual([]);
+    expect(
+      check(WS_LEARN_PATH, "import { shared } from '@capsuletech/web-workspace';"),
+    ).toEqual([]);
+  });
+
+  it('workspace app ↔ app (web-studio → web-learn) → cross-zone violation (D7)', () => {
+    const violations = check(WS_STUDIO_PATH, "import { Lesson } from '@capsuletech/web-learn';");
+    expect(violations).toHaveLength(1);
+    expect(violations[0].kind).toBe('cross-zone-import');
+    expect(violations[0].zone).toBe('workspace');
+    expect(violations[0].message).toContain('Workspace app-cross import');
+    expect(violations[0].hint).toContain('web-workspace');
+  });
+
+  it('workspace shared → app (web-workspace → web-studio) → cross-zone violation (shared ↛ app)', () => {
+    const violations = check(WS_KIT_PATH, "import { Studio } from '@capsuletech/web-studio';");
+    expect(violations).toHaveLength(1);
+    expect(violations[0].kind).toBe('cross-zone-import');
+    expect(violations[0].zone).toBe('workspace');
+    expect(violations[0].message).toContain('Workspace app-cross import');
+  });
+
+  it('workspace shared web-workspace importing anything below → allowed', () => {
+    expect(
+      check(
+        WS_KIT_PATH,
+        `
+import { Button } from '@capsuletech/web-ui';
+import { useCtx } from '@capsuletech/web-core';
 `,
       ),
     ).toEqual([]);

@@ -1,16 +1,16 @@
 ---
 title: web-zones-index
-description: Index 5 zone canon docs для packages/web/* per ADR 047 D1 + D6. Точка входа для контрибьютора / агента / user'а.
+description: Index 6 zone canon docs для packages/web/* per ADR 047 D1 + D6 + D7. Точка входа для контрибьютора / агента / user'а.
 status: canon
-last_updated: 2026-06-12
+last_updated: 2026-07-05
 tags: [meta, web-zones]
 ---
 
 # Web zones — index
 
-> Канон-источник: [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] D1. `packages/web/*` разбивается на 5 zone по смыслу. Реализация — физическая через директории `packages/web/<zone>/<pkg>/` (после Phase D миграции).
+> Канон-источник: [[047-frontend-architecture-zones-cycle-vendor|ADR 047]] D1. `packages/web/*` разбивается на 6 zone по смыслу. Реализация — физическая через директории `packages/web/<zone>/<pkg>/` (после Phase D миграции).
 
-## 5 zone {#five-zones}
+## 6 zone {#zones}
 
 | Zone | Packages | Что это | Doc |
 |---|---|---|---|
@@ -18,7 +18,7 @@ tags: [meta, web-zones]
 | **runtime** | `web-core`, `web-state`, `web-router`, `web-query`, `web-style`, `web-renderer`, `web-dnd`, `web-intl`, `web-date`, `web-profiler`, `web-remote`, `web-contract`, `web-access` | Framework-сервисы, включённые в каждое capsule-приложение под капотом. | [[web-zone-runtime]] |
 | **domain** | `web-auth`, `web-shell`, `web-agent` | Stateful feature-packages — «мини-апп как пакет». | [[web-zone-domain]] |
 | **boost** | `boost-table`, `boost-map`, `boost-flow`, `boost-chart`, `boost-layout` | Heavy domain-mirror kit-примитива. Зеркало в `Ui.*`, full power в `Tables.*`/`Maps.*`/etc. | [[web-zone-boost]] |
-| **studio** | `studio` (host/composer) | Tooling для авторства capsule-приложений. Composes from other zones. Не в prod-bundle. | [[web-zone-studio]] |
+| **workspace** | `web-studio`, `web-learn`, `web-workspace` (shared) | Каталог апп-хостов capsule (мощные UX-приложения). Общая механика в `web-workspace`; app-хосты ⊥ друг друга. | [[web-zone-workspace]] |
 
 ## Канон зависимостей {#dep-canon}
 
@@ -29,7 +29,7 @@ tags: [meta, web-zones]
         ↑       ↑
        (apps консьюмят всё)
 
-       studio ← всё кроме apps
+       workspace ← всё кроме apps (app-хосты ⊥ друг друга; общее — через web-workspace)
 ```
 
 Кратко:
@@ -37,7 +37,7 @@ tags: [meta, web-zones]
 - **runtime** может на runtime (без циклов) + kit.
 - **boost** — на runtime + kit. Не на domain / другой boost.
 - **domain** — на kit/runtime/boost. **НЕ на другой domain** (canon — через `web-contract`).
-- **studio** — host/composer; на всё кроме apps. Один пакет в зоне (single-package by design).
+- **workspace** — каталог апп-хостов (studio/learn); на всё кроме apps. Intra-zone: app-хосты **НЕ импортят друг друга**, общее — только через `web-workspace` (designated shared, ADR 047 D7).
 
 Compliance enforces (расширение [[004-compliance-golden-rules|ADR 004]] на package-уровень).
 
