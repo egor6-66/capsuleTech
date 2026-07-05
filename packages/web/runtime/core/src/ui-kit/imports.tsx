@@ -128,6 +128,10 @@ export const Image = createLazy(() => import('@capsuletech/web-ui/image'), 'Imag
 // Avatar — thin composition over Image (circular, string-fallback convenience)
 export const Avatar = createLazy(() => import('@capsuletech/web-ui/avatar'), 'Avatar');
 
+// Prose — typography container for rendered-markdown (headings/lists/tables/code
+// on design-tokens); not on the critical shell path. Convention: Textarea/Image.
+export const Prose = createLazy(() => import('@capsuletech/web-ui/prose'), 'Prose');
+
 // ---------------------------------------------------------------------------
 // Augmentation-ready namespaces for boost-* extensions (per ADR 046 D5).
 // Kit ships a basic member in each namespace as a light placeholder; boost-*

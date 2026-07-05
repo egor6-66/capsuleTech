@@ -1,12 +1,8 @@
 [workspace]
 resolver = "2"
+# scriber/* + fs удалены (ADR 074): Rust LLM-роутер superseded backend/llm;
+# fs был только их зависимостью. Наработки — в git-истории.
 members = [
-  "fs",
-  "scriber/core",
-  "scriber/ollama",
-  "scriber/mcp",
-  "scriber/native-tools",
-  "scriber/server",
   "telegram",
   "playground",
 ]

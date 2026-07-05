@@ -58,7 +58,7 @@ CapsuleOutlet: () => JSX.Element   // wrapper над TanStack <Outlet/> + DepthC
 DepthContext: Context<number>      // per-Outlet depth, sentinel -1 = "над любым Outlet'ом" (ADR 046 D4)
 
 // Types
-ICapsuleRouter<TRouteTree>    // { goTo, back, current, raw }
+ICapsuleRouter<TRouteTree>    // { goTo, back, current, params, param, raw }
 ICapsuleRouterContext<TUser>  // TUser & { [k]: unknown }
 IGoToOpts                     // { params?, search?, hash?, replace? }
 IBeforeLoadContext            // { location, cause, params, search, context, preload, abortController }
@@ -76,6 +76,8 @@ notFound                      // re-export @tanstack/solid-router (для throw 
 | `goTo` | `(path, opts?) => void` | `raw.navigate({ to: path, ...opts })` |
 | `back` | `() => void` | `raw.history.back()` |
 | `current` | `() => string` | `raw.state.location.pathname` — app-relative (TanStack стрипает basepath через input-rewrite) |
+| `params` | `() => Record<string, string>` | path-параметры leaf-матча (`raw.state.matches[last].params`; TanStack мёржит предков). Реактивен как `current()`; нет матча → `{}` |
+| `param` | `(name) => string \| undefined` | сахар над `params()` на один ключ |
 | `raw` | property | Escape hatch к TanStack Router |
 
 ## Файлы
@@ -89,7 +91,7 @@ notFound                      // re-export @tanstack/solid-router (для throw 
 | `src/useRouteDepth.ts` | `useRouteDepth()` — `useContext(DepthContext)`, normalize sentinel `-1`→`0` (ADR 046 D4) |
 | `src/depthContext.ts` | `DepthContext` — Solid-context для per-Outlet depth (sentinel `-1`) |
 | `src/CapsuleOutlet.tsx` | `CapsuleOutlet` — wrapper над TanStack `<Outlet/>`, владеет `view-transition-name: capsule-content-${depth}` (per-depth, для разделения регионов) + `view-transition-class: capsule-route` (depth-agnostic CSS-таргетинг — `::view-transition-*(.capsule-route)` матчит любую глубину, никакого hardcoded потолка) (ADR 046 D4). **Trace-инструментация (ADR 062):** эмиттит `router.route` mount/dispose `{ depth, path }` через `@capsuletech/web-profiler/trace` (no-op когда off). Трейсит OUTLET-узел (структурная глубина), НЕ matched leaf-компонент (его рендерит TanStack внутри `<Outlet/>`). |
-| `src/__tests__/` | 51 тест: wrap (14), normalizeBase (8), context (2), notFoundRedirect (5), beforeLoad (6), viewTransition (4), useRouteDepth (5 Provider-based), CapsuleOutlet (4 DOM), CapsuleOutlet.trace (3 mount/dispose/soft-dep) — jsdom-env |
+| `src/__tests__/` | 61 тест: wrap shape+goTo+back+current (14), params/param mock (7), params.reactive real-router (3, jsdom), normalizeBase (8), context (2), notFoundRedirect (5), beforeLoad (6), viewTransition (4), useRouteDepth (5 Provider-based), CapsuleOutlet (4 DOM), CapsuleOutlet.trace (3 mount/dispose/soft-dep) — jsdom-env |
 
 ## Ключевые инварианты
 

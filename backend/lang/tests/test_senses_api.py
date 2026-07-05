@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from capsule_lang.importer import import_file
-from capsule_lang.seed import seed
+from seed_fixture import seed
 
 
 def _id_by_text(client, word: str, **params) -> int:

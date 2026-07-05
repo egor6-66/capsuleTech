@@ -11,18 +11,14 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Query, Request
 
+from .clients.image import ImageClient
 from .clients.voice import VoiceClient
+from .compose import audio_block as _audio_block
+from .compose import image_block as _image_block
 from .config import settings
 from .schemas import RelatedResponse, SenseDetail, SensesResponse
 
 router = APIRouter(prefix="/learn/lang", tags=["lang"])
-
-
-async def _audio_block(voice: VoiceClient, text: str, lang: str) -> dict[str, Any] | None:
-    engines = await voice.engines()
-    if engines is None:
-        return None
-    return {"url": voice.speak_url(text, lang), "engines": engines}
 
 
 @router.get("/senses", response_model=SensesResponse)
@@ -54,8 +50,10 @@ async def list_senses(
     params.update({k: v for k, v in optional.items() if v is not None})
     data = await request.app.state.lang.senses(params)
     voice: VoiceClient = request.app.state.voice
+    image: ImageClient = request.app.state.image
     for item in data["senses"]:
         item["audio"] = await _audio_block(voice, item["text"], lang)
+        item["image"] = await _image_block(image, item["text"], item["pos"])
     return data
 
 
@@ -63,7 +61,10 @@ async def list_senses(
 async def get_sense(sense_id: int, request: Request) -> Any:
     data = await request.app.state.lang.sense(sense_id)
     voice: VoiceClient = request.app.state.voice
+    image: ImageClient = request.app.state.image
     data["audio"] = await _audio_block(voice, data["word"]["text"], data["word"]["lang"])
+    # Overrides lang's plain-text "образ" stub with the composed picture link.
+    data["image"] = await _image_block(image, data["word"]["text"], data["pos"])
     return data
 
 

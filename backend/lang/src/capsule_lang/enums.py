@@ -84,3 +84,63 @@ class Source(StrEnum):
 
     AUTO = "auto"
     CURATED = "curated"
+
+
+class LessonLevel(StrEnum):
+    """Pack-difficulty axis L0–L5 (ADR 069) — set by hand, distinct from the
+    CEFR `Level` facet of a sense. Drills/lessons carry this, not `a1..c2`."""
+
+    L0 = "l0"
+    L1 = "l1"
+    L2 = "l2"
+    L3 = "l3"
+    L4 = "l4"
+    L5 = "l5"
+
+
+class RuleCategory(StrEnum):
+    """Grouping facet for reference rules (accordion IA, ADR 069).
+
+    Default is derived from the vault folder a rule lives in (`grammar/` →
+    grammar, `phonetics/` → phonetics, `speech/` → speech), so real reference
+    files need no extra frontmatter. Ru group labels + group order live on the
+    front, not here (only the field is our concern)."""
+
+    PHONETICS = "phonetics"
+    GRAMMAR = "grammar"
+    SPEECH = "speech"
+
+
+class ConceptKind(StrEnum):
+    """Grouping facet for concepts (accordion IA, ADR 069). Default `approach`.
+
+    A `trap`-kind is intentionally NOT added yet — it lands additively with its
+    first content."""
+
+    APPROACH = "approach"
+    PATTERN = "pattern"
+    RECOMMENDATION = "recommendation"
+
+
+class MatchMode(StrEnum):
+    """How a `nearMiss` pattern matches a learner answer (ADR 069 D2).
+
+    `contains` covers ~90% of typo-feedback; `regex` for the rare cases a plain
+    substring can't express. Default is `contains`.
+    """
+
+    CONTAINS = "contains"
+    REGEX = "regex"
+
+
+class DrillDimension(StrEnum):
+    """What a drill measures — the axis its prompts must be unambiguous on.
+
+    `tense` (default) keeps the strict time-marker check: a RU→EN tense drill is
+    worthless if the prompt doesn't pin the time. `other` (pronouns/articles/
+    copula/…) measures something else, so a time marker is not required — the
+    `context` becomes a recommendation, not a gate (ADR 069, round-3 decision).
+    """
+
+    TENSE = "tense"
+    OTHER = "other"

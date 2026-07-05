@@ -10,7 +10,7 @@ last-updated: 2026-07-03
 
 # backend-voice
 
-Stateless TTS capability service (FastAPI, Python 3.11, port :8001) — five pluggable engines (piper, kokoro, edge, chatterbox, f5) behind a Protocol + lazy registry, per-request A/B via `?engine=`. Prod target = Docker/Linux (dev on Windows, no platform-specific engines).
+Stateless TTS capability service (FastAPI, Python 3.11, port :8001) — three pluggable engines (piper, kokoro, chatterbox) behind a Protocol + lazy registry, per-request A/B via `?engine=`. Prod target = Docker/Linux (dev on Windows, no platform-specific engines).
 
 ## Состояние (читать ПЕРВЫМ)
 
@@ -28,10 +28,21 @@ Stateless TTS capability service (FastAPI, Python 3.11, port :8001) — five plu
 - **pydantic-settings** (`>=2.3`) — env config. https://docs.pydantic.dev/latest/concepts/pydantic_settings/
 - **Piper** (`piper-tts` `>=1.3`, extra `voice-piper`) — fastest, small ONNX voices, CPU realtime. https://github.com/OHF-Voice/piper1-gpl
 - **Kokoro** (`kokoro` `>=0.8`, extra `voice-kokoro`) — light TTS, CPU-friendly. https://github.com/hexgrad/kokoro
-- **edge-tts** (`edge-tts` `>=6.1`, extra `voice-edge`) — Microsoft Edge neural voices, NETWORK-only. https://github.com/rany2/edge-tts
 - **Chatterbox** (`chatterbox-tts` `>=0.1`, extra `voice-chatterbox`) — Resemble AI TTS + voice cloning, MIT. https://github.com/resemble-ai/chatterbox
-- **F5-TTS** (`f5-tts` `>=1.0`, extra `voice-f5`) — SOTA flow-matching, cloning-first, slowest. https://github.com/SWivid/F5-TTS
 - **uv** — toolchain (venv + lock). https://docs.astral.sh/uv/
+
+## Лицензии движков (канон ростера)
+
+Канон — **library-not-service** (ADR 065: torch-библиотеки in-process ок; внешние сервисы нет) + только commercial-friendly лицензии. Ростер вычищен 2026-07-04.
+
+| Engine | Пакет | Лицензия | Вердикт |
+|---|---|---|---|
+| `kokoro` | `kokoro` | Apache-2.0 | ✅ в ростере — permissive, CPU-friendly, дефолт. |
+| `chatterbox` | `chatterbox-tts` | MIT | ✅ в ростере — единственный cloning-движок; torch in-process. |
+| `piper` | `piper-tts` | MIT (GPL-derived tooling, runtime ok) | ✅ в ростере — быстрейший, локальный. |
+| ~~`edge`~~ | `edge-tts` | — | ❌ выпилен 2026-07-04 — **облачный сервис Microsoft**, нарушает канон library-not-service (внешний сервис, air-gapped не работает). |
+| ~~`f5`~~ | `f5-tts` | CC-BY-NC | ❌ выпилен 2026-07-04 — **non-commercial** лицензия, отклонена прецедентом ADR 065 (как XTTS). |
+| ~~`xtts`~~ | `TTS` (Coqui) | CPML (non-commercial) | ❌ выпилен 2026-07-03 — non-commercial лицензия + venv-конфликт с chatterbox (`transformers` pin); ниша перекрыта chatterbox (MIT). |
 
 ## Зона ответственности
 
@@ -59,18 +70,19 @@ HTTP, prefix `/voice`:
 - **Python строго 3.11** (`requires-python = ">=3.11,<3.12"`) — Chatterbox/XTTS не собираются под 3.13 (ADR 065 §3). Не поднимать версию без проверки всего engine-стека.
 - **Engines = lazy extras** — base `uv sync --extra dev` НЕ ставит torch; движки грузятся только по первому запросу (`engine.py` `_FACTORIES`). CI гоняет тесты без ML-стека.
 - **chatterbox-tts строго `>=0.1.7`** — 0.1.6 пинит numpy<1.26 (конфликт с остальными), ≤0.1.5 тянет битый build pkuseg.
-- **Chatterbox `speed` игнорируется** — у модели нет нативного speed-контроля; `voice` для chatterbox/f5 = путь к референс-клипу (cloning), не имя голоса.
-- **f5: кастомный референс требует ffmpeg** (whisper-транскрипция); дефолтный референс идёт с известным транскриптом — whisper не дёргается.
+- **Chatterbox `speed` игнорируется** — у модели нет нативного speed-контроля; `voice` для chatterbox = путь к референс-клипу (cloning), не имя голоса.
 - **Первый запрос тяжёлых движков** качает модель с HF (гигабайты) и грузит минуты на CPU — норма, кэшируется in-process.
-- **edge — сетевой** (Microsoft endpoint), air-gapped не работает; mp3→wav декодится через libsndfile (mp3-support в wheels soundfile).
 - **Windows dev: не `uv sync` под запущенным сервером** — uvicorn держит .pyd/DLL, sync падает или оставляет битый пакет (прецедент: полуустановленный transformers → `cannot import name 'pipeline'`). Сначала стоп сервера. И TaskStop у фонового `uv run uvicorn` убивает shell, но НЕ python-потомка — добивать процесс на :8001 руками.
 - **StyleTTS2 выброшен** — pip-обёртка битая (ADR 065 §отклонено). pyttsx3/SAPI отклонён (OS-биндинги, prod=Docker). Не возвращать.
 - **XTTS выброшен (2026-07-03)** — конфликтовал с chatterbox по venv (`transformers` pin) + CPML non-commercial лицензия; ниша (cloning + мультиязычность) перекрывалась chatterbox (MIT). Не возвращать без нового обоснования.
+- **f5 выброшен (2026-07-04)** — CC-BY-NC (non-commercial), отклонён прецедентом ADR 065. Не возвращать без нового обоснования.
+- **edge выброшен (2026-07-04)** — облачный сервис Microsoft, нарушает канон library-not-service (air-gapped не работал). Не возвращать.
 
 ## План рефакторинга / оптимизаций
 
 - [ ] **STT/scoring** — ADR 065 фаза 3, следующая волна. (priority: high)
 - [ ] **Kokoro lang_code из `lang`** — сейчас захардкожен American English. (priority: low)
+- [x] **Чистка ростера по канону лицензий/library-not-service** — f5 (CC-BY-NC) и edge (облачный сервис MS) выпилены; ростер = kokoro/chatterbox/piper; license-таблица зафиксирована (2026-07-04).
 - [x] **Отсев движков по итогам ушного A/B** — xtts убран (venv-конфликт с chatterbox + лицензия), chatterbox остался единственным cloning-движком с torch-конфликтом (2026-07-03).
 - [x] **Вынос из learn + ChatterboxEngine + dep-долг kokoro→transformers в uv.lock** (2026-07-03).
 - [x] **+4 движка (piper/edge/xtts/f5) + conflict-механика chatterbox×xtts** (2026-07-03).

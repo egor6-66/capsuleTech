@@ -4,7 +4,7 @@ export default libConfig({
   entry: {
     index: 'src/index.ts',
     core: 'src/core/index.ts',
-    lesson: 'src/lesson/index.ts',
+    lessons: 'src/lessons/index.ts',
     exercise: 'src/exercise/index.ts',
     progress: 'src/progress/index.ts',
     library: 'src/library/index.ts',

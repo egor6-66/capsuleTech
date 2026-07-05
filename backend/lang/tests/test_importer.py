@@ -6,7 +6,7 @@ from sqlalchemy import func, select
 
 from capsule_lang.importer import import_file
 from capsule_lang.models import Sense, SenseExample, SenseRelation, Tag, Word
-from capsule_lang.seed import SEED_FILE
+from seed_fixture import SEED_FILE
 
 
 def _count(db, model) -> int:

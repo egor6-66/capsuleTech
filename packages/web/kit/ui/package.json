@@ -162,6 +162,16 @@
       "import": "./dist/components/list/*.mjs",
       "default": "./dist/components/list/*.mjs"
     },
+    "./prose": {
+      "types": "./dist/components/prose/index.d.ts",
+      "import": "./dist/components/prose/index.mjs",
+      "default": "./dist/components/prose/index.mjs"
+    },
+    "./prose/*": {
+      "types": "./dist/components/prose/*.d.ts",
+      "import": "./dist/components/prose/*.mjs",
+      "default": "./dist/components/prose/*.mjs"
+    },
     "./separator": {
       "types": "./dist/components/separator/index.d.ts",
       "import": "./dist/components/separator/index.mjs",

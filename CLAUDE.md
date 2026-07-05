@@ -207,14 +207,13 @@ cd apps/<app> && pnpm capsule desktop build
 
 ```
 backend/
-  fs/                      shared FS-утилиты (общие для всех Rust-crate'ов)
-  scriber/                 LLM-агент (Ollama-based)
-    ollama/                lib: HTTP-клиент к Ollama + streaming
-    tools/                 lib: tool-calling протокол
-    server/                bin `capsule-server`: axum HTTP/SSE
+  telegram/                gateway: бот + Mini App backend (initData HMAC)
+  playground/              экспериментальный bin
 ```
 
-`pnpm dev:backend` поднимает `capsule-server` (агентский, Rust).
+`scriber/` (Rust LLM-роутер на Ollama) и `fs/` **удалены** (ADR 074, 2026-07-05):
+LLM = capability-сервис `backend/llm` (:8007, Python, llama-cpp in-process);
+agent-loop — ADR 065 ф.4-5 поверх него.
 
 ### Backend (Python services — FastAPI + uv)
 

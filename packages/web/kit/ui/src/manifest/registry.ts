@@ -36,6 +36,7 @@ import { LabelManifest } from '../primitives/label/label.manifest';
 import { FlexManifest } from '../primitives/layout/flex/flex.manifest';
 import { GridManifest } from '../primitives/layout/grid/grid.manifest';
 import { ListManifest } from '../primitives/list/list.manifest';
+import { ProseManifest } from '../primitives/prose/prose.manifest';
 import { SelectManifest } from '../primitives/select/select.manifest';
 import { SeparatorManifest } from '../primitives/separator/separator.manifest';
 import { SkeletonManifest } from '../primitives/skeleton/skeleton.manifest';
@@ -60,6 +61,7 @@ const ALL: IPrimitiveManifestEntry[] = [
   // typography
   TypographyManifest,
   LabelManifest,
+  ProseManifest,
   // containers
   CardManifest,
   FieldManifest,

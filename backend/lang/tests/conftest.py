@@ -11,7 +11,7 @@ from sqlalchemy.pool import StaticPool
 from capsule_lang.db import Base, get_db
 from capsule_lang.main import app
 from capsule_lang.models import Base as ModelsBase  # noqa: F401  (ensure tables loaded)
-from capsule_lang.seed import seed
+from seed_fixture import seed
 
 
 @pytest.fixture()

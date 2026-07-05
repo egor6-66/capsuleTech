@@ -1,0 +1,7 @@
+# Vault-words fixture — dictionary the эталон drill (`past-perfect-which-clause`)
+# resolves its `words[]` against. Same sense-YAML format as the vocab packs.
+- {word: eat, lang: en_US, pos: verb, ru: "есть", forms: {past: ate, participle: eaten}, traits: [irregular]}
+- {word: call, lang: en_US, pos: verb, ru: "звонить"}
+- {word: leave, lang: en_US, pos: verb, ru: "уходить", forms: {past: left, participle: left}, traits: [irregular]}
+- {word: come, lang: en_US, pos: verb, ru: "приходить", forms: {past: came, participle: come}, traits: [irregular]}
+- {word: already, lang: en_US, pos: adv, ru: "уже"}

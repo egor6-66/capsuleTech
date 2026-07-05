@@ -15,10 +15,10 @@
       "import": "./dist/core.mjs",
       "default": "./dist/core.mjs"
     },
-    "./lesson": {
-      "types": "./dist/lesson/index.d.ts",
-      "import": "./dist/lesson.mjs",
-      "default": "./dist/lesson.mjs"
+    "./lessons": {
+      "types": "./dist/lessons/index.d.ts",
+      "import": "./dist/lessons.mjs",
+      "default": "./dist/lessons.mjs"
     },
     "./exercise": {
       "types": "./dist/exercise/index.d.ts",
@@ -72,6 +72,7 @@
   },
   "dependencies": {
     "@capsuletech/web-core": "workspace:*",
+    "@capsuletech/web-docs": "workspace:*",
     "@capsuletech/web-router": "workspace:*",
     "@capsuletech/web-ui": "workspace:*"
   },

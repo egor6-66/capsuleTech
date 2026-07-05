@@ -1,5 +1,5 @@
-import { Outlet } from '@tanstack/solid-router';
 import { trace } from '@capsuletech/web-profiler/trace';
+import { Outlet } from '@tanstack/solid-router';
 import { type JSX, onCleanup, useContext } from 'solid-js';
 import { RouterContext } from './context';
 import { DepthContext } from './depthContext';

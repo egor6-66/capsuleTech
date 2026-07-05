@@ -10,22 +10,11 @@ import { render } from 'solid-js/web';
 import { describe, expect, test } from 'vitest';
 import { Exercise } from '../exercise';
 import { Tour } from '../guides';
-import { LessonView } from '../lesson';
 import { Collections, VocabList } from '../library';
 import { Progress } from '../progress';
 import { SentenceBuilder } from '../sentence-builder';
 
 describe('web-learn skeleton smoke', () => {
-  test('LessonView renders', () => {
-    const host = document.createElement('div');
-    const dispose = render(() => <LessonView conceptId="lang.en_US.articles" />, host);
-    try {
-      expect(host.querySelector('[data-stub="Learn.LessonView"]')).toBeTruthy();
-    } finally {
-      dispose();
-    }
-  });
-
   test('Exercise dispatches by type', () => {
     const host = document.createElement('div');
     const dispose = render(() => <Exercise type="fill-blank" />, host);

@@ -47,6 +47,7 @@ class TagIn(BaseModel):
 class RelationIn(BaseModel):
     type: RelationType  # antonym|hypernym|hyponym|part_of|member_of
     target: str  # "word (gloss-disambiguator)" → resolved to a sense id
+    bridge: str | None = None  # образ-мост (ADR 069 D4) — optional, usually absent
 
 
 class SenseIn(BaseModel):

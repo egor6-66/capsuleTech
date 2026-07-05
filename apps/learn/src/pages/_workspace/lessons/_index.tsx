@@ -1,6 +1,18 @@
 /**
- * /library — index fallback: сетка слов (live с backend/learn). rightBar (инфо) — в layout'е.
+ * /lessons — index: редирект на вкладку «Концепты» (дефолт раздела).
+ *
+ * Сегментные роуты (`concepts/`, `rules/`) рендерят под своим URL, чтобы под-нав
+ * `Learn.LessonsNav` подсвечивал активную вкладку (active derive'ится из сегмента).
+ * Голый `/lessons` собственного контента не имеет — уводим на `/lessons/concepts`
+ * (replace: без записи в history, back не застревает на редиректе).
+ *
+ * `queueMicrotask` — навигация ПОСЛЕ фазы рендера (не мутируем router в render);
+ * `useRouter` — auto-import глобал. Импортов в файле нет (канон app-слоёв).
  */
-const LibraryHome = Page(() => <Learn.LibraryWelcome />);
+const LessonsHome = Page(() => {
+  const router = useRouter();
+  queueMicrotask(() => router.goTo('/lessons/concepts', { replace: true }));
+  return null;
+});
 
-export default LibraryHome;
+export default LessonsHome;

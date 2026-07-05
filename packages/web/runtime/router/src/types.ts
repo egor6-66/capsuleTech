@@ -81,6 +81,34 @@ export interface ICapsuleRouter<TRouteTree extends AnyRoute = AnyRoute> {
   goTo(path: string, opts?: IGoToOpts): void;
   back(): void;
   current(): string;
+  /**
+   * Реактивный доступ к path-параметрам текущего маршрута.
+   *
+   * Возвращает **все** path-параметры leaf-матча. TanStack мёржит параметры
+   * маршрутов-предков в каждый вложенный матч, поэтому для deep-link роута
+   * (`/lessons/rules/$ruleId` внутри layout `/lessons`) leaf уже содержит полный
+   * набор (`{ ruleId }`). Если ни один маршрут не совпал — `{}`.
+   *
+   * Реактивен так же, как `current()`: читает `raw.state` (Solid-memo TanStack),
+   * поэтому при навигации `/rules/a → /rules/b` внутри Solid-реактивного scope
+   * (JSX-проп, `createMemo`, `createEffect`) отдаёт новое значение БЕЗ ремаунта.
+   * Не кэшировать в `const` вне реактивного контекста.
+   *
+   * Симметрия на чтение к `IGoToOpts.params` (запись через `goTo`).
+   *
+   * ```tsx
+   * // pages/_workspace/lessons/rules/[ruleId].tsx → /lessons/rules/$ruleId
+   * const router = useRouter();
+   * return <Learn.Lessons.Rule id={router.params().ruleId} />;
+   * ```
+   */
+  params(): Record<string, string>;
+  /**
+   * Сахар над `params()` для одного ключа: `param('ruleId')` ≡
+   * `params().ruleId`. Возвращает `undefined`, если ключа нет в текущем матче.
+   * Реактивен на тех же условиях, что `params()`.
+   */
+  param(name: string): string | undefined;
   /** Escape hatch для случаев, когда нужны API-возможности TanStack напрямую. */
   raw: RouterCore<TRouteTree, any, any, any, any>;
 }
@@ -194,4 +222,15 @@ export const wrap = <TRouteTree extends AnyRoute = AnyRoute>(
     raw.history.back();
   },
   current: () => raw.state.location.pathname,
+  // Leaf-матч несёт полный набор path-параметров (TanStack мёржит предков).
+  // Читаем `raw.state` тем же паттерном, что `current()` — Solid-memo TanStack
+  // делает доступ реактивным внутри реактивного scope. Нет матча → `{}`.
+  params: () => {
+    const { matches } = raw.state;
+    return (matches[matches.length - 1]?.params ?? {}) as Record<string, string>;
+  },
+  param: (name) => {
+    const { matches } = raw.state;
+    return (matches[matches.length - 1]?.params as Record<string, string> | undefined)?.[name];
+  },
 });

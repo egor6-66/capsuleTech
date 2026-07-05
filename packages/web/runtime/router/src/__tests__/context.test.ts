@@ -30,6 +30,8 @@ describe('useRouter — inside Provider', () => {
       goTo: () => {},
       back: () => {},
       current: () => '/',
+      params: () => ({}),
+      param: () => undefined,
     };
     let captured: ICapsuleRouter | null = null;
     createRoot(() => {

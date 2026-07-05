@@ -187,6 +187,9 @@ importers:
       '@capsuletech/web-learn':
         specifier: workspace:*
         version: link:../../packages/web/learn
+      '@capsuletech/web-placeholders':
+        specifier: workspace:*
+        version: link:../../packages/web/domain/placeholders
       '@capsuletech/web-profiler':
         specifier: workspace:*
         version: link:../../packages/web/runtime/profiler
@@ -888,6 +891,34 @@ importers:
         specifier: ^2.11.12
         version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
 
+  packages/web/domain/placeholders:
+    dependencies:
+      '@capsuletech/web-core':
+        specifier: workspace:*
+        version: link:../../runtime/core
+      '@capsuletech/web-ui':
+        specifier: workspace:*
+        version: link:../../kit/ui
+      solid-js:
+        specifier: 1.9.12
+        version: 1.9.12
+    devDependencies:
+      '@capsuletech/lib-builder':
+        specifier: workspace:*
+        version: link:../../../builders/lib
+      '@capsuletech/vite-builder':
+        specifier: workspace:*
+        version: link:../../../builders/vite
+      '@testing-library/jest-dom':
+        specifier: ^6.9.1
+        version: 6.9.1
+      jsdom:
+        specifier: ~29.1.1
+        version: 29.1.1
+      vite-plugin-solid:
+        specifier: ^2.11.12
+        version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
+
   packages/web/domain/shell:
     dependencies:
       '@capsuletech/web-core':
@@ -1012,6 +1043,9 @@ importers:
       '@capsuletech/web-core':
         specifier: workspace:*
         version: link:../runtime/core
+      '@capsuletech/web-docs':
+        specifier: workspace:*
+        version: link:../docs
       '@capsuletech/web-router':
         specifier: workspace:*
         version: link:../runtime/router

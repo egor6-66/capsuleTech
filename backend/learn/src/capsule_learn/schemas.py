@@ -18,6 +18,50 @@ class AudioBlock(BaseModel):
     engines: list[str]
 
 
+class ImageBlock(BaseModel):
+    """Ready-to-display image link — never image bytes.
+
+    Supersedes the former plain-text `image` ("образ") mnemonic on the sense:
+    lang carries a text stand-in until picture generation exists, at which
+    point the composer replaces it with this link.
+    """
+
+    url: str
+
+
+class ResolvedWord(BaseModel):
+    """A drill word resolved to its lang sense + media (library-style enrichment).
+
+    Injected as `words_resolved[]` on each lesson drill (ADR 069 ф.1). When the
+    word isn't in lang yet, `senseId`/`ru`/`pron_ru`/`pos` stay `None`; `audio`
+    rides on the text alone (voice up), `image` needs the resolved `pos`.
+    """
+
+    text: str
+    senseId: int | None
+    ru: str | None
+    pron_ru: str | None
+    pos: str | None
+    audio: AudioBlock | None
+    image: ImageBlock | None
+
+
+class DrillCheckRequest(BaseModel):
+    """Learner submission for one drill item (ADR 069 phase 2)."""
+
+    item_index: int
+    answer: str
+    reveal: bool = False
+
+
+class DrillCheckResponse(BaseModel):
+    """Verdict for a drill submission — `hint` on near_miss, `answer` on reveal."""
+
+    verdict: str  # 'correct' | 'near_miss' | 'wrong'
+    hint: str | None = None
+    answer: str | None = None
+
+
 class TagOut(BaseModel):
     name: str
     kind: str
@@ -55,6 +99,7 @@ class SenseListItem(BaseModel):
     synset: str | None
     tags: list[TagOut]
     audio: AudioBlock | None
+    image: ImageBlock | None
 
 
 class SensesResponse(BaseModel):
@@ -73,7 +118,6 @@ class SenseDetail(BaseModel):
     source: str
     pron_ru: str | None
     ipa: str | None
-    image: str | None
     connotation: str | None
     intensity: int | None
     synset: str | None
@@ -85,6 +129,7 @@ class SenseDetail(BaseModel):
     examples: list[ExampleOut]
     relations: list[RelationOut]
     audio: AudioBlock | None
+    image: ImageBlock | None
 
 
 class RelatedItem(BaseModel):

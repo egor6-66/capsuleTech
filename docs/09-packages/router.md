@@ -89,6 +89,10 @@ interface ICapsuleRouter<TRouteTree extends AnyRoute = AnyRoute> {
   goTo(path: string, opts?: IGoToOpts): void;
   back(): void;
   current(): string;
+  /** Реактивное чтение path-параметров текущего (leaf) маршрута */
+  params(): Record<string, string>;
+  /** Сахар над params() на один ключ */
+  param(name: string): string | undefined;
   /** Escape hatch: TanStack-роутер напрямую — для редких use-case'ов */
   raw: RouterCore<TRouteTree, any, any, any, any>;
 }
@@ -99,6 +103,8 @@ API специально **не** копирует все возможности
 - `goTo(path, opts?)` — `raw.navigate({ to: path, ...opts })`. Опции напрямую мапятся в TanStack-`navigate`. См. [[014-router-api-extension|ADR 014]].
 - `back()` — `raw.history.back()`. Через TanStack-историю, а не `window.history.back()` напрямую — single-source-of-truth + проще к SSR.
 - `current()` — `raw.state.location.pathname`. Реактивно (читается по требованию). Search/hash берутся из `router.raw.state.location`.
+- `params()` — path-параметры текущего (leaf) маршрута из `raw.state.matches`. TanStack мёржит параметры маршрутов-предков в leaf-матч, поэтому для вложенного deep-link роута (`/lessons/rules/$ruleId`) `params()` уже содержит полный набор (`{ ruleId }`). Реактивно — тот же Solid-memo `raw.state`, что у `current()`; при навигации `/rules/a → /rules/b` значение обновляется без ремаунта. Нет совпавшего маршрута → `{}`. Симметрия на **чтение** к `IGoToOpts.params` (запись через `goTo`).
+- `param(name)` — сахар: `params()[name]`, `undefined` если ключа нет.
 - `raw` — escape hatch. Когда `BaseProviders` параметризован конкретным `TRouteTree`, `raw.navigate({ to: '...' })` получит autocomplete по маршрутам.
 
 ### `ICapsuleRouterContext<TUser = {}>`
@@ -212,6 +218,21 @@ const search = router.raw.state.location.search; // { tag: 'urgent', sort: 'date
 const hash = router.raw.state.location.hash;
 const path = router.current();                    // pathname only
 ```
+
+### Deep-link: чтение path-параметров в Page
+
+Для роута с path-параметром (`pages/_workspace/lessons/rules/[ruleId].tsx` → `/lessons/rules/$ruleId`) Page читает параметр реактивно через `params()` / `param()` и отдаёт `id`-пропом в пакетные блоки — **без** прямого импорта `useParams` из `@tanstack/solid-router` (raw-import движка в слое ломает канон «в аппе только глобалы `@capsuletech/*`»):
+
+```tsx
+// pages/_workspace/lessons/rules/[ruleId].tsx
+const RuleDetailPage = Page((Ui) => {
+  const router = useRouter();
+  // params() реактивен: навигация /rules/a → /rules/b обновит id без ремаунта.
+  return <Learn.Lessons.Rule id={router.param('ruleId')} />;
+});
+```
+
+`params()` возвращает весь набор leaf-матча (`{ ruleId }`), `param('ruleId')` — сахар на один ключ. Читай прямо в JSX-пропе или `createMemo` — не кэшируй в `const` вне реактивного scope (будет stale).
 
 ### Мягкая зависимость: компонент без роутера
 

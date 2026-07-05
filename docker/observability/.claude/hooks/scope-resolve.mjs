@@ -104,17 +104,32 @@ export function resolveScope(scope, root = repoRoot()) {
   if (!scope) return null;
   if (scope === 'main') return { scope: 'main', kind: 'main' };
 
-  // Зона-scope `apps` (2026-07-03, канон user): ОДИН owner-apps на все apps/*
-  // (канон-хранитель app-слоёв, см. apps/OWNERSHIP.md). ПОЛНЫЙ фенс: apps
-  // правится ТОЛЬКО этим scope'ом (main — тоже deny, architect пишет брифы).
-  // kind='package' сохраняем ради совместимости потребителей (identity, governance).
+  // Зона apps (канон user 2026-07-05 — owner PER APP, зеркало packages-модели;
+  // заменяет «один owner-apps» от 2026-07-03):
+  //   `apps-<name>` → apps/<name>/ (директория обязана существовать — fail-fast
+  //   против опечаток; bootstrap нового аппа: main создаёт пустую директорию,
+  //   owner скаффолдит через CLI).
+  //   `apps` остаётся канон-хранителем ФАЙЛОВ В КОРНЕ apps/ (OWNERSHIP.md).
+  // main по-прежнему deny во всей зоне apps.
   if (scope === 'apps') {
     return {
       scope: 'apps',
       kind: 'package',
       packagePath: join(root, 'apps'),
-      packageName: 'apps/* (все аппы, зона owner-apps)',
+      packageName: 'apps/ (корневые канон-документы зоны)',
       relativePath: 'apps',
+    };
+  }
+  const appMatch = /^apps-([a-z0-9][a-z0-9-]*)$/.exec(scope);
+  if (appMatch) {
+    const appDir = join(root, 'apps', appMatch[1]);
+    if (!existsSync(appDir)) return null;
+    return {
+      scope,
+      kind: 'package',
+      packagePath: appDir,
+      packageName: `apps/${appMatch[1]} (owner-${scope})`,
+      relativePath: `apps/${appMatch[1]}`,
     };
   }
 
@@ -134,7 +149,16 @@ export function resolveScope(scope, root = repoRoot()) {
 /** Список валидных scope-имён для help-сообщений. */
 export function listValidScopes(root = repoRoot()) {
   const index = buildIndex(root);
-  return ['main', 'apps', ...[...index.keys()].sort()];
+  let appScopes = [];
+  try {
+    appScopes = readdirSync(join(root, 'apps'), { withFileTypes: true })
+      .filter((e) => e.isDirectory())
+      .map((e) => `apps-${e.name}`)
+      .sort();
+  } catch {
+    /* нет apps/ — пропускаем */
+  }
+  return ['main', 'apps', ...appScopes, ...[...index.keys()].sort()];
 }
 
 // CLI mode

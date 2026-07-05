@@ -17,6 +17,7 @@ import type { Dropdown } from '@capsuletech/web-ui/dropdown';
 import type { DropdownMenu } from '@capsuletech/web-ui/dropdownMenu';
 import type { Image } from '@capsuletech/web-ui/image';
 import type { PreviewCard } from '@capsuletech/web-ui/previewCard';
+import type { Prose } from '@capsuletech/web-ui/prose';
 import type { Select } from '@capsuletech/web-ui/select';
 import type { Separator } from '@capsuletech/web-ui/separator';
 import type { Skeleton } from '@capsuletech/web-ui/skeleton';
@@ -202,6 +203,7 @@ type ViewUiRaw = UniversalUiRaw & {
   List: typeof List;
   Image: typeof Image;
   Avatar: typeof Avatar;
+  Prose: typeof Prose;
   PreviewCard: typeof PreviewCard;
   Skeleton: typeof Skeleton;
   Spinner: typeof Spinner;
@@ -242,6 +244,7 @@ type WidgetUiRaw = UniversalUiRaw & {
   Outlet: Outlet;
   Image: typeof Image;
   Avatar: typeof Avatar;
+  Prose: typeof Prose;
   PreviewCard: typeof PreviewCard;
   Skeleton: typeof Skeleton;
   Spinner: typeof Spinner;
