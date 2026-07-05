@@ -4,7 +4,7 @@
  */
 import { Typography } from '@capsuletech/web-ui/typography';
 import type { Component } from 'solid-js';
-import type { ISkillNode } from '../core';
+import type { ISkillNode } from '../../core';
 
 export interface ISkillTreeProps {
   root?: ISkillNode;

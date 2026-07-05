@@ -15,7 +15,7 @@
 import { useEmitOptional } from '@capsuletech/web-core';
 import { List as UiList } from '@capsuletech/web-ui/list';
 import { onMount } from 'solid-js';
-import { useApiBase } from '../core/apiContext';
+import { useApiBase } from '../../core/apiContext';
 import { libraryStore } from './store';
 import type { ISense } from './types';
 import { WordTile } from './WordTile';

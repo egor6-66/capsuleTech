@@ -13,7 +13,7 @@
 import { useEmitOptional } from '@capsuletech/web-core';
 import { List as UiList } from '@capsuletech/web-ui/list';
 import { onMount } from 'solid-js';
-import { useApiBase } from '../core/apiContext';
+import { useApiBase } from '../../core/apiContext';
 import { LessonCard } from './LessonCard';
 import { lessonsStore } from './store';
 import type { ILessonSummary } from './types';

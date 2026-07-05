@@ -31,15 +31,15 @@
 import { defineCapsuleModule } from '@capsuletech/web-core/module';
 import { Launcher, SegmentNav } from '@capsuletech/web-shell/ui';
 import { LearnProvider } from './core';
-import { Exercise } from './exercise';
-import { Tour } from './guides';
-import { Concept, Concepts, List, Rule, RuleDrills, Rules, View } from './lessons';
-import { LESSONS_SEGMENTS } from './lessons/segments';
-import { Collections, Info, Search, Words } from './library';
-import { LIBRARY_SEGMENTS } from './library/segments';
-import { Progress } from './progress';
-import { SentenceBuilder } from './sentence-builder';
-import { LEARN_SEGMENTS } from './welcome/segments';
+import { Exercise } from './modules/exercise';
+import { Tour } from './modules/guides';
+import { Concept, Concepts, List, Rule, RuleDrills, Rules, View } from './modules/lessons';
+import { LESSONS_SEGMENTS } from './modules/lessons/segments';
+import { Collections, Info, Search, Words } from './modules/library';
+import { LIBRARY_SEGMENTS } from './modules/library/segments';
+import { Progress } from './modules/progress';
+import { SentenceBuilder } from './modules/sentence-builder';
+import { LEARN_SEGMENTS } from './modules/welcome/segments';
 
 // Тонкие data-биндинги: композиция готового shell-блока с данными зоны.
 // Это НЕ «свой UI» — весь визуал/механика/классы живут в web-shell/web-ui.

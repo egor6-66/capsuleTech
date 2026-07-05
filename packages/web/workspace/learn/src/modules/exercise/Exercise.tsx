@@ -4,7 +4,7 @@
  */
 import { Typography } from '@capsuletech/web-ui/typography';
 import { type Component, Match, Switch } from 'solid-js';
-import type { ExerciseType } from '../core';
+import type { ExerciseType } from '../../core';
 import { BuildClause } from './BuildClause';
 import { FillBlank } from './FillBlank';
 import { FixTypeError } from './FixTypeError';

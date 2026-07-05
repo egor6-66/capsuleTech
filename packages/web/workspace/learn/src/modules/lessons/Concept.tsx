@@ -17,7 +17,7 @@ import { Card } from '@capsuletech/web-ui/card';
 import { Layout } from '@capsuletech/web-ui/layout';
 import { Typography } from '@capsuletech/web-ui/typography';
 import { createEffect, For, Show } from 'solid-js';
-import { useApiBase } from '../core/apiContext';
+import { useApiBase } from '../../core/apiContext';
 import { Markdown } from './Markdown';
 import { emitRefNav } from './refnav';
 import { lessonsStore } from './store';

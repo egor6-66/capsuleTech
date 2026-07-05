@@ -9,11 +9,11 @@
  */
 import { render } from 'solid-js/web';
 import { describe, expect, test } from 'vitest';
-import { Exercise } from '../exercise';
-import { Tour } from '../guides';
-import { Collections } from '../library';
-import { Progress } from '../progress';
-import { SentenceBuilder } from '../sentence-builder';
+import { Exercise } from '../modules/exercise';
+import { Tour } from '../modules/guides';
+import { Collections } from '../modules/library';
+import { Progress } from '../modules/progress';
+import { SentenceBuilder } from '../modules/sentence-builder';
 
 describe('web-learn skeleton smoke', () => {
   test('Exercise dispatches by type', () => {

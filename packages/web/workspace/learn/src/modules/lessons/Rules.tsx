@@ -19,7 +19,7 @@ import { Accordion } from '@capsuletech/web-ui/accordion';
 import { Layout } from '@capsuletech/web-ui/layout';
 import { Typography } from '@capsuletech/web-ui/typography';
 import { createEffect, createSignal, For, onMount, Show } from 'solid-js';
-import { useApiBase } from '../core/apiContext';
+import { useApiBase } from '../../core/apiContext';
 import { lessonsStore } from './store';
 import type { IRuleSummary, RuleCategory } from './types';
 

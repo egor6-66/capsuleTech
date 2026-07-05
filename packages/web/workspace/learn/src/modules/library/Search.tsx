@@ -7,7 +7,7 @@
  */
 import { Input } from '@capsuletech/web-ui/input';
 import { Layout } from '@capsuletech/web-ui/layout';
-import { useApiBase } from '../core/apiContext';
+import { useApiBase } from '../../core/apiContext';
 import { libraryStore } from './store';
 
 export interface ISearchProps {

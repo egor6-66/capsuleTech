@@ -4,7 +4,7 @@
  */
 import { Typography } from '@capsuletech/web-ui/typography';
 import type { Component } from 'solid-js';
-import type { IProgressEntry } from '../core';
+import type { IProgressEntry } from '../../core';
 
 export interface IProgressProps {
   entries?: IProgressEntry[];

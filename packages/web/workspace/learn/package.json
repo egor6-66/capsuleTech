@@ -16,42 +16,42 @@
       "default": "./dist/core.mjs"
     },
     "./lessons": {
-      "types": "./dist/lessons/index.d.ts",
+      "types": "./dist/modules/lessons/index.d.ts",
       "import": "./dist/lessons.mjs",
       "default": "./dist/lessons.mjs"
     },
     "./exercise": {
-      "types": "./dist/exercise/index.d.ts",
+      "types": "./dist/modules/exercise/index.d.ts",
       "import": "./dist/exercise.mjs",
       "default": "./dist/exercise.mjs"
     },
     "./progress": {
-      "types": "./dist/progress/index.d.ts",
+      "types": "./dist/modules/progress/index.d.ts",
       "import": "./dist/progress.mjs",
       "default": "./dist/progress.mjs"
     },
     "./library": {
-      "types": "./dist/library/index.d.ts",
+      "types": "./dist/modules/library/index.d.ts",
       "import": "./dist/library.mjs",
       "default": "./dist/library.mjs"
     },
     "./guides": {
-      "types": "./dist/guides/index.d.ts",
+      "types": "./dist/modules/guides/index.d.ts",
       "import": "./dist/guides.mjs",
       "default": "./dist/guides.mjs"
     },
     "./sentence-builder": {
-      "types": "./dist/sentence-builder/index.d.ts",
+      "types": "./dist/modules/sentence-builder/index.d.ts",
       "import": "./dist/sentence-builder.mjs",
       "default": "./dist/sentence-builder.mjs"
     },
     "./welcome": {
-      "types": "./dist/welcome/index.d.ts",
+      "types": "./dist/modules/welcome/index.d.ts",
       "import": "./dist/welcome.mjs",
       "default": "./dist/welcome.mjs"
     },
     "./controllers": {
-      "types": "./dist/controllers/index.d.ts",
+      "types": "./dist/core/controllers/index.d.ts",
       "import": "./dist/controllers.mjs",
       "default": "./dist/controllers.mjs"
     },

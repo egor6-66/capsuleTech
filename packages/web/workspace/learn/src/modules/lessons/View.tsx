@@ -15,7 +15,7 @@ import { useEmitOptional } from '@capsuletech/web-core';
 import { Layout } from '@capsuletech/web-ui/layout';
 import { Typography } from '@capsuletech/web-ui/typography';
 import { For, Show } from 'solid-js';
-import { useApiBase } from '../core/apiContext';
+import { useApiBase } from '../../core/apiContext';
 import { Drill } from './Drill';
 import { Markdown } from './Markdown';
 import { lessonsStore } from './store';

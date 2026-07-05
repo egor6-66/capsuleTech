@@ -25,6 +25,23 @@ last-updated: 2026-07-05 (nav-dedup pilot)
 - **Active blockers:** owner-agent `owner-web-learn` ещё не создан (появится отдельным PR). Пока зона ведётся через scoped `learn`-сессию.
 - **Last activity:** 2026-07-05 (nav-dedup pilot, brief `pilot-segment-nav-4-learn`: снесены Nav×2 (`lessons/Nav`, `library/Navigation`) + Welcome×3 (`welcome/Welcome`, `lessons/LessonsWelcome`, `library/LibraryWelcome`) + их event-типы; `Learn.LibraryNav`/`LessonsNav`/`Welcome`/`LessonsWelcome`/`LibraryWelcome` = композиция `Shell.SegmentNav`/`Shell.Launcher` + сегменты зоны в `capsule.tsx`; `+@capsuletech/web-shell` / `−@capsuletech/web-router` в deps; событие консолидировано в `onSegmentNavigate`. 70 тестов зелены, typecheck+build ✓). До этого — refnav lazy-lists: `emitRefNav` async-устойчив — при промахе резолва `await lessonsStore.ensureLists(apiBase)` (идемпотентный догруз обоих списков, гонки одним in-flight) → повторный резолв → emit; чинит wikilink с вкладки, где второй список ещё не смонтирован; brief `learn-refnav-lazy-lists.md`). До этого — Lessons ИА iter 2: аккордеон-группы (category/kind), URL-driven `id`-пропы + кэш-дедуп стора, сплит `Rule`/`RuleDrills`, wikilink/relatedRules-переходы, strip-H1, `LessonsWelcome` (brief `learn-lessons-three-pane.md`).
 
+## Анатомия `src/` (эталон, brief `learn-anatomy-core-modules`)
+
+Learn = эталон анатомии домен-пакета ([[feedback_mirror_means_literal_mirror]]). В корне `src/` — только `core/ modules/ __tests__/ capsule.tsx index.ts`:
+
+```
+src/
+  core/                     ← cross-cutting: provider.tsx / apiContext.ts / interfaces.ts / index.ts
+    controllers/            ← Controllers.Learn (ADR 032), пока export {}
+  modules/                  ← фича-модули (папка-на-модуль)
+    exercise/ guides/ lessons/ library/ progress/ sentence-builder/ welcome/
+  __tests__/                ← package-smoke
+  capsule.tsx               ← манифест (ADR 033)
+  index.ts                  ← barrel (реэкспорт core)
+```
+
+Импорты модуля → core: `../../core/...` (модуль на уровень глубже); тесты модуля → core: `../../../core/...`. **Vite-entry KEYS = имена субпатов** (`lessons`/`library`/`controllers`/…) не изменились — `.mjs` остаются flat (`dist/lessons.mjs`), а `.d.ts` зеркалят src (`dist/modules/lessons/index.d.ts`, `dist/core/controllers/index.d.ts`) → `types` в exports репойнтнуты соответственно.
+
 ## Vendor stack (ADR 047 D3)
 
 - **Solid.js** (`solid-js` `^1.9.12`, peerDep) — реактивный фреймворк. https://docs.solidjs.com/
@@ -38,9 +55,9 @@ last-updated: 2026-07-05 (nav-dedup pilot)
 ## Зона ответственности
 
 ### Owns
-- `packages/web/learn/src/` (полностью)
-- `packages/web/learn/vite.config.mts`
-- `packages/web/learn/package.json` exports / deps
+- `packages/web/workspace/learn/src/` (полностью — анатомия `core/` + `modules/`, см. выше)
+- `packages/web/workspace/learn/vite.config.mts`
+- `packages/web/workspace/learn/package.json` exports / deps
 
 ### Не трогает
 - Содержимое других `@capsuletech/*` пакетов (делегировать).
@@ -104,6 +121,7 @@ last-updated: 2026-07-05 (nav-dedup pilot)
 - [x] `lessons` ИА iter 2 — аккордеон-группы (category/kind, `Ui.Accordion`), URL-driven `id`-пропы + кэш-дедуп стора, сплит `Rule`/`RuleDrills`, wikilink/relatedRules-переходы, strip-H1, `LessonsWelcome` (brief `learn-lessons-three-pane.md`) — 2026-07-05.
 - [x] Nav/Welcome dedup — снос Nav×2+Welcome×3, композиция `Shell.SegmentNav`/`Shell.Launcher` + сегменты зоны, единое `onSegmentNavigate` (brief `pilot-segment-nav-4-learn`) — 2026-07-05.
 - [x] Списки на `Ui.List` (batch) + бейджи на `Ui.Badge`, снос `VocabList`-скелета (brief `lists-badge-2-learn`) — 2026-07-05.
+- [x] Анатомия `core/` + `modules/` — controllers→core/controllers, 7 фича-папок→modules/, репойнт vite-entries + exports `types` (brief `learn-anatomy-core-modules`) — 2026-07-05.
 - [ ] Наполнить остальные модули реальным UI (exercise/progress/guides/sentence-builder).
 - [ ] Реализовать `Controllers.Learn` (useEmit-эмиссия доменных событий обучения).
 - [ ] Backend-интеграция остальных модулей: `web-query` endpoints к `/learn/*` (ADR 055 D2).
