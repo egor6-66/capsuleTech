@@ -6,13 +6,22 @@
  *   Learn.Provider | Learn.Welcome | Learn.Exercise | Learn.Progress |
  *   Learn.Tour | Learn.SentenceBuilder | Learn.LibraryNav |
  *   Learn.LessonsNav | Learn.LessonsWelcome | Learn.LibraryWelcome | Learn.Collections |
- *   Learn.Library.{Search,Words,Info} |
- *   Learn.Lessons.{List,View,Concepts,Concept,Rules,Rule,RuleDrills}
+ *   Learn.Words | Learn.Search | Learn.Markdown |
+ *   Learn.Library.{Info} |
+ *   Learn.Lesson | Learn.Lessons | Learn.Concept | Learn.Concepts |
+ *   Learn.Rule | Learn.Rules | Learn.RuleDrills
  *
- * `Library` / `Lessons` — вложенные namespace-блоки (как `WebStudio.*` на
- * верхнем уровне, но на уровень глубже): `Learn.Library.Search` /
- * `Learn.Lessons.List` и т.д. Блоки раздельные намеренно (апп раскладывает по
- * слотам Matrix сам: список слева, деталь справа).
+ * `Words` / `Search` / `Markdown` — промоутнутые атомы `shared/` (были
+ * `Learn.Library.Words`/`.Search` / internal): переиспользуются многими
+ * модулями, поэтому top-level, не под `Library`.
+ *
+ * lessons-домен раздроблен по сущностям (бриф split) и регистрируется ПЛОСКО:
+ * `<Entity>` = деталь, `<Entities>` = список — `Learn.Lesson`/`Learn.Lessons`,
+ * `Learn.Concept`/`Learn.Concepts`, `Learn.Rule`/`Learn.Rules` (+ `RuleDrills`).
+ * Больше НЕ nested `Learn.Lessons.{...}` — плоские ключи попадают в codegen-
+ * агрегат `.Events` штатно (ручное типизирование событий не нужно). Блоки
+ * раздельные намеренно (апп раскладывает по слотам Matrix сам: список слева,
+ * деталь справа). `Library.Info` пока остаётся вложенным (вне scope split).
  *
  * ## Nav / Welcome — композиция shell-блоков, НЕ свой UI (пилот дедупа)
  *
@@ -31,15 +40,20 @@
 import { defineCapsuleModule } from '@capsuletech/web-core/module';
 import { Launcher, SegmentNav } from '@capsuletech/web-shell/ui';
 import { LearnProvider } from './core';
+import { Concept, Concepts } from './modules/concepts';
 import { Exercise } from './modules/exercise';
 import { Tour } from './modules/guides';
-import { Concept, Concepts, List, Rule, RuleDrills, Rules, View } from './modules/lessons';
+import { Lesson, Lessons } from './modules/lessons';
 import { LESSONS_SEGMENTS } from './modules/lessons/segments';
-import { Collections, Info, Search, Words } from './modules/library';
+import { Collections, Info } from './modules/library';
 import { LIBRARY_SEGMENTS } from './modules/library/segments';
 import { Progress } from './modules/progress';
+import { Rule, RuleDrills, Rules } from './modules/rules';
 import { SentenceBuilder } from './modules/sentence-builder';
 import { LEARN_SEGMENTS } from './modules/welcome/segments';
+import { Markdown } from './shared/markdown';
+import { Search } from './shared/search';
+import { Words } from './shared/words';
 
 // Тонкие data-биндинги: композиция готового shell-блока с данными зоны.
 // Это НЕ «свой UI» — весь визуал/механика/классы живут в web-shell/web-ui.
@@ -88,7 +102,16 @@ export default defineCapsuleModule({
     LessonsWelcome,
     LibraryWelcome,
     Collections,
-    Library: { Search, Words, Info },
-    Lessons: { List, View, Concepts, Concept, Rules, Rule, RuleDrills },
+    Words,
+    Search,
+    Markdown,
+    Library: { Info },
+    Lesson,
+    Lessons,
+    Concept,
+    Concepts,
+    Rule,
+    Rules,
+    RuleDrills,
   },
 });

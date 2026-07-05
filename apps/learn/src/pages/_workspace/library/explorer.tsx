@@ -1,7 +1,8 @@
 /**
  * /library/explorer — сетка слов (поиск + плитка) из пакетных блоков
- * `Learn.Library.*` (стор внутри пакета, брифы learn-library-block-migration.md /
- * apps-learn-mount-library-blocks.md). Инфо выбранного — в rightBar.
+ * `Learn.Search` / `Learn.Words` (плоские неймспейсы; стор внутри пакета, брифы
+ * learn-library-block-migration.md / apps-learn-mount-library-blocks.md). Инфо
+ * выбранного (`Learn.Library.Info`) — в rightBar.
  */
 const Explorer = Page((Ui) => (
   <Layouts.Matrix
@@ -10,8 +11,8 @@ const Explorer = Page((Ui) => (
       main: {
         children: (
           <Ui.Layout.Flex orientation="vertical" h="full">
-            <Learn.Library.Search />
-            <Learn.Library.Words />
+            <Learn.Search />
+            <Learn.Words />
           </Ui.Layout.Flex>
         ),
       },

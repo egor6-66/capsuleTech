@@ -1,20 +1,22 @@
 /**
- * Learn.Library.Info — панель выбранного слова (`libraryStore.selected()`).
- * Перенос вёрстки app-слоя 1-в-1 (была `apps/learn/src/views/wordInfo.tsx`):
- * ориг en + 🔊 → фонетика (pron_ru) → перевод (ru) → определение en (gloss) →
- * теги → фасеты.
+ * Learn.Library.Info — панель выбранного слова (`wordsStore.selected()`).
+ * Library-view-концерн (деталь выбранного), НЕ атом — остаётся в модуле,
+ * композирует атом `shared/words/` (читает его `selected()`). Сущностный
+ * `Ui.Card` (пресет-сущность, component-model canon) — та же сущность, что
+ * `WordTile`, только фулл (больше слотов): en-ориг + 🔊 в titleAction,
+ * фонетика (pron_ru) в subtitle, перевод (ru) в translation, определение
+ * (gloss) в definition, теги, фасеты в meta. Ноль ручной вёрстки.
  *
  * `useEmitOptional` — тот же контракт, что `Words` (see IWordsEvents doc).
  * Phantom `__events?: IInfoEvents` → codegen `Learn.Library.Info.Events`.
  * Регистрируется как `Learn.Library.Info` через `../capsule` (ADR 033).
  */
 import { useEmitOptional } from '@capsuletech/web-core';
-import { Badge } from '@capsuletech/web-ui/badge';
+import { Empty } from '@capsuletech/web-placeholders';
 import { Button } from '@capsuletech/web-ui/button';
-import { Layout } from '@capsuletech/web-ui/layout';
-import { Typography } from '@capsuletech/web-ui/typography';
-import { For, Show } from 'solid-js';
-import { libraryStore } from './store';
+import { Card } from '@capsuletech/web-ui/card';
+import { Show } from 'solid-js';
+import { wordsStore } from '../../shared/words/store';
 
 const FACETS = ['pos', 'level', 'register', 'connotation', 'synset'] as const;
 
@@ -28,21 +30,15 @@ export interface IInfoEvents {
 
 const InfoComponent = (props: IInfoProps) => {
   const emit = useEmitOptional();
-  const sense = () => libraryStore.selected();
+  const sense = () => wordsStore.selected();
 
   return (
-    <Show
-      when={sense()}
-      fallback={
-        <Layout.Flex h="full" align="center" justify="center" p={6} class={props.class}>
-          <Typography tone="muted">Выберите слово</Typography>
-        </Layout.Flex>
-      }
-    >
+    <Show when={sense()} fallback={<Empty title="Выберите слово" />}>
       {(s) => (
-        <Layout.Flex orientation="vertical" gapY={3} p={6} class={props.class}>
-          <Layout.Flex orientation="horizontal" gapX={2} align="center">
-            <Typography variant="h2">{s().text}</Typography>
+        <Card
+          class={props.class}
+          title={s().text}
+          titleAction={
             <Button
               variant="ghost"
               size="sm"
@@ -55,40 +51,13 @@ const InfoComponent = (props: IInfoProps) => {
             >
               🔊
             </Button>
-          </Layout.Flex>
-
-          <Show when={s().pron_ru}>
-            <Typography tone="muted">{s().pron_ru}</Typography>
-          </Show>
-          <Show when={s().ru}>
-            <Typography>{s().ru}</Typography>
-          </Show>
-          <Show when={s().gloss}>
-            <Typography tone="muted">{s().gloss}</Typography>
-          </Show>
-
-          <Layout.Flex orientation="horizontal" gapX={2} gapY={2} wrap="wrap">
-            <For each={s().tags ?? []}>
-              {(t) => (
-                <Badge tone="muted">
-                  {t.name} · {t.kind}
-                </Badge>
-              )}
-            </For>
-          </Layout.Flex>
-
-          <Layout.Flex orientation="vertical" gapY={1}>
-            <For each={FACETS}>
-              {(f) => (
-                <Show when={s()[f]}>
-                  <Typography size="sm" tone="muted">
-                    {f}: {s()[f]}
-                  </Typography>
-                </Show>
-              )}
-            </For>
-          </Layout.Flex>
-        </Layout.Flex>
+          }
+          subtitle={s().pron_ru ?? undefined}
+          translation={s().ru ?? undefined}
+          definition={s().gloss ?? undefined}
+          tags={(s().tags ?? []).map((t) => `${t.name} · ${t.kind}`)}
+          meta={FACETS.filter((f) => s()[f]).map((f) => ({ key: f, value: String(s()[f]) }))}
+        />
       )}
     </Show>
   );

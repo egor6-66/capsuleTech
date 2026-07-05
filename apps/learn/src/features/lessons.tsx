@@ -10,24 +10,24 @@
  * `Features.App` (автобабблится выше), сюда не приходит. Здесь остаются только
  * доменные события выбора темы/урока (не навигация-сегментами).
  *
- * `onLessonSelect` (ADR 032, `Learn.Lessons.List`): выбор урока живёт внутри
- * пакета (`List` → `lessonsStore.open`, `View` читает `current()`). List/View с
- * раздела сняты (вернём вкладкой позже), событие сейчас не эмитится — no-op сток
+ * `onLessonSelect` (ADR 032, `Learn.Lessons`): выбор урока живёт внутри
+ * пакета (`Lessons` → `lessonsStore.open`, `Lesson` читает `current()`). Lessons/Lesson
+ * с раздела сняты (вернём вкладкой позже), событие сейчас не эмитится — no-op сток
  * для канона, оставлен на возврат уроков-вкладки.
  *
  * `onSpeak` (озвучка слов дриллов) НЕ ловим тут — оно app-глобальное, баблится
  * выше в root `Features.App` (плеер/движок — app-concern).
  *
- * `onRuleSelect` / `onConceptSelect` (ADR 069, `Learn.Lessons.{Rules,Rule,Concepts,
+ * `onRuleSelect` / `onConceptSelect` (ADR 069, `Learn.{Rules,Rule,Concepts,
  * Concept}`): выбор темы = URL (deep-link). События приходят из аккордеонов,
  * relatedRules-чипов концепта И wikilink'ов в теле — пакет эмитит одинаково, фиче
  * всё равно откуда; она только роутит в сегментный URL. Страницы читают param
  * (`router.param('ruleId')` / `'conceptId'`) и отдают `id`-пропом в блоки.
  *
- * `Learn.Lessons.*` — вложенные namespace-блоки; codegen per-component `.Events`
- * агрегат вложенные ключи не видит (см. `web-learn/src/capsule.ts`), поэтому
- * payload типизируем вручную (форма зеркалит `IRulesEvents`/`IConceptsEvents`
- * пакета, без импорта — как `IOnSpeakEvent` в `features/app.tsx`).
+ * `Learn.{Rules,Rule,Concepts,Concept}` — плоские namespace-блоки (пакет промоутнул
+ * их из вложенного `Learn.Lessons` namespace, brief apps-learn-flat-namespaces-1). Payload типизируем
+ * вручную (форма зеркалит `IRulesEvents`/`IConceptsEvents` пакета, без импорта — как
+ * `IOnSpeakEvent` в `features/app.tsx`).
  *
  * `onSpeak` (озвучка слов дриллов) тут НЕ ловим — оно app-глобальное, баблится
  * выше в root `Features.App` (плеер/движок — app-concern).

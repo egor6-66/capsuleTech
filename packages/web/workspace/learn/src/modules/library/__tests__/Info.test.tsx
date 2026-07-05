@@ -5,9 +5,9 @@
 /* @vitest-environment jsdom */
 import { render } from 'solid-js/web';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { wordsStore } from '../../../shared/words/store';
+import type { ISense } from '../../../shared/words/types';
 import { Info } from '../Info';
-import { libraryStore } from '../store';
-import type { ISense } from '../types';
 
 const { emitSpy } = vi.hoisted(() => ({ emitSpy: vi.fn() }));
 
@@ -45,7 +45,7 @@ beforeEach(() => {
   container = document.createElement('div');
   document.body.appendChild(container);
   emitSpy.mockClear();
-  libraryStore.select(null);
+  wordsStore.select(null);
 });
 
 afterEach(() => {
@@ -64,8 +64,8 @@ describe('Learn.Library.Info', () => {
 
   it('renders the selected sense', async () => {
     mockSenses([SENSE]);
-    await libraryStore.load('http://api');
-    libraryStore.select(1);
+    await wordsStore.load('http://api');
+    wordsStore.select(1);
 
     cleanup = render(() => <Info />, container);
 
@@ -78,8 +78,8 @@ describe('Learn.Library.Info', () => {
 
   it('emits onSpeak with the selected sense audioUrl on speaker click', async () => {
     mockSenses([SENSE]);
-    await libraryStore.load('http://api');
-    libraryStore.select(1);
+    await wordsStore.load('http://api');
+    wordsStore.select(1);
 
     cleanup = render(() => <Info />, container);
     const speaker = container.querySelector('button');

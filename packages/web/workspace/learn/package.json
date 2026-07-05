@@ -50,6 +50,21 @@
       "import": "./dist/welcome.mjs",
       "default": "./dist/welcome.mjs"
     },
+    "./words": {
+      "types": "./dist/shared/words/index.d.ts",
+      "import": "./dist/words.mjs",
+      "default": "./dist/words.mjs"
+    },
+    "./search": {
+      "types": "./dist/shared/search/index.d.ts",
+      "import": "./dist/search.mjs",
+      "default": "./dist/search.mjs"
+    },
+    "./markdown": {
+      "types": "./dist/shared/markdown/index.d.ts",
+      "import": "./dist/markdown.mjs",
+      "default": "./dist/markdown.mjs"
+    },
     "./controllers": {
       "types": "./dist/core/controllers/index.d.ts",
       "import": "./dist/controllers.mjs",
@@ -73,6 +88,7 @@
   "dependencies": {
     "@capsuletech/web-core": "workspace:*",
     "@capsuletech/web-docs": "workspace:*",
+    "@capsuletech/web-placeholders": "workspace:*",
     "@capsuletech/web-shell": "workspace:*",
     "@capsuletech/web-ui": "workspace:*"
   },
