@@ -16,7 +16,6 @@
  */
 import { useEmitOptional } from '@capsuletech/web-core';
 import { Accordion } from '@capsuletech/web-ui/accordion';
-import { Card } from '@capsuletech/web-ui/card';
 import { Layout } from '@capsuletech/web-ui/layout';
 import { Typography } from '@capsuletech/web-ui/typography';
 import { createEffect, createSignal, For, onMount, Show } from 'solid-js';
@@ -93,35 +92,35 @@ const ConceptsComponent = (props: IConceptsProps) => {
         </Layout.Flex>
       }
     >
-      <Accordion multiple value={open()} onChange={setOpen} class={props.class}>
+      <Accordion multiple bordered rounded value={open()} onChange={setOpen} class={props.class}>
         <For each={groups()}>
           {(group) => (
             <Accordion.Item value={group.kind}>
               <Accordion.Trigger>
-                <Layout.Flex orientation="vertical" gapY={0} align="start">
+                <span class="flex min-w-0 flex-col gap-0.5 text-left">
                   <Typography>{group.label}</Typography>
                   <Typography size="sm" tone="muted">
                     {group.subtitle}
                   </Typography>
-                </Layout.Flex>
+                </span>
               </Accordion.Trigger>
               <Accordion.Content>
-                <Layout.Flex orientation="vertical" gapY={1} p={1}>
+                <div class="flex flex-col gap-0.5 py-1 pl-3 pr-1">
                   <For each={group.items}>
                     {(concept) => (
-                      <Card
-                        role="button"
-                        tabIndex={0}
-                        interactive
-                        selected={props.id === concept.id}
-                        padding="sm"
+                      <button
+                        type="button"
                         onClick={() => handleSelect(concept.id)}
+                        class="flex w-full cursor-pointer items-center rounded-sm px-2 py-1.5 text-left text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                        classList={{
+                          'bg-accent text-accent-foreground': props.id === concept.id,
+                        }}
                       >
-                        <Typography>{concept.title}</Typography>
-                      </Card>
+                        {concept.title}
+                      </button>
                     )}
                   </For>
-                </Layout.Flex>
+                </div>
               </Accordion.Content>
             </Accordion.Item>
           )}

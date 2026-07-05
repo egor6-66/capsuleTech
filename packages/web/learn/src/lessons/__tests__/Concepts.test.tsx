@@ -59,7 +59,7 @@ afterEach(() => {
 });
 
 const flush = () => new Promise((r) => setTimeout(r, 0));
-const cards = () => [...container.querySelectorAll('[role="button"]')];
+const cards = () => [...container.querySelectorAll('button:not([aria-expanded])')];
 const orderOf = (...needles: string[]) =>
   needles.map((n) => (container.textContent ?? '').indexOf(n));
 

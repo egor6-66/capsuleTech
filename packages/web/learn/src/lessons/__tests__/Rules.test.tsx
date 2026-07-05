@@ -59,7 +59,7 @@ afterEach(() => {
 });
 
 const flush = () => new Promise((r) => setTimeout(r, 0));
-const cards = () => [...container.querySelectorAll('[role="button"]')];
+const cards = () => [...container.querySelectorAll('button:not([aria-expanded])')];
 const triggers = () => [...container.querySelectorAll('[aria-expanded]')];
 const triggerFor = (label: string) => triggers().find((t) => t.textContent?.includes(label));
 const orderOf = (...needles: string[]) =>
