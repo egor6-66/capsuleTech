@@ -129,6 +129,45 @@ export const ChildrenMode: Story = {
   ),
 };
 
+// renderMarkdown (web-docs) выдаёт семантику Obsidian-callout'ов и wikilink'ов;
+// Prose её красит. HTML здесь — то, что вернёт renderMarkdown в проде.
+const CALLOUTS_HTML = `
+  <h2>Callouts &amp; wikilinks</h2>
+  <p>Учительский markdown с Obsidian-callout'ами и внутренними ссылками —
+  переход по <a class="wikilink" data-ref="grammar-verbs-tenses">временам глагола</a>
+  вешает потребитель (web-learn) по <code>data-ref</code>.</p>
+
+  <div class="callout callout-info">
+    <p class="callout-title">Информация</p>
+    <p>Present Simple используется для регулярных действий и общих истин.</p>
+  </div>
+
+  <div class="callout callout-tip">
+    <p class="callout-title">Совет</p>
+    <p>Запомни окончание <code>-s</code> для третьего лица единственного числа.</p>
+  </div>
+
+  <div class="callout callout-warning">
+    <p class="callout-title">Внимание</p>
+    <p>Не путай Present Simple с Present Continuous — см.
+    <a class="wikilink" data-ref="present-continuous">Present Continuous</a>.</p>
+  </div>
+
+  <div class="callout callout-note">
+    <p class="callout-title">Заметка</p>
+    <p>Callout без заголовка тоже валиден — тело рендерится как обычный markdown
+    со списком:</p>
+    <ul><li>habits</li><li>general truths</li><li>timetables</li></ul>
+  </div>
+`;
+
+/** Callout-блоки (4 типа) + wikilink-акцент — семантика из renderMarkdown. */
+export const CalloutsAndWikilinks: Story = {
+  name: 'callouts (4 types) + wikilinks',
+  args: { size: 'md' },
+  render: (args) => <Prose {...args} innerHTML={CALLOUTS_HTML} />,
+};
+
 /** md vs sm бок-о-бок. */
 export const SizeComparison: Story = {
   name: 'size — md vs sm',

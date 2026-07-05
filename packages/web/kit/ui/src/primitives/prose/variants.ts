@@ -39,6 +39,8 @@ export const variants = {
       '[&_hr]:my-8',
       // tables
       '[&_table]:my-4 [&_table]:text-sm',
+      // callouts
+      '[&_.callout]:my-4',
     ],
     // sm — компакт для панелей/Info: сжатые заголовки и ритм, размер тела 14px.
     sm: [
@@ -56,6 +58,8 @@ export const variants = {
       '[&_hr]:my-5',
       // tables
       '[&_table]:my-2.5 [&_table]:text-xs',
+      // callouts
+      '[&_.callout]:my-2.5',
     ],
   },
 };
@@ -98,6 +102,32 @@ export const proseCva = cva(
     '[&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2 [&_td]:align-top',
     // зебра поверх линий-сетки — читается как документ
     '[&_tbody_tr:nth-child(even)]:bg-muted/40',
+    // ── callouts (renderMarkdown Obsidian-callouts → `.callout .callout-<type>`) ──
+    // Карточка-блок с акцентом по типу. Спец-токенов info/tip/note нет (Token set
+    // FROZEN) → маппим на primary/success/muted; warning — каноничный status-токен.
+    // Тёмная тема — автоматически через сдвиг токенов. Иконка заголовка НЕ рисуется:
+    // контент — innerHTML, Solid-Icon туда не инжектится, а хардкодить lucide-SVG в
+    // CSS = дубль реестра (крутль). Тип различается цветом рамки/фона/заголовка.
+    '[&_.callout]:rounded-lg [&_.callout]:border [&_.callout]:p-4',
+    '[&_.callout>*:first-child]:mt-0 [&_.callout>*:last-child]:mb-0',
+    '[&_.callout-title]:mt-0 [&_.callout-title]:mb-2 [&_.callout-title]:font-semibold',
+    // info → primary
+    '[&_.callout-info]:border-primary/30 [&_.callout-info]:bg-primary/5',
+    '[&_.callout-info_.callout-title]:text-primary',
+    // tip → success
+    '[&_.callout-tip]:border-success/30 [&_.callout-tip]:bg-success/5',
+    '[&_.callout-tip_.callout-title]:text-success',
+    // warning → warning
+    '[&_.callout-warning]:border-warning/40 [&_.callout-warning]:bg-warning/10',
+    '[&_.callout-warning_.callout-title]:text-warning',
+    // note → neutral (muted)
+    '[&_.callout-note]:border-border [&_.callout-note]:bg-muted/40',
+    '[&_.callout-note_.callout-title]:text-foreground',
+    // ── wikilinks (внутренняя ссылка `.wikilink` без href; клик вешает потребитель) ──
+    // primary-акцент, underline только на hover, cursor-pointer. Класс-селектор
+    // (0,1,0) перебивает базовый `[&_a]` (0,0,1) → always-underline с обычных ссылок снят.
+    '[&_.wikilink]:cursor-pointer [&_.wikilink]:text-primary [&_.wikilink]:no-underline',
+    '[&_.wikilink:hover]:underline',
   ],
   {
     variants,

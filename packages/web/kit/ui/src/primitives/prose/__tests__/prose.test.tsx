@@ -106,6 +106,69 @@ describe('Prose — descendant typography classes', () => {
 });
 
 // ---------------------------------------------------------------------------
+// callouts + wikilinks (renderMarkdown semantic classes)
+// ---------------------------------------------------------------------------
+
+describe('Prose — callout + wikilink descendant classes', () => {
+  it('carries callout card + per-type accent selectors on the root', () => {
+    cleanup = render(() => <Prose data-testid="p" innerHTML="<p>x</p>" />, container);
+    const cls = container.querySelector('[data-testid="p"]')?.className ?? '';
+    // card chrome + title
+    expect(cls).toContain('[&_.callout]:rounded-lg');
+    expect(cls).toContain('[&_.callout]:border');
+    expect(cls).toContain('[&_.callout-title]:font-semibold');
+    // per-type accents (info→primary, tip→success, warning→warning, note→muted)
+    expect(cls).toContain('[&_.callout-info]:bg-primary/5');
+    expect(cls).toContain('[&_.callout-info_.callout-title]:text-primary');
+    expect(cls).toContain('[&_.callout-tip_.callout-title]:text-success');
+    expect(cls).toContain('[&_.callout-warning]:bg-warning/10');
+    expect(cls).toContain('[&_.callout-note]:bg-muted/40');
+  });
+
+  it('carries wikilink accent selectors (hover-only underline, cursor-pointer)', () => {
+    cleanup = render(() => <Prose data-testid="p" innerHTML="<p>x</p>" />, container);
+    const cls = container.querySelector('[data-testid="p"]')?.className ?? '';
+    expect(cls).toContain('[&_.wikilink]:text-primary');
+    expect(cls).toContain('[&_.wikilink]:cursor-pointer');
+    expect(cls).toContain('[&_.wikilink]:no-underline');
+    expect(cls).toContain('[&_.wikilink:hover]:underline');
+  });
+
+  it('actually renders injected callout + wikilink markup with their classes', () => {
+    cleanup = render(
+      () => (
+        <Prose
+          data-testid="p"
+          innerHTML={
+            '<div class="callout callout-warning"><p class="callout-title">Note</p><p>body</p></div>' +
+            '<a class="wikilink" data-ref="x">link</a>'
+          }
+        />
+      ),
+      container,
+    );
+    const el = container.querySelector('[data-testid="p"]');
+    expect(el?.querySelector('.callout.callout-warning')).not.toBeNull();
+    expect(el?.querySelector('.callout-title')?.textContent).toBe('Note');
+    const link = el?.querySelector('a.wikilink');
+    expect(link?.getAttribute('data-ref')).toBe('x');
+    // href-less by contract — consumer wires the click
+    expect(link?.hasAttribute('href')).toBe(false);
+  });
+
+  it('callout accent uses only design-token colors (no raw hex)', () => {
+    cleanup = render(() => <Prose data-testid="p" innerHTML="<p>x</p>" />, container);
+    const cls = container.querySelector('[data-testid="p"]')?.className ?? '';
+    // callout/wikilink slice specifically
+    const calloutClasses = cls
+      .split(' ')
+      .filter((c) => c.includes('callout') || c.includes('wikilink'))
+      .join(' ');
+    expect(calloutClasses).not.toMatch(/#[0-9a-fA-F]{3,6}/);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // size variant
 // ---------------------------------------------------------------------------
 
