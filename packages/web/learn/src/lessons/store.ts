@@ -151,6 +151,32 @@ const loadRules = async (apiBase: string): Promise<void> => {
   }
 };
 
+// Общий in-flight для `ensureLists` — параллельные промахи резолва (несколько
+// wikilink'ов кликнули подряд) не плодят дублирующих fetch'ей.
+let ensureInflight: Promise<void> | null = null;
+
+/**
+ * Гарантировать, что оба списка (концепты + правила) загружены. Идемпотентно:
+ * непустой список НЕ перезагружаем (тот же сигнал «загружено», что у mount'а
+ * аккордеонов — `length > 0`); гонки схлопываются одним in-flight промисом.
+ * Нужен `refnav`: wikilink с вкладки, где второй список ещё не смонтирован,
+ * промахивается по резолву — догружаем и повторяем резолв.
+ */
+const ensureLists = (apiBase: string): Promise<void> => {
+  if (ensureInflight) return ensureInflight;
+  const jobs: Promise<void>[] = [];
+  if (state.concepts.length === 0) jobs.push(loadConcepts(apiBase));
+  if (state.rules.length === 0) jobs.push(loadRules(apiBase));
+  if (jobs.length === 0) return Promise.resolve();
+  const inflight = Promise.all(jobs)
+    .then(() => {})
+    .finally(() => {
+      ensureInflight = null;
+    });
+  ensureInflight = inflight;
+  return inflight;
+};
+
 /**
  * Загрузить правило (+ его дриллы) по id в кэш. Дедуп по кэшу/inflight — ОДИН
  * fetch, даже если `Rule` и `RuleDrills` дёрнут одновременно. На реальной
@@ -229,6 +255,8 @@ export interface ILessonsStore {
   openConcept: (apiBase: string, id: string) => Promise<void>;
   /** GET списка правил (справочник). */
   loadRules: (apiBase: string) => Promise<void>;
+  /** Догрузить оба списка (концепты+правила), если пусты — для `refnav` резолва. */
+  ensureLists: (apiBase: string) => Promise<void>;
   /** GET правила (+ дриллов) в кэш по id (дедуп); cache-miss сбрасывает дрилл. */
   openRule: (apiBase: string, id: string) => Promise<void>;
   /** Записать ответ на item дрилла (эфемерно). */
@@ -261,6 +289,7 @@ export const lessonsStore: ILessonsStore = {
   openConcept,
   loadRules,
   openRule,
+  ensureLists,
   setAnswer,
   check,
 };

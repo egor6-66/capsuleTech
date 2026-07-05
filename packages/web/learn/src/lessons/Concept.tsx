@@ -42,7 +42,7 @@ const ConceptComponent = (props: IConceptProps) => {
   });
 
   const concept = () => (props.id ? lessonsStore.concept(props.id) : null);
-  const onWikilink = (ref: string) => emitRefNav(ref, 'Learn.Lessons.Concept', emit);
+  const onWikilink = (ref: string) => void emitRefNav(ref, apiBase, 'Learn.Lessons.Concept', emit);
   const selectRule = (id: string) =>
     emit('onRuleSelect', { source: 'Learn.Lessons.Concept', payload: { id } });
   // Подпись чипа = title правила, если список правил загружен, иначе сам id.

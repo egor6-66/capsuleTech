@@ -43,7 +43,7 @@ const RuleComponent = (props: IRuleProps) => {
   });
 
   const rule = () => (props.id ? lessonsStore.rule(props.id) : null);
-  const onWikilink = (ref: string) => emitRefNav(ref, 'Learn.Lessons.Rule', emit);
+  const onWikilink = (ref: string) => void emitRefNav(ref, apiBase, 'Learn.Lessons.Rule', emit);
 
   return (
     <Show

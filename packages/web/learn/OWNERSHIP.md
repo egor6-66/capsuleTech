@@ -23,7 +23,7 @@ last-updated: 2026-07-05 (iter 2)
   - Backend-интеграция остальных модулей: `web-query` endpoints к `/learn/*` (ADR 055 D2) — `library` уже ходит на backend напрямую через `fetch` (см. Quirks).
   - app `apps/learn/` связан с пакетом, верификация в браузере (library-блоки — коллапс страницы на блоки, отдельный бриф owner-apps).
 - **Active blockers:** owner-agent `owner-web-learn` ещё не создан (появится отдельным PR). Пока зона ведётся через scoped `learn`-сессию.
-- **Last activity:** 2026-07-05 (Lessons ИА iter 2: аккордеон-группы (category/kind), URL-driven `id`-пропы + кэш-дедуп стора, сплит `Rule`/`RuleDrills`, wikilink/relatedRules-переходы, strip-H1, `LessonsWelcome`; brief `learn-lessons-three-pane.md`).
+- **Last activity:** 2026-07-05 (refnav lazy-lists: `emitRefNav` async-устойчив — при промахе резолва `await lessonsStore.ensureLists(apiBase)` (идемпотентный догруз обоих списков, гонки одним in-flight) → повторный резолв → emit; чинит wikilink с вкладки, где второй список ещё не смонтирован; brief `learn-refnav-lazy-lists.md`). До этого — Lessons ИА iter 2: аккордеон-группы (category/kind), URL-driven `id`-пропы + кэш-дедуп стора, сплит `Rule`/`RuleDrills`, wikilink/relatedRules-переходы, strip-H1, `LessonsWelcome` (brief `learn-lessons-three-pane.md`).
 
 ## Vendor stack (ADR 047 D3)
 
@@ -118,6 +118,7 @@ last-updated: 2026-07-05 (iter 2)
 | Unit | `lessons/__tests__/Rules.test.tsx` | lazy-load, **группы по category** (порядок+подписи), **свёрнут кроме группы активного id** (`aria-expanded`), `sortOrder`-порядок, клик → emit `onRuleSelect` |
 | Unit | `lessons/__tests__/Rule.test.tsx` | id-driven тело в `Prose` (**strip-H1**), БЕЗ дриллов, wikilink → `onRuleSelect`/`onConceptSelect`, **неизвестный ref → `console.warn` no-op**, fallback |
 | Unit | `lessons/__tests__/RuleDrills.test.tsx` | id-driven «Практика» из кэша, дрилл-флоу correct (общий чекер), emit `onSpeak`, **один fetch рядом с `Rule`** (общий кэш), fallback |
+| Unit | `lessons/__tests__/refnav.test.ts` | **ленивый догруз** списка при промахе (`ensureLists`): wikilink к правилу/концепту при пустом списке → догруз → emit; unknown ref после догруза → warn no-op; повторный резолв не рефетчит (кэш); параллельные промахи → один in-flight fetch |
 | Unit | `library/__tests__/store.test.ts` | `load`/`select`/`selected`, select-миграция между id (регрессия к app-слой багу) |
 | Unit | `library/__tests__/Search.test.tsx` | keystroke → `load(apiBase, q)`, `apiBase` из `Learn.Provider` / дефолт |
 | Unit | `library/__tests__/Words.test.tsx` | lazy-load on mount, `data-selected` миграция по тайлам (регрессия), emit `onWordSelect`/`onSpeak` |

@@ -143,7 +143,7 @@ describe('Learn.Lessons.Rule', () => {
     });
   });
 
-  it('unknown wikilink ref → console.warn, no emit', async () => {
+  it('unknown wikilink ref → console.warn, no emit (after lazy list load)', async () => {
     ruleBody = '<a class="wikilink" data-ref="nope">go</a>';
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     await lessonsStore.openRule('', 'r1');
@@ -151,6 +151,7 @@ describe('Learn.Lessons.Rule', () => {
     await flush();
 
     (container.querySelector('a.wikilink') as HTMLElement).click();
+    await flush(); // miss → ensureLists догруз → повторный резолв → warn (async)
 
     expect(warn).toHaveBeenCalled();
     expect(emitSpy).not.toHaveBeenCalled();
