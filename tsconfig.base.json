@@ -165,6 +165,10 @@
         "packages/web/kit/ui/src/composites/compositeProxy/index.ts"
       ],
       "@capsuletech/web-ui/dataTable": ["packages/web/kit/ui/src/composites/dataTable/index.ts"],
+      "@capsuletech/web-ui/segmentedBar": [
+        "packages/web/kit/ui/src/composites/segmentedBar/index.ts"
+      ],
+      "@capsuletech/web-ui/launcher": ["packages/web/kit/ui/src/composites/launcher/index.ts"],
       "@capsuletech/web-ui/dropdownMenu": [
         "packages/web/kit/ui/src/composites/dropdownMenu/index.ts"
       ],
