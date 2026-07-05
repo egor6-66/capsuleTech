@@ -21,6 +21,7 @@ import {
   isZoneImportAllowed,
   NO_PREFIX_PKG_DIRS,
   PACKAGE_TO_ZONE,
+  WORKSPACE_DIR_RENAME,
   type Zone,
 } from './zones';
 
@@ -542,10 +543,13 @@ const runZoneCheck = (absPath: string, code: string): IViolation[] => {
   //   runtime/data-gen    → @capsuletech/data-gen   (no prefix; package-scoped util)
   //   boost/layout        → @capsuletech/boost-layout
   //   domain/auth         → @capsuletech/web-auth
-  //   studio/studio       → @capsuletech/web-studio (sole inhabitant of zone, web-prefixed per zone canon)
+  //   workspace/studio    → @capsuletech/web-studio
+  //   workspace/learn     → @capsuletech/web-learn
+  //   workspace/kit       → @capsuletech/web-workspace (rename-exception; shared kit)
   let fromPkg: string;
-  if (fromZone === 'studio') {
-    fromPkg = `@capsuletech/web-${fromPkgDir}`;
+  if (fromZone === 'workspace') {
+    const dir = WORKSPACE_DIR_RENAME[fromPkgDir] ?? fromPkgDir;
+    fromPkg = `@capsuletech/web-${dir}`;
   } else if (NO_PREFIX_PKG_DIRS.has(fromPkgDir)) {
     fromPkg = `@capsuletech/${fromPkgDir}`;
   } else {
@@ -582,6 +586,22 @@ const runZoneCheck = (absPath: string, code: string): IViolation[] => {
     if (isZoneImportAllowed(fromZone, fromPkg, targetZone, npmName)) return;
 
     const isCrossDomain = fromZone === 'domain' && targetZone === 'domain' && npmName !== fromPkg;
+    const isWorkspaceAppCross =
+      fromZone === 'workspace' && targetZone === 'workspace' && npmName !== fromPkg;
+    let message: string;
+    let hint: string;
+    if (isCrossDomain) {
+      message = `Cross-domain import: ${fromPkg} (domain) → ${npmName} (domain). Direct domain↔domain imports запрещены (ADR 047 D2).`;
+      hint =
+        'Extract capability в @capsuletech/web-contract/capabilities, consumer тянет контракт, target реализует через ADR 033 manifest.';
+    } else if (isWorkspaceAppCross) {
+      message = `Workspace app-cross import: ${fromPkg} → ${npmName}. Апп-члены workspace (web-studio/web-learn) ⊥ друг друга; разрешён импорт только общего @capsuletech/web-workspace (ADR 047 D7).`;
+      hint =
+        'Общий код вынеси в @capsuletech/web-workspace (оба аппа могут его тянуть). Апп в апп корни не пускает.';
+    } else {
+      message = `Cross-zone import: ${fromPkg} (${fromZone}) → ${npmName} (${targetZone}). Zone ${fromZone} не может зависеть на ${targetZone} (ADR 047 D1).`;
+      hint = `Zone ${fromZone} разрешает: ${[...(ZONE_ALLOWED_DEPS_PUBLIC[fromZone] ?? [])].join(', ')}. Если связь нужна — поднять обсуждение архитектуры.`;
+    }
     violations.push({
       file: absPath,
       line,
@@ -590,12 +610,8 @@ const runZoneCheck = (absPath: string, code: string): IViolation[] => {
       layer: 'system',
       zone: fromZone,
       kind: 'cross-zone-import',
-      message: isCrossDomain
-        ? `Cross-domain import: ${fromPkg} (domain) → ${npmName} (domain). Direct domain↔domain imports запрещены (ADR 047 D2).`
-        : `Cross-zone import: ${fromPkg} (${fromZone}) → ${npmName} (${targetZone}). Zone ${fromZone} не может зависеть на ${targetZone} (ADR 047 D1).`,
-      hint: isCrossDomain
-        ? 'Extract capability в @capsuletech/web-contract/capabilities, consumer тянет контракт, target реализует через ADR 033 manifest.'
-        : `Zone ${fromZone} разрешает: ${[...(ZONE_ALLOWED_DEPS_PUBLIC[fromZone] ?? [])].join(', ')}. Если связь нужна — поднять обсуждение архитектуры.`,
+      message,
+      hint,
     });
   };
 

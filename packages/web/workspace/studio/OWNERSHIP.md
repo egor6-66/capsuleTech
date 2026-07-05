@@ -2,21 +2,21 @@
 name: "@capsuletech/web-studio"
 owner-agent: owner-studio
 group: web_base
-zone: studio
+zone: workspace
 status: alpha
 priority: P1
-last-updated: 2026-07-02
+last-updated: 2026-07-05
 ---
 
 # OWNERSHIP — @capsuletech/web-studio
 
 **Owner agent:** `owner-studio`
-**Package path:** `packages/web/studio/`
+**Package path:** `packages/web/workspace/studio/`
 **Release group:** `web_base` (tag `web@{version}`)
 
 ## Состояние (читать ПЕРВЫМ)
 
-- **Zone:** `studio` (5-я zone, host/composer per ADR 047 D6, 2026-06-12). Studio — единственный пакет в зоне; зона существует как top-level slot для host/composer-инструмента.
+- **Zone:** `workspace` (каталог апп-хостов, ADR 047 **D7**, 2026-07-05). Studio — app-хост-ярус зоны рядом с `learn`; общий шелл механик уедет в designated-shared `@capsuletech/web-workspace` (kit). Studio ⊥ learn (app не пускает корни в соседа) — enforced в `compliance/zones.ts`. Ранее (D6) studio была плоской sole-inhabitant зоной `studio`. См. [[web-zone-workspace]].
 - **Status:** `alpha` (0.1.1) — manifests/state/inspector/generators работают; controllers subpath добавлен.
 - **Priority:** **P1** — единственный design-time host; активная разработка ожидается на следующих этапах.
 - **Composition rule (canon):** Studio exports **product-blocks** (`logic-editor`, `component-builder`, `inspector-panel`, …), НЕ raw functionality. Raw engines (universal generators, manifest registry, JSON-tree ops) при необходимости extract'ятся в свои пакеты и юзаются и в studio, и в apps. См. [[studio-composition-rule]].

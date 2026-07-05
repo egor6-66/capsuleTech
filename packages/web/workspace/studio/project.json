@@ -1,7 +1,7 @@
 {
-  "name": "@capsuletech/web-learn",
-  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/web/learn/src",
+  "name": "@capsuletech/web-studio",
+  "$schema": "../../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/web/workspace/studio/src",
   "projectType": "library",
   "tags": [],
   "targets": {},

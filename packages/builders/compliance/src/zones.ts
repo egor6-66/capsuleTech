@@ -1,26 +1,31 @@
 /**
- * Zone-canon compliance per ADR 047 D1 / D2 (Phase D3) + D6 (Phase D6, 2026-06-12).
+ * Zone-canon compliance per ADR 047 D1 / D2 (Phase D3) + D6 (Phase D6, 2026-06-12)
+ * + D7 (workspace zone, 2026-07-05).
  *
  * `packages/web/<zone>/<pkg>/` files are classified by their physical zone
- * (kit / runtime / domain / boost / studio). Imports across `@capsuletech/web-*`
+ * (kit / runtime / domain / boost / workspace). Imports across `@capsuletech/web-*`
  * and `@capsuletech/boost-*` are validated against `ZONE_ALLOWED_DEPS` —
  * forbidden directions emit a `cross-zone-import` violation.
  *
  * Cross-domain → cross-domain canon: forbidden direct imports between domain
  * packages (use `@capsuletech/web-contract` for cross-domain capabilities).
  *
+ * `workspace` zone (D7) — app-hosts (`web-studio`, `web-learn`) + shared
+ * `web-workspace`. App-members ⊥ each other; both may import only the shared
+ * `web-workspace` (see `isZoneImportAllowed`).
+ *
  * Vendor packages (`shared-zod`, `shared-utils`, `vite-builder`, `lib-builder`,
  * `compliance`, `cli`) are allowed everywhere as shared infrastructure.
  */
 
-export type Zone = 'kit' | 'runtime' | 'domain' | 'boost' | 'studio';
+export type Zone = 'kit' | 'runtime' | 'domain' | 'boost' | 'workspace';
 
 const ZONE_RX: Array<[Zone, RegExp]> = [
   ['kit', /[\\/]packages[\\/]web[\\/]kit[\\/]/],
   ['runtime', /[\\/]packages[\\/]web[\\/]runtime[\\/]/],
   ['domain', /[\\/]packages[\\/]web[\\/]domain[\\/]/],
   ['boost', /[\\/]packages[\\/]web[\\/]boost[\\/]/],
-  ['studio', /[\\/]packages[\\/]web[\\/]studio[\\/]/],
+  ['workspace', /[\\/]packages[\\/]web[\\/]workspace[\\/]/],
 ];
 
 /**
@@ -41,16 +46,12 @@ export const classifyZone = (absPath: string): Zone | null => {
  * Extract package name from path inside packages/web/<zone>/<pkg>/.
  *
  * `packages/web/runtime/core/src/...` → 'core'
- *
- * Sole-inhabitant zones (post-D6 `studio`) have NO `<pkg>` subdir — the zone IS
- * the package. For these, returns the zone name directly.
+ * `packages/web/workspace/learn/src/...` → 'learn'
  *
  * Returns null if path is not zone-classified.
  */
 export const extractZonePackage = (absPath: string, zone: Zone | null): string | null => {
   if (!zone) return null;
-  // Sole-inhabitant zone — package dir == zone name (e.g. studio).
-  if (zone === 'studio') return 'studio';
   const rx = new RegExp(`[\\\\/]packages[\\\\/]web[\\\\/]${zone}[\\\\/]([^\\\\/]+)[\\\\/]`);
   const m = absPath.match(rx);
   return m ? m[1] : null;
@@ -62,10 +63,21 @@ export const extractZonePackage = (absPath: string, zone: Zone | null): string |
  * Exceptions to the «<zone-prefix>-<pkg-dir>» rule. Currently:
  *   - `data-gen` (runtime/data-gen → @capsuletech/data-gen) — package-scoped
  *     util, no `web-` prefix to keep the name short for app consumers.
- *
- * `studio` is handled separately (whole zone) — see check.ts path-reconstruction.
  */
 export const NO_PREFIX_PKG_DIRS = new Set<string>(['data-gen']);
+
+/**
+ * Package-dir names inside the `workspace` zone that rename to a different npm
+ * suffix than the dir itself. ADR 047 D7.
+ *
+ *   - `kit` (workspace/kit → @capsuletech/web-workspace) — the shared kit IS the
+ *     zone-level package; the `kit` dirname stays short but maps to `web-workspace`.
+ *
+ * `studio` / `learn` follow the plain `web-<dir>` rule (→ web-studio, web-learn).
+ */
+export const WORKSPACE_DIR_RENAME: Record<string, string> = {
+  kit: 'workspace',
+};
 
 /**
  * Maps `@capsuletech/<pkg>` names to their zone per ADR 047 D1.
@@ -109,29 +121,32 @@ export const PACKAGE_TO_ZONE: Record<string, Zone> = {
   '@capsuletech/boost-chart': 'boost',
   '@capsuletech/boost-layout': 'boost',
 
-  // studio (host/composer; per ADR 047 D6 retired `design-time` parent zone)
-  '@capsuletech/web-studio': 'studio',
+  // workspace (апп-хосты + общий kit; ADR 047 D7)
+  '@capsuletech/web-studio': 'workspace',
+  '@capsuletech/web-learn': 'workspace',
+  '@capsuletech/web-workspace': 'workspace',
 };
 
 /**
  * Zone X can import from any zone in `ZONE_ALLOWED_DEPS[X]`.
  *
- * Per ADR 047 D1 + D6:
- * - **kit** — only kit + runtime/web-style (peer). NO boost/domain/studio.
+ * Per ADR 047 D1 + D6 + D7:
+ * - **kit** — only kit + runtime/web-style (peer). NO boost/domain/workspace.
  * - **runtime** — runtime + kit. No cycles.
  * - **boost** — kit + runtime. NOT domain. NOT another boost.
  * - **domain** — kit + runtime + boost. NOT another domain (use web-contract).
- * - **studio** — host/composer; can consume everything else (apps excluded).
+ * - **workspace** — app-hosts; consume everything below (host-role, apps excluded).
  *
- * Same-zone imports are always allowed.
+ * Same-zone imports are always allowed (workspace has the extra app⊥app rule —
+ * see `isZoneImportAllowed`).
  */
 export const ZONE_ALLOWED_DEPS: Record<Zone, ReadonlySet<Zone>> = {
   kit: new Set<Zone>(['kit', 'runtime']),
   runtime: new Set<Zone>(['runtime', 'kit']),
   boost: new Set<Zone>(['boost', 'kit', 'runtime']),
   domain: new Set<Zone>(['domain', 'kit', 'runtime', 'boost']),
-  // Studio is the host/composer — pulls from everything else (apps excluded).
-  studio: new Set<Zone>(['studio', 'kit', 'runtime', 'boost', 'domain']),
+  // workspace — апп-хосты, потребляют всё нижнее (наследуют host-роль студии).
+  workspace: new Set<Zone>(['workspace', 'kit', 'runtime', 'boost', 'domain']),
 };
 
 /**
@@ -153,6 +168,12 @@ export const isZoneImportAllowed = (
   // Cross-domain direct import is the canonical no-no per ADR 047 D2.
   if (fromZone === 'domain' && targetZone === 'domain' && fromPkg !== targetPkg) {
     return false;
+  }
+  // Внутри workspace: апп-члены (web-studio/web-learn) ⊥ друг друга; разрешён
+  // импорт ТОЛЬКО общего web-workspace (designated shared). ADR 047 D7.
+  // Покрывает: app→shared allowed, app↔app forbidden, shared→app forbidden.
+  if (fromZone === 'workspace' && targetZone === 'workspace' && fromPkg !== targetPkg) {
+    return targetPkg === '@capsuletech/web-workspace';
   }
   return ZONE_ALLOWED_DEPS[fromZone].has(targetZone);
 };

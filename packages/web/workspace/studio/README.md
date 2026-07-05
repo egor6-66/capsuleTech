@@ -46,7 +46,7 @@ Multi-entry: `index` + `manifests` + `state` + `inspector` + `generators` + `con
 
 ## Docs
 
-- AI-anchor: [`docs/_meta/studio.md`](../../../docs/_meta/studio.md)
-- Zone canon: [`docs/_meta/web-zones/studio.md`](../../../docs/_meta/web-zones/studio.md)
+- AI-anchor: [`docs/_meta/studio.md`](../../../../docs/_meta/studio.md)
+- Zone canon: [`docs/_meta/web-zones/workspace.md`](../../../../docs/_meta/web-zones/workspace.md)
 - OWNERSHIP: [`./OWNERSHIP.md`](./OWNERSHIP.md)
 - ADR 032 phase 5 (package /controllers + useEmit), ADR 045 #2, ADR 047 D4 + D6 (zone flatten).

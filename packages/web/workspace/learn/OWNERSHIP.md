@@ -2,7 +2,7 @@
 name: "@capsuletech/web-learn"
 owner-agent: owner-web-learn
 group: web_base
-zone: learn
+zone: workspace
 status: skeleton
 priority: P2
 last-updated: 2026-07-05 (iter 2)

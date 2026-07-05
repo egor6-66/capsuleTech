@@ -140,7 +140,7 @@ importers:
         version: link:../../packages/web/runtime/state
       '@capsuletech/web-studio':
         specifier: workspace:*
-        version: link:../../packages/web/studio
+        version: link:../../packages/web/workspace/studio
       '@capsuletech/web-style':
         specifier: workspace:*
         version: link:../../packages/web/runtime/style
@@ -186,7 +186,7 @@ importers:
         version: link:../../packages/web/runtime/core
       '@capsuletech/web-learn':
         specifier: workspace:*
-        version: link:../../packages/web/learn
+        version: link:../../packages/web/workspace/learn
       '@capsuletech/web-placeholders':
         specifier: workspace:*
         version: link:../../packages/web/domain/placeholders
@@ -286,7 +286,7 @@ importers:
         version: link:../../packages/web/runtime/state
       '@capsuletech/web-studio':
         specifier: workspace:*
-        version: link:../../packages/web/studio
+        version: link:../../packages/web/workspace/studio
       '@capsuletech/web-style':
         specifier: workspace:*
         version: link:../../packages/web/runtime/style
@@ -344,7 +344,7 @@ importers:
         version: link:../../packages/web/runtime/state
       '@capsuletech/web-studio':
         specifier: workspace:*
-        version: link:../../packages/web/studio
+        version: link:../../packages/web/workspace/studio
       '@capsuletech/web-style':
         specifier: workspace:*
         version: link:../../packages/web/runtime/style
@@ -1038,40 +1038,6 @@ importers:
         specifier: ^6.1.1
         version: 6.1.1(typescript@5.9.3)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
 
-  packages/web/learn:
-    dependencies:
-      '@capsuletech/web-core':
-        specifier: workspace:*
-        version: link:../runtime/core
-      '@capsuletech/web-docs':
-        specifier: workspace:*
-        version: link:../docs
-      '@capsuletech/web-router':
-        specifier: workspace:*
-        version: link:../runtime/router
-      '@capsuletech/web-ui':
-        specifier: workspace:*
-        version: link:../kit/ui
-      solid-js:
-        specifier: 1.9.12
-        version: 1.9.12
-    devDependencies:
-      '@capsuletech/lib-builder':
-        specifier: workspace:*
-        version: link:../../builders/lib
-      '@capsuletech/vite-builder':
-        specifier: workspace:*
-        version: link:../../builders/vite
-      '@testing-library/jest-dom':
-        specifier: ^6.9.1
-        version: 6.9.1
-      jsdom:
-        specifier: ~29.1.1
-        version: 29.1.1
-      vite-plugin-solid:
-        specifier: ^2.11.12
-        version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
-
   packages/web/runtime/access:
     dependencies:
       '@capsuletech/web-contract':
@@ -1455,54 +1421,88 @@ importers:
         specifier: workspace:*
         version: link:../../../builders/vite
 
-  packages/web/studio:
+  packages/web/workspace/learn:
     dependencies:
-      '@capsuletech/data-gen':
-        specifier: workspace:*
-        version: link:../runtime/data-gen
-      '@capsuletech/shared-zod':
-        specifier: workspace:*
-        version: link:../../shared/zod
-      '@capsuletech/web-contract':
-        specifier: workspace:*
-        version: link:../runtime/contract
       '@capsuletech/web-core':
         specifier: workspace:*
-        version: link:../runtime/core
-      '@capsuletech/web-dnd':
-        specifier: workspace:*
-        version: link:../runtime/dnd
+        version: link:../../runtime/core
       '@capsuletech/web-docs':
         specifier: workspace:*
-        version: link:../docs
-      '@capsuletech/web-remote':
-        specifier: workspace:*
-        version: link:../runtime/remote
-      '@capsuletech/web-renderer':
-        specifier: workspace:*
-        version: link:../runtime/renderer
+        version: link:../../docs
       '@capsuletech/web-router':
         specifier: workspace:*
-        version: link:../runtime/router
-      '@capsuletech/web-shell':
-        specifier: workspace:*
-        version: link:../domain/shell
-      '@capsuletech/web-style':
-        specifier: workspace:*
-        version: link:../runtime/style
+        version: link:../../runtime/router
       '@capsuletech/web-ui':
         specifier: workspace:*
-        version: link:../kit/ui
+        version: link:../../kit/ui
       solid-js:
         specifier: 1.9.12
         version: 1.9.12
     devDependencies:
       '@capsuletech/lib-builder':
         specifier: workspace:*
-        version: link:../../builders/lib
+        version: link:../../../builders/lib
       '@capsuletech/vite-builder':
         specifier: workspace:*
-        version: link:../../builders/vite
+        version: link:../../../builders/vite
+      '@testing-library/jest-dom':
+        specifier: ^6.9.1
+        version: 6.9.1
+      jsdom:
+        specifier: ~29.1.1
+        version: 29.1.1
+      vite-plugin-solid:
+        specifier: ^2.11.12
+        version: 2.11.12(@testing-library/jest-dom@6.9.1)(solid-js@1.9.12)(vite@8.0.13(@types/node@25.9.0)(esbuild@0.27.7)(jiti@2.4.2)(yaml@2.9.0))
+
+  packages/web/workspace/studio:
+    dependencies:
+      '@capsuletech/data-gen':
+        specifier: workspace:*
+        version: link:../../runtime/data-gen
+      '@capsuletech/shared-zod':
+        specifier: workspace:*
+        version: link:../../../shared/zod
+      '@capsuletech/web-contract':
+        specifier: workspace:*
+        version: link:../../runtime/contract
+      '@capsuletech/web-core':
+        specifier: workspace:*
+        version: link:../../runtime/core
+      '@capsuletech/web-dnd':
+        specifier: workspace:*
+        version: link:../../runtime/dnd
+      '@capsuletech/web-docs':
+        specifier: workspace:*
+        version: link:../../docs
+      '@capsuletech/web-remote':
+        specifier: workspace:*
+        version: link:../../runtime/remote
+      '@capsuletech/web-renderer':
+        specifier: workspace:*
+        version: link:../../runtime/renderer
+      '@capsuletech/web-router':
+        specifier: workspace:*
+        version: link:../../runtime/router
+      '@capsuletech/web-shell':
+        specifier: workspace:*
+        version: link:../../domain/shell
+      '@capsuletech/web-style':
+        specifier: workspace:*
+        version: link:../../runtime/style
+      '@capsuletech/web-ui':
+        specifier: workspace:*
+        version: link:../../kit/ui
+      solid-js:
+        specifier: 1.9.12
+        version: 1.9.12
+    devDependencies:
+      '@capsuletech/lib-builder':
+        specifier: workspace:*
+        version: link:../../../builders/lib
+      '@capsuletech/vite-builder':
+        specifier: workspace:*
+        version: link:../../../builders/vite
       '@testing-library/jest-dom':
         specifier: ^6.9.1
         version: 6.9.1
