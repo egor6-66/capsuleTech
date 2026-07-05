@@ -56,6 +56,8 @@ export function Badge(props: IBadgeProps) {
   };
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: role/onClick/tabIndex/onKeyDown ставятся согласованно по одному гейту isInteractive() — biome не видит условной связи (рантайм a11y-корректен).
+    // biome-ignore lint/a11y/useAriaPropsSupportedByRole: aria-pressed присутствует только вместе с role="button" (тот же isInteractive-гейт) — статически недоказуемо.
     <span
       class={className()}
       // data-slot — универсальный селектор-хук (test/inspector/canvas-overlay)

@@ -39,11 +39,14 @@ describe('Badge — static', () => {
   });
 
   it('reflects tone/size props', () => {
-    cleanup = render(() => (
-      <Badge tone="accent" size="md">
-        x
-      </Badge>
-    ), container);
+    cleanup = render(
+      () => (
+        <Badge tone="accent" size="md">
+          x
+        </Badge>
+      ),
+      container,
+    );
 
     expect(badge().getAttribute('data-tone')).toBe('accent');
     expect(badge().getAttribute('data-size')).toBe('md');
@@ -62,11 +65,14 @@ describe('Badge — static', () => {
 
 describe('Badge — interactive chip', () => {
   it('exposes role="button" + tabIndex when interactive', () => {
-    cleanup = render(() => (
-      <Badge interactive onClick={() => {}}>
-        chip
-      </Badge>
-    ), container);
+    cleanup = render(
+      () => (
+        <Badge interactive onClick={() => {}}>
+          chip
+        </Badge>
+      ),
+      container,
+    );
 
     expect(badge().getAttribute('role')).toBe('button');
     expect(badge().getAttribute('tabindex')).toBe('0');
@@ -75,11 +81,14 @@ describe('Badge — interactive chip', () => {
 
   it('fires onClick on click', () => {
     const onClick = vi.fn();
-    cleanup = render(() => (
-      <Badge interactive onClick={onClick}>
-        chip
-      </Badge>
-    ), container);
+    cleanup = render(
+      () => (
+        <Badge interactive onClick={onClick}>
+          chip
+        </Badge>
+      ),
+      container,
+    );
 
     badge().click();
 
@@ -88,11 +97,14 @@ describe('Badge — interactive chip', () => {
 
   it('activates via Enter and Space keys', () => {
     const onClick = vi.fn();
-    cleanup = render(() => (
-      <Badge interactive onClick={onClick}>
-        chip
-      </Badge>
-    ), container);
+    cleanup = render(
+      () => (
+        <Badge interactive onClick={onClick}>
+          chip
+        </Badge>
+      ),
+      container,
+    );
 
     badge().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     badge().dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
@@ -101,11 +113,14 @@ describe('Badge — interactive chip', () => {
   });
 
   it('reflects selected via aria-pressed + data-selected + accent highlight', () => {
-    cleanup = render(() => (
-      <Badge tone="outline" interactive selected onClick={() => {}}>
-        chip
-      </Badge>
-    ), container);
+    cleanup = render(
+      () => (
+        <Badge tone="outline" interactive selected onClick={() => {}}>
+          chip
+        </Badge>
+      ),
+      container,
+    );
 
     expect(badge().getAttribute('aria-pressed')).toBe('true');
     expect(badge().getAttribute('data-selected')).toBe('');
@@ -114,11 +129,14 @@ describe('Badge — interactive chip', () => {
   });
 
   it('unselected interactive chip → aria-pressed="false", no data-selected', () => {
-    cleanup = render(() => (
-      <Badge interactive onClick={() => {}}>
-        chip
-      </Badge>
-    ), container);
+    cleanup = render(
+      () => (
+        <Badge interactive onClick={() => {}}>
+          chip
+        </Badge>
+      ),
+      container,
+    );
 
     expect(badge().getAttribute('aria-pressed')).toBe('false');
     expect(badge().getAttribute('data-selected')).toBeNull();
