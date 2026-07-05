@@ -463,6 +463,7 @@
 }
 
 /* Firefox — global thin scrollbar */
+/* biome-ignore lint/style/noDescendingSpecificity: global universal default — low specificity by design, sets scrollbar-* only (no cascade conflict) */
 * {
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   scrollbar-width: thin;
@@ -494,6 +495,7 @@
     caret-color: var(--foreground) !important;
   }
 
+  /* biome-ignore lint/style/noDescendingSpecificity: @layer base universal reset — layer membership (not source-order specificity) governs the cascade here */
   *,
   ::after,
   ::before {
@@ -503,6 +505,7 @@
     border-width: 0;
   }
 
+  /* biome-ignore lint/style/noDescendingSpecificity: @layer base universal reset — layer membership (not source-order specificity) governs the cascade here */
   * {
     @apply border-border outline-ring/50;
   }
