@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { activeSegment } from '../segments';
 
 /**
- * `activeSegment` — чистая функция: последний непустой сегмент пути, если он
- * входит в набор известных id. Route-prefix-агностично: подсветка работает под
- * любым префиксом монтирования (важно для дедупа Nav/Welcome, канон
+ * `activeSegment` — чистая функция: id из набора известных секций, ПРИСУТСТВУЮЩИЙ
+ * в пути (мы «внутри» этой секции), а не последний кусок пути. Deep-link
+ * `/lessons/concepts/word-as-image` → секция `concepts` активна, хотя последний
+ * кусок = `word-as-image`. Route-prefix-агностично: подсветка работает под любым
+ * префиксом монтирования (важно для дедупа Nav/Welcome, канон
  * product-wide-kit-layering). Node-env — без Solid runtime.
  *
  * `useActiveSegment` — тонкая реактивная обёртка над `useRouter().current()`;
@@ -14,19 +16,28 @@ import { activeSegment } from '../segments';
 describe('activeSegment', () => {
   const ids = ['library', 'explorer', 'settings'] as const;
 
-  it('матчит последний сегмент пути', () => {
+  it('матчит id секции, присутствующий в пути', () => {
     expect(activeSegment('/library', ids)).toBe('library');
     expect(activeSegment('/explorer', ids)).toBe('explorer');
   });
 
-  it('undefined, если последний сегмент не в ids', () => {
+  it('deep-link: активна секция, а не последний кусок пути (регресс)', () => {
+    expect(activeSegment('/lessons/concepts/word-as-image', ['concepts', 'rules'])).toBe(
+      'concepts',
+    );
+    expect(activeSegment('/lessons/concepts', ['concepts', 'rules'])).toBe('concepts');
+    // секция активна, даже если за ней вложенный роут
+    expect(activeSegment('/library/detail', ids)).toBe('library');
+  });
+
+  it('undefined, когда ни один id не в пути (чужая секция)', () => {
     expect(activeSegment('/unknown', ids)).toBeUndefined();
-    expect(activeSegment('/library/detail', ids)).toBeUndefined();
+    expect(activeSegment('/library/explorer', ['concepts', 'rules'])).toBeUndefined();
   });
 
   it('prefix-агностично — матчит под любым префиксом монтирования', () => {
-    expect(activeSegment('/foo/library/explorer', ids)).toBe('explorer');
     expect(activeSegment('/ewc/settings', ids)).toBe('settings');
+    expect(activeSegment('/app/lessons/rules/x', ['concepts', 'rules'])).toBe('rules');
   });
 
   it('игнорирует trailing slash', () => {

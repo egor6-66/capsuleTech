@@ -1,15 +1,16 @@
 import { useRouter } from './context';
 
 /**
- * Активный сегмент по последнему непустому куску пути — route-prefix-агностично
- * (подсветка работает под любым префиксом монтирования). Чистая функция.
+ * Активный сегмент = id из `ids`, ПРИСУТСТВУЮЩИЙ в пути (мы «внутри» секции),
+ * route-prefix-агностично. Deep-link `/lessons/concepts/word-as-image` → `concepts`
+ * активен, хотя последний кусок = word-as-image. Чистая функция.
  */
 export const activeSegment = (
   path: string,
   ids: readonly string[],
 ): string | undefined => {
-  const last = path.split('/').filter(Boolean).at(-1);
-  return last && ids.includes(last) ? last : undefined;
+  const segs = path.split('/').filter(Boolean);
+  return ids.find((id) => segs.includes(id));
 };
 
 /** Реактивная обёртка над current() — отдаёт активный сегмент из URL. */
