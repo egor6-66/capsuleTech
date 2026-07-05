@@ -368,6 +368,35 @@ describe('WidgetUi — Image and Avatar: plain callables with meta', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Compile-time: Prose — plain callable (isLeaf, no sub-components).
+// Lazy (typography container for rendered-markdown). Guards: callable +
+// IUiMetaProps + original props preserved in both ViewUi and WidgetUi.
+// ---------------------------------------------------------------------------
+
+describe('ViewUi — Prose: plain callable with meta', () => {
+  it('Ui.Prose is a function', () => {
+    expectTypeOf<ViewUi['Prose']>().toBeFunction();
+  });
+
+  it('Ui.Prose accepts IUiMetaProps (meta prop)', () => {
+    type Props = Parameters<ViewUi['Prose']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
+  });
+
+  it('Ui.Prose still accepts its original props (innerHTML)', () => {
+    type Props = Parameters<ViewUi['Prose']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<{ innerHTML?: string }>();
+  });
+});
+
+describe('WidgetUi — Prose: plain callable with meta', () => {
+  it('Ui.Prose accepts IUiMetaProps (meta prop)', () => {
+    type Props = Parameters<WidgetUi['Prose']>[0];
+    expectTypeOf<Props>().toMatchTypeOf<IUiMetaProps>();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Runtime: ViewWrapper + UiProxy does not crash when meta is passed
 // (the actual prop stripping is in UiProxy; here we verify no runtime error)
 // ---------------------------------------------------------------------------
