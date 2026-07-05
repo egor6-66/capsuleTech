@@ -12,6 +12,13 @@
         "command": "uv run uvicorn capsule_learn.main:app --port 8003 --reload"
       }
     },
+    "warm-voice": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "backend/learn",
+        "command": "uv run python -m capsule_learn.warm"
+      }
+    },
     "test:py": {
       "executor": "nx:run-commands",
       "options": {

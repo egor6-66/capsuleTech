@@ -14,11 +14,19 @@ from .clients.image import ImageClient
 from .clients.voice import VoiceClient
 
 
-async def audio_block(voice: VoiceClient, text: str, lang: str) -> dict[str, Any] | None:
+async def audio_block(
+    voice: VoiceClient, text: str, lang: str, kind: str
+) -> dict[str, Any] | None:
+    # `kind` (ADR 076) is the storage policy baked into the URL: words/phrases
+    # are curated → voice persists them in MinIO; dynamic is LRU-only. Callers
+    # here compose curated content (words/example phrases), never `dynamic`.
     engines = await voice.engines()
-    if engines is None:
+    if not engines:
         return None
-    return {"url": voice.speak_url(text, lang), "engines": engines}
+    engine = voice.default_engine()
+    if engine is None:  # engines present but no resolvable default — treat as down
+        return None
+    return {"url": voice.speak_url(text, lang, kind, engine), "engines": engines}
 
 
 async def image_block(image: ImageClient, text: str, pos: str) -> dict[str, Any] | None:

@@ -16,8 +16,12 @@ def test_audio_block_url_encoded_and_engines_cached(upstream, client):
 
     resp = client.get("/learn/lang/senses")
     audio = resp.json()["senses"][0]["audio"]
-    # Ready-to-play public link, text URL-encoded; never audio bytes.
-    assert audio["url"] == f"{settings.voice_url}/voice/speak?text=ice+cream&lang=en_US"
+    # Ready-to-play public link, text URL-encoded; never audio bytes. Carries
+    # the resolved engine (default "kokoro") + storage kind=words (ADR 076).
+    assert audio["url"] == (
+        f"{settings.voice_url}/voice/speak"
+        "?engine=kokoro&kind=words&text=ice+cream&lang=en_US"
+    )
     assert audio["engines"] == ["kokoro", "chatterbox"]
 
     client.get("/learn/lang/senses")
@@ -28,7 +32,10 @@ def test_detail_audio_uses_word_lang(upstream, client):
     upstream.get(f"{settings.lang_url}/lang/sense/1").respond(json=SENSE_DETAIL)
     resp = client.get("/learn/lang/sense/1")
     audio = resp.json()["audio"]
-    assert audio["url"] == f"{settings.voice_url}/voice/speak?text=ice+cream&lang=en_US"
+    assert audio["url"] == (
+        f"{settings.voice_url}/voice/speak"
+        "?engine=kokoro&kind=words&text=ice+cream&lang=en_US"
+    )
 
 
 def test_voice_down_yields_null_audio_not_error(upstream, client):
