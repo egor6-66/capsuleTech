@@ -9,7 +9,7 @@ const meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['h1', 'h2', 'p', 'blockquote', 'code', 'lead', 'muted'],
+      options: ['h1', 'h2', 'h3', 'p', 'blockquote', 'code', 'lead', 'muted'],
     },
     color: {
       control: 'inline-radio',
@@ -56,6 +56,11 @@ export const H2: Story = {
   render: (args) => <Typography {...args}>Hyper-Controlled Architecture</Typography>,
 };
 
+export const H3: Story = {
+  args: { variant: 'h3' },
+  render: (args) => <Typography {...args}>Controller & Feature</Typography>,
+};
+
 export const Lead: Story = {
   args: { variant: 'lead' },
   render: (args) => (
@@ -94,6 +99,7 @@ export const Showcase: Story = {
     <div class="flex flex-col gap-3">
       <Typography variant="h1">H1 — page title</Typography>
       <Typography variant="h2">H2 — section heading</Typography>
+      <Typography variant="h3">H3 — subsection heading</Typography>
       <Typography variant="lead">
         Lead paragraph — usually muted, larger size, intro to the section.
       </Typography>

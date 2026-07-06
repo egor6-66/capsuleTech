@@ -125,4 +125,61 @@ export const cardPresets: readonly IPreset[] = [
     description:
       'Метрика без шапки — подпись + крупное число. Для KPI-плиток, сводок дашборда, статистических виджетов.',
   },
+  // ─── Entity presets (data-driven mode) ──────────────────────────────────
+  // Single `ui.Card` node whose entity slots carry serializable sample data.
+  // Same entity, different slot-completeness — not different markup.
+  {
+    id: 'word-compact',
+    label: 'Word (compact)',
+    schema: buildSchema({
+      type: 'ui.Card',
+      props: {
+        title: 'cat',
+        titleAction: '🔊',
+        subtitle: '/kæt/',
+        translation: 'кошка',
+        align: 'center',
+        interactive: true,
+      },
+    }),
+    description:
+      'Компактная карточка слова: заголовок + озвучка + транскрипция + перевод, по центру, кликабельна. Для плиток словаря.',
+  },
+  {
+    id: 'word-full',
+    label: 'Word (full)',
+    schema: buildSchema({
+      type: 'ui.Card',
+      props: {
+        title: 'cat',
+        titleAction: '🔊',
+        subtitle: '/kæt/',
+        translation: 'кошка',
+        definition: 'a small domesticated carnivorous mammal',
+        tags: ['noun', 'A1', 'animals'],
+        meta: [
+          { key: 'часть речи', value: 'существительное' },
+          { key: 'частота', value: 'высокая' },
+        ],
+        align: 'start',
+      },
+    }),
+    description:
+      'Полная карточка слова: тот же пресет, но с определением, тегами и фасетами. «Урезано где-то» = те же слоты, часть погашена.',
+  },
+  {
+    id: 'entity-meta',
+    label: 'Entity (meta)',
+    schema: buildSchema({
+      type: 'ui.Card',
+      props: {
+        title: 'Present Simple',
+        badge: 'A2',
+        tags: ['grammar', 'tense'],
+        interactive: true,
+      },
+    }),
+    description:
+      'Карточка сущности с одиночным бейджем (уровень) и тегами, кликабельна. Для карточек уроков / каталожных строк.',
+  },
 ];

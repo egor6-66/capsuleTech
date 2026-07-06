@@ -6,8 +6,8 @@ export const TypographyContract = defineContract({ name: 'Typography', kind: 'pr
   rule.props(
     z.object({
       // Семантический вариант (CVA `variant`). Управляет font-weight/tracking/border.
-      // По умолчанию тег выбирается из variant (h1/h2/p/blockquote/code; lead→p; muted→p).
-      variant: z.enum(['h1', 'h2', 'p', 'blockquote', 'code', 'lead', 'muted']).optional(),
+      // По умолчанию тег выбирается из variant (h1/h2/h3/p/blockquote/code; lead→p; muted→p).
+      variant: z.enum(['h1', 'h2', 'h3', 'p', 'blockquote', 'code', 'lead', 'muted']).optional(),
       // Color override через CVA (старый канал). Поверх него ещё `tone` (см. ниже).
       color: z.enum(['default', 'muted', 'primary', 'destructive']).optional(),
       // Tone — override цвета через отдельный prop. Если задан — переопределяет
@@ -27,6 +27,7 @@ export const TypographyContract = defineContract({ name: 'Typography', kind: 'pr
   rule.examples([
     { name: 'h1', props: { variant: 'h1' } },
     { name: 'h2', props: { variant: 'h2' } },
+    { name: 'h3', props: { variant: 'h3' } },
     { name: 'p', props: { variant: 'p' } },
     { name: 'lead', props: { variant: 'lead' } },
     { name: 'muted', props: { variant: 'muted' } },

@@ -12,6 +12,14 @@
  */
 
 import type { Contract } from '@capsuletech/web-contract';
+import { ArticleManifest } from '../composites/article/article.manifest';
+import { SectionedListManifest } from '../composites/sectionedList/sectionedList.manifest';
+import {
+  AccordionContentManifest,
+  AccordionItemManifest,
+  AccordionManifest,
+  AccordionTriggerManifest,
+} from '../primitives/accordion/accordion.manifest';
 import { AvatarManifest } from '../primitives/avatar/avatar.manifest';
 import { ButtonManifest } from '../primitives/button/button.manifest';
 import {
@@ -69,7 +77,14 @@ const ALL: IPrimitiveManifestEntry[] = [
   FlexManifest,
   GroupManifest,
   ListManifest,
+  AccordionManifest,
+  // composites (molecules)
+  ArticleManifest,
+  SectionedListManifest,
   // composite parts
+  AccordionItemManifest,
+  AccordionTriggerManifest,
+  AccordionContentManifest,
   CardHeaderManifest,
   CardTitleManifest,
   CardDescriptionManifest,

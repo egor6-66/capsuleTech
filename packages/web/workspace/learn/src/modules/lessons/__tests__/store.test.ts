@@ -1,34 +1,16 @@
 /**
- * lessonsStore unit tests — loadList / open / close (навигация) + эфемерный
- * интерактив дрилла (setAnswer / check / verdict). `open` сбрасывает пласт
- * дрилла — переход на другой урок начинает с чистого листа.
+ * lessonsStore unit tests — loadList / open / close (навигация урока) + каскад
+ * координации СВЕРХУ ВНИЗ: `open` сбрасывает эфемерный дрилл (`drillsStore`),
+ * `close` чистит выбор + кэши концептов/правил + дриллы.
  *
- * Плейн `createStore` (этот модуль) не трогает `@xstate/solid` reconcile-баг
- * (см. `library/store.ts` doc) — гарант, что этот флоу от него независим.
+ * Плейн `createStore` (этот модуль) не зависит от `@xstate/solid` reconcile-бага.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { drillsStore } from '../../drills/store';
 import { lessonsStore } from '../store';
 import type { ILessonDetail, ILessonSummary } from '../types';
 
-const summary = (id: string): ILessonSummary => ({
-  id,
-  title: id,
-  level: 'l3',
-  tags: ['grammar'],
-});
-
-const drill = (id: string) => ({
-  id,
-  title: 'Drill',
-  level: 'l3',
-  tags: [],
-  rule: 'r',
-  graboTag: id,
-  words: [],
-  concepts: [],
-  items: [{ index: 0, promptRu: 'Я поел.', context: null }],
-  words_resolved: [],
-});
+const summary = (id: string): ILessonSummary => ({ id, title: id, level: 'l3', tags: ['grammar'] });
 
 const detail = (id: string): ILessonDetail => ({
   id,
@@ -38,21 +20,11 @@ const detail = (id: string): ILessonDetail => ({
   intro: 'intro',
   concepts: [],
   rules: [],
-  drills: [drill(`${id}-drill`)],
+  drills: [],
 });
 
-/** URL+method-диспетчер fetch: list / lesson / check. */
-const mockFetch = (
-  handlers: {
-    lessons?: ILessonSummary[];
-    lesson?: ILessonDetail;
-    check?: { verdict: string; hint?: string; answer?: string };
-  } = {},
-) => {
-  const spy = vi.fn(async (url: string, init?: { method?: string }) => {
-    if (init?.method === 'POST') {
-      return { ok: true, json: async () => handlers.check ?? { verdict: 'wrong' } };
-    }
+const mockFetch = (handlers: { lessons?: ILessonSummary[]; lesson?: ILessonDetail } = {}) => {
+  const spy = vi.fn(async (url: string) => {
     if (url.includes('/learn/lessons/')) {
       return { ok: true, json: async () => handlers.lesson ?? detail('x') };
     }
@@ -100,31 +72,12 @@ describe('web-learn lessons store', () => {
     expect(lessonsStore.current()).toBeNull();
   });
 
-  it('setAnswer + answer round-trip per item', () => {
-    lessonsStore.setAnswer('d1', 0, 'I had eaten');
-    expect(lessonsStore.answer('d1', 0)).toBe('I had eaten');
-    expect(lessonsStore.answer('d1', 1)).toBe('');
-  });
-
-  it('check POSTs item_index + answer, stores verdict', async () => {
-    const spy = mockFetch({ check: { verdict: 'correct' } });
-    lessonsStore.setAnswer('d1', 0, 'I had eaten');
-    await lessonsStore.check('http://api', 'd1', 0);
-
-    const [, init] = spy.mock.calls.at(-1) as [string, { method: string; body: string }];
-    expect(init.method).toBe('POST');
-    expect(JSON.parse(init.body)).toEqual({ item_index: 0, answer: 'I had eaten', reveal: false });
-    expect(lessonsStore.verdict('d1', 0)).toEqual({ verdict: 'correct' });
-  });
-
-  it('open resets ephemeral drill state (answers/verdicts)', async () => {
-    mockFetch({ lesson: detail('x'), check: { verdict: 'correct' } });
-    lessonsStore.setAnswer('d1', 0, 'foo');
-    await lessonsStore.check('http://api', 'd1', 0);
-    expect(lessonsStore.verdict('d1', 0)).not.toBeNull();
+  it('open resets the ephemeral drill state (cascade to drillsStore)', async () => {
+    mockFetch({ lesson: detail('x') });
+    drillsStore.setAnswer('d1', 0, 'foo');
+    expect(drillsStore.answer('d1', 0)).toBe('foo');
 
     await lessonsStore.open('http://api', 'x');
-    expect(lessonsStore.answer('d1', 0)).toBe('');
-    expect(lessonsStore.verdict('d1', 0)).toBeNull();
+    expect(drillsStore.answer('d1', 0)).toBe('');
   });
 });

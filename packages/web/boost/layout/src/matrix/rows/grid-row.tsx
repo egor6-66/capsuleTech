@@ -9,8 +9,9 @@ import type { Accessor, JSX } from 'solid-js';
 import { For, Suspense } from 'solid-js';
 import { MatrixCellFallback } from '../cell';
 import type { IInsertEngine } from '../dnd/insert';
-import type { IRow } from '../interfaces';
+import type { BorderValue, IRow } from '../interfaces';
 import { MatrixSlot, traceSlotRender } from '../slot';
+import { cellCardBordered } from '../utils';
 
 // ---------------------------------------------------------------------------
 // Grid-zone bindings threaded from MatrixContent → renderRow → renderGridRow.
@@ -41,7 +42,7 @@ export const renderGridRow = (
   resizeEnabled: Accessor<boolean>,
   gridOpts: IGridOpts,
   /** Single source of truth for the cell border — independent of resize/DnD. */
-  bordered: Accessor<boolean> = () => true,
+  bordered: Accessor<BorderValue> = () => true,
 ): JSX.Element => {
   const cols = row.grid?.cols ?? GRID_DEFAULT_COLS;
   const rowHeight = row.grid?.rowHeight ?? GRID_DEFAULT_ROW_HEIGHT;
@@ -201,7 +202,7 @@ export const renderGridRow = (
               ref={zoneItem.ref}
               data-grid-cell={cell.id}
               class="relative overflow-hidden rounded-sm"
-              classList={{ 'border border-border/60': cell.bordered ?? bordered() }}
+              classList={{ 'border border-border': cellCardBordered(cell, bordered) }}
               style={gridStyle()}
             >
               <div

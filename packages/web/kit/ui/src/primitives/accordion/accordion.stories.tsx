@@ -258,6 +258,43 @@ export const Segmented: Story = {
 };
 
 /**
+ * `subtitle` prop — the "title + muted caption" group header used by the
+ * `Concepts` / `Rules` reference blocks. Pass `subtitle` and the label draws
+ * as a column stack (title on top, muted caption below) with zero raw classes
+ * in the consumer. Triggers without `subtitle` stay single-line.
+ */
+export const WithSubtitle: Story = {
+  render: () => (
+    <Accordion preset="segmented" defaultValue={['pointer']}>
+      <Accordion.Item value="pointer">
+        <Accordion.Trigger subtitle="How events flow from View to Controller">
+          UiProxy
+        </Accordion.Trigger>
+        <Accordion.Content>
+          UiProxy wraps the base UI-kit when a View renders inside a Controller, binding events and
+          registering meta-tagged nodes in the store.
+        </Accordion.Content>
+      </Accordion.Item>
+      <Accordion.Item value="bridge">
+        <Accordion.Trigger subtitle="Reactive getter wrapper around XState state/send">
+          Bridge
+        </Accordion.Trigger>
+        <Accordion.Content>
+          Bridge exposes reactive reads (`store.ctx.*`) plus tag operations (pick / omit / match)
+          over the underlying XState machine.
+        </Accordion.Content>
+      </Accordion.Item>
+      <Accordion.Item value="plain">
+        <Accordion.Trigger>No subtitle — single line</Accordion.Trigger>
+        <Accordion.Content>
+          Omit `subtitle` and the trigger keeps its original single-line layout.
+        </Accordion.Content>
+      </Accordion.Item>
+    </Accordion>
+  ),
+};
+
+/**
  * Controlled: first item is open by default.
  */
 export const DefaultOpen: Story = {

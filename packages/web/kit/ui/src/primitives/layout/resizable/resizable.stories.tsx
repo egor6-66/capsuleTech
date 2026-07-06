@@ -85,43 +85,6 @@ export const LiveToggle: Story = {
   },
 };
 
-export const LineVsGhost: Story = {
-  name: 'handleVariant: line vs ghost',
-  render: () => (
-    <div class="flex flex-col gap-4">
-      <div>
-        <div class="mb-1 text-xs opacity-60">line (default) — активная ручка рисует hairline</div>
-        <div class="h-32">
-          <Resizable
-            orientation="horizontal"
-            withHandle
-            items={[
-              { children: <MockBlock label="A" />, resizable: true, initialSize: 0.5 },
-              { children: <MockBlock label="B" tone="b" />, resizable: true, initialSize: 0.5 },
-            ]}
-          />
-        </div>
-      </div>
-      <div>
-        <div class="mb-1 text-xs opacity-60">
-          ghost — линии нет ни в каком состоянии, только хит-зона + grip
-        </div>
-        <div class="h-32">
-          <Resizable
-            orientation="horizontal"
-            withHandle
-            handleVariant="ghost"
-            items={[
-              { children: <MockBlock label="A" />, resizable: true, initialSize: 0.5 },
-              { children: <MockBlock label="B" tone="b" />, resizable: true, initialSize: 0.5 },
-            ]}
-          />
-        </div>
-      </div>
-    </div>
-  ),
-};
-
 export const AllDisabled: Story = {
   name: 'handleDisabled: container gate (no hairline)',
   render: () => (

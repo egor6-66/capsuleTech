@@ -164,13 +164,28 @@ describe('getPresets — compositions (card/field)', () => {
     }
   };
 
-  it('returns 3 presets for ui.Card (basic/with-footer/stat) as nested ui.Card.* trees', () => {
+  it('returns 6 presets for ui.Card (3 compound trees + 3 entity single-node)', () => {
     const presets = getPresets('ui.Card');
-    expect(presets.map((p) => p.id)).toEqual(['basic', 'with-footer', 'stat']);
+    expect(presets.map((p) => p.id)).toEqual([
+      'basic',
+      'with-footer',
+      'stat',
+      'word-compact',
+      'word-full',
+      'entity-meta',
+    ]);
+    const compound = new Set(['basic', 'with-footer', 'stat']);
     for (const p of presets) {
       const rootNode = p.schema.components.nodes[p.schema.components.root];
       expect(rootNode?.type).toBe('ui.Card');
-      expect(rootNode?.children.length).toBeGreaterThan(0);
+      if (compound.has(p.id)) {
+        // Compound presets are nested ui.Card.* trees.
+        expect(rootNode?.children.length).toBeGreaterThan(0);
+      } else {
+        // Entity presets are a single data-driven ui.Card node (no children).
+        expect(rootNode?.children.length).toBe(0);
+        expect(rootNode?.props?.title).toBeTruthy();
+      }
       assertTreeIntegrity(p.schema);
     }
   });

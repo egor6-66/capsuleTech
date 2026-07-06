@@ -15,6 +15,7 @@ last_updated: 2026-06-01
 ## 📐 Архитектура
 
 - [[philosophy|🌑 Философия — UI is a Shadow]]
+- [[component-model|🧱 Component Model — сущности/списки/пресеты/слоты (БАЗА)]]
 - [[layers|🪜 Слои HCA — Entity / Controller / Feature / Widget / Page]]
 - [[golden-rules|📜 Золотой регламент (Compliance)]]
 - [[lifecycle|🔄 Жизненный цикл — от клика до Feature]]

@@ -12,11 +12,11 @@ import { type ICellDndState, MatrixCellFallback, NOOP_REF } from './cell';
 import { DragBadge } from './dnd/drag-badge';
 import { createInsertEngine } from './dnd/insert';
 import { createSwapEngine } from './dnd/swap';
-import type { ICell, IRow, LayoutChangeEvent, MatrixDndKind } from './interfaces';
+import type { BorderValue, ICell, IRow, LayoutChangeEvent, MatrixDndKind } from './interfaces';
 import { renderRow } from './rows/flex-row';
 import type { IGridOpts } from './rows/grid-row';
 import { MatrixPresetContext, MatrixSlot, traceSlotRender } from './slot';
-import { dividerBetweenRows, rowResizeActive } from './utils';
+import { dividerBetweenRows, dividerBetweenZones, rowHandleActive, rowResizeActive } from './utils';
 
 // ---------------------------------------------------------------------------
 // SizesMap — session-only persistence of user-resized panel sizes.
@@ -34,11 +34,11 @@ export interface IMatrixContentProps {
   dndEnabled: Accessor<boolean>;
   dndKind: Accessor<MatrixDndKind>;
   /**
-   * Single source of truth for the Matrix cell border. Independent of `resizeEnabled`/
-   * `dndEnabled` — resize only activates the interactive handle (+ badge), it never
-   * implies a border by itself.
+   * Single source of truth for the Matrix cell border (opt-out, default true).
+   * `boolean | BorderSides`. На АКТИВНОМ resize-стыке линию рисует сама ручка
+   * (Matrix гасит свой divider на этой стороне) — двойной линии нет.
    */
-  bordered: Accessor<boolean>;
+  bordered: Accessor<BorderValue>;
   onLayoutChange: ((e: LayoutChangeEvent) => void) | undefined;
   /**
    * Matrix-level outer axis (ADR 022).
@@ -77,8 +77,8 @@ const rowsToVerticalItems = (
   setCellSize: (cellId: string, px: number) => void,
   /** ADR 026: Grid-zone bindings (insert mode only). */
   gridOpts: IGridOpts | undefined,
-  /** Single source of truth for the cell border — independent of resize/DnD. */
-  bordered: Accessor<boolean>,
+  /** Single source of truth for the cell border (`boolean | BorderSides`). */
+  bordered: Accessor<BorderValue>,
 ): IResizable.IResizableItem[] => {
   return rows.map((row, i) => {
     const heightIsNumber = typeof row.height === 'number';
@@ -91,11 +91,15 @@ const rowsToVerticalItems = (
     const resolvedHeight =
       savedVerticalSizes?.[i] ?? (heightIsNumber ? (row.height as number) : undefined);
     const zone = getZone && row.id ? getZone(row.id) : undefined;
-    // Divider над row (i>0): пара bordered (either-rule). Resize на
-    // разделители не влияет — ручки ghost (без своей линии).
+    // Divider над row (i>0): пара bordered (either-rule со сторонами). На
+    // АКТИВНОЙ вертикальной ручке между prevRow и row линию рисует ручка —
+    // Matrix гасит свой divider (resize-стык = один элемент).
     const prevRow = i > 0 ? rows[i - 1] : undefined;
     const topDivider = prevRow
-      ? (): boolean => dividerBetweenRows(prevRow, row, bordered)
+      ? (): boolean =>
+          dividerBetweenRows(prevRow, row, bordered, () =>
+            rowHandleActive(prevRow, row, resizeEnabled),
+          )
       : undefined;
     return {
       children: renderRow(
@@ -369,16 +373,21 @@ export const MatrixContent = (props: IMatrixContentProps) => {
               const getZoneFn = insertGetZone();
               const zone = getZoneFn && row.id ? getZoneFn(row.id) : undefined;
               const widthFraction = typeof row.height === 'number' ? row.height : undefined;
-              // Divider слева от зоны (i>0): пара bordered (either-rule).
+              // Divider слева от зоны (i>0): пара bordered (either-rule со
+              // сторонами). На АКТИВНОЙ горизонтальной зонной ручке линию рисует
+              // ручка — Matrix гасит свой divider (resize-стык = один элемент).
               const prevZone = i > 0 ? rs[i - 1] : undefined;
               const zoneDivider = prevZone
-                ? (): boolean => dividerBetweenRows(prevZone, row, props.bordered)
+                ? (): boolean =>
+                    dividerBetweenZones(prevZone, row, props.bordered, () =>
+                      rowHandleActive(prevZone, row, props.resizeEnabled),
+                    )
                 : undefined;
               return {
                 children: (
                   <div
                     class="relative h-full min-w-0 flex-1 overflow-hidden"
-                    classList={{ 'border-l border-border/60': zoneDivider ? zoneDivider() : false }}
+                    classList={{ 'border-l border-border': zoneDivider ? zoneDivider() : false }}
                   >
                     {renderRow(
                       row,
@@ -411,7 +420,6 @@ export const MatrixContent = (props: IMatrixContentProps) => {
                     orientation="horizontal"
                     items={zoneItems}
                     withHandle
-                    handleVariant="ghost"
                     onSizesChange={(sizes) => {
                       for (let k = 0; k < rs.length; k++) {
                         const rk = rs[k].id ?? `r${k}`;
@@ -443,16 +451,17 @@ export const MatrixContent = (props: IMatrixContentProps) => {
                     }
                     return { flex: '1', 'min-width': '0' };
                   };
+                  // Plain-путь (зоны без resizable) — ручек нет, divider по bordered.
                   const prevZone = i() > 0 ? effectiveRows()[i() - 1] : undefined;
                   const zoneDivider = prevZone
-                    ? (): boolean => dividerBetweenRows(prevZone, row, props.bordered)
+                    ? (): boolean => dividerBetweenZones(prevZone, row, props.bordered)
                     : undefined;
                   return (
                     <div
                       class="relative h-full overflow-hidden"
                       style={colStyle()}
                       classList={{
-                        'border-l border-border/60': zoneDivider ? zoneDivider() : false,
+                        'border-l border-border': zoneDivider ? zoneDivider() : false,
                       }}
                     >
                       {renderRow(
@@ -507,7 +516,6 @@ export const MatrixContent = (props: IMatrixContentProps) => {
                     orientation="vertical"
                     items={verticalItems}
                     withHandle
-                    handleVariant="ghost"
                     onSizesChange={onVerticalSizesChange}
                   />
                 </div>
@@ -541,7 +549,9 @@ export const MatrixContent = (props: IMatrixContentProps) => {
             let resizableBlockEmitted = false;
             const elements: JSX.Element[] = rs.map((row, _i) => {
               // Divider между соседними элементами вертикальной последовательности;
-              // внутри corvu-блока дивайдеры считает rowsToVerticalItems.
+              // внутри corvu-блока дивайдеры (+ resize-подавление) считает
+              // rowsToVerticalItems. Границы с auto-рядами ручек не имеют →
+              // resizeActive не нужен.
               const prevRow = _i > 0 ? rs[_i - 1] : undefined;
               const topDivider = prevRow
                 ? (): boolean => dividerBetweenRows(prevRow, row, props.bordered)
@@ -577,7 +587,7 @@ export const MatrixContent = (props: IMatrixContentProps) => {
               return (
                 <div
                   class="relative min-h-0 flex-1 overflow-hidden"
-                  classList={{ 'border-t border-border/60': topDivider ? topDivider() : false }}
+                  classList={{ 'border-t border-border': topDivider ? topDivider() : false }}
                 >
                   <div class="absolute inset-0">
                     <Layout.Resizable

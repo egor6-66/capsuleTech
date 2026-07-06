@@ -35,11 +35,6 @@ type ResizableHandleProps<T extends ValidComponent = 'button'> = HandleProps<T> 
    * отключён, grip скрыт. Handle остаётся смонтирован — флип не ремоунтит панели.
    */
   active?: boolean;
-  /**
-   * Визуал ручки. Default: 'line' (bg-border hairline на активной).
-   * 'ghost' — без линии в любом состоянии; поведение active не меняется.
-   */
-  variant?: 'line' | 'ghost';
 };
 
 export const ResizableHandle = <T extends ValidComponent = 'button'>(
@@ -50,7 +45,6 @@ export const ResizableHandle = <T extends ValidComponent = 'button'>(
     'style',
     'withHandle',
     'active',
-    'variant',
   ]);
   const isActive = () => local.active !== false;
   // Getters — createStyle мемоизирует cvaFn(props); без них флип `active`
@@ -58,9 +52,6 @@ export const ResizableHandle = <T extends ValidComponent = 'button'>(
   const { className, style } = createStyle(resizableHandleCva, {
     get active() {
       return isActive();
-    },
-    get variant() {
-      return local.variant;
     },
     get class() {
       return local.class;

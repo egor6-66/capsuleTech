@@ -8,8 +8,9 @@ import type { Accessor, JSX } from 'solid-js';
 import { For, Suspense } from 'solid-js';
 import { Dynamic } from 'solid-js/web';
 import { MatrixCellFallback, NOOP_REF } from '../cell';
-import type { ICell, IRow } from '../interfaces';
+import type { BorderValue, ICell, IRow } from '../interfaces';
 import { MatrixSlot, traceSlotRender } from '../slot';
+import { cellCardBordered } from '../utils';
 import { matrixSlots } from '../variants';
 
 // ---------------------------------------------------------------------------
@@ -87,7 +88,7 @@ export const renderPackingRow = (
   /** Setter called by the resize handle to persist a new explicit px size. */
   setCellSize: (cellId: string, px: number) => void,
   /** Single source of truth for the cell border — independent of resize/DnD. */
-  bordered: Accessor<boolean> = () => true,
+  bordered: Accessor<BorderValue> = () => true,
 ): JSX.Element => {
   const isVertical = row.orientation === 'vertical';
   const hasWrap = row.wrap === true;
@@ -247,7 +248,7 @@ export const renderPackingRow = (
                 component={tag}
                 ref={cellRef}
                 class={`${cell.id === 'main' ? matrixSlots.resizeMain : matrixSlots.resizeSlot} relative overflow-hidden rounded-sm`}
-                classList={{ 'border border-border/60': cell.bordered ?? bordered() }}
+                classList={{ 'border border-border': cellCardBordered(cell, bordered) }}
                 style={cellStyle()}
               >
                 <div

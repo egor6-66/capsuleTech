@@ -4,7 +4,41 @@ import type { cardCva } from './variants';
 
 export type CardVariants = VariantProps<typeof cardCva>;
 
-export interface ICardProps extends JSX.HTMLAttributes<HTMLDivElement>, CardVariants {
+/**
+ * Entity-mode slots. Card is a **data entity**: when any of these is set, the
+ * Card draws itself from the data (a vertical stack — all structure/classes live
+ * in the kit), instead of the compound `Card.Header/…` children path. Every slot
+ * is optional; an absent slot is simply not rendered (no empty box). The
+ * consumer never hand-composes a layout — it feeds data and toggles slots.
+ *
+ * Runtime accepts `JSX.Element` for text slots; a serializable preset (`ISchema`)
+ * uses plain strings for the same slots (the store is JSON).
+ */
+export interface ICardEntityProps {
+  /** Primary label (entity name / word / lesson title). */
+  title?: JSX.Element;
+  /** Trailing node beside the title (e.g. a 🔊 play button). A slot — not layout. */
+  titleAction?: JSX.Element;
+  /** Muted caption under the title (phonetics / principle). */
+  subtitle?: JSX.Element;
+  /** Secondary line (translation). */
+  translation?: JSX.Element;
+  /** Muted definition / gloss line. */
+  definition?: JSX.Element;
+  /** Single meta badge (e.g. a level) — the kit wraps it in `Ui.Badge`. */
+  badge?: JSX.Element;
+  /** Row of tag badges — the kit renders each as `Ui.Badge tone="muted"`. */
+  tags?: string[];
+  /** key:value muted facet lines. */
+  meta?: { key: string; value: JSX.Element }[];
+  /** Content alignment. `center` (word tiles) / `start` (info panels). Default `start`. */
+  align?: 'start' | 'center';
+}
+
+export interface ICardProps
+  extends Omit<JSX.HTMLAttributes<HTMLDivElement>, keyof ICardEntityProps>,
+    CardVariants,
+    ICardEntityProps {
   /**
    * Shadow elevation. Maps to Tailwind `shadow-{level}`.
    * Default (`'sm'`) preserves the current card shadow.

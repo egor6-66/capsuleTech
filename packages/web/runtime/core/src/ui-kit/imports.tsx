@@ -119,6 +119,27 @@ export const Select = Object.assign(SelectBase, {
   Value: createLazy(() => import('@capsuletech/web-ui/select'), 'SelectValue'),
 });
 
+// Accordion — kobalte-heavy, compound (Item/Trigger/Content); collapsible
+// sections. Convention mirrors Dropdown/Select: base + sub-parts via Object.assign
+// from the subpath's named re-exports (AccordionItem/Trigger/Content).
+const AccordionBase = createLazy(() => import('@capsuletech/web-ui/accordion'), 'Accordion');
+export const Accordion = Object.assign(AccordionBase, {
+  Item: createLazy(() => import('@capsuletech/web-ui/accordion'), 'AccordionItem'),
+  Trigger: createLazy(() => import('@capsuletech/web-ui/accordion'), 'AccordionTrigger'),
+  Content: createLazy(() => import('@capsuletech/web-ui/accordion'), 'AccordionContent'),
+});
+
+// SectionedList — data-driven composite over Accordion + List + Tooltip; not on
+// the critical shell path → lazy. Plain leaf (no sub-components).
+export const SectionedList = createLazy(
+  () => import('@capsuletech/web-ui/sectionedList'),
+  'SectionedList',
+);
+
+// Article — data-driven composite over Card + Prose + Badge; not on the critical
+// shell path → lazy. Plain leaf (no sub-components). Convention: SectionedList.
+export const Article = createLazy(() => import('@capsuletech/web-ui/article'), 'Article');
+
 // Textarea — multiline text input, mirrors Input in styling conventions
 export const Textarea = createLazy(() => import('@capsuletech/web-ui/textarea'), 'Textarea');
 

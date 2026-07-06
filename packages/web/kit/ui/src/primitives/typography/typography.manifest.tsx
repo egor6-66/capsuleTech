@@ -15,7 +15,7 @@ export const TypographyManifest: IPrimitiveManifestEntry = {
   label: 'Typography',
   category: 'typography',
   icon: () => <Type size={16} />,
-  description: 'Текстовый блок с вариантами оформления (h1/h2/p/lead/muted/…)',
+  description: 'Текстовый блок с вариантами оформления (h1/h2/h3/p/lead/muted/…)',
   isLeaf: true,
   contract: TypographyContract,
   docSlug: 'web-ui/primitives/typography',

@@ -16,7 +16,7 @@ const ConceptsLayout = Page((Ui) => {
     <Layouts.Matrix
       preset="app-shell"
       slots={{
-        sidebar: { children: <Learn.Lessons.Concepts id={conceptId()} /> },
+        sidebar: { children: <Learn.Concepts id={conceptId()} /> },
         main: { children: <Ui.Outlet /> },
       }}
     />

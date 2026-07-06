@@ -1,5 +1,68 @@
 import type { Accessor, JSX } from 'solid-js';
-import type { ICell, IRow, SlotValue } from './interfaces';
+import type { BorderSide, BorderValue, ICell, IRow, SlotValue } from './interfaces';
+
+// ---------------------------------------------------------------------------
+// Border model (border-1/border-2 briefs, 2026-07-05).
+//
+// `bordered` — opt-out (default true): внутренние hairline-разделители между
+// слотами есть всегда, точечно гасятся Matrix-пропом или per-slot. Управление
+// ПО СТОРОНАМ (`BorderSides`), не булево на весь слот: кейс двойного шва у
+// вложенных фреймов гасится ОДНОЙ стороной. Типы контракта — в interfaces.ts.
+//
+// Единый токен: разделители рисуются полным `--border` (`border-border`), как
+// ручка ресайза (web-ui) и Card/Input в ките — все бордеры в продукте один цвет.
+// ---------------------------------------------------------------------------
+
+/**
+ * Резолвит ОДНУ сторону значения → `true | false | undefined`.
+ * `undefined` (значение не задано целиком) = следовать Matrix-дефолту.
+ * Объект: указанная сторона = её значение, неуказанная = `on` (true).
+ */
+const resolveSide = (value: BorderValue | undefined, side: BorderSide): boolean | undefined => {
+  if (value === undefined) return undefined;
+  if (typeof value === 'boolean') return value;
+  return value[side] ?? true;
+};
+
+/**
+ * Matrix-уровневый дефолт для ВНУТРЕННЕГО шва. Matrix `bordered` первично булев
+ * (default true / opt-out false); per-side богатство — свойство СЛОТОВ, для
+ * внутренних швов матричный объект трактуется как «включено».
+ */
+const matrixDefault = (bordered: BorderValue): boolean =>
+  typeof bordered === 'boolean' ? bordered : true;
+
+/**
+ * Комбинирует две обращённые друг к другу стороны общего шва.
+ * Kill-wins: явный `false` на любой из сторон гасит шов («гасим ОДНУ сторону»).
+ * Явный `true` — рисует. Обе не заданы → Matrix-дефолт.
+ */
+const seamOn = (a: boolean | undefined, b: boolean | undefined, mDefault: boolean): boolean => {
+  if (a === false || b === false) return false;
+  if (a === true || b === true) return true;
+  return mDefault;
+};
+
+/**
+ * Агрегирует сторону ряда из его ячеек (ряд — горизонтальная полоса; его
+ * top/bottom/left/right разделяют все cells). Kill-wins на уровне ряда: явный
+ * `false` любой ячейки гасит сторону ряда; явный `true` — включает.
+ */
+const rowSideResolve = (row: IRow, side: BorderSide): boolean | undefined => {
+  let sawTrue = false;
+  for (const c of row.cells) {
+    const r = resolveSide(c.bordered, side);
+    if (r === false) return false;
+    if (r === true) sawTrue = true;
+  }
+  return sawTrue ? true : undefined;
+};
+
+/** Любая сторона включена (для карточной border-модели packing/grid-зон). */
+const anySideOn = (value: BorderValue): boolean =>
+  typeof value === 'boolean'
+    ? value
+    : (['top', 'right', 'bottom', 'left'] as const).some((s) => value[s] ?? true);
 
 // ---------------------------------------------------------------------------
 // Effective-flag resolvers (2026-07-04).
@@ -18,28 +81,90 @@ export const cellResizeActive = (cell: ICell, resizeEnabled: Accessor<boolean>):
 export const rowResizeActive = (row: IRow, resizeEnabled: Accessor<boolean>): boolean =>
   row.resizable ?? resizeEnabled();
 
-/** Row считается bordered, если хотя бы одна его cell резолвится в true. */
-export const rowBordered = (row: IRow, bordered: Accessor<boolean>): boolean =>
-  row.cells.some((c) => c.bordered ?? bordered());
+/**
+ * Активна ли resize-ручка МЕЖДУ двумя горизонтальными соседями (corvu ANDит
+ * соседей — ручка активна когда активны ОБА). Активная ручка сама рисует линию
+ * шва (`bg-border`, web-ui) — Matrix гасит свой divider на этой стороне.
+ */
+export const cellHandleActive = (
+  prev: ICell,
+  cell: ICell,
+  resizeEnabled: Accessor<boolean>,
+): boolean => cellResizeActive(prev, resizeEnabled) && cellResizeActive(cell, resizeEnabled);
+
+/** То же для пары соседних rows / зон (вертикальная либо зонная ручка). */
+export const rowHandleActive = (prev: IRow, row: IRow, resizeEnabled: Accessor<boolean>): boolean =>
+  rowResizeActive(prev, resizeEnabled) && rowResizeActive(row, resizeEnabled);
 
 /**
- * Divider между двумя соседними cells (внутренний разделитель общего
- * пространства, НЕ карточный бордер). Виден когда хотя бы один из соседей
- * резолвится bordered (either-rule).
- *
- * Разделители — ИСКЛЮЧИТЕЛЬНО функция `bordered`, resize на них не влияет:
- * все Resizable матрицы работают с `handleVariant="ghost"` (ручка — хит-зона
- * + grip-бэйдж, своей линии не рисует ни в каком состоянии).
+ * Карточный бордер ячейки для packing/grid-зон (insert-канвас сохраняет плитки).
+ * Возвращает булево (any-side): per-side объект трактуется как «есть бордер».
+ */
+export const cellCardBordered = (cell: ICell, bordered: Accessor<BorderValue>): boolean =>
+  cell.bordered !== undefined ? anySideOn(cell.bordered) : anySideOn(bordered());
+
+// ---------------------------------------------------------------------------
+// Divider resolvers (внутренние разделители общего пространства, НЕ карточки).
+//
+// Инверсия resize-стыка (border-2 бриф, 2026-07-05): когда на шве активна
+// resize-ручка, её hairline (`bg-border`, web-ui после снятия ghost) И ЕСТЬ
+// divider — Matrix гасит СВОЙ бордер на этой стороне (иначе двойная линия, см.
+// img_9/img_10). `resizeActive` передаётся только на путях с ручкой
+// (Resizable-ветки); на plain-путях опускается (`undefined` → нет подавления).
+// ---------------------------------------------------------------------------
+
+const seamDivider = (
+  prevSide: boolean | undefined,
+  curSide: boolean | undefined,
+  bordered: Accessor<BorderValue>,
+  resizeActive: Accessor<boolean> | undefined,
+): boolean => {
+  if (resizeActive?.()) return false; // активная ручка сама рисует линию шва
+  return seamOn(prevSide, curSide, matrixDefault(bordered()));
+};
+
+/**
+ * Divider между двумя горизонтальными соседями-cells (вертикальная линия слева
+ * от правой ячейки). Виден когда пара bordered (either-rule со сторонами:
+ * `prev.right` / `cell.left`, kill-wins) И на шве нет активной resize-ручки.
  */
 export const dividerBetweenCells = (
   prev: ICell,
   cell: ICell,
-  bordered: Accessor<boolean>,
-): boolean => (prev.bordered ?? bordered()) || (cell.bordered ?? bordered());
+  bordered: Accessor<BorderValue>,
+  resizeActive?: Accessor<boolean>,
+): boolean =>
+  seamDivider(
+    resolveSide(prev.bordered, 'right'),
+    resolveSide(cell.bordered, 'left'),
+    bordered,
+    resizeActive,
+  );
 
-/** То же для пары соседних rows (divider между зонами). */
-export const dividerBetweenRows = (prev: IRow, row: IRow, bordered: Accessor<boolean>): boolean =>
-  rowBordered(prev, bordered) || rowBordered(row, bordered);
+/**
+ * Divider между двумя вертикальными соседями-rows (горизонтальная линия сверху
+ * нижнего ряда). Стороны: `prev.bottom` / `row.top`.
+ */
+export const dividerBetweenRows = (
+  prev: IRow,
+  row: IRow,
+  bordered: Accessor<BorderValue>,
+  resizeActive?: Accessor<boolean>,
+): boolean =>
+  seamDivider(rowSideResolve(prev, 'bottom'), rowSideResolve(row, 'top'), bordered, resizeActive);
+
+/**
+ * Divider между двумя горизонтальными соседями-зонами (direction=horizontal:
+ * зоны стоят бок-о-бок, линия вертикальная слева от правой зоны). Стороны:
+ * `prev.right` / `row.left`.
+ */
+export const dividerBetweenZones = (
+  prev: IRow,
+  row: IRow,
+  bordered: Accessor<BorderValue>,
+  resizeActive?: Accessor<boolean>,
+): boolean =>
+  seamDivider(rowSideResolve(prev, 'right'), rowSideResolve(row, 'left'), bordered, resizeActive);
 
 /**
  * Нормализованный slot — всегда объект с `children` + размерами + `draggable`.
@@ -62,9 +187,10 @@ export interface INormalizedSlot {
   resizable?: boolean;
   /**
    * Per-slot border override — undefined = follows the Matrix-level `bordered` prop.
-   * `true`/`false` forces this slot's border regardless of the Matrix-level flag.
+   * Boolean = весь слот; `BorderSides` = точечно по сторонам (T/R/B/L). `false`
+   * на обращённой к соседу стороне гасит шов (kill-wins).
    */
-  bordered?: boolean;
+  bordered?: BorderValue;
   /**
    * Per-slot Suspense fallback — forwarded to ICell.skeleton.
    * Shown while the slot's child is suspended (lazy chunk loading).
@@ -99,7 +225,7 @@ export const normalizeSlotValue = (slot: SlotValue | undefined): INormalizedSlot
       draggable?: boolean;
       swapGroup?: string;
       resizable?: boolean;
-      bordered?: boolean;
+      bordered?: BorderValue;
       skeleton?: JSX.Element;
     };
     return {

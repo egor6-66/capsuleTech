@@ -457,6 +457,53 @@ describe('Accordion', () => {
     });
   });
 
+  describe('subtitle', () => {
+    it('subtitle set → renders both label and muted caption', () => {
+      cleanup = render(
+        () => (
+          <Accordion>
+            <Accordion.Item value="a">
+              <Accordion.Trigger data-testid="trigger-a" subtitle="the caption line">
+                the title line
+              </Accordion.Trigger>
+              <Accordion.Content>Content A</Accordion.Content>
+            </Accordion.Item>
+          </Accordion>
+        ),
+        container,
+      );
+      const trigger = container.querySelector('[data-testid="trigger-a"]')!;
+      // Both strings are present.
+      expect(trigger.textContent).toContain('the title line');
+      expect(trigger.textContent).toContain('the caption line');
+      // The caption is rendered in the muted tone.
+      const stack = trigger.querySelector('.flex-col')!;
+      expect(stack).not.toBeNull();
+      const caption = stack.querySelector('.text-muted-foreground')!;
+      expect(caption).not.toBeNull();
+      expect(caption.textContent).toBe('the caption line');
+    });
+
+    it('subtitle omitted → single line, no stack or muted caption (regress guard)', () => {
+      cleanup = render(
+        () => (
+          <Accordion>
+            <Accordion.Item value="a">
+              <Accordion.Trigger data-testid="trigger-a">just the title</Accordion.Trigger>
+              <Accordion.Content>Content A</Accordion.Content>
+            </Accordion.Item>
+          </Accordion>
+        ),
+        container,
+      );
+      const trigger = container.querySelector('[data-testid="trigger-a"]')!;
+      expect(trigger.textContent).toContain('just the title');
+      // No column-stack wrapper in the plain layout. (The chevron carries its
+      // own `text-muted-foreground`, so the stack class is the reliable signal.)
+      expect(trigger.querySelector('.flex-col')).toBeNull();
+    });
+  });
+
   describe('compound structure', () => {
     it('Accordion.Item + Trigger + Content render without error', () => {
       expect(() => {

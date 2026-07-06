@@ -297,6 +297,20 @@ describe('Typography — backward compatibility', () => {
     expect(el?.tagName.toLowerCase()).toBe('h1');
   });
 
+  it('renders correct tag and size for variant="h3"', () => {
+    cleanup = render(
+      () => (
+        <Typography variant="h3" data-testid="t">
+          Subtitle
+        </Typography>
+      ),
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.tagName.toLowerCase()).toBe('h3');
+    expect(el?.className).toContain('text-2xl');
+  });
+
   it('forwards custom class', () => {
     cleanup = render(
       () => (

@@ -10,7 +10,8 @@
  *
  * `Rules` (sidebar) и `RuleDrills` (rightBar) живут в layout'е — НЕ ремаунтятся
  * при навигации между правилами (сохраняют раскрытие/скролл); тело правила
- * приходит из дочернего роута через `Ui.Outlet`. `Rule` и `RuleDrills` на один
+ * приходит из дочернего роута через `Ui.Outlet`. `Rule` и `RuleDrills` (плоские
+ * `Learn.*`) на один
  * `id` = один fetch (стор дедуплицирует `openRule`).
  */
 const RulesLayout = Page((Ui) => {
@@ -21,9 +22,9 @@ const RulesLayout = Page((Ui) => {
     <Layouts.Matrix
       preset="app-shell"
       slots={{
-        sidebar: { children: <Learn.Lessons.Rules id={ruleId()} /> },
+        sidebar: { children: <Learn.Rules id={ruleId()} /> },
         main: { children: <Ui.Outlet /> },
-        rightBar: { children: <Learn.Lessons.RuleDrills id={ruleId()} /> },
+        rightBar: { children: <Learn.RuleDrills id={ruleId()} /> },
       }}
     />
   );

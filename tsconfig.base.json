@@ -125,6 +125,7 @@
       "@capsuletech/web-ui/icons": ["packages/web/kit/ui/src/icons/index.ts"],
       "@capsuletech/web-ui/manifest": ["packages/web/kit/ui/src/manifest/index.ts"],
       "@capsuletech/web-ui/accordion": ["packages/web/kit/ui/src/primitives/accordion/index.ts"],
+      "@capsuletech/web-ui/article": ["packages/web/kit/ui/src/composites/article/index.ts"],
       "@capsuletech/web-ui/avatar": ["packages/web/kit/ui/src/primitives/avatar/index.ts"],
       "@capsuletech/web-ui/badge": ["packages/web/kit/ui/src/primitives/badge/index.ts"],
       "@capsuletech/web-ui/button": ["packages/web/kit/ui/src/primitives/button/index.ts"],
@@ -148,6 +149,9 @@
       "@capsuletech/web-ui/chart": ["packages/web/kit/ui/src/primitives/chart/index.ts"],
       "@capsuletech/web-ui/list": ["packages/web/kit/ui/src/primitives/list/index.ts"],
       "@capsuletech/web-ui/prose": ["packages/web/kit/ui/src/primitives/prose/index.ts"],
+      "@capsuletech/web-ui/sectionedList": [
+        "packages/web/kit/ui/src/composites/sectionedList/index.ts"
+      ],
       "@capsuletech/web-ui/select": ["packages/web/kit/ui/src/primitives/select/index.ts"],
       "@capsuletech/web-ui/separator": ["packages/web/kit/ui/src/primitives/separator/index.ts"],
       "@capsuletech/web-ui/skeleton": ["packages/web/kit/ui/src/primitives/skeleton/index.ts"],

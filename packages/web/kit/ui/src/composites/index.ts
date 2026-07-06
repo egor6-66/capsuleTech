@@ -4,10 +4,12 @@
  * `@capsuletech/web-shell` (tier-2). `compositeProxy` is internal events-context
  * glue consumed by `@capsuletech/web-core`, not a composite itself.
  */
+export * from './article';
 export * from './compositeProxy';
 export * from './dataTable';
 export * from './dropdownMenu';
 export * from './launcher';
 export * from './menu';
 export * from './previewCard';
+export * from './sectionedList';
 export * from './segmentedBar';

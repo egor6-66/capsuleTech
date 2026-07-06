@@ -1,5 +1,29 @@
 import type { JSX } from 'solid-js';
 
+// ---------------------------------------------------------------------------
+// Border model (border-1/border-2 briefs, 2026-07-05)
+// ---------------------------------------------------------------------------
+
+/** Сторона бордера/шва. */
+export type BorderSide = 'top' | 'right' | 'bottom' | 'left';
+
+/**
+ * Точечный per-side override бордера. Указанная сторона = её значение;
+ * НЕуказанная = on (объект — explicit spec, не частичное следование матрице).
+ */
+export type BorderSides = Partial<Record<BorderSide, boolean>>;
+
+/**
+ * Значение `bordered`:
+ * - `true` / omitted — все стороны (opt-out default);
+ * - `false` — ни одной;
+ * - `BorderSides` — точечный override (неуказанная сторона = on).
+ *
+ * `false` на обращённой к соседу стороне гасит внутренний шов (kill-wins) —
+ * так снимается двойная линия у вложенных фреймов, гася ОДНУ сторону.
+ */
+export type BorderValue = boolean | BorderSides;
+
 /**
  * SlotValue — либо JSX-элемент напрямую, либо объект с children + overrides.
  *
@@ -51,11 +75,15 @@ export type SlotValue =
        * Per-slot border override. `bordered` рисует ВНУТРЕННИЕ разделители
        * (hairline между слотами) — слоты это общее пространство, разделённое
        * линиями, не независимые карточки. Divider между двумя слотами виден,
-       * если ХОТЯ БЫ ОДИН из них резолвится в bordered (either-rule).
-       * Resize на линии не влияет: ручки ghost (только хит-зона + grip).
+       * если пара резолвится bordered (either-rule со сторонами, kill-wins:
+       * явный `false` на обращённой к соседу стороне гасит шов).
+       *
+       * `boolean` — весь слот; `BorderSides` — точечно T/R/B/L (кейс: погасить
+       * ОДНУ сторону двойного шва у вложенного фрейма). На активном resize-стыке
+       * линию рисует сама ручка (Matrix гасит свою сторону) — двойной линии нет.
        * `undefined` (default) — следует Matrix-level `bordered` prop.
        */
-      bordered?: boolean;
+      bordered?: BorderValue;
       /**
        * Fallback shown inside the per-cell `<Suspense>` boundary while the
        * slot's child (e.g. a lazy Widget chunk) is loading.
@@ -174,11 +202,12 @@ export interface ICell {
   swapGroup?: string;
   /**
    * Per-cell border override — участие cell в ВНУТРЕННИХ разделителях
-   * (divider виден между парой соседей, если хотя бы один резолвится true;
-   * resize на линии не влияет — ручки ghost). Не карточный бордер.
+   * (divider виден между парой соседей по either-rule со сторонами, kill-wins).
+   * На активном resize-стыке линию рисует ручка — Matrix гасит свою сторону.
+   * Не карточный бордер. `boolean` — весь слот; `BorderSides` — точечно T/R/B/L.
    * `undefined` (default) — follows the Matrix-level `bordered` prop.
    */
-  bordered?: boolean;
+  bordered?: BorderValue;
   /**
    * Fallback shown inside the per-cell `<Suspense>` boundary while the cell's
    * child is suspended (e.g. a lazy Widget chunk that hasn't resolved yet).
@@ -361,17 +390,23 @@ export interface IMatrixCommonProps extends JSX.HTMLAttributes<HTMLDivElement> {
    */
   direction?: 'vertical' | 'horizontal';
   /**
-   * Single source of truth для ВНУТРЕННИХ разделителей Matrix (hairline между
-   * слотами). Слоты — общее пространство, разделённое линиями, не независимые
-   * карточки: внешнего бордера и скруглений у ячеек нет. Divider между парой
-   * соседей виден, когда хотя бы один резолвится bordered (either-rule).
-   * Линии — ИСКЛЮЧИТЕЛЬНО функция bordered: resize-ручки работают в
-   * ghost-варианте (хит-зона + grip-бэйдж, своей линии не рисуют никогда).
-   * Per-slot override: `slots.X.bordered` / `cell.bordered`.
+   * Single source of truth (opt-out, default true) для ВНУТРЕННИХ разделителей
+   * Matrix (hairline между слотами). Слоты — общее пространство, разделённое
+   * линиями, не независимые карточки: внешнего бордера и скруглений у ячеек нет.
+   * Divider между парой соседей виден по either-rule со сторонами (kill-wins:
+   * явный `false` на обращённой стороне гасит шов).
+   *
+   * На АКТИВНОМ resize-стыке линию рисует сама ручка (`bg-border`, web-ui после
+   * снятия ghost) — Matrix гасит СВОЙ divider на этой стороне, поэтому на стыке
+   * одна линия, не две (см. img_9/img_10). Единый токен `--border`.
+   *
+   * Per-slot / per-side override: `slots.X.bordered` / `cell.bordered`
+   * (`boolean | BorderSides`). Matrix-уровень первично булев; per-side богатство —
+   * свойство слотов.
    *
    * @default true
    */
-  bordered?: boolean;
+  bordered?: BorderValue;
 }
 
 /**

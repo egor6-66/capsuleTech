@@ -19,7 +19,7 @@
  *   context.engines — список TTS-движков с voice-сервиса (напрямую, capability публичен);
  *   context.engine  — выбор юзера, персистится в localStorage (переживает рестарт);
  *   onPick (Shell.Picker в хедере, name='engine') — смена движка;
- *   onSpeak (Learn.Library.Words/Info, именованное событие пакета) — проигрывание,
+ *   onSpeak (Learn.Words/Learn.Library.Info, именованное событие пакета) — проигрывание,
  *   payload.audioUrl = готовая ссылка learn-композиции на voice (null — voice лежал).
  *
  * Картинки слов (ADR 067/068) — тот же app-глобальный concern, зеркало озвучки:
@@ -29,8 +29,7 @@
  *   Прокидывание выбора в реальные запросы картинок — будущий шаг (когда
  *   learn-выдача принесёт image.url, `&engine=` добавляется как в 🔊-onSpeak).
  *
- * `Learn.Library.*` — вложенный namespace-блок, codegen per-component `.Events`
- * агрегат не видит вложенные ключи (nested-нюанс, см. `web-learn/src/capsule.ts`) —
+ * `Learn.Words` (плоский) / `Learn.Library.Info` — блоки, эмитящие `onSpeak`.
  * `IOnSpeakEvent` ниже типизирует payload вручную (форма зеркалит `IWordsEvents`/
  * `IInfoEvents` пакета, без импорта).
  */
@@ -105,7 +104,7 @@ const App = Feature<Shell.SegmentNav.Events & Shell.Picker.Events & IOnSpeakEven
       }
     },
 
-    // Озвучка: именованное событие из Learn.Library.Words/Info (payload несёт
+    // Озвучка: именованное событие из Learn.Words/Learn.Library.Info (payload несёт
     // audio.url, null = voice лежал при выдаче — learn кэширует недоступность 30с;
     // слово без озвучки — молча скипаем, ре-фетч слов самолечит).
     onSpeak: ({ target, store }) => {

@@ -14,6 +14,8 @@
  * решает, куда вести (навигация/повтор/логин — концерн приложения).
  */
 
+import type { JSX } from 'solid-js';
+
 // ─── NotFound (404) ──────────────────────────────────────────────────────────
 
 export interface INotFoundEvents {
@@ -77,4 +79,25 @@ export interface IWidgetUnavailableProps {
   title?: string;
   description?: string;
   actionLabel?: string;
+}
+
+// ─── Empty (нейтральное пусто, не ошибка) ────────────────────────────────────
+
+export interface IEmptyEvents {
+  /**
+   * Клик по действию. Эмитится ТОЛЬКО когда потребитель задал `actionLabel`;
+   * без него блок — чистое информационное пусто (ни кнопки, ни события).
+   */
+  onAction: Record<string, never>;
+}
+
+export interface IEmptyProps {
+  title?: string;
+  description?: string;
+  /** Опц. override дефолтной нейтральной иконки (по умолчанию `Inbox`). */
+  icon?: JSX.Element;
+  /** Если задан — рисуется action и по клику эмитится `onAction`. */
+  actionLabel?: string;
+  /** Компактный вариант — для узких слотов (правая панель, встройка). */
+  compact?: boolean;
 }

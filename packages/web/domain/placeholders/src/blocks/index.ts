@@ -1,5 +1,6 @@
 export { AccessDenied } from './accessDenied';
 export { Community } from './community';
+export { Empty } from './empty';
 export { ErrorState } from './error';
 export { NotFound } from './notFound';
 export type {
@@ -7,6 +8,8 @@ export type {
   IAccessDeniedProps,
   ICommunityEvents,
   ICommunityProps,
+  IEmptyEvents,
+  IEmptyProps,
   IErrorEvents,
   IErrorProps,
   INotFoundEvents,

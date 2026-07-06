@@ -1,5 +1,5 @@
 /**
- * Манифест регистрации: имя `Placeholders` + курируемая поверхность из 5 блоков.
+ * Манифест регистрации: имя `Placeholders` + курируемая поверхность из 6 блоков.
  * `Error` в глобале маппится на экспорт `ErrorState`.
  */
 import { describe, expect, it } from 'vitest';
@@ -10,10 +10,11 @@ describe('@capsuletech/web-placeholders/capsule', () => {
     expect(module.name).toBe('Placeholders');
   });
 
-  it('экспонирует все 5 блоков', () => {
+  it('экспонирует все 6 блоков', () => {
     expect(Object.keys(module.components).sort()).toEqual([
       'AccessDenied',
       'Community',
+      'Empty',
       'Error',
       'NotFound',
       'WidgetUnavailable',
