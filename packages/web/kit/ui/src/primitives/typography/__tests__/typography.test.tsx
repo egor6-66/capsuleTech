@@ -231,6 +231,180 @@ describe('Typography — dim prop', () => {
 });
 
 // ---------------------------------------------------------------------------
+// weight prop
+// ---------------------------------------------------------------------------
+
+describe('Typography — weight override prop', () => {
+  it('adds font-normal for weight="normal"', () => {
+    cleanup = render(
+      () => (
+        <Typography weight="normal" data-testid="t">
+          Hello
+        </Typography>
+      ),
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).toContain('font-normal');
+  });
+
+  it('adds font-extrabold for weight="extrabold"', () => {
+    cleanup = render(
+      () => (
+        <Typography weight="extrabold" data-testid="t">
+          Hello
+        </Typography>
+      ),
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).toContain('font-extrabold');
+  });
+
+  it('overrides the variant font-weight (h1 extrabold + weight="normal")', () => {
+    cleanup = render(
+      () => (
+        <Typography variant="h1" weight="normal" data-testid="t">
+          Title
+        </Typography>
+      ),
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    // tailwind-merge drops the variant's font-extrabold, keeps font-normal
+    expect(el?.className).toContain('font-normal');
+    expect(el?.className).not.toContain('font-extrabold');
+  });
+
+  it('does not add a weight class when weight is not provided', () => {
+    cleanup = render(
+      () => (
+        <Typography variant="p" data-testid="t">
+          Hello
+        </Typography>
+      ),
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).not.toContain('font-thin');
+    expect(el?.className).not.toContain('font-light');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// mono prop
+// ---------------------------------------------------------------------------
+
+describe('Typography — mono prop', () => {
+  it('adds font-mono when mono=true', () => {
+    cleanup = render(
+      () => (
+        <Typography mono data-testid="t">
+          GET /users
+        </Typography>
+      ),
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).toContain('font-mono');
+  });
+
+  it('does not add font-mono when mono is not provided', () => {
+    cleanup = render(
+      () => (
+        <Typography variant="p" data-testid="t">
+          Hello
+        </Typography>
+      ),
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).not.toContain('font-mono');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// overline variant
+// ---------------------------------------------------------------------------
+
+describe('Typography — overline variant', () => {
+  it('applies eyebrow classes (uppercase + tracking + muted)', () => {
+    cleanup = render(
+      () => (
+        <Typography variant="overline" data-testid="t">
+          Section
+        </Typography>
+      ),
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).toContain('uppercase');
+    expect(el?.className).toContain('tracking-widest');
+    expect(el?.className).toContain('text-muted-foreground');
+  });
+
+  it('renders as <p> (overline is not a real HTML tag)', () => {
+    cleanup = render(
+      () => (
+        <Typography variant="overline" data-testid="t">
+          Section
+        </Typography>
+      ),
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.tagName.toLowerCase()).toBe('p');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// variant-baked colour precedence (regression: color default must not clobber
+// a variant's own text colour — see variants.ts ordering note)
+// ---------------------------------------------------------------------------
+
+describe('Typography — variant colour precedence', () => {
+  it('muted variant keeps text-muted-foreground (not overridden by color default)', () => {
+    cleanup = render(
+      () => (
+        <Typography variant="muted" data-testid="t">
+          Hint
+        </Typography>
+      ),
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).toContain('text-muted-foreground');
+    expect(el?.className).not.toContain('text-foreground');
+  });
+
+  it('lead variant keeps text-muted-foreground', () => {
+    cleanup = render(
+      () => (
+        <Typography variant="lead" data-testid="t">
+          Intro
+        </Typography>
+      ),
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).toContain('text-muted-foreground');
+  });
+
+  it('tone prop still overrides a variant-baked colour', () => {
+    cleanup = render(
+      () => (
+        <Typography variant="muted" tone="primary" data-testid="t">
+          Hint
+        </Typography>
+      ),
+      container,
+    );
+    const el = container.querySelector('[data-testid="t"]');
+    expect(el?.className).toContain('text-primary');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Backward compatibility smoke
 // ---------------------------------------------------------------------------
 

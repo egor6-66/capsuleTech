@@ -84,6 +84,13 @@ export const typographyPresets: readonly IPreset[] = [
       "Inline-код в потоке текста — фон muted, моноширинный шрифт. Для имён переменных, путей, коротких snippet'ов.",
   },
   {
+    id: 'overline',
+    label: 'Overline',
+    schema: singleText({ variant: 'overline', children: 'Section label' }),
+    description:
+      'Надзаголовок (eyebrow/kicker) — мелкий uppercase с трекингом, muted. Ставится над заголовком секции как метка-категория. Тег `<p>`.',
+  },
+  {
     id: 'centered-heading',
     label: 'Centered heading',
     schema: singleText({ variant: 'h2', align: 'center', children: 'Centered Heading' }),

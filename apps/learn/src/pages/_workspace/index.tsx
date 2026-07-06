@@ -2,7 +2,7 @@
  * Workspace shell (`/workspace`) — каркас всех learn-страниц (зеркало playground).
  *
  *   header — `Widgets.Header` (nav: Lessons · Exercises · Progress · Library · Guides + тема)
- *   main   — `<Ui.Outlet/>` под дочерние роуты разделов; `_index` = Learn.Welcome.
+ *   main   — `<Ui.Outlet/>` под дочерние роуты разделов; `_index` = Learn.Welcome.Root.
  *
  * `Learn.Provider` оборачивает шелл → learn-контекст (apiBase/модуль) персистит между
  * разделами. `mode="view"` + `resizable:false` — shell не редактируется/не ресайзится.

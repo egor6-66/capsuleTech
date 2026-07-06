@@ -2,8 +2,9 @@
  * /lessons — layout раздела уроков с под-навигацией (зеркало `library/index.tsx`).
  *
  * Обёрнут в `Features.Lessons` — сток баблинга доменных событий раздела:
- * `Learn.LessonsNav` (пакетный переключатель, ADR 032) эмитит `onLessonsNavigate` →
- * фича роутит в `/lessons/<segment>`. Под-вью — в `<Ui.Outlet/>`; `_index` = дефолт
+ * `Learn.Nav.Lessons` (пакетный переключатель, ADR 032) эмитит `onSegmentNavigate`
+ * `{ nav: 'lessons', segment }` → авто-баблится до `Features.App`, роут `/lessons/<segment>`.
+ * Под-вью — в `<Ui.Outlet/>`; `_index` = дефолт
  * (концепты). Стор раздела живёт внутри `Learn.*` блоков (пакет).
  *
  * Уроки-маршруты (`Learn.Lessons`/`Learn.Lesson`) с раздела сняты до накопления контента
@@ -13,7 +14,7 @@ const LessonsLayout = Page((Ui) => (
   <Features.Lessons>
     <Ui.Layout.Flex orientation={'vertical'} w={'full'} h={'full'}>
       <Widgets.Navigation>
-        <Learn.LessonsNav />
+        <Learn.Nav.Lessons />
       </Widgets.Navigation>
       <Ui.Separator />
       <Ui.Layout.Flex h={'full'} w={'full'}>

@@ -1,7 +1,7 @@
 /**
  * Header — app-shell хедер learn-workspace (зеркало playground, единый UI/UX-флоу).
  *
- * Слева — `Shapes.ShellNavigation` (через `Shell.Header.Navigation`).
+ * Слева — `Learn.Nav.Main` (пакетный header-nav; app лишь монтит и роутит его событие).
  * Справа — `Shell.Header.Menu` с `Shell.Appearance` (тема/dark/finish, config-driven)
  * и `Shell.Picker` озвучки: шелл даёт каркас селекта, данные (движки) — из
  * Features.App (store 2-м аргументом виджета; список взят с voice-сервиса).
@@ -20,7 +20,7 @@ const Header = Widget((Ui, store) => {
 
   return (
     <Shell.Header>
-      <Shapes.ShellNavigation />
+      <Learn.Nav.Main />
       <Shell.Header.Menu>
         <Shell.Appearance />
         <Shell.Header.Menu.Separator />
