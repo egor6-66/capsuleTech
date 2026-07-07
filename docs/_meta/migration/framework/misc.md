@@ -30,6 +30,16 @@ Docs-сайт компоненты (DocSection/DocPage). `dangerouslySetInnerHTM
 **Проблема (CC):** docs-тулинг размазан на **три** артефакта — `web/docs` (рендер) + `builders/docs-builder` (extraction CLI+plugin, 0.0.0, БЕЗ OWNERSHIP) + `vite/plugins/codegen/generators/docs-sources.ts` (кодген источников). В v2 свести: источник / потребитель / мёртвое.
 **Действие:** **не критический путь** (docs-сайт ≠ апп-сборка). Отложить из первой волны; при переносе сначала консолидировать docs-тулинг-трио + завести OWNERSHIP для docs-builder.
 
+## Pass-2 (2026-07-08) — web-docs tie-in к v2-продукту
+
+`web-docs` `render-markdown.ts` (Obsidian wikilinks/callouts) + Prose `.wikilink`/`.callout-*` —
+флагнуто как canon-конфликт (capsule PR #476/#475, gap U6): v2-канон = **чистый markdown, ноль
+Obsidian**. **Новый контекст (2026-07-07):** появился продукт **Omnifield Writer** (репо `writer`),
+чей движок берёт `render-markdown.ts` **de-Obsidian** (порт-карта `writer/ARCHITECTURE.md`). Т.е.
+web-docs НЕ переносится в framework как есть — его рендер-ядро **уезжает в writer-движок**
+очищенным. docs-трио (web/docs + builders/docs-builder + vite codegen docs-sources) в framework =
+кандидат на снос/consolidate, а не порт. Подтверждает pass-1 «defer + consolidate».
+
 ## Итог
 
 | Пакет | Вердикт |
