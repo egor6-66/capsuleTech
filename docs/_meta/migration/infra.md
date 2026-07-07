@@ -78,7 +78,27 @@ harness — источник для вывода, не verbatim-порт. govern
 Остальное — doc-drift. **v2:** не переносить ни один ref; при переносе CLI генератор шаблонов
 уже инлайнен (пакета нет), CI/группы чистятся.
 
+## Полнота покрытия root-дир (2026-07-08) — «по всему»
+
+Учёт ВСЕХ значимых top-level дир, чтобы аудит был исчерпывающим:
+
+| Root-дир | Статус |
+|---|---|
+| `packages/` | ✅ framework (pass-1+2) |
+| `backend/` | ✅ (pass-1+2) |
+| `apps/` | ✅ (pass-1) — `apps-frontends.md` |
+| `docker/` `scripts/` `.github/` `.claude/` | ✅ infra (этот файл) |
+| `.husky/` | инфра: git-хуки (pre-commit, pre-push=affected test+build). v2: per-repo (writer/brainer уже свои). Логика переносима. |
+| `.verdaccio/` | release-инфра (local registry config) — с release-pipeline. |
+| `docs/` | Obsidian-vault (01-architecture…09-packages, ADR, figma-handoff). **Мигрирует по docs-hygiene** (commons/standards + product-репо), НЕ code-audit. web-docs-движок → writer (см. misc). Obsidian-специфику чистим (PR #476). |
+| `.obsidian/` `.smart-env/` `plugins/` | vault-тулинг (Obsidian конфиг + плагины). **N/A для code-переноса** (v2-доки — чистый markdown, ADR 078). `plugins/` проверить, если не vault-тулинг. |
+| `types/` (`capsule.d.ts`) | root ambient-типы, 1 файл. Тривиально: `@capsuletech`→`@omnifield` при CC-1 rename. |
+| `reports/` `imgBugs/` | генерённое (feature-report) / баг-скрины. **N/A** (не мигрируют). |
+
+**Вывод: аудит покрывает весь значимый кодбейз.** Остаток = vault-контент (docs-hygiene, отдельный
+трек) + генерённое/конфиг (N/A).
+
 ## Открыто (pass-2)
 - release-local.mjs group-конфиг: как читает группы (package.json field? const?) — для v2-адаптации.
 - preview-server — живой ли flow, нужен ли.
-- Полный список ADR 072 §4 (Dockerfile-присутствие) per backend-сервис.
+- `plugins/` — подтвердить, что vault-тулинг (не капсульные плагины вне packages).
