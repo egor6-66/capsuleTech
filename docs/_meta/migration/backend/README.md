@@ -69,8 +69,26 @@ framework-0.0.0. Backend заметно здоровее по зрелости.
 `learn`+`lang`+`community` (🟢) + добор тестов на `auth`/`image`/`llm`/`voice` (🟡) = capability-ядро.
 Rust (telegram) — отдельным треком (integrations); playground/target — не переносим.
 
-## Открыто (pass-2 deepen)
-- Per-service §2/§3/§4 ADR 072 (X-Internal-Key seam, S3-usage, Dockerfile присутствие).
-- lang importer typing-долг — оценить объём чистки.
-- telegram живой e2e (после ADR 074 D3 chat-форвардинг).
-- `voice`/`image`/`llm` — real-engine пути за env-флагами (CI гоняет fake) — проверить эталонность real-путей.
+## Pass-2 (2026-07-08) — ADR 072 §2/§4 проверены
+
+- **§4 containerize — ❌ НЕ ВЫПОЛНЕН (packaging-долг).** Glob `Dockerfile*` по `backend/`: **ноль**
+  своих Dockerfile'ов (совпадения только в `voice/.venv/` = сторонние пакеты). Compose только у
+  `playground` (rust experimental). **Python-сервисы крутятся на хосте (`uv run uvicorn`), не в
+  контейнерах.** ADR 072 §4 («каждый бэк-сервис контейнеризуем с первого дня») — **аспирационен,
+  не достигнут** (известный долг, checkpoint «Dockerize-брифы»). v2 self-host/federation упирается
+  в это → Dockerfile per-сервис = обязательный шаг переноса (env-конфиг у них уже есть — pydantic
+  Settings, так что контейнеризация механическая).
+- **§2 X-Internal-Key seam — ✅ ЕСТЬ (где нужно).** `community` реализует заменяемый auth-шов:
+  `internal_key` (env-setting) + `require_internal_key` FastAPI-Depends на `/internal/events`,
+  **не публикуется через gateway** (ADR 071 D4), **покрыт тестами** (`test_events_api.py`: wrong-key
+  403, no-key-configured behavior). Контракт эндпоинта не завязан на механизм → замена на node-scoped
+  ключи/mTLS не ломает форму (ADR 072 §2 ✓). Только community держит internal-only эндпоинты; прочим
+  сервисам §2-шов пока не нужен.
+- **§3 S3** — voice (media-cache ADR 076) + community (media ADR 071 D5) ходят в MinIO по S3;
+  диск не контракт (ADR 072 §3 ✓, spot-verify; полный per-service S3-скан — при переносе).
+
+## Открыто (pass-2 остаток)
+- lang importer typing-долг (40+ `type: ignore`) — оценить объём чистки (discriminated unions).
+- telegram живой e2e (после ADR 074 D3 chat-форвардинг был мёртв).
+- `voice`/`image`/`llm` — real-engine пути за env-флагами (CI гоняет fake) — эталонность real-путей.
+- Dockerfile per python-сервис (§4 долг) — механический, но обязательный для v2.
