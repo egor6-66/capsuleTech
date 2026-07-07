@@ -13,6 +13,6 @@
 // Docs runtime lives in @capsuletech/web-docs (extracted per ADR 052 Phase 3.6):
 //   import { DocSection, DocsProvider } from '@capsuletech/web-docs';
 
-export { COMPOSITION_ROOT_ID, type IWebStudioDocument, useDocument } from './document';
-export * from './manifests';
-export * from './palette';
+export { COMPOSITION_ROOT_ID, type IWebStudioDocument, useDocument } from './core';
+export * from './shared/manifests';
+export * from './modules/palette';

@@ -319,6 +319,64 @@ importers:
         specifier: workspace:*
         version: link:../../packages/cli
 
+  apps/studio:
+    dependencies:
+      '@capsuletech/shared-zod':
+        specifier: workspace:*
+        version: link:../../packages/shared/zod
+      '@capsuletech/web-core':
+        specifier: workspace:*
+        version: link:../../packages/web/runtime/core
+      '@capsuletech/web-profiler':
+        specifier: workspace:*
+        version: link:../../packages/web/runtime/profiler
+      '@capsuletech/web-query':
+        specifier: workspace:*
+        version: link:../../packages/web/runtime/query
+      '@capsuletech/web-renderer':
+        specifier: workspace:*
+        version: link:../../packages/web/runtime/renderer
+      '@capsuletech/web-router':
+        specifier: workspace:*
+        version: link:../../packages/web/runtime/router
+      '@capsuletech/web-state':
+        specifier: workspace:*
+        version: link:../../packages/web/runtime/state
+      '@capsuletech/web-studio':
+        specifier: workspace:*
+        version: link:../../packages/web/workspace/studio
+      '@capsuletech/web-style':
+        specifier: workspace:*
+        version: link:../../packages/web/runtime/style
+      '@capsuletech/web-ui':
+        specifier: workspace:*
+        version: link:../../packages/web/kit/ui
+      '@kobalte/core':
+        specifier: ^0.13.0
+        version: 0.13.11(solid-js@1.9.12)
+      '@tanstack/router-core':
+        specifier: ^1.169.0
+        version: 1.171.2
+      '@tanstack/solid-router':
+        specifier: ^1.169.0
+        version: 1.170.4(solid-js@1.9.12)
+      '@xstate/solid':
+        specifier: ^2.0.0
+        version: 2.0.0(solid-js@1.9.12)(xstate@5.31.1)
+      solid-js:
+        specifier: 1.9.12
+        version: 1.9.12
+      xstate:
+        specifier: ^5.0.0
+        version: 5.31.1
+      zod:
+        specifier: ^3.23.8
+        version: 3.25.76
+    devDependencies:
+      '@capsuletech/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
+
   apps/universal-canvas:
     dependencies:
       '@capsuletech/shared-zod':
@@ -1435,6 +1493,9 @@ importers:
       '@capsuletech/web-placeholders':
         specifier: workspace:*
         version: link:../../domain/placeholders
+      '@capsuletech/web-router':
+        specifier: workspace:*
+        version: link:../../runtime/router
       '@capsuletech/web-shell':
         specifier: workspace:*
         version: link:../../domain/shell
@@ -1481,6 +1542,9 @@ importers:
       '@capsuletech/web-docs':
         specifier: workspace:*
         version: link:../../docs
+      '@capsuletech/web-placeholders':
+        specifier: workspace:*
+        version: link:../../domain/placeholders
       '@capsuletech/web-remote':
         specifier: workspace:*
         version: link:../../runtime/remote

@@ -9,6 +9,11 @@
  * (координатор), api-функции.
  */
 
+export {
+  type ILessonsSegment,
+  LESSONS_SEGMENTS,
+  type LessonsSegmentId,
+} from '../../shared/segments';
 export type { ConceptKind, IConcept, IConceptSummary, ILessonExample } from '../concepts';
 // ── Concept (библиотека прозы) ───────────────────────────────────────────────
 export {
@@ -51,6 +56,5 @@ export {
 // ── Lesson (урок) ────────────────────────────────────────────────────────────
 export { type ILessonEvents, type ILessonProps, Lesson } from './Lesson';
 export { type ILessonsEvents, type ILessonsProps, Lessons } from './Lessons';
-export { type ILessonsSegment, LESSONS_SEGMENTS, type LessonsSegmentId } from './segments';
 export { type ILessonsStore, lessonsStore } from './store';
 export type { ILessonDetail, ILessonSummary } from './types';
