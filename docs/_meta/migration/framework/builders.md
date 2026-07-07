@@ -6,6 +6,14 @@
 
 Зона build-time. Дёргается CLI (`createDevCapsuleServer`/`buildCapsuleApp`). Порядок ADR 077: **builders вторыми после core** — без них апп не собирается, и **compliance несёт канон-enforcement (v2 canon-first критичен)**.
 
+> **Pass-2 code-verify (2026-07-08) — fork #2 ПОДТВЕРЖДЁН по коду.** `compliance/src/classify.ts:24-31`
+> `LAYER_RX` содержит ТОЛЬКО `views/controllers/features/widgets/pages` (+ system/test). **`shapes/`
+> и `entities/` ОТСУТСТВУЮТ** → `classify()` возвращает `null` → эти 2 слоя **не проверяются** на
+> upward/horizontal-импорты. Claim «2 из 7 слоёв вне линтера» — **точен** (это именно shapes+entities).
+> `extractGroup` тоже их не знает. **v2-фикс (fork #2, canon-first):** добавить 2 паттерна в `LAYER_RX`
+> + плюрали в `extractGroup` ДО app-кода, иначе enforcement неполон в самом эталоне. Мелкий (2 regex),
+> но принципиальный — канон должен покрывать все 7 слоёв прежде чем на них полагаются апы.
+
 ---
 
 ## @capsuletech/vite-builder (0.1.1) — 🟡 FIX-BEFORE-MIGRATE
