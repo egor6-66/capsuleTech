@@ -9,6 +9,18 @@
 
 **Код и тесты — эталонного качества (🟢).** Причина 🟡 — не в коде, а в **доко-гигиене и dependency-hygiene**, которые нужно закрыть при переносе (все пункты мелкие, ни один не архитектурный). По v2-DoD (эталон = код+тесты+**доки**) пакет не дотягивает до эталона до появления AI-anchor.
 
+## Pass-2 code-verify (2026-07-08)
+
+- **CC-4 подтверждён LIVE:** `package.json:22` — `"@capsuletech/vite-builder": "workspace:*"` в
+  **`dependencies`** (не devDep). Runtime-сердце (в каждом апе) тянет build-tool; в src только
+  doc-ссылка (app-config.ts). **v2: перенести в devDependencies / удалить** — единственный реальный
+  dependency-tier смелл фреймворка.
+- **store.ctx typing-gap (surfaced apps-аудитом):** апы (вкл. ЭТАЛОН learn) кастуют
+  `(store?.ctx as any)?.data?.X` для чтения данных — `useCtx`/web-state Bridge **не типизирует
+  `store.ctx.data` под schema-context**. Это загоняет `as any` в app-слои (нарушение «без крутылей»
+  в самом эталоне). **v2-приоритет:** типизировать store.ctx (web-core `useCtx` + web-state
+  `createBridge`) под context-схему → убирает `as any` из всех апов. См. [apps-frontends.md](../apps-frontends.md).
+
 ## Что хорошо (переносим как есть)
 
 - **Публичный API стабилен и богато задокументирован** — вся история breaking-changes (v0.2→v0.4) отражена в OWNERSHIP с ADR-ссылками. Контракт чёткий: 3 основных subpath (`.`/`/create`/`/providers`) + `/events` (лёгкий event-канал для пакетов).
