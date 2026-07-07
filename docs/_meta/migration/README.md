@@ -204,3 +204,15 @@ web-core: 9 subpath'ов в exports, 4 в OWNERSHIP-API. Мёртвых нет, 
 
 ### CC-6. Дубль-каталог(и) — верификация
 Ранний sweep показал `composites/dataTable/` **в двух местах**: `web/kit/ui/` и `web/boost/table/` (boost-table = 0.0.0 скелет, по ADR 033 должен был ВЫНЕСТИ table из web-ui). Проверить в аудите web-ui + boost — где живой источник, что дубль/недоделанный вынос.
+
+### CC-10. store.ctx typing-gap → `as any` в app-слоях (surfaced 2026-07-08)
+Апы (вкл. **ЭТАЛОН learn**) кастуют `(store.ctx as any)?.data?.X` для чтения данных — web-core
+`useCtx` / web-state `createBridge` **не типизируют `store.ctx.data`** под schema-context. Загоняет
+`as any` в app-слои = нарушение «без крутылей» в самом эталоне. **Root — framework** (web-core/state),
+не апы. v2-приоритет: типизировать store.ctx → чистит `as any` во всех апах. См. [web-core.md](framework/web-core.md) + [apps-frontends.md](apps-frontends.md).
+
+### CC-11. ADR 072 §4 containerize НЕ выполнен — backend без Dockerfile'ов (surfaced 2026-07-08)
+У python-сервисов **ноль своих Dockerfile'ов** (крутятся на хосте через `uv run uvicorn`). ADR 072
+§4 («каждый бэк-сервис контейнеризуем с первого дня») — аспирационен, известный packaging-долг.
+env-конфиг уже есть (pydantic Settings) → контейнеризация **механическая, но обязательная** для
+self-host/federation в v2. См. [backend/README.md](backend/README.md).
