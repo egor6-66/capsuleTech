@@ -9,7 +9,7 @@ const meta = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['h1', 'h2', 'h3', 'p', 'blockquote', 'code', 'lead', 'muted'],
+      options: ['h1', 'h2', 'h3', 'p', 'blockquote', 'code', 'lead', 'muted', 'overline'],
     },
     color: {
       control: 'inline-radio',
@@ -27,6 +27,11 @@ const meta = {
       control: 'select',
       options: ['xs', 'sm', 'base', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl'],
     },
+    weight: {
+      control: 'select',
+      options: ['thin', 'light', 'normal', 'medium', 'semibold', 'bold', 'extrabold'],
+    },
+    mono: { control: 'boolean' },
     dim: { control: 'boolean' },
   },
   args: { variant: 'p', color: 'default' },
@@ -93,10 +98,16 @@ export const Muted: Story = {
   ),
 };
 
+export const Overline: Story = {
+  args: { variant: 'overline' },
+  render: (args) => <Typography {...args}>Getting started</Typography>,
+};
+
 export const Showcase: Story = {
   name: 'showcase · all variants',
   render: () => (
     <div class="flex flex-col gap-3">
+      <Typography variant="overline">Overline — eyebrow label</Typography>
       <Typography variant="h1">H1 — page title</Typography>
       <Typography variant="h2">H2 — section heading</Typography>
       <Typography variant="h3">H3 — subsection heading</Typography>
@@ -188,6 +199,64 @@ export const SizeOverride: Story = {
       <Typography variant="h2" size="sm">
         h2 variant but size="sm" (override)
       </Typography>
+    </div>
+  ),
+};
+
+export const WeightProps: Story = {
+  name: 'weight — override variant font-weight',
+  render: () => (
+    <div class="flex flex-col gap-2">
+      <Typography variant="p" weight="thin">
+        weight="thin" — font-thin
+      </Typography>
+      <Typography variant="p" weight="light">
+        weight="light" — font-light
+      </Typography>
+      <Typography variant="p" weight="normal">
+        weight="normal" — font-normal
+      </Typography>
+      <Typography variant="p" weight="medium">
+        weight="medium" — font-medium
+      </Typography>
+      <Typography variant="p" weight="semibold">
+        weight="semibold" — font-semibold
+      </Typography>
+      <Typography variant="p" weight="bold">
+        weight="bold" — font-bold
+      </Typography>
+      <Typography variant="p" weight="extrabold">
+        weight="extrabold" — font-extrabold
+      </Typography>
+      <Typography variant="h1" size="xl" weight="normal">
+        h1 variant but weight="normal" (override extrabold)
+      </Typography>
+    </div>
+  ),
+};
+
+export const MonoProp: Story = {
+  name: 'mono — monospace font family',
+  render: () => (
+    <div class="flex flex-col gap-2">
+      <Typography variant="p">Regular paragraph in the sans font.</Typography>
+      <Typography variant="p" mono>
+        mono — GET /api/v1/users/42 (font-mono, no code chrome)
+      </Typography>
+      <Typography variant="p" mono tone="muted">
+        mono + tone="muted" — 0xDEADBEEF
+      </Typography>
+    </div>
+  ),
+};
+
+export const OverlineEyebrow: Story = {
+  name: 'overline — eyebrow above a heading',
+  render: () => (
+    <div class="flex flex-col gap-1">
+      <Typography variant="overline">Documentation</Typography>
+      <Typography variant="h2">Getting started with Capsule</Typography>
+      <Typography variant="lead">A typed projection of logic — UI is a Shadow.</Typography>
     </div>
   ),
 };

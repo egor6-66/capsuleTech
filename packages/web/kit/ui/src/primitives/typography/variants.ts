@@ -1,6 +1,19 @@
 import { cva } from '@capsuletech/web-style';
 
 export const variants = {
+  // NOTE: `color` is declared BEFORE `variant` on purpose. createStyle applies
+  // tailwind-merge, so later-emitted classes win. Keeping `color` first lets a
+  // variant that bakes its own text color (lead/muted/overline) win over the
+  // `color` DEFAULT (`text-foreground`) — otherwise those variants would always
+  // render foreground-coloured despite their name/docs. Explicit color overrides
+  // for such variants go through the `tone` prop (applied via cn after CVA, so
+  // it always wins regardless of this ordering).
+  color: {
+    default: 'text-foreground',
+    muted: 'text-muted-foreground',
+    primary: 'text-primary',
+    destructive: 'text-destructive',
+  },
   variant: {
     h1: 'scroll-m-20 text-4xl font-extrabold tracking-tight leading-tight',
     h2: 'scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight leading-tight',
@@ -10,12 +23,7 @@ export const variants = {
     code: 'relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold',
     lead: 'text-xl leading-relaxed text-muted-foreground',
     muted: 'text-sm text-muted-foreground',
-  },
-  color: {
-    default: 'text-foreground',
-    muted: 'text-muted-foreground',
-    primary: 'text-primary',
-    destructive: 'text-destructive',
+    overline: 'text-xs font-medium uppercase tracking-widest text-muted-foreground',
   },
 };
 

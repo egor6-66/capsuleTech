@@ -20,13 +20,13 @@ packages: ['@capsuletech/web-learn']
 ```
 
 После регистрации доступны глобалы `Learn.*`:
-`Learn.Provider` · `Learn.Welcome` · `Learn.Exercise` · `Learn.Progress` · `Learn.Tour` · `Learn.SentenceBuilder` · `Learn.LibraryNav` · `Learn.LessonsNav` · `Learn.LessonsWelcome` · `Learn.LibraryWelcome` · `Learn.Collections` · `Learn.Words` · `Learn.Search` · `Learn.Markdown` · `Learn.Library.{Info}` · `Learn.Lessons.{List,View,Concepts,Concept,Rules,Rule,RuleDrills}`.
+`Learn.Provider` · `Learn.Nav.{Main,Library,Lessons}` · `Learn.Welcome.{Root,Library,Lessons}` · `Learn.Exercise` · `Learn.Progress` · `Learn.Tour` · `Learn.SentenceBuilder` · `Learn.Collections` · `Learn.Words` · `Learn.Search` · `Learn.Markdown` · `Learn.Library.{Info}` · `Learn.Lesson` · `Learn.Lessons` · `Learn.Concept` · `Learn.Concepts` · `Learn.Rule` · `Learn.Rules` · `Learn.RuleDrills`.
 
 ## Анатомия `src/` (core / shared / modules)
 
 - **`core/`** — cross-cutting инфра (provider / apiContext / interfaces / controllers).
-- **`shared/`** — переиспользуемые **атомы** (`words/` · `search/` · `markdown/`). Не собственность фиче-модуля: модуль **композирует** атом, не хардкодит его в себе.
-- **`modules/`** — фиче-композиты (`lessons/` · `library/` · `exercise/` · …), импортят атомы из `shared/`.
+- **`shared/`** — переиспользуемые **атомы** (`words/` · `search/` · `markdown/` · `segments/`). Не собственность фиче-модуля: модуль **композирует** атом, не хардкодит его в себе.
+- **`modules/`** — фиче-композиты (`lessons/` · `library/` · `navigation/` · `welcome/` · `exercise/` · …), импортят атомы из `shared/`.
 - **Направление строгое: `modules/ → shared/`, НИКОГДА `shared/ → modules/`.**
 
 ## Subpath exports
@@ -35,13 +35,13 @@ packages: ['@capsuletech/web-learn']
 - `./words` — атом слова: `Words`-грид + `WordTile` + `wordsStore` + `fetchSenses` + `ISense`.
 - `./search` — атом поиска слов: `Search` (пишет `wordsStore`).
 - `./markdown` — атом рендера markdown: `Markdown` (`renderMarkdown` → `Prose`, strip-H1 + wikilink).
-- `./lessons` — раздел Lessons: `List` / `View` / `Concepts` / `Concept` / `Rules` / `Rule` / `RuleDrills` + `lessonsStore`.
+- `./lessons` — барель lessons-домена: `Lesson` / `Lessons` / `Concept` / `Concepts` / `Rule` / `Rules` / `RuleDrills` + сторы + `LESSONS_SEGMENTS`-типы.
 - `./exercise` — `Exercise` (dispatch по type) + 4 под-типа.
 - `./progress` — `Progress` / `SkillTree`.
 - `./library` — library-view-концерны: `Info` (деталь выбранного слова, читает `wordsStore` из `shared/words`) / `Collections` / `BookmarkButton` + `LIBRARY_SEGMENTS`-типы. `Words`/`Search` промоутнуты в `shared/`.
 - `./guides` — `Tour` / `Step` / `Spotlight` / `Hint`.
 - `./sentence-builder` — `SentenceBuilder`.
-- `./welcome` — данные сегментов (`LEARN_SEGMENTS`/`ILearnSegment`/`LearnSegmentId`).
+- `./welcome` — welcome-лаунчеры (`Root`/`Lessons`/`Library` → `Learn.Welcome.*`) + реэкспорт main-сегментов (`MAIN_SEGMENTS`/`IMainSegment`/`MainSegmentId`). Nav-блоки (`Learn.Nav.*`) регистрируются через `capsule.tsx`, отдельного субпата у `modules/navigation` нет.
 - `./controllers` — гнездо `Controllers.Learn` (ADR 032), пока пусто.
 - `./capsule` — capsule manifest (ADR 033).
 

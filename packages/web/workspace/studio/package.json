@@ -11,7 +11,7 @@
       "default": "./dist/index.mjs"
     },
     "./manifests": {
-      "types": "./dist/manifests/index.d.ts",
+      "types": "./dist/shared/manifests/index.d.ts",
       "import": "./dist/manifests.mjs",
       "default": "./dist/manifests.mjs"
     },
@@ -21,7 +21,7 @@
       "default": "./dist/capsule.mjs"
     },
     "./palette": {
-      "types": "./dist/palette/index.d.ts",
+      "types": "./dist/modules/palette/index.d.ts",
       "import": "./dist/palette.mjs",
       "default": "./dist/palette.mjs"
     }
@@ -42,6 +42,7 @@
     "@capsuletech/web-contract": "workspace:*",
     "@capsuletech/web-core": "workspace:*",
     "@capsuletech/web-dnd": "workspace:*",
+    "@capsuletech/web-placeholders": "workspace:*",
     "@capsuletech/web-remote": "workspace:*",
     "@capsuletech/web-router": "workspace:*",
     "@capsuletech/web-shell": "workspace:*",

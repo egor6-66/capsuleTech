@@ -32,6 +32,16 @@ const SIZE: Record<NonNullable<ITypographyProps['size']>, string> = {
   '5xl': 'text-5xl',
 };
 
+const WEIGHT: Record<NonNullable<ITypographyProps['weight']>, string> = {
+  thin: 'font-thin',
+  light: 'font-light',
+  normal: 'font-normal',
+  medium: 'font-medium',
+  semibold: 'font-semibold',
+  bold: 'font-bold',
+  extrabold: 'font-extrabold',
+};
+
 export const Typography = (props: ITypographyProps) => {
   useTrace('web-ui.typography'); // ADR 062
   // 1. Устанавливаем дефолты
@@ -42,7 +52,7 @@ export const Typography = (props: ITypographyProps) => {
     merged,
     ['class', 'style', 'as'],
     ['variant', 'color'],
-    ['align', 'tone', 'size', 'dim'],
+    ['align', 'tone', 'size', 'weight', 'mono', 'dim'],
   );
 
   // 3. Создаем реактивные стили через CVA
@@ -64,6 +74,9 @@ export const Typography = (props: ITypographyProps) => {
       // tone overrides the CVA color variant when provided
       presentational.tone && TONE[presentational.tone],
       presentational.size && SIZE[presentational.size],
+      // weight/mono override the variant's font-weight/family (tailwind-merge wins)
+      presentational.weight && WEIGHT[presentational.weight],
+      presentational.mono && 'font-mono',
       // dim: always add transition; toggle opacity
       'transition-opacity duration-200',
       presentational.dim ? 'opacity-0' : 'opacity-100',
@@ -72,7 +85,8 @@ export const Typography = (props: ITypographyProps) => {
   // 5. Логика выбора тега
   const componentTag = () => {
     if (local.as) return local.as;
-    if (variantProps.variant === 'lead') return 'p';
+    // Variants that are not real HTML tags render as <p>.
+    if (variantProps.variant === 'lead' || variantProps.variant === 'overline') return 'p';
     return variantProps.variant || 'p';
   };
 

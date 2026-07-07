@@ -9,6 +9,6 @@
  * `queueMicrotask` — навигация ПОСЛЕ фазы рендера (не мутируем router в render);
  * `useRouter` — auto-import глобал. Импортов в файле нет (канон app-слоёв).
  */
-const LessonsHome = Page(() => <Learn.LessonsWelcome />);
+const LessonsHome = Page(() => <Learn.Welcome.Lessons />);
 
 export default LessonsHome;

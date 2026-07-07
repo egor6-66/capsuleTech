@@ -25,6 +25,18 @@ export interface ITypographyProps extends JSX.HTMLAttributes<HTMLElement>, Typog
    */
   size?: 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl';
   /**
+   * Font-weight override — applied on top of the variant's weight.
+   * Maps to Tailwind `font-{weight}` and wins over the variant's own weight
+   * (e.g. `variant="h1"` is extrabold; `weight="normal"` relaxes it).
+   */
+  weight?: 'thin' | 'light' | 'normal' | 'medium' | 'semibold' | 'bold' | 'extrabold';
+  /**
+   * Monospace font family — adds `font-mono`. Orthogonal to variant/weight/size.
+   * Use for inline technical tokens without the `code` variant's chrome
+   * (bg-muted / padding).
+   */
+  mono?: boolean;
+  /**
    * When `true`: opacity-0; when `false` (default): opacity-100.
    * Always adds `transition-opacity duration-200` for smooth fade-in/out.
    * Keeps element in DOM (preserves layout height), only hides visually.
