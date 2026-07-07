@@ -140,7 +140,7 @@
 | @capsuletech/canvas-three | canvas/three | 0.0.0 | [misc.md](framework/misc.md) | 🟠 голый скелет (1 файл) |
 | @capsuletech/canvas-ui | canvas/ui | 0.0.0 | [misc.md](framework/misc.md) | 🟠 голый скелет (1 файл) |
 | @capsuletech/desktop | desktop | 0.0.0 | [misc.md](framework/misc.md) | 🟡/🟠 функц.+tested, Rust-вес, опционален |
-| @capsuletech/web-docs | web/docs | 0.0.0 | [misc.md](framework/misc.md) | 🟠 docs-трио, consolidate, defer |
+| @capsuletech/web-docs | web/docs | 0.0.0 | [misc.md](framework/misc.md) | 🟠 docs-трио, consolidate, defer + Obsidian-canon-conflict (wikilinks/callouts) |
 
 ## Прогресс аудита
 
