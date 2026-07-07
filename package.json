@@ -44,7 +44,7 @@
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.2",
     "@biomejs/biome": "^2.4.15",
-    "@nx/devkit": "^22.7.0",
+    "@nx/devkit": "^23.0.1",
     "@nx/esbuild": "22.6.5",
     "@nx/js": "22.6.5",
     "@nx/storybook": "22.6.5",
