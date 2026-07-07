@@ -155,7 +155,12 @@
 - [x] boost
 - [x] workspace
 - [x] canvas/desktop/docs
-- [~] Второй проход — углубление спорного (code-verified: classify.ts, AppSourceServe, data-gen≠shared-zod, web-ui vitest, cli git add -A, web-auth стратегии; 2 поправки → CC-9). Открыто: light code-verify 🟢-backbone (state/router/query/style/dnd), boost-chart/flow usage, docs-трио consolidation.
+- [x] Второй проход — углубление спорного (code-verified: classify.ts, AppSourceServe, data-gen≠shared-zod, web-ui vitest, cli git add -A, web-auth стратегии; 2 поправки → CC-9).
+- [x] **Pass-2 (2026-07-08):** 🟢-backbone code-verify (касты low-risk type-shaping, query `log()`=opt-in не crutch, web-remote cross-origin TODO — в runtime.md); boost-chart/flow **usage-verify = 0 app-потребителей → DEFER** (boost.md); docs-трио tie-in к writer-продукту (misc.md).
+- [x] **Backend zone (pass-1, 2026-07-08)** — [backend/README.md](backend/README.md). 7 python capability-сервисов (все tested) + 2 rust + target(N/A). Federation ✅ (env-URL pydantic-settings). Tiers: learn/lang/community 🟢, auth/image/llm/voice 🟡, telegram/playground 🟠.
+- [x] **Apps zone (pass-1, 2026-07-08)** — [apps-frontends.md](apps-frontends.md). learn=ЭТАЛОН, playground=fork, studio/canvas/community=WIP/scaffold. Compliance clean. Cross-cutting: store.ctx typing-gap (as any даже в эталоне) → web-core/state fix.
+- [ ] **Infra zone (docker/scripts/root-config/harness)** — [infra.md](infra.md) (в работе).
+- [ ] Pass-2 deepen backend (per-service ADR 072 §2/§3/§4, lang importer typing-долг, telegram e2e) + apps (playground-судьба, full compliance:check).
 
 ## Сквозные находки (cross-cutting)
 
