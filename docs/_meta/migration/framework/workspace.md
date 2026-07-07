@@ -35,3 +35,17 @@
 | moderator | ⚪ N/A — пустой POC-гейт, строится свежим в v2 |
 
 **Зона `workspace` в v2 РАСТВОРЯЕТСЯ:** studio/learn = отдельные ship-юниты топологии (repo-map), не «зона» одного монорепо. zones.ts под это переосмыслить (см. compliance C1). **Порядок переноса:** workspace — САМЫЙ последний, гейтится moderator-POC + ре-анатомией. Богатый функционал (lessons/studio-editors) сохраняется, меняется раскладка.
+
+## Pass-2 (2026-07-08) — fork #3 РЕЗОЛВНУТ ADR 078 + пивот supersedes moderator-first
+
+- **Fork #3 (workspace растворяется) — ЗАКРЫТ ADR 078 §2:** `framework/` = чистый монорепо
+  (runtime/kit/builders/boost/domain/cli), **learn/studio/docs/moderator = продукты СНАРУЖИ** (свои
+  репо, composition). `zones.ts` теряет зону workspace. Развилка больше не открыта — решено.
+- **⚠️ «moderator = первый продукт» (ADR 077 §3) — УСТАРЕЛО пивотом 2026-07-07** (ADR 078 amends 077 §3;
+  затем реврейм: первый продукт = **Brainer** agent-оркестрация, потом docs/Writer). Т.е. moderator-POC
+  как ближайший гейт — **отодвинут далеко**: сначала Brainer обкатывает дисциплину, потом framework-волна,
+  learn/studio-ре-анатомия — ещё позже. web-learn/web-studio остаются 🟠 «последними», но «последними»
+  теперь = после Brainer + framework + продуктовых волн. Package-модель (app-minus-layers) валидируется
+  на первом реальном продукте (Brainer packages/ или Writer), не обязательно на greenfield moderator.
+- **Практ. вывод:** web-learn/web-studio НЕ трогать в обозримой волне; WIP-ветка `wip/v2-studio-learn-handoff`
+  = заморожена как справка. Их богатый функционал — оракул-референс для будущей ре-анатомии.
