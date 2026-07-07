@@ -47,6 +47,18 @@ as-is; строим свежими (с тестами) когда появитс
 `Ui.Chart`/`Ui.FlowDiagram` тоже никем не рендерятся — при v2 решить, тащить ли placeholder-пару
 или завести её вместе с booster'ом по потребности.
 
+**CC-6 table-дубль + usage (verified 2026-07-08):** `DataTable`+`infiniteScroll` дублированы в
+**kit** (`kit/ui/composites/dataTable` + `lib/infiniteScroll`) И **boost-table** (полнее:
+provider/controllers/contract/tests — ADR 033 extraction target). НО grep `DataTable|Tables.|
+infiniteScroll` по `apps/` → **1 хит, и тот `apps/OWNERSHIP.md` (doc)**. **Ноль app-код-потребителей
+таблицы.** → CC-6 развилка (достроить boost-table vs оставить kit) — **ниже ставками**: ничего не
+ломается (нечему), DataTable-infinite-quirk (cold-empty) **moot** пока не используется. v2: выбрать
+чистый путь без давления (доделать extraction ИЛИ отложить весь table-стек до реальной потребности).
+
+**Сквозной вывод boost:** chart / flow / table — **все три heavy-компонента без живых app-потребителей**
+(built/extracted вперёд спроса). v2-урок: не тащить heavy-обвязку до потребности; завести по факту
+нужды с тестами. Это снимает давление с 3 развилок разом (chart/flow/table = defer-until-needed).
+
 ## Итог по зоне
 
 | Пакет | Вердикт |
