@@ -34,6 +34,19 @@ Heavy flow-diagram booster (augment `Ui.FlowDiagram`). **src=4 test=0 — НЕТ
 Полная re-экстракция table из web-ui (ADR 033 → `Tables.*` global): composites/dataTable + primitives/table + lib/{infiniteScroll,pagination} + controller + provider + capsule-регистрация. **src=23 test=6.** Параллелен **живому** web-ui/composites/dataTable (см. [web-ui.md](web-ui.md) CC-6). `dataTable.contract.ts` — file-level `eslint-disable no-explicit-any`.
 **Действие / развилка (CC-6):** решить дубль — достроить boost-table и снять table из kit (консистентно с chart/map/flow), ИЛИ отменить boost-table, оставить DataTable в kit. Определяет дом DataTable-infinite-quirk. **Флажок user'у.**
 
+## Pass-2 usage-verify (2026-07-08) — boost-chart/flow НЕ используются
+
+Grep по всему репо (`Ui.Chart|Ui.FlowDiagram|Charts.|Flows.|@capsuletech/boost-(chart|flow)`):
+совпадения ТОЛЬКО внутри самих пакетов — kit-плейсхолдеры (`kit/ui/primitives/{chart,flow-diagram}`),
+регистрация (`runtime/core/imports.tsx`), zones/config. **Ноль `apps/*`.** Отдельный grep по
+`apps/` на `Chart|FlowDiagram` — **No files found**.
+
+**Вывод:** boost-chart (src=7, test=0) и boost-flow (src=4, test=0) — **не потребляются ни одним
+аппом**, тестов нет. Это не эталон и не в первой волне. **Вердикт firms → DEFER:** не переносим
+as-is; строим свежими (с тестами) когда появится реальная потребность в чарте/флоу. kit-плейсхолдеры
+`Ui.Chart`/`Ui.FlowDiagram` тоже никем не рендерятся — при v2 решить, тащить ли placeholder-пару
+или завести её вместе с booster'ом по потребности.
+
 ## Итог по зоне
 
 | Пакет | Вердикт |
