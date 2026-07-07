@@ -48,7 +48,7 @@
     "@nx/esbuild": "22.6.5",
     "@nx/js": "22.6.5",
     "@nx/storybook": "22.6.5",
-    "@nx/vite": "22.6.5",
+    "@nx/vite": "23.0.1",
     "@nx/web": "22.6.5",
     "@swc-node/register": "~1.11.1",
     "@swc/core": "~1.15.5",
