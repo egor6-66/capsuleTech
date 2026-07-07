@@ -45,6 +45,28 @@
 ### Сквозная механика (делаем скриптом/системно, не по файлу)
 Бренд-rename (CC-1) · вычистить dangling `shared-file-manager` (CC-7, 24 файла + CI) · освежить пути в OWNERSHIP после зон-реорга (CC-3) · exports↔docs sync (CC-5) · дописать отсутствующие AI-anchor'ы (почти везде помечены как долг).
 
+## 🌐 FULL-CODEBASE ROLLUP (2026-07-08 — аудит расширен за пределы framework)
+
+Аудит теперь покрывает **весь кодбейз**: framework (packages) · backend (7 py + 2 rust) · apps
+(6 фронтов) · infra (scripts/config/CI/docker/harness). Сводка по зонам:
+
+| Зона | Здоровье | Ключевое |
+|---|---|---|
+| **framework** | база ДОВЕРЕННАЯ (0 silent-swallow/HACK) | касты = low-risk type-shaping; **chart/flow/table — 3 heavy без app-потребителей** (defer-until-needed); CC-4 (vite-builder в web-core deps) LIVE |
+| **backend** | **здоровее framework** (все py tested, federation env-URL ✅) | **§4 Docker НЕ выполнен** (0 Dockerfile'ов = packaging-долг CC-11); §2 seam ✅; lang importer typing-долг (fixable) |
+| **apps** | compliance ЧИСТО (0 app-package-import в слоях) | learn=ЭТАЛОН; **store.ctx typing-gap → `as any` даже в эталоне** (CC-10, root=web-core/state); playground-судьба развилка |
+| **infra** | v2 = regen/adapt, не verbatim | gateway+observability REUSE (brainer их юзает); CI CC-7 cleanup; harness уже деривится из commons |
+
+**Мета-уроки для v2 (сквозные, новые этой ночью):**
+1. **Не строить heavy-обвязку вперёд спроса** — chart/flow/table построены/extracted, но 0 app-потребителей. v2: заводить по факту нужды, с тестами. Снимает давление с 3 развилок разом.
+2. **store.ctx typing-gap** (CC-10) — единственный крутыль в самом эталоне; root во фреймворке (web-core `useCtx` + web-state `createBridge` не типизируют `store.ctx.data`). Фикс в runtime чистит все апы. **v2-приоритет.**
+3. **ADR 072 §4 Docker-долг** (CC-11) — backend не контейнеризован; env-конфиг есть (pydantic) → механический, но обязательный шаг для self-host/federation.
+4. **web-agent → brainer** — 🔴 web-agent не портируется standalone; его rebuild = `self-hosted`-провайдер продукта Brainer (agent-as-provider, backend/llm agent-loop).
+
+**Связь с текущим курсом (пивот 2026-07-07):** первая волна v2 = **продукт Brainer** (agent-оркестрация), не docs. Этот аудит = задел под ПОЗДНЮЮ framework-миграцию (когда до неё дойдём) + источник для backend-контрактов, которые Brainer/движки потребляют уже сейчас (OTEL-стек, backend/llm). Framework-first-wave (🟢+🟡 spine) остаётся валидным планом, но исполняется ПОСЛЕ обкатки дисциплины на Brainer.
+
+---
+
 ---
 
 ## Легенда вердиктов
