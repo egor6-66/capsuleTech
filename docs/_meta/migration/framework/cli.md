@@ -9,6 +9,15 @@
 
 Солидный dual-mode CLI с e2e-smoke и богато задокументированными квирками. 🟡 — из-за функционального CI-gap'а, git-футгана (конфликт с v2-дисциплиной), тонкого unit-покрытия и dangling-ссылки на удалённый пакет.
 
+## Pass-2 code-verify (2026-07-08)
+
+- **git add -A футган — ПОДТВЕРЖДЁН по коду** (CC-9 verify, claim НЕ stale): `src/actions/git.ts:371`
+  — `gitInherit(ctx.root, ['add', '-A'])` → `:372` `commit -m message`. `gitCommit`-action стейджит
+  **всё** (вкл. `.env`). execa-args-массив (потому literal-grep `add -A` мимо). **v2-фикс:** confirm
+  или whitelist перед `add -A` — конфликтует с v2-git-дисциплиной (scope-коммиты, git-gate).
+- Git-слой чист: `execa` (не raw shell), `gh pr create --fill --web`, dirty-tree guard перед sync.
+  Футган — единственная git-проблема, точечная.
+
 ## Что хорошо
 
 - **Dual-mode** TUI/commander из одного источника команд; продуманный process-exit (SIGINT/SIGTERM → exit(0) пока Vite держит event loop; execa cleanup:true против orphan'ов).
