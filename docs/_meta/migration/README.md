@@ -45,6 +45,28 @@
 ### Сквозная механика (делаем скриптом/системно, не по файлу)
 Бренд-rename (CC-1) · вычистить dangling `shared-file-manager` (CC-7, 24 файла + CI) · освежить пути в OWNERSHIP после зон-реорга (CC-3) · exports↔docs sync (CC-5) · дописать отсутствующие AI-anchor'ы (почти везде помечены как долг).
 
+## 🌐 FULL-CODEBASE ROLLUP (2026-07-08 — аудит расширен за пределы framework)
+
+Аудит теперь покрывает **весь кодбейз**: framework (packages) · backend (7 py + 2 rust) · apps
+(6 фронтов) · infra (scripts/config/CI/docker/harness). Сводка по зонам:
+
+| Зона | Здоровье | Ключевое |
+|---|---|---|
+| **framework** | база ДОВЕРЕННАЯ (0 silent-swallow/HACK) | касты = low-risk type-shaping; **chart/flow/table — 3 heavy без app-потребителей** (defer-until-needed); CC-4 (vite-builder в web-core deps) LIVE |
+| **backend** | **здоровее framework** (все py tested, federation env-URL ✅) | **§4 Docker НЕ выполнен** (0 Dockerfile'ов = packaging-долг CC-11); §2 seam ✅; lang importer typing-долг (fixable) |
+| **apps** | compliance ЧИСТО (0 app-package-import в слоях) | learn=ЭТАЛОН; **store.ctx typing-gap → `as any` даже в эталоне** (CC-10, root=web-core/state); playground-судьба развилка |
+| **infra** | v2 = regen/adapt, не verbatim | gateway+observability REUSE (brainer их юзает); CI CC-7 cleanup; harness уже деривится из commons |
+
+**Мета-уроки для v2 (сквозные, новые этой ночью):**
+1. **Не строить heavy-обвязку вперёд спроса** — chart/flow/table построены/extracted, но 0 app-потребителей. v2: заводить по факту нужды, с тестами. Снимает давление с 3 развилок разом.
+2. **store.ctx typing-gap** (CC-10) — единственный крутыль в самом эталоне; root во фреймворке (web-core `useCtx` + web-state `createBridge` не типизируют `store.ctx.data`). Фикс в runtime чистит все апы. **v2-приоритет.**
+3. **ADR 072 §4 Docker-долг** (CC-11) — backend не контейнеризован; env-конфиг есть (pydantic) → механический, но обязательный шаг для self-host/federation.
+4. **web-agent → brainer** — 🔴 web-agent не портируется standalone; его rebuild = `self-hosted`-провайдер продукта Brainer (agent-as-provider, backend/llm agent-loop).
+
+**Связь с текущим курсом (пивот 2026-07-07):** первая волна v2 = **продукт Brainer** (agent-оркестрация), не docs. Этот аудит = задел под ПОЗДНЮЮ framework-миграцию (когда до неё дойдём) + источник для backend-контрактов, которые Brainer/движки потребляют уже сейчас (OTEL-стек, backend/llm). Framework-first-wave (🟢+🟡 spine) остаётся валидным планом, но исполняется ПОСЛЕ обкатки дисциплины на Brainer.
+
+---
+
 ---
 
 ## Легенда вердиктов
@@ -155,7 +177,15 @@
 - [x] boost
 - [x] workspace
 - [x] canvas/desktop/docs
-- [~] Второй проход — углубление спорного (code-verified: classify.ts, AppSourceServe, data-gen≠shared-zod, web-ui vitest, cli git add -A, web-auth стратегии; 2 поправки → CC-9). Открыто: light code-verify 🟢-backbone (state/router/query/style/dnd), boost-chart/flow usage, docs-трио consolidation.
+- [x] Второй проход — углубление спорного (code-verified: classify.ts, AppSourceServe, data-gen≠shared-zod, web-ui vitest, cli git add -A, web-auth стратегии; 2 поправки → CC-9).
+- [x] **Pass-2 (2026-07-08):** 🟢-backbone code-verify (касты low-risk type-shaping, query `log()`=opt-in не crutch, web-remote cross-origin TODO — в runtime.md); boost-chart/flow **usage-verify = 0 app-потребителей → DEFER** (boost.md); docs-трио tie-in к writer-продукту (misc.md).
+- [x] **Backend zone (pass-1, 2026-07-08)** — [backend/README.md](backend/README.md). 7 python capability-сервисов (все tested) + 2 rust + target(N/A). Federation ✅ (env-URL pydantic-settings). Tiers: learn/lang/community 🟢, auth/image/llm/voice 🟡, telegram/playground 🟠.
+- [x] **Apps zone (pass-1, 2026-07-08)** — [apps-frontends.md](apps-frontends.md). learn=ЭТАЛОН, playground=fork, studio/canvas/community=WIP/scaffold. Compliance clean. Cross-cutting: store.ctx typing-gap (as any даже в эталоне) → web-core/state fix.
+- [x] **Infra zone (2026-07-08)** — [infra.md](infra.md). scripts/root-config/CI/docker/harness. Вердикт: в v2 РЕГЕН/АДАПТ, не verbatim. gateway+observability 🟢 REUSE (brainer юзает); CI 🟡 REWRITE + CC-7 cleanup; harness уже деривится из commons-шаблонов. CC-7 подтверждён (24 файла).
+- [ ] Pass-2 deepen backend (per-service ADR 072 §2/§3/§4, lang importer typing-долг, telegram e2e) + apps (playground-судьба, full compliance:check).
+
+> **АУДИТ ТЕПЕРЬ ПОКРЫВАЕТ ВЕСЬ КОДБЕЙЗ** (2026-07-08): framework (packages, pass-1+2) · backend (7 py + 2 rust) · apps (6 фронтов) · infra (scripts/config/CI/docker/harness). Ниже executive summary — framework-центричный (историч.); полная картина по зонам — в per-zone файлах + прогресс выше.
+- [ ] Pass-2 deepen backend (per-service ADR 072 §2/§3/§4, lang importer typing-долг, telegram e2e) + apps (playground-судьба, full compliance:check).
 
 ## Сквозные находки (cross-cutting)
 
@@ -196,3 +226,15 @@ web-core: 9 subpath'ов в exports, 4 в OWNERSHIP-API. Мёртвых нет, 
 
 ### CC-6. Дубль-каталог(и) — верификация
 Ранний sweep показал `composites/dataTable/` **в двух местах**: `web/kit/ui/` и `web/boost/table/` (boost-table = 0.0.0 скелет, по ADR 033 должен был ВЫНЕСТИ table из web-ui). Проверить в аудите web-ui + boost — где живой источник, что дубль/недоделанный вынос.
+
+### CC-10. store.ctx typing-gap → `as any` в app-слоях (surfaced 2026-07-08)
+Апы (вкл. **ЭТАЛОН learn**) кастуют `(store.ctx as any)?.data?.X` для чтения данных — web-core
+`useCtx` / web-state `createBridge` **не типизируют `store.ctx.data`** под schema-context. Загоняет
+`as any` в app-слои = нарушение «без крутылей» в самом эталоне. **Root — framework** (web-core/state),
+не апы. v2-приоритет: типизировать store.ctx → чистит `as any` во всех апах. См. [web-core.md](framework/web-core.md) + [apps-frontends.md](apps-frontends.md).
+
+### CC-11. ADR 072 §4 containerize НЕ выполнен — backend без Dockerfile'ов (surfaced 2026-07-08)
+У python-сервисов **ноль своих Dockerfile'ов** (крутятся на хосте через `uv run uvicorn`). ADR 072
+§4 («каждый бэк-сервис контейнеризуем с первого дня») — аспирационен, известный packaging-долг.
+env-конфиг уже есть (pydantic Settings) → контейнеризация **механическая, но обязательная** для
+self-host/federation в v2. См. [backend/README.md](backend/README.md).

@@ -31,6 +31,20 @@ Placeholder-компоненты (`Placeholders.Empty` и т.п.) — испол
 **Проблема:** **весь пакет — заглушки** (`TODO(owner-web-agent)` в capsule.ts/controllers/personas/ui/tools). `client/index.ts` — stub «yields добавятся при реализации MCP tool-streaming (**PENDING scriber**)». **Scriber УДАЛЁН (ADR 074, 2026-07-05)** — LLM теперь `backend/llm` (:8007, Python llama-cpp), agent-loop = ADR 065 ф.4-5 поверх него. Т.е. web-agent завязан концептуально на удалённый бэкенд.
 **Действие:** **не переносить as-is.** В v2 строить свежим против `backend/llm` контракта, когда agent-frontend понадобится. Ментальная модель (3 оси) — сохранить, код — нет. Скаффолд.
 
+## Pass-2 (2026-07-08)
+
+- **web-placeholders LIVE-confirm:** grep `apps/` → **learn** `src/pages/_workspace/library/collections.tsx`
+  использует `Placeholders.Empty` (+ registry/types). **Реально потребляется** (в отличие от
+  chart/flow/table = 0 consumers). Fork #7 (kit vs domain) = **чисто категоризация** (`Empty` =
+  stateless UI → скорее kit), **ноль функционального риска**, low-stakes. v2: положить в kit или
+  оставить domain — косметическое решение.
+- **web-agent → BRAINER tie-in (важно).** web-agent 🔴 «rebuild против backend/llm» — это **ровно
+  `self-hosted`-провайдер продукта Brainer** (agent-as-provider, `brainer/ARCHITECTURE.md`): ментальная
+  модель агента (транспорт/тулсет/персона + tool-calling ADR 043 MCP + встраиваемый примитив ADR 035)
+   resurface'ит в brainer, исполняясь на `backend/llm` agent-loop (ADR 065 ф.5 / 074). Т.е. web-agent
+  НЕ портируется как standalone framework-пакет — его «rebuild» **происходит внутри brainer/engine**
+  по готовому provider-шву. Подтверждает 🔴 «не тащим as-is».
+
 ## Итог по зоне
 
 | Пакет | Вердикт |
