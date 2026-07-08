@@ -32,7 +32,11 @@ services:
     volumes:
       - ./loki-config.yaml:/etc/loki/config.yaml:ro
       - loki-data:/loki
-    # Без host-порта: Grafana и collector ходят к Loki по compose-сети (loki:3100).
+    ports:
+      # Grafana/collector ходят по compose-сети (loki:3100). Host-порт добавлен для
+      # хостовых потребителей LogQL — brainer-backend читает активность сессий
+      # `{scope="X"}` с хоста (Omnifield Brainer, agent-оркестрация).
+      - "3100:3100"
 
   prometheus:
     image: prom/prometheus:v2.54.1

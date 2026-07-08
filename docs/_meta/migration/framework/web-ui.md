@@ -27,6 +27,7 @@
 | U3 | **DataTable `infinite` (virtual-scroll) cold-empty quirk** — интермиттентный пустой body на cold reload (tanstack virtual-core race). Митигация откатана; sidestep = `infinite:{mode:'plain'}` (non-virtual). Незакрыт в корне. См. CLAUDE.md «Известные шероховатости». | known-issue | v2-решение: нести как known-issue + plain-дефолт, ИЛИ починить в корне (keyed-remount виртуалайзера / апгрейд solid-virtual). Верификация только в реальном браузере. |
 | U4 | **Dropdown cold-first-open position flash** — первая раскрытие за сессию мелькает в left-top, потом прыгает к якорю (Kobalte positioner + async floating-ui). Косметика, first-click-only. Две попытки фикса откатаны. | known-issue (low) | нести как known-issue ИЛИ проверить fixed-версию @kobalte/core >0.13. |
 | U5 | **W4 maturity pending:** bundle-size assertions (L0/L1 weight gradient не формализован) + build-time `manifest.json` генерация (studio-палитра на него опирается). | roadmap | закрыть в v2 при доведении до эталона. |
+| U6 | **Prose несёт Obsidian-специфичные `.wikilink`/`.callout-*` стили**, парные к `web-docs` `render-markdown.ts` (Obsidian wikilinks/callouts). Конфликт с v2-решением «ноль Obsidian» — детали в `docs/_meta/migration/framework/misc.md` (web-docs секция). | canon-conflict | переносить синхронно с фиксом web-docs-резолвера (не по отдельности — стили и парсер один контракт). |
 
 ## CC-6 — table-развилка (структурная, требует решения)
 

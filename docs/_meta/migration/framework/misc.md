@@ -28,7 +28,9 @@ Tauri-shell host: JS wrapper (`runDev`/`runBuild`, child-process orchestration, 
 Docs-сайт компоненты (DocSection/DocPage). `dangerouslySetInnerHTML` для controlled docs-source — biome-ignore'нут с обоснованием («docs source is controlled»). src=8 test=6.
 
 **Проблема (CC):** docs-тулинг размазан на **три** артефакта — `web/docs` (рендер) + `builders/docs-builder` (extraction CLI+plugin, 0.0.0, БЕЗ OWNERSHIP) + `vite/plugins/codegen/generators/docs-sources.ts` (кодген источников). В v2 свести: источник / потребитель / мёртвое.
-**Действие:** **не критический путь** (docs-сайт ≠ апп-сборка). Отложить из первой волны; при переносе сначала консолидировать docs-тулинг-трио + завести OWNERSHIP для docs-builder.
+
+**🚩 Canon-conflict (2026-07-07, найдено при v2 канон-бутстрапе commons):** `render-markdown.ts` (web-docs) парсит **Obsidian-специфичный** синтаксис — wikilinks `[[id]]`/`[[id|label]]` и callouts `> [!type]` (ADR 048 D2-D3, `docs-system.md` §4, брифы `docs-markdown-callouts-wikilinks.md`/`ui-prose-callouts-wikilink.md`). Prose (`web-ui`) несёт парные `.wikilink`/`.callout-*` стили. Это прямо конфликтует с решением v2: **ноль Obsidian, только чистый markdown** (`commons/standards/workflow/docs-hygiene.md` правила 7-8). Ценность (slug-индирекция + build-time link-граф-валидация) — реальна и стоит перенести, но она свойство **их собственного parser/registry**, не свойство `[[...]]`-синтаксиса — тот же parser одинаково валидирует обычные markdown-ссылки `[text](slug)`. Разбор — см. переписку по ADR-077, чек-лист верификации §1.
+**Действие:** **не критический путь** (docs-сайт ≠ апп-сборка). Отложить из первой волны; при переносе — (1) консолидировать docs-тулинг-трио + завести OWNERSHIP для docs-builder, (2) **пересобрать резолвер под стандартный markdown-синтаксис** (`[text](path)` вместо wikilinks; callout-blockquote — решить отдельно, не копировать Obsidian-taxonomy автоматом). Не переносить `[[...]]`-парсинг as-is.
 
 ## Pass-2 (2026-07-08) — web-docs tie-in к v2-продукту
 
