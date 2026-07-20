@@ -28,8 +28,8 @@
   "devDependencies": {
     "@capsuletech/lib-builder": "workspace:*",
     "@capsuletech/vite-builder": "workspace:*",
-    "vite": "^8.0.13",
-    "vite-plugin-solid": "^2.11.12"
+    "vite": "^8.1.5",
+    "vite-plugin-solid": "^2.11.13"
   },
   "publishConfig": {
     "access": "public",

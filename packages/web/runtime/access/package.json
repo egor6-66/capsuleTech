@@ -30,7 +30,7 @@
   "devDependencies": {
     "@capsuletech/lib-builder": "workspace:*",
     "@capsuletech/vite-builder": "workspace:*",
-    "vite-plugin-solid": "^2.11.12"
+    "vite-plugin-solid": "^2.11.13"
   },
   "publishConfig": {
     "access": "public",
