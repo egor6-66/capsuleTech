@@ -52,7 +52,7 @@
     "@capsuletech/web-style": "workspace:*",
     "@capsuletech/web-ui": "workspace:*",
     "@tanstack/solid-table": "^8.21.3",
-    "@tanstack/solid-virtual": "^3.13.24"
+    "@tanstack/solid-virtual": "^3.13.34"
   },
   "peerDependencies": {
     "solid-js": "^1.9.12"
@@ -61,7 +61,7 @@
     "@capsuletech/lib-builder": "workspace:*",
     "@capsuletech/vite-builder": "workspace:*",
     "@testing-library/jest-dom": "^6.9.1",
-    "vite-plugin-solid": "^2.11.12"
+    "vite-plugin-solid": "^2.11.13"
   },
   "publishConfig": {
     "access": "public",

@@ -30,12 +30,12 @@
     "@capsuletech/web-access": "workspace:*",
     "@capsuletech/shared-zod": "workspace:*",
     "@capsuletech/shared-utils": "workspace:*",
-    "@kobalte/core": "^0.13.0",
-    "@tanstack/router-core": "^1.169.0",
-    "@tanstack/solid-router": "^1.169.0",
+    "@kobalte/core": "^0.13.12",
+    "@tanstack/router-core": "^1.171.15",
+    "@tanstack/solid-router": "^1.170.18",
     "@xstate/solid": "^2.0.0",
-    "solid-js": "1.9.12",
-    "xstate": "^5.0.0",
+    "solid-js": "1.9.14",
+    "xstate": "^5.32.5",
     "zod": "^3.23.8"
   }
 }

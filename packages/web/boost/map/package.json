@@ -35,8 +35,8 @@
     "@capsuletech/web-core": "workspace:*",
     "@testing-library/jest-dom": "^6.9.1",
     "jsdom": "~29.1.1",
-    "solid-js": "^1.9.0",
-    "vite-plugin-solid": "^2.11.12"
+    "solid-js": "^1.9.14",
+    "vite-plugin-solid": "^2.11.13"
   },
   "publishConfig": {
     "access": "public",
