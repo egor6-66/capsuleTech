@@ -20,6 +20,7 @@
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 // Canon (2026-06-22): scope = package.json#name минус @capsuletech/ минус
 // опциональный web- префикс. Один источник истины с scope-resolve.mjs.
 //   @capsuletech/web-ui      → ui
@@ -229,6 +230,14 @@ async function main() {
   if (!targetRaw) allow();
   const target = norm(targetRaw);
   dbg(`target=${target}`);
+
+  // Граница репо (2026-07-09): governance гейтит ТОЛЬКО пути внутри capsule-репо.
+  // Чужие репо (omnifield/weber, brainer, …) несут СВОИ хуки/фенсы — матчить их
+  // packages/* отсюда = over-reach (инцидент: блок авторизованного user'ом порта
+  // 🟢-волны в weber). Repo root = 4 уровня вверх от .claude/hooks (канон §0.2:
+  // хуки живут только в docker/observability/.claude).
+  const repoRoot = norm(join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..'));
+  if (!(target === repoRoot || target.startsWith(repoRoot + '/'))) allow();
 
   // Гейтим правки в packages/**, backend/** и apps/** — docs/infra/прочее свободно.
   if (
